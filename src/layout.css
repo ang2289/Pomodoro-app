@@ -1,0 +1,361 @@
+/* Layout CSS - 全站手機畫面排版與字體優化 */
+
+/* 1. body 最大寬度限制為 420px，左右內距 16px */
+body {
+  max-width: 420px !important;
+  margin: 0 auto !important;
+  padding: 0 16px !important;
+  box-sizing: border-box !important;
+}
+
+/* 2. 所有卡片與按鈕使用 flex-column 垂直排版 */
+.container {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+  width: 100% !important;
+  max-width: 420px !important;
+  margin: 0 auto !important;
+  padding: 0 16px !important;
+  box-sizing: border-box !important;
+}
+
+/* 3. 使用 clamp(16px, 2.5vw, 20px) 控制全站文字大小，自動適應手機／平板 */
+body,
+.container,
+.stack {
+  font-size: clamp(16px, 2.5vw, 20px) !important;
+  line-height: 1.5 !important;
+}
+
+/* 4. 加上 .stack、.container 類別統一應用在每個頁面根元素 */
+.stack {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  width: 100% !important;
+}
+
+/* 5. 所有元件加上 overflow-wrap: break-word 避免大字爆版 */
+* {
+  overflow-wrap: break-word !important;
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  hyphens: auto !important;
+}
+
+/* 卡片響應式優化 */
+.card,
+.feature-card,
+.bg-white {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+  padding: 16px !important;
+  border-radius: 12px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+}
+
+/* 按鈕響應式優化 */
+button {
+  width: 100% !important;
+  max-width: 100% !important;
+  padding: 12px 16px !important;
+  font-size: clamp(14px, 2.2vw, 18px) !important;
+  border-radius: 8px !important;
+  border: none !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  box-sizing: border-box !important;
+}
+
+/* 輸入框響應式優化 */
+input,
+textarea,
+select {
+  width: 100% !important;
+  max-width: 100% !important;
+  padding: 12px 16px !important;
+  font-size: clamp(14px, 2.2vw, 18px) !important;
+  border-radius: 8px !important;
+  border: 1px solid #ddd !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+}
+
+/* 待辦事項輸入框特殊樣式 */
+.todo-input {
+  height: 64px !important;
+  font-size: 18px !important;
+  padding: 16px 20px !important;
+  border-radius: 12px !important;
+  border: 2px solid #ddd !important;
+  background-color: #ffffff !important;
+  color: #333333 !important;
+  transition: border-color 0.2s ease !important;
+  font-weight: 500 !important;
+}
+
+.todo-input:focus {
+  outline: none !important;
+  border-color: #2196f3 !important;
+  box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2) !important;
+}
+
+/* 專注項目輸入框樣式 */
+.focus-input {
+  height: 64px !important;
+  font-size: 18px !important;
+  padding: 16px 20px !important;
+  border-radius: 12px !important;
+  border: 2px solid #ddd !important;
+  background-color: #ffffff !important;
+  color: #333333 !important;
+  transition: border-color 0.2s ease !important;
+  font-weight: 500 !important;
+}
+
+.focus-input:focus {
+  outline: none !important;
+  border-color: #4ecdc4 !important;
+  box-shadow: 0 0 0 2px rgba(78, 205, 196, 0.2) !important;
+}
+
+/* 顏色圓點通用樣式 */
+.color-dot {
+  border: 2px solid #ffffff !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+  transition: all 0.2s ease !important;
+}
+
+.color-dot:hover {
+  transform: scale(1.1) !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* 標題響應式優化 */
+h1 {
+  font-size: clamp(24px, 4vw, 32px) !important;
+  font-weight: 700 !important;
+  margin: 0 0 16px 0 !important;
+  line-height: 1.2 !important;
+}
+
+h2 {
+  font-size: clamp(20px, 3.5vw, 28px) !important;
+  font-weight: 600 !important;
+  margin: 0 0 12px 0 !important;
+  line-height: 1.3 !important;
+}
+
+h3 {
+  font-size: clamp(18px, 3vw, 24px) !important;
+  font-weight: 600 !important;
+  margin: 0 0 8px 0 !important;
+  line-height: 1.4 !important;
+}
+
+h4 {
+  font-size: clamp(16px, 2.5vw, 20px) !important;
+  font-weight: 500 !important;
+  margin: 0 0 8px 0 !important;
+  line-height: 1.4 !important;
+}
+
+/* 段落文字響應式優化 */
+p {
+  font-size: clamp(14px, 2.2vw, 18px) !important;
+  line-height: 1.6 !important;
+  margin: 0 0 12px 0 !important;
+}
+
+/* 標籤響應式優化 */
+label {
+  font-size: clamp(14px, 2.2vw, 18px) !important;
+  font-weight: 500 !important;
+  margin-bottom: 8px !important;
+  display: block !important;
+}
+
+/* 頁面容器優化 */
+.page {
+  width: 100% !important;
+  max-width: 420px !important;
+  margin: 0 auto !important;
+  padding: 16px !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+}
+
+/* 主內容區域優化 */
+.main-content {
+  width: 100% !important;
+  max-width: 420px !important;
+  margin: 0 auto !important;
+  padding: 16px !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+}
+
+/* 應用程式容器優化 */
+.app-container {
+  width: 100% !important;
+  max-width: 420px !important;
+  margin: 0 auto !important;
+  min-height: 100vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-sizing: border-box !important;
+}
+
+/* 表格響應式優化 */
+table {
+  width: 100% !important;
+  max-width: 100% !important;
+  font-size: clamp(12px, 2vw, 16px) !important;
+  border-collapse: collapse !important;
+  table-layout: fixed !important;
+}
+
+th,
+td {
+  padding: 8px 4px !important;
+  text-align: left !important;
+  border-bottom: 1px solid #ddd !important;
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+}
+
+/* 列表響應式優化 */
+ul,
+ol {
+  padding-left: 20px !important;
+  margin: 0 0 12px 0 !important;
+}
+
+li {
+  font-size: clamp(14px, 2.2vw, 18px) !important;
+  line-height: 1.6 !important;
+  margin-bottom: 4px !important;
+}
+
+/* 連結響應式優化 */
+a {
+  font-size: clamp(14px, 2.2vw, 18px) !important;
+  color: #2196f3 !important;
+  text-decoration: none !important;
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+}
+
+a:hover {
+  text-decoration: underline !important;
+}
+
+/* 圖片響應式優化 */
+img {
+  max-width: 100% !important;
+  height: auto !important;
+  display: block !important;
+}
+
+/* 表單群組優化 */
+.form-group {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  margin-bottom: 16px !important;
+  width: 100% !important;
+}
+
+/* 按鈕群組優化 */
+.button-group {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  width: 100% !important;
+}
+
+/* 特殊情況：橫向按鈕群組（在需要時使用） */
+.button-group.horizontal {
+  flex-direction: row !important;
+  gap: 8px !important;
+}
+
+.button-group.horizontal button {
+  flex: 1 !important;
+  min-width: 0 !important;
+}
+
+/* 響應式間距 */
+.spacing-xs { gap: 4px !important; }
+.spacing-sm { gap: 8px !important; }
+.spacing-md { gap: 12px !important; }
+.spacing-lg { gap: 16px !important; }
+.spacing-xl { gap: 20px !important; }
+
+/* 響應式內距 */
+.padding-xs { padding: 4px !important; }
+.padding-sm { padding: 8px !important; }
+.padding-md { padding: 12px !important; }
+.padding-lg { padding: 16px !important; }
+.padding-xl { padding: 20px !important; }
+
+/* 響應式外距 */
+.margin-xs { margin: 4px !important; }
+.margin-sm { margin: 8px !important; }
+.margin-md { margin: 12px !important; }
+.margin-lg { margin: 16px !important; }
+.margin-xl { margin: 20px !important; }
+
+/* 確保所有元素都遵循響應式設計 */
+* {
+  box-sizing: border-box !important;
+}
+
+/* 防止水平滾動 */
+html,
+body {
+  overflow-x: hidden !important;
+  width: 100% !important;
+  max-width: 100vw !important;
+}
+
+/* 確保在小螢幕上的可讀性 */
+@media (max-width: 480px) {
+  body {
+    padding: 0 12px !important;
+  }
+  
+  .container,
+  .page,
+  .main-content {
+    padding: 0 12px !important;
+  }
+  
+  .card,
+  .feature-card {
+    padding: 12px !important;
+  }
+  
+  button {
+    padding: 10px 14px !important;
+  }
+  
+  input,
+  textarea,
+  select {
+    padding: 10px 14px !important;
+  }
+}

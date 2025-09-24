@@ -1,0 +1,567 @@
+/* Dark Theme CSS - 統一全站暗色模式樣式 */
+
+/* 亮色模式基礎設定 */
+:root:not(.dark) {
+  background-color: #ffffff !important;
+  color: #213547 !important;
+}
+
+:root:not(.dark) body {
+  background-color: #ffffff !important;
+  color: #213547 !important;
+}
+
+/* 亮色模式下的卡片樣式 */
+:root:not(.dark) .card,
+:root:not(.dark) .bg-white {
+  background-color: #ffffff !important;
+  color: #213547 !important;
+  border-color: #e5e7eb !important;
+}
+
+:root:not(.dark) .bg-gray-50,
+:root:not(.dark) .bg-gray-100,
+:root:not(.dark) .bg-neutral-50,
+:root:not(.dark) .rounded-md,
+:root:not(.dark) .shadow,
+:root:not(.dark) .shadow-md,
+:root:not(.dark) .feature-card {
+  background-color: #f9fafb !important;
+  color: #213547 !important;
+  border-color: #e5e7eb !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* 亮色模式下的文字顏色 */
+:root:not(.dark) h1,
+:root:not(.dark) h2,
+:root:not(.dark) h3,
+:root:not(.dark) h4,
+:root:not(.dark) h5,
+:root:not(.dark) h6,
+:root:not(.dark) p,
+:root:not(.dark) span,
+:root:not(.dark) div,
+:root:not(.dark) label {
+  color: #213547 !important;
+}
+
+/* 亮色模式下的按鈕樣式 */
+:root:not(.dark) button {
+  background-color: #3b82f6 !important;
+  color: #ffffff !important;
+  border: 1px solid #3b82f6 !important;
+}
+
+:root:not(.dark) button:hover {
+  background-color: #2563eb !important;
+  border-color: #2563eb !important;
+}
+
+/* 1. 卡片背景與字體調整 */
+.dark .card,
+.dark .bg-white {
+  background-color: #1f1f1f !important;
+  color: #ffffff !important;
+  border-color: #444 !important;
+}
+
+.dark .bg-gray-50,
+.dark .bg-gray-100,
+.dark .bg-neutral-50,
+.dark .rounded-md,
+.dark .shadow,
+.dark .shadow-md,
+.dark .feature-card {
+  background-color: #1f1f1f !important;
+  color: #ffffff !important;
+  border-color: #444 !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+}
+
+.dark .card:hover,
+.dark .feature-card:hover {
+  background-color: #252525 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* 3. 按鈕樣式在暗色下修正 */
+.dark button {
+  background-color: #333 !important;
+  color: #fff !important;
+  border: 1px solid #555 !important;
+}
+
+.dark button:hover {
+  background-color: #555 !important;
+  transform: translateY(-1px) !important;
+}
+
+/* 額外的按鈕樣式覆蓋 */
+.dark [class*="button"],
+.dark [class*="btn"],
+.dark input[type="button"],
+.dark input[type="submit"] {
+  background-color: #333 !important;
+  color: #fff !important;
+  border: 1px solid #555 !important;
+}
+
+.dark [class*="button"]:hover,
+.dark [class*="btn"]:hover,
+.dark input[type="button"]:hover,
+.dark input[type="submit"]:hover {
+  background-color: #555 !important;
+}
+
+.dark .button-primary {
+  background-color: #1976d2 !important;
+  color: #fff !important;
+  border-color: #1976d2 !important;
+  box-shadow: 0 2px 4px rgba(25, 118, 210, 0.3) !important;
+}
+
+.dark .button-primary:hover {
+  background-color: #1565c0 !important;
+  border-color: #1565c0 !important;
+  box-shadow: 0 4px 8px rgba(25, 118, 210, 0.4) !important;
+}
+
+.dark .button-danger {
+  background-color: #d32f2f !important;
+  color: #fff !important;
+  border-color: #d32f2f !important;
+  box-shadow: 0 2px 4px rgba(211, 47, 47, 0.3) !important;
+}
+
+.dark .button-danger:hover {
+  background-color: #c62828 !important;
+  border-color: #c62828 !important;
+  box-shadow: 0 4px 8px rgba(211, 47, 47, 0.4) !important;
+}
+
+.dark .button-disabled {
+  background-color: #1a1a1a !important;
+  color: #666 !important;
+  border-color: #333 !important;
+  cursor: not-allowed !important;
+  opacity: 0.5 !important;
+  box-shadow: none !important;
+}
+
+/* 4. 修正輸入框與下拉選單 */
+.dark input,
+.dark select,
+.dark textarea {
+  background-color: #2a2a2a !important;
+  color: #ffffff !important;
+  border: 1px solid #555 !important;
+}
+
+/* 專門針對待辦事項輸入框的深色模式樣式 */
+.dark .todo-input {
+  background-color: #2a2a2a !important;
+  color: #ffffff !important;
+  border: 2px solid #555 !important;
+  height: 64px !important;
+  font-size: 18px !important;
+  padding: 16px 20px !important;
+  border-radius: 12px !important;
+}
+
+/* 專門針對專注項目輸入框的深色模式樣式 */
+.dark .focus-input {
+  background-color: #2a2a2a !important;
+  color: #ffffff !important;
+  border: 2px solid #555 !important;
+  height: 64px !important;
+  font-size: 18px !important;
+  padding: 16px 20px !important;
+  border-radius: 12px !important;
+  font-weight: 500 !important;
+}
+
+/* 顏色圓點在深色模式下的樣式 */
+.dark .color-dot {
+  border: 2px solid #ffffff !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+  filter: brightness(1.8) saturate(1.5) !important;
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important;
+  min-height: 18px !important;
+  display: inline-block !important;
+  vertical-align: middle !important;
+}
+
+/* 亮色模式下的圓點樣式 */
+:root:not(.dark) .color-dot {
+  border: 2px solid #ffffff !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important;
+  min-height: 18px !important;
+  display: inline-block !important;
+  vertical-align: middle !important;
+  /* 移除 background-color 讓內聯樣式生效 */
+}
+
+/* 預設標籤在深色模式下的樣式 */
+.dark .default-tag {
+  background-color: #4caf50 !important;
+  color: #ffffff !important;
+  border: 1px solid #2e7d32 !important;
+  font-weight: 700 !important;
+}
+
+/* 專注項目名稱在深色模式下的樣式 */
+.dark .focus-item-name {
+  color: #ffffff !important;
+}
+
+/* 專注項目使用次數在深色模式下的樣式 */
+.dark .focus-item-usage {
+  color: #cccccc !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #888 !important;
+}
+
+.dark input:focus,
+.dark textarea:focus,
+.dark select:focus {
+  outline: none !important;
+  border-color: #2196f3 !important;
+  box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2) !important;
+}
+
+/* 4. 頁面背景（body） */
+.dark body {
+  background-color: #121212 !important;
+}
+
+/* 4. emoji、icon、標題文字使用白色 */
+.dark .title, 
+.dark h1, 
+.dark h2, 
+.dark h3, 
+.dark h4,
+.dark .emoji,
+.dark .icon {
+  color: #fff !important;
+}
+
+/* 2. 所有標題強制白字 */
+.dark h1, 
+.dark h2, 
+.dark h3, 
+.dark h4, 
+.dark h5, 
+.dark h6,
+.dark .text-title, 
+.dark .section-title {
+  color: #ffffff !important;
+}
+
+/* 額外的標題樣式覆蓋 */
+.dark [class*="text-"] h1,
+.dark [class*="text-"] h2,
+.dark [class*="text-"] h3,
+.dark [class*="text-"] h4,
+.dark [class*="text-"] h5,
+.dark [class*="text-"] h6 {
+  color: #ffffff !important;
+}
+
+/* 5. 避免任何白底白字情況 - 強制所有文字在暗色主題下為白色或淺色 */
+.dark p,
+.dark span,
+.dark div,
+.dark label,
+.dark .text-gray-800,
+.dark .text-gray-700,
+.dark .text-gray-600 {
+  color: #fff !important;
+}
+
+.dark .text-gray-500 {
+  color: #ccc !important;
+}
+
+/* 6. 通用暗色主題樣式 */
+.dark .app-container,
+.dark .main-content,
+.dark .page {
+  background-color: #121212 !important;
+}
+
+/* 7. 覆蓋 Tailwind 類別 - 確保所有卡片樣式都被覆蓋 */
+.dark .bg-gray-50 {
+  background-color: #1f1f1f !important;
+  color: #ffffff !important;
+  border-color: #444 !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+}
+
+.dark .bg-gray-100 {
+  background-color: #1f1f1f !important;
+  color: #ffffff !important;
+  border-color: #444 !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+}
+
+.dark .bg-neutral-50 {
+  background-color: #1f1f1f !important;
+  color: #ffffff !important;
+  border-color: #444 !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* 額外的卡片樣式覆蓋 */
+.dark .rounded-lg,
+.dark .rounded-xl,
+.dark .rounded-2xl {
+  background-color: #1f1f1f !important;
+  color: #ffffff !important;
+  border-color: #444 !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+}
+
+.dark .shadow-sm,
+.dark .shadow-lg,
+.dark .shadow-xl {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+}
+
+.dark .border-gray-300 {
+  border-color: #555 !important;
+}
+
+.dark .border-gray-200 {
+  border-color: #444 !important;
+}
+
+/* 8. 特殊按鈕類別 */
+.dark .bg-indigo-500,
+.dark .bg-teal-600,
+.dark .bg-blue-500,
+.dark .bg-green-500 {
+  background-color: #2196f3 !important;
+  color: #fff !important;
+}
+
+.dark .bg-red-500 {
+  background-color: #e53935 !important;
+  color: #fff !important;
+}
+
+.dark .bg-gray-500,
+.dark .bg-gray-400 {
+  background-color: #333 !important;
+  color: #fff !important;
+}
+
+/* 9. React DatePicker 暗色主題 */
+.dark .react-datepicker__input-container input {
+  background-color: #2a2a2a !important;
+  color: #fff !important;
+}
+
+.dark .react-datepicker {
+  background-color: #2a2a2a !important;
+  color: #fff !important;
+  border: 1px solid #555 !important;
+}
+
+.dark .react-datepicker__header {
+  background-color: #333 !important;
+  border-bottom: 1px solid #555 !important;
+}
+
+.dark .react-datepicker__day {
+  color: #fff !important;
+}
+
+.dark .react-datepicker__day:hover {
+  background-color: #444 !important;
+}
+
+.dark .react-datepicker__day--selected {
+  background-color: #2196f3 !important;
+  color: #fff !important;
+}
+
+.dark .react-datepicker__day--keyboard-selected {
+  background-color: #2196f3 !important;
+  color: #fff !important;
+}
+
+.dark .react-datepicker__time-container {
+  border-left: 1px solid #555 !important;
+}
+
+.dark .react-datepicker__time-list-item {
+  color: #fff !important;
+}
+
+.dark .react-datepicker__time-list-item:hover {
+  background-color: #444 !important;
+}
+
+.dark .react-datepicker__time-list-item--selected {
+  background-color: #2196f3 !important;
+  color: #fff !important;
+}
+
+/* 10. 通用卡片樣式覆蓋 - 確保所有可能的卡片都被覆蓋 */
+.dark [class*="bg-"]:not([class*="bg-white"]):not([class*="bg-gray-50"]):not([class*="bg-gray-100"]),
+.dark [class*="rounded"]:not([class*="bg-white"]):not([class*="bg-gray-50"]):not([class*="bg-gray-100"]),
+.dark [class*="shadow"]:not([class*="bg-white"]):not([class*="bg-gray-50"]):not([class*="bg-gray-100"]) {
+  background-color: #1f1f1f !important;
+  color: #ffffff !important;
+  border-color: #444 !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* 特殊處理：只針對有背景色的元素 */
+.dark [class*="bg-white"],
+.dark [class*="bg-gray"],
+.dark [class*="bg-neutral"],
+.dark [class*="bg-slate"] {
+  background-color: #1f1f1f !important;
+  color: #ffffff !important;
+  border-color: #444 !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* 強制覆蓋所有可能的白色背景 */
+.dark div[style*="background-color: white"],
+.dark div[style*="background-color: #fff"],
+.dark div[style*="background-color: #ffffff"],
+.dark div[style*="background-color: #f9f9f9"],
+.dark div[style*="background-color: #f7f7f7"],
+.dark div[style*="background-color: #f3f3f3"],
+.dark div[style*="background-color: #f8f9fa"],
+.dark div[style*="background-color: #e9ecef"] {
+  background-color: #1f1f1f !important;
+  color: #ffffff !important;
+  border-color: #444 !important;
+}
+
+/* 強制覆蓋所有 Tailwind 背景色類別 */
+.dark .bg-white,
+.dark .bg-gray-50,
+.dark .bg-gray-100,
+.dark .bg-gray-200,
+.dark .bg-neutral-50,
+.dark .bg-neutral-100,
+.dark .bg-slate-50,
+.dark .bg-slate-100,
+.dark .bg-zinc-50,
+.dark .bg-zinc-100,
+.dark .bg-stone-50,
+.dark .bg-stone-100 {
+  background-color: #1f1f1f !important;
+  color: #ffffff !important;
+  border-color: #444 !important;
+}
+
+/* 強制覆蓋所有可能的卡片容器 */
+.dark .container,
+.dark .wrapper,
+.dark .panel,
+.dark .box,
+.dark .item,
+.dark .block {
+  background-color: #1f1f1f !important;
+  color: #ffffff !important;
+  border-color: #444 !important;
+}
+
+/* 11. 最強力的通用覆蓋 - 確保沒有任何白色背景 */
+.dark * {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease !important;
+}
+
+/* 強制覆蓋所有可能的白色背景元素 */
+.dark *[style*="background-color: white"],
+.dark *[style*="background-color: #fff"],
+.dark *[style*="background-color: #ffffff"],
+.dark *[style*="background-color: #f9f9f9"],
+.dark *[style*="background-color: #f7f7f7"],
+.dark *[style*="background-color: #f3f3f3"],
+.dark *[style*="background-color: #f8f9fa"],
+.dark *[style*="background-color: #e9ecef"],
+.dark *[style*="background-color: #fafafa"],
+.dark *[style*="background-color: #f5f5f5"] {
+  background-color: #1f1f1f !important;
+  color: #ffffff !important;
+}
+
+/* 強制覆蓋所有 div 元素 */
+.dark div:not([class*="bg-"]):not([style*="background-color"]) {
+  background-color: transparent !important;
+}
+
+/* 強制覆蓋所有有背景色的 div */
+.dark div[class*="bg-"],
+.dark div[style*="background-color"] {
+  background-color: #1f1f1f !important;
+  color: #ffffff !important;
+}
+
+/* 亮色模式強制覆蓋 - 確保亮色模式下所有卡片都是白色背景 */
+:root:not(.dark) .card,
+:root:not(.dark) .feature-card,
+:root:not(.dark) .record-card,
+:root:not(.dark) [class*="bg-"],
+:root:not(.dark) [class*="rounded"],
+:root:not(.dark) [class*="shadow"] {
+  background-color: #ffffff !important;
+  color: #213547 !important;
+  border-color: #e5e7eb !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* 亮色模式強制覆蓋所有可能的白色背景元素 */
+:root:not(.dark) *[style*="background-color: white"],
+:root:not(.dark) *[style*="background-color: #fff"],
+:root:not(.dark) *[style*="background-color: #ffffff"],
+:root:not(.dark) *[style*="background-color: #f9f9f9"],
+:root:not(.dark) *[style*="background-color: #f7f7f7"],
+:root:not(.dark) *[style*="background-color: #f3f3f3"],
+:root:not(.dark) *[style*="background-color: #f8f9fa"],
+:root:not(.dark) *[style*="background-color: #e9ecef"],
+:root:not(.dark) *[style*="background-color: #fafafa"],
+:root:not(.dark) *[style*="background-color: #f5f5f5"] {
+  background-color: #ffffff !important;
+  color: #213547 !important;
+}
+
+/* 確保卡片元件使用正確的 Tailwind 類別 */
+:root:not(.dark) .card,
+:root:not(.dark) .feature-card,
+:root:not(.dark) .record-card {
+  background-color: #ffffff !important;
+  color: #1f2937 !important;
+}
+
+.dark .card,
+.dark .feature-card,
+.dark .record-card {
+  background-color: #1f2937 !important;
+  color: #f3f4f6 !important;
+}
+
+/* 圓點使用 Tailwind accent-color - 僅適用於 input 元素 */
+:root:not(.dark) input.color-dot {
+  accent-color: #3b82f6 !important; /* blue-500 */
+}
+
+.dark input.color-dot {
+  accent-color: #4ade80 !important; /* green-400 */
+}

@@ -1,0 +1,10 @@
+  {
+    "security.allowlistMode": "all",
+    "security.allowlist": {
+      "npx": "allow",
+      "npm": "allow",
+      "bash": "allow",
+      "node": "allow"
+    }
+  }
+  

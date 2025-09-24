@@ -1,0 +1,32 @@
+export interface TaskTag {
+  id: string
+  name: string
+  color: string
+  isDefault: boolean
+  createdAt: string
+  createdBy: string
+}
+
+export interface TaskTagWithCount extends TaskTag {
+  usageCount: number
+}
+
+// 預設標籤顏色
+export const DEFAULT_TAG_COLORS = [
+  '#4caf50', // 綠色 - 運動
+  '#2196f3', // 藍色 - 會議
+  '#ff9800', // 橙色 - 學習
+  '#9c27b0', // 紫色 - 創意
+  '#f44336', // 紅色 - 緊急
+  '#607d8b', // 藍灰色 - 其他
+  '#795548', // 棕色 - 休閒
+  '#e91e63'  // 粉紅色 - 個人
+]
+
+
+
+
+
+
+
+
