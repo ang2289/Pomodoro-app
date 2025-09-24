@@ -1,0 +1,6 @@
+@echo off
+echo 開始自動備份...
+cd /d "%~dp0.."
+node scripts/auto-backup.js
+echo 備份完成，按任意鍵結束...
+pause > nul
