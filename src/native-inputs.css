@@ -1,0 +1,99 @@
+/* 強制確保原生 HTML5 input type="time" 和 type="date" 正常顯示 */
+
+/* 重置所有可能的第三方樣式干擾 */
+input[type="time"],
+input[type="date"] {
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+  background: white !important;
+  border: 1px solid #d1d5db !important;
+  border-radius: 0.375rem !important;
+  padding: 0.5rem 0.75rem !important;
+  width: 100% !important;
+  font-size: 1rem !important;
+  line-height: 1.5rem !important;
+  color: #374151 !important;
+  font-family: inherit !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* 確保原生時間選擇器圖示正常顯示 */
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="date"]::-webkit-calendar-picker-indicator {
+  display: block !important;
+  width: 20px !important;
+  height: 20px !important;
+  opacity: 1 !important;
+  cursor: pointer !important;
+  background: transparent !important;
+  margin-left: 8px !important;
+}
+
+/* 隱藏任何可能的自訂時間選擇器覆蓋層 - 但保留標籤和調試信息 */
+input[type="time"] + .react-datepicker,
+input[type="time"] ~ .react-datepicker,
+input[type="date"] + .react-datepicker,
+input[type="date"] ~ .react-datepicker,
+input[type="time"] + .custom-datepicker,
+input[type="time"] ~ .custom-datepicker,
+input[type="date"] + .custom-datepicker,
+input[type="date"] ~ .custom-datepicker {
+  display: none !important;
+}
+
+/* 確保原生時間選擇器在點擊時正常顯示 */
+input[type="time"]:focus,
+input[type="date"]:focus {
+  outline: 2px solid #3b82f6 !important;
+  outline-offset: 2px !important;
+  border-color: #3b82f6 !important;
+}
+
+/* 手機版優化 */
+@media (max-width: 768px) {
+  input[type="time"],
+  input[type="date"] {
+    min-height: 44px !important; /* iOS 建議的最小觸控目標 */
+    font-size: 16px !important; /* 防止 iOS 縮放 */
+    padding: 12px !important;
+  }
+}
+
+/* 強制禁用任何可能的第三方時間選擇器 */
+.react-datepicker,
+.react-datepicker__time-container,
+.react-datepicker__time-list,
+.react-datepicker__time-list-item,
+.custom-datepicker,
+.time-picker,
+.date-picker,
+div[class*="time"],
+div[class*="picker"],
+div[class*="dropdown"],
+div[class*="select"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  position: absolute !important;
+  left: -9999px !important;
+  top: -9999px !important;
+}
+
+/* 隱藏任何可能包含 "上午" 或 "下午" 的元素 */
+div:has-text("上午"),
+div:has-text("下午"),
+div:has-text("AM"),
+div:has-text("PM") {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+/* 確保原生 input 的 z-index 最高 */
+input[type="time"],
+input[type="date"] {
+  position: relative !important;
+  z-index: 9999 !important;
+}

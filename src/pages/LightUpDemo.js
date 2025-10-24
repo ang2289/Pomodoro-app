@@ -1,0 +1,17 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { useState } from 'react';
+import LightUpButton from '../components/LightUpButton';
+// 示範頁面 - 可以在路由中添加 /light-demo 來查看效果
+export default function LightUpDemo() {
+    const [lightCount, setLightCount] = useState(108);
+    const [isLighted, setIsLighted] = useState(false);
+    const handleLight = () => {
+        setLightCount(prev => prev + 1);
+        setIsLighted(true);
+        // 3 秒後重置（僅用於示範）
+        setTimeout(() => {
+            setIsLighted(false);
+        }, 3000);
+    };
+    return (_jsx("div", { className: "min-h-screen bg-gradient-to-br from-purple-100 via-pink-100 to-yellow-100 flex items-center justify-center p-8", children: _jsxs("div", { className: "max-w-2xl w-full", children: [_jsx("h1", { className: "text-4xl font-bold text-center mb-8 text-gray-800", children: "\uD83E\uDEB7 \u84EE\u82B1\u9EDE\u71C8\u52D5\u756B\u793A\u7BC4" }), _jsxs("div", { className: "bg-white rounded-2xl shadow-2xl p-8 mb-8", children: [_jsx("h2", { className: "text-2xl font-bold text-center mb-4 text-gray-700", children: "\u672A\u9EDE\u71C8\u72C0\u614B" }), _jsx("p", { className: "text-center text-gray-600 mb-6", children: "\u9EDE\u64CA\u84EE\u82B1\u6703\u89F8\u767C\u5B8C\u6574\u7684\u9EDE\u71C8\u52D5\u756B\u6548\u679C" }), _jsx("div", { className: "flex justify-center", children: _jsx(LightUpButton, { onLight: handleLight, disabled: isLighted, lightCount: lightCount }) }), _jsxs("div", { className: "mt-6 text-center", children: [_jsxs("p", { className: "text-sm text-gray-500", children: ["\u72C0\u614B\uFF1A", isLighted ? '✅ 已點燈' : '⭕ 未點燈'] }), _jsx("p", { className: "text-sm text-gray-500 mt-2", children: "\u63D0\u793A\uFF1A\u9EDE\u64CA\u5F8C 3 \u79D2\u6703\u81EA\u52D5\u91CD\u7F6E\uFF0C\u53EF\u91CD\u8907\u6E2C\u8A66" })] })] }), _jsxs("div", { className: "bg-white rounded-2xl shadow-2xl p-8", children: [_jsx("h2", { className: "text-2xl font-bold text-center mb-4 text-gray-700", children: "\u5DF2\u9EDE\u71C8\u72C0\u614B" }), _jsx("p", { className: "text-center text-gray-600 mb-6", children: "\u9EDE\u71C8\u5F8C\u6309\u9215\u6703\u8B8A\u6210\u7981\u7528\u72C0\u614B" }), _jsx("div", { className: "flex justify-center", children: _jsx(LightUpButton, { onLight: () => console.log('已經點過燈了'), disabled: true, lightCount: 108 }) })] }), _jsxs("div", { className: "mt-8 bg-gradient-to-r from-pink-50 to-purple-50 rounded-xl p-6 border border-pink-200", children: [_jsx("h3", { className: "text-lg font-bold mb-3 text-gray-800", children: "\u2728 \u52D5\u756B\u6548\u679C\u8AAA\u660E" }), _jsxs("ul", { className: "space-y-2 text-sm text-gray-700", children: [_jsxs("li", { children: ["\uD83D\uDD04 ", _jsx("strong", { children: "\u65CB\u8F49\u52D5\u756B" }), "\uFF1A\u84EE\u82B1 360\u00B0 \u65CB\u8F49"] }), _jsxs("li", { children: ["\u2B06\uFE0F ", _jsx("strong", { children: "\u5F48\u8DF3\u6548\u679C" }), "\uFF1A\u5411\u4E0A\u5F48\u8DF3"] }), _jsxs("li", { children: ["\uD83D\uDCAB ", _jsx("strong", { children: "\u5149\u6688\u8108\u52D5" }), "\uFF1A\u7C89\u7D2B\u9EC3\u6F38\u5C64\u5149\u6688"] }), _jsxs("li", { children: ["\u2728 ", _jsx("strong", { children: "\u7C92\u5B50\u6563\u5C04" }), "\uFF1A8 \u65B9\u5411\u9EC3\u8272\u7C92\u5B50"] }), _jsxs("li", { children: ["\uD83C\uDF0A ", _jsx("strong", { children: "\u6F23\u6F2A\u64F4\u6563" }), "\uFF1A\u96D9\u5C64\u6CE2\u7D0B\u6548\u679C"] }), _jsxs("li", { children: ["\uD83C\uDFA8 ", _jsx("strong", { children: "\u4EAE\u5EA6\u589E\u5F37" }), "\uFF1A1.5 \u500D\u4EAE\u5EA6\u8207\u98FD\u548C\u5EA6"] })] })] })] }) }));
+}

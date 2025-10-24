@@ -40,3 +40,4 @@ coverage/
 android/
 ios/
 
+.vercel

@@ -3,6 +3,7 @@ export interface ChantHistoryRecord {
   date: string; // YYYY-MM-DD 格式
   chant: string; // 經文名稱
   count: number; // 當日唸誦次數
+  timestamp: string; // ISO 時間戳，記錄實際操作時間
 }
 
 const HISTORY_STORAGE_KEY = 'chant-history-records';
@@ -36,31 +37,20 @@ export const saveChantHistory = (records: ChantHistoryRecord[]): void => {
 // 增加唸經次數記錄
 export const addChantHistoryRecord = (chantName: string, count: number = 1): void => {
   const today = getTodayString();
+  const now = new Date().toISOString(); // 完整的時間戳
   const records = loadChantHistory();
   
-  // 查找今日該經文的記錄
-  const existingRecordIndex = records.findIndex(
-    record => record.date === today && record.chant === chantName
-  );
+  // 每次都創建新的記錄條目，記錄實際操作
+  records.push({
+    date: today,
+    chant: chantName,
+    count: count,
+    timestamp: now
+  });
   
-  if (existingRecordIndex >= 0) {
-    // 更新現有記錄
-    records[existingRecordIndex].count += count;
-  } else {
-    // 新增記錄
-    records.push({
-      date: today,
-      chant: chantName,
-      count: count
-    });
-  }
-  
-  // 按日期和經文名稱排序
+  // 按時間戳排序（最新的在前）
   records.sort((a, b) => {
-    if (a.date !== b.date) {
-      return b.date.localeCompare(a.date); // 日期降序
-    }
-    return a.chant.localeCompare(b.chant); // 經文名稱升序
+    return new Date(b.timestamp || b.date).getTime() - new Date(a.timestamp || a.date).getTime();
   });
   
   saveChantHistory(records);
@@ -93,7 +83,8 @@ export const getChantHistoryForDays = (chantName: string, days: number = 7): Cha
       result.push({
         date: dateStr,
         chant: chantName,
-        count: 0
+        count: 0,
+        timestamp: new Date().toISOString()
       });
     }
   }

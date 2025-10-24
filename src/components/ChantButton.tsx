@@ -1,0 +1,94 @@
+import { useState } from 'react'
+
+interface ChantButtonProps {
+  onSoundPlay?: () => void
+  onCount?: () => void
+  customWoodfishImage?: string | null
+  onWoodfishUpload?: (image: string | null) => void
+  onReset?: () => void
+}
+
+export default function ChantButton({ onSoundPlay, onCount, customWoodfishImage, onWoodfishUpload, onReset }: ChantButtonProps) {
+  const [animate, setAnimate] = useState(false)
+  const [showPlusOne, setShowPlusOne] = useState(false)
+
+  const handleWoodfishUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        onWoodfishUpload?.(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleClick = () => {
+    // 如果正在動畫中，不重複觸發
+    if (animate) return
+
+    setAnimate(true)
+    setShowPlusOne(true)
+
+    // 播放音效
+    onSoundPlay?.()
+
+    // 呼叫計數邏輯
+    onCount?.()
+
+    // 動畫完成後重置狀態
+    setTimeout(() => {
+      setShowPlusOne(false)
+      setAnimate(false)
+    }, 1000)
+  }
+
+  return (
+    <div className="flex flex-col items-center gap-2">
+      {/* 木魚按鈕（立體漸層 + 陰影 + 壓下動畫） */}
+      <div className="relative">
+        <button
+          type="button"
+          onClick={handleClick}
+          className={`group w-28 h-28 rounded-full bg-gradient-to-br from-amber-300 via-yellow-400 to-amber-500 
+            shadow-[0_10px_20px_rgba(0,0,0,0.2)] !border-0 !outline-none !ring-0 focus:!outline-none focus:!ring-0 
+            flex items-center justify-center transition-all duration-200 
+            ${animate ? 'translate-y-[2px] shadow-[0_6px_14px_rgba(0,0,0,0.18)]' : 'active:translate-y-[2px] active:shadow-[0_6px_14px_rgba(0,0,0,0.18)]'}`}
+          aria-label="敲木魚"
+        >
+          <img
+            src={customWoodfishImage || "/assets/woodfish.png"}
+            className={`w-20 h-20 select-none pointer-events-none border-0 outline-none ${animate ? 'woodfish-clicked' : ''}`}
+            alt="敲木魚"
+            style={{ WebkitTapHighlightColor: 'transparent' }}
+          />
+        </button>
+        {showPlusOne && (
+          <div className="floating-plus-one animate-pop-bounce">+1</div>
+        )}
+      </div>
+      
+      {/* 上傳圖片按鈕 */}
+      <input
+        type="file"
+        accept="image/*"
+        onChange={handleWoodfishUpload}
+        className="hidden"
+        id="woodfish-upload"
+      />
+      <label htmlFor="woodfish-upload">
+        <div className="bg-yellow-500 text-white px-4 py-2 rounded cursor-pointer hover:bg-yellow-600 transition-colors duration-200">
+          上傳自訂木魚圖
+        </div>
+      </label>
+      
+      {/* 還原預設按鈕 */}
+      <div 
+        onClick={onReset}
+        className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500 cursor-pointer transition-colors duration-200"
+      >
+        還原預設
+      </div>
+    </div>
+  )
+}

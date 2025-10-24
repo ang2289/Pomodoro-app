@@ -8,10 +8,10 @@ interface BottomNavigationProps {
 
 const BottomNavigation = ({ currentPath, isVisible, isMobile }: BottomNavigationProps) => {
   const navItems = [
-    { path: '/', label: '首頁', icon: '🏠' },
-    { path: '/pomodoro', label: '番茄鐘', icon: '🍅' },
-    { path: '/todo', label: '待辦', icon: '📝' },
-    { path: '/settings', label: '設定', icon: '⚙️' }
+    { path: '/', label: '首頁' },
+    { path: '/pomodoro', label: '番茄鐘' },
+    { path: '/todo', label: '待辦' },
+    { path: '/settings', label: '設定' }
   ]
 
   return (
@@ -23,8 +23,8 @@ const BottomNavigation = ({ currentPath, isVisible, isMobile }: BottomNavigation
           key={item.path}
           to={item.path}
           className={`nav-button ${currentPath === item.path ? 'active' : ''}`}
+          style={{ fontSize: '16px', fontWeight: '500' }}
         >
-          <span style={{ fontSize: '24px' }}>{item.icon}</span>
           <span>{item.label}</span>
         </Link>
       ))}

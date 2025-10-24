@@ -1,8 +1,43 @@
+import { saveAs } from 'file-saver';
 import { PomodoroRecord } from '../types/PomodoroRecord'
+import { FocusItem } from '../types/FocusItem'
+
+// 根據 focusItemId 獲取專注項目名稱
+const getFocusItemName = (focusItemId: string | undefined, focusItems: FocusItem[]): string => {
+  if (!focusItemId) {
+    return '未選擇'
+  }
+  
+  const focusItem = focusItems.find(item => item.id === focusItemId)
+  return focusItem ? focusItem.name : '未知項目'
+}
 
 // 匯出番茄鐘記錄為 CSV
-export const exportPomodoroRecordsToCSV = (records: PomodoroRecord[]): void => {
+export const exportPomodoroRecordsToCSV = (records: PomodoroRecord[], focusItems: FocusItem[], isSearchActive: boolean = false, searchKeyword: string = ''): void => {
+  // 如果沒有記錄，生成一個顯示「0筆」的 CSV
   if (records.length === 0) {
+    const noDataMessage = isSearchActive && searchKeyword 
+      ? `搜尋條件：「${searchKeyword}」無符合條件的資料 (0筆)`
+      : '無資料可匯出 (0筆)'
+    
+    const csvContent = [
+      '"狀態","說明","記錄筆數"',
+      `"無資料","${noDataMessage}","0"`
+    ].join('\n')
+    
+    const BOM = '\uFEFF'
+    const csvWithBOM = BOM + csvContent
+    
+    const today = new Date()
+    const year = today.getFullYear()
+    const month = String(today.getMonth() + 1).padStart(2, '0')
+    const day = String(today.getDate()).padStart(2, '0')
+    const fileName = `Pomodoro_Log_${year}-${month}-${day}_無資料.csv`
+    
+    const blob = new Blob([csvWithBOM], { type: 'text/csv;charset=utf-8;' })
+    
+    // 使用 file-saver 下載檔案，提升手機支援度
+    saveAs(blob, fileName)
     return
   }
 
@@ -36,8 +71,8 @@ export const exportPomodoroRecordsToCSV = (records: PomodoroRecord[]): void => {
     }
 
     // 格式化專注項目名稱（補足到 10 字寬度）
-    const formatFocusItem = (name: string) => {
-      const displayName = name || '未選擇'
+    const formatFocusItem = (focusItemId: string | undefined) => {
+      const displayName = getFocusItemName(focusItemId, focusItems)
       return displayName.padEnd(10, ' ')
     }
 
@@ -45,7 +80,7 @@ export const exportPomodoroRecordsToCSV = (records: PomodoroRecord[]): void => {
     const formatNumber = (num: number) => ` ${num} `
 
     return [
-      formatFocusItem(record.focusItemName || '未選擇'),
+      formatFocusItem(record.focusItemId),
       formatDateTime(startTime),
       formatDateTime(completedAt),
       formatNumber(record.workMinutes),
@@ -65,30 +100,25 @@ export const exportPomodoroRecordsToCSV = (records: PomodoroRecord[]): void => {
   const BOM = '\uFEFF'
   const csvWithBOM = BOM + csvContent
 
-  // 生成檔案名（包含當前日期）
+  // 生成檔案名（包含當前日期和搜尋條件）
   const today = new Date()
   const year = today.getFullYear()
   const month = String(today.getMonth() + 1).padStart(2, '0')
   const day = String(today.getDate()).padStart(2, '0')
-  const fileName = `Pomodoro_Log_${year}-${month}-${day}.csv`
-
-  // 創建 Blob 並下載
-  const blob = new Blob([csvWithBOM], { type: 'text/csv;charset=utf-8;' })
-  const link = document.createElement('a')
   
-  if (link.download !== undefined) {
-    const url = URL.createObjectURL(blob)
-    link.setAttribute('href', url)
-    link.setAttribute('download', fileName)
-    link.style.visibility = 'hidden'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
-  } else {
-    // 舊版瀏覽器支援
-    alert('您的瀏覽器不支援檔案下載功能')
+  let fileName = `Pomodoro_Log_${year}-${month}-${day}`
+  if (isSearchActive && searchKeyword) {
+    // 清理搜尋關鍵字，移除特殊字符以適合檔案名
+    const cleanKeyword = searchKeyword.replace(/[<>:"/\\|?*]/g, '_').substring(0, 20)
+    fileName += `_搜尋_${cleanKeyword}`
   }
+  fileName += `.csv`
+
+  // 創建 Blob 並使用 file-saver 下載
+  const blob = new Blob([csvWithBOM], { type: 'text/csv;charset=utf-8;' })
+  
+  // 使用 file-saver 下載檔案，提升手機支援度
+  saveAs(blob, fileName)
 }
 
 // 檢查是否有記錄可匯出

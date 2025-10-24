@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaMinus, FaPlus, FaPause, FaPlay, FaRotateRight } from 'react-icons/fa6';
+// removed unused react-icons imports
 import IconButton from '../ui/IconButton';
 
 interface TimeSettingsProps {
@@ -9,9 +9,8 @@ interface TimeSettingsProps {
   onBreakMinutesChange: (minutes: number) => void;
   onStart: () => void;
   onPause: () => void;
-  onReset: () => void;
+  onSkip: () => void;
   isRunning: boolean;
-  isMobile: boolean;
 }
 
 const TimeSettings: React.FC<TimeSettingsProps> = ({
@@ -21,9 +20,8 @@ const TimeSettings: React.FC<TimeSettingsProps> = ({
   onBreakMinutesChange,
   onStart,
   onPause,
-  onReset,
-  isRunning,
-  isMobile
+  onSkip,
+  isRunning
 }) => {
   return (
     <div className="card" style={{
@@ -45,26 +43,29 @@ const TimeSettings: React.FC<TimeSettingsProps> = ({
       <div style={{
         display: 'flex',
         justifyContent: 'center',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         flexWrap: 'wrap',
-        gap: '20px'
+        gap: '30px'
       }}>
         {/* 工作時間設定 */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '200px' }}>
           <label style={{
             fontSize: '14px',
             fontWeight: '600',
             color: '#666',
-            marginBottom: '8px'
+            marginBottom: '8px',
+            textAlign: 'center'
           }}>
             工作時間
           </label>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
             <IconButton
               onClick={() => onWorkMinutesChange(Math.max(1, workMinutes - 1))}
               disabled={isRunning}
               variant={isRunning ? 'secondary' : 'primary'}
-              icon={<FaMinus className="text-white" />}
+              icon={<span style={{ color: 'white !important', filter: 'brightness(0) invert(1)' }}>➖</span>}
+              label="減"
+              className="bg-blue-600 text-white font-bold text-lg px-4 py-2 rounded hover:bg-blue-700 transition"
             />
             <input
               type="number"
@@ -91,35 +92,33 @@ const TimeSettings: React.FC<TimeSettingsProps> = ({
               onClick={() => onWorkMinutesChange(Math.min(60, workMinutes + 1))}
               disabled={isRunning}
               variant={isRunning ? 'secondary' : 'primary'}
-              icon={<FaPlus className="text-white" />}
+              icon={<span style={{ color: 'white !important', filter: 'brightness(0) invert(1)' }}>➕</span>}
+              label="加"
+              className="bg-blue-600 text-white font-bold text-lg px-4 py-2 rounded hover:bg-blue-700 transition"
             />
           </div>
         </div>
 
-        {/* 分隔線 */}
-        <div style={{
-          width: '1px',
-          height: '40px',
-          backgroundColor: '#ddd',
-          margin: '0 10px'
-        }} />
 
         {/* 休息時間設定 */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '200px' }}>
           <label style={{
             fontSize: '14px',
             fontWeight: '600',
             color: '#666',
-            marginBottom: '8px'
+            marginBottom: '8px',
+            textAlign: 'center'
           }}>
             休息時間
           </label>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
             <IconButton
               onClick={() => onBreakMinutesChange(Math.max(0, breakMinutes - 1))}
               disabled={isRunning}
-              variant={isRunning ? 'secondary' : 'danger'}
-              icon={<FaMinus className="text-white" />}
+              variant={isRunning ? 'secondary' : 'primary'}
+              icon={<span style={{ color: 'white !important', filter: 'brightness(0) invert(1)' }}>➖</span>}
+              label="減"
+              className="bg-blue-600 text-white font-bold text-lg px-4 py-2 rounded hover:bg-blue-700 transition"
             />
             <input
               type="number"
@@ -145,8 +144,10 @@ const TimeSettings: React.FC<TimeSettingsProps> = ({
             <IconButton
               onClick={() => onBreakMinutesChange(Math.min(30, breakMinutes + 1))}
               disabled={isRunning}
-              variant={isRunning ? 'secondary' : 'danger'}
-              icon={<FaPlus className="text-white" />}
+              variant={isRunning ? 'secondary' : 'primary'}
+              icon={<span style={{ color: 'white !important', filter: 'brightness(0) invert(1)' }}>➕</span>}
+              label="加"
+              className="bg-blue-600 text-white font-bold text-lg px-4 py-2 rounded hover:bg-blue-700 transition"
             />
           </div>
         </div>
@@ -160,18 +161,31 @@ const TimeSettings: React.FC<TimeSettingsProps> = ({
         marginTop: '25px',
         flexWrap: 'wrap'
       }}>
+        {/* 開始/暫停按鈕 */}
         <IconButton
           onClick={isRunning ? onPause : onStart}
           variant={isRunning ? 'danger' : 'primary'}
-          icon={isRunning ? <FaPause /> : <FaPlay />}
+          icon={isRunning ? <span style={{ color: 'white', filter: 'none' }}>⏸️</span> : <span style={{ color: 'white', filter: 'none' }}>▶️</span>}
           label={isRunning ? '暫停' : '開始'}
+          className="flex-1 hover:scale-105"
         />
+        
+        {/* ⏹ 提早結束按鈕 */}
         <IconButton
+          onClick={onSkip}
+          variant="danger"
+          icon={<span style={{ color: 'white', filter: 'none' }}>⏹</span>}
+          label="提早結束"
+          className="flex-1 bg-red-500 hover:bg-red-600 text-white rounded-lg px-4 py-2 transition-colors duration-200 hover:scale-105"
+        />
+        
+        {/* 移除重置按鈕 */}
+        {/* <IconButton
           onClick={onReset}
           variant="secondary"
           icon={<FaRotateRight />}
           label="重置"
-        />
+        /> */}
       </div>
     </div>
   );

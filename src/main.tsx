@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import App from './App.tsx'
 import './index.css'
+import './native-inputs.css'
 
 // 在應用掛載前，根據 localStorage 中的 theme 同步 html 的 dark 類
 const savedTheme = (typeof window !== 'undefined' && localStorage.getItem('theme')) || 'light'

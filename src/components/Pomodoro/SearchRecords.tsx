@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaSearch, FaTrash } from 'react-icons/fa';
+// removed unused icon imports
 import IconButton from '../ui/IconButton';
 import { FocusItem } from '../../types/FocusItem';
 
@@ -12,10 +12,6 @@ interface SearchFields {
 interface SearchRecordsProps {
   searchKeyword: string;
   onSearchKeywordChange: (keyword: string) => void;
-  startDate: string;
-  onStartDateChange: (date: string) => void;
-  endDate: string;
-  onEndDateChange: (date: string) => void;
   searchFields: SearchFields;
   onSearchFieldsChange: (fields: SearchFields) => void;
   searchHistory: string[];
@@ -28,27 +24,32 @@ interface SearchRecordsProps {
   onClearSearch: () => void;
   isSearching: boolean;
   isMobile: boolean;
+  // 新增日期相關屬性
+  startDate: string;
+  onStartDateChange: (date: string) => void;
+  endDate: string;
+  onEndDateChange: (date: string) => void;
 }
 
 const SearchRecords: React.FC<SearchRecordsProps> = ({
   searchKeyword,
   onSearchKeywordChange,
-  startDate,
-  onStartDateChange,
-  endDate,
-  onEndDateChange,
   searchFields,
   onSearchFieldsChange,
   searchHistory,
   showSuggestions,
   onShowSuggestionsChange,
-  isSearchInputFocused,
+  isSearchInputFocused: _isSearchInputFocused,
   onIsSearchInputFocusedChange,
-  focusItems,
+  focusItems: _focusItems,
   onSearch,
   onClearSearch,
   isSearching,
-  isMobile
+  isMobile,
+  startDate,
+  onStartDateChange,
+  endDate,
+  onEndDateChange
 }) => {
   const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -78,6 +79,23 @@ const SearchRecords: React.FC<SearchRecordsProps> = ({
       ...searchFields,
       [field]: !searchFields[field]
     });
+  };
+
+  // 日期變更處理
+  const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    onStartDateChange(value);
+  };
+
+  const handleEndDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    onEndDateChange(value);
+  };
+
+  // 獲取今天的日期（YYYY-MM-DD 格式）
+  const getTodayDate = () => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
   };
 
   return (
@@ -211,69 +229,72 @@ const SearchRecords: React.FC<SearchRecordsProps> = ({
         </div>
 
         {/* 日期範圍選擇 */}
-        <div style={{
-          display: 'flex',
-          flexDirection: isMobile ? 'column' : 'row',
-          flexWrap: 'wrap',
-          gap: isMobile ? '10px' : '15px',
-          alignItems: isMobile ? 'stretch' : 'center'
-        }}>
-          <div style={{ flex: '1 1 220px', minWidth: '220px' }}>
-            <label style={{
-              display: 'block',
-              marginBottom: '8px',
-              fontSize: '14px',
-              fontWeight: '600',
-              color: '#555'
-            }}>
-              開始日期：
-            </label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => onStartDateChange(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                fontSize: '16px',
-                border: '2px solid #e0e0e0',
-                borderRadius: '6px',
-                outline: 'none',
-                transition: 'border-color 0.2s',
-                boxSizing: 'border-box',
-                lineHeight: 1.4,
-                backgroundColor: '#ffffff'
-              }}
-            />
-          </div>
-          
-          <div style={{ flex: '1 1 220px', minWidth: '220px' }}>
-            <label style={{
-              display: 'block',
-              marginBottom: '8px',
-              fontSize: '14px',
-              fontWeight: '600',
-              color: '#555'
-            }}>
-              結束日期：
-            </label>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => onEndDateChange(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                fontSize: '16px',
-                border: '2px solid #e0e0e0',
-                borderRadius: '6px',
-                outline: 'none',
-                transition: 'border-color 0.2s',
-                boxSizing: 'border-box',
-                lineHeight: 1.4,
-                backgroundColor: '#ffffff'
-              }}
-            />
+        <div>
+          <label style={{
+            display: 'block',
+            marginBottom: '10px',
+            fontSize: '14px',
+            fontWeight: '600',
+            color: '#555'
+          }}>
+            日期範圍：
+          </label>
+          <div style={{
+            display: 'flex',
+            flexDirection: isMobile ? 'column' : 'row',
+            gap: '12px',
+            alignItems: 'center'
+          }}>
+            <div style={{ flex: 1 }}>
+              <label style={{
+                display: 'block',
+                marginBottom: '5px',
+                fontSize: '12px',
+                color: '#666'
+              }}>
+                開始日期：
+              </label>
+              <input
+                type="date"
+                value={startDate || getTodayDate()}
+                onChange={handleStartDateChange}
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  fontSize: '14px',
+                  border: '2px solid #e0e0e0',
+                  borderRadius: '6px',
+                  outline: 'none',
+                  transition: 'border-color 0.2s',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={{
+                display: 'block',
+                marginBottom: '5px',
+                fontSize: '12px',
+                color: '#666'
+              }}>
+                結束日期：
+              </label>
+              <input
+                type="date"
+                value={endDate || getTodayDate()}
+                onChange={handleEndDateChange}
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  fontSize: '14px',
+                  border: '2px solid #e0e0e0',
+                  borderRadius: '6px',
+                  outline: 'none',
+                  transition: 'border-color 0.2s',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
           </div>
         </div>
 
@@ -288,14 +309,16 @@ const SearchRecords: React.FC<SearchRecordsProps> = ({
             onClick={onSearch}
             disabled={isSearching}
             variant="primary"
-            icon={<FaSearch />}
+            icon="🔍"
             label={isSearching ? '搜尋中...' : '搜尋'}
+            className="hover:scale-105"
           />
           <IconButton
             onClick={onClearSearch}
-            variant="secondary"
-            icon={<FaTrash />}
+            variant="primary"
+            icon="🗑️"
             label="清除"
+            className="hover:scale-105"
           />
         </div>
       </div>

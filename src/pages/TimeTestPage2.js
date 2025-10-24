@@ -1,0 +1,18 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { useState } from 'react';
+const TimeTestPage2 = () => {
+    const [testTime, setTestTime] = useState('09:00');
+    const [testDate, setTestDate] = useState('2025-01-01');
+    return (_jsxs("div", { style: { padding: '20px', fontFamily: 'Arial, sans-serif' }, children: [_jsx("h1", { children: "\u539F\u751F HTML5 \u6642\u9593\u9078\u64C7\u5668\u6E2C\u8A66\uFF08\u7121 CSS\uFF09" }), _jsxs("div", { style: { marginBottom: '20px' }, children: [_jsx("label", { style: { display: 'block', marginBottom: '5px' }, children: "\u539F\u751F HTML5 \u6642\u9593\u9078\u64C7\u5668\uFF08\u53D7\u63A7\u5143\u4EF6\uFF09" }), _jsx("input", { type: "time", value: testTime, onChange: (e) => setTestTime(e.target.value), style: {
+                            padding: '10px',
+                            border: '1px solid #ccc',
+                            borderRadius: '4px',
+                            fontSize: '16px'
+                        } }), _jsxs("p", { style: { fontSize: '12px', color: '#666' }, children: ["\u7576\u524D\u503C: ", testTime] })] }), _jsxs("div", { style: { marginBottom: '20px' }, children: [_jsx("label", { style: { display: 'block', marginBottom: '5px' }, children: "\u539F\u751F HTML5 \u65E5\u671F\u9078\u64C7\u5668\uFF08\u53D7\u63A7\u5143\u4EF6\uFF09" }), _jsx("input", { type: "date", value: testDate, onChange: (e) => setTestDate(e.target.value), style: {
+                            padding: '10px',
+                            border: '1px solid #ccc',
+                            borderRadius: '4px',
+                            fontSize: '16px'
+                        } }), _jsxs("p", { style: { fontSize: '12px', color: '#666' }, children: ["\u7576\u524D\u503C: ", testDate] })] }), _jsxs("div", { style: { marginBottom: '20px' }, children: [_jsx("label", { style: { display: 'block', marginBottom: '5px' }, children: "\u539F\u751F HTML5 \u6642\u9593\u9078\u64C7\u5668\uFF08\u5B8C\u5168\u539F\u751F\uFF0C\u7121\u6A23\u5F0F\uFF09" }), _jsx("input", { type: "time", value: testTime, onChange: (e) => setTestTime(e.target.value) })] }), _jsxs("div", { style: { marginBottom: '20px' }, children: [_jsx("label", { style: { display: 'block', marginBottom: '5px' }, children: "\u539F\u751F HTML5 \u65E5\u671F\u9078\u64C7\u5668\uFF08\u5B8C\u5168\u539F\u751F\uFF0C\u7121\u6A23\u5F0F\uFF09" }), _jsx("input", { type: "date", value: testDate, onChange: (e) => setTestDate(e.target.value) })] }), _jsxs("div", { style: { marginBottom: '20px', padding: '10px', backgroundColor: '#f0f8ff', border: '1px solid #ccc' }, children: [_jsx("h3", { children: "\u8A3A\u65B7\u7D50\u679C\uFF1A" }), _jsx("p", { children: "\u2705 \u65E5\u671F\u9078\u64C7\u5668\uFF1A\u986F\u793A\u539F\u751F HTML5 \u65E5\u66C6" }), _jsx("p", { children: "\u274C \u6642\u9593\u9078\u64C7\u5668\uFF1A\u4ECD\u986F\u793A\u81EA\u8A02\u4E0B\u62C9\u9078\u55AE" }), _jsx("p", { children: "\uD83D\uDD0D \u9019\u8868\u793A\u554F\u984C\u7279\u5B9A\u65BC\u6642\u9593\u9078\u64C7\u5668\uFF0C\u800C\u4E0D\u662F\u700F\u89BD\u5668\u6216\u7CFB\u7D71\u554F\u984C" })] }), _jsxs("div", { style: { fontSize: '14px', color: '#666' }, children: [_jsxs("p", { children: [_jsx("strong", { children: "\u7D50\u8AD6\uFF1A" }), "\u700F\u89BD\u5668\u652F\u63F4\u539F\u751F HTML5 \u63A7\u5236\u9805\uFF0C\u4F46\u6642\u9593\u9078\u64C7\u5668\u53D7\u5230\u67D0\u7A2E\u5E72\u64FE\u3002"] }), _jsxs("p", { children: [_jsx("strong", { children: "\u4E0B\u4E00\u6B65\uFF1A" }), "\u9700\u8981\u6AA2\u67E5\u662F\u5426\u6709\u5168\u5C40 CSS \u6216 JavaScript \u5F71\u97FF\u6642\u9593\u9078\u64C7\u5668\u3002"] })] })] }));
+};
+export default TimeTestPage2;

@@ -6,6 +6,7 @@ interface CircularTimerProps {
   timerColor: string;
   isRunning: boolean;
   isBreak: boolean;
+  className?: string;
 }
 
 const CircularTimer: React.FC<CircularTimerProps> = ({
@@ -13,7 +14,8 @@ const CircularTimer: React.FC<CircularTimerProps> = ({
   totalSeconds,
   timerColor,
   isRunning,
-  isBreak
+  isBreak: _isBreak,
+  className
 }) => {
   const getProgressPercentage = () => {
     return ((totalSeconds - timeLeft) / totalSeconds) * 100;
@@ -26,14 +28,13 @@ const CircularTimer: React.FC<CircularTimerProps> = ({
   };
 
   const progress = getProgressPercentage();
-  // 與實際 circle 的 r 一致，避免進度起點/長度錯位
   const radius = 95;
   const circumference = 2 * Math.PI * radius;
   const strokeDasharray = circumference;
   const strokeDashoffset = circumference - (progress / 100) * circumference;
 
   return (
-    <div style={{
+    <div className={className} style={{
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
@@ -46,7 +47,6 @@ const CircularTimer: React.FC<CircularTimerProps> = ({
         width="240"
         height="240"
         style={{
-          // 使進度條從 12 點鐘方向開始
           transform: 'rotate(-90deg)',
           width: '240px',
           height: '240px'
@@ -57,19 +57,19 @@ const CircularTimer: React.FC<CircularTimerProps> = ({
           stroke="#e5e7eb"
           fill="transparent"
           strokeWidth="10"
-          r={95}
+          r={radius}
           cx="120"
           cy="120"
           style={{
             opacity: 0.3
           }}
         />
-        {/* 進度圓環 - 只有在計時器運行時才顯示顏色 */}
+        {/* 進度圓環 */}
         <circle
           stroke={isRunning ? timerColor : '#e5e7eb'}
           fill="transparent"
           strokeWidth="10"
-          r={95}
+          r={radius}
           cx="120"
           cy="120"
           strokeDasharray={strokeDasharray}
@@ -82,45 +82,39 @@ const CircularTimer: React.FC<CircularTimerProps> = ({
         />
       </svg>
       
-      {/* 中央時間顯示 */}
-      <div style={{
+      {/* 中央時間顯示 - 使用藍色文字 */}
+      <div className="font-sans text-4xl font-bold text-blue-600 dark:text-gray-100" style={{
         position: 'absolute',
         top: '50%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
         textAlign: 'center',
-        color: '#213547',
-        fontSize: '3rem',
-        fontWeight: 'bold',
-        fontFamily: 'monospace',
         whiteSpace: 'nowrap',
         lineHeight: 1
-      }} className="dark:text-gray-100">
+      }}>
         {formatTime(timeLeft)}
       </div>
       
-      {/* 狀態指示器 */}
-      <div style={{
+      {/* 只顯示進行中狀態，移除工作時間/休息時間文字 */}
+      {/* <div style={{
         position: 'absolute',
         bottom: '20px',
         left: '50%',
         transform: 'translateX(-50%)',
         fontSize: '1rem',
         fontWeight: '600',
-        color: isBreak ? '#ff6b6b' : '#4ecdc4',
         textAlign: 'center'
-      }} className="dark:text-gray-200">
-        {isBreak ? '休息時間' : '工作時間'}
+      }}>
         {isRunning && (
-          <div style={{
+          <div className="dark:text-gray-400" style={{
             fontSize: '0.8rem',
             color: '#213547',
             marginTop: '4px'
-          }} className="dark:text-gray-400">
+          }}>
             ● 進行中
           </div>
         )}
-      </div>
+      </div> */}
     </div>
   );
 };

@@ -1,3 +1,4 @@
+import { saveAs } from 'file-saver';
 import { TaskRegistration } from '../types/TaskRegistration'
 import { GroupTask } from '../types/GroupTask'
 
@@ -76,16 +77,9 @@ export const exportToJSON = (data: ExportData): string => {
 // 下載檔案
 export const downloadFile = (content: string, filename: string, mimeType: string) => {
   const blob = new Blob([content], { type: mimeType })
-  const url = URL.createObjectURL(blob)
   
-  const link = document.createElement('a')
-  link.href = url
-  link.download = filename
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-  
-  URL.revokeObjectURL(url)
+  // 使用 file-saver 下載檔案，提升手機支援度
+  saveAs(blob, filename)
 }
 
 // 匯出報名名單（CSV）

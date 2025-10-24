@@ -1,4 +1,4 @@
-import { google } from 'googleapis'
+import { google as _google } from 'googleapis'
 
 // Google Calendar API 設定
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CALENDAR_CLIENT_ID || ''

@@ -341,33 +341,17 @@ const FocusItemModal: React.FC<FocusItemModalProps> = ({
                             onEditingFocusItemNameChange(item.name);
                             // 這裡需要觸發編輯模式，但需要從父組件傳入
                           }}
-                          style={{
-                            padding: '4px 8px',
-                            fontSize: '12px',
-                            fontWeight: '600',
-                            border: '1px solid #007bff',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            backgroundColor: 'transparent',
-                            color: '#007bff'
-                          }}
+                          className="flex items-center gap-1 px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-colors duration-200 hover:scale-105"
                         >
-                          編輯
+                          <span>✏️</span>
+                          <span>編輯</span>
                         </button>
                         <button
                           onClick={() => onDeleteFocusItem(item.id)}
-                          style={{
-                            padding: '4px 8px',
-                            fontSize: '12px',
-                            fontWeight: '600',
-                            border: '1px solid #dc3545',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            backgroundColor: 'transparent',
-                            color: '#dc3545'
-                          }}
+                          className="flex items-center gap-1 px-3 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-lg transition-colors duration-200 hover:scale-105"
                         >
-                          刪除
+                          <span>🗑️</span>
+                          <span>刪除</span>
                         </button>
                       </>
                     )}

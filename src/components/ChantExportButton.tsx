@@ -1,93 +1,113 @@
-import React from 'react';
-import { loadChantHistory } from '../utils/chantHistoryStorage';
+import React, { useState } from 'react';
+import { exportChantRecordsToCSVWithCapacitor } from '../services/chantCsvExportService';
+import IconButton from '../components/ui/IconButton';
 
 interface ChantExportButtonProps {
-  chant: string;
-  today: number;
-  total: number;
+  chant?: string;
+  today?: number;
+  total?: number;
 }
 
-const ChantExportButton: React.FC<ChantExportButtonProps> = ({ chant, today, total }) => {
-  const exportAllChantDataToCSV = () => {
-    try {
-      // 取得所有歷史紀錄
-      const allRecords = loadChantHistory();
-      
-      if (allRecords.length === 0) {
-        alert('目前沒有任何經文紀錄');
-        return;
-      }
+const ChantExportButton: React.FC<ChantExportButtonProps> = () => {
+  const [exportStatus, setExportStatus] = useState({
+    show: false,
+    type: 'success' as 'success' | 'error',
+    message: ''
+  })
 
-      // CSV 標題行
-      const headers = ['經文名稱', '日期', '次數', '記錄時間'];
+  const exportAllChantDataToCSV = async () => {
+    try {
+      const result = await exportChantRecordsToCSVWithCapacitor()
       
-      // 轉換資料為 CSV 格式
-      const csvRows = [headers];
-      
-      allRecords.forEach((record: any) => {
-        csvRows.push([
-          record.chant,
-          new Date(record.date).toLocaleDateString('zh-TW'),
-          record.count.toString(),
-          new Date(record.date).toLocaleString('zh-TW')
-        ]);
-      });
-      
-      // 轉換為 CSV 字串 - 使用 UTF-8 BOM 避免亂碼
-      const csvContent = '\uFEFF' + csvRows.map(row => 
-        row.map(field => `"${field}"`).join(',')
-      ).join('\n');
-      
-      // 創建並下載檔案
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', `所有經文紀錄_${new Date().toLocaleDateString('zh-TW').replace(/\//g, '-')}.csv`);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      URL.revokeObjectURL(url);
+      if (result.success) {
+        setExportStatus({
+          show: true,
+          type: 'success',
+          message: result.message
+        })
+        
+        // 顯示 alert 提示使用者檔案已儲存
+        alert(result.message)
+        
+        setTimeout(() => {
+          setExportStatus(prev => ({ ...prev, show: false }))
+        }, 5000)
+      } else {
+        setExportStatus({
+          show: true,
+          type: 'error',
+          message: result.message
+        })
+        setTimeout(() => {
+          setExportStatus(prev => ({ ...prev, show: false }))
+        }, 3000)
+      }
     } catch (error) {
-      console.error('匯出 CSV 時發生錯誤:', error);
-      alert('匯出失敗，請稍後再試');
+      console.error('匯出失敗:', error)
+      setExportStatus({
+        show: true,
+        type: 'error',
+        message: '匯出失敗，請稍後再試'
+      })
+      setTimeout(() => {
+        setExportStatus(prev => ({ ...prev, show: false }))
+      }, 3000)
     }
-  };
+  }
 
   return (
-    <button
-      onClick={exportAllChantDataToCSV}
-      style={{
-        backgroundColor: '#3b82f6',
-        color: 'white',
-        border: 'none',
-        padding: '16px 32px',
-        borderRadius: '12px',
-        fontSize: '1.1rem',
-        fontWeight: 'bold',
-        cursor: 'pointer',
-        transition: 'all 0.3s ease',
-        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.15)',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        margin: '0 auto'
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.backgroundColor = '#2563eb';
-        e.currentTarget.style.transform = 'translateY(-2px) scale(1.05)';
-        e.currentTarget.style.boxShadow = '0 8px 16px rgba(0, 0, 0, 0.25)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.backgroundColor = '#3b82f6';
-        e.currentTarget.style.transform = 'translateY(0) scale(1)';
-        e.currentTarget.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.15)';
-      }}
-    >
-      📄 匯出所有經文紀錄 CSV
-    </button>
+    <div className="mb-4">
+      {/* 匯出狀態提示 */}
+      {exportStatus.show && exportStatus.type === 'success' && (
+        <div style={{
+          padding: '8px 16px',
+          backgroundColor: '#d4edda',
+          color: '#155724',
+          borderRadius: '6px',
+          fontSize: '14px',
+          fontWeight: '500',
+          border: '1px solid #c3e6cb',
+          marginBottom: '10px'
+        }}>
+          ✅ {exportStatus.message}
+        </div>
+      )}
+      
+      {exportStatus.show && exportStatus.type === 'error' && (
+        <div style={{
+          padding: '8px 16px',
+          backgroundColor: '#f8d7da',
+          color: '#721c24',
+          borderRadius: '6px',
+          fontSize: '14px',
+          fontWeight: '500',
+          border: '1px solid #f5c6cb',
+          marginBottom: '10px'
+        }}>
+          ❌ {exportStatus.message}
+        </div>
+      )}
+      
+      {/* 匯出按鈕 */}
+      <IconButton
+        onClick={exportAllChantDataToCSV}
+        onTouchEnd={(e) => {
+          // 防止觸控事件重複觸發
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('觸發念經記錄CSV匯出 - 觸控事件');
+          exportAllChantDataToCSV();
+        }}
+        onTouchStart={(e) => {
+          // 防止觸控事件重複觸發
+          e.preventDefault();
+          console.log('觸控開始 - 念經記錄CSV匯出');
+        }}
+        variant="primary"
+        label="📄 匯出所有經文記錄 CSV"
+        className="w-1/2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold py-1.5 px-2 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
+      />
+    </div>
   );
 };
 

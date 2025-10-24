@@ -1,9 +1,75 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
 
 /* 引入響應式佈局樣式 */
 @import './layout.css';
 
-@plugin "tailwindcss-animate";
+/* @plugin "tailwindcss-animate"; */
+
+/* 自訂動畫 */
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+/* 自定義文字陰影樣式 */
+.text-shadow {
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+}
+
+/* 防止輸入欄位在手機上被擠壓 */
+input[type="number"] {
+  min-width: 60px;
+}
+
+/* 確保時間輸入欄位在 WebView 中正常顯示 */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* 確保原生日期時間選擇器在手機上正常顯示 */
+/* 移除這行 CSS，讓原生時間選擇器正常顯示 */
+/* input[type="date"], 
+input[type="time"] {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+} */
+
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  display: block;
+  width: 20px;
+  height: 20px;
+  opacity: 1;
+  cursor: pointer;
+}
+
+/* 手機版優化：確保日期時間選擇器觸控友好 */
+@media (max-width: 768px) {
+  input[type="date"], 
+  input[type="time"] {
+    min-height: 44px; /* iOS 建議的最小觸控目標 */
+    font-size: 16px; /* 防止 iOS 縮放 */
+  }
+}
+
+/* 移除所有自訂樣式覆蓋，讓 input[type="time"] 使用原生樣式 */
+
+input[type="number"] {
+  /* 使用標準屬性 */
+  -webkit-appearance: textfield;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
 
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
@@ -70,6 +136,7 @@ body {
   min-height: 100vh;
   background-color: #ffffff;
   color: #213547;
+  font-family: 'Noto Sans TC', sans-serif;
 }
 
 h1 {
@@ -94,7 +161,24 @@ button:hover {
 }
 button:focus,
 button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* 特殊情況：保留某些按鈕的聚焦樣式 */
+button:focus:not(.no-focus-outline),
+button:focus-visible:not(.no-focus-outline) {
+  outline: 2px solid #3b82f6 !important;
+  outline-offset: 2px !important;
+}
+
+/* 自定義按鈕樣式，覆蓋默認樣式 */
+.icon-button {
+  background-color: var(--button-bg-color, #1d4ed8) !important;
+  color: var(--button-text-color, white) !important;
+  border: none !important;
+  padding: 0.5rem 1rem !important;
+  font-size: 1rem !important;
 }
 
 /* 應用程式特定樣式 */
@@ -118,19 +202,7 @@ button:focus-visible {
   color: #213547;
 }
 
-.ad-banner {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background-color: #333;
-  color: white;
-  text-align: center;
-  padding: 12px;
-  font-size: 16px;
-  font-weight: 500;
-  z-index: 999;
-}
+/* 廣告區樣式已移至 AdBanner 元件使用 Tailwind 類別 */
 
 .page {
   text-align: center;
@@ -229,12 +301,18 @@ button:focus-visible {
 }
 
 @keyframes fadeOut {
-  from {
+  0% {
     opacity: 1;
+    transform: translateY(0);
   }
-  to {
+  100% {
     opacity: 0;
+    transform: translateY(-30px);
   }
+}
+
+.animate-fadeOut {
+  animation: fadeOut 0.7s ease-out forwards;
 }
 
 /* DatePicker 自定義樣式 */
@@ -261,6 +339,8 @@ button:focus-visible {
   border: 1px solid #e0e0e0 !important;
   border-radius: 8px !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  min-width: 380px !important;
+  width: auto !important;
 }
 
 .react-datepicker__header {
@@ -285,6 +365,8 @@ button:focus-visible {
 
 .react-datepicker__time-container {
   border-left: 1px solid #e0e0e0 !important;
+  width: 150px !important;
+  min-width: 150px !important;
 }
 
 .react-datepicker__time-list-item--selected {
@@ -294,6 +376,13 @@ button:focus-visible {
 
 .react-datepicker__time-list-item:hover {
   background-color: #e8f5f4 !important;
+}
+
+.react-datepicker__time-list-item {
+  padding: 8px 16px !important;
+  width: 100% !important;
+  text-align: center !important;
+  white-space: nowrap !important;
 }
 
 /* 手機版優化 */
@@ -306,6 +395,7 @@ button:focus-visible {
 
   .react-datepicker {
     font-size: 16px !important;
+    min-width: 360px !important;
   }
 
   .react-datepicker__day {
@@ -314,9 +404,16 @@ button:focus-visible {
     line-height: 40px !important;
   }
 
+  .react-datepicker__time-container {
+    width: 130px !important;
+    min-width: 130px !important;
+  }
+
   .react-datepicker__time-list-item {
-    padding: 8px 12px !important;
+    padding: 10px 12px !important;
     font-size: 16px !important;
+    width: 100% !important;
+    text-align: center !important;
   }
 
   .react-datepicker__input-container input {
@@ -351,23 +448,24 @@ button:focus-visible {
 }
 
 /* 全站 Tailwind 公用樣式：統一手機版視覺 */
-@layer components {
+/* 移除 @layer 以避免 CSS 警告 */
+.components {
   /* 1) 全頁容器：寬度限制並置中 */
   .page {
-    @apply max-w-md mx-auto px-4 w-full overflow-x-hidden;
+    max-width: 28rem; margin-left: auto; margin-right: auto; padding-left: 1rem; padding-right: 1rem; width: 100%; overflow-x: hidden;
     background-color: #ffffff !important;
     color: #213547 !important;
   }
 
   /* 4) 頁面標題：一致字級與粗體 */
   .page h1 {
-    @apply text-xl font-bold;
+    font-size: 1.25rem; font-weight: 700;
     color: #213547 !important;
   }
 
   /* 2) 全站按鈕：只設定圓角與內距，不覆蓋顏色，避免按鈕底色被蓋掉 */
   button {
-    @apply rounded px-4 py-2;
+    border-radius: 0.25rem; padding-left: 1rem; padding-right: 1rem; padding-top: 0.5rem; padding-bottom: 0.5rem;
   }
 
   /* 3) 列表項卡片：亮色卡片、圓角、陰影與間距 */
@@ -375,8 +473,330 @@ button:focus-visible {
   .card-dark,
   .feature-card,
   .record-card {
-    @apply rounded-lg p-4 mb-3 shadow;
+    border-radius: 0.5rem; padding: 1rem; margin-bottom: 0.75rem; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
     background-color: #ffffff !important;
     color: #213547 !important;
   }
+}
+
+/* DatePicker 樣式 */
+.custom-datepicker {
+  padding: 14px !important;
+  border-radius: 8px !important;
+  border: 2px solid #cccccc !important;
+  background-color: #ffffff !important;
+  color: #333333 !important;
+  font-size: 16px !important;
+  font-weight: 500 !important;
+  outline: none !important;
+  transition: border-color 0.2s !important;
+  min-width: 200px !important;
+  width: 100% !important;
+  height: 52px !important;
+  box-sizing: border-box !important;
+}
+
+.custom-datepicker:focus {
+  border-color: #4ecdc4 !important;
+}
+
+.datepicker-wrapper {
+  width: 100% !important;
+}
+
+/* 支援 emoji 顯示 */
+button {
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Android Emoji", "EmojiSymbols", "EmojiOne Mozilla", "Twemoji Mozilla", "Segoe UI Symbol", Inter, system-ui, Avenir, Helvetica, Arial, sans-serif !important;
+  font-size: inherit !important;
+  line-height: 1 !important;
+}
+
+/* 強制字體大小 - 唸誦統計 */
+.chant-title {
+  font-size: 2rem !important;
+}
+
+.chant-label {
+  font-size: 2rem !important;
+}
+
+.chant-number {
+  font-size: 2rem !important;
+}
+
+/* 確保按鈕中的 emoji 正確顯示 */
+button span,
+button {
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Android Emoji", "EmojiSymbols", "EmojiOne Mozilla", "Twemoji Mozilla", "Segoe UI Symbol", Inter, system-ui, Avenir, Helvetica, Arial, sans-serif !important;
+}
+
+/* 移除行動裝置點擊高亮與任何預設外框線條 */
+button, img {
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+  border: 0;
+}
+
+/* 強制支持按鈕的文字為深色，避免被外層白色字覆蓋 */
+.support-wrapper, .support-button, .support-text {
+  color: #111827 !important; /* Tailwind gray-900 */
+}
+
+/* ========== Animations for Support/Fade effects ========== */
+@keyframes heartBounce {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.5); }
+  60% { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+
+.animate-heartBounce {
+  animation: heartBounce 0.6s ease;
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translateY(10px); }
+  10% { opacity: 1; transform: translateY(0); }
+  90% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-10px); }
+}
+
+.animate-fadeInOut {
+  animation: fadeInOut 1.2s ease-in-out forwards;
+}
+
+/* 木魚點擊動畫 */
+.woodfish-clicked {
+  animation: scaleOnce 0.3s ease;
+}
+
+@keyframes scaleOnce {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+
+/* 浮動 +1 效果 */
+.floating-plus-one {
+  position: absolute;
+  animation: floatUpFade 1s ease-out forwards;
+  color: orange;
+  font-weight: bold;
+  font-size: 1.5rem;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* +1 彈跳放大（可疊加在浮動動畫上） */
+.animate-pop-bounce {
+  animation: floatUpFade 1s ease-out forwards, popBounce 0.4s ease-out;
+}
+
+@keyframes popBounce {
+  0% { transform: translateX(-50%) scale(0.6); opacity: 0; }
+  40% { transform: translateX(-50%) scale(1.2); opacity: 1; }
+  70% { transform: translateX(-50%) scale(0.95); }
+  100% { transform: translateX(-50%) scale(1); }
+}
+
+@keyframes floatUpFade {
+  0% { opacity: 1; transform: translateX(-50%) translateY(0); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-40px); }
+}
+
+/* 蓮花點燈動畫效果 */
+.center-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 80px;
+  height: 80px;
+  background: radial-gradient(circle, rgba(255, 215, 0, 1) 0%, rgba(255, 165, 0, 0.9) 30%, rgba(255, 100, 150, 0.7) 60%, transparent 80%);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: centerGlow 1.2s ease-out;
+  pointer-events: none;
+  box-shadow: 0 0 40px rgba(255, 215, 0, 0.8), 0 0 80px rgba(255, 165, 0, 0.6);
+}
+
+@keyframes centerGlow {
+  0% { 
+    opacity: 0; 
+    transform: translate(-50%, -50%) scale(0.3); 
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+  }
+  30% { 
+    opacity: 1; 
+    transform: translate(-50%, -50%) scale(1.5); 
+    box-shadow: 0 0 60px rgba(255, 215, 0, 1), 0 0 120px rgba(255, 165, 0, 0.8);
+  }
+  70% { 
+    opacity: 0.8; 
+    transform: translate(-50%, -50%) scale(2.5); 
+    box-shadow: 0 0 80px rgba(255, 215, 0, 0.8), 0 0 160px rgba(255, 165, 0, 0.6);
+  }
+  100% { 
+    opacity: 0; 
+    transform: translate(-50%, -50%) scale(4); 
+    box-shadow: 0 0 100px rgba(255, 215, 0, 0.3);
+  }
+}
+
+.particle-effect {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 200px;
+  height: 200px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.particle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: radial-gradient(circle, rgba(255, 215, 0, 1) 0%, rgba(255, 165, 0, 0.9) 30%, rgba(255, 100, 150, 0.7) 70%, transparent 100%);
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  animation: particleFloat 1.5s ease-out forwards;
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.8), 0 0 25px rgba(255, 165, 0, 0.6);
+}
+
+.particle:nth-child(1) { transform: translate(-50%, -50%) rotate(0deg) translateX(80px); }
+.particle:nth-child(2) { transform: translate(-50%, -50%) rotate(45deg) translateX(80px); }
+.particle:nth-child(3) { transform: translate(-50%, -50%) rotate(90deg) translateX(80px); }
+.particle:nth-child(4) { transform: translate(-50%, -50%) rotate(135deg) translateX(80px); }
+.particle:nth-child(5) { transform: translate(-50%, -50%) rotate(180deg) translateX(80px); }
+.particle:nth-child(6) { transform: translate(-50%, -50%) rotate(225deg) translateX(80px); }
+.particle:nth-child(7) { transform: translate(-50%, -50%) rotate(270deg) translateX(80px); }
+.particle:nth-child(8) { transform: translate(-50%, -50%) rotate(315deg) translateX(80px); }
+
+@keyframes particleFloat {
+  0% { 
+    opacity: 1; 
+    transform: translate(-50%, -50%) rotate(var(--rotation)) translateX(80px) scale(1); 
+  }
+  50% { 
+    opacity: 0.8; 
+    transform: translate(-50%, -50%) rotate(var(--rotation)) translateX(120px) scale(0.8); 
+  }
+  100% { 
+    opacity: 0; 
+    transform: translate(-50%, -50%) rotate(var(--rotation)) translateX(160px) scale(0.3); 
+  }
+}
+
+.ripple-effect {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 120px;
+  height: 120px;
+  border: 3px solid rgba(255, 215, 0, 0.8);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: rippleExpand 1.5s ease-out;
+  pointer-events: none;
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.6), inset 0 0 20px rgba(255, 215, 0, 0.3);
+}
+
+.ripple-1 {
+  animation-delay: 0s;
+}
+
+.ripple-2 {
+  animation-delay: 0.3s;
+}
+
+@keyframes rippleExpand {
+  0% { 
+    opacity: 1; 
+    transform: translate(-50%, -50%) scale(0.3); 
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.8), inset 0 0 10px rgba(255, 215, 0, 0.5);
+  }
+  50% { 
+    opacity: 0.8; 
+    transform: translate(-50%, -50%) scale(1.5); 
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.6), inset 0 0 30px rgba(255, 215, 0, 0.3);
+  }
+  100% { 
+    opacity: 0; 
+    transform: translate(-50%, -50%) scale(4); 
+    box-shadow: 0 0 50px rgba(255, 215, 0, 0.2), inset 0 0 50px rgba(255, 215, 0, 0.1);
+  }
+}
+
+/* 【解決方式總整理】禁止套件干擾時間輸入欄位 */
+
+/* 禁用日曆選擇器圖示 */
+input[type="time"]::-webkit-calendar-picker-indicator {
+  display: none;
+  -webkit-appearance: none;
+}
+
+/* 禁用內部微調按鈕 */
+input[type="time"]::-webkit-inner-spin-button {
+  display: none;
+}
+
+/* 讓時間輸入欄位變回純文字輸入（不會彈出下拉選單） */
+input[type="time"] {
+  appearance: textfield !important;
+  -moz-appearance: textfield !important;
+  -webkit-appearance: textfield !important;
+}
+
+/* 播放音樂按鈕專用樣式 - 強制覆蓋全域按鈕樣式 */
+.music-play-button {
+  background-color: #3b82f6 !important;
+  background: #3b82f6 !important;
+  border: none !important;
+  color: white !important;
+  padding: 12px 16px !important;
+  border-radius: 8px !important;
+  transition: all 0.2s ease !important;
+  width: auto !important;
+  max-width: none !important;
+  font-size: clamp(14px, 2.2vw, 18px) !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  box-sizing: border-box !important;
+}
+
+.music-play-button:hover {
+  background-color: #2563eb !important;
+  background: #2563eb !important;
+}
+
+/* 針對特定 ID 的樣式 - 最高優先級 */
+#music-play-button {
+  background-color: #3b82f6 !important;
+  background: #3b82f6 !important;
+  border: none !important;
+  color: white !important;
+  padding: 12px 16px !important;
+  border-radius: 8px !important;
+  transition: all 0.2s ease !important;
+  width: auto !important;
+  max-width: none !important;
+  font-size: clamp(14px, 2.2vw, 18px) !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  box-sizing: border-box !important;
+}
+
+#music-play-button:hover {
+  background-color: #2563eb !important;
+  background: #2563eb !important;
 }

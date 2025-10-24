@@ -1,50 +1,59 @@
-import React from 'react';
-
-type ButtonVariant = 'primary' | 'secondary' | 'danger';
+import React from 'react'
+import clsx from 'clsx'
 
 interface IconButtonProps {
-  icon: React.ReactNode;
-  label?: string;
-  onClick?: () => void;
-  variant?: ButtonVariant;
-  disabled?: boolean;
-  className?: string;
+  icon?: React.ReactNode
+  label: React.ReactNode
+  onClick?: () => void
+  onTouchEnd?: (e: React.TouchEvent) => void
+  onTouchStart?: (e: React.TouchEvent) => void
+  className?: string
+  variant?: 'primary' | 'secondary' | 'danger'
+  disabled?: boolean
+  fullWidth?: boolean
 }
 
-const variantToClasses: Record<ButtonVariant, string> = {
-  primary: 'bg-blue-600 hover:bg-blue-700 text-white',
-  danger: 'bg-red-600 hover:bg-red-700 text-white',
-  secondary: 'bg-gray-200 hover:bg-gray-300 text-gray-800',
-};
-
-export default function IconButton({
+const IconButton: React.FC<IconButtonProps> = ({
   icon,
   label,
   onClick,
+  onTouchEnd,
+  onTouchStart,
+  className = '',
   variant = 'primary',
   disabled = false,
-  className = '',
-}: IconButtonProps) {
-  const inlineStyle: React.CSSProperties =
-    variant === 'primary'
-      ? { backgroundColor: '#2563eb', color: '#fff' }
-      : variant === 'danger'
-      ? { backgroundColor: '#dc2626', color: '#fff' }
-      : { backgroundColor: '#e5e7eb', color: '#111827' };
+  fullWidth = false
+}) => {
+  const baseStyle = 'flex items-center justify-center gap-1 font-bold rounded-xl px-4 py-2 shadow transition active:scale-95 text-base'
+
+  const variants = {
+    primary: '!bg-blue-700 !text-white hover:!bg-blue-800',
+    secondary: '!bg-gray-200 !text-gray-800 hover:!bg-gray-300',
+    danger: '!bg-red-600 !text-white hover:!bg-red-700'
+  }
+
+  const combined = clsx(
+    'icon-button', 
+    baseStyle, 
+    variants[variant], 
+    className, 
+    disabled && 'opacity-50 pointer-events-none cursor-not-allowed',
+    fullWidth && 'w-full'
+  )
+
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className={`inline-flex items-center gap-2 rounded px-4 py-2 font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${variantToClasses[variant]} ${className}`}
-      style={inlineStyle}
+    <button 
+      onClick={onClick} 
+      onTouchEnd={onTouchEnd}
+      onTouchStart={onTouchStart}
+      className={combined} 
+      disabled={disabled} 
+      style={{ backgroundColor: variant === 'primary' ? '#1d4ed8' : variant === 'danger' ? '#dc2626' : '#e5e7eb', color: variant === 'primary' || variant === 'danger' ? 'white' : '#1f2937' }}
     >
-      <span className="inline-flex items-center" aria-hidden>
-        {icon}
-      </span>
-      {label && <span>{label}</span>}
+      {icon && <span style={{ color: 'white !important', textShadow: 'none' }}>{icon}</span>}
+      <span style={{ color: 'inherit' }}>{label}</span>
     </button>
-  );
+  )
 }
 
-
+export default IconButton

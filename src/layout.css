@@ -1,11 +1,40 @@
 /* Layout CSS - 全站手機畫面排版與字體優化 */
 
-/* 1. body 最大寬度限制為 420px，左右內距 16px */
+/* 1. 響應式佈局：手機滿版，平板適中，桌機限制寬度 */
 body {
-  max-width: 420px !important;
-  margin: 0 auto !important;
-  padding: 0 16px !important;
+  margin: 0 !important;
+  padding: 0 !important;
   box-sizing: border-box !important;
+  display: block !important;
+  place-items: unset !important;
+}
+
+/* 手機版：滿版顯示 */
+@media (max-width: 768px) {
+  body {
+    width: 100% !important;
+    max-width: none !important;
+    padding: 0 !important;
+  }
+}
+
+/* 平板版：適中的最大寬度，避免過度留白 */
+@media (min-width: 769px) and (max-width: 1024px) {
+  body {
+    width: 100% !important;
+    max-width: none !important;
+    padding: 0 !important;
+  }
+}
+
+/* 桌機版：限制最大寬度，保持良好閱讀體驗 */
+@media (min-width: 1025px) {
+  body {
+    width: 100% !important;
+    max-width: 1200px !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+  }
 }
 
 /* 2. 所有卡片與按鈕使用 flex-column 垂直排版 */
@@ -14,10 +43,35 @@ body {
   flex-direction: column !important;
   gap: 16px !important;
   width: 100% !important;
-  max-width: 420px !important;
-  margin: 0 auto !important;
-  padding: 0 16px !important;
+  margin: 0 !important;
+  padding: 0 1rem !important; /* 16px */
   box-sizing: border-box !important;
+}
+
+/* 手機版：滿版容器 */
+@media (max-width: 768px) {
+  .container {
+    max-width: none !important;
+    padding: 0 1rem !important;
+  }
+}
+
+/* 平板版：適中的最大寬度，充分利用螢幕空間 */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .container {
+    max-width: 800px !important;
+    margin: 0 auto !important;
+    padding: 0 2rem !important;
+  }
+}
+
+/* 桌機版：較大的最大寬度，保持良好閱讀體驗 */
+@media (min-width: 1025px) {
+  .container {
+    max-width: 1000px !important;
+    margin: 0 auto !important;
+    padding: 0 2rem !important;
+  }
 }
 
 /* 3. 使用 clamp(16px, 2.5vw, 20px) 控制全站文字大小，自動適應手機／平板 */
@@ -34,6 +88,38 @@ body,
   flex-direction: column !important;
   gap: 12px !important;
   width: 100% !important;
+}
+
+/* 響應式頁面容器 - 解決平板留白問題 */
+.responsive-container {
+  width: 100% !important;
+  margin: 0 auto !important;
+  padding: 1.5rem 1rem !important;
+  box-sizing: border-box !important;
+}
+
+/* 手機版：滿版顯示 */
+@media (max-width: 768px) {
+  .responsive-container {
+    max-width: none !important;
+    padding: 1.5rem 1rem !important;
+  }
+}
+
+/* 平板版：適中的最大寬度，充分利用螢幕空間 */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .responsive-container {
+    max-width: 800px !important;
+    padding: 2rem 2rem !important;
+  }
+}
+
+/* 桌機版：較大的最大寬度，保持良好閱讀體驗 */
+@media (min-width: 1025px) {
+  .responsive-container {
+    max-width: 1000px !important;
+    padding: 2rem 2rem !important;
+  }
 }
 
 /* 5. 所有元件加上 overflow-wrap: break-word 避免大字爆版 */
@@ -184,11 +270,11 @@ label {
   display: block !important;
 }
 
-/* 頁面容器優化 */
+/* 頁面容器優化 - 全螢幕顯示 */
 .page {
   width: 100% !important;
-  max-width: 420px !important;
-  margin: 0 auto !important;
+  max-width: none !important;
+  margin: 0 !important;
   padding: 16px !important;
   box-sizing: border-box !important;
   display: flex !important;
@@ -196,11 +282,11 @@ label {
   gap: 16px !important;
 }
 
-/* 主內容區域優化 */
+/* 主內容區域優化 - 全螢幕顯示 */
 .main-content {
   width: 100% !important;
-  max-width: 420px !important;
-  margin: 0 auto !important;
+  max-width: none !important;
+  margin: 0 !important;
   padding: 16px !important;
   box-sizing: border-box !important;
   display: flex !important;
@@ -208,11 +294,11 @@ label {
   gap: 16px !important;
 }
 
-/* 應用程式容器優化 */
+/* 應用程式容器優化 - 全螢幕顯示 */
 .app-container {
   width: 100% !important;
-  max-width: 420px !important;
-  margin: 0 auto !important;
+  max-width: none !important;
+  margin: 0 !important;
   min-height: 100vh !important;
   display: flex !important;
   flex-direction: column !important;

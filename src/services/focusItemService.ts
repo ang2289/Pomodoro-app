@@ -12,6 +12,14 @@ const DEFAULT_FOCUS_ITEMS: Omit<FocusItem, 'id' | 'createdAt' | 'createdBy'>[] =
   { name: '冥想', isDefault: true, color: '#3b82f6' }
 ]
 
+// 還原預設分類（不包含讀書）
+const RESTORE_FOCUS_ITEMS: Omit<FocusItem, 'id' | 'createdAt' | 'createdBy'>[] = [
+  { name: '寫作', isDefault: true, color: '#3b82f6' },
+  { name: '工作', isDefault: true, color: '#3b82f6' },
+  { name: '運動', isDefault: true, color: '#3b82f6' },
+  { name: '冥想', isDefault: true, color: '#3b82f6' }
+]
+
 // 預設顏色列表
 const DEFAULT_COLORS = [
   '#4caf50', // 綠色
@@ -23,6 +31,9 @@ const DEFAULT_COLORS = [
   '#795548', // 棕色
   '#e91e63'  // 粉紅色
 ]
+
+// 未來可能用於顏色選擇器，暫時避免 TS6133
+void DEFAULT_COLORS
 
 // 生成 UUID
 const generateUUID = (): string => {
@@ -45,6 +56,30 @@ export const initializeDefaultFocusItems = (): void => {
     }))
     localStorage.setItem(FOCUS_ITEMS_KEY, JSON.stringify(defaultItems))
   }
+}
+
+// 還原預設分類（不刪除自訂分類）
+export const restoreDefaultFocusItems = (): boolean => {
+  const existingItems = getFocusItems()
+  const existingNames = existingItems.map(item => item.name)
+  
+  // 只添加不存在的預設分類
+  const newDefaultItems: FocusItem[] = RESTORE_FOCUS_ITEMS
+    .filter(item => !existingNames.includes(item.name))
+    .map(item => ({
+      ...item,
+      id: generateUUID(),
+      createdAt: new Date().toISOString(),
+      createdBy: 'system'
+    }))
+  
+  if (newDefaultItems.length > 0) {
+    const updatedItems = [...existingItems, ...newDefaultItems]
+    localStorage.setItem(FOCUS_ITEMS_KEY, JSON.stringify(updatedItems))
+    return true
+  }
+  
+  return false
 }
 
 // 獲取所有專注項目
@@ -76,14 +111,14 @@ export const getFocusItemsWithCount = (): FocusItemWithCount[] => {
 }
 
 // 新增專注項目
-export const addFocusItem = (name: string, createdBy: string = 'user'): FocusItem => {
+export const addFocusItem = (name: string, color: string = '#3b82f6', createdBy: string = 'user'): FocusItem => {
   const newItem: FocusItem = {
     id: generateUUID(),
     name: name.trim(),
     isDefault: false,
     createdAt: new Date().toISOString(),
     createdBy,
-    color: '#3b82f6' // 預設藍色
+    color: color
   }
   
   const existingItems = getFocusItems()
@@ -94,16 +129,18 @@ export const addFocusItem = (name: string, createdBy: string = 'user'): FocusIte
 }
 
 // 更新專注項目
-export const updateFocusItem = (id: string, name: string): boolean => {
+export const updateFocusItem = (id: string, name: string, color?: string): boolean => {
   const items = getFocusItems()
   const itemIndex = items.findIndex(item => item.id === id)
   
   if (itemIndex === -1) return false
   
-  // 不允許編輯預設項目
-  if (items[itemIndex].isDefault) return false
-  
+  // 允許編輯預設項目和自訂項目
   items[itemIndex].name = name.trim()
+  if (color) {
+    items[itemIndex].color = color
+  }
+  
   localStorage.setItem(FOCUS_ITEMS_KEY, JSON.stringify(items))
   
   return true
@@ -116,9 +153,7 @@ export const deleteFocusItem = (id: string): boolean => {
   
   if (itemIndex === -1) return false
   
-  // 不允許刪除預設項目
-  if (items[itemIndex].isDefault) return false
-  
+  // 允許刪除預設項目和自訂項目
   const updatedItems = items.filter(item => item.id !== id)
   localStorage.setItem(FOCUS_ITEMS_KEY, JSON.stringify(updatedItems))
   

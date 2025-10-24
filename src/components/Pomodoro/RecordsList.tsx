@@ -1,6 +1,8 @@
 import React from 'react';
 import { PomodoroRecord } from '../../types/PomodoroRecord';
 import { FocusItem } from '../../types/FocusItem';
+import IconButton from '../ui/IconButton';
+import { Download } from 'lucide-react';
 
 interface RecordsListProps {
   records: PomodoroRecord[];
@@ -13,6 +15,10 @@ interface RecordsListProps {
     type: 'success' | 'error';
     message: string;
   };
+  isSearchActive?: boolean;
+  searchKeyword?: string;
+  totalRecords?: number;
+  showAllRecords?: boolean;
 }
 
 const RecordsList: React.FC<RecordsListProps> = ({
@@ -21,8 +27,13 @@ const RecordsList: React.FC<RecordsListProps> = ({
   onEditRecord,
   onDeleteRecord,
   onExportRecords,
-  exportStatus
+  exportStatus,
+  isSearchActive = false,
+  searchKeyword = '',
+  totalRecords = 0,
+  showAllRecords = false
 }) => {
+
   const formatDateTime = (dateTime: string) => {
     return new Date(dateTime).toLocaleString('zh-TW', {
       year: 'numeric',
@@ -51,14 +62,53 @@ const RecordsList: React.FC<RecordsListProps> = ({
         flexWrap: 'wrap',
         gap: '10px'
       }}>
-        <h3 style={{ 
-          margin: '0', 
-          color: '#333',
-          fontSize: '1.3rem',
-          fontWeight: '600'
-        }}>
-          📋 完成紀錄
-        </h3>
+        <div>
+          <h3 style={{ 
+            margin: '0', 
+            color: '#333',
+            fontSize: '1.3rem',
+            fontWeight: '600'
+          }}>
+            📋 完成紀錄
+          </h3>
+          {isSearchActive ? (
+            <div style={{
+              marginTop: '5px',
+              fontSize: '14px',
+              color: '#666',
+              fontStyle: 'italic'
+            }}>
+              搜尋結果：找到 {records.length} 筆記錄
+              {searchKeyword && (
+                <span style={{ marginLeft: '8px' }}>
+                  (關鍵字: "{searchKeyword}")
+                </span>
+              )}
+            </div>
+          ) : showAllRecords ? (
+            // 顯示全部紀錄時的提示文字
+            <div style={{
+              marginTop: '5px',
+              fontSize: '14px',
+              color: '#666',
+              fontStyle: 'italic'
+            }}>
+              目前顯示全部紀錄，共 {totalRecords} 筆。
+              <br />
+              若資料過多，建議使用搜尋功能或設定分頁顯示。
+            </div>
+          ) : (
+            // 預設顯示提示文字
+            <div style={{
+              marginTop: '5px',
+              fontSize: '14px',
+              color: '#666',
+              fontStyle: 'italic'
+            }}>
+              預設五筆，更多資料可用搜尋功能
+            </div>
+          )}
+        </div>
         
         <div style={{
           display: 'flex',
@@ -100,22 +150,13 @@ const RecordsList: React.FC<RecordsListProps> = ({
             alignItems: 'center'
           }}>
             {/* 匯出 CSV 按鈕 */}
-            <button
+            <IconButton
+              icon={<Download size={16} />}
+              label="匯出 CSV"
               onClick={onExportRecords}
-              style={{
-                padding: '8px 16px',
-                fontSize: '14px',
-                fontWeight: '600',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                backgroundColor: '#28a745',
-                color: 'white'
-              }}
-            >
-              📊 匯出 CSV
-            </button>
+              variant="primary"
+              className="px-4 py-2 text-sm"
+            />
           </div>
         </div>
       </div>
@@ -133,52 +174,76 @@ const RecordsList: React.FC<RecordsListProps> = ({
         <div style={{
           display: 'flex',
           flexDirection: 'column',
-          gap: '12px'
+          gap: '16px'
         }}>
           {records.map((record) => (
             <div
               key={record.id}
               className="card"
               style={{
-                padding: '16px',
-                border: '1px solid #e0e0e0',
-                borderRadius: '8px'
+                padding: '16px 18px',
+                border: '1px solid #e2e8f0',
+                borderRadius: '10px',
+                backgroundColor: '#ffffff',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.08)';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.04)';
+                e.currentTarget.style.transform = 'translateY(0)';
               }}
             >
               <div style={{
                 display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'flex-start',
+                flexDirection: 'column',
                 gap: '12px'
               }}>
-                <div style={{ flex: 1 }}>
+                {/* 主要內容區域 */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px'
+                }}>
                   <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    marginBottom: '8px'
+                    width: '14px',
+                    height: '14px',
+                    borderRadius: '50%',
+                    backgroundColor: (() => {
+                      if (record.focusItemId) {
+                        const focusItem = focusItems.find(item => item.id === record.focusItemId);
+                        return focusItem ? focusItem.color : '#4caf50';
+                      }
+                      return '#4caf50';
+                    })(),
+                    flexShrink: 0
+                  }} />
+                  <span style={{
+                    fontSize: '17px',
+                    fontWeight: '600',
+                    color: '#2d3748',
+                    lineHeight: '1.3',
+                    flex: 1
                   }}>
-                    <div style={{
-                      width: '12px',
-                      height: '12px',
-                      borderRadius: '50%',
-                      backgroundColor: record.focusItemColor || '#4caf50'
-                    }} />
-                    <span style={{
-                      fontSize: '16px',
-                      fontWeight: '600',
-                      color: '#333'
-                    }}>
-                      {getFocusItemName(record.focusItemId)}
-                    </span>
-                  </div>
-                  
+                    {record.focusItemId ? getFocusItemName(record.focusItemId) : '未知項目'}
+                  </span>
+                </div>
+                
+                {/* 描述和時間區域 */}
+                <div style={{
+                  paddingLeft: '24px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px'
+                }}>
                   {record.description && (
                     <div style={{
                       fontSize: '14px',
-                      color: '#666',
-                      marginBottom: '8px',
-                      lineHeight: '1.4'
+                      color: '#4a5568',
+                      lineHeight: '1.5'
                     }}>
                       {record.description}
                     </div>
@@ -186,50 +251,37 @@ const RecordsList: React.FC<RecordsListProps> = ({
                   
                   <div style={{
                     fontSize: '13px',
-                    color: '#888'
+                    color: '#718096',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
                   }}>
-                    🕒 {formatDateTime(record.completedAt)}
+                    <span style={{ fontSize: '12px' }}>🕒</span>
+                    <span>{formatDateTime(record.completedAt)}</span>
                   </div>
                 </div>
                 
-                {/* 編輯和刪除按鈕 */}
+                {/* 編輯和刪除按鈕 - 移到下方 */}
                 <div style={{
                   display: 'flex',
                   gap: '8px',
-                  flexShrink: 0
+                  paddingLeft: '24px',
+                  marginTop: '4px'
                 }}>
-                  <button
+                  <IconButton
+                    icon="✏️"
+                    label="編輯"
                     onClick={() => onEditRecord(record)}
-                    style={{
-                      padding: '6px 12px',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      border: '1px solid #007bff',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      backgroundColor: 'transparent',
-                      color: '#007bff'
-                    }}
-                  >
-                    ✏️ 編輯
-                  </button>
-                  <button
+                    variant="primary"
+                    className="px-3 py-1 text-xs hover:scale-105"
+                  />
+                  <IconButton
+                    icon="🗑️"
+                    label="刪除"
                     onClick={() => onDeleteRecord(record.id)}
-                    style={{
-                      padding: '6px 12px',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      border: '1px solid #dc3545',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      backgroundColor: 'transparent',
-                      color: '#dc3545'
-                    }}
-                  >
-                    🗑️ 刪除
-                  </button>
+                    variant="danger"
+                    className="px-3 py-1 text-xs hover:scale-105"
+                  />
                 </div>
               </div>
             </div>
