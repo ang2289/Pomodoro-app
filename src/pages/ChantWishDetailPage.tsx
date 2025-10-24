@@ -324,9 +324,9 @@ export default function ChantWishDetailPage() {
   const handleShare = () => {
     if (!wish) return
     
-    // 使用實際網站域名而非本地端連結
-    const websiteDomain = 'https://chant-wish.vercel.app' // 替換為實際的網站域名
-    const shareUrl = `${websiteDomain}/chant-wish-detail/${wish.wish_no}`
+    // 使用相對路徑，由瀏覽器自動補全完整網址
+    const path = `/chant-wish-detail/${wish.wish_no}`
+    const shareUrl = window.location.origin + path
     const shareText = `🙏 一起幫忙集氣：${wish.title}\n念誦：${wish.chant_text} ${wish.chant_target_count}${wish.chant_unit}\n${shareUrl}`
     navigator.clipboard.writeText(shareText)
     alert('✅ 分享文字已複製，可貼到 TikTok / LINE 分享')
@@ -504,9 +504,9 @@ export default function ChantWishDetailPage() {
             <button
               onClick={() => {
                 if (!wish) return;
-                // 使用實際網站域名而非本地端連結
-                const websiteDomain = 'https://chant-wish.vercel.app';
-                const shareUrl = `${websiteDomain}/chant-wish-detail/${wish.wish_no}`;
+                // 使用相對路徑，由瀏覽器自動補全完整網址
+                const path = `/chant-wish-detail/${wish.wish_no}`;
+                const shareUrl = window.location.origin + path;
                 const shareText = `🙏 一起幫忙集氣：${wish.title}\n念誦：${wish.chant_text} ${wish.chant_target_count}${wish.chant_unit}`;
                 const lineUrl = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`;
                 window.open(lineUrl, '_blank');

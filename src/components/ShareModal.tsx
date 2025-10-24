@@ -12,12 +12,11 @@ export default function ShareModal({ wishText, wishUrl, onClose }: ShareModalPro
   const [shareTikTok, setShareTikTok] = useState(true)
   const [isSharing, setIsSharing] = useState(false)
 
-  // 使用實際網站域名而非本地端連結
-  const websiteDomain = 'https://chant-wish.vercel.app' // 替換為實際的網站域名
-  
+  // 使用相對路徑，由瀏覽器自動補全完整網址
   // 從 wishUrl 中提取 wish_no
   const wishNo = wishUrl.split('/').pop()
-  const shareUrl = `${websiteDomain}/wish/${wishNo}`
+  const path = `/wish/${wishNo}`
+  const shareUrl = window.location.origin + path
   
   const shareMessage = `🌟 我的願望：「${wishText}」\n✨ 幫我集氣 ➜ ${shareUrl}\n#集氣任務 #許願池 #AI願望牆`
 

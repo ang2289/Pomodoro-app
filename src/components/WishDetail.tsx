@@ -244,9 +244,9 @@ const WishDetail: React.FC<WishDetailProps> = ({ wishId, wishNo }) => {
           <button 
             className="px-4 py-2 bg-pink-500 text-white rounded-md hover:bg-pink-600 transition-colors"
             onClick={() => {
-              // 使用實際網站域名而非本地端連結
-              const websiteDomain = 'https://chant-wish.vercel.app'; // 替換為實際的網站域名
-              const shareUrl = `${websiteDomain}/wish/${wish.wish_no}`;
+              // 使用相對路徑，由瀏覽器自動補全完整網址
+              const path = `/wish/${wish.wish_no}`;
+              const shareUrl = window.location.origin + path;
               navigator.clipboard.writeText(shareUrl);
               alert('分享連結已複製到剪貼簿');
             }}

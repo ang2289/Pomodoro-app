@@ -148,10 +148,11 @@ export default function ChantWishCard({ wish }: ChantWishCardProps) {
   }
 
   const buildShareText = () => {
-    // 使用實際網站域名而非本地端連結
-    const websiteDomain = 'https://chant-wish.vercel.app' // 替換為實際的網站域名
-    const fullUrl = `${websiteDomain}/chant-wish-detail/${wish.wish_no}`
+    // 使用當前網站域名
     const target = wish.for_person_name || '有緣眾生'
+    // 使用相對路徑，由瀏覽器自動補全完整網址
+    const path = `/chant-wish-detail/${wish.wish_no}`
+    const fullUrl = window.location.origin + path
     return `我參加了「${wish.title}」🙏\n一起念誦 ${wish.chant_text}，為 ${target} 集氣祈福！\n👉 ${fullUrl}`
   }
 
@@ -162,9 +163,9 @@ export default function ChantWishCard({ wish }: ChantWishCardProps) {
   }
 
   const handleLineShare = () => {
-    // 使用實際網站域名而非本地端連結
-    const websiteDomain = 'https://chant-wish.vercel.app' // 替換為實際的網站域名
-    const fullUrl = `${websiteDomain}/chant-wish-detail/${wish.wish_no}`
+    // 使用相對路徑，由瀏覽器自動補全完整網址
+    const path = `/chant-wish-detail/${wish.wish_no}`
+    const fullUrl = window.location.origin + path
     const text = buildShareText()
     const lineUrl = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(fullUrl)}&text=${encodeURIComponent(text)}`
     window.open(lineUrl, '_blank')
