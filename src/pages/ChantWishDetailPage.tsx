@@ -8,6 +8,7 @@ import LightUpButton from '../components/LightUpButton'
 import SupportSection from '../components/SupportSection'
 import SupportButton from '../components/SupportButton'
 import LightRecordsModule from '../components/LightRecordsModule'
+import { config } from '../config'
 
 interface ChantWish {
   id: string
@@ -324,9 +325,9 @@ export default function ChantWishDetailPage() {
   const handleShare = () => {
     if (!wish) return
     
-    // 使用相對路徑，由瀏覽器自動補全完整網址
+    // 使用配置中的基礎 URL
     const path = `/chant-wish-detail/${wish.wish_no}`
-    const shareUrl = window.location.origin + path
+    const shareUrl = `${config.baseUrl}${path}`
     const shareText = `🙏 一起幫忙集氣：${wish.title}\n念誦：${wish.chant_text} ${wish.chant_target_count}${wish.chant_unit}\n${shareUrl}`
     navigator.clipboard.writeText(shareText)
     alert('✅ 分享文字已複製，可貼到 TikTok / LINE 分享')
@@ -504,9 +505,9 @@ export default function ChantWishDetailPage() {
             <button
               onClick={() => {
                 if (!wish) return;
-                // 使用相對路徑，由瀏覽器自動補全完整網址
+                // 使用配置中的基礎 URL
                 const path = `/chant-wish-detail/${wish.wish_no}`;
-                const shareUrl = window.location.origin + path;
+                const shareUrl = `${config.baseUrl}${path}`;
                 const shareText = `🙏 一起幫忙集氣：${wish.title}\n念誦：${wish.chant_text} ${wish.chant_target_count}${wish.chant_unit}`;
                 const lineUrl = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`;
                 window.open(lineUrl, '_blank');

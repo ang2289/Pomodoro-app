@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../utils/supabaseClient'
 import { deleteChantWish } from '../utils/deleteChantWish'
+import { config } from '../config'
 
 interface ChantWish {
   id: string
@@ -148,11 +149,10 @@ export default function ChantWishCard({ wish }: ChantWishCardProps) {
   }
 
   const buildShareText = () => {
-    // 使用當前網站域名
+    // 使用配置中的基礎 URL
     const target = wish.for_person_name || '有緣眾生'
-    // 使用相對路徑，由瀏覽器自動補全完整網址
     const path = `/chant-wish-detail/${wish.wish_no}`
-    const fullUrl = window.location.origin + path
+    const fullUrl = `${config.baseUrl}${path}`
     return `我參加了「${wish.title}」🙏\n一起念誦 ${wish.chant_text}，為 ${target} 集氣祈福！\n👉 ${fullUrl}`
   }
 
@@ -163,9 +163,9 @@ export default function ChantWishCard({ wish }: ChantWishCardProps) {
   }
 
   const handleLineShare = () => {
-    // 使用相對路徑，由瀏覽器自動補全完整網址
+    // 使用配置中的基礎 URL
     const path = `/chant-wish-detail/${wish.wish_no}`
-    const fullUrl = window.location.origin + path
+    const fullUrl = `${config.baseUrl}${path}`
     const text = buildShareText()
     const lineUrl = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(fullUrl)}&text=${encodeURIComponent(text)}`
     window.open(lineUrl, '_blank')

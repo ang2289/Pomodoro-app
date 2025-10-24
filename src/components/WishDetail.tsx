@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../utils/supabaseClient';
 import LightWishForm from './LightWishForm';
 import WishLightsList from './WishLightsList';
+import { config } from '../config';
 
 interface Wish {
   id: string;
@@ -244,9 +245,9 @@ const WishDetail: React.FC<WishDetailProps> = ({ wishId, wishNo }) => {
           <button 
             className="px-4 py-2 bg-pink-500 text-white rounded-md hover:bg-pink-600 transition-colors"
             onClick={() => {
-              // 使用相對路徑，由瀏覽器自動補全完整網址
+              // 使用配置中的基礎 URL
               const path = `/wish/${wish.wish_no}`;
-              const shareUrl = window.location.origin + path;
+              const shareUrl = `${config.baseUrl}${path}`;
               navigator.clipboard.writeText(shareUrl);
               alert('分享連結已複製到剪貼簿');
             }}
