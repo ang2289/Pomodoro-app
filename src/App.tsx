@@ -113,6 +113,8 @@ function App() {
           <Route path="/chant-wish-create" element={<CreateChantWishPage />} />
           <Route path="/chant-wish-wall" element={<ChantWishWallPage />} />
           <Route path="/chant-wish-detail/:wishNo" element={<ChantWishDetailPage />} />
+          {/* 添加對 /chant-wish/:id 格式的支持，以兼容現有連結 */}
+          <Route path="/chant-wish/:id" element={<ChantWishDetailPage />} />
           <Route path="/chant-stats" element={<ChantStatsPage />} />
           <Route path="/chant-ranking" element={<ChantRankingPage />} />
           <Route path="/chant-support-ranking" element={<ChantSupportRankingPage />} />

@@ -35,7 +35,8 @@ interface Comment {
 }
 
 export default function ChantWishDetailPage() {
-  const { wishNo } = useParams()
+  const { wishNo, id } = useParams()
+  const paramValue = wishNo || id // 使用 wishNo 或 id，兼容兩種路由格式
   const navigate = useNavigate()
   const [wish, setWish] = useState<ChantWish | null>(null)
   const [loading, setLoading] = useState(true)
@@ -110,7 +111,7 @@ export default function ChantWishDetailPage() {
 
   useEffect(() => {
     const fetchWish = async () => {
-      if (!wishNo) {
+      if (!paramValue) {
         setError('無效的活動編號')
         setLoading(false)
         return
@@ -120,16 +121,53 @@ export default function ChantWishDetailPage() {
         setLoading(true)
         setError(null)
 
-        const { data, error } = await supabase
-          .from('chant_wishes')
-          .select('*')
-          .eq('wish_no', wishNo)
-          .single()
+        let query = supabase.from('chant_wishes').select('*')
+        
+        // 嘗試先通過 wish_no 查詢（如果參數是數字）
+        if (!isNaN(Number(paramValue))) {
+          query = query.eq('wish_no', paramValue)
+        } else {
+          // 否則嘗試通過 id 查詢
+          query = query.eq('id', paramValue)
+        }
+        
+        const { data, error } = await query.single()
 
         if (error) {
           console.error('讀取錯誤', error)
-          setError('讀取活動失敗：' + error.message)
-          return
+          
+          // 如果第一次查詢失敗，嘗試另一種方式
+          if (!isNaN(Number(paramValue))) {
+            // 如果第一次是通過 wish_no 查詢，現在嘗試通過 id 查詢
+            const secondTry = await supabase
+              .from('chant_wishes')
+              .select('*')
+              .eq('id', paramValue)
+              .single()
+              
+            if (secondTry.error) {
+              setError('讀取活動失敗：' + error.message)
+              return
+            } else {
+              setWish(secondTry.data)
+              return
+            }
+          } else {
+            // 如果第一次是通過 id 查詢，現在嘗試通過 wish_no 查詢
+            const secondTry = await supabase
+              .from('chant_wishes')
+              .select('*')
+              .eq('wish_no', paramValue)
+              .single()
+              
+            if (secondTry.error) {
+              setError('讀取活動失敗：' + error.message)
+              return
+            } else {
+              setWish(secondTry.data)
+              return
+            }
+          }
         }
 
         setWish(data)
@@ -142,7 +180,7 @@ export default function ChantWishDetailPage() {
     }
 
     fetchWish()
-  }, [wishNo])
+  }, [paramValue])
 
   // 當 wish 狀態更新時，載入相關資料
   useEffect(() => {
