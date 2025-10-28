@@ -50,7 +50,7 @@ export default function ChantButton({ onSoundPlay, onCount, customWoodfishImage,
         <button
           type="button"
           onClick={handleClick}
-          className={`group w-28 h-28 rounded-full bg-gradient-to-br from-amber-300 via-yellow-400 to-amber-500 
+          className={`group w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gradient-to-br from-amber-300 via-yellow-400 to-amber-500 
             shadow-[0_10px_20px_rgba(0,0,0,0.2)] !border-0 !outline-none !ring-0 focus:!outline-none focus:!ring-0 
             flex items-center justify-center transition-all duration-200 
             ${animate ? 'translate-y-[2px] shadow-[0_6px_14px_rgba(0,0,0,0.18)]' : 'active:translate-y-[2px] active:shadow-[0_6px_14px_rgba(0,0,0,0.18)]'}`}
@@ -58,7 +58,7 @@ export default function ChantButton({ onSoundPlay, onCount, customWoodfishImage,
         >
           <img
             src={customWoodfishImage || "/assets/woodfish.png"}
-            className={`w-20 h-20 select-none pointer-events-none border-0 outline-none ${animate ? 'woodfish-clicked' : ''}`}
+            className={`w-16 h-16 sm:w-20 sm:h-20 select-none pointer-events-none border-0 outline-none ${animate ? 'woodfish-clicked' : ''}`}
             alt="敲木魚"
             style={{ WebkitTapHighlightColor: 'transparent' }}
           />
@@ -77,7 +77,7 @@ export default function ChantButton({ onSoundPlay, onCount, customWoodfishImage,
         id="woodfish-upload"
       />
       <label htmlFor="woodfish-upload">
-        <div className="bg-yellow-500 text-white px-4 py-2 rounded cursor-pointer hover:bg-yellow-600 transition-colors duration-200">
+        <div className="w-full max-w-xs lg:w-40 mx-auto block bg-yellow-500 text-white px-3 sm:px-4 py-2 rounded cursor-pointer hover:bg-yellow-600 transition-colors duration-200 text-sm sm:text-base">
           上傳自訂木魚圖
         </div>
       </label>
@@ -85,7 +85,7 @@ export default function ChantButton({ onSoundPlay, onCount, customWoodfishImage,
       {/* 還原預設按鈕 */}
       <div 
         onClick={onReset}
-        className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500 cursor-pointer transition-colors duration-200"
+        className="w-full max-w-xs lg:w-40 mx-auto block bg-gray-400 text-white px-3 sm:px-4 py-2 rounded hover:bg-gray-500 cursor-pointer transition-colors duration-200 text-sm sm:text-base"
       >
         還原預設
       </div>

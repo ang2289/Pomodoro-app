@@ -44,28 +44,31 @@ export default function TodoList({ todos, onDelete, onToggleComplete, onEdit, fo
 
   return (
     <div className="space-y-3">
-      <div className="mb-4">
-        <p>總任務數：{statistics.total}</p>
-        <p>已完成：{statistics.done}</p>
-        <p>未開始：{statistics.notStarted}</p>
-        <p>進行中：{statistics.doing}</p>
+      <div className="mb-4 p-4 sm:p-6 bg-gray-50 rounded-xl">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 text-sm sm:text-base overflow-wrap break-word">
+          <p>總任務數：{statistics.total}</p>
+          <p>已完成：{statistics.done}</p>
+          <p>未開始：{statistics.notStarted}</p>
+          <p>進行中：{statistics.doing}</p>
+        </div>
       </div>
-      {tasks.map(todo => (
-        <div 
-          key={todo.id} 
-          className="w-full max-w-md mx-auto bg-white rounded-xl shadow-md p-4 mb-4"
-        >
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        {tasks.map(todo => (
+          <div 
+            key={todo.id} 
+            className="w-full bg-white rounded-xl shadow-md p-4 sm:p-6 overflow-wrap break-word"
+          >
           <div className="flex justify-between items-start">
             <div>
-              <h3 className={`text-base font-medium mb-2 ${
+              <h3 className={`text-sm sm:text-base font-medium mb-2 overflow-wrap break-word ${
                 todo.status === '已完成' 
                   ? 'line-through text-gray-400' 
                   : 'text-gray-800'
               }`}>
                 {todo.title}
               </h3>
-              <p className="text-sm text-gray-500">🗓 {formatDate(todo.datetime)}</p>
-              <p className="text-sm text-gray-500">🏷️ 優先度：<span className={`font-bold ${
+              <p className="text-xs sm:text-sm text-gray-500 overflow-wrap break-word">🗓 {formatDate(todo.datetime)}</p>
+              <p className="text-xs sm:text-sm text-gray-500 overflow-wrap break-word">🏷️ 優先度：<span className={`font-bold ${
                 todo.priority === 'high' ? 'text-red-600' : 
                 todo.priority === 'medium' ? 'text-orange-600' : 
                 'text-green-600'
@@ -104,8 +107,9 @@ export default function TodoList({ todos, onDelete, onToggleComplete, onEdit, fo
               🗑️ 刪除
             </button>
           </div>
-        </div>
-      ))}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

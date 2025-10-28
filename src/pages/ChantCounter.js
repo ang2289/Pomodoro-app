@@ -290,8 +290,34 @@ const ChantCounter = () => {
         const file = e.target.files?.[0];
         if (!file)
             return;
-        setCustomFile(file);
-        setSelected('custom');
+        
+        // 檢查檔案大小（限制為5MB）
+        const maxSize = 5 * 1024 * 1024; // 5MB
+        if (file.size > maxSize) {
+            alert('檔案太大！請選擇小於5MB的MP3檔案。');
+            e.target.value = '';
+            return;
+        }
+        
+        try {
+            setCustomFile(file);
+            setSelected('custom');
+        } catch (error) {
+            console.error('處理自訂音效檔案失敗:', error);
+            alert('檔案處理失敗，請重試。');
+        }
+        // 重置input值，以便能夠重新選擇相同檔案
+        e.target.value = '';
+    };
+    // 清除自訂音效
+    const clearCustomSound = () => {
+        setCustomFile(null);
+        localStorage.removeItem('custom-sound-file');
+        localStorage.removeItem('chant-sound');
+        setSelected('chant1');
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
     };
     // 觸發檔案選擇對話框
     const triggerFileUpload = () => {

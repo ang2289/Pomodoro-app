@@ -37,17 +37,17 @@ export default function ModuleDropdown() {
   }
 
   return (
-    <div className="relative w-full max-w-xs mx-auto mb-4">
+    <div className="relative w-full max-w-xs mx-auto mb-3 sm:mb-4">
       {/* 下拉選單按鈕 */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between px-4 py-3 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        className="w-full flex items-center justify-between px-3 sm:px-4 py-2 sm:py-3 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
       >
         <div className="flex items-center">
-          <span className="text-base font-medium text-gray-700">{getCurrentOption().label}</span>
+          <span className="text-sm sm:text-base font-medium text-gray-700">{getCurrentOption().label}</span>
         </div>
         <svg 
-          className={`w-4 h-4 text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          className={`w-3 h-3 sm:w-4 sm:h-4 text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`}
           fill="none" 
           stroke="currentColor" 
           viewBox="0 0 24 24"
@@ -68,7 +68,7 @@ export default function ModuleDropdown() {
                 <button
                   key={option.value}
                   onClick={() => handleChange(option.value)}
-                  className={`w-full text-left px-4 py-3 text-base transition-colors ${
+                  className={`w-full text-left px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base transition-colors ${
                     isActive 
                       ? 'bg-blue-50 text-blue-700 font-medium' 
                       : 'text-gray-700 hover:bg-gray-50'

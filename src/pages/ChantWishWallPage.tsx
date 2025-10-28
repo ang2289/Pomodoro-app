@@ -125,21 +125,21 @@ export default function ChantWishWallPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
-      <div className="responsive-container">
-      <h1 className="text-2xl sm:text-3xl font-bold text-center text-gray-800 mb-6">集氣活動牆</h1>
-      <div className="space-y-4 mb-6">
+      <div className="max-w-screen-md mx-auto px-4 w-full">
+      <h1 className="text-lg sm:text-xl font-bold text-center text-gray-800 mb-6 overflow-wrap break-word">集氣活動牆</h1>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         <button
-          className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 !text-white font-bold py-3 sm:py-4 px-4 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg text-base sm:text-lg"
+          className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 !text-white font-bold py-3 sm:py-4 px-4 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-md text-sm sm:text-base overflow-wrap break-word"
         >
           前往排行榜
         </button>
         <button
-          className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 !text-white font-bold py-3 sm:py-4 px-4 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg text-base sm:text-lg"
+          className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 !text-white font-bold py-3 sm:py-4 px-4 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-md text-sm sm:text-base overflow-wrap break-word"
         >
           支持排行榜
         </button>
       </div>
-      <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
+      <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 mb-6">
         <div className="flex items-center mb-4">
           <label htmlFor="search-checkbox" className="text-base sm:text-lg font-medium text-gray-700 mr-3">啟用搜尋</label>
           <input id="search-checkbox" type="checkbox" className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" title="啟用搜尋" />
@@ -223,23 +223,28 @@ export default function ChantWishWallPage() {
             <p className="text-blue-600 text-base sm:text-lg">共 {filtered.length} 筆集氣活動</p>
           </div>
 
-          {filtered
-            .slice((page - 1) * pageSize, page * pageSize)
-            .map((wish, index) => (
-              <div
-                key={wish.id}
-                className={`rounded-xl shadow-md mb-4 sm:mb-6 border border-gray-200 p-4 sm:p-5 ${index % 2 === 0 ? 'bg-white' : 'bg-orange-50'}`}
-              >
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+            {filtered
+              .slice((page - 1) * pageSize, page * pageSize)
+              .map((wish, index) => (
+                <div
+                  key={wish.id}
+                  className={`rounded-xl shadow-md border border-gray-200 p-4 sm:p-5 ${index % 2 === 0 ? 'bg-white' : 'bg-orange-50'}`}
+                >
                 {wish.image_url && (
-                  <div className="mb-3 sm:mb-4">
-                    <div className="rounded-md border border-gray-200 shadow overflow-hidden">
-                      <img src={wish.image_url} alt="活動圖片" className="w-full max-h-48 sm:max-h-56 object-cover bg-white" />
-                    </div>
+                  <div className="w-full h-[220px] flex items-center justify-center bg-white rounded-md overflow-hidden">
+                    <img
+                      src={wish.image_url}
+                      alt="願望圖片"
+                      className="h-full w-auto object-contain"
+                      loading="lazy"
+                    />
                   </div>
                 )}
                 <ChantWishCard wish={wish} />
-              </div>
-            ))}
+                </div>
+              ))}
+          </div>
           
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 bg-white rounded-lg shadow-lg p-4">
             <button

@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { notificationService } from './services/notificationService'
 import MainLayout from './layouts/MainLayout'
@@ -31,6 +31,9 @@ import ChantStatsPage from './pages/ChantStatsPage'
 import ChantRankingPage from './pages/ChantRankingPage'
 import ChantSupportRankingPage from './pages/ChantSupportRankingPage'
 import SupportRankingPage from './pages/SupportRankingPage'
+import PrivacyPolicy from './pages/PrivacyPolicy'
+import Terms from './pages/Terms'
+import About from './pages/About'
 import Footer from './components/Footer'
 import AdBanner from './components/AdBanner'
 // 已移除廣告
@@ -79,9 +82,8 @@ function App() {
   }, [])
 
   return (
-    <div className="w-full min-h-screen">
-      <main>
-        <Routes>
+    <div className="w-full min-h-screen max-w-screen-md mx-auto">
+      <Routes>
           {/* 主要巢狀路由 - 使用 MainLayout */}
           <Route path="/" element={<MainLayout />}>
             <Route index element={<PomodoroPage />} />
@@ -120,14 +122,22 @@ function App() {
           <Route path="/chant-support-ranking" element={<ChantSupportRankingPage />} />
           <Route path="/support-ranking" element={<SupportRankingPage />} />
           <Route path="/chant-support-leaderboard" element={<SupportRankingPage />} />
+          
+          {/* 網站基本頁面 */}
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/about" element={<About />} />
         </Routes>
-      </main>
       
-      {/* 底部導覽 - 已移除 */}
-      {/* <Footer /> */}
+      {/* 底部政策連結 - 全站共用 */}
+      <footer className="text-center text-xs text-gray-400 py-6 px-4">
+        <Link to="/privacy-policy" className="underline mx-2 hover:text-gray-600">隱私權政策</Link>|
+        <Link to="/terms" className="underline mx-2 hover:text-gray-600">使用條款</Link>|
+        <Link to="/about" className="underline mx-2 hover:text-gray-600">關於我們</Link>
+      </footer>
       
       {/* AdBanner 廣告 */}
-      <AdBanner />
+      {false && <AdBanner />}
       
       {/* Toast 通知 */}
       <Toaster 

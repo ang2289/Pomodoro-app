@@ -670,8 +670,8 @@ const PomodoroPage = () => {
   void _resetTimer;
 
   return (
-    <div className="responsive-container bg-gray-50 min-h-screen flex flex-col">
-      <main className="flex-1">
+    <div className="bg-gray-50 min-h-screen flex flex-col">
+      <main className="flex-1 max-w-screen-md mx-auto px-4 w-full">
         {/* 模組選擇下拉選單 */}
         <ModuleDropdown />
         
@@ -679,7 +679,7 @@ const PomodoroPage = () => {
         <HeaderBar icon="🍅" title="番茄鐘" />
       
       {/* 圓形計時器 */}
-      <div className="card" style={{ backgroundColor: '#ffffff', color: '#213547' }}>
+      <div className="rounded-xl shadow-md p-4 sm:p-6 bg-white" style={{ color: '#213547' }}>
         <CircularTimer
           timeLeft={timeLeft}
           totalSeconds={isBreak ? breakMinutes * 60 : workMinutes * 60}

@@ -1,8 +1,12 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../utils/supabaseClient';
 import LightWishForm from './LightWishForm';
 import WishLightsList from './WishLightsList';
 import { config } from '../config';
+import { useUserStore } from '../store/userStore';
+import GoogleAdBanner from './GoogleAdBanner';
+import { getWebSubscriptionStatus } from '../services/subscriptionService';
 
 interface Wish {
   id: string;
@@ -21,6 +25,8 @@ interface WishDetailProps {
 }
 
 const WishDetail: React.FC<WishDetailProps> = ({ wishId, wishNo }) => {
+  const navigate = useNavigate();
+  const { isWebSubscribed, setWebSubscribed } = useUserStore();
   const [wish, setWish] = useState<Wish | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,6 +34,15 @@ const WishDetail: React.FC<WishDetailProps> = ({ wishId, wishNo }) => {
   const [userName, setUserName] = useState('');
   const [message, setMessage] = useState('');
   const [hasLightedToday, setHasLightedToday] = useState(false);
+
+  // 初始化網站訂閱狀態
+  useEffect(() => {
+    const loadSubscriptionStatus = async () => {
+      const status = await getWebSubscriptionStatus();
+      setWebSubscribed(status);
+    };
+    loadSubscriptionStatus();
+  }, [setWebSubscribed]);
 
   useEffect(() => {
     const fetchWish = async () => {
@@ -166,97 +181,134 @@ const WishDetail: React.FC<WishDetailProps> = ({ wishId, wishNo }) => {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6">
-      <div className="mb-6">
-        <div className="flex justify-between items-start">
-          <h1 className="text-2xl font-bold text-gray-800">願望 #{wish.wish_no}</h1>
-          <span className="text-sm text-gray-500">
-            {new Date(wish.created_at).toLocaleDateString('zh-TW')}
-          </span>
+    <>
+      {/* Google AdSense 橫幅廣告 - 僅網頁版顯示 */}
+      {!isWebSubscribed && (
+        <div className="hidden md:block mb-4">
+          <GoogleAdBanner />
         </div>
-        
-        <div className="mt-4 p-4 bg-pink-50 rounded-lg">
-          <p className="text-lg text-gray-700 whitespace-pre-wrap">{wish.content}</p>
-        </div>
-        
-        <div className="mt-3 flex items-center text-sm text-gray-600">
-          <span>來自：{wish.user_name || '匿名'}</span>
-        </div>
-      </div>
-      
-      <div className="border-t border-gray-100 pt-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold text-gray-700">點燈祈福</h2>
-          <div className="flex items-center text-yellow-600">
-            <span className="text-2xl mr-1">🪔</span>
-            <span>{lightCount} 盞燈</span>
+      )}
+
+      <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 max-w-screen-md mx-auto overflow-wrap break-word">
+        <div className="mb-6">
+          <div className="flex justify-between items-start">
+            <h1 className="text-lg sm:text-xl font-bold text-gray-800 overflow-wrap break-word">願望 #{wish.wish_no}</h1>
+            <span className="text-sm text-gray-500">
+              {new Date(wish.created_at).toLocaleDateString('zh-TW')}
+            </span>
+          </div>
+          
+          <div className="mt-4 p-4 sm:p-6 bg-pink-50 rounded-xl">
+            <p className="text-sm sm:text-base text-gray-700 whitespace-pre-wrap overflow-wrap break-word">{wish.content}</p>
+          </div>
+          
+          <div className="mt-3 flex items-center text-sm text-gray-600">
+            <span>來自：{wish.user_name || '匿名'}</span>
           </div>
         </div>
         
-        {/* 點燈表單 */}
-        <LightWishForm wishId={wish.id} onSuccess={updateLightCount} />
-        
-        {/* 點燈列表 */}
-        <div className="mt-6 pt-4 border-t border-gray-100">
-          <h3 className="text-lg font-medium text-gray-700 mb-3">祈福紀錄</h3>
-          <WishLightsList chantWishId={wish.id} />
-        </div>
-
-        <div className="mt-6">
-          {!hasLightedToday && (
-            <div className="mb-4">
-              <label htmlFor="userName" className="block text-sm text-gray-600 mb-1">
-                您的名字（可留空）
-              </label>
-              <input
-                id="userName"
-                type="text"
-                value={userName}
-                onChange={(e) => setUserName(e.target.value)}
-                placeholder="匿名善信"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-              />
-
-              <label htmlFor="message" className="block text-sm text-gray-600 mb-1 mt-4">
-                祈福留言（可留空）
-              </label>
-              <textarea
-                id="message"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder="願一切眾生平安喜樂"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                rows={3}
-              />
+        <div className="border-t border-gray-100 pt-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-700 overflow-wrap break-word">點燈祈福</h2>
+            <div className="flex items-center text-yellow-600">
+              <span className="text-2xl mr-1">🪔</span>
+              <span>{lightCount} 盞燈</span>
             </div>
-          )}
+          </div>
+          
+          {/* 點燈表單 */}
+          <LightWishForm wishId={wish.id} onSuccess={updateLightCount} />
+          
+          {/* 點燈列表 */}
+          <div className="mt-6 pt-4 border-t border-gray-100">
+            <h3 className="text-lg font-medium text-gray-700 mb-3">祈福紀錄</h3>
+            <WishLightsList chantWishId={wish.id} />
+          </div>
 
+          <div className="mt-6">
+            {!hasLightedToday && (
+              <div className="mb-4">
+                <label htmlFor="userName" className="block text-sm text-gray-600 mb-1">
+                  您的名字（可留空）
+                </label>
+                <input
+                  id="userName"
+                  type="text"
+                  value={userName}
+                  onChange={(e) => setUserName(e.target.value)}
+                  placeholder="匿名善信"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm sm:text-base"
+                />
+
+                <label htmlFor="message" className="block text-sm text-gray-600 mb-1 mt-4">
+                  祈福留言（可留空）
+                </label>
+                <textarea
+                  id="message"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="願一切眾生平安喜樂"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm sm:text-base"
+                  rows={3}
+                />
+              </div>
+            )}
+
+            <button
+              onClick={handleLight}
+              className="w-full sm:w-auto px-4 py-2 bg-pink-500 text-white rounded-md hover:bg-pink-600 transition-colors text-sm sm:text-base"
+            >
+              點燈祈福
+            </button>
+          </div>
+        </div>
+        
+        <div className="mt-8 pt-6 border-t border-gray-100">
+          <div className="flex flex-col sm:flex-row justify-center gap-3">
+            <button 
+              className="w-full sm:w-auto px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors text-sm sm:text-base"
+              onClick={() => {
+                // 使用配置中的基礎 URL
+                const path = `/wish/${wish.wish_no}`;
+                const shareUrl = `${config.baseUrl}${path}`;
+                const shareText = `🙏 一起幫忙集氣：${wish.content.substring(0, 30)}${wish.content.length > 30 ? '...' : ''}`;
+                const lineUrl = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`;
+                window.open(lineUrl, '_blank');
+              }}
+            >
+              LINE 分享
+            </button>
+            <button 
+              className="w-full sm:w-auto px-4 py-2 bg-pink-500 text-white rounded-md hover:bg-pink-600 transition-colors text-sm sm:text-base"
+              onClick={() => {
+                // 使用配置中的基礎 URL
+                const path = `/wish/${wish.wish_no}`;
+                const shareUrl = `${config.baseUrl}${path}`;
+                navigator.clipboard.writeText(shareUrl);
+                alert('分享連結已複製到剪貼簿');
+              }}
+            >
+              複製連結
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* 訂閱方案提示 - 僅網頁版且未訂閱時顯示 */}
+      {!isWebSubscribed && (
+        <div className="hidden md:block mt-6 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-6 text-center max-w-screen-md mx-auto">
+          <p className="text-gray-700 mb-4">
+            🎯 升級為訂閱方案即可移除網站廣告
+          </p>
           <button
-            onClick={handleLight}
-            className="px-4 py-2 bg-pink-500 text-white rounded-md hover:bg-pink-600 transition-colors"
+            onClick={() => navigate('/subscribe')}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
           >
-            點燈祈福
+            了解訂閱方案
           </button>
         </div>
-      </div>
-      
-      <div className="mt-8 pt-6 border-t border-gray-100">
-        <div className="flex justify-center">
-          <button 
-            className="px-4 py-2 bg-pink-500 text-white rounded-md hover:bg-pink-600 transition-colors"
-            onClick={() => {
-              // 使用配置中的基礎 URL
-              const path = `/wish/${wish.wish_no}`;
-              const shareUrl = `${config.baseUrl}${path}`;
-              navigator.clipboard.writeText(shareUrl);
-              alert('分享連結已複製到剪貼簿');
-            }}
-          >
-            分享這個願望
-          </button>
-        </div>
-      </div>
-    </div>
+      )}
+    </>
   );
 };
 

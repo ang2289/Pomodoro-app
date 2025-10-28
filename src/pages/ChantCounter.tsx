@@ -147,7 +147,7 @@ const ChantCounter = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 p-3 sm:p-4">
-      <div className="w-full responsive-container">
+      <div className="w-full max-w-screen-md mx-auto px-4">
         <ModuleDropdown />
         
         <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 mb-4 sm:mb-6">
@@ -220,14 +220,14 @@ const ChantCounter = () => {
           <div className="flex gap-2">
             <button
               onClick={addChant}
-              className="px-3 sm:px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm sm:text-base"
+              className="flex-1 sm:flex-initial sm:px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm sm:text-base"
             >
               新增念誦
             </button>
             {selectedChant && chantList.includes(selectedChant) && (
               <button
                 onClick={() => removeChant(selectedChant)}
-                className="px-3 sm:px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm sm:text-base"
+                className="flex-1 sm:flex-initial sm:px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm sm:text-base"
               >
                 刪除
               </button>

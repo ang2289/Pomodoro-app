@@ -453,9 +453,9 @@ export default function ChantWishDetailPage() {
           </div>
 
           {wish.image_url && (
-            <div className="mb-6">
-              <div className="rounded-md border border-gray-200 shadow overflow-hidden">
-                <img src={wish.image_url} alt="活動圖片" className="w-full max-h-72 object-cover bg-white" />
+            <div className="mb-6 flex justify-center items-center">
+              <div className="w-full max-w-[320px] mx-auto">
+                <img src={wish.image_url} alt="願望圖片" className="max-h-60 w-auto max-w-full object-contain mx-auto rounded" />
               </div>
             </div>
           )}

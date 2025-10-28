@@ -20,5 +20,27 @@ export default function WishWallPage() {
         }
         fetchWishes();
     }, []);
-    return (_jsxs("div", { className: "responsive-container", children: [_jsx("h1", { className: "text-xl font-bold mb-4", children: "\u2728 \u96C6\u6C23\u7246" }), loading ? (_jsx("p", { children: "\u8F09\u5165\u4E2D..." })) : wishes.length === 0 ? (_jsx("p", { children: "\u76EE\u524D\u9084\u6C92\u6709\u9858\u671B\uFF0C\u5FEB\u4F86\u8A31\u4E00\u500B\u5427\uFF01" })) : (wishes.map((wish) => _jsx(WishCard, { wish: wish, showLightButton: true }, wish.id)))] }));
+    return (_jsxs("div", { 
+        className: "max-w-screen-md mx-auto px-4 w-full", 
+        children: [
+            _jsx("h1", { 
+                className: "text-lg sm:text-xl font-bold mb-4 text-center overflow-wrap break-word", 
+                children: "\u2728 \u96C6\u6C23\u7246" 
+            }), 
+            loading ? 
+                _jsx("p", { 
+                    className: "text-center", 
+                    children: "\u8F09\u5165\u4E2D..." 
+                }) : 
+                wishes.length === 0 ? 
+                    _jsx("p", { 
+                        className: "text-center", 
+                        children: "\u76EE\u524D\u9084\u6C92\u6709\u9858\u671B\uFF0C\u5FEB\u4F86\u8A31\u4E00\u500B\u5427\uFF01" 
+                    }) : 
+                    _jsxs("div", { 
+                        className: "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4", 
+                        children: wishes.map((wish) => _jsx(WishCard, { wish: wish, showLightButton: true }, wish.id)) 
+                    })
+        ] 
+    }));
 }

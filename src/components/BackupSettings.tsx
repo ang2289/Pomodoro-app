@@ -21,20 +21,28 @@ export default function BackupSettings() {
     <div className="border-t pt-4 mt-6">
       <h2 className="text-xl font-semibold mb-3">📦 資料備份與還原</h2>
 
-      <div className="space-x-4">
-        <button
-          onClick={backupDataToFile}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition"
-        >
-          匯出備份（.json）
-        </button>
+      <div className="flex flex-col space-y-3">
+        <div className="flex justify-center">
+          <div className="w-1/3">
+            <button
+              onClick={backupDataToFile}
+              className="w-full text-white bg-blue-600 hover:bg-blue-700 font-bold py-2 px-4 rounded"
+            >
+              匯出備份（.json）
+            </button>
+          </div>
+        </div>
 
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded transition"
-        >
-          匯入還原（.json）
-        </button>
+        <div className="flex justify-center mt-3">
+n         <div className="w-1/3">
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full text-white bg-green-600 hover:bg-green-700 font-bold py-2 px-4 rounded"
+            >
+              匯入還原（.json）
+            </button>
+          </div>
+        </div>
 
         <input
           ref={fileInputRef}

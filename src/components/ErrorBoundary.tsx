@@ -24,7 +24,7 @@ export default class ErrorBoundary extends React.Component<React.PropsWithChildr
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex flex-col min-h-screen bg-white overflow-y-auto px-4 pt-4 text-black">
+        <div className="flex flex-col min-h-screen bg-white px-4 pt-4 text-black">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-red-600 mb-4">❌ 頁面載入錯誤</h1>
             <p className="text-gray-600 mb-2">{this.state.errorMessage}</p>

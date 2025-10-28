@@ -41,29 +41,30 @@ const WishMenu: React.FC = () => {
   ];
 
   return (
-    <Card className="card rounded-2xl shadow-md p-3 sm:p-4 md:p-6">
+    <Card className="card rounded-xl shadow-md p-4 sm:p-6">
       <div className="text-center">
-        <h2 className="text-xl font-bold mb-2">發起集氣活動，邀請大家一起幫忙助念</h2>
-        <p className="text-gray-600 mb-6 text-sm">選擇您想要進行的操作</p>
+        <h2 className="text-lg sm:text-xl font-bold mb-2 overflow-wrap break-word">發起集氣活動，邀請大家一起幫忙助念</h2>
+        <p className="text-gray-600 mb-6 text-sm sm:text-base overflow-wrap break-word">選擇您想要進行的操作</p>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
           {menuItems.map((item) => (
             <button
               key={item.id}
               onClick={item.onClick}
               className={`
-                w-full bg-gradient-to-r ${item.gradient} hover:${item.hoverGradient}
-                text-white font-bold py-4 px-4 rounded-xl
+                w-full sm:w-auto bg-gradient-to-r ${item.gradient} hover:${item.hoverGradient}
+                text-white font-bold py-3 sm:py-4 px-3 sm:px-4 rounded-xl
                 transition-all duration-200 transform hover:scale-105
-                shadow-lg hover:shadow-xl
+                shadow-md hover:shadow-lg
                 flex flex-col items-center justify-center
-                min-h-[80px] space-y-1
+                min-h-[70px] sm:min-h-[80px] space-y-1
+                overflow-wrap break-word
               `}
             >
               <div className="flex items-center justify-center">
-                <span className="text-lg sm:text-xl text-white" style={{ color: '#ffffff' }}>{item.title}</span>
+                <span className="text-sm sm:text-base text-white overflow-wrap break-word" style={{ color: '#ffffff' }}>{item.title}</span>
               </div>
-              <p className="text-sm sm:text-base text-white text-center leading-tight" style={{ color: '#ffffff' }}>
+              <p className="text-xs sm:text-sm text-white text-center leading-tight overflow-wrap break-word" style={{ color: '#ffffff' }}>
                 {item.description}
               </p>
             </button>

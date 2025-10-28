@@ -299,27 +299,28 @@ const SearchRecords: React.FC<SearchRecordsProps> = ({
         </div>
 
         {/* 搜尋按鈕 */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          gap: '15px',
-          flexWrap: 'wrap'
-        }}>
-          <IconButton
-            onClick={onSearch}
-            disabled={isSearching}
-            variant="primary"
-            icon="🔍"
-            label={isSearching ? '搜尋中...' : '搜尋'}
-            className="hover:scale-105"
-          />
-          <IconButton
-            onClick={onClearSearch}
-            variant="primary"
-            icon="🗑️"
-            label="清除"
-            className="hover:scale-105"
-          />
+        <div className="flex flex-col space-y-3">
+          <div className="flex justify-center">
+            <div className="w-1/3">
+              <button
+                onClick={onSearch}
+                disabled={isSearching}
+                className="w-full !bg-blue-600 hover:!bg-blue-700 !text-white font-semibold py-2 px-4 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                🔍 {isSearching ? '搜尋中...' : '搜尋'}
+              </button>
+            </div>
+          </div>
+          <div className="flex justify-center">
+            <div className="w-1/3">
+              <button
+                onClick={onClearSearch}
+                className="w-full !bg-green-600 hover:!bg-green-700 !text-white font-semibold py-2 px-4 rounded transition-colors"
+              >
+                🗑️ 清除
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

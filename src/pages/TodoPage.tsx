@@ -194,23 +194,23 @@ export default function TodoPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
-      <div className="responsive-container">
+      <div className="max-w-screen-md mx-auto px-4 w-full">
         <ModuleDropdown />
         
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-          <h1 className="text-2xl font-bold text-gray-800 mb-6">📋 待辦事項</h1>
+        <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 mb-6">
+          <h1 className="text-lg sm:text-xl font-bold text-gray-800 mb-4 sm:mb-6 overflow-wrap break-word">📋 待辦事項</h1>
 
           {/* 新增待辦事項 */}
-          <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-            <h2 className="text-lg font-semibold text-gray-700 mb-4">新增待辦事項</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="mb-6 p-4 sm:p-6 bg-gray-50 rounded-xl">
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-700 mb-4 overflow-wrap break-word">新增待辦事項</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">標題 *</label>
                 <input
                   type="text"
                   value={newTodo.title || ''}
                   onChange={(e) => setNewTodo({ ...newTodo, title: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base overflow-wrap break-word"
                   placeholder="輸入待辦事項標題"
                   title="請輸入待辦事項"
                 />
@@ -221,7 +221,7 @@ export default function TodoPage() {
                 <select
                   value={newTodo.category || ''}
                   onChange={(e) => setNewTodo({ ...newTodo, category: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
                   title="選擇分類"
                 >
                   {categories.map(category => (
@@ -302,10 +302,10 @@ export default function TodoPage() {
               />
             </div>
             
-            <div className="mt-4 flex justify-end">
+            <div className="mt-4">
               <button
                 onClick={addTodo}
-                className="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+                className="w-full max-w-xs lg:w-40 mx-auto block px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
               >
                 新增待辦事項
               </button>
@@ -314,10 +314,10 @@ export default function TodoPage() {
 
           {/* 篩選器 */}
           <div className="mb-6 flex flex-wrap gap-4">
-            <div className="flex gap-2">
+            <div className="flex gap-2 w-full sm:w-auto">
               <button
                 onClick={() => setFilter('all')}
-                className={`px-4 py-2 rounded-md transition-colors ${
+                className={`flex-1 sm:flex-initial sm:px-4 py-2 rounded-md transition-colors ${
                   filter === 'all' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                 }`}
               >
@@ -325,7 +325,7 @@ export default function TodoPage() {
               </button>
               <button
                 onClick={() => setFilter('pending')}
-                className={`px-4 py-2 rounded-md transition-colors ${
+                className={`flex-1 sm:flex-initial sm:px-4 py-2 rounded-md transition-colors ${
                   filter === 'pending' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                 }`}
               >
@@ -333,7 +333,7 @@ export default function TodoPage() {
               </button>
               <button
                 onClick={() => setFilter('completed')}
-                className={`px-4 py-2 rounded-md transition-colors ${
+                className={`flex-1 sm:flex-initial sm:px-4 py-2 rounded-md transition-colors ${
                   filter === 'completed' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                 }`}
               >
@@ -453,7 +453,7 @@ export default function TodoPage() {
             <div className="mt-6 pt-4 border-t border-gray-200">
               <button
                 onClick={clearCompleted}
-                className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
+                className="w-full max-w-xs lg:w-40 mx-auto block px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
               >
                 清除已完成項目
               </button>
