@@ -34,6 +34,7 @@ import SupportRankingPage from './pages/SupportRankingPage'
 import PrivacyPolicy from './pages/PrivacyPolicy'
 import Terms from './pages/Terms'
 import About from './pages/About'
+import FeaturesPage from './pages/FeaturesPage'
 import Footer from './components/Footer'
 import AdBanner from './components/AdBanner'
 // 已移除廣告
@@ -127,13 +128,15 @@ function App() {
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/about" element={<About />} />
+          <Route path="/features" element={<FeaturesPage />} />
         </Routes>
       
       {/* 底部政策連結 - 全站共用 */}
       <footer className="text-center text-xs text-gray-400 py-6 px-4">
         <Link to="/privacy-policy" className="underline mx-2 hover:text-gray-600">隱私權政策</Link>|
         <Link to="/terms" className="underline mx-2 hover:text-gray-600">使用條款</Link>|
-        <Link to="/about" className="underline mx-2 hover:text-gray-600">關於我們</Link>
+        <Link to="/about" className="underline mx-2 hover:text-gray-600">關於我們</Link>|
+        <Link to="/features" className="underline mx-2 hover:text-gray-600">功能總覽</Link>
       </footer>
       
       {/* AdBanner 廣告 */}

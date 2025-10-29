@@ -113,7 +113,10 @@ const TodoStats: React.FC<TodoStatsProps> = ({ todos }) => {
 
         {/* 每週完成任務長條圖 */}
         <div className="mt-6">
-          <h3 className="text-md font-bold mb-2 text-gray-800">📅 最近 7 天完成任務</h3>
+          <div className="flex items-center text-blue-700 text-lg mb-2">
+            <span className="mr-2">📊</span>
+            <span>最近 7 天完成任務 (今日：{today.format('MM/DD')})</span>
+          </div>
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={weeklyData}>
             <XAxis dataKey="date" />

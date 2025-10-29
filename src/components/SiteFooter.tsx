@@ -16,6 +16,9 @@ export default function SiteFooter() {
             <Link to="/about" className="hover:underline">
               關於我們
             </Link>
+            <Link to="/features" className="hover:underline">
+              功能總覽
+            </Link>
           </div>
           
           {/* 聯絡信箱 */}

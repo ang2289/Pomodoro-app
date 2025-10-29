@@ -1,7 +1,14 @@
+import React from "react"
+import ModuleDropdown from '../components/ModuleDropdown'
+
 export default function Terms() {
   return (
     <div className="max-w-screen-md mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-4">使用條款與免責聲明</h1>
+      {/* 頁面標題與導覽 */}
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">使用條款與免責聲明</h1>
+        <ModuleDropdown />
+      </div>
       
       <div className="mb-6">
         <p className="mb-4">

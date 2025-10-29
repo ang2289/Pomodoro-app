@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useWakeLock } from 'react-screen-wake-lock';
 import IconButton from '../components/ui/IconButton';
 import HeaderBar from '../components/HeaderBar';
 import ModuleDropdown from '../components/ModuleDropdown';
@@ -26,12 +25,29 @@ import SearchRecords from '../components/Pomodoro/SearchRecords';
 import FocusItemModal from '../components/Pomodoro/FocusItemModal';
 
 const PomodoroPage = () => {
-  // 防止螢幕休眠
-  const { isSupported, released, request, release } = useWakeLock({
-    onError: (err) => console.error('防止螢幕休眠失敗:', err),
-    onRequest: () => console.log('螢幕已鎖定，防止休眠'),
-    onRelease: () => console.log('螢幕休眠已恢復'),
-  });
+  // Wake Lock 變數
+  let wakeLock: any = null;
+
+  const requestWakeLock = async () => {
+    try {
+      wakeLock = await (navigator as any).wakeLock.request('screen');
+      console.log('🟢 螢幕已鎖定避免休眠');
+    } catch (err) {
+      console.warn('⚠️ 瀏覽器不支援 Wake Lock', err);
+    }
+  };
+
+  const releaseWakeLock = async () => {
+    try {
+      if (wakeLock) {
+        await wakeLock.release();
+        wakeLock = null;
+        console.log('🔓 已釋放螢幕鎖定');
+      }
+    } catch (err) {
+      console.warn('⚠️ 無法釋放 Wake Lock', err);
+    }
+  };
 
   // 計時器狀態 - 從 localStorage 讀取預設值
   const getInitialWorkMinutes = () => {
@@ -118,9 +134,7 @@ const PomodoroPage = () => {
     // 組件卸載時釋放防止螢幕休眠
     return () => {
       window.removeEventListener('resize', handleResize);
-      if (isSupported && !released) {
-        release().catch(error => console.error('組件卸載時無法釋放防止螢幕休眠:', error));
-      }
+      releaseWakeLock(); // 組件卸載時釋放鎖定
     };
   }, []);
 
@@ -179,17 +193,6 @@ const PomodoroPage = () => {
       }
     } catch (error) {
       console.error('載入搜尋歷史失敗:', error);
-    }
-  };
-
-  // 防止螢幕休眠控制函數
-  const releaseWakeLock = async () => {
-    if (isSupported && !released) {
-      try {
-        await release();
-      } catch (error) {
-        console.error('無法關閉防止螢幕休眠:', error);
-      }
     }
   };
 
@@ -316,13 +319,7 @@ const PomodoroPage = () => {
   const startTimer = async () => {
     setIsRunning(true);
     // 啟用防止螢幕休眠
-    if (isSupported) {
-      try {
-        await request();
-      } catch (error) {
-        console.error('無法啟用防止螢幕休眠:', error);
-      }
-    }
+    await requestWakeLock();
   };
 
   const pauseTimer = async () => {

@@ -202,7 +202,7 @@ export default function ChantWishCard({ wish }: ChantWishCardProps) {
       <div className="mb-4">
         <h2 className="text-xl font-bold text-gray-800 mb-2">{wish.title}</h2>
         <p className="text-sm text-gray-500">
-          📅 {formatDate(wish.created_at)}
+          📅 發布日期：{formatDate(wish.created_at)}
         </p>
       </div>
 

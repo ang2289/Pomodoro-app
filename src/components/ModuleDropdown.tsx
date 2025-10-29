@@ -13,6 +13,8 @@ const moduleOptions = [
   { value: '/chant-stats', label: '統計' },
   // 新增：排行榜頁面
   { value: '/chant-ranking', label: '排行榜' },
+  // 新增：功能總覽頁面
+  { value: '/features', label: '功能總覽' },
   // 新增：設定頁面
   { value: '/settings', label: '設定' }
 ]

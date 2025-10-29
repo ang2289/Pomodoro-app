@@ -67,7 +67,7 @@ export default function TodoList({ todos, onDelete, onToggleComplete, onEdit, fo
               }`}>
                 {todo.title}
               </h3>
-              <p className="text-xs sm:text-sm text-gray-500 overflow-wrap break-word">🗓 {formatDate(todo.datetime)}</p>
+              <p className="text-xs sm:text-sm text-gray-500 overflow-wrap break-word">📅 任務日期：{formatDate(todo.datetime)}</p>
               <p className="text-xs sm:text-sm text-gray-500 overflow-wrap break-word">🏷️ 優先度：<span className={`font-bold ${
                 todo.priority === 'high' ? 'text-red-600' : 
                 todo.priority === 'medium' ? 'text-orange-600' : 

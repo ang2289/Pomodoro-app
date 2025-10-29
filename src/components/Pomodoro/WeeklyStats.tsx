@@ -30,7 +30,7 @@ const WeeklyStats: React.FC<WeeklyStatsProps> = ({ weeklyData, totalCount }) => 
         if (totalCount === 0) {
           return (
             <div className="text-center py-10 px-5 text-gray-600 text-lg font-medium">
-              📅 本週尚無完成紀錄
+              📊 本週尚無完成紀錄 (今日：{new Date().toLocaleDateString('zh-TW', { month: '2-digit', day: '2-digit' })})
             </div>
           )
         }
