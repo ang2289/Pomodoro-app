@@ -3,6 +3,7 @@ import { Share } from '@capacitor/share'
 import { Capacitor } from '@capacitor/core'
 import { saveAs } from 'file-saver'
 import { loadChantHistory } from '../utils/chantHistoryStorage'
+import i18n from '../i18n'
 
 // 唸經記錄介面
 interface ChantRecord {
@@ -14,11 +15,17 @@ interface ChantRecord {
 
 // 生成 CSV 內容
 const generateChantCsvContent = (records: ChantRecord[]): string => {
+  // 根據語言決定日期格式
+  const locale = i18n.language === 'zh_TW' ? 'zh-TW' : 'en-US'
   // 如果沒有記錄，生成一個顯示「0筆」的 CSV
   if (records.length === 0) {
+    const headers = locale === 'zh-TW' 
+      ? ['狀態', '說明', '記錄筆數'] 
+      : ['Status', 'Description', 'Record Count']
+    const noDataText = locale === 'zh-TW' ? '無資料' : 'No Data'
     const csvContent = [
-      '"狀態","說明","記錄筆數"',
-      '"無資料","目前沒有任何經文紀錄 (0筆)","0"'
+      `"${headers[0]}","${headers[1]}","${headers[2]}"`,
+      `"${noDataText}","${i18n.t('chant_export_no_data')}","0"`
     ].join('\n')
     
     const BOM = '\uFEFF'
@@ -26,7 +33,9 @@ const generateChantCsvContent = (records: ChantRecord[]): string => {
   }
 
   // CSV 標題行
-  const headers = ['經文名稱', '日期', '次數', '記錄時間']
+  const headers = locale === 'zh-TW'
+    ? ['經文名稱', '日期', '次數', '記錄時間']
+    : ['Scripture Name', 'Date', 'Count', 'Record Time']
   
   // 轉換資料為 CSV 格式 - 以日期和經文為單位加總
   const csvRows = [headers]
@@ -66,9 +75,13 @@ const generateChantCsvContent = (records: ChantRecord[]): string => {
   
   // 如果沒有資料，返回無資料的 CSV
   if (sortedData.length === 0) {
+    const headers = locale === 'zh-TW' 
+      ? ['狀態', '說明', '記錄筆數'] 
+      : ['Status', 'Description', 'Record Count']
+    const noDataText = locale === 'zh-TW' ? '無資料' : 'No Data'
     const csvContent = [
-      '"狀態","說明","記錄筆數"',
-      '"無資料","目前沒有任何經文紀錄 (0筆)","0"'
+      `"${headers[0]}","${headers[1]}","${headers[2]}"`,
+      `"${noDataText}","${i18n.t('chant_export_no_data')}","0"`
     ].join('\n')
     
     const BOM = '\uFEFF'
@@ -80,27 +93,28 @@ const generateChantCsvContent = (records: ChantRecord[]): string => {
     const displayCount = Math.max(0, record.count)
     
     // 安全地處理日期
-    let dateStr = '無效日期'
-    let timestampStr = '無效時間'
+    let dateStr = locale === 'zh-TW' ? '無效日期' : 'Invalid Date'
+    let timestampStr = locale === 'zh-TW' ? '無效時間' : 'Invalid Time'
+    const unknownText = locale === 'zh-TW' ? '未知經文' : 'Unknown Scripture'
     
     try {
-      dateStr = new Date(record.date).toLocaleDateString('zh-TW')
+      dateStr = new Date(record.date).toLocaleDateString(locale)
     } catch (error) {
       console.warn('日期格式錯誤:', record.date)
     }
     
     try {
       if (record.timestamp) {
-        timestampStr = new Date(record.timestamp).toLocaleString('zh-TW')
+        timestampStr = new Date(record.timestamp).toLocaleString(locale)
       } else {
-        timestampStr = new Date(record.date).toLocaleString('zh-TW')
+        timestampStr = new Date(record.date).toLocaleString(locale)
       }
     } catch (error) {
       console.warn('時間戳格式錯誤:', record.timestamp)
     }
     
     csvRows.push([
-      record.chant || '未知經文',
+      record.chant || unknownText,
       dateStr,
       displayCount.toString(),
       timestampStr
@@ -122,9 +136,9 @@ const generateChantFileName = (records: ChantRecord[]): string => {
   const month = String(today.getMonth() + 1).padStart(2, '0')
   const day = String(today.getDate()).padStart(2, '0')
   
-  let fileName = `所有經文紀錄_${year}-${month}-${day}`
+  let fileName = `All_Scripture_Records_${year}-${month}-${day}`
   if (records.length === 0) {
-    fileName += '_無資料'
+    fileName += '_NoData'
   }
   fileName += '.csv'
   
@@ -189,17 +203,22 @@ export const exportChantRecordsToCSVWithCapacitor = async (): Promise<{
     
     let message = ''
     if (recordCount === 0) {
-      message = '目前沒有任何經文紀錄 (0筆)'
+      message = i18n.t('chant_export_no_data')
     } else {
-      message = `已匯出 ${recordCount} 筆經文記錄`
+      message = i18n.t('chant_export_success', { count: recordCount })
     }
 
     // 格式化訊息，讓它更清楚地顯示檔案位置
     const formattedPath = fullPath.replace('file://', '');
     
+    const locationText = formattedPath || (i18n.language === 'zh_TW' ? 'Documents 資料夾' : 'Documents folder')
+    
     return {
       success: true,
-      message: `${message}\n\n檔案已儲存：\n${fileName}\n\n儲存位置：\n${formattedPath || 'Documents 資料夾'}`,
+      message: `${message}\n\n${i18n.t('chant_export_file_saved', { 
+        fileName, 
+        location: locationText 
+      })}`,
       filePath,
       fileName
     }
@@ -208,7 +227,9 @@ export const exportChantRecordsToCSVWithCapacitor = async (): Promise<{
     console.error('Capacitor 唸經記錄 CSV 匯出失敗:', error)
     return {
       success: false,
-      message: `匯出失敗：${error instanceof Error ? error.message : '未知錯誤'}`
+      message: i18n.t('chant_export_failed', { 
+        error: error instanceof Error ? error.message : i18n.t('chant_export_unknown_error') 
+      })
     }
   }
 }
@@ -255,14 +276,14 @@ const exportChantRecordsToCSVWeb = async (records: ChantRecord[]): Promise<{
     const recordCount = records.length
     let message = ''
     if (recordCount === 0) {
-      message = '目前沒有任何經文紀錄 (0筆)'
+      message = i18n.t('chant_export_no_data')
     } else {
-      message = `已匯出 ${recordCount} 筆經文記錄`
+      message = i18n.t('chant_export_success', { count: recordCount })
     }
 
     return {
       success: true,
-      message: `${message}\n\n檔案已下載：${fileName}`,
+      message: `${message}\n\n${i18n.t('chant_export_file_downloaded', { fileName })}`,
       fileName
     }
 
@@ -270,7 +291,9 @@ const exportChantRecordsToCSVWeb = async (records: ChantRecord[]): Promise<{
     console.error('Web 唸經記錄 CSV 匯出失敗:', error)
     return {
       success: false,
-      message: `匯出失敗：${error instanceof Error ? error.message : '未知錯誤'}`
+      message: i18n.t('chant_export_failed', { 
+        error: error instanceof Error ? error.message : i18n.t('chant_export_unknown_error') 
+      })
     }
   }
 }
@@ -284,15 +307,15 @@ export const shareChantCsvFile = async (filePath: string, fileName: string): Pro
     if (!isCapacitorEnvironment()) {
       return {
         success: false,
-        message: '分享功能僅在手機應用程式中可用'
+        message: i18n.t('chant_share_only_mobile')
       }
     }
 
     // 優先以附件方式分享，避免在 LINE 顯示不可點擊的本機路徑連結
     const shareOptions: any = {
-      title: '唸經記錄匯出',
-      text: `唸經記錄匯出檔案：${fileName}`,
-      dialogTitle: '分享唸經記錄'
+      title: i18n.t('chant_share_title'),
+      text: i18n.t('chant_share_text', { fileName }),
+      dialogTitle: i18n.t('chant_share_dialog')
     }
 
     // Capacitor Share v5 在部分平台支援 files 附件分享
@@ -312,13 +335,13 @@ export const shareChantCsvFile = async (filePath: string, fileName: string): Pro
     if (shareResult) {
       return {
         success: true,
-        message: '分享成功'
+        message: i18n.t('chant_share_success')
       }
     } else {
       // 如果沒有明確的結果，視為成功（分享選單已開啟）
       return {
         success: true,
-        message: '分享選單已開啟'
+        message: i18n.t('chant_share_menu_opened')
       }
     }
 
@@ -331,14 +354,14 @@ export const shareChantCsvFile = async (filePath: string, fileName: string): Pro
         errorMessage.includes('Share canceled') || errorMessage.includes('User cancelled')) {
       return {
         success: true,
-        message: '分享已取消'
+        message: i18n.t('chant_share_cancelled')
       }
     }
     
     // 其他錯誤才視為真正的分享失敗
     return {
       success: false,
-      message: `分享失敗：${errorMessage.replace(/分享失敗：/g, '')}`
+      message: i18n.t('chant_share_failed', { error: errorMessage.replace(/分享失敗：/g, '') })
     }
   }
 }
@@ -349,12 +372,12 @@ export const hasChantRecordsToExport = (): boolean => {
   return records.length > 0
 }
 
-// 匯出唸經記錄 CSV 功能
+// 匯出唸經記錄 CSV 功能（舊版，保持相容性）
 export const exportChantRecordsToCSV = async (records: ChantRecord[]): Promise<void> => {
   if (records.length === 0) {
     const csvContent = [
-      '"狀態","說明","記錄筆數"',
-      '"無資料","目前沒有任何經文紀錄 (0筆)","0"'
+      '"Status","Description","Record Count"',
+      `"No Data","${i18n.t('chant_export_no_data')}","0"`
     ].join('\n');
 
     const BOM = '\uFEFF';
@@ -364,24 +387,24 @@ export const exportChantRecordsToCSV = async (records: ChantRecord[]): Promise<v
     const year = today.getFullYear();
     const month = String(today.getMonth() + 1).padStart(2, '0');
     const day = String(today.getDate()).padStart(2, '0');
-    const fileName = `Chant_Log_${year}-${month}-${day}_無資料.csv`;
+    const fileName = `Chant_Log_${year}-${month}-${day}_NoData.csv`;
 
     const blob = new Blob([csvWithBOM], { type: 'text/csv;charset=utf-8;' });
     saveAs(blob, fileName);
     return;
   }
 
-  const headers = ['經文名稱', '日期', '次數', '記錄時間'];
+  const headers = ['Scripture Name', 'Date', 'Count', 'Record Time'];
   const csvRows = [headers];
 
   records.forEach((record) => {
     csvRows.push([
       record.chant,
-      new Date(record.date).toLocaleDateString('zh-TW'),
+      new Date(record.date).toLocaleDateString('en-US'),
       record.count.toString(),
       record.timestamp
-        ? new Date(record.timestamp).toLocaleString('zh-TW')
-        : new Date(record.date).toLocaleString('zh-TW')
+        ? new Date(record.timestamp).toLocaleString('en-US')
+        : new Date(record.date).toLocaleString('en-US')
     ]);
   });
 

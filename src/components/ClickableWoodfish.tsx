@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 
 interface ClickableWoodfishProps {
   onWoodfishClick?: () => void
 }
 
 const ClickableWoodfish: React.FC<ClickableWoodfishProps> = ({ onWoodfishClick }) => {
+  const { t } = useTranslation()
   const [woodfishImage, setWoodfishImage] = useState('/assets/woodfish.png')
   const [isAnimating, setIsAnimating] = useState(false)
   const audioRef = useRef<HTMLAudioElement>(null)
@@ -57,7 +59,7 @@ const ClickableWoodfish: React.FC<ClickableWoodfishProps> = ({ onWoodfishClick }
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 border-t-4 border-amber-500">
       <h3 className="text-xl font-bold mb-4 text-center text-gray-800">
-        🐟 敲木魚
+        🐟 {t('woodfish')}
       </h3>
       
       {/* 木魚顯示區域 */}
@@ -89,7 +91,7 @@ const ClickableWoodfish: React.FC<ClickableWoodfishProps> = ({ onWoodfishClick }
           
           {/* 點擊提示 */}
           <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 text-xs text-gray-500 bg-white px-2 py-1 rounded shadow-sm">
-            點擊敲擊
+            {t('click_to_strike')}
           </div>
         </motion.div>
       </div>
@@ -105,14 +107,14 @@ const ClickableWoodfish: React.FC<ClickableWoodfishProps> = ({ onWoodfishClick }
               className="hidden"
             />
             <div className="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-center text-sm font-medium transition-colors duration-200">
-              上傳自訂木魚圖
+              {t('upload_custom_woodfish_image')}
             </div>
           </label>
           <button
             onClick={resetToDefault}
             className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
           >
-            還原預設
+            {t('restore_default')}
           </button>
         </div>
       </div>

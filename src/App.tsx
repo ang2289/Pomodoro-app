@@ -1,5 +1,7 @@
 import { Routes, Route, Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useEffect, useState } from 'react'
+import i18n from './i18n'
 import { notificationService } from './services/notificationService'
 import MainLayout from './layouts/MainLayout'
 import ChantCounter from './pages/ChantCounter'
@@ -34,15 +36,70 @@ import SupportRankingPage from './pages/SupportRankingPage'
 import PrivacyPolicy from './pages/PrivacyPolicy'
 import Terms from './pages/Terms'
 import About from './pages/About'
+import Contact from './pages/Contact'
 import FeaturesPage from './pages/FeaturesPage'
+import ArticleTemplate from './pages/blog/ArticleTemplate'
+import ChantFocusArticle from './pages/blog/ChantFocusArticle'
+import MorningMeditationArticle from './pages/blog/MorningMeditationArticle'
+import EveningDetox from './pages/blog/EveningDetox'
+import PerfectBreakfastTime from './pages/blog/PerfectBreakfastTime'
+import EveningMeditation from './pages/blog/evening-meditation'
+import AfternoonStretch from './pages/blog/AfternoonStretch'
+import HealthyLunch from './pages/blog/HealthyLunch'
+import HydrationMeditation from './pages/blog/HydrationMeditation'
+import MorningRitual from './pages/blog/MorningRitual'
+import NightReset from './pages/blog/NightReset'
+import SelfDialogueMeditation from './pages/blog/SelfDialogueMeditation'
+import EmotionalDetox from './pages/blog/EmotionalDetox'
+import FocusReset from './pages/blog/FocusReset'
+import FocusAndEmotion from './pages/blog/FocusAndEmotion'
+import FocusMeditation from './pages/blog/FocusMeditation'
+import MorningBreath from './pages/blog/MorningBreath'
+import EveningBreath from './pages/blog/EveningBreath'
+import WeeklyBreathChallenge from './pages/blog/WeeklyBreathChallenge'
+import CalmBreath from './pages/blog/CalmBreath'
+import FocusBreath from './pages/blog/FocusBreath'
+import BreathPrayer from './pages/blog/BreathPrayer'
+import GratitudeBreathJournal from './pages/blog/GratitudeBreathJournal'
+import ChantEnergyBreath from './pages/blog/ChantEnergyBreath'
+import MoonlightMeditationBreath from './pages/blog/MoonlightMeditationBreath'
+import SleepSoundTherapy from './pages/blog/SleepSoundTherapy'
+import EveningGratitudeJournal from './pages/blog/EveningGratitudeJournal'
+import MorningAffirmations from './pages/blog/MorningAffirmations'
+import PowerOfSilence from './pages/blog/PowerOfSilence'
+import ThreeMinuteMeditation from './pages/blog/ThreeMinuteMeditation'
+import AboutSpiritualGrowth from './pages/blog/AboutSpiritualGrowth'
+import BlogHome from './pages/blog/BlogHome'
+import LazyHome from './pages/blog/LazyHome'
+import AidsPage from './pages/blog/aids'
+import FinancePage from './pages/finance/index'
+import RetirementPage from './pages/retirement/index'
+import RentalSubsidy2025 from './pages/aids/rental-subsidy-2025'
+import LTC2025Update from './pages/aids/ltc-2025-update'
+import SeniorTransportAid2025 from './pages/aids/senior-transport-2025'
+import HealthBalance2025 from './pages/finance/health-balance-2025'
+import RetirePlan2025 from './pages/finance/retire-plan-2025'
+import AntiFraud2025 from './pages/finance/anti-fraud-2025'
+import HealthPage from './pages/health/index'
+import SleepBalance2025 from './pages/health/sleep-balance-2025'
+import DietMind2025 from './pages/health/diet-mind-2025'
+import PensionPage from './pages/pension/index'
+import InsuranceOldage2025 from './pages/pension/insurance-oldage-2025'
+import SelfContribution2025 from './pages/pension/self-contribution-2025'
+import Announcements from './pages/Announcements'
 import Footer from './components/Footer'
 import AdBanner from './components/AdBanner'
 // 已移除廣告
 import { Toaster } from 'react-hot-toast'
 
 function App() {
+  const { t } = useTranslation()
   const [showAd, setShowAd] = useState(false)
   const [isSubscribed, setIsSubscribed] = useState(false)
+  // 自動偵測目前執行模式（App/PWA 或 Web）
+  const isApp =
+    (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+    /Capacitor|Android|iPhone|iPad/i.test(navigator.userAgent)
 
   // 初始化主題設定
   useEffect(() => {
@@ -82,16 +139,53 @@ function App() {
     setIsSubscribed(sub === 'true')
   }, [])
 
+  // 更新頁面標題
+  useEffect(() => {
+    const updateTitle = () => {
+      const appName = t('app_name')
+      document.title = appName
+    }
+    
+    // 初始設置
+    updateTitle()
+    
+    // 監聽語言變更
+    i18n.on('languageChanged', updateTitle)
+    
+    return () => {
+      i18n.off('languageChanged', updateTitle)
+    }
+  }, [t])
+
   return (
     <div className="w-full min-h-screen max-w-screen-md mx-auto">
       <Routes>
           {/* 主要巢狀路由 - 使用 MainLayout */}
           <Route path="/" element={<MainLayout />}>
-            <Route index element={<PomodoroPage />} />
+            {/* 首頁根據執行模式顯示不同頁面：App → 番茄鐘；Web → 退休理財懶人包首頁 */}
+            <Route index element={isApp ? <PomodoroPage /> : <LazyHome />} />
             <Route path="chant" element={<ChantCounter />} />
             <Route path="todo" element={<TodoPage />} />
             <Route path="pomodoro" element={<PomodoroPage />} />
             <Route path="wish" element={<WishWallPage />} />
+            
+            {/* 退休理財懶人包頁面 */}
+            <Route path="aids" element={<AidsPage />} />
+            <Route path="aids/rental-subsidy-2025" element={<RentalSubsidy2025 />} />
+            <Route path="aids/ltc-2025-update" element={<LTC2025Update />} />
+            <Route path="aids/senior-transport-2025" element={<SeniorTransportAid2025 />} />
+            <Route path="finance" element={<FinancePage />} />
+            <Route path="finance/health-balance-2025" element={<HealthBalance2025 />} />
+            <Route path="finance/retire-plan-2025" element={<RetirePlan2025 />} />
+            <Route path="finance/anti-fraud-2025" element={<AntiFraud2025 />} />
+            <Route path="health" element={<HealthPage />} />
+            <Route path="health/sleep-balance-2025" element={<SleepBalance2025 />} />
+            <Route path="health/diet-mind-2025" element={<DietMind2025 />} />
+            <Route path="pension" element={<PensionPage />} />
+            <Route path="pension/insurance-oldage-2025" element={<InsuranceOldage2025 />} />
+            <Route path="pension/self-contribution-2025" element={<SelfContribution2025 />} />
+            <Route path="retirement" element={<RetirementPage />} />
+            <Route path="announcements" element={<Announcements />} />
           </Route>
           
           {/* 其他獨立頁面 */}
@@ -128,16 +222,43 @@ function App() {
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
           <Route path="/features" element={<FeaturesPage />} />
+          
+          {/* Blog 教學文章 */}
+          <Route path="/blog" element={<BlogHome />} />
+          <Route path="/blog/pomodoro-focus" element={<ArticleTemplate />} />
+          <Route path="/blog/chant-focus" element={<ChantFocusArticle />} />
+          <Route path="/blog/morning-meditation" element={<MorningMeditationArticle />} />
+          <Route path="/blog/evening-detox" element={<EveningDetox />} />
+          <Route path="/blog/perfect-breakfast-time" element={<PerfectBreakfastTime />} />
+          <Route path="/blog/evening-meditation" element={<EveningMeditation />} />
+          <Route path="/blog/afternoon-stretch" element={<AfternoonStretch />} />
+          <Route path="/blog/healthy-lunch" element={<HealthyLunch />} />
+          <Route path="/blog/hydration-meditation" element={<HydrationMeditation />} />
+          <Route path="/blog/morning-ritual" element={<MorningRitual />} />
+          <Route path="/blog/night-reset" element={<NightReset />} />
+          <Route path="/blog/self-dialogue-meditation" element={<SelfDialogueMeditation />} />
+          <Route path="/blog/emotional-detox" element={<EmotionalDetox />} />
+          <Route path="/blog/focus-reset" element={<FocusReset />} />
+          <Route path="/blog/focus-and-emotion" element={<FocusAndEmotion />} />
+          <Route path="/blog/focus-meditation" element={<FocusMeditation />} />
+          <Route path="/blog/morning-breath" element={<MorningBreath />} />
+          <Route path="/blog/evening-breath" element={<EveningBreath />} />
+          <Route path="/blog/weekly-breath-challenge" element={<WeeklyBreathChallenge />} />
+          <Route path="/blog/calm-breath" element={<CalmBreath />} />
+          <Route path="/blog/focus-breath" element={<FocusBreath />} />
+          <Route path="/blog/breath-prayer" element={<BreathPrayer />} />
+          <Route path="/blog/gratitude-breath-journal" element={<GratitudeBreathJournal />} />
+          <Route path="/blog/chant-energy-breath" element={<ChantEnergyBreath />} />
+          <Route path="/blog/moonlight-meditation-breath" element={<MoonlightMeditationBreath />} />
+          <Route path="/blog/sleep-sound-therapy" element={<SleepSoundTherapy />} />
+          <Route path="/blog/evening-gratitude-journal" element={<EveningGratitudeJournal />} />
+          <Route path="/blog/morning-affirmations" element={<MorningAffirmations />} />
+          <Route path="/blog/power-of-silence" element={<PowerOfSilence />} />
+          <Route path="/blog/three-minute-meditation" element={<ThreeMinuteMeditation />} />
+          <Route path="/blog/about-spiritual-growth" element={<AboutSpiritualGrowth />} />
         </Routes>
-      
-      {/* 底部政策連結 - 全站共用 */}
-      <footer className="text-center text-xs text-gray-400 py-6 px-4">
-        <Link to="/privacy-policy" className="underline mx-2 hover:text-gray-600">隱私權政策</Link>|
-        <Link to="/terms" className="underline mx-2 hover:text-gray-600">使用條款</Link>|
-        <Link to="/about" className="underline mx-2 hover:text-gray-600">關於我們</Link>|
-        <Link to="/features" className="underline mx-2 hover:text-gray-600">功能總覽</Link>
-      </footer>
       
       {/* AdBanner 廣告 */}
       {false && <AdBanner />}

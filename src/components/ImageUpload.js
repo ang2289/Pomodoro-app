@@ -1,8 +1,10 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import imageCompression from 'browser-image-compression';
 import { supabase } from '../utils/supabaseClient';
 export default function ImageUpload({ onUpload }) {
+    const { t } = useTranslation();
     const [uploading, setUploading] = useState(false);
     const [previewUrl, setPreviewUrl] = useState('');
     const [fileName, setFileName] = useState('');
@@ -24,7 +26,7 @@ export default function ImageUpload({ onUpload }) {
         // 僅允許 JPG / PNG
         const validTypes = ['image/jpeg', 'image/png'];
         if (!validTypes.includes(file.type)) {
-            alert('僅支援 JPG 或 PNG 圖片');
+            alert(t('only_jpg_png'));
             if (fileInputRef.current)
                 fileInputRef.current.value = '';
             setFileName('');
@@ -33,7 +35,7 @@ export default function ImageUpload({ onUpload }) {
         }
         // 檢查檔案大小（初步檢查）
         if (file.size > 10 * 1024 * 1024) { // 10MB
-            alert('圖片檔案過大（超過 10MB），請選擇較小的圖片');
+            alert(t('image_too_large_10mb'));
             if (fileInputRef.current) fileInputRef.current.value = '';
             setFileName('');
             setPreviewUrl('');
@@ -186,27 +188,27 @@ export default function ImageUpload({ onUpload }) {
             console.error('錯誤詳情:', err);
             console.error('設備類型:', isMobile ? '手機' : '桌面');
             
-            let errorMessage = '圖片上傳失敗';
+            let errorMessage = t('image_upload_failed');
             
             // 首先檢查是否有具體的錯誤訊息
             if (err?.message) {
                 const message = err.message.toLowerCase();
                 if (message.includes('jwt') || message.includes('auth') || message.includes('unauthorized')) {
-                    errorMessage = '認證失敗，請重新整理頁面後再試';
+                    errorMessage = t('upload_failed_retry');
                 } else if (message.includes('storage') || message.includes('bucket') || message.includes('supabase')) {
-                    errorMessage = '儲存服務暫時無法使用，請稍後再試';
+                    errorMessage = t('upload_failed_retry');
                 } else if (message.includes('size') || message.includes('too large') || message.includes('過大') || message.includes('exceeded')) {
-                    errorMessage = '圖片檔案過大，請選擇較小的圖片（建議小於 1MB）';
+                    errorMessage = t('image_too_large_1mb');
                 } else if (message.includes('compression') || message.includes('壓縮') || message.includes('process')) {
-                    errorMessage = '圖片處理失敗，請選擇較小的圖片';
+                    errorMessage = t('image_too_large_1mb');
                 } else if (message.includes('format') || message.includes('格式') || message.includes('type')) {
-                    errorMessage = '不支援的圖片格式，請選擇 JPG 或 PNG 格式';
+                    errorMessage = t('only_jpg_png');
                 } else if (message.includes('timeout') || message.includes('超時')) {
-                    errorMessage = isMobile ? '上傳超時，手機網路較慢，請稍後再試' : '上傳超時，請檢查網路後再試';
+                    errorMessage = t('network_issue_check');
                 } else if (message.includes('network') || message.includes('fetch') || message.includes('connection')) {
-                    errorMessage = isMobile ? '網路連線不穩定，請檢查手機網路後再試' : '網路連線問題，請檢查網路後再試';
+                    errorMessage = t('network_issue_check');
                 } else {
-                    errorMessage = `上傳失敗: ${err.message}`;
+                    errorMessage = `${t('upload_failed_colon')}${err.message}`;
                 }
             } else if (err instanceof ProgressEvent) {
                 // 更仔細地檢查 ProgressEvent 的具體情況
@@ -218,32 +220,32 @@ export default function ImageUpload({ onUpload }) {
                 });
                 
                 if (err.type === 'abort') {
-                    errorMessage = '上傳被取消，請重試';
+                    errorMessage = t('upload_failed_retry');
                 } else if (err.type === 'error') {
                     // 檢查是否真的是網路問題
                     if (err.loaded === 0 && err.total === 0) {
-                        errorMessage = isMobile ? '手機網路連線中斷，請檢查網路設定後再試' : '網路連線中斷，請檢查網路後再試';
+                        errorMessage = t('network_issue_check');
                     } else {
-                        errorMessage = isMobile ? '手機上傳過程中發生錯誤，請重試' : '上傳過程中發生錯誤，請重試';
+                        errorMessage = t('upload_failed_retry');
                     }
                 } else {
-                    errorMessage = isMobile ? '手機上傳過程中發生錯誤，請重試' : '上傳過程中發生錯誤，請重試';
+                    errorMessage = t('upload_failed_retry');
                 }
             } else if (typeof err === 'string') {
-                errorMessage = `上傳失敗: ${err}`;
+                errorMessage = `${t('upload_failed_colon')}${err}`;
             } else if (err && typeof err.toString === 'function') {
                 const errStr = err.toString();
                 console.log('錯誤字串:', errStr);
                 
                 if (errStr.includes('network') || errStr.includes('fetch') || errStr.includes('timeout')) {
-                    errorMessage = isMobile ? '手機網路連線問題，請檢查網路後再試' : '網路連線問題，請檢查網路後再試';
+                    errorMessage = t('network_issue_check');
                 } else if (errStr.includes('size') || errStr.includes('large')) {
-                    errorMessage = '圖片檔案過大，請選擇較小的圖片';
+                    errorMessage = t('image_too_large_1mb');
                 } else {
-                    errorMessage = `上傳失敗: ${errStr}`;
+                    errorMessage = `${t('upload_failed_colon')}${errStr}`;
                 }
             } else {
-                errorMessage = isMobile ? '手機上傳失敗，請重試' : '上傳失敗，請重試';
+                errorMessage = t('upload_failed_retry');
             }
             
             alert(errorMessage);
@@ -261,5 +263,5 @@ export default function ImageUpload({ onUpload }) {
         if (fileInputRef.current)
             fileInputRef.current.value = '';
     }
-    return (_jsxs("div", { className: "text-sm text-gray-600", children: [_jsx("label", { className: "block font-semibold mb-1", children: "\uD83D\uDCF7 \u4E0A\u50B3\u5716\u7247\uFF08JPG/PNG\uFF0C\u6700\u5927 1MB\uFF0C\u9577\u908A 800px\uFF09" }), _jsxs("div", { className: "flex flex-col gap-2", children: [_jsx("button", { type: "button", onClick: handleButtonClick, disabled: uploading, className: "px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium text-sm shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none", style: { color: '#ffffff' }, children: uploading ? '上傳中...' : '選擇圖片' }), _jsx("span", { className: "text-gray-500 text-xs", children: fileName ? `(${fileName})` : '(尚未選擇檔案)' })] }), _jsx("input", { ref: fileInputRef, type: "file", accept: "image/jpeg,image/png", className: "hidden", onChange: handleUpload }), uploading && _jsx("p", { className: "text-xs text-gray-400 mt-1", children: "\u5716\u7247\u58D3\u7E2E\u8207\u4E0A\u50B3\u4E2D\u2026" }), previewUrl && (_jsxs("div", { className: "mt-3", children: [_jsx("div", { className: "inline-block rounded-md border border-gray-200 shadow-md overflow-hidden", children: _jsx("img", { src: previewUrl, alt: "\u9810\u89BD", className: "max-h-40 object-contain bg-white" }) }), _jsx("div", { className: "mt-2", children: _jsx("button", { type: "button", onClick: handleRemove, className: "px-3 py-1 rounded-md bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm", children: "\u79FB\u9664" }) })] })), _jsx("p", { className: "text-xs text-gray-400 mt-1", children: "\u8ACB\u52FF\u4E0A\u50B3\u4FB5\u6B0A\u6216\u654F\u611F\u5716\u7247" })] }));
+    return (_jsxs("div", { className: "text-sm text-gray-600", children: [_jsx("label", { className: "block font-semibold mb-1", children: `📷 ${t('upload_image_label')}` }), _jsxs("div", { className: "flex flex-col gap-2", children: [_jsx("button", { type: "button", onClick: handleButtonClick, disabled: uploading, className: "px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium text-sm shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none", style: { color: '#ffffff' }, children: uploading ? t('uploading') : t('select_image') }), _jsx("span", { className: "text-gray-500 text-xs", children: fileName ? `(${fileName})` : t('no_file_chosen') })] }), _jsx("input", { ref: fileInputRef, type: "file", accept: "image/jpeg,image/png", className: "hidden", onChange: handleUpload }), uploading && _jsx("p", { className: "text-xs text-gray-400 mt-1", children: t('image_compressing_uploading') }), previewUrl && (_jsxs("div", { className: "mt-3", children: [_jsx("div", { className: "inline-block rounded-md border border-gray-200 shadow-md overflow-hidden", children: _jsx("img", { src: previewUrl, alt: t('preview'), className: "max-h-40 object-contain bg-white" }) }), _jsx("div", { className: "mt-2", children: _jsx("button", { type: "button", onClick: handleRemove, className: "px-3 py-1 rounded-md bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm", children: t('remove') }) })] })), _jsx("p", { className: "text-xs text-gray-400 mt-1", children: t('image_content_warning') })] }));
 }

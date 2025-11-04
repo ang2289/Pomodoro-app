@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { exportChantRecordsToCSVWithCapacitor } from '../services/chantCsvExportService';
 import IconButton from '../components/ui/IconButton';
 
@@ -9,6 +10,7 @@ interface ChantExportButtonProps {
 }
 
 const ChantExportButton: React.FC<ChantExportButtonProps> = () => {
+  const { t } = useTranslation()
   const [exportStatus, setExportStatus] = useState({
     show: false,
     type: 'success' as 'success' | 'error',
@@ -43,11 +45,11 @@ const ChantExportButton: React.FC<ChantExportButtonProps> = () => {
         }, 3000)
       }
     } catch (error) {
-      console.error('匯出失敗:', error)
+      console.error(t('export_failed') + ':', error)
       setExportStatus({
         show: true,
         type: 'error',
-        message: '匯出失敗，請稍後再試'
+        message: t('export_failed_try_again')
       })
       setTimeout(() => {
         setExportStatus(prev => ({ ...prev, show: false }))
@@ -104,7 +106,7 @@ const ChantExportButton: React.FC<ChantExportButtonProps> = () => {
           console.log('觸控開始 - 念經記錄CSV匯出');
         }}
         variant="primary"
-        label="📄 匯出所有經文記錄 CSV"
+        label={`📄 ${t('export_all_scripture_records_csv')}`}
         className="w-1/2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold py-1.5 px-2 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
       />
     </div>

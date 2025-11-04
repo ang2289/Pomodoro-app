@@ -3,6 +3,7 @@ import { saveAs } from 'file-saver';
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
+import i18n from '../i18n';
 
 export async function backupDataToFile() {
   const allData: Record<string, string> = {}
@@ -29,18 +30,18 @@ export async function backupDataToFile() {
       const filePath = result.uri
       try {
         await Share.share({
-          title: '資料備份',
-          text: `應用程式資料備份：${fileName}`,
+          title: i18n.t('backup_share_title'),
+          text: i18n.t('backup_share_text', { fileName }),
           files: filePath ? [filePath] : undefined,
           url: filePath,
-          dialogTitle: '分享備份檔案'
+          dialogTitle: i18n.t('backup_share_dialog')
         })
       } catch {
         // 即使分享失敗，仍然算備份成功（已寫入 Documents）
       }
       
       // 顯示檔案路徑訊息
-      alert(`✅ 備份成功！\n\n檔案名稱：${fileName}\n存儲路徑：Documents 資料夾\n\n您可以在裝置的 Documents 資料夾中找到此備份檔案。`)
+      alert(i18n.t('backup_success_native', { fileName }))
       return
     }
   } catch (e) {
@@ -53,7 +54,7 @@ export async function backupDataToFile() {
   saveAs(blob, fileName)
   
   // 顯示檔案下載訊息
-  alert(`✅ 備份成功！\n\n檔案名稱：${fileName}\n存儲位置：瀏覽器下載資料夾\n\n檔案已下載到您的預設下載資料夾中。`)
+  alert(i18n.t('backup_success_web', { fileName }))
 }
 
 export function restoreDataFromFile(file: File): Promise<void> {

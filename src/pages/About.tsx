@@ -1,36 +1,41 @@
 import React from "react"
+import { useTranslation } from 'react-i18next'
+import i18n from '../i18n'
 import ModuleDropdown from '../components/ModuleDropdown'
 
-export default function About() {
+export default function AboutPage() {
+  const { t } = useTranslation()
+  
   return (
-    <div className="max-w-screen-md mx-auto px-4 py-8">
-      {/* 頁面標題與導覽 */}
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">關於本站</h1>
-        <ModuleDropdown />
-      </div>
-      
-      <div className="mb-6">
+    <div className="gradient-bg min-h-screen flex justify-center px-4 py-10">
+      <div className="bg-white/80 backdrop-blur-md shadow-xl rounded-2xl p-6 max-w-2xl w-full text-gray-800">
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-2xl font-bold">{t('about_page_title')}</h1>
+          <ModuleDropdown />
+        </div>
+        <p className="mb-4">{t('about_page_intro')}</p>
         <p className="mb-4">
-          本網站為一款結合專注計時、任務管理與集氣祈願的番茄鐘應用，致力於提升使用者的生活品質與專注力。
+          {t('about_page_independent')}
+          <strong className="mx-1">{t('about_page_studio')}</strong>
+          {t('about_page_features')}
         </p>
-        <p className="mb-4">
-          本網站與 App 均由 RxV 夢想創作工作室獨立開發與維運，所有功能不含 AI 模型運算，使用者所有資料皆儲存在本地裝置或經過授權之雲端儲存服務，並尊重使用者的隱私權。
-        </p>
-      </div>
-
-      <div className="border-t pt-4">
-        <p className="mb-4">
-          如有合作建議或回饋，歡迎透過 Email 聯繫我們：
-        </p>
-        <p className="mb-4">
-          📧 <a href="mailto:rxv0227@gmail.com" className="text-blue-600 dark:text-blue-400 underline">
+        <p className="mb-4">{t('about_page_not_affiliated')}</p>
+        
+        <hr className="my-6 border-gray-300" />
+        
+        <p className="mb-2">
+          📧 {t('about_page_contact')}{" "}
+          <a
+            href="mailto:rxv0227@gmail.com"
+            className="text-blue-600 underline hover:text-blue-800"
+          >
             rxv0227@gmail.com
           </a>
         </p>
-        
-        <p className="text-sm text-gray-500 dark:text-gray-400">更新日期：2025/10/28</p>
+        <p className="text-sm text-gray-500">
+          {t('about_page_update')}{i18n.language === 'en_US' ? ': ' : '：'}2025/11/04
+        </p>
       </div>
     </div>
-  );
+  )
 }

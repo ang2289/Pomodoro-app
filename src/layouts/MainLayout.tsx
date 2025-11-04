@@ -1,22 +1,14 @@
-import { Outlet } from 'react-router-dom'
-import WebAdBanner from '../components/WebAdBanner'
-import SiteFooter from '../components/SiteFooter'
+import { Outlet } from 'react-router-dom';
+import SiteFooter from '../components/SiteFooter';
 
 export default function MainLayout() {
   return (
-    <>
-      {/* 主要內容區域 */}
-      <div className="bg-white dark:bg-gray-900 text-black dark:text-white">
-        <div className="max-w-screen-md mx-auto px-4 py-4 min-h-screen">
-          <Outlet />
-        </div>
-      </div>
-      
-      {/* 底部廣告 */}
-      {false && <WebAdBanner />}
-      
-      {/* 網站頁腳 */}
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-white to-blue-50">
+      {/* ⛔ 已停用 TopNoticeBar，送審版本不顯示任何公告 */}
+      <main className="flex-grow">
+        <Outlet />
+      </main>
       <SiteFooter />
-    </>
-  )
+    </div>
+  );
 }

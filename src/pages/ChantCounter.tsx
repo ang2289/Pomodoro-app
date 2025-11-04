@@ -146,7 +146,7 @@ const ChantCounter = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-3 sm:p-4">
+    <div className="gradient-bg min-h-screen p-3 sm:p-4">
       <div className="w-full max-w-screen-md mx-auto px-4">
         <ModuleDropdown />
         

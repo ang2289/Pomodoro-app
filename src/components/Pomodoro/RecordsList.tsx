@@ -1,4 +1,6 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 import { PomodoroRecord } from '../../types/PomodoroRecord';
 import { FocusItem } from '../../types/FocusItem';
 import IconButton from '../ui/IconButton';
@@ -33,9 +35,11 @@ const RecordsList: React.FC<RecordsListProps> = ({
   totalRecords = 0,
   showAllRecords = false
 }) => {
+  const { t } = useTranslation();
 
   const formatDateTime = (dateTime: string) => {
-    return new Date(dateTime).toLocaleString('zh-TW', {
+    const locale = i18n.language === 'zh_TW' ? 'zh-TW' : 'en-US';
+    return new Date(dateTime).toLocaleString(locale, {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
@@ -46,7 +50,22 @@ const RecordsList: React.FC<RecordsListProps> = ({
 
   const getFocusItemName = (focusItemId: string) => {
     const item = focusItems.find(item => item.id === focusItemId);
-    return item ? item.name : '未知項目';
+    if (!item) {
+      return t('pomodoro_focus_item_unknown');
+    }
+    // 獲取翻譯後的專注項目名稱
+    const defaultFocusItemNames = ['讀書', '寫作', '工作', '運動', '冥想', '抄經'];
+    if (defaultFocusItemNames.includes(item.name)) {
+      const translationKey = `focus_items_list.${item.name}`;
+      const translated = t(translationKey);
+      // 如果翻譯返回的是對象或與鍵相同，則使用原始名稱
+      if (typeof translated === 'string' && translated !== translationKey) {
+        return translated;
+      }
+      return item.name;
+    }
+    // 對於自定義專注項目，使用原始名稱
+    return item.name;
   };
 
   return (
@@ -69,7 +88,7 @@ const RecordsList: React.FC<RecordsListProps> = ({
             fontSize: '1.3rem',
             fontWeight: '600'
           }}>
-            📋 完成紀錄
+            📋 {t('completed_records')}
           </h3>
           {isSearchActive ? (
             <div style={{
@@ -78,10 +97,10 @@ const RecordsList: React.FC<RecordsListProps> = ({
               color: '#666',
               fontStyle: 'italic'
             }}>
-              搜尋結果：找到 {records.length} 筆記錄
+              {t('search_results')}: {t('found')} {records.length} {t('records')}
               {searchKeyword && (
                 <span style={{ marginLeft: '8px' }}>
-                  (關鍵字: "{searchKeyword}")
+                  ({t('keyword')}: "{searchKeyword}")
                 </span>
               )}
             </div>
@@ -93,9 +112,9 @@ const RecordsList: React.FC<RecordsListProps> = ({
               color: '#666',
               fontStyle: 'italic'
             }}>
-              目前顯示全部紀錄，共 {totalRecords} 筆。
+              {t('currently_showing_all_records')}, {t('total')} {totalRecords} {t('records')}.
               <br />
-              若資料過多，建議使用搜尋功能或設定分頁顯示。
+              {t('if_too_much_data_suggest_search_or_pagination')}
             </div>
           ) : (
             // 預設顯示提示文字
@@ -105,7 +124,7 @@ const RecordsList: React.FC<RecordsListProps> = ({
               color: '#666',
               fontStyle: 'italic'
             }}>
-              預設五筆，更多資料可用搜尋功能
+              {t('default_five_records_more_available_with_search')}
             </div>
           )}
         </div>
@@ -152,7 +171,7 @@ const RecordsList: React.FC<RecordsListProps> = ({
             {/* 匯出 CSV 按鈕 */}
             <IconButton
               icon={<Download size={16} />}
-              label="匯出 CSV"
+              label={t('export_csv')}
               onClick={onExportRecords}
               variant="primary"
               className="px-4 py-2 text-sm"
@@ -168,7 +187,7 @@ const RecordsList: React.FC<RecordsListProps> = ({
           color: '#666',
           fontSize: '16px'
         }}>
-          📝 尚無完成紀錄
+          📝 {t('no_completed_records')}
         </div>
       ) : (
         <div style={{
@@ -228,7 +247,7 @@ const RecordsList: React.FC<RecordsListProps> = ({
                     lineHeight: '1.3',
                     flex: 1
                   }}>
-                    {record.focusItemId ? getFocusItemName(record.focusItemId) : '未知項目'}
+                    {record.focusItemId ? getFocusItemName(record.focusItemId) : t('pomodoro_focus_item_unknown')}
                   </span>
                 </div>
                 
@@ -270,14 +289,14 @@ const RecordsList: React.FC<RecordsListProps> = ({
                 }}>
                   <IconButton
                     icon="✏️"
-                    label="編輯"
+                    label={t('edit')}
                     onClick={() => onEditRecord(record)}
                     variant="primary"
                     className="px-3 py-1 text-xs hover:scale-105"
                   />
                   <IconButton
                     icon="🗑️"
-                    label="刪除"
+                    label={t('delete')}
                     onClick={() => onDeleteRecord(record.id)}
                     variant="danger"
                     className="px-3 py-1 text-xs hover:scale-105"

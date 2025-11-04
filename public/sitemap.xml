@@ -1,31 +1,307 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://pomodoro-app-eight-rouge.vercel.app/</loc>
-    <priority>1.0</priority>
-  </url>
-  <url>
-    <loc>https://pomodoro-app-eight-rouge.vercel.app/pomodoro</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://pomodoro-app-eight-rouge.vercel.app/chant</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://pomodoro-app-eight-rouge.vercel.app/wish</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://pomodoro-app-eight-rouge.vercel.app/privacy-policy</loc>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://pomodoro-app-eight-rouge.vercel.app/terms</loc>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://pomodoro-app-eight-rouge.vercel.app/about</loc>
-    <priority>0.5</priority>
-  </url>
-</urlset>
+  <urlset
+    xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+    xmlns:xhtml="http://www.w3.org/1999/xhtml"
+  >
+  
+    <url>
+      <loc>https://rxv-dreamstudio.vercel.app/</loc>
+      <lastmod>2025-11-04</lastmod>
+      <changefreq>monthly</changefreq>
+      <priority>1.0</priority>
+    </url>
+
+    <url>
+      <loc>https://rxv-dreamstudio.vercel.app/aids</loc>
+      <lastmod>2025-11-04</lastmod>
+      <changefreq>monthly</changefreq>
+      <priority>0.8</priority>
+    </url>
+
+    <url>
+      <loc>https://rxv-dreamstudio.vercel.app/finance</loc>
+      <lastmod>2025-11-04</lastmod>
+      <changefreq>monthly</changefreq>
+      <priority>0.8</priority>
+    </url>
+
+    <url>
+      <loc>https://rxv-dreamstudio.vercel.app/retirement</loc>
+      <lastmod>2025-11-04</lastmod>
+      <changefreq>monthly</changefreq>
+      <priority>0.8</priority>
+    </url>
+
+    <url>
+      <loc>https://rxv-dreamstudio.vercel.app/blog</loc>
+      <lastmod>2025-11-04</lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>0.8</priority>
+    </url>
+
+    <url>
+      <loc>https://rxv-dreamstudio.vercel.app/privacy-policy</loc>
+      <lastmod>2025-11-04</lastmod>
+      <changefreq>monthly</changefreq>
+      <priority>0.8</priority>
+    </url>
+
+    <url>
+      <loc>https://rxv-dreamstudio.vercel.app/terms</loc>
+      <lastmod>2025-11-04</lastmod>
+      <changefreq>monthly</changefreq>
+      <priority>0.8</priority>
+    </url>
+
+    <url>
+      <loc>https://rxv-dreamstudio.vercel.app/about</loc>
+      <lastmod>2025-11-04</lastmod>
+      <changefreq>monthly</changefreq>
+      <priority>0.8</priority>
+    </url>
+
+    <url>
+      <loc>https://rxv-dreamstudio.vercel.app/contact</loc>
+      <lastmod>2025-11-04</lastmod>
+      <changefreq>monthly</changefreq>
+      <priority>0.8</priority>
+    </url>
+
+    <url>
+      <loc>https://rxv-dreamstudio.vercel.app/blog/about-spiritual-growth</loc>
+      <lastmod>2025-11-04</lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>0.8</priority>
+    </url>
+
+    <url>
+      <loc>https://rxv-dreamstudio.vercel.app/blog/afternoon-stretch</loc>
+      <lastmod>2025-11-02</lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>0.8</priority>
+    </url>
+
+    <url>
+      <loc>https://rxv-dreamstudio.vercel.app/blog/pomodoro-focus</loc>
+      <lastmod>2025-11-02</lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>0.8</priority>
+    </url>
+
+    <url>
+      <loc>https://rxv-dreamstudio.vercel.app/blog/breath-prayer</loc>
+      <lastmod>2025-11-02</lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>0.8</priority>
+    </url>
+
+    <url>
+      <loc>https://rxv-dreamstudio.vercel.app/blog/calm-breath</loc>
+      <lastmod>2025-11-02</lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>0.8</priority>
+    </url>
+
+    <url>
+      <loc>https://rxv-dreamstudio.vercel.app/blog/chant-energy-breath</loc>
+      <lastmod>2025-11-02</lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>0.8</priority>
+    </url>
+
+    <url>
+      <loc>https://rxv-dreamstudio.vercel.app/blog/chant-focus</loc>
+      <lastmod>2025-11-02</lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>0.8</priority>
+    </url>
+
+    <url>
+      <loc>https://rxv-dreamstudio.vercel.app/blog/emotional-detox</loc>
+      <lastmod>2025-11-02</lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>0.8</priority>
+    </url>
+
+    <url>
+      <loc>https://rxv-dreamstudio.vercel.app/blog/evening-meditation</loc>
+      <lastmod>2025-11-02</lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>0.8</priority>
+    </url>
+
+    <url>
+      <loc>https://rxv-dreamstudio.vercel.app/blog/evening-breath</loc>
+      <lastmod>2025-11-02</lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>0.8</priority>
+    </url>
+
+    <url>
+      <loc>https://rxv-dreamstudio.vercel.app/blog/evening-detox</loc>
+      <lastmod>2025-11-02</lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>0.8</priority>
+    </url>
+
+    <url>
+      <loc>https://rxv-dreamstudio.vercel.app/blog/evening-gratitude-journal</loc>
+      <lastmod>2025-11-03</lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>0.8</priority>
+    </url>
+
+    <url>
+      <loc>https://rxv-dreamstudio.vercel.app/blog/focus-and-emotion</loc>
+      <lastmod>2025-11-02</lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>0.8</priority>
+    </url>
+
+    <url>
+      <loc>https://rxv-dreamstudio.vercel.app/blog/focus-breath</loc>
+      <lastmod>2025-11-02</lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>0.8</priority>
+    </url>
+
+    <url>
+      <loc>https://rxv-dreamstudio.vercel.app/blog/focus-meditation</loc>
+      <lastmod>2025-11-02</lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>0.8</priority>
+    </url>
+
+    <url>
+      <loc>https://rxv-dreamstudio.vercel.app/blog/focus-reset</loc>
+      <lastmod>2025-11-02</lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>0.8</priority>
+    </url>
+
+    <url>
+      <loc>https://rxv-dreamstudio.vercel.app/blog/gratitude-breath-journal</loc>
+      <lastmod>2025-11-02</lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>0.8</priority>
+    </url>
+
+    <url>
+      <loc>https://rxv-dreamstudio.vercel.app/blog/healthy-lunch</loc>
+      <lastmod>2025-11-02</lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>0.8</priority>
+    </url>
+
+    <url>
+      <loc>https://rxv-dreamstudio.vercel.app/blog/hydration-meditation</loc>
+      <lastmod>2025-11-02</lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>0.8</priority>
+    </url>
+
+    <url>
+      <loc>https://rxv-dreamstudio.vercel.app/blog/moonlight-meditation-breath</loc>
+      <lastmod>2025-11-03</lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>0.8</priority>
+    </url>
+
+    <url>
+      <loc>https://rxv-dreamstudio.vercel.app/blog/morning-affirmations</loc>
+      <lastmod>2025-11-03</lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>0.8</priority>
+    </url>
+
+    <url>
+      <loc>https://rxv-dreamstudio.vercel.app/blog/morning-breath</loc>
+      <lastmod>2025-11-02</lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>0.8</priority>
+    </url>
+
+    <url>
+      <loc>https://rxv-dreamstudio.vercel.app/blog/morning-meditation</loc>
+      <lastmod>2025-11-02</lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>0.8</priority>
+    </url>
+
+    <url>
+      <loc>https://rxv-dreamstudio.vercel.app/blog/morning-ritual</loc>
+      <lastmod>2025-11-02</lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>0.8</priority>
+    </url>
+
+    <url>
+      <loc>https://rxv-dreamstudio.vercel.app/blog/night-reset</loc>
+      <lastmod>2025-11-02</lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>0.8</priority>
+    </url>
+
+    <url>
+      <loc>https://rxv-dreamstudio.vercel.app/blog/perfect-breakfast-time</loc>
+      <lastmod>2025-11-02</lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>0.8</priority>
+    </url>
+
+    <url>
+      <loc>https://rxv-dreamstudio.vercel.app/blog/power-of-silence</loc>
+      <lastmod>2025-11-03</lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>0.8</priority>
+    </url>
+
+    <url>
+      <loc>https://rxv-dreamstudio.vercel.app/blog/self-dialogue-meditation</loc>
+      <lastmod>2025-11-02</lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>0.8</priority>
+    </url>
+
+    <url>
+      <loc>https://rxv-dreamstudio.vercel.app/blog/sleep-sound-therapy</loc>
+      <lastmod>2025-11-03</lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>0.8</priority>
+    </url>
+
+    <url>
+      <loc>https://rxv-dreamstudio.vercel.app/blog/three-minute-meditation</loc>
+      <lastmod>2025-11-03</lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>0.8</priority>
+    </url>
+
+    <url>
+      <loc>https://rxv-dreamstudio.vercel.app/blog/weekly-breath-challenge</loc>
+      <lastmod>2025-11-02</lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>0.8</priority>
+    </url>
+
+    <url>
+      <loc>https://rxv-dreamstudio.vercel.app/aids/ltc-2025-update</loc>
+      <lastmod>2025-11-04</lastmod>
+      <changefreq>monthly</changefreq>
+      <priority>0.8</priority>
+    </url>
+
+    <url>
+      <loc>https://rxv-dreamstudio.vercel.app/aids/rental-subsidy-2025</loc>
+      <lastmod>2025-11-04</lastmod>
+      <changefreq>monthly</changefreq>
+      <priority>0.8</priority>
+    </url>
+
+    <url>
+      <loc>https://rxv-dreamstudio.vercel.app/aids/senior-transport-2025</loc>
+      <lastmod>2025-11-04</lastmod>
+      <changefreq>monthly</changefreq>
+      <priority>0.8</priority>
+    </url>
+  </urlset>

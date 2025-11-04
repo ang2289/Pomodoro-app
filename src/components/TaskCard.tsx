@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface Task {
   id: string
@@ -31,6 +32,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
   getCategoryColor, 
   getCategoryName 
 }) => {
+  const { t } = useTranslation()
+  
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl mb-3 shadow-sm text-sm p-4">
       {/* 頂部：勾選框+任務名稱 | 狀態 */}
@@ -49,18 +52,20 @@ const TaskCard: React.FC<TaskCardProps> = ({
                 ? 'line-through text-gray-500 dark:text-gray-400' 
                 : 'text-gray-900 dark:text-white'
             }`}>
-              {task.title && task.title.trim() ? task.title : '（未命名任務）'}
+              {task.title && task.title.trim() ? task.title : `(${t('todo_config.empty.no_todos')})`}
             </div>
           </div>
         </div>
         <div className={`px-3 py-1 rounded-full text-sm font-medium flex-shrink-0 ${
-          task.status === '已完成' 
+          task.status === t('todo_config.status.completed') || task.status === '已完成'
             ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300' 
-            : task.status === '進行中'
+            : task.status === t('todo_config.status.in_progress') || task.status === '進行中'
             ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300'
             : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
         }`}>
-          {task.status}
+          {task.status === '已完成' ? t('todo_config.status.completed') :
+           task.status === '進行中' ? t('todo_config.status.in_progress') :
+           task.status === '未開始' ? t('todo_config.status.not_started') : task.status}
         </div>
       </div>
 
@@ -86,31 +91,33 @@ const TaskCard: React.FC<TaskCardProps> = ({
         
         {/* 優先順序 */}
         <div className="text-sm text-gray-600 dark:text-gray-400">
-          <span className="font-medium">優先順序：</span>
+          <span className="font-medium">{t('todo_config.form.priority')}: </span>
           <span className={`ml-1 ${
-            task.priority === '高' 
+            task.priority === t('todo_config.priority.high') || task.priority === '高'
               ? 'text-red-600 dark:text-red-400' 
-              : task.priority === '中'
+              : task.priority === t('todo_config.priority.medium') || task.priority === '中'
               ? 'text-yellow-600 dark:text-yellow-400'
               : 'text-green-600 dark:text-green-400'
           }`}>
-            {task.priority}
+            {task.priority === '高' ? t('todo_config.priority.high') : 
+             task.priority === '中' ? t('todo_config.priority.medium') : 
+             task.priority === '低' ? t('todo_config.priority.low') : task.priority}
           </span>
         </div>
         
         {/* 日期 */}
         <div className="text-sm text-gray-600 dark:text-gray-400">
-          <span className="font-medium">日期：</span>
-          <span className="ml-1">{task.date || '未設定'}</span>
+          <span className="font-medium">{t('todo_config.form.date')}: </span>
+          <span className="ml-1">{task.date || t('todo_config.form.enter_date')}</span>
         </div>
         
         {/* 時間 */}
         <div className="text-sm text-gray-600 dark:text-gray-400">
-          <span className="font-medium">時間：</span>
+          <span className="font-medium">{t('todo_config.form.time')}: </span>
           <span className="ml-1">
             {task.startHour && task.startMinute 
               ? `${task.startHour}:${task.startMinute.padStart(2, '0')} - ${task.endHour}:${task.endMinute.padStart(2, '0')}`
-              : '未設定'
+              : t('todo_config.form.enter_time')
             }
           </span>
         </div>
@@ -119,8 +126,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
       {/* 提醒設定 */}
       {(task.reminder && task.reminder !== '0') || task.remindBeforeMinutes ? (
         <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-          <span className="font-medium">提醒：</span>
-          <span className="ml-1">任務開始前 {task.remindBeforeMinutes || Number(task.reminder)} 分鐘</span>
+          <span className="font-medium">{t('todo_config.form.reminder')}: </span>
+          <span className="ml-1">{t('todo_config.reminder.before_start')} {task.remindBeforeMinutes || Number(task.reminder)} {t('todo_config.reminder.minutes')}</span>
         </div>
       ) : null}
 
@@ -134,7 +141,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
             className="bg-red-500 hover:bg-red-600 text-white text-sm flex items-center gap-1 px-3 py-2 rounded-lg shadow transition-all duration-200 hover:shadow-md transform hover:scale-[1.02] border-0"
             style={{ background: '#ef4444', color: '#fff', border: 'none' }}
           >
-            🗑️ 刪除
+            🗑️ {t('todo_config.action.delete')}
           </button>
         </div>
       )}

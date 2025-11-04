@@ -1,5 +1,8 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 const WeeklyStats = ({ weeklyData, totalCount }) => {
+    const { t } = useTranslation();
     return (_jsxs("div", { className: "card p-4 sm:p-6 mx-auto", style: {
             margin: '30px auto',
             maxWidth: '600px'
@@ -9,9 +12,10 @@ const WeeklyStats = ({ weeklyData, totalCount }) => {
                     fontSize: '1.3rem',
                     fontWeight: '600',
                     textAlign: 'center'
-                }, children: "\uD83D\uDCCA \u672C\u9031\u7D71\u8A08" }), (() => {
+                }, children: `📊 ${t('weekly_stats')}` }), (() => {
                 if (totalCount === 0) {
-                    return (_jsx("div", { className: "text-center py-10 px-5 text-gray-600 text-lg font-medium", children: "\uD83D\uDCC5 \u672C\u9031\u5C1A\u7121\u5B8C\u6210\u7D00\u9304" }));
+                    const locale = i18n.language === 'zh_TW' ? 'zh-TW' : 'en-US';
+                    return (_jsx("div", { className: "text-center py-10 px-5 text-gray-600 text-lg font-medium", children: `📊 ${t('no_records_this_week')} (${t('today')}：${new Date().toLocaleDateString(locale, { month: '2-digit', day: '2-digit' })})` }));
                 }
                 return (_jsxs("div", { className: "flex flex-col gap-3 px-2 sm:px-4", children: [weeklyData.map((day, index) => (_jsxs("div", { className: "flex items-center gap-3 min-h-10", children: [_jsx("div", { className: "w-12 sm:w-14 text-sm sm:text-base font-semibold text-gray-700 text-center flex-shrink-0", children: day.day }), _jsx("div", { className: "flex-1 h-8 bg-gray-200 rounded-full relative overflow-hidden min-w-24", children: _jsx("div", { className: "h-full rounded-full transition-all duration-300 flex items-center justify-end pr-2", style: {
                                             width: (() => {
@@ -37,7 +41,7 @@ const WeeklyStats = ({ weeklyData, totalCount }) => {
                                                     return '#6ddddd'; // 中色 - 中強度
                                                 return '#7de5e5'; // 淺色 - 低強度
                                             })()
-                                        }, children: day.count > 0 && (_jsx("span", { className: "text-white text-xs font-semibold", children: day.count })) }) }), _jsx("div", { className: "w-16 sm:w-20 text-right text-sm sm:text-base font-semibold flex-shrink-0 flex items-center justify-end pr-3", children: _jsx("span", { className: day.count > 0 ? 'text-teal-500' : 'text-gray-400', children: day.count > 0 ? `${day.count} 顆` : '0 顆' }) })] }, index))), _jsx("div", { className: "mt-5 p-5 bg-gradient-to-r from-green-50 to-teal-50 rounded-xl border border-green-200 shadow-sm", children: _jsxs("div", { className: "space-y-3", children: [_jsxs("div", { className: "text-center", children: [_jsx("div", { className: "text-lg sm:text-xl font-bold text-green-700 mb-1", children: "\uD83C\uDFAF \u672C\u9031\u7E3D\u8A08" }), _jsxs("div", { className: "text-2xl sm:text-3xl font-bold text-green-600", children: [totalCount, " \u9846\u756A\u8304"] })] }), _jsx("div", { className: "text-center pt-2 border-t border-green-200", children: _jsxs("div", { className: "text-sm sm:text-base font-semibold text-green-600", children: ["\u5E73\u5747\u6BCF\u65E5\uFF1A", Math.round(totalCount / 7 * 10) / 10, " \u9846"] }) })] }) })] }));
+                                        }, children: day.count > 0 && (_jsx("span", { className: "text-white text-xs font-semibold", children: day.count })) }) }), _jsx("div", { className: "w-16 sm:w-20 text-right text-sm sm:text-base font-semibold flex-shrink-0 flex items-center justify-end pr-3", children: _jsx("span", { className: day.count > 0 ? 'text-teal-500' : 'text-gray-400', children: day.count > 0 ? `${day.count} ${t('units')}` : `0 ${t('units')}` }) })] }, index))), _jsx("div", { className: "mt-5 p-5 bg-gradient-to-r from-green-50 to-teal-50 rounded-xl border border-green-200 shadow-sm", children: _jsxs("div", { className: "space-y-3", children: [_jsxs("div", { className: "text-center", children: [_jsx("div", { className: "text-lg sm:text-xl font-bold text-green-700 mb-1", children: `🎯 ${t('weekly_total')}` }), _jsxs("div", { className: "text-2xl sm:text-3xl font-bold text-green-600", children: [totalCount, ` ${t('tomatoes')}`] })] }), _jsx("div", { className: "text-center pt-2 border-t border-green-200", children: _jsxs("div", { className: "text-sm sm:text-base font-semibold text-green-600", children: [`${t('daily_avg')}：`, Math.round(totalCount / 7 * 10) / 10, ` ${t('units')}`] }) })] }) })] }));
             })()] }));
 };
 export default WeeklyStats;

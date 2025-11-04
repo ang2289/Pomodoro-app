@@ -1,5 +1,18 @@
 User-agent: *
 Allow: /
-Sitemap: https://pomodoro-app-eight-rouge.vercel.app/sitemap.xml
-Disallow: /admin
-Disallow: /private
+Disallow: /private/
+
+Sitemap: https://rxv-dreamstudio.vercel.app/sitemap.xml
+
+# 強化 AdSense 與 SEO
+User-agent: Mediapartners-Google
+Disallow:
+
+User-agent: AdsBot-Google
+Disallow:
+
+User-agent: Googlebot-Image
+Disallow:
+
+User-agent: Googlebot-Mobile
+Disallow:

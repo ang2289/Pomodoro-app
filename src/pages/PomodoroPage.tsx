@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import IconButton from '../components/ui/IconButton';
 import HeaderBar from '../components/HeaderBar';
 import ModuleDropdown from '../components/ModuleDropdown';
@@ -13,42 +14,21 @@ import {
   initializeDefaultFocusItems 
 } from '../services/focusItemService';
 import { exportPomodoroRecordsToCSVWithCapacitor } from '../services/capacitorCsvExportService';
-import { getNotificationSettings } from '../utils/notificationUtils';
 
 // 導入新創建的組件
-import CircularTimer from '../components/Pomodoro/CircularTimer';
-import FocusItemSelector from '../components/Pomodoro/FocusItemSelector';
-import TimeSettings from '../components/Pomodoro/TimeSettings';
+import FocusItemSelector from '../components/Pomodoro/FocusItemSelector.tsx';
+import TimeSettings from '../components/Pomodoro/TimeSettings.tsx';
 import WeeklyStats from '../components/Pomodoro/WeeklyStats';
 import RecordsList from '../components/Pomodoro/RecordsList';
 import SearchRecords from '../components/Pomodoro/SearchRecords';
 import FocusItemModal from '../components/Pomodoro/FocusItemModal';
+import TimerPanel from './Pomodoro/components/TimerPanel';
+import { usePomodoroTimer } from './Pomodoro/hooks/usePomodoroTimer';
+import './PomodoroPage.css';
 
 const PomodoroPage = () => {
-  // Wake Lock 變數
-  let wakeLock: any = null;
-
-  const requestWakeLock = async () => {
-    try {
-      wakeLock = await (navigator as any).wakeLock.request('screen');
-      console.log('🟢 螢幕已鎖定避免休眠');
-    } catch (err) {
-      console.warn('⚠️ 瀏覽器不支援 Wake Lock', err);
-    }
-  };
-
-  const releaseWakeLock = async () => {
-    try {
-      if (wakeLock) {
-        await wakeLock.release();
-        wakeLock = null;
-        console.log('🔓 已釋放螢幕鎖定');
-      }
-    } catch (err) {
-      console.warn('⚠️ 無法釋放 Wake Lock', err);
-    }
-  };
-
+  const { t } = useTranslation();
+  
   // 計時器狀態 - 從 localStorage 讀取預設值
   const getInitialWorkMinutes = () => {
     const saved = localStorage.getItem('pomodoroWorkMinutes');
@@ -62,10 +42,7 @@ const PomodoroPage = () => {
 
   const [workMinutes, setWorkMinutes] = useState(getInitialWorkMinutes);
   const [breakMinutes, setBreakMinutes] = useState(getInitialBreakMinutes);
-  const [timeLeft, setTimeLeft] = useState(getInitialWorkMinutes() * 60);
-  const [isRunning, setIsRunning] = useState(false);
-  const [isBreak, setIsBreak] = useState(false);
-
+  
   // 專注項目狀態
   const [focusItems, setFocusItems] = useState<FocusItemWithCount[]>([]);
   const [selectedFocusItemId, setSelectedFocusItemId] = useState<string>('');
@@ -131,21 +108,10 @@ const PomodoroPage = () => {
     
     window.addEventListener('resize', handleResize);
     
-    // 組件卸載時釋放防止螢幕休眠
     return () => {
       window.removeEventListener('resize', handleResize);
-      releaseWakeLock(); // 組件卸載時釋放鎖定
     };
   }, []);
-
-  // 當工作時間設定改變時，更新計時器（僅在非運行狀態且非休息狀態）
-  useEffect(() => {
-    if (!isRunning && !isBreak) {
-      setTimeLeft(workMinutes * 60);
-      // 儲存到 localStorage
-      localStorage.setItem('pomodoroWorkMinutes', workMinutes.toString());
-    }
-  }, [workMinutes]);
 
   // 當休息時間設定改變時，儲存到 localStorage
   useEffect(() => {
@@ -196,174 +162,50 @@ const PomodoroPage = () => {
     }
   };
 
-  // 播放音效和發送通知
-  const playNotificationSound = (type: 'work' | 'break') => {
-    const settings = getNotificationSettings();
-    
-    // 檢查是否啟用通知
-    if (!settings.enabled) return;
-    
-    // 檢查特定類型的通知設定
-    if (type === 'work' && !settings.workNotification) return;
-    if (type === 'break' && !settings.breakNotification) return;
-    
-    // 播放音效
-    try {
-      const audio = new Audio(`/sounds/${settings.sound}`);
-      audio.volume = 0.8; // 設定音量
-      audio.play().catch(err => {
-        console.error('播放音效失敗:', err);
-      });
-    } catch (error) {
-      console.error('音效播放錯誤:', error);
-    }
-    
-    // 發送瀏覽器通知
-    if ('Notification' in window && Notification.permission === 'granted') {
-      const title = type === 'work' ? '番茄鐘工作時間結束！' : '休息時間結束！';
-      const body = type === 'work' ? '恭喜完成一個番茄鐘！可以開始休息了。' : '休息時間結束，準備開始下一個工作時段。';
+  // 處理工作階段完成（記錄完成的工作時段）
+  const handleWorkSessionComplete = () => {
+    if (selectedFocusItemId) {
+      const newRecord: PomodoroRecord = {
+        id: Date.now().toString(),
+        completedAt: new Date().toISOString(),
+        workMinutes: workMinutes,
+        breakMinutes: breakMinutes,
+        focusItemId: selectedFocusItemId,
+        description: ''
+      };
       
-      try {
-        new Notification(title, {
-          body: body,
-          icon: '/favicon.ico',
-          badge: '/favicon.ico'
-        });
-      } catch (error) {
-        console.error('發送通知失敗:', error);
-      }
-    }
-  };
-
-  // 計時器邏輯
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    
-    if (isRunning && timeLeft > 0) {
-      interval = setInterval(() => {
-        setTimeLeft(time => time - 1);
-      }, 1000);
-    } else if (timeLeft === 0) {
-      // 時間到，切換到休息或工作時間
-      if (isBreak) {
-        // 休息結束，回到工作時間
-        setIsBreak(false);
-        setTimeLeft(workMinutes * 60);
-        setIsRunning(false);
-        // 播放休息結束通知
-        playNotificationSound('break');
-        // 關閉防止螢幕休眠
-        releaseWakeLock();
+      const updatedRecords = [newRecord, ...records];
+      setRecords(updatedRecords);
+      localStorage.setItem('pomodoroRecords', JSON.stringify(updatedRecords));
+      
+      // 如果搜尋處於活動狀態，重新執行搜尋
+      if (isSearchActive) {
+        // 暫時清除搜尋狀態，然後重新執行搜尋
+        const currentKeyword = searchKeyword;
+        const currentSearchFields = searchFields;
+        
+        // 更新記錄後重新搜尋
+        setTimeout(() => {
+          setSearchKeyword(currentKeyword);
+          setSearchFields(currentSearchFields);
+          handleSearch();
+        }, 100);
       } else {
-        // 工作結束，開始休息
-        // 播放工作結束通知
-        playNotificationSound('work');
-        
-        if (breakMinutes <= 0) {
-          // 無休息：直接重置到下一輪工作並停下等待使用者開始
-          setIsBreak(false);
-          setTimeLeft(workMinutes * 60);
-          setIsRunning(false);
-          // 關閉防止螢幕休眠
-          releaseWakeLock();
-        } else {
-          setIsBreak(true);
-          setTimeLeft(breakMinutes * 60);
-          // 自動開始休息計時
-          setIsRunning(true);
-          // 繼續保持防止螢幕休眠狀態
-        }
-        
-        // 記錄完成的工作時段
-        if (selectedFocusItemId) {
-          const newRecord: PomodoroRecord = {
-            id: Date.now().toString(),
-            completedAt: new Date().toISOString(),
-            workMinutes: workMinutes,
-            breakMinutes: breakMinutes,
-            focusItemId: selectedFocusItemId,
-            description: ''
-          };
-          
-          const updatedRecords = [newRecord, ...records];
-          setRecords(updatedRecords);
-          localStorage.setItem('pomodoroRecords', JSON.stringify(updatedRecords));
-          
-          // 如果搜尋處於活動狀態，重新執行搜尋
-          if (isSearchActive) {
-            // 暫時清除搜尋狀態，然後重新執行搜尋
-            const currentKeyword = searchKeyword;
-            const currentSearchFields = searchFields;
-            
-            // 更新記錄後重新搜尋
-            setTimeout(() => {
-              setSearchKeyword(currentKeyword);
-              setSearchFields(currentSearchFields);
-              handleSearch();
-            }, 100);
-          } else {
-            setFilteredRecords(updatedRecords);
-          }
-          
-          // 記錄使用次數
-          recordFocusItemUsage(selectedFocusItemId);
-          loadFocusItems(); // 重新載入以更新使用次數
-        }
+        setFilteredRecords(updatedRecords);
       }
+      
+      // 記錄使用次數
+      recordFocusItemUsage(selectedFocusItemId);
+      loadFocusItems(); // 重新載入以更新使用次數
     }
-    
-    return () => clearInterval(interval);
-  }, [isRunning, timeLeft, isBreak, workMinutes, breakMinutes, selectedFocusItemId, focusItems, records]);
-
-  // 計時器控制函數
-  const startTimer = async () => {
-    setIsRunning(true);
-    // 啟用防止螢幕休眠
-    await requestWakeLock();
   };
 
-  const pauseTimer = async () => {
-    setIsRunning(false);
-    // 關閉防止螢幕休眠
-    await releaseWakeLock();
-  };
-
-  const _resetTimer = async () => {
-    setIsRunning(false);
-    setIsBreak(false);
-    setTimeLeft(workMinutes * 60);
-    // 關閉防止螢幕休眠
-    await releaseWakeLock();
-  };
-
-  // 提早結束當前階段
-  const skipCurrentPhase = async () => {
-    // 顯示確認彈窗
-    if (!confirm("確定要提前結束這一輪嗎？")) {
-      return; // 使用者取消，不執行任何操作
-    }
-    
-    // 1. 停止當前計時器（setInterval 會透過 useEffect 的清理函數自動清除）
-    setIsRunning(false);
-    
-    // 2. 切換工作/休息階段
-    setIsBreak(!isBreak);
-    
-    // 3. 根據當前狀態設定下個階段的預設時間
-    if (isBreak) {
-      // 如果現在是休息，切換到工作時間
-      setTimeLeft(workMinutes * 60);
-    } else {
-      // 如果現在是工作，切換到休息時間
-      setTimeLeft(breakMinutes * 60);
-    }
-    
-    // 4. 確保不會自動繼續倒數
-    setIsRunning(false);
-    
-    // 5. 關閉防止螢幕休眠
-    await releaseWakeLock();
-  };
+  // 使用 Pomodoro Timer Hook
+  const timer = usePomodoroTimer({
+    workMinutes,
+    breakMinutes,
+    onWorkSessionComplete: handleWorkSessionComplete
+  });
 
   // 專注項目管理
   const handleAddFocusItem = async () => {
@@ -473,7 +315,7 @@ const PomodoroPage = () => {
   const handleSearch = () => {
     // 檢查日期條件
     if (startDate && endDate && endDate < startDate) {
-      alert('結束日期不能早於開始日期！請檢查日期設定。');
+      alert(t('date_range_error'));
       return;
     }
     
@@ -620,7 +462,7 @@ const PomodoroPage = () => {
       setExportStatus({
         show: true,
         type: 'error',
-        message: '匯出失敗，請稍後再試'
+        message: t('export_failed_try_later')
       });
       setTimeout(() => {
         setExportStatus(prev => ({ ...prev, show: false }));
@@ -636,7 +478,15 @@ const PomodoroPage = () => {
     startOfWeek.setHours(0, 0, 0, 0);
     
     const weeklyData = [];
-    const days = ['日', '一', '二', '三', '四', '五', '六'];
+    const days = [
+      t('weekday_sun'),
+      t('weekday_mon'),
+      t('weekday_tue'),
+      t('weekday_wed'),
+      t('weekday_thu'),
+      t('weekday_fri'),
+      t('weekday_sat')
+    ];
     
     for (let i = 0; i < 7; i++) {
       const date = new Date(startOfWeek);
@@ -662,29 +512,59 @@ const PomodoroPage = () => {
   const selectedFocusItem = focusItems.find(item => item.id === selectedFocusItemId);
   const timerColor = selectedFocusItem?.color || '#4ecdc4';
 
+  // 獲取翻譯後的專注項目名稱
+  const getFocusItemDisplayName = (name: string) => {
+    const defaultFocusItemNames = ['讀書', '寫作', '工作', '運動', '冥想', '抄經'];
+    if (defaultFocusItemNames.includes(name)) {
+      const translationKey = `focus_items_list.${name}`;
+      const translated = t(translationKey);
+      // 如果翻譯返回的是對象或與鍵相同，則使用原始名稱
+      if (typeof translated === 'string' && translated !== translationKey) {
+        return translated;
+      }
+      return name;
+    }
+    // 對於自定義專注項目，使用原始名稱
+    return name;
+  };
+
   // 保留未來使用的函式，避免 TS6133（不改變任何行為）
   void _handleLoadMore;
-  void _resetTimer;
 
   return (
-    <div className="bg-gray-50 min-h-screen flex flex-col">
+    <div 
+      className="bg-gray-50 min-h-screen flex flex-col"
+      style={{
+        background: `
+          radial-gradient(at 30% 20%, rgba(255, 240, 255, 0.6) 0%, transparent 60%),
+          radial-gradient(at 80% 80%, rgba(180, 230, 255, 0.5) 0%, transparent 70%),
+          linear-gradient(180deg, #D9F3FF 0%, #F7FBFE 100%)
+        `,
+        minHeight: "100vh",
+        paddingBottom: "80px"
+      }}
+    >
       <main className="flex-1 max-w-screen-md mx-auto px-4 w-full">
         {/* 模組選擇下拉選單 */}
         <ModuleDropdown />
         
         {/* 頁面標題 */}
-        <HeaderBar icon="🍅" title="番茄鐘" />
+        <HeaderBar icon="🍅" title="pomodoro" />
       
-      {/* 圓形計時器 */}
-      <div className="rounded-xl shadow-md p-4 sm:p-6 bg-white" style={{ color: '#213547' }}>
-        <CircularTimer
-          timeLeft={timeLeft}
-          totalSeconds={isBreak ? breakMinutes * 60 : workMinutes * 60}
-          timerColor={timerColor}
-          isRunning={isRunning}
-          isBreak={isBreak}
-        />
-      </div>
+      {/* 計時器面板 */}
+      <TimerPanel
+        timeLeft={timer.timeLeft}
+        isRunning={timer.isRunning}
+        isBreak={timer.isBreak}
+        timerColor={timerColor}
+        workMinutes={workMinutes}
+        breakMinutes={breakMinutes}
+        onStart={timer.startTimer}
+        onPause={timer.pauseTimer}
+        onReset={timer.resetTimer}
+        onSkip={timer.endSession}
+        onTimeInput={timer.handleTimeInput}
+      />
 
       {/* 專注項目選擇器 */}
       <FocusItemSelector
@@ -699,10 +579,10 @@ const PomodoroPage = () => {
         breakMinutes={breakMinutes}
         onWorkMinutesChange={setWorkMinutes}
         onBreakMinutesChange={setBreakMinutes}
-        onStart={startTimer}
-        onPause={pauseTimer}
-        onSkip={skipCurrentPhase}
-        isRunning={isRunning}
+        onStart={timer.startTimer}
+        onPause={timer.pauseTimer}
+        onSkip={timer.endSession}
+        isRunning={timer.isRunning}
       />
 
       {/* 每週統計 */}
@@ -798,7 +678,7 @@ const PomodoroPage = () => {
               fontSize: '1.5rem',
               fontWeight: '600',
               color: '#333'
-            }}>編輯記錄</h2>
+            }}>{t('todo_config.action.edit')} {t('todo_config.title')}</h2>
             
             <div style={{ marginBottom: '20px' }}>
               <label style={{
@@ -807,7 +687,7 @@ const PomodoroPage = () => {
                 fontSize: '14px',
                 fontWeight: '600',
                 color: '#555'
-              }}>專注項目：</label>
+              }}>{t('focus_item_colon')}</label>
               <div style={{ position: 'relative' }}>
                 <button
                   type="button"
@@ -821,7 +701,9 @@ const PomodoroPage = () => {
                       style={{ backgroundColor: (focusItems.find(i => i.id === editingRecordFocusItemId)?.color) || '#3b82f6' }}
                     />
                     <span className="text-gray-800">
-                      {focusItems.find(i => i.id === editingRecordFocusItemId)?.name || '—'}
+                      {focusItems.find(i => i.id === editingRecordFocusItemId) 
+                        ? getFocusItemDisplayName(focusItems.find(i => i.id === editingRecordFocusItemId)!.name)
+                        : '—'}
                     </span>
                   </span>
                   <svg 
@@ -855,7 +737,7 @@ const PomodoroPage = () => {
                           className="w-3 h-3 rounded-full border border-black/5" 
                           style={{ backgroundColor: item.color }}
                         />
-                        <span className="text-gray-800">{item.name}</span>
+                        <span className="text-gray-800">{getFocusItemDisplayName(item.name)}</span>
                       </div>
                     ))}
                   </div>
@@ -870,11 +752,11 @@ const PomodoroPage = () => {
                 fontSize: '14px',
                 fontWeight: '600',
                 color: '#555'
-              }}>描述：</label>
+              }}>{t('todo_config.form.description')}:</label>
               <textarea
                 value={editingRecordDescription}
                 onChange={(e) => setEditingRecordDescription(e.target.value)}
-                placeholder="輸入描述..."
+                placeholder={t('todo_config.form.description_placeholder')}
                 style={{
                   width: '100%',
                   padding: '10px 12px',
@@ -896,7 +778,7 @@ const PomodoroPage = () => {
             }}>
               <IconButton
                 icon="❌"
-                label="取消"
+                label={t('cancel')}
                 onClick={() => {
                   setEditingRecord(null);
                   setEditingRecordFocusItemId('');
@@ -907,7 +789,7 @@ const PomodoroPage = () => {
               />
               <IconButton
                 icon="💾"
-                label="儲存"
+                label={t('save')}
                 onClick={handleSaveRecordEdit}
                 variant="primary"
                 className="px-5 py-2 text-sm"

@@ -1,9 +1,13 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 import IconButton from '../ui/IconButton';
 import { Download } from 'lucide-react';
 const RecordsList = ({ records, focusItems, onEditRecord, onDeleteRecord, onExportRecords, exportStatus, isSearchActive = false, searchKeyword = '', totalRecords = 0, showAllRecords = false }) => {
+    const { t } = useTranslation();
     const formatDateTime = (dateTime) => {
-        return new Date(dateTime).toLocaleString('zh-TW', {
+        const locale = i18n.language === 'zh_TW' ? 'zh-TW' : 'en-US';
+        return new Date(dateTime).toLocaleString(locale, {
             year: 'numeric',
             month: '2-digit',
             day: '2-digit',
@@ -13,7 +17,22 @@ const RecordsList = ({ records, focusItems, onEditRecord, onDeleteRecord, onExpo
     };
     const getFocusItemName = (focusItemId) => {
         const item = focusItems.find(item => item.id === focusItemId);
-        return item ? item.name : '未知項目';
+        if (!item) {
+            return t('pomodoro_focus_item_unknown');
+        }
+        // 獲取翻譯後的專注項目名稱
+        const defaultFocusItemNames = ['讀書', '寫作', '工作', '運動', '冥想', '抄經'];
+        if (defaultFocusItemNames.includes(item.name)) {
+            const translationKey = `focus_items_list.${item.name}`;
+            const translated = t(translationKey);
+            // 如果翻譯返回的是對象或與鍵相同，則使用原始名稱
+            if (typeof translated === 'string' && translated !== translationKey) {
+                return translated;
+            }
+            return item.name;
+        }
+        // 對於自定義專注項目，使用原始名稱
+        return item.name;
     };
     return (_jsxs("div", { className: "card max-w-md mx-auto", style: {
             marginTop: '50px',
@@ -30,26 +49,26 @@ const RecordsList = ({ records, focusItems, onEditRecord, onDeleteRecord, onExpo
                                     color: '#333',
                                     fontSize: '1.3rem',
                                     fontWeight: '600'
-                                }, children: "\uD83D\uDCCB \u5B8C\u6210\u7D00\u9304" }), isSearchActive ? (_jsxs("div", { style: {
+                                }, children: "\uD83D\uDCCB " + t('completed_records') }), isSearchActive ? (_jsxs("div", { style: {
                                     marginTop: '5px',
                                     fontSize: '14px',
                                     color: '#666',
                                     fontStyle: 'italic'
-                                }, children: ["\u641C\u5C0B\u7D50\u679C\uFF1A\u627E\u5230 ", records.length, " \u7B46\u8A18\u9304", searchKeyword && (_jsxs("span", { style: { marginLeft: '8px' }, children: ["(\u95DC\u9375\u5B57: \"", searchKeyword, "\")"] }))] })) : showAllRecords ? (
+                                }, children: [t('search_results') + "\uFF1A" + " " + t('found') + " ", records.length, " " + t('records'), searchKeyword && (_jsxs("span", { style: { marginLeft: '8px' }, children: ["(" + t('keyword') + ": \"", searchKeyword, "\")"] }))] })) : showAllRecords ? (
                             // 顯示全部紀錄時的提示文字
                             _jsxs("div", { style: {
                                     marginTop: '5px',
                                     fontSize: '14px',
                                     color: '#666',
                                     fontStyle: 'italic'
-                                }, children: ["\u76EE\u524D\u986F\u793A\u5168\u90E8\u7D00\u9304\uFF0C\u5171 ", totalRecords, " \u7B46\u3002", _jsx("br", {}), "\u82E5\u8CC7\u6599\u904E\u591A\uFF0C\u5EFA\u8B70\u4F7F\u7528\u641C\u5C0B\u529F\u80FD\u6216\u8A2D\u5B9A\u5206\u9801\u986F\u793A\u3002"] })) : (
+                                }, children: [t('currently_showing_all_records') + ", " + t('total') + " ", totalRecords, " " + t('records') + ".\u3002", _jsx("br", {}), t('if_too_much_data_suggest_search_or_pagination')] })) : (
                             // 預設顯示提示文字
                             _jsx("div", { style: {
                                     marginTop: '5px',
                                     fontSize: '14px',
                                     color: '#666',
                                     fontStyle: 'italic'
-                                }, children: "\u9810\u8A2D\u4E94\u7B46\uFF0C\u66F4\u591A\u8CC7\u6599\u53EF\u7528\u641C\u5C0B\u529F\u80FD" }))] }), _jsxs("div", { style: {
+                                }, children: t('default_five_records_more_available_with_search') }))] }), _jsxs("div", { style: {
                             display: 'flex',
                             gap: '10px',
                             alignItems: 'center'
@@ -73,12 +92,12 @@ const RecordsList = ({ records, focusItems, onEditRecord, onDeleteRecord, onExpo
                                     display: 'flex',
                                     gap: '10px',
                                     alignItems: 'center'
-                                }, children: _jsx(IconButton, { icon: _jsx(Download, { size: 16 }), label: "\u532F\u51FA CSV", onClick: onExportRecords, variant: "primary", className: "px-4 py-2 text-sm" }) })] })] }), records.length === 0 ? (_jsx("div", { style: {
+                                },                                 children: _jsx(IconButton, { icon: _jsx(Download, { size: 16 }), label: t('export_csv'), onClick: onExportRecords, variant: "primary", className: "px-4 py-2 text-sm" }) })] })] }), records.length === 0 ? (_jsx("div", { style: {
                     textAlign: 'center',
                     padding: '40px 20px',
                     color: '#666',
                     fontSize: '16px'
-                }, children: "\uD83D\uDCDD \u5C1A\u7121\u5B8C\u6210\u7D00\u9304" })) : (_jsx("div", { style: {
+                }, children: "\uD83D\uDCDD " + t('no_completed_records') })) : (_jsx("div", { style: {
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '16px'
@@ -121,7 +140,7 @@ const RecordsList = ({ records, focusItems, onEditRecord, onDeleteRecord, onExpo
                                             color: '#2d3748',
                                             lineHeight: '1.3',
                                             flex: 1
-                                        }, children: record.focusItemId ? getFocusItemName(record.focusItemId) : '未知項目' })] }), _jsxs("div", { style: {
+                                        }, children: record.focusItemId ? getFocusItemName(record.focusItemId) : t('pomodoro_focus_item_unknown') })] }), _jsxs("div", { style: {
                                     paddingLeft: '24px',
                                     display: 'flex',
                                     flexDirection: 'column',
@@ -141,6 +160,6 @@ const RecordsList = ({ records, focusItems, onEditRecord, onDeleteRecord, onExpo
                                     gap: '8px',
                                     paddingLeft: '24px',
                                     marginTop: '4px'
-                                }, children: [_jsx(IconButton, { icon: "\u270F\uFE0F", label: "\u7DE8\u8F2F", onClick: () => onEditRecord(record), variant: "primary", className: "px-3 py-1 text-xs hover:scale-105" }), _jsx(IconButton, { icon: "\uD83D\uDDD1\uFE0F", label: "\u522A\u9664", onClick: () => onDeleteRecord(record.id), variant: "danger", className: "px-3 py-1 text-xs hover:scale-105" })] })] }) }, record.id))) }))] }));
+                                }, children: [_jsx(IconButton, { icon: "\u270F\uFE0F", label: t('edit'), onClick: () => onEditRecord(record), variant: "primary", className: "px-3 py-1 text-xs hover:scale-105" }), _jsx(IconButton, { icon: "\uD83D\uDDD1\uFE0F", label: t('delete'), onClick: () => onDeleteRecord(record.id), variant: "danger", className: "px-3 py-1 text-xs hover:scale-105" })] })] }) }, record.id))) }))] }));
 };
 export default RecordsList;

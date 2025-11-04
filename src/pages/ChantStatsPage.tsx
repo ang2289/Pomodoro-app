@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import i18n from '../i18n'
 import { supabase } from '../utils/supabaseClient'
 import ChantSummaryItem from '../components/ChantSummaryItem'
 
@@ -17,6 +19,7 @@ interface ChantWish {
 }
 
 export default function ChantStatsPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [stats, setStats] = useState<ChantLog[]>([])
   const [wishes, setWishes] = useState<ChantWish[]>([])
@@ -37,7 +40,7 @@ export default function ChantStatsPage() {
 
         if (logsError) {
           console.error('讀取統計失敗:', logsError)
-          setError('讀取統計失敗：' + logsError.message)
+          setError(t('failed_to_load_stats') + ': ' + logsError.message)
           return
         }
 
@@ -55,7 +58,7 @@ export default function ChantStatsPage() {
         setWishes(wishesData || [])
       } catch (err) {
         console.error('讀取統計失敗:', err)
-        setError('讀取統計失敗，請重試')
+        setError(t('failed_to_load_stats_retry'))
       } finally {
         setLoading(false)
       }
@@ -65,7 +68,8 @@ export default function ChantStatsPage() {
   }, [])
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('zh-TW', {
+    const locale = i18n.language === 'zh_TW' ? 'zh-TW' : 'en-US'
+    return new Date(dateString).toLocaleDateString(locale, {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
@@ -98,7 +102,7 @@ export default function ChantStatsPage() {
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              <span className="ml-3 text-base sm:text-lg text-gray-600">載入統計資料中...</span>
+              <span className="ml-3 text-base sm:text-lg text-gray-600">{t('loading_stats_data')}</span>
             </div>
           </div>
         </div>
@@ -118,7 +122,7 @@ export default function ChantStatsPage() {
                 onClick={() => window.location.reload()}
                 className="bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 sm:px-6 sm:py-3 rounded-lg transition-colors text-sm sm:text-base"
               >
-                重新載入
+                {t('reload')}
               </button>
             </div>
           </div>
@@ -139,41 +143,41 @@ export default function ChantStatsPage() {
           <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
-          返回唸經頁
+          {t('back_to_chant_page')}
         </button>
       </div>
 
       {/* 頁面標題 */}
       <div className="text-center mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">📊 唸經統計報表</h1>
-        <p className="text-sm sm:text-base text-gray-600">查看大家的集氣助念記錄</p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">📊 {t('chant_stats_report')}</h1>
+        <p className="text-sm sm:text-base text-gray-600">{t('chant_stats_subtitle')}</p>
       </div>
 
       {/* 統計卡片 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
         <div className="card text-center" style={{ backgroundColor: '#ffffff', color: '#213547' }}>
           <div className="text-2xl sm:text-3xl font-bold text-pink-600 mb-2">{getTotalChanted()}</div>
-          <div className="text-sm sm:text-base text-gray-600">總念誦次數</div>
+          <div className="text-sm sm:text-base text-gray-600">{t('total_chant_count')}</div>
         </div>
         <div className="card text-center" style={{ backgroundColor: '#ffffff', color: '#213547' }}>
           <div className="text-2xl sm:text-3xl font-bold text-blue-600 mb-2">{stats.length}</div>
-          <div className="text-sm sm:text-base text-gray-600">記錄筆數</div>
+          <div className="text-sm sm:text-base text-gray-600">{t('number_of_records')}</div>
         </div>
         <div className="card text-center" style={{ backgroundColor: '#ffffff', color: '#213547' }}>
           <div className="text-2xl sm:text-3xl font-bold text-green-600 mb-2">{getUniqueUsers()}</div>
-          <div className="text-sm sm:text-base text-gray-600">參與人數</div>
+          <div className="text-sm sm:text-base text-gray-600">{t('number_of_participants')}</div>
         </div>
       </div>
 
       {/* 詳細記錄 */}
       <div className="card mb-6" style={{ backgroundColor: '#ffffff', color: '#213547' }}>
-        <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-4 sm:mb-6">📋 詳細記錄</h2>
+        <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-4 sm:mb-6">📋 {t('detailed_records')}</h2>
         
         {stats.length === 0 ? (
           <div className="text-center py-6 sm:py-8">
             <div className="text-3xl sm:text-4xl mb-4">📊</div>
-            <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-2">還沒有統計資料</h3>
-            <p className="text-sm sm:text-base text-gray-600">開始念誦後，統計資料會顯示在這裡</p>
+            <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-2">{t('no_stats_data')}</h3>
+            <p className="text-sm sm:text-base text-gray-600">{t('stats_will_appear_after_chanting')}</p>
           </div>
         ) : (
           <div className="space-y-3 sm:space-y-4">
@@ -190,12 +194,12 @@ export default function ChantStatsPage() {
 
       {/* 說明區塊 */}
       <div className="card" style={{ backgroundColor: '#ffffff', color: '#213547' }}>
-        <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-3 sm:mb-4">ℹ️ 說明</h3>
+        <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-3 sm:mb-4">ℹ️ {t('instructions')}</h3>
         <div className="text-sm sm:text-base text-gray-600 space-y-2">
-          <p>• 此頁面顯示所有用戶的念誦記錄</p>
-          <p>• 每次念誦完成後會自動記錄到統計中</p>
-          <p>• 可以查看總念誦次數、參與人數等統計資訊</p>
-          <p>• 記錄按時間降序排列，最新的記錄在最上方</p>
+          <p>• {t('stats_instruction_1')}</p>
+          <p>• {t('stats_instruction_2')}</p>
+          <p>• {t('stats_instruction_3')}</p>
+          <p>• {t('stats_instruction_4')}</p>
         </div>
       </div>
       </div>

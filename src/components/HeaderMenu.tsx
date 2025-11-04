@@ -1,14 +1,16 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 
 const menuItems = [
-  { path: '/chant', label: '唸經' },
-  { path: '/todo', label: '待辦' },
-  { path: 'pomodoro', label: '專注' },
-  { path: '/wish', label: '發起集氣' }
+  { path: '/chant', labelKey: 'chant' },
+  { path: '/todo', labelKey: 'todo' },
+  { path: 'pomodoro', labelKey: 'pomodoro' },
+  { path: '/wish', labelKey: 'wish' }
 ]
 
 export default function HeaderMenu() {
+  const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
   const location = useLocation()
   const currentPath = location.pathname
@@ -18,7 +20,7 @@ export default function HeaderMenu() {
       item.path === currentPath || 
       (item.path === '/chant' && currentPath === '/')
     )
-    return currentItem ? currentItem.label : '選單'
+    return currentItem ? t(currentItem.labelKey) : t('menu')
   }
 
   const getCurrentPageIcon = () => {
@@ -63,7 +65,7 @@ export default function HeaderMenu() {
                       : 'text-gray-700 hover:bg-gray-50'
                   }`}
                 >
-                  <span>{item.label}</span>
+                  <span>{t(item.labelKey)}</span>
                   {isActive && (
                     <svg className="w-4 h-4 ml-auto text-blue-600" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />

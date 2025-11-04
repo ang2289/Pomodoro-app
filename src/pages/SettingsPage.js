@@ -1,8 +1,10 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useRef, useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link as _Link } from 'react-router-dom';
 import _IconButton from '../components/ui/IconButton';
 import HeaderBar from '../components/HeaderBar';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 import NotificationSettings from '../components/NotificationSettings';
 import { backupDataToFile, restoreDataFromFile } from '../utils/backupUtils';
 import { Preferences } from '@capacitor/preferences';
@@ -10,6 +12,7 @@ import { Capacitor } from '@capacitor/core';
 import PayPalSubscribeButton from '../components/PayPalSubscribeButton';
 console.log('✅ SettingsPage 載入中');
 export default function SettingsPage() {
+    const { t } = useTranslation();
     const fileInputRef = useRef(null);
     const [isSubscribed, setIsSubscribed] = useState(false);
     const [openDialog, setOpenDialog] = useState(false);
@@ -44,11 +47,11 @@ export default function SettingsPage() {
             return;
         try {
             await restoreDataFromFile(file);
-            alert('✅ 資料還原成功！');
+            alert('✅ ' + t('data_restore_success'));
             window.location.reload();
         }
         catch (err) {
-            alert('❌ 匯入失敗，請確認檔案格式正確');
+            alert('❌ ' + t('import_failed'));
         }
     };
     return (_jsxs("div", { className: "min-h-screen bg-gray-50 p-4", children: [
@@ -64,7 +67,8 @@ export default function SettingsPage() {
             ]})
         }),
         _jsxs("div", { className: "responsive-container", children: [
-            _jsx(HeaderBar, { icon: "\u2699\uFE0F", title: "\u8A2D\u5B9A\u4E2D\u5FC3", showHomeButton: true }), 
+            _jsx(HeaderBar, { icon: "\u2699\uFE0F", title: t('settings'), showHomeButton: true }), 
+            _jsx(LanguageSwitcher, {}), 
             _jsxs("div", { className: "flex flex-col gap-4 sm:gap-6", children: [
                 _jsx(NotificationSettings, {}), 
                 ...(false ? (isApp ? [
@@ -129,14 +133,14 @@ export default function SettingsPage() {
                     ] })
                 ]) : []),
                 _jsxs("div", { className: "card", style: { backgroundColor: '#ffffff', color: '#213547' }, children: [
-                    _jsx("h2", { className: "text-lg sm:text-xl font-medium text-gray-700 mb-4 sm:mb-6", children: "\uD83D\uDCE6 \u8CC7\u6599\u5099\u4EFD\u8207\u9084\u539F" }), 
+                    _jsx("h2", { className: "text-lg sm:text-xl font-medium text-gray-700 mb-4 sm:mb-6", children: "\uD83D\uDCE6 " + t('data_backup_restore') }), 
                     _jsxs("div", { className: "flex flex-col", children: [
                         _jsx("div", { className: "flex justify-center", children:
                             _jsx("div", { className: "w-1/3", children:
                                 _jsx("button", { 
                                     onClick: backupDataToFile, 
                                     className: "w-full !bg-blue-600 hover:!bg-blue-700 !text-white font-semibold py-2 px-4 rounded transition-colors", 
-                                    children: "\u532F\u51FA\u5099\u4EFD\uFF08.json\uFF09" 
+                                    children: t('export_backup')
                                 })
                             })
                         }), 
@@ -145,7 +149,7 @@ export default function SettingsPage() {
                                 _jsx("button", { 
                                     onClick: () => fileInputRef.current?.click(), 
                                     className: "w-full !bg-green-600 hover:!bg-green-700 !text-white font-semibold py-2 px-4 rounded transition-colors", 
-                                    children: "\u532F\u5165\u9084\u539F\uFF08.json\uFF09" 
+                                    children: t('import_restore')
                                 })
                             })
                         }), 

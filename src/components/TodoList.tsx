@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Todo } from '../types/Todo'
 
 interface Props {
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export default function TodoList({ todos, onDelete, onToggleComplete, onEdit, formatDate }: Props) {
+  const { t } = useTranslation();
   const [tasks, setTasks] = useState(todos);
   const [statistics, setStatistics] = useState({
     total: 0,
@@ -22,9 +24,9 @@ export default function TodoList({ todos, onDelete, onToggleComplete, onEdit, fo
     localStorage.setItem('tasks', JSON.stringify(tasks));
 
     const total = tasks.length;
-    const done = tasks.filter(t => t.status === '已完成').length;
-    const notStarted = tasks.filter(t => t.status === '未開始').length;
-    const doing = tasks.filter(t => t.status === '進行中').length;
+    const done = tasks.filter(task => task.status === '已完成').length;
+    const notStarted = tasks.filter(task => task.status === '未開始').length;
+    const doing = tasks.filter(task => task.status === '進行中').length;
 
     setStatistics({ total, done, notStarted, doing });
   }, [tasks]);
@@ -46,10 +48,10 @@ export default function TodoList({ todos, onDelete, onToggleComplete, onEdit, fo
     <div className="space-y-3">
       <div className="mb-4 p-4 sm:p-6 bg-gray-50 rounded-xl">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 text-sm sm:text-base overflow-wrap break-word">
-          <p>總任務數：{statistics.total}</p>
-          <p>已完成：{statistics.done}</p>
-          <p>未開始：{statistics.notStarted}</p>
-          <p>進行中：{statistics.doing}</p>
+          <p>{t('total_tasks')}: {statistics.total}</p>
+          <p>{t('completed')}: {statistics.done}</p>
+          <p>{t('not_started')}: {statistics.notStarted}</p>
+          <p>{t('in_progress')}: {statistics.doing}</p>
         </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -67,19 +69,19 @@ export default function TodoList({ todos, onDelete, onToggleComplete, onEdit, fo
               }`}>
                 {todo.title}
               </h3>
-              <p className="text-xs sm:text-sm text-gray-500 overflow-wrap break-word">📅 任務日期：{formatDate(todo.datetime)}</p>
-              <p className="text-xs sm:text-sm text-gray-500 overflow-wrap break-word">🏷️ 優先度：<span className={`font-bold ${
+              <p className="text-xs sm:text-sm text-gray-500 overflow-wrap break-word">📅 {t('task_date')}: {formatDate(todo.datetime)}</p>
+              <p className="text-xs sm:text-sm text-gray-500 overflow-wrap break-word">🏷️ {t('priority')}: <span className={`font-bold ${
                 todo.priority === 'high' ? 'text-red-600' : 
                 todo.priority === 'medium' ? 'text-orange-600' : 
                 'text-green-600'
               }`}>
-                {todo.priority === 'high' ? '高' : todo.priority === 'medium' ? '中' : '低'}
+                {todo.priority === 'high' ? t('priority_high') : todo.priority === 'medium' ? t('priority_medium') : t('priority_low')}
               </span></p>
             </div>
             <label className="flex items-center gap-2">
               <input
                 type="checkbox"
-                checked={todo.status === '已完成'}
+                checked={todo.status === t('status_completed')}
                 onChange={() => {
                   handleToggleStatus(todo.id);
                   onToggleComplete?.(todo.id);
@@ -98,7 +100,7 @@ export default function TodoList({ todos, onDelete, onToggleComplete, onEdit, fo
             </button>
             <button
               onClick={() => {
-                if (window.confirm('確定要刪除這個任務嗎？')) {
+                if (window.confirm(t('confirm_delete_task'))) {
                   onDelete(todo.id);
                 }
               }}

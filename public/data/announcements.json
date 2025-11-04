@@ -1,0 +1,23 @@
+[
+  {
+    "id": 1,
+    "title_zh": "⚠️ 普發一萬元補助提醒｜認明官網防詐騙！",
+    "title_en": "⚠️ NT$10,000 Subsidy Alert｜Beware of Scams!",
+    "date": "2025-11-04",
+    "content_zh": "行政院宣布普發一萬元補助方案將於 11 月 5 日正式開放，請民眾認明官方網站「https://10000.gov.tw」，勿點陌生連結或提供個資。若接獲不明簡訊、電話或連結要求操作 ATM，務必提高警覺並撥打 165 反詐騙專線。",
+    "content_en": "The Executive Yuan announced the NT$10,000 subsidy program will officially open on November 5. Please verify the official site 'https://10000.gov.tw' and do not click unknown links or provide personal data. If you receive suspicious messages or calls, contact the 165 anti-fraud hotline.",
+    "link": "https://10000.gov.tw",
+    "source": "行政院官方網站"
+  },
+  {
+    "id": 2,
+    "title_zh": "💡 節能家電補助延長申請期限",
+    "title_en": "💡 Energy-Saving Appliance Subsidy Extended",
+    "date": "2025-10-20",
+    "content_zh": "經濟部能源署公告，節能家電補助計畫延長至 2025 年底，民眾購買符合能效等級的冰箱、冷氣、洗衣機可申請現金回饋。",
+    "content_en": "The Ministry of Economic Affairs announced that the Energy-Saving Appliance Subsidy has been extended until the end of 2025. Citizens purchasing approved energy-efficient appliances can apply for cashback.",
+    "link": "https://saveenergy.gov.tw",
+    "source": "經濟部能源署"
+  }
+]
+

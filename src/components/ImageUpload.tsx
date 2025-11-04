@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import imageCompression from 'browser-image-compression'
 import { supabase } from '../utils/supabaseClient'
 
@@ -52,6 +53,7 @@ async function isImageSafe(base64DataUrl: string): Promise<boolean> {
 }
 
 export default function ImageUpload({ onUpload }: { onUpload: (url: string) => void }) {
+  const { t } = useTranslation()
   const [uploading, setUploading] = useState(false)
   const [previewUrl, setPreviewUrl] = useState('')
   const [fileName, setFileName] = useState('')
@@ -81,7 +83,7 @@ export default function ImageUpload({ onUpload }: { onUpload: (url: string) => v
     const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase()
     
     if (!validTypes.includes(file.type) && !validExtensions.includes(fileExtension)) {
-      alert('僅支援 JPG 或 PNG 圖片格式')
+      alert(t('only_jpg_png'))
       if (fileInputRef.current) fileInputRef.current.value = ''
       setFileName('')
       setPreviewUrl('')
@@ -90,7 +92,7 @@ export default function ImageUpload({ onUpload }: { onUpload: (url: string) => v
 
     // 檢查檔案大小（初步檢查）
     if (file.size > 50 * 1024 * 1024) { // 50MB
-      alert('圖片檔案過大（超過 50MB），請選擇較小的圖片')
+      alert(t('image_too_large_50mb'))
       if (fileInputRef.current) fileInputRef.current.value = ''
       setFileName('')
       setPreviewUrl('')
@@ -166,7 +168,7 @@ export default function ImageUpload({ onUpload }: { onUpload: (url: string) => v
       
       // 檢查檔案大小（如果太大直接提示）
       if (file.size > 10 * 1024 * 1024) { // 10MB
-        alert('圖片檔案過大（超過 10MB），請選擇較小的圖片')
+        alert(t('image_too_large_10mb'))
         return
       }
       
@@ -302,7 +304,7 @@ export default function ImageUpload({ onUpload }: { onUpload: (url: string) => v
 
       if (uploadResult.error) {
         console.error('Supabase 上傳錯誤:', uploadResult.error)
-        throw new Error(`上傳失敗: ${uploadResult.error.message}`)
+        throw new Error(`${t('upload_failed_colon')}${uploadResult.error.message}`)
       }
 
       console.log('上傳成功，獲取公開 URL...')
@@ -322,45 +324,45 @@ export default function ImageUpload({ onUpload }: { onUpload: (url: string) => v
     } catch (err: any) {
       console.error('圖片上傳失敗:', err)
       
-      let errorMessage = '圖片上傳失敗'
+      let errorMessage = t('image_upload_failed')
       
       // 處理 ProgressEvent 錯誤（網路中斷等情況）
       if (err instanceof ProgressEvent) {
         if (err.type === 'error') {
-          errorMessage = '網路連線中斷，請檢查網路後再試'
+          errorMessage = t('network_issue_check')
         } else if (err.type === 'abort') {
-          errorMessage = '上傳被取消，請重試'
+          errorMessage = t('upload_failed_retry')
         } else {
-          errorMessage = '網路連線問題，請檢查網路後再試'
+          errorMessage = t('network_issue_check')
         }
       } else if (err?.message) {
         if (err.message.includes('JWT') || err.message.includes('auth')) {
-          errorMessage = '認證失敗，請重新整理頁面後再試'
+          errorMessage = t('upload_failed_retry')
         } else if (err.message.includes('storage') || err.message.includes('bucket')) {
-          errorMessage = '儲存服務暫時無法使用，請稍後再試'
+          errorMessage = t('upload_failed_retry')
         } else if (err.message.includes('network') || err.message.includes('fetch') || err.message.includes('timeout')) {
-          errorMessage = '網路連線問題，請檢查網路後再試'
+          errorMessage = t('network_issue_check')
         } else if (err.message.includes('size') || err.message.includes('too large') || err.message.includes('過大')) {
-          errorMessage = '圖片檔案過大，請選擇較小的圖片（建議小於 1MB）'
+          errorMessage = t('image_too_large_1mb')
         } else if (err.message.includes('compression') || err.message.includes('壓縮')) {
-          errorMessage = '圖片處理失敗，請選擇較小的圖片'
+          errorMessage = t('image_too_large_1mb')
         } else if (err.message.includes('format') || err.message.includes('格式')) {
-          errorMessage = '不支援的圖片格式，請選擇 JPG 或 PNG 格式'
+          errorMessage = t('only_jpg_png')
         } else {
-          errorMessage = `上傳失敗: ${err.message}`
+          errorMessage = `${t('upload_failed_colon')}${err.message}`
         }
       } else if (typeof err === 'string') {
-        errorMessage = `上傳失敗: ${err}`
+        errorMessage = `${t('upload_failed_colon')}${err}`
       } else if (err && typeof err.toString === 'function') {
         // 處理其他類型的錯誤物件
         const errStr = err.toString()
         if (errStr.includes('ProgressEvent')) {
-          errorMessage = '網路連線問題，請檢查網路後再試'
+          errorMessage = t('network_issue_check')
         } else {
-          errorMessage = `上傳失敗: ${errStr}`
+          errorMessage = `${t('upload_failed_colon')}${errStr}`
         }
       } else {
-        errorMessage = '上傳失敗，請重試'
+        errorMessage = t('upload_failed_retry')
       }
       
       alert(errorMessage)
@@ -379,7 +381,7 @@ export default function ImageUpload({ onUpload }: { onUpload: (url: string) => v
 
   return (
     <div className="text-sm text-gray-600">
-      <label className="block font-semibold mb-1">📷 上傳圖片（JPG/PNG，最大 1MB，長邊 800px）</label>
+      <label className="block font-semibold mb-1">📷 {t('upload_image_label')}</label>
 
       <div className="flex flex-col gap-2">
         <button
@@ -388,10 +390,10 @@ export default function ImageUpload({ onUpload }: { onUpload: (url: string) => v
           disabled={uploading}
           className="!bg-blue-500 hover:!bg-blue-600 !text-white font-bold py-2 px-4 rounded-lg transition-all duration-200 transform hover:scale-105 disabled:!bg-gray-400 disabled:cursor-not-allowed disabled:scale-100"
         >
-          {uploading ? '上傳中...' : '選擇圖片'}
+          {uploading ? t('uploading') : t('select_image')}
         </button>
         <span className="text-gray-500 text-xs">
-          {fileName ? `(${fileName})` : '(尚未選擇檔案)'}
+          {fileName ? `(${fileName})` : t('no_file_chosen')}
         </span>
       </div>
 
@@ -400,18 +402,18 @@ export default function ImageUpload({ onUpload }: { onUpload: (url: string) => v
         type="file"
         accept="image/jpeg,image/jpg,image/png"
         className="hidden"
-        title="選擇圖片檔案"
-        placeholder="請選擇圖片"
+        title={t('select_image_file')}
+        placeholder={t('please_select_image')}
         onChange={handleUpload}
         capture="environment"
       />
 
-      {uploading && <p className="text-xs text-gray-400 mt-1">圖片壓縮與上傳中…</p>}
+      {uploading && <p className="text-xs text-gray-400 mt-1">{t('image_compressing_uploading')}</p>}
 
       {previewUrl && (
         <div className="mt-3">
           <div className="inline-block rounded-md border border-gray-200 shadow-md overflow-hidden">
-            <img src={previewUrl} alt="預覽" className="max-h-40 object-contain bg-white" />
+            <img src={previewUrl} alt={t('preview')} className="max-h-40 object-contain bg-white" />
           </div>
           <div className="mt-2">
             <button
@@ -419,14 +421,14 @@ export default function ImageUpload({ onUpload }: { onUpload: (url: string) => v
               onClick={handleRemove}
               className="px-3 py-1 rounded-md bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm"
             >
-              移除
+              {t('remove')}
             </button>
           </div>
         </div>
       )}
 
       <p className="text-xs text-gray-400 mt-1">
-        上傳圖片不得包含裸露、暴力或不當內容，違者將無法使用。
+        {t('image_content_warning')}
       </p>
     </div>
   )

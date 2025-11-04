@@ -1,5 +1,6 @@
 import React from 'react';
 import { FocusItem } from '../../types/FocusItem';
+import { useTranslation } from 'react-i18next';
 
 interface FocusItemModalProps {
   show: boolean;
@@ -34,13 +35,14 @@ const FocusItemModal: React.FC<FocusItemModalProps> = ({
   selectedColor,
   onSelectedColorChange
 }) => {
+  const { t } = useTranslation();
   const colors = [
-    { hex: '#3b82f6', name: '藍色' },
-    { hex: '#22c55e', name: '綠色' },
-    { hex: '#f97316', name: '橘色' },
-    { hex: '#a855f7', name: '紫色' },
-    { hex: '#ef4444', name: '紅色' },
-    { hex: '#eab308', name: '黃色' }
+    { hex: '#3b82f6', name: t('blue') },
+    { hex: '#22c55e', name: t('green') },
+    { hex: '#f97316', name: t('orange') },
+    { hex: '#a855f7', name: t('purple') },
+    { hex: '#ef4444', name: t('red') },
+    { hex: '#eab308', name: t('yellow') }
   ];
 
   if (!show) return null;
@@ -82,7 +84,7 @@ const FocusItemModal: React.FC<FocusItemModalProps> = ({
             fontWeight: '600',
             color: '#333'
           }}>
-            🎯 專注項目管理
+            🎯 {t('focus_item_management')}
           </h2>
           <button
             onClick={onClose}
@@ -125,7 +127,7 @@ const FocusItemModal: React.FC<FocusItemModalProps> = ({
             fontWeight: '600',
             color: '#333'
           }}>
-            ➕ 新增專注項目
+            ➕ {t('add_focus_item')}
           </h3>
           
           <div style={{ marginBottom: '15px' }}>
@@ -136,11 +138,11 @@ const FocusItemModal: React.FC<FocusItemModalProps> = ({
               fontWeight: '600',
               color: '#555'
             }}>
-              項目名稱：
+              {t('item_name')}：
             </label>
             <input
               type="text"
-              placeholder="輸入專注項目名稱..."
+              placeholder={t('enter_focus_item_name')}
               value={newFocusItemName}
               onChange={(e) => onNewFocusItemNameChange(e.target.value)}
               style={{
@@ -165,7 +167,7 @@ const FocusItemModal: React.FC<FocusItemModalProps> = ({
               fontWeight: '600',
               color: '#555'
             }}>
-              選擇顏色：
+              {t('select_color')}：
             </label>
             <div style={{
               display: 'flex',
@@ -214,9 +216,9 @@ const FocusItemModal: React.FC<FocusItemModalProps> = ({
               backgroundColor: newFocusItemName.trim() ? '#4ecdc4' : '#ccc',
               color: 'white'
             }}
-          >
-            ➕ 新增項目
-          </button>
+            >
+              ➕ {t('new_focus_item')}
+            </button>
         </div>
 
         {/* 專注項目列表 */}
@@ -227,7 +229,7 @@ const FocusItemModal: React.FC<FocusItemModalProps> = ({
             fontWeight: '600',
             color: '#333'
           }}>
-            📋 現有專注項目
+            📋 {t('existing_focus_items')}
           </h3>
           
           {focusItems.length === 0 ? (
@@ -237,7 +239,7 @@ const FocusItemModal: React.FC<FocusItemModalProps> = ({
               color: '#666',
               fontSize: '14px'
             }}>
-              尚無專注項目
+              {t('no_focus_items')}
             </div>
           ) : (
             <div style={{
@@ -290,7 +292,19 @@ const FocusItemModal: React.FC<FocusItemModalProps> = ({
                       color: '#333',
                       fontWeight: '500'
                     }}>
-                      {item.name}
+                      {(() => {
+                        const defaultFocusItemNames = ['讀書', '寫作', '工作', '運動', '冥想', '抄經'];
+                        if (defaultFocusItemNames.includes(item.name)) {
+                          const translationKey = `focus_items_list.${item.name}`;
+                          const translated = t(translationKey);
+                          // 如果翻譯返回的是對象或與鍵相同，則使用原始名稱
+                          if (typeof translated === 'string' && translated !== translationKey) {
+                            return translated;
+                          }
+                          return item.name;
+                        }
+                        return item.name;
+                      })()}
                     </span>
                   )}
                   
@@ -316,7 +330,7 @@ const FocusItemModal: React.FC<FocusItemModalProps> = ({
                             color: 'white'
                           }}
                         >
-                          儲存
+                          {t('save')}
                         </button>
                         <button
                           onClick={onCancelEdit}
@@ -331,7 +345,7 @@ const FocusItemModal: React.FC<FocusItemModalProps> = ({
                             color: '#6c757d'
                           }}
                         >
-                          取消
+                          {t('cancel')}
                         </button>
                       </>
                     ) : (
@@ -344,14 +358,14 @@ const FocusItemModal: React.FC<FocusItemModalProps> = ({
                           className="flex items-center gap-1 px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-colors duration-200 hover:scale-105"
                         >
                           <span>✏️</span>
-                          <span>編輯</span>
+                          <span>{t('edit')}</span>
                         </button>
                         <button
                           onClick={() => onDeleteFocusItem(item.id)}
                           className="flex items-center gap-1 px-3 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-lg transition-colors duration-200 hover:scale-105"
                         >
                           <span>🗑️</span>
-                          <span>刪除</span>
+                          <span>{t('delete')}</span>
                         </button>
                       </>
                     )}

@@ -2,6 +2,7 @@ import { Filesystem, Directory, Encoding } from '@capacitor/filesystem'
 import { Share } from '@capacitor/share'
 import { Capacitor } from '@capacitor/core'
 import { saveAs } from 'file-saver'
+import i18n from '../i18n'
 
 // 待辦任務介面
 interface Todo {
@@ -9,7 +10,7 @@ interface Todo {
   title: string
   description?: string
   category: string
-  priority: '低' | '中' | '高'
+  priority: string | '低' | '中' | '高'
   date: string
   startHour: string
   startMinute: string
@@ -17,7 +18,7 @@ interface Todo {
   endMinute: string
   reminder: string
   remindBeforeMinutes?: number
-  status: '未開始' | '進行中' | '已完成'
+  status: string | '未開始' | '進行中' | '已完成'
 }
 
 // 分類介面
@@ -31,16 +32,23 @@ interface Category {
 // 根據 categoryId 獲取分類名稱
 const getCategoryName = (categoryId: string, categories: Category[]): string => {
   const category = categories.find(cat => cat.id === categoryId)
-  return category?.name || '未分類'
+  return category?.name || i18n.t('todo_category_uncategorized')
 }
 
 // 生成 CSV 內容
 const generateTodoCsvContent = (todos: Todo[], categories: Category[]): string => {
+  // 根據語言決定日期格式
+  const locale = i18n.language === 'zh_TW' ? 'zh-TW' : 'en-US'
+  
   // 如果沒有待辦事項，生成一個顯示「0筆」的 CSV
   if (todos.length === 0) {
+    const headers = locale === 'zh-TW' 
+      ? ['狀態', '說明', '記錄筆數'] 
+      : ['Status', 'Description', 'Record Count']
+    const noDataText = locale === 'zh-TW' ? '無資料' : 'No Data'
     const csvContent = [
-      '"狀態","說明","記錄筆數"',
-      '"無資料","無待辦事項可匯出 (0筆)","0"'
+      `"${headers[0]}","${headers[1]}","${headers[2]}"`,
+      `"${noDataText}","${i18n.t('todo_export_no_data')}","0"`
     ].join('\n')
     
     const BOM = '\uFEFF'
@@ -48,18 +56,9 @@ const generateTodoCsvContent = (todos: Todo[], categories: Category[]): string =
   }
 
   // CSV 標題行
-  const headers = [
-    '標題',
-    '描述',
-    '分類',
-    '優先級',
-    '日期',
-    '開始時間',
-    '結束時間',
-    '提醒',
-    '狀態',
-    '建立時間'
-  ]
+  const headers = locale === 'zh-TW' 
+    ? ['標題', '描述', '分類', '優先級', '日期', '開始時間', '結束時間', '提醒', '狀態', '建立時間']
+    : ['Title', 'Description', 'Category', 'Priority', 'Date', 'Start Time', 'End Time', 'Reminder', 'Status', 'Created Time']
 
   // 轉換待辦事項為 CSV 行
   const csvRows = todos.map(todo => {
@@ -77,7 +76,7 @@ const generateTodoCsvContent = (todos: Todo[], categories: Category[]): string =
       endTime,
       todo.reminder,
       todo.status,
-      new Date().toLocaleString('zh-TW')
+      new Date().toLocaleString(locale)
     ]
   })
 
@@ -101,7 +100,7 @@ const generateTodoFileName = (todos: Todo[]): string => {
   
   let fileName = `Todo_Records_${year}-${month}-${day}`
   if (todos.length === 0) {
-    fileName += '_無資料'
+    fileName += '_NoData'
   }
   fileName += '.csv'
   
@@ -142,14 +141,14 @@ export const exportTodosToCSVWithCapacitor = async (
     
     let message = ''
     if (todoCount === 0) {
-      message = '無待辦事項可匯出 (0筆)'
+      message = i18n.t('todo_export_no_data')
     } else {
-      message = `已匯出 ${todoCount} 筆待辦事項記錄`
+      message = i18n.t('todo_export_success', { count: todoCount })
     }
 
     return {
       success: true,
-      message: `${message}\n\n檔案已儲存至：\n${fileName}\n\n儲存位置：Documents 資料夾`,
+      message: `${message}\n\n${i18n.t('todo_export_file_saved', { fileName })}`,
       filePath,
       fileName
     }
@@ -158,7 +157,9 @@ export const exportTodosToCSVWithCapacitor = async (
     console.error('Capacitor 待辦事項 CSV 匯出失敗:', error)
     return {
       success: false,
-      message: `匯出失敗：${error instanceof Error ? error.message : '未知錯誤'}`
+      message: i18n.t('todo_export_failed', { 
+        error: error instanceof Error ? error.message : i18n.t('todo_export_unknown_error') 
+      })
     }
   }
 }
@@ -201,14 +202,14 @@ const exportTodosToCSVWeb = async (
     const todoCount = todos.length
     let message = ''
     if (todoCount === 0) {
-      message = '無待辦事項可匯出 (0筆)'
+      message = i18n.t('todo_export_no_data')
     } else {
-      message = `已匯出 ${todoCount} 筆待辦事項記錄`
+      message = i18n.t('todo_export_success', { count: todoCount })
     }
 
     return {
       success: true,
-      message: `${message}\n\n檔案已下載：${fileName}`,
+      message: `${message}\n\n${i18n.t('todo_export_file_downloaded', { fileName })}`,
       fileName
     }
 
@@ -216,7 +217,9 @@ const exportTodosToCSVWeb = async (
     console.error('Web 待辦事項 CSV 匯出失敗:', error)
     return {
       success: false,
-      message: `匯出失敗：${error instanceof Error ? error.message : '未知錯誤'}`
+      message: i18n.t('todo_export_failed', { 
+        error: error instanceof Error ? error.message : i18n.t('todo_export_unknown_error') 
+      })
     }
   }
 }
@@ -227,15 +230,15 @@ export const shareTodoCsvFile = async (filePath: string, fileName: string): Prom
     if (!isCapacitorEnvironment()) {
       return {
         success: false,
-        message: '分享功能僅在手機應用程式中可用'
+        message: i18n.t('todo_share_only_mobile')
       }
     }
 
     // 優先以附件方式分享，避免在 LINE 顯示不可點擊的本機路徑連結
     const shareOptions: any = {
-      title: '待辦事項記錄匯出',
-      text: `待辦事項記錄匯出檔案：${fileName}`,
-      dialogTitle: '分享待辦事項記錄'
+      title: i18n.t('todo_share_title'),
+      text: i18n.t('todo_share_text', { fileName }),
+      dialogTitle: i18n.t('todo_share_dialog')
     }
 
     if (filePath && (filePath.startsWith('content://') || filePath.startsWith('file://'))) {
@@ -251,13 +254,13 @@ export const shareTodoCsvFile = async (filePath: string, fileName: string): Prom
     if (shareResult) {
       return {
         success: true,
-        message: '分享成功'
+        message: i18n.t('todo_share_success')
       }
     } else {
       // 如果沒有明確的結果，視為成功（分享選單已開啟）
       return {
         success: true,
-        message: '分享選單已開啟'
+        message: i18n.t('todo_share_menu_opened')
       }
     }
 
@@ -270,14 +273,14 @@ export const shareTodoCsvFile = async (filePath: string, fileName: string): Prom
         errorMessage.includes('Share canceled') || errorMessage.includes('User cancelled')) {
       return {
         success: true,
-        message: '分享已取消'
+        message: i18n.t('todo_share_cancelled')
       }
     }
     
     // 其他錯誤才視為真正的分享失敗
     return {
       success: false,
-      message: `分享失敗：${errorMessage.replace(/分享失敗：/g, '')}`
+      message: i18n.t('todo_share_failed', { error: errorMessage.replace(/分享失敗：/g, '') })
     }
   }
 }

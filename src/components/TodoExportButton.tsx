@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { exportTodosToCSVWithCapacitor } from '../services/todoCsvExportService'
 import IconButton from './ui/IconButton'
 import { Download } from 'lucide-react'
@@ -9,7 +10,7 @@ interface Todo {
   title: string
   description?: string
   category: string
-  priority: '低' | '中' | '高'
+  priority: string | '低' | '中' | '高'
   date: string
   startHour: string
   startMinute: string
@@ -17,7 +18,7 @@ interface Todo {
   endMinute: string
   reminder: string
   remindBeforeMinutes?: number
-  status: '未開始' | '進行中' | '已完成'
+  status: string | '未開始' | '進行中' | '已完成'
 }
 
 // 分類介面
@@ -34,6 +35,7 @@ interface TodoExportButtonProps {
 }
 
 const TodoExportButton: React.FC<TodoExportButtonProps> = ({ todos, categories }) => {
+  const { t } = useTranslation()
   const [exportStatus, setExportStatus] = useState({
     show: false,
     type: 'success' as 'success' | 'error',
@@ -68,11 +70,11 @@ const TodoExportButton: React.FC<TodoExportButtonProps> = ({ todos, categories }
         }, 3000)
       }
     } catch (error) {
-      console.error('匯出失敗:', error)
+      console.error(t('export_failed') + ':', error)
       setExportStatus({
         show: true,
         type: 'error',
-        message: '匯出失敗，請稍後再試'
+        message: t('export_failed_try_again')
       })
       setTimeout(() => {
         setExportStatus(prev => ({ ...prev, show: false }))
@@ -116,7 +118,7 @@ const TodoExportButton: React.FC<TodoExportButtonProps> = ({ todos, categories }
       {/* 匯出按鈕 */}
       <IconButton
         icon={<Download size={16} />}
-        label="匯出待辦記錄 (CSV)"
+        label={t('export_todo_records_csv')}
         onClick={handleExportTodos}
         onTouchEnd={(e) => {
           // 防止觸控事件重複觸發

@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 // removed unused Link import
 import { FocusItem } from '../../types/FocusItem';
 import IconButton from '../IconButton';
+import { useTranslation } from 'react-i18next';
 
 interface FocusItemSelectorProps {
   focusItems: FocusItem[];
@@ -14,9 +15,26 @@ const FocusItemSelector: React.FC<FocusItemSelectorProps> = ({
   selectedFocusItemId,
   onFocusItemChange
 }) => {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const selectedItem = focusItems.find(i => i.id === selectedFocusItemId) || focusItems[0];
+
+  // 獲取翻譯後的專注項目名稱
+  const getFocusItemName = (name: string) => {
+    const defaultFocusItemNames = ['讀書', '寫作', '工作', '運動', '冥想', '抄經'];
+    if (defaultFocusItemNames.includes(name)) {
+      const translationKey = `focus_items_list.${name}`;
+      const translated = t(translationKey);
+      // 如果翻譯返回的是對象或與鍵相同，則使用原始名稱
+      if (typeof translated === 'string' && translated !== translationKey) {
+        return translated;
+      }
+      return name;
+    }
+    // 對於自定義專注項目，使用原始名稱
+    return name;
+  };
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -36,7 +54,7 @@ const FocusItemSelector: React.FC<FocusItemSelectorProps> = ({
         fontSize: '1.3rem',
         fontWeight: '600'
       }}>
-        專注項目
+        {t('focus_items')}
       </h3>
       
       {/* 自訂下拉選單 */}
@@ -50,7 +68,7 @@ const FocusItemSelector: React.FC<FocusItemSelectorProps> = ({
         >
           <span className="flex items-center gap-2">
             <span className="w-3 h-3 rounded-full border border-black/5" style={{ backgroundColor: selectedItem?.color || '#3b82f6' }} />
-            <span className="text-gray-800">{selectedItem?.name || '—'}</span>
+            <span className="text-gray-800">{selectedItem ? getFocusItemName(selectedItem.name) : '—'}</span>
           </span>
           <svg className={`h-4 w-4 text-gray-500 transition-transform ${open ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.25 8.29a.75.75 0 01-.02-1.08z" clipRule="evenodd" />
@@ -69,7 +87,7 @@ const FocusItemSelector: React.FC<FocusItemSelectorProps> = ({
                 }}
               >
                 <span className="w-3 h-3 rounded-full border border-black/5" style={{ backgroundColor: item.color }} />
-                <span className="text-gray-800">{item.name}</span>
+                <span className="text-gray-800">{getFocusItemName(item.name)}</span>
               </div>
             ))}
           </div>
@@ -78,7 +96,7 @@ const FocusItemSelector: React.FC<FocusItemSelectorProps> = ({
 
       {/* 管理導向按鈕 */}
       <div style={{ display: 'flex', justifyContent: 'center' }}>
-        <IconButton label="🗂 管理分類" to="/projects" />
+        <IconButton label={`🗂 ${t('manage_categories')}`} to="/projects" />
       </div>
     </div>
   );

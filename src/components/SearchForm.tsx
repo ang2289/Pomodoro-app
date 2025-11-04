@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 export type SortBy = 'start_desc' | 'start_asc' | 'created_desc' | 'created_asc'
 
@@ -17,6 +18,7 @@ interface SearchFormProps {
 }
 
 export default function SearchForm({ scriptureOptions = [], onSearch, onReset }: SearchFormProps) {
+  const { t } = useTranslation()
   // checkbox enable states
   const [useKeyword, setUseKeyword] = useState(true) // 預設只勾選關鍵字
   const [useDate, setUseDate] = useState(false)
@@ -63,21 +65,21 @@ export default function SearchForm({ scriptureOptions = [], onSearch, onReset }:
       <div className="flex flex-col gap-3">
         {/* 啟用搜尋 */}
         <div className="flex items-center gap-2">
-          <label className="text-sm text-gray-700">啟用搜尋</label>
+          <label className="text-sm text-gray-700">{t('enable_search')}</label>
           <input type="checkbox" checked={useKeyword || useDate || useScripture || useSort}
                  onChange={(e) => { const v = e.target.checked; setUseKeyword(v); setUseDate(v && useDate); setUseScripture(v && useScripture); setUseSort(v && useSort); }} />
-          <span className="text-xs text-gray-500">（可個別切換下方條件）</span>
+          <span className="text-xs text-gray-500">{t('individual_toggle_conditions')}</span>
         </div>
 
         {/* 關鍵字 */}
         <div className="flex flex-col gap-2">
         <div className="flex items-center gap-2">
             <input type="checkbox" checked={useKeyword} onChange={(e) => setUseKeyword(e.target.checked)} />
-          <label className="text-sm text-gray-700 whitespace-nowrap">關鍵字</label>
+          <label className="text-sm text-gray-700 whitespace-nowrap">{t('keyword_label')}</label>
           </div>
           <input
             type="text"
-            placeholder="🔍 搜尋標題、對象或發起人"
+            placeholder={`🔍 ${t('search_title_object_or_creator')}`}
             className="w-full border rounded-lg px-4 py-3 text-base h-12"
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
@@ -90,11 +92,11 @@ export default function SearchForm({ scriptureOptions = [], onSearch, onReset }:
         <div className="flex flex-col gap-2">
         <div className="flex items-center gap-2">
             <input type="checkbox" checked={useDate} onChange={(e) => setUseDate(e.target.checked)} />
-          <label className="text-sm text-gray-700 whitespace-nowrap">日期範圍</label>
+          <label className="text-sm text-gray-700 whitespace-nowrap">{t('date_range')}</label>
           </div>
         <div className="flex flex-col gap-2">
             <div>
-              <label className="block text-xs text-gray-500 mb-1">開始日期</label>
+              <label className="block text-xs text-gray-500 mb-1">{t('start_date')}</label>
               <input
                 type="date"
                 className="w-full border rounded-lg px-4 py-3 text-base h-12"
@@ -104,7 +106,7 @@ export default function SearchForm({ scriptureOptions = [], onSearch, onReset }:
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">截止日期</label>
+              <label className="block text-xs text-gray-500 mb-1">{t('end_date_label')}</label>
               <input
                 type="date"
                 className="w-full border rounded-lg px-4 py-3 text-base h-12"
@@ -120,7 +122,7 @@ export default function SearchForm({ scriptureOptions = [], onSearch, onReset }:
         <div className="flex flex-col gap-2">
         <div className="flex items-center gap-2">
             <input type="checkbox" checked={useScripture} onChange={(e) => setUseScripture(e.target.checked)} />
-          <label className="text-sm text-gray-700 whitespace-nowrap">經文</label>
+          <label className="text-sm text-gray-700 whitespace-nowrap">{t('scripture_label')}</label>
           </div>
           <select
             className="w-full px-3 py-2 text-base rounded border border-gray-300 leading-normal"
@@ -128,7 +130,7 @@ export default function SearchForm({ scriptureOptions = [], onSearch, onReset }:
             onChange={(e) => setScripture(e.target.value)}
             disabled={false}
           >
-            <option value="">全部</option>
+            <option value="">{t('all')}</option>
             {scriptureOptions.map((opt) => (
               <option key={opt} value={opt}>{opt}</option>
             ))}
@@ -139,7 +141,7 @@ export default function SearchForm({ scriptureOptions = [], onSearch, onReset }:
         <div className="flex flex-col gap-2">
         <div className="flex items-center gap-2">
             <input type="checkbox" checked={useSort} onChange={(e) => setUseSort(e.target.checked)} />
-          <label className="text-sm text-gray-700 whitespace-nowrap">排序</label>
+          <label className="text-sm text-gray-700 whitespace-nowrap">{t('sort_label')}</label>
           </div>
           <select
             className="w-full px-3 py-2 text-base rounded border border-gray-300 leading-normal"
@@ -147,10 +149,10 @@ export default function SearchForm({ scriptureOptions = [], onSearch, onReset }:
             onChange={(e) => setSortBy(e.target.value as SortBy)}
             disabled={false}
           >
-            <option value="start_desc">開始日（新→舊）</option>
-            <option value="start_asc">開始日（舊→新）</option>
-            <option value="created_desc">建立時間（新→舊）</option>
-            <option value="created_asc">建立時間（舊→新）</option>
+            <option value="start_desc">{t('sort_start_desc')}</option>
+            <option value="start_asc">{t('sort_start_asc')}</option>
+            <option value="created_desc">{t('sort_created_desc')}</option>
+            <option value="created_asc">{t('sort_created_asc')}</option>
           </select>
         </div>
 
@@ -164,7 +166,7 @@ export default function SearchForm({ scriptureOptions = [], onSearch, onReset }:
             onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#4338ca' }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#4f46e5' }}
           >
-            查詢
+            {t('search')}
           </button>
           <button
             onClick={handleReset}
@@ -173,7 +175,7 @@ export default function SearchForm({ scriptureOptions = [], onSearch, onReset }:
             onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#4b5563' }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#6b7280' }}
           >
-            重設
+            {t('reset')}
           </button>
         </div>
       </div>

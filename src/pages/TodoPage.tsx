@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import ModuleDropdown from '../components/ModuleDropdown'
 import { defaultCategories, Category } from '../lib/defaultCategories'
 import TodoExportButton from '../components/TodoExportButton'
@@ -8,7 +9,7 @@ interface Todo {
   title: string
   description?: string
   category: string
-  priority: '低' | '中' | '高'
+  priority: string | '低' | '中' | '高'
   date: string
   startHour: string
   startMinute: string
@@ -16,25 +17,26 @@ interface Todo {
   endMinute: string
   reminder: string
   remindBeforeMinutes?: number
-  status: '未開始' | '進行中' | '已完成'
+  status: string | '未開始' | '進行中' | '已完成'
 }
 
 export default function TodoPage() {
+  const { t } = useTranslation()
   const [todos, setTodos] = useState<Todo[]>([])
   const [categories, setCategories] = useState<Category[]>(defaultCategories)
   const [newTodo, setNewTodo] = useState<Partial<Todo>>({
     title: '',
     description: '',
     category: categories[0]?.id || '',
-    priority: '中',
+    priority: t('todo_config.priority.medium'),
     date: new Date().toISOString().split('T')[0],
     startHour: '09',
     startMinute: '00',
     endHour: '10',
     endMinute: '00',
-    reminder: '無',
+    reminder: t('todo_config.reminder.none'),
     remindBeforeMinutes: 15,
-    status: '未開始'
+    status: t('todo_config.status.not_started')
   })
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null)
   const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('all')
@@ -52,7 +54,7 @@ export default function TodoPage() {
         setTodos(JSON.parse(saved))
       }
     } catch (error) {
-      console.error('載入待辦事項失敗:', error)
+      console.error(t('todo_config.error.load_failed'), error)
     }
   }
 
@@ -63,7 +65,7 @@ export default function TodoPage() {
         setCategories(JSON.parse(saved))
       }
     } catch (error) {
-      console.error('載入分類失敗:', error)
+      console.error(t('todo_config.error.load_categories_failed'), error)
     }
   }
 
@@ -72,13 +74,13 @@ export default function TodoPage() {
       localStorage.setItem('todos', JSON.stringify(newTodos))
       setTodos(newTodos)
     } catch (error) {
-      console.error('儲存待辦事項失敗:', error)
+      console.error(t('todo_config.error.save_failed'), error)
     }
   }
 
   const addTodo = () => {
     if (!newTodo.title?.trim()) {
-      alert('請輸入待辦事項標題')
+      alert(t('todo_config.alert.enter_title'))
       return
     }
 
@@ -87,15 +89,15 @@ export default function TodoPage() {
       title: newTodo.title.trim(),
       description: newTodo.description || '',
       category: newTodo.category || categories[0]?.id || '',
-      priority: newTodo.priority || '中',
+      priority: newTodo.priority || t('todo_config.priority.medium'),
       date: newTodo.date || new Date().toISOString().split('T')[0],
       startHour: newTodo.startHour || '09',
       startMinute: newTodo.startMinute || '00',
       endHour: newTodo.endHour || '10',
       endMinute: newTodo.endMinute || '00',
-      reminder: newTodo.reminder || '無',
+      reminder: newTodo.reminder || t('todo_config.reminder.none'),
       remindBeforeMinutes: newTodo.remindBeforeMinutes || 15,
-      status: '未開始'
+      status: t('todo_config.status.not_started')
     }
 
     saveTodos([...todos, todo])
@@ -103,15 +105,15 @@ export default function TodoPage() {
       title: '',
       description: '',
       category: categories[0]?.id || '',
-      priority: '中',
+      priority: t('todo_config.priority.medium'),
       date: new Date().toISOString().split('T')[0],
       startHour: '09',
       startMinute: '00',
       endHour: '10',
       endMinute: '00',
-      reminder: '無',
+      reminder: t('todo_config.reminder.none'),
       remindBeforeMinutes: 15,
-      status: '未開始'
+      status: t('todo_config.status.not_started')
     })
   }
 
@@ -123,7 +125,7 @@ export default function TodoPage() {
   }
 
   const deleteTodo = (id: string) => {
-    if (window.confirm('確定要刪除此待辦事項嗎？')) {
+    if (window.confirm(t('todo_config.confirm.delete'))) {
       const updatedTodos = todos.filter(todo => todo.id !== id)
       saveTodos(updatedTodos)
     }
@@ -132,7 +134,7 @@ export default function TodoPage() {
   const toggleStatus = (id: string) => {
     const todo = todos.find(t => t.id === id)
     if (todo) {
-      const newStatus = todo.status === '已完成' ? '未開始' : '已完成'
+      const newStatus = todo.status === t('todo_config.status.completed') ? t('todo_config.status.not_started') : t('todo_config.status.completed')
       updateTodo(id, { status: newStatus })
     }
   }
@@ -141,9 +143,9 @@ export default function TodoPage() {
     let filtered = todos
 
     if (filter === 'pending') {
-      filtered = filtered.filter(todo => todo.status !== '已完成')
+      filtered = filtered.filter(todo => todo.status !== t('todo_config.status.completed'))
     } else if (filter === 'completed') {
-      filtered = filtered.filter(todo => todo.status === '已完成')
+      filtered = filtered.filter(todo => todo.status === t('todo_config.status.completed'))
     }
 
     if (selectedCategory !== 'all') {
@@ -151,15 +153,24 @@ export default function TodoPage() {
     }
 
     return filtered.sort((a, b) => {
-      if (a.status === '已完成' && b.status !== '已完成') return 1
-      if (a.status !== '已完成' && b.status === '已完成') return -1
+      if (a.status === t('todo_config.status.completed') && b.status !== t('todo_config.status.completed')) return 1
+      if (a.status !== t('todo_config.status.completed') && b.status === t('todo_config.status.completed')) return -1
       return new Date(a.date).getTime() - new Date(b.date).getTime()
     })
   }
 
   const getCategoryName = (categoryId: string) => {
     const category = categories.find(cat => cat.id === categoryId)
-    return category?.name || '未分類'
+    if (!category) {
+      return t('todo_config.category.uncategorized')
+    }
+    // 檢查是否為預設分類（通過 id 判斷）
+    const defaultCategoryIds = ['work', 'housework', 'reading', 'study', 'health', 'social', 'misc']
+    if (defaultCategoryIds.includes(category.id)) {
+      return t(`todo_config.category.${category.id}`)
+    }
+    // 對於自定義分類，使用原始名稱（可能包含 emoji 或自定義文字）
+    return category.name
   }
 
   const getCategoryColor = (categoryId: string) => {
@@ -168,95 +179,96 @@ export default function TodoPage() {
   }
 
   const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case '高': return 'text-red-600 bg-red-100'
-      case '中': return 'text-yellow-600 bg-yellow-100'
-      case '低': return 'text-green-600 bg-green-100'
-      default: return 'text-gray-600 bg-gray-100'
-    }
+    if (priority === t('todo_config.priority.high')) return 'text-red-600 bg-red-100'
+    if (priority === t('todo_config.priority.medium')) return 'text-yellow-600 bg-yellow-100'
+    if (priority === t('todo_config.priority.low')) return 'text-green-600 bg-green-100'
+    return 'text-gray-600 bg-gray-100'
   }
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case '已完成': return 'text-green-600 bg-green-100'
-      case '進行中': return 'text-blue-600 bg-blue-100'
-      case '未開始': return 'text-gray-600 bg-gray-100'
-      default: return 'text-gray-600 bg-gray-100'
-    }
+    if (status === t('todo_config.status.completed')) return 'text-green-600 bg-green-100'
+    if (status === t('todo_config.status.in_progress')) return 'text-blue-600 bg-blue-100'
+    if (status === t('todo_config.status.not_started')) return 'text-gray-600 bg-gray-100'
+    return 'text-gray-600 bg-gray-100'
   }
 
   const clearCompleted = () => {
-    if (window.confirm('確定要清除所有已完成的待辦事項嗎？')) {
-      const updatedTodos = todos.filter(todo => todo.status !== '已完成')
+    if (window.confirm(t('todo_config.confirm.clear_completed'))) {
+      const updatedTodos = todos.filter(todo => todo.status !== t('todo_config.status.completed'))
       saveTodos(updatedTodos)
     }
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
+    <div className="gradient-bg min-h-screen p-4">
       <div className="max-w-screen-md mx-auto px-4 w-full">
         <ModuleDropdown />
         
-        <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 mb-6">
-          <h1 className="text-lg sm:text-xl font-bold text-gray-800 mb-4 sm:mb-6 overflow-wrap break-word">📋 待辦事項</h1>
+        <div className="card mb-6">
+          <h1 className="text-lg sm:text-xl font-bold text-gray-800 mb-4 sm:mb-6 overflow-wrap break-word">📋 {t('todo_config.title')}</h1>
 
           {/* 新增待辦事項 */}
-          <div className="mb-6 p-4 sm:p-6 bg-gray-50 rounded-xl">
-            <h2 className="text-lg sm:text-xl font-semibold text-gray-700 mb-4 overflow-wrap break-word">新增待辦事項</h2>
+          <div className="mb-6 card">
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-700 mb-4 overflow-wrap break-word">{t('todo_config.add_new')}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">標題 *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('todo_config.form.title')} *</label>
                 <input
                   type="text"
                   value={newTodo.title || ''}
                   onChange={(e) => setNewTodo({ ...newTodo, title: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base overflow-wrap break-word"
-                  placeholder="輸入待辦事項標題"
-                  title="請輸入待辦事項"
+                  placeholder={t('todo_config.form.title_placeholder')}
+                  title={t('todo_config.form.title')}
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">分類</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('todo_config.form.category')}</label>
                 <select
                   value={newTodo.category || ''}
                   onChange={(e) => setNewTodo({ ...newTodo, category: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
-                  title="選擇分類"
+                  style={{ color: newTodo.category ? getCategoryColor(newTodo.category) : undefined }}
+                  title={t('todo_config.form.select_category')}
                 >
-                  {categories.map(category => (
-                    <option key={category.id} value={category.id}>{category.name}</option>
-                  ))}
+                  {categories.map(category => {
+                    const defaultCategoryIds = ['work', 'housework', 'reading', 'study', 'health', 'social', 'misc']
+                    const displayName = defaultCategoryIds.includes(category.id) 
+                      ? t(`todo_config.category.${category.id}`)
+                      : category.name
+                    return <option key={category.id} value={category.id} style={{ color: category.color }}>{displayName}</option>
+                  })}
                 </select>
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">優先級</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('todo_config.form.priority')}</label>
                 <select
-                  value={newTodo.priority || '中'}
-                  onChange={(e) => setNewTodo({ ...newTodo, priority: e.target.value as '低' | '中' | '高' })}
+                  value={newTodo.priority || t('todo_config.priority.medium')}
+                  onChange={(e) => setNewTodo({ ...newTodo, priority: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  title="選擇優先級"
+                  title={t('todo_config.form.select_priority')}
                 >
-                  <option value="低">低</option>
-                  <option value="中">中</option>
-                  <option value="高">高</option>
+                  <option value={t('todo_config.priority.low')}>{t('todo_config.priority.low')}</option>
+                  <option value={t('todo_config.priority.medium')}>{t('todo_config.priority.medium')}</option>
+                  <option value={t('todo_config.priority.high')}>{t('todo_config.priority.high')}</option>
                 </select>
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">日期</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('todo_config.form.date')}</label>
                 <input
                   type="date"
                   value={newTodo.date || ''}
                   onChange={(e) => setNewTodo({ ...newTodo, date: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  title="請輸入日期"
+                  title={t('todo_config.form.enter_date')}
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">開始時間</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('todo_config.form.start_time')}</label>
                 <div className="flex gap-2">
                   <input
                     type="time"
@@ -266,14 +278,14 @@ export default function TodoPage() {
                       setNewTodo({ ...newTodo, startHour: hour, startMinute: minute })
                     }}
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    title="請輸入時間"
-                    placeholder="時間"
+                    title={t('todo_config.form.enter_time')}
+                    placeholder={t('todo_config.form.time')}
                   />
                 </div>
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">結束時間</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('todo_config.form.end_time')}</label>
                 <div className="flex gap-2">
                   <input
                     type="time"
@@ -283,22 +295,22 @@ export default function TodoPage() {
                       setNewTodo({ ...newTodo, endHour: hour, endMinute: minute })
                     }}
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    title="請輸入時間"
-                    placeholder="時間"
+                    title={t('todo_config.form.enter_time')}
+                    placeholder={t('todo_config.form.time')}
                   />
                 </div>
               </div>
             </div>
             
             <div className="mt-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">描述</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('todo_config.form.description')}</label>
               <textarea
                 value={newTodo.description || ''}
                 onChange={(e) => setNewTodo({ ...newTodo, description: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 rows={3}
-                placeholder="輸入待辦事項描述（選填）"
-                title="請輸入描述"
+                placeholder={t('todo_config.form.description_placeholder')}
+                title={t('todo_config.form.enter_description')}
               />
             </div>
             
@@ -307,7 +319,7 @@ export default function TodoPage() {
                 onClick={addTodo}
                 className="w-full max-w-xs lg:w-40 mx-auto block px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
               >
-                新增待辦事項
+                {t('todo_config.button.add')}
               </button>
             </div>
           </div>
@@ -321,7 +333,7 @@ export default function TodoPage() {
                   filter === 'all' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                 }`}
               >
-                全部
+                {t('todo_config.filter.all')}
               </button>
               <button
                 onClick={() => setFilter('pending')}
@@ -329,7 +341,7 @@ export default function TodoPage() {
                   filter === 'pending' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                 }`}
               >
-                未完成
+                {t('todo_config.filter.pending')}
               </button>
               <button
                 onClick={() => setFilter('completed')}
@@ -337,7 +349,7 @@ export default function TodoPage() {
                   filter === 'completed' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                 }`}
               >
-                已完成
+                {t('todo_config.filter.completed')}
               </button>
             </div>
             
@@ -345,9 +357,9 @@ export default function TodoPage() {
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
               className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              title="選擇分類"
+              title={t('todo_config.form.select_category')}
             >
-              <option value="all">全部分類</option>
+              <option value="all">{t('todo_config.filter.all_categories')}</option>
               {categories.map(category => (
                 <option key={category.id} value={category.id}>{category.name}</option>
               ))}
@@ -359,10 +371,10 @@ export default function TodoPage() {
             {getFilteredTodos().map((todo) => (
               <div
                 key={todo.id}
-                className={`p-4 rounded-lg transition-all ${
-                  todo.status === '已完成' 
-                    ? 'bg-gray-50 opacity-75' 
-                    : 'bg-white border border-gray-300 hover:shadow-md'
+                  className={`card transition-all ${
+                  todo.status === t('todo_config.status.completed') 
+                    ? 'opacity-75' 
+                    : ''
                 }`}
               >
                 {/* 手機版優化佈局 */}
@@ -372,12 +384,12 @@ export default function TodoPage() {
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <input
                         type="checkbox"
-                        checked={todo.status === '已完成'}
+                        checked={todo.status === t('todo_config.status.completed')}
                         onChange={() => toggleStatus(todo.id)}
                         className="w-5 h-5 text-blue-600 border-0 rounded focus:ring-blue-500 flex-shrink-0"
                       />
                       <h3 className={`text-lg font-semibold break-words flex-1 min-w-0 ${
-                        todo.status === '已完成' ? 'line-through text-gray-500' : 'text-gray-800'
+                        todo.status === t('todo_config.status.completed') ? 'line-through text-gray-500' : 'text-gray-800'
                       }`}>
                         {todo.title}
                       </h3>
@@ -388,14 +400,14 @@ export default function TodoPage() {
                       <button
                         onClick={() => setEditingTodo(todo)}
                         className="p-2 text-blue-500 hover:bg-blue-50 rounded"
-                        title="編輯"
+                        title={t('todo_config.action.edit')}
                       >
                         ✏️
                       </button>
                       <button
                         onClick={() => deleteTodo(todo.id)}
                         className="p-2 text-red-500 hover:bg-red-50 rounded"
-                        title="刪除"
+                        title={t('todo_config.action.delete')}
                       >
                         🗑️
                       </button>
@@ -438,7 +450,7 @@ export default function TodoPage() {
             {getFilteredTodos().length === 0 && (
               <div className="text-center py-8 text-gray-500">
                 <div className="text-4xl mb-2">📝</div>
-                <p>沒有找到待辦事項</p>
+                <p>{t('todo_config.empty.no_todos')}</p>
               </div>
             )}
           </div>
@@ -449,13 +461,13 @@ export default function TodoPage() {
           </div>
 
           {/* 清除已完成 */}
-          {todos.some(todo => todo.status === '已完成') && (
+          {todos.some(todo => todo.status === t('todo_config.status.completed')) && (
             <div className="mt-6 pt-4 border-t border-gray-200">
               <button
                 onClick={clearCompleted}
                 className="w-full max-w-xs lg:w-40 mx-auto block px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
               >
-                清除已完成項目
+                {t('todo_config.button.clear_completed')}
               </button>
             </div>
           )}

@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import i18n from '../i18n'
 import { supabase } from '../utils/supabaseClient'
 import { deleteChantWish } from '../utils/deleteChantWish'
 import { config } from '../config'
@@ -31,6 +33,7 @@ interface Stats {
 }
 
 export default function ChantWishCard({ wish }: ChantWishCardProps) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [stats, setStats] = useState<Stats>({ participants: 0, totalChants: 0 })
   const [loading, setLoading] = useState(true)
@@ -141,7 +144,8 @@ export default function ChantWishCard({ wish }: ChantWishCardProps) {
   }, [wish.id])
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('zh-TW', {
+    const locale = i18n.language === 'zh_TW' ? 'zh-TW' : 'en-US'
+    return new Date(dateString).toLocaleDateString(locale, {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit'
@@ -150,16 +154,21 @@ export default function ChantWishCard({ wish }: ChantWishCardProps) {
 
   const buildShareText = () => {
     // 使用配置中的基礎 URL
-    const target = wish.for_person_name || '有緣眾生'
+    const target = wish.for_person_name || t('all_beings')
     const path = `/chant-wish-detail/${wish.wish_no}`
     const fullUrl = `${config.baseUrl}${path}`
-    return `我參加了「${wish.title}」🙏\n一起念誦 ${wish.chant_text}，為 ${target} 集氣祈福！\n👉 ${fullUrl}`
+    return t('share_text_template', { 
+      title: wish.title, 
+      chant_text: wish.chant_text, 
+      target: target, 
+      url: fullUrl 
+    })
   }
 
   const copyToClipboard = () => {
     const text = buildShareText()
     navigator.clipboard.writeText(text)
-    alert('✅ 分享內容已複製！')
+    alert(t('share_copied'))
   }
 
   const handleLineShare = () => {
@@ -180,12 +189,12 @@ export default function ChantWishCard({ wish }: ChantWishCardProps) {
   }
 
   const handleDeleteWish = async (id: string, imageUrl?: string | null) => {
-    const confirmed = window.confirm('確定要刪除這個集氣活動嗎？此操作無法復原。')
+    const confirmed = window.confirm(t('confirm_delete_chant_wish'))
     if (!confirmed) return
 
     const success = await deleteChantWish({ id, imageUrl })
     if (success) {
-      alert('集氣活動已成功刪除')
+      alert(t('chant_wish_deleted_success'))
       // 重新載入頁面或觸發父組件重新獲取資料
       window.location.reload()
     }
@@ -195,14 +204,14 @@ export default function ChantWishCard({ wish }: ChantWishCardProps) {
     <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 hover:shadow-xl transition-shadow duration-200 cursor-pointer border border-gray-100 max-w-md mx-auto w-full">
       {/* 願望編號 */}
       <div className="mb-3">
-        <h1 className="text-lg font-bold text-pink-600">🪷 願望編號：{wish.wish_no}</h1>
+        <h1 className="text-lg font-bold text-pink-600">🪷 {t('wish_number')}: {wish.wish_no}</h1>
       </div>
 
       {/* 標題和日期 */}
       <div className="mb-4">
         <h2 className="text-xl font-bold text-gray-800 mb-2">{wish.title}</h2>
         <p className="text-sm text-gray-500">
-          📅 發布日期：{formatDate(wish.created_at)}
+          📅 {t('release_date')}: {formatDate(wish.created_at)}
         </p>
       </div>
 
@@ -210,7 +219,7 @@ export default function ChantWishCard({ wish }: ChantWishCardProps) {
       <div className="space-y-3 mb-4 text-sm sm:text-base">
         <div className="flex items-center text-gray-700">
           <span className="mr-2">📿</span>
-          <span className="font-medium">念誦：</span>
+          <span className="font-medium">{t('chant')}:</span>
           <span className="ml-1 text-pink-600 font-bold">
             {wish.chant_text} {wish.chant_target_count}{wish.chant_unit}
           </span>
@@ -219,14 +228,14 @@ export default function ChantWishCard({ wish }: ChantWishCardProps) {
         {wish.for_person_name && (
           <div className="flex items-center text-gray-700">
             <span className="mr-2">🎯</span>
-            <span className="font-medium">迴向對象：</span>
+            <span className="font-medium">{t('dedication_recipient')}:</span>
             <span className="ml-1 text-blue-600 font-bold">{wish.for_person_name}</span>
           </div>
         )}
 
         <div className="flex items-center text-gray-700">
           <span className="mr-2">🔥</span>
-          <span className="font-medium">發起人：</span>
+          <span className="font-medium">{t('creator_name')}:</span>
           <span className="ml-1">{wish.created_by}</span>
         </div>
 
@@ -237,7 +246,7 @@ export default function ChantWishCard({ wish }: ChantWishCardProps) {
             className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 !text-white font-bold py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg text-base"
             style={{ color: '#ffffff' }}
           >
-            🔎 查看詳情
+            🔎 {t('view_details')}
           </button>
         </div>
 
@@ -245,7 +254,7 @@ export default function ChantWishCard({ wish }: ChantWishCardProps) {
         <div className="py-2">
           <div className="flex items-center text-gray-700">
             <span className="mr-2">📅</span>
-            <span className="font-medium">活動期間：</span>
+            <span className="font-medium">{t('activity_period')}:</span>
             <span className="ml-1">{formatDate(wish.start_date)} ~ {formatDate(wish.end_date)}</span>
           </div>
         </div>
@@ -258,17 +267,17 @@ export default function ChantWishCard({ wish }: ChantWishCardProps) {
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              載入統計中...
+              {t('loading_stats')}
             </div>
           ) : (
             <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-lg p-4">
               <div className="text-center">
                 <p className="text-xl font-bold text-purple-600 mb-2">
-                  📿 總唸誦次數：{stats.totalChants} 遍
+                  📿 {t('total_chant_count')}: {stats.totalChants} {t('chant_unit')}
                 </p>
                 <p className="text-sm text-gray-700">
-                  <span className="font-bold text-pink-600">👥 {stats.participants} 人</span>
-                  <span className="mx-2">已參與集氣</span>
+                  <span className="font-bold text-pink-600">👥 {stats.participants} {t('people')}</span>
+                  <span className="mx-2">{t('participated')}</span>
                 </p>
               </div>
             </div>
@@ -285,9 +294,9 @@ export default function ChantWishCard({ wish }: ChantWishCardProps) {
 
       {/* 支持 / 留言 / 點燈計數 - 手機版優化 */}
       <div className="flex flex-col sm:flex-row sm:justify-between gap-2 sm:gap-0 text-sm text-gray-600 mt-2 px-2">
-        <div className="text-center sm:text-left">❤️ {supportCount} 人支持</div>
-        <div className="text-center sm:text-center">💬 {commentCount} 則留言</div>
-        <div className="text-center sm:text-right text-yellow-600">🪔 {lightCount} 盞</div>
+        <div className="text-center sm:text-left">❤️ {supportCount} {t('people_support')}</div>
+        <div className="text-center sm:text-center">💬 {commentCount} {t('comments')}</div>
+        <div className="text-center sm:text-right text-yellow-600">🪔 {lightCount} {t('lights')}</div>
       </div>
 
       {/* 操作按鈕 - 手機版優化 */}
@@ -299,7 +308,7 @@ export default function ChantWishCard({ wish }: ChantWishCardProps) {
           className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 !text-white font-bold py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg text-base"
           style={{ color: '#ffffff' }}
         >
-          🙏 我要參加集氣
+          🙏 {t('join_chant')}
         </button>
         
         {/* 分享按鈕 - 手機版也單獨一行 */}
@@ -311,7 +320,7 @@ export default function ChantWishCard({ wish }: ChantWishCardProps) {
             onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#16a34a' }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#22c55e' }}
           >
-            📱 LINE 分享
+            📱 {t('line_share')}
           </button>
           <button
             onClick={copyToClipboard}
@@ -320,7 +329,7 @@ export default function ChantWishCard({ wish }: ChantWishCardProps) {
             onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#059669' }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#10b981' }}
           >
-            📋 複製訊息
+            📋 {t('copy_message')}
           </button>
         </div>
         
@@ -331,7 +340,7 @@ export default function ChantWishCard({ wish }: ChantWishCardProps) {
             className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 !text-white font-bold py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg text-sm sm:text-base"
             style={{ color: '#ffffff' }}
           >
-            🗑️ 刪除集氣活動
+            🗑️ {t('delete_chant_wish')}
           </button>
         )}
       </div>

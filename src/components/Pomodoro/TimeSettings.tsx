@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 // removed unused react-icons imports
 import IconButton from '../ui/IconButton';
 
@@ -23,13 +24,14 @@ const TimeSettings: React.FC<TimeSettingsProps> = ({
   onSkip,
   isRunning
 }) => {
+  const { t } = useTranslation();
   return (
     <div className="card" style={{
       marginBottom: '30px',
       border: '1px solid #e9ecef',
       borderRadius: '12px',
       padding: '20px'
-    }}>
+      }}>
       <h3 style={{ 
         margin: '0 0 20px 0', 
         color: '#333',
@@ -37,7 +39,7 @@ const TimeSettings: React.FC<TimeSettingsProps> = ({
         fontWeight: '600',
         textAlign: 'center'
       }}>
-        ⏰ 時間設定
+        ⏰ {t('time_settings')}
       </h3>
       
       <div style={{
@@ -56,7 +58,7 @@ const TimeSettings: React.FC<TimeSettingsProps> = ({
             marginBottom: '8px',
             textAlign: 'center'
           }}>
-            工作時間
+          {t('work_time')}
           </label>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
             <IconButton
@@ -64,7 +66,7 @@ const TimeSettings: React.FC<TimeSettingsProps> = ({
               disabled={isRunning}
               variant={isRunning ? 'secondary' : 'primary'}
               icon={<span style={{ color: 'white !important', filter: 'brightness(0) invert(1)' }}>➖</span>}
-              label="減"
+              label={t('decrease')}
               className="bg-blue-600 text-white font-bold text-lg px-4 py-2 rounded hover:bg-blue-700 transition"
             />
             <input
@@ -93,7 +95,7 @@ const TimeSettings: React.FC<TimeSettingsProps> = ({
               disabled={isRunning}
               variant={isRunning ? 'secondary' : 'primary'}
               icon={<span style={{ color: 'white !important', filter: 'brightness(0) invert(1)' }}>➕</span>}
-              label="加"
+              label={t('increase')}
               className="bg-blue-600 text-white font-bold text-lg px-4 py-2 rounded hover:bg-blue-700 transition"
             />
           </div>
@@ -109,7 +111,7 @@ const TimeSettings: React.FC<TimeSettingsProps> = ({
             marginBottom: '8px',
             textAlign: 'center'
           }}>
-            休息時間
+          {t('break_time')}
           </label>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
             <IconButton
@@ -117,7 +119,7 @@ const TimeSettings: React.FC<TimeSettingsProps> = ({
               disabled={isRunning}
               variant={isRunning ? 'secondary' : 'primary'}
               icon={<span style={{ color: 'white !important', filter: 'brightness(0) invert(1)' }}>➖</span>}
-              label="減"
+              label={t('decrease')}
               className="bg-blue-600 text-white font-bold text-lg px-4 py-2 rounded hover:bg-blue-700 transition"
             />
             <input
@@ -146,7 +148,7 @@ const TimeSettings: React.FC<TimeSettingsProps> = ({
               disabled={isRunning}
               variant={isRunning ? 'secondary' : 'primary'}
               icon={<span style={{ color: 'white !important', filter: 'brightness(0) invert(1)' }}>➕</span>}
-              label="加"
+              label={t('increase')}
               className="bg-blue-600 text-white font-bold text-lg px-4 py-2 rounded hover:bg-blue-700 transition"
             />
           </div>
@@ -166,7 +168,7 @@ const TimeSettings: React.FC<TimeSettingsProps> = ({
           onClick={isRunning ? onPause : onStart}
           variant={isRunning ? 'danger' : 'primary'}
           icon={isRunning ? <span style={{ color: 'white', filter: 'none' }}>⏸️</span> : <span style={{ color: 'white', filter: 'none' }}>▶️</span>}
-          label={isRunning ? '暫停' : '開始'}
+          label={isRunning ? t('pause') : t('start')}
           className="flex-1 hover:scale-105"
         />
         
@@ -175,7 +177,7 @@ const TimeSettings: React.FC<TimeSettingsProps> = ({
           onClick={onSkip}
           variant="danger"
           icon={<span style={{ color: 'white', filter: 'none' }}>⏹</span>}
-          label="提早結束"
+          label={t('stop_early')}
           className="flex-1 bg-red-500 hover:bg-red-600 text-white rounded-lg px-4 py-2 transition-colors duration-200 hover:scale-105"
         />
         
@@ -184,7 +186,7 @@ const TimeSettings: React.FC<TimeSettingsProps> = ({
           onClick={onReset}
           variant="secondary"
           icon={<FaRotateRight />}
-          label="重置"
+          label={t('reset')}
         /> */}
       </div>
     </div>

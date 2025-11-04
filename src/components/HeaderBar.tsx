@@ -1,4 +1,5 @@
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
 interface HeaderBarProps {
@@ -14,6 +15,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   className = '',
   showHomeButton = false
 }) => {
+  const { t } = useTranslation()
   return (
     <div className={`flex items-center justify-between gap-2 mb-4 sm:mb-6 pt-2 sm:pt-6 pb-2 sm:pb-4 ${className}`}>
       {/* 左側：回首頁按鈕和標題 */}
@@ -31,7 +33,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
         {/* 標題區域 */}
         <span className="text-xl sm:text-2xl">{icon}</span>
         <h1 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-100">
-          {title}
+          {t(title)}
         </h1>
       </div>
     </div>

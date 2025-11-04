@@ -837,3 +837,45 @@ input[type="time"] {
   background-color: #2563eb !important;
   background: #2563eb !important;
 }
+
+/* 漸層背景與柔光呼吸效果 */
+.gradient-bg {
+  min-height: 100vh;
+  background: linear-gradient(160deg, #E8F6FF 0%, #F6FBFF 50%, #D9EDFF 100%);
+  background-attachment: fixed;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: softGlow 8s ease-in-out infinite alternate;
+}
+
+/* 加柔光呼吸效果 */
+@keyframes softGlow {
+  0% {
+    background-position: 0% 50%;
+    filter: brightness(1);
+  }
+  50% {
+    background-position: 100% 50%;
+    filter: brightness(1.05);
+  }
+  100% {
+    background-position: 0% 50%;
+    filter: brightness(1);
+  }
+}
+
+/* 每個主要卡片都統一柔藍陰影 */
+.card {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(8px);
+  border-radius: 18px;
+  box-shadow: 0 4px 12px rgba(100, 180, 255, 0.2);
+  padding: 20px;
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(100, 180, 255, 0.3);
+}

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 interface ChantButtonProps {
   onSoundPlay?: () => void
@@ -9,6 +10,7 @@ interface ChantButtonProps {
 }
 
 export default function ChantButton({ onSoundPlay, onCount, customWoodfishImage, onWoodfishUpload, onReset }: ChantButtonProps) {
+  const { t } = useTranslation()
   const [animate, setAnimate] = useState(false)
   const [showPlusOne, setShowPlusOne] = useState(false)
 
@@ -78,7 +80,7 @@ export default function ChantButton({ onSoundPlay, onCount, customWoodfishImage,
       />
       <label htmlFor="woodfish-upload">
         <div className="w-full max-w-xs lg:w-40 mx-auto block bg-yellow-500 text-white px-3 sm:px-4 py-2 rounded cursor-pointer hover:bg-yellow-600 transition-colors duration-200 text-sm sm:text-base">
-          上傳自訂木魚圖
+          {t('upload_custom_woodfish_image')}
         </div>
       </label>
       
@@ -87,7 +89,7 @@ export default function ChantButton({ onSoundPlay, onCount, customWoodfishImage,
         onClick={onReset}
         className="w-full max-w-xs lg:w-40 mx-auto block bg-gray-400 text-white px-3 sm:px-4 py-2 rounded hover:bg-gray-500 cursor-pointer transition-colors duration-200 text-sm sm:text-base"
       >
-        還原預設
+        {t('restore_default')}
       </div>
     </div>
   )

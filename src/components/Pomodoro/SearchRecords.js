@@ -1,7 +1,9 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 // removed unused icon imports
+import { useTranslation } from 'react-i18next';
 import IconButton from '../ui/IconButton';
 const SearchRecords = ({ searchKeyword, onSearchKeywordChange, searchFields, onSearchFieldsChange, searchHistory, showSuggestions, onShowSuggestionsChange, isSearchInputFocused: _isSearchInputFocused, onIsSearchInputFocusedChange, focusItems: _focusItems, onSearch, onClearSearch, isSearching, isMobile, startDate, onStartDateChange, endDate, onEndDateChange }) => {
+    const { t } = useTranslation();
     const handleSearchInputChange = (e) => {
         const value = e.target.value;
         onSearchKeywordChange(value);
@@ -52,11 +54,11 @@ const SearchRecords = ({ searchKeyword, onSearchKeywordChange, searchFields, onS
                     fontSize: '1.3rem',
                     fontWeight: '600',
                     textAlign: 'center'
-                }, children: "\uD83D\uDD0D \u641C\u5C0B\u529F\u80FD" }), _jsxs("div", { style: {
+                }, children: "\uD83D\uDD0D " + t('search_function') }), _jsxs("div", { style: {
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '20px'
-                }, children: [_jsxs("div", { style: { position: 'relative' }, children: [_jsx("input", { type: "text", placeholder: "\u641C\u5C0B\u5C08\u6CE8\u9805\u76EE\u3001\u63CF\u8FF0\u6216\u6642\u9593...", value: searchKeyword, onChange: handleSearchInputChange, onFocus: handleSearchInputFocus, onBlur: handleSearchInputBlur, style: {
+                }, children: [_jsxs("div", { style: { position: 'relative' }, children: [_jsx("input", { type: "text", placeholder: t('search_focus_item_description_time'), value: searchKeyword, onChange: handleSearchInputChange, onFocus: handleSearchInputFocus, onBlur: handleSearchInputBlur, style: {
                                     width: '100%',
                                     padding: '12px 16px',
                                     fontSize: '16px',
@@ -95,14 +97,14 @@ const SearchRecords = ({ searchKeyword, onSearchKeywordChange, searchFields, onS
                                     fontSize: '14px',
                                     fontWeight: '600',
                                     color: '#555'
-                                }, children: "\u641C\u5C0B\u7BC4\u570D\uFF1A" }), _jsx("div", { style: {
+                                }, children: t('search_scope') + "\uFF1A" }), _jsx("div", { style: {
                                     display: 'flex',
                                     flexWrap: 'wrap',
                                     gap: '12px'
-                                }, children: [
-                                    { key: 'focusItem', label: '專注項目' },
-                                    { key: 'description', label: '描述內容' },
-                                    { key: 'time', label: '完成時間' }
+                                },                                 children: [
+                                    { key: 'focusItem', label: t('focus_item') },
+                                    { key: 'description', label: t('description') },
+                                    { key: 'time', label: t('completion_time') }
                                 ].map(({ key, label }) => (_jsxs("label", { style: {
                                         display: 'flex',
                                         alignItems: 'center',
@@ -120,7 +122,7 @@ const SearchRecords = ({ searchKeyword, onSearchKeywordChange, searchFields, onS
                                     fontSize: '14px',
                                     fontWeight: '600',
                                     color: '#555'
-                                }, children: "\u65E5\u671F\u7BC4\u570D\uFF1A" }), _jsxs("div", { style: {
+                                }, children: t('date_range') + "\uFF1A" }), _jsxs("div", { style: {
                                     display: 'flex',
                                     flexDirection: isMobile ? 'column' : 'row',
                                     gap: '12px',
@@ -130,7 +132,7 @@ const SearchRecords = ({ searchKeyword, onSearchKeywordChange, searchFields, onS
                                                     marginBottom: '5px',
                                                     fontSize: '12px',
                                                     color: '#666'
-                                                }, children: "\u958B\u59CB\u65E5\u671F\uFF1A" }), _jsx("input", { type: "date", value: startDate || getTodayDate(), onChange: handleStartDateChange, style: {
+                                                }, children: t('start_date') + "\uFF1A" }), _jsx("input", { type: "date", value: startDate || getTodayDate(), onChange: handleStartDateChange, style: {
                                                     width: '100%',
                                                     padding: '8px 12px',
                                                     fontSize: '14px',
@@ -144,7 +146,7 @@ const SearchRecords = ({ searchKeyword, onSearchKeywordChange, searchFields, onS
                                                     marginBottom: '5px',
                                                     fontSize: '12px',
                                                     color: '#666'
-                                                }, children: "\u7D50\u675F\u65E5\u671F\uFF1A" }), _jsx("input", { type: "date", value: endDate || getTodayDate(), onChange: handleEndDateChange, style: {
+                                                }, children: t('end_date') + "\uFF1A" }), _jsx("input", { type: "date", value: endDate || getTodayDate(), onChange: handleEndDateChange, style: {
                                                     width: '100%',
                                                     padding: '8px 12px',
                                                     fontSize: '14px',
@@ -158,6 +160,6 @@ const SearchRecords = ({ searchKeyword, onSearchKeywordChange, searchFields, onS
                             justifyContent: 'center',
                             gap: '15px',
                             flexWrap: 'wrap'
-                        }, children: [_jsx(IconButton, { onClick: onSearch, disabled: isSearching, variant: "primary", icon: "\uD83D\uDD0D", label: isSearching ? '搜尋中...' : '搜尋', className: "hover:scale-105" }), _jsx(IconButton, { onClick: onClearSearch, variant: "primary", icon: "\uD83D\uDDD1\uFE0F", label: "\u6E05\u9664", className: "hover:scale-105" })] })] })] }));
+                        }, children: [_jsx(IconButton, { onClick: onSearch, disabled: isSearching, variant: "primary", icon: "\uD83D\uDD0D", label: isSearching ? t('searching') : t('search'), className: "hover:scale-105" }), _jsx(IconButton, { onClick: onClearSearch, variant: "primary", icon: "\uD83D\uDDD1\uFE0F", label: t('clear'), className: "hover:scale-105" })] })] })] }));
 };
 export default SearchRecords;

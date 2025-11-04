@@ -1,35 +1,48 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useEffect, useRef, useState } from 'react';
-const defaultMusicOptions = [
-    { label: '南無阿彌陀佛（一）', file: '/music/namo1.mp3' },
-    { label: '南無阿彌陀佛（二）', file: '/music/namo2.mp3' },
-    { label: '南無阿彌陀佛（三）', file: '/music/namo3.mp3' }
-];
+import { useTranslation } from 'react-i18next';
+import i18n from '../i18n';
 export default function AnimatedMusicPlayer({ onPlayStateChange } = {}) {
+    const { t } = useTranslation();
     const audioRef = useRef(null);
+    // 根據語言動態生成音樂選項
+    const getDefaultMusicOptions = () => [
+        { label: t('chant_config.music.namo_1'), file: '/music/namo1.mp3' },
+        { label: t('chant_config.music.namo_2'), file: '/music/namo2.mp3' },
+        { label: t('chant_config.music.namo_3'), file: '/music/namo3.mp3' }
+    ];
     const [isPlaying, setIsPlaying] = useState(() => {
         // 從 localStorage 讀取播放狀態，預設為暫停
         const savedPlayState = localStorage.getItem('animatedMusicPlayState');
         return savedPlayState === 'true';
     });
     const [selected, setSelected] = useState(() => {
-        // 從 localStorage 讀取音樂選擇，預設為南無阿彌陀佛（一）
-        return localStorage.getItem('selectedAnimatedMusic') || defaultMusicOptions[0].file;
+        // 從 localStorage 讀取音樂選擇，預設為第一個選項
+        const defaultOptions = getDefaultMusicOptions();
+        return localStorage.getItem('selectedAnimatedMusic') || defaultOptions[0].file;
     });
     const [customMusic, setCustomMusic] = useState(null);
-    const [musicOptions, setMusicOptions] = useState(defaultMusicOptions);
-    // 載入儲存的音樂設定
+    const [musicOptions, setMusicOptions] = useState(getDefaultMusicOptions());
+    // 載入儲存的自訂音樂（只在初始化時）
     useEffect(() => {
         const savedCustomMusic = localStorage.getItem('customAnimatedMusic');
         if (savedCustomMusic) {
             setCustomMusic(savedCustomMusic);
-            const customOption = {
-                label: '自訂音樂',
-                file: savedCustomMusic
-            };
-            setMusicOptions([customOption, ...defaultMusicOptions]);
         }
     }, []);
+    
+    // 更新音樂選項（當語言變更時）
+    useEffect(() => {
+        if (customMusic) {
+            const customOption = {
+                label: t('chant_config.music.custom_music') + ': ' + (localStorage.getItem('customMusicName') || ''),
+                file: customMusic
+            };
+            setMusicOptions([customOption, ...getDefaultMusicOptions()]);
+        } else {
+            setMusicOptions(getDefaultMusicOptions());
+        }
+    }, [t, i18n.language, customMusic]);
     // 初始載入時通知播放狀態
     useEffect(() => {
         onPlayStateChange?.(isPlaying);
@@ -93,7 +106,7 @@ export default function AnimatedMusicPlayer({ onPlayStateChange } = {}) {
             // 檢查檔案大小（限制為5MB）
             const maxSize = 5 * 1024 * 1024; // 5MB
             if (file.size > maxSize) {
-                alert('檔案太大！請選擇小於5MB的MP3檔案。');
+                alert(t('chant_config.alert.file_too_large'));
                 event.target.value = '';
                 return;
             }
@@ -106,21 +119,22 @@ export default function AnimatedMusicPlayer({ onPlayStateChange } = {}) {
                     localStorage.setItem('customAnimatedMusic', result);
                     // 更新音樂選項
                     const customOption = {
-                        label: '自訂音樂',
+                        label: t('chant_config.music.custom_music') + ': ' + file.name,
                         file: result
                     };
-                    setMusicOptions([customOption, ...defaultMusicOptions]);
+                    localStorage.setItem('customMusicName', file.name);
+                    setMusicOptions([customOption, ...getDefaultMusicOptions()]);
                     setSelected(result);
                 } catch (error) {
-                    console.error('儲存自訂音樂失敗:', error);
-                    alert('檔案太大無法儲存！請選擇較小的MP3檔案。');
+                    console.error(t('chant_config.error.process_custom_music_failed'), error);
+                    alert(t('chant_config.alert.file_process_failed'));
                     setCustomMusic(null);
                     localStorage.removeItem('customAnimatedMusic');
                 }
             };
             reader.onerror = () => {
-                console.error('讀取檔案失敗');
-                alert('讀取檔案失敗，請重試。');
+                console.error(t('chant_config.error.read_file_failed'));
+                alert(t('chant_config.alert.file_read_failed'));
             };
             reader.readAsDataURL(file);
         }
@@ -132,8 +146,10 @@ export default function AnimatedMusicPlayer({ onPlayStateChange } = {}) {
         setCustomMusic(null);
         localStorage.removeItem('customAnimatedMusic');
         localStorage.removeItem('selectedAnimatedMusic');
-        setMusicOptions(defaultMusicOptions);
-        setSelected(defaultMusicOptions[0].file);
+        localStorage.removeItem('customMusicName');
+        const defaultOptions = getDefaultMusicOptions();
+        setMusicOptions(defaultOptions);
+        setSelected(defaultOptions[0].file);
     };
-    return (_jsxs("div", { className: "bg-white rounded-xl shadow-lg p-6 border-t-4 border-blue-500", children: [_jsx("h3", { className: "text-xl font-bold mb-2 text-center text-gray-800", children: "\uD83C\uDFB5 \u80CC\u666F\u97F3\u6A02\uFF08\u52D5\u756B\u7248\uFF09" }), _jsx("p", { className: "text-sm text-gray-600 text-center mb-4", children: "\u6309\u7A7A\u767D\u9375\u53EF\u5FEB\u901F\u5207\u63DB\u64AD\u653E/\u66AB\u505C" }), _jsxs("div", { className: "mb-4", children: [_jsx("label", { className: "block text-sm font-medium text-gray-700 mb-2", children: "\u9078\u64C7\u97F3\u6A02\uFF1A" }), _jsx("select", { className: "w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", value: selected, onChange: (e) => setSelected(e.target.value), children: musicOptions.map((music) => (_jsx("option", { value: music.file, children: music.label }, music.file))) })] }), _jsxs("div", { className: "mb-4", children: [_jsx("label", { className: "block text-sm font-medium text-gray-700 mb-2", children: "\u4E0A\u50B3\u81EA\u8A02\u97F3\u6A02\uFF1A" }), _jsxs("div", { className: "space-y-2", children: [_jsxs("label", { className: "block cursor-pointer", children: [_jsx("input", { type: "file", accept: "audio/mp3,audio/*", onChange: handleCustomMusicUpload, className: "hidden" }), _jsx("div", { className: "w-full bg-green-500 hover:bg-green-600 active:bg-green-700 text-white px-4 py-2 rounded-lg text-center font-medium transition-colors duration-200 shadow-md hover:shadow-lg", children: "\u9078\u64C7 MP3 \u6A94\u6848" })] }), customMusic && (_jsx("button", { onClick: clearCustomMusic, className: "w-full bg-red-500 hover:bg-red-600 active:bg-red-700 text-white px-4 py-3 rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg hover:scale-[1.02] mt-3 mb-2", children: "\u6E05\u9664\u81EA\u8A02\u97F3\u6A02" }))] })] }), _jsx("div", { className: "text-center", children: _jsx("button", { onClick: togglePlay, className: "text-white px-4 py-2 rounded-lg font-bold transition-all duration-200 transform hover:scale-105 shadow-lg", style: { backgroundColor: '#3b82f6', border: 'none', color: '#ffffff' }, onMouseEnter: (e) => { e.currentTarget.style.backgroundColor = '#2563eb'; e.currentTarget.style.color = '#ffffff'; }, onMouseLeave: (e) => { e.currentTarget.style.backgroundColor = '#3b82f6'; e.currentTarget.style.color = '#ffffff'; }, children: isPlaying ? '⏸️ 暫停音樂' : '▶️ 播放音樂' }) }), _jsx("audio", { ref: audioRef, loop: true, hidden: true })] }));
+    return (_jsxs("div", { className: "bg-white rounded-xl shadow-lg p-6 border-t-4 border-blue-500", children: [_jsx("h3", { className: "text-xl font-bold mb-2 text-center text-gray-800", children: "\uD83C\uDFB5 " + t('background_music_animated') }), _jsx("p", { className: "text-sm text-gray-500 text-center mb-4", children: t('chant_config.music.spacebar_hint') }), _jsxs("div", { className: "mb-4", children: [_jsx("label", { className: "block text-sm font-medium text-gray-700 mb-2", children: t('select_music') }), _jsx("select", { className: "w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", value: selected, onChange: (e) => setSelected(e.target.value), children: musicOptions.map((music) => (_jsx("option", { value: music.file, children: music.label }, music.file))) })] }), _jsxs("div", { className: "mb-4", children: [_jsx("label", { className: "block text-sm font-medium text-gray-700 mb-2", children: t('upload_custom_music') }), _jsxs("div", { className: "space-y-2", children: [_jsxs("label", { className: "block cursor-pointer", children: [_jsx("input", { type: "file", accept: "audio/mp3,audio/*", onChange: handleCustomMusicUpload, className: "hidden" }), _jsx("div", { className: "w-full bg-green-500 hover:bg-green-600 active:bg-green-700 text-white px-4 py-2 rounded-lg text-center font-medium transition-colors duration-200 shadow-md hover:shadow-lg", children: t('select_mp3_file') })] }), customMusic && (_jsx("button", { onClick: clearCustomMusic, className: "w-full bg-red-500 hover:bg-red-600 active:bg-red-700 text-white px-4 py-3 rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg hover:scale-[1.02] mt-3 mb-2", children: t('clear_custom_music') }))] })] }), _jsx("div", { className: "text-center", children: _jsx("button", { onClick: togglePlay, className: "text-white px-4 py-2 rounded-lg font-bold transition-all duration-200 transform hover:scale-105 shadow-lg", style: { backgroundColor: '#3b82f6', border: 'none', color: '#ffffff' }, onMouseEnter: (e) => { e.currentTarget.style.backgroundColor = '#2563eb'; e.currentTarget.style.color = '#ffffff'; }, onMouseLeave: (e) => { e.currentTarget.style.backgroundColor = '#3b82f6'; e.currentTarget.style.color = '#ffffff'; }, children: isPlaying ? "\u23F8\uFE0F " + t('pause_music') : "\u25B6\uFE0F " + t('play_music') }) }), _jsx("audio", { ref: audioRef, loop: true, hidden: true })] }));
 }

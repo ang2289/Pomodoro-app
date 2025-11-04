@@ -4,28 +4,37 @@ import { Filesystem, Directory, Encoding } from '@capacitor/filesystem'
 import { Share } from '@capacitor/share'
 import { Capacitor } from '@capacitor/core'
 import { saveAs } from 'file-saver'
+import i18n from '../i18n'
 
 // 根據 focusItemId 獲取專注項目名稱
 const getFocusItemName = (focusItemId: string | undefined, focusItems: FocusItem[]): string => {
   if (!focusItemId) {
-    return '未選擇'
+    return i18n.t('pomodoro_focus_item_unselected')
   }
   
   const focusItem = focusItems.find(item => item.id === focusItemId)
-  return focusItem ? focusItem.name : '未知項目'
+  return focusItem ? focusItem.name : i18n.t('pomodoro_focus_item_unknown')
 }
 
 // 生成 CSV 內容
 const generateCsvContent = (records: PomodoroRecord[], focusItems: FocusItem[], isSearchActive: boolean = false, searchKeyword: string = ''): string => {
+  // 根據語言決定日期格式
+  const locale = i18n.language === 'zh_TW' ? 'zh-TW' : 'en-US'
+  
   // 如果沒有記錄，生成一個顯示「0筆」的 CSV
   if (records.length === 0) {
     const noDataMessage = isSearchActive && searchKeyword 
-      ? `搜尋條件：「${searchKeyword}」無符合條件的資料 (0筆)`
-      : '無資料可匯出 (0筆)'
+      ? i18n.t('pomodoro_export_no_search_data', { keyword: searchKeyword })
+      : i18n.t('pomodoro_export_no_data')
+    
+    const headers = locale === 'zh-TW'
+      ? ['狀態', '說明', '記錄筆數']
+      : ['Status', 'Description', 'Record Count']
+    const noDataText = locale === 'zh-TW' ? '無資料' : 'No Data'
     
     const csvContent = [
-      '"狀態","說明","記錄筆數"',
-      `"無資料","${noDataMessage}","0"`
+      `"${headers[0]}","${headers[1]}","${headers[2]}"`,
+      `"${noDataText}","${noDataMessage}","0"`
     ].join('\n')
     
     const BOM = '\uFEFF'
@@ -33,15 +42,25 @@ const generateCsvContent = (records: PomodoroRecord[], focusItems: FocusItem[], 
   }
 
   // CSV 標題行（添加 padding 讓寬度一致）
-  const headers = [
-    '專注項目      ', // 10 字寬度
-    ' 開始時間 ',      // 左右各 1 格空白
-    ' 結束時間 ',      // 左右各 1 格空白
-    ' 時長（分鐘） ',   // 左右各 1 格空白
-    ' 是否完成 ',      // 左右各 1 格空白
-    ' 工作時間（分鐘） ', // 左右各 1 格空白
-    ' 休息時間（分鐘） '  // 左右各 1 格空白
-  ]
+  const headers = locale === 'zh-TW'
+    ? [
+        '專注項目      ', // 10 字寬度
+        ' 開始時間 ',      // 左右各 1 格空白
+        ' 結束時間 ',      // 左右各 1 格空白
+        ' 時長（分鐘） ',   // 左右各 1 格空白
+        ' 是否完成 ',      // 左右各 1 格空白
+        ' 工作時間（分鐘） ', // 左右各 1 格空白
+        ' 休息時間（分鐘） '  // 左右各 1 格空白
+      ]
+    : [
+        'Focus Item     ',
+        ' Start Time  ',
+        ' End Time    ',
+        ' Duration (min)  ',
+        ' Completed?  ',
+        ' Work Time (min)  ',
+        ' Break Time (min)  '
+      ]
 
   // 轉換記錄為 CSV 行
   const csvRows = records.map(record => {
@@ -70,12 +89,14 @@ const generateCsvContent = (records: PomodoroRecord[], focusItems: FocusItem[], 
     // 格式化數字欄位（添加左右空白）
     const formatNumber = (num: number) => ` ${num} `
 
+    const completedText = locale === 'zh-TW' ? ' 是 ' : ' Yes  '
+    
     return [
       formatFocusItem(record.focusItemId),
       formatDateTime(startTime),
       formatDateTime(completedAt),
       formatNumber(record.workMinutes),
-      ' 是 ',  // 統一兩字寬度
+      completedText,
       formatNumber(record.workMinutes),
       formatNumber(record.breakMinutes)
     ]
@@ -103,10 +124,10 @@ const generateFileName = (records: PomodoroRecord[], isSearchActive: boolean = f
   if (isSearchActive && searchKeyword) {
     // 清理搜尋關鍵字，移除特殊字符以適合檔案名
     const cleanKeyword = searchKeyword.replace(/[<>:"/\\|?*]/g, '_').substring(0, 20)
-    fileName += `_搜尋_${cleanKeyword}`
+    fileName += `_Search_${cleanKeyword}`
   }
   if (records.length === 0) {
-    fileName += '_無資料'
+    fileName += '_NoData'
   }
   fileName += '.csv'
   
@@ -150,17 +171,22 @@ export const exportPomodoroRecordsToCSVWithCapacitor = async (
     let message = ''
     if (recordCount === 0) {
       message = isSearchActive && searchKeyword 
-        ? `搜尋條件：「${searchKeyword}」無符合條件的資料 (0筆)`
-        : '無資料可匯出 (0筆)'
+        ? i18n.t('pomodoro_export_no_search_data', { keyword: searchKeyword })
+        : i18n.t('pomodoro_export_no_data')
     } else if (isSearchActive) {
-      message = `已匯出 ${recordCount} 筆搜尋結果${searchKeyword ? ` (關鍵字: "${searchKeyword}")` : ''}`
+      let baseMessage = i18n.t('pomodoro_export_search_success', { count: recordCount })
+      if (searchKeyword) {
+        const keywordLabel = i18n.language === 'zh_TW' ? '關鍵字' : 'keyword'
+        baseMessage += ` (${keywordLabel}: "${searchKeyword}")`
+      }
+      message = baseMessage
     } else {
-      message = `已匯出 ${recordCount} 筆記錄`
+      message = i18n.t('pomodoro_export_success', { count: recordCount })
     }
 
     return {
       success: true,
-      message: `${message}\n\n檔案已儲存至：\n${fileName}\n\n儲存位置：Documents 資料夾`,
+      message: `${message}\n\n${i18n.t('pomodoro_export_file_saved', { fileName })}`,
       filePath,
       fileName
     }
@@ -169,7 +195,9 @@ export const exportPomodoroRecordsToCSVWithCapacitor = async (
     console.error('Capacitor CSV 匯出失敗:', error)
     return {
       success: false,
-      message: `匯出失敗：${error instanceof Error ? error.message : '未知錯誤'}`
+      message: i18n.t('pomodoro_export_failed', { 
+        error: error instanceof Error ? error.message : i18n.t('pomodoro_export_unknown_error') 
+      })
     }
   }
 }
@@ -215,17 +243,22 @@ const exportPomodoroRecordsToCSVWeb = async (
     let message = ''
     if (recordCount === 0) {
       message = isSearchActive && searchKeyword 
-        ? `搜尋條件：「${searchKeyword}」無符合條件的資料 (0筆)`
-        : '無資料可匯出 (0筆)'
+        ? i18n.t('pomodoro_export_no_search_data', { keyword: searchKeyword })
+        : i18n.t('pomodoro_export_no_data')
     } else if (isSearchActive) {
-      message = `已匯出 ${recordCount} 筆搜尋結果${searchKeyword ? ` (關鍵字: "${searchKeyword}")` : ''}`
+      let baseMessage = i18n.t('pomodoro_export_search_success', { count: recordCount })
+      if (searchKeyword) {
+        const keywordLabel = i18n.language === 'zh_TW' ? '關鍵字' : 'keyword'
+        baseMessage += ` (${keywordLabel}: "${searchKeyword}")`
+      }
+      message = baseMessage
     } else {
-      message = `已匯出 ${recordCount} 筆記錄`
+      message = i18n.t('pomodoro_export_success', { count: recordCount })
     }
 
     return {
       success: true,
-      message: `${message}\n\n檔案已下載：${fileName}`,
+      message: `${message}\n\n${i18n.t('pomodoro_export_file_downloaded', { fileName })}`,
       fileName
     }
 
@@ -233,7 +266,9 @@ const exportPomodoroRecordsToCSVWeb = async (
     console.error('Web CSV 匯出失敗:', error)
     return {
       success: false,
-      message: `匯出失敗：${error instanceof Error ? error.message : '未知錯誤'}`
+      message: i18n.t('pomodoro_export_failed', { 
+        error: error instanceof Error ? error.message : i18n.t('pomodoro_export_unknown_error') 
+      })
     }
   }
 }
@@ -244,15 +279,15 @@ export const shareCsvFile = async (filePath: string, fileName: string): Promise<
     if (!isCapacitorEnvironment()) {
       return {
         success: false,
-        message: '分享功能僅在手機應用程式中可用'
+        message: i18n.t('pomodoro_share_only_mobile')
       }
     }
 
     // 優先以附件方式分享，避免在 LINE 顯示不可點擊的本機路徑連結
     const shareOptions: any = {
-      title: '番茄鐘記錄匯出',
-      text: `番茄鐘記錄匯出檔案：${fileName}`,
-      dialogTitle: '分享番茄鐘記錄'
+      title: i18n.t('pomodoro_share_title'),
+      text: i18n.t('pomodoro_share_text', { fileName }),
+      dialogTitle: i18n.t('pomodoro_share_dialog')
     }
 
     // Capacitor Share v5 在部分平台支援 files 附件分享
@@ -270,13 +305,13 @@ export const shareCsvFile = async (filePath: string, fileName: string): Promise<
     if (shareResult) {
       return {
         success: true,
-        message: '分享成功'
+        message: i18n.t('pomodoro_share_success')
       }
     } else {
       // 如果沒有明確的結果，視為成功（分享選單已開啟）
       return {
         success: true,
-        message: '分享選單已開啟'
+        message: i18n.t('pomodoro_share_menu_opened')
       }
     }
 
@@ -289,14 +324,14 @@ export const shareCsvFile = async (filePath: string, fileName: string): Promise<
         errorMessage.includes('Share canceled') || errorMessage.includes('User cancelled')) {
       return {
         success: true,
-        message: '分享已取消'
+        message: i18n.t('pomodoro_share_cancelled')
       }
     }
     
     // 其他錯誤才視為真正的分享失敗
     return {
       success: false,
-      message: `分享失敗：${errorMessage.replace(/分享失敗：/g, '')}`
+      message: i18n.t('pomodoro_share_failed', { error: errorMessage.replace(/分享失敗：/g, '') })
     }
   }
 }

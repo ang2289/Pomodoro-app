@@ -1,4 +1,6 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 
 interface WeeklyData {
   day: string;
@@ -11,11 +13,12 @@ interface WeeklyStatsProps {
 }
 
 const WeeklyStats: React.FC<WeeklyStatsProps> = ({ weeklyData, totalCount }) => {
+  const { t } = useTranslation();
   return (
     <div className="card p-4 sm:p-6 mx-auto" style={{
       margin: '30px auto',
       maxWidth: '600px'
-    }}>
+      }}>
       <h3 style={{ 
         margin: '0 0 20px 0', 
         color: '#333',
@@ -23,14 +26,14 @@ const WeeklyStats: React.FC<WeeklyStatsProps> = ({ weeklyData, totalCount }) => 
         fontWeight: '600',
         textAlign: 'center'
       }}>
-        📊 本週統計
+        📊 {t('weekly_stats')}
       </h3>
       
       {(() => {
         if (totalCount === 0) {
           return (
             <div className="text-center py-10 px-5 text-gray-600 text-lg font-medium">
-              📊 本週尚無完成紀錄 (今日：{new Date().toLocaleDateString('zh-TW', { month: '2-digit', day: '2-digit' })})
+              📊 {t('no_records_this_week')} ({t('today')}：{new Date().toLocaleDateString(i18n.language === 'zh_TW' ? 'zh-TW' : 'en-US', { month: '2-digit', day: '2-digit' })})
             </div>
           )
         }
@@ -80,7 +83,7 @@ const WeeklyStats: React.FC<WeeklyStatsProps> = ({ weeklyData, totalCount }) => 
                 {/* 數值顯示 */}
                 <div className="w-16 sm:w-20 text-right text-sm sm:text-base font-semibold flex-shrink-0 flex items-center justify-end pr-3">
                   <span className={day.count > 0 ? 'text-teal-500' : 'text-gray-400'}>
-                    {day.count > 0 ? `${day.count} 顆` : '0 顆'}
+                    {day.count > 0 ? `${day.count} ${t('units')}` : `0 ${t('units')}`}
                   </span>
                 </div>
               </div>
@@ -91,16 +94,16 @@ const WeeklyStats: React.FC<WeeklyStatsProps> = ({ weeklyData, totalCount }) => 
               <div className="space-y-3">
                 <div className="text-center">
                   <div className="text-lg sm:text-xl font-bold text-green-700 mb-1">
-                    🎯 本週總計
+                    🎯 {t('weekly_total')}
                   </div>
                   <div className="text-2xl sm:text-3xl font-bold text-green-600">
-                    {totalCount} 顆番茄
+                    {totalCount} {t('tomatoes')}
                   </div>
                 </div>
                 
                 <div className="text-center pt-2 border-t border-green-200">
                   <div className="text-sm sm:text-base font-semibold text-green-600">
-                    平均每日：{Math.round(totalCount / 7 * 10) / 10} 顆
+                    {t('daily_avg')}：{Math.round(totalCount / 7 * 10) / 10} {t('units')}
                   </div>
                 </div>
               </div>

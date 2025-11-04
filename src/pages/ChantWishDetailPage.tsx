@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { supabase } from '../utils/supabaseClient'
 import ChantLogInput from '../components/ChantLogInput'
 import ChantSummary from '../components/ChantSummary'
@@ -35,6 +36,7 @@ interface Comment {
 }
 
 export default function ChantWishDetailPage() {
+  const { t } = useTranslation()
   const { wishNo, id } = useParams()
   const paramValue = wishNo || id // 使用 wishNo 或 id，兼容兩種路由格式
   const navigate = useNavigate()
@@ -401,19 +403,19 @@ export default function ChantWishDetailPage() {
           <div className="bg-white rounded-lg shadow-lg p-6">
             <div className="text-center">
               <div className="text-red-500 text-lg mb-2">❌</div>
-              <p className="text-red-600 mb-4">{error || '找不到此活動'}</p>
+              <p className="text-red-600 mb-4">{error || t('activity_not_found')}</p>
               <div className="space-x-4">
                 <button
                   onClick={() => navigate('/chant-wish-wall')}
                   className="bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded-lg transition-colors"
                 >
-                  返回集氣牆
+                  {t('back_to_wish_wall')}
                 </button>
                 <button
                   onClick={() => window.location.reload()}
                   className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors"
                 >
-                  重新載入
+                  {t('reload')}
                 </button>
               </div>
             </div>
@@ -434,13 +436,13 @@ export default function ChantWishDetailPage() {
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            返回唸經頁
+            {t('back_to_chant_page')}
           </button>
         </div>
 
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">🙏 集氣活動詳情</h1>
-          <p className="text-gray-600">一起為願望集氣助念</p>
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">🙏 {t('chant_wish_detail_title')}</h1>
+          <p className="text-gray-600">{t('chant_wish_detail_subtitle')}</p>
         </div>
 
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
@@ -448,14 +450,14 @@ export default function ChantWishDetailPage() {
             <h2 className="text-2xl font-bold text-gray-800 mb-2">{wish.title}</h2>
             <div className="flex items-center text-sm text-gray-500">
               <span className="mr-2">📅</span>
-              <span>發起時間：{formatDate(wish.created_at)}</span>
+              <span>{t('created_time')}: {formatDate(wish.created_at)}</span>
             </div>
           </div>
 
           {wish.image_url && (
             <div className="mb-6 flex justify-center items-center">
               <div className="w-full max-w-[320px] mx-auto">
-                <img src={wish.image_url} alt="願望圖片" className="max-h-60 w-auto max-w-full object-contain mx-auto rounded" />
+                <img src={wish.image_url} alt={t('wish_image')} className="max-h-60 w-auto max-w-full object-contain mx-auto rounded" />
               </div>
             </div>
           )}
@@ -464,7 +466,7 @@ export default function ChantWishDetailPage() {
             <div className="flex items-center text-gray-700">
               <span className="mr-3 text-2xl">🙏</span>
               <div>
-                <span className="font-medium">念誦內容：</span>
+                <span className="font-medium">{t('chant_content')}:</span>
                 <span className="ml-2 text-lg font-bold text-pink-600">
                   {wish.chant_text} {wish.chant_target_count}{wish.chant_unit}
                 </span>
@@ -475,7 +477,7 @@ export default function ChantWishDetailPage() {
               <div className="flex items-center text-gray-700">
                 <span className="mr-3 text-2xl">🎯</span>
                 <div>
-                  <span className="font-medium">迴向對象：</span>
+                  <span className="font-medium">{t('dedication_recipient')}:</span>
                   <span className="ml-2 text-lg font-bold text-blue-600">{wish.for_person_name}</span>
                 </div>
               </div>
@@ -484,7 +486,7 @@ export default function ChantWishDetailPage() {
             <div className="flex items-center text-gray-700">
               <span className="mr-3 text-2xl">📅</span>
               <div>
-                <span className="font-medium">活動期間：</span>
+                <span className="font-medium">{t('activity_period')}:</span>
                 <span className="ml-2">{formatDate(wish.start_date)} ~ {formatDate(wish.end_date)}</span>
               </div>
             </div>
@@ -492,8 +494,8 @@ export default function ChantWishDetailPage() {
             <div className="flex items-center text-gray-700">
               <span className="mr-3 text-2xl">✍️</span>
               <div>
-                <span className="font-medium">發起人：</span>
-                <span className="ml-2">{wish.created_by || '匿名'}</span>
+                <span className="font-medium">{t('creator_name')}:</span>
+                <span className="ml-2">{wish.created_by || t('anonymous')}</span>
               </div>
             </div>
 
@@ -511,17 +513,17 @@ export default function ChantWishDetailPage() {
               <div className="flex items-start text-gray-700">
                 <span className="mr-3 text-2xl mt-1">📝</span>
                 <div>
-                  <span className="font-medium block mb-2">願望說明：</span>
+                  <span className="font-medium block mb-2">{t('wish_content')}:</span>
                   <p className="whitespace-pre-wrap leading-relaxed">
-                    {wish.description || '（尚未填寫願望內容）'}
+                    {wish.description || t('no_wish_content')}
                   </p>
                 </div>
               </div>
               
               <div className="mt-6 p-6 bg-gradient-to-br from-pink-50 via-purple-50 to-yellow-50 rounded-xl border border-pink-200 shadow-lg">
-                <h3 className="text-lg font-bold text-center text-gray-800 mb-2">🙏 為此願望點燈祈福</h3>
+                <h3 className="text-lg font-bold text-center text-gray-800 mb-2">🙏 {t('light_up_for_wish')}</h3>
                 <p className="text-sm text-gray-600 text-center mb-4">
-                  {isLighted ? '感謝您的祈福，功德無量' : '點擊蓮花為此願望點燈祈福'}
+                  {isLighted ? t('thank_you_for_blessing') : t('click_lotus_to_light_up')}
                 </p>
                 
                 <div className="flex justify-center">
@@ -589,8 +591,8 @@ export default function ChantWishDetailPage() {
 
         {chantLogs.length > 0 && (
           <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">📊 念誦記錄</h3>
-            <p className="text-gray-600 mb-4">大家的集氣記錄</p>
+            <h3 className="text-xl font-bold text-gray-800 mb-4">📊 {t('chant_records')}</h3>
+            <p className="text-gray-600 mb-4">{t('chant_records_description')}</p>
             
             <div className="space-y-3">
               {chantLogs.map((log) => (
@@ -605,7 +607,7 @@ export default function ChantWishDetailPage() {
                     {/* 念了108遍 - 移到用戶名下面 */}
                     <div className="ml-11">
                       <span className="text-green-600 font-bold">
-                        念了 {log.chanted_count} 遍
+                        {t('chanted_count_template', { count: log.chanted_count })}
                       </span>
                     </div>
                     
@@ -622,7 +624,7 @@ export default function ChantWishDetailPage() {
               <div className="text-center">
                 <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-3">
                   <p className="text-lg font-bold text-green-600">
-                    💪 總共已念誦 {chantLogs.reduce((total, log) => total + log.chanted_count, 0)} 遍
+                    💪 {t('total_chanted_count_template', { count: chantLogs.reduce((total, log) => total + log.chanted_count, 0) })}
                   </p>
                 </div>
               </div>

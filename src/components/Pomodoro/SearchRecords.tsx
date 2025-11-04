@@ -2,6 +2,7 @@ import React from 'react';
 // removed unused icon imports
 import IconButton from '../ui/IconButton';
 import { FocusItem } from '../../types/FocusItem';
+import { useTranslation } from 'react-i18next';
 
 interface SearchFields {
   focusItem: boolean;
@@ -51,6 +52,7 @@ const SearchRecords: React.FC<SearchRecordsProps> = ({
   endDate,
   onEndDateChange
 }) => {
+  const { t } = useTranslation();
   const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     onSearchKeywordChange(value);
@@ -112,7 +114,7 @@ const SearchRecords: React.FC<SearchRecordsProps> = ({
         fontWeight: '600',
         textAlign: 'center'
       }}>
-        🔍 搜尋功能
+        🔍 {t('search_function') || '搜尋功能'}
       </h3>
       
       <div style={{
@@ -124,7 +126,7 @@ const SearchRecords: React.FC<SearchRecordsProps> = ({
         <div style={{ position: 'relative' }}>
           <input
             type="text"
-            placeholder="搜尋專注項目、描述或時間..."
+            placeholder={t('search_focus_item_description_time')}
             value={searchKeyword}
             onChange={handleSearchInputChange}
             onFocus={handleSearchInputFocus}
@@ -192,7 +194,7 @@ const SearchRecords: React.FC<SearchRecordsProps> = ({
             fontWeight: '600',
             color: '#555'
           }}>
-            搜尋範圍：
+            {t('search_scope')}：
           </label>
           <div style={{
             display: 'flex',
@@ -200,9 +202,9 @@ const SearchRecords: React.FC<SearchRecordsProps> = ({
             gap: '12px'
           }}>
             {[
-              { key: 'focusItem', label: '專注項目' },
-              { key: 'description', label: '描述內容' },
-              { key: 'time', label: '完成時間' }
+              { key: 'focusItem', label: t('focus_item') },
+              { key: 'description', label: t('description') },
+              { key: 'time', label: t('completion_time') }
             ].map(({ key, label }) => (
               <label key={key} style={{
                 display: 'flex',
@@ -237,7 +239,7 @@ const SearchRecords: React.FC<SearchRecordsProps> = ({
             fontWeight: '600',
             color: '#555'
           }}>
-            日期範圍：
+            {t('date_range')}：
           </label>
           <div style={{
             display: 'flex',
@@ -252,7 +254,7 @@ const SearchRecords: React.FC<SearchRecordsProps> = ({
                 fontSize: '12px',
                 color: '#666'
               }}>
-                開始日期：
+                {t('start_date')}：
               </label>
               <input
                 type="date"
@@ -277,7 +279,7 @@ const SearchRecords: React.FC<SearchRecordsProps> = ({
                 fontSize: '12px',
                 color: '#666'
               }}>
-                結束日期：
+                {t('end_date')}：
               </label>
               <input
                 type="date"
@@ -307,7 +309,7 @@ const SearchRecords: React.FC<SearchRecordsProps> = ({
                 disabled={isSearching}
                 className="w-full !bg-blue-600 hover:!bg-blue-700 !text-white font-semibold py-2 px-4 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                🔍 {isSearching ? '搜尋中...' : '搜尋'}
+                🔍 {isSearching ? t('searching') : t('search')}
               </button>
             </div>
           </div>
@@ -317,7 +319,7 @@ const SearchRecords: React.FC<SearchRecordsProps> = ({
                 onClick={onClearSearch}
                 className="w-full !bg-green-600 hover:!bg-green-700 !text-white font-semibold py-2 px-4 rounded transition-colors"
               >
-                🗑️ 清除
+                🗑️ {t('clear')}
               </button>
             </div>
           </div>

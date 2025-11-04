@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from 'recharts'
 import dayjs from 'dayjs'
 import 'dayjs/locale/zh-tw'
@@ -20,6 +21,7 @@ interface TodoStatsProps {
 // removed unused TYPE_COLORS
 
 const TodoStats: React.FC<TodoStatsProps> = ({ todos }) => {
+  const { t } = useTranslation();
   const total = todos.length
   const inProgress = todos.filter(t => t.status === '進行中').length
   const completed = todos.filter(t => t.status === '已完成').length
@@ -62,15 +64,15 @@ const TodoStats: React.FC<TodoStatsProps> = ({ todos }) => {
 
   return (
     <div className="bg-white shadow-md rounded-2xl p-4 mt-4 font-['Noto Sans TC']">
-      <h2 className="text-lg font-bold mb-4 text-gray-800">📊 任務統計</h2>
+      <h2 className="text-lg font-bold mb-4 text-gray-800">📊 {t('todo_stats_title')}</h2>
 
       {/* 今日統計 */}
       <div className="flex flex-col sm:flex-row justify-around items-center mb-6">
         <div className="text-center" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <h3 className="text-lg font-bold mb-2 text-gray-800">任務完成率</h3>
+          <h3 className="text-lg font-bold mb-2 text-gray-800">{t('task_completion_rate')}</h3>
           {chartData.every(d => d.value === 0) ? (
             <div className="w-32 h-32 flex items-center justify-center border-2 border-dashed border-gray-300 rounded-full">
-              <span className="text-gray-500 text-sm">無任務</span>
+              <span className="text-gray-500 text-sm">{t('no_tasks')}</span>
             </div>
           ) : (
             <ResponsiveContainer width={200} height={200}>
@@ -100,14 +102,14 @@ const TodoStats: React.FC<TodoStatsProps> = ({ todos }) => {
             </ResponsiveContainer>
           )}
           <p className="mt-2 text-sm text-gray-600" style={{ padding: '8px', lineHeight: '1.6' }}>
-            {completedTasks.length}/{todayTasks.length} 任務完成
+            {completedTasks.length}/{todayTasks.length} {t('tasks_completed')}
           </p>
         </div>
 
         <div className="mt-4 sm:mt-0 space-y-1 text-gray-700 text-sm" style={{ padding: '8px', lineHeight: '1.6' }}>
-          <p>總任務：<span className="font-semibold">{total}</span></p>
-          <p>進行中：<span className="font-semibold text-yellow-500">{inProgress}</span></p>
-          <p>已完成：<span className="font-semibold text-green-600">{completed}</span></p>
+          <p>{t('total_tasks')}: <span className="font-semibold">{total}</span></p>
+          <p>{t('in_progress')}: <span className="font-semibold text-yellow-500">{inProgress}</span></p>
+          <p>{t('completed')}: <span className="font-semibold text-green-600">{completed}</span></p>
         </div>
       </div>
 
@@ -115,7 +117,7 @@ const TodoStats: React.FC<TodoStatsProps> = ({ todos }) => {
         <div className="mt-6">
           <div className="flex items-center text-blue-700 text-lg mb-2">
             <span className="mr-2">📊</span>
-            <span>最近 7 天完成任務 (今日：{today.format('MM/DD')})</span>
+            <span>{t('last_7_days_with_today', { date: today.format('MM/DD') })}</span>
           </div>
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={weeklyData}>
@@ -129,7 +131,7 @@ const TodoStats: React.FC<TodoStatsProps> = ({ todos }) => {
 
       {/* 每日完成率折線圖 */}
       <div className="mt-8">
-        <h3 className="text-md font-bold mb-2 text-gray-800">📈 每日任務完成率 (%)</h3>
+        <h3 className="text-md font-bold mb-2 text-gray-800">📈 {t('daily_completion_rate')}</h3>
         <ResponsiveContainer width="100%" height={200}>
           <LineChart data={weeklyData}>
             <XAxis dataKey="date" />
@@ -142,7 +144,7 @@ const TodoStats: React.FC<TodoStatsProps> = ({ todos }) => {
 
     {/* 分類分析圖 */}
     <div className="mt-8">
-      <h3 className="text-lg font-bold mb-2 text-gray-800">📂 任務分類分析</h3>
+      <h3 className="text-lg font-bold mb-2 text-gray-800">📂 {t('task_category_analysis')}</h3>
       {(() => {
         // 使用今日任務進行分類統計，保持與完成率圖表一致
         const categoryMap = new Map()
@@ -152,14 +154,14 @@ const TodoStats: React.FC<TodoStatsProps> = ({ todos }) => {
           // 根據分類 ID 獲取正確的顯示名稱
           const getCategoryName = (id: string) => {
             switch(id) {
-              case 'work': return '💼 工作'
-              case 'housework': return '🧹 家務'
-              case 'reading': return '📚 閱讀'
-              case 'study': return '🎓 學習'
-              case 'health': return '💪 健康'
-              case 'social': return '🎉 聚會'
-              case 'misc': return '📝 其他'
-              case '未分類': return '📂 未分類'
+              case 'work': return t('cat_work')
+              case 'housework': return t('cat_housework')
+              case 'reading': return t('cat_reading')
+              case 'study': return t('cat_study')
+              case 'health': return t('cat_health')
+              case 'social': return t('cat_social')
+              case 'misc': return t('cat_misc')
+              case '未分類': return t('cat_uncategorized')
               default: return id // 如果是自訂分類，保持原名稱
             }
           }
@@ -175,7 +177,7 @@ const TodoStats: React.FC<TodoStatsProps> = ({ todos }) => {
         
         // 轉為陣列資料格式
         const categoryData = Array.from(categoryMap.entries()).map(([name, value]) => ({
-          name: name || '未分類',
+          name: name || t('cat_uncategorized'),
           value
         }))
 
@@ -184,7 +186,7 @@ const TodoStats: React.FC<TodoStatsProps> = ({ todos }) => {
 
         return categoryData.length === 0 || categoryData.every(d => d.value === 0) ? (
           <div className="h-48 flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg">
-            <span className="text-gray-500">今日尚無任務分類資料</span>
+            <span className="text-gray-500">{t('no_category_data_today')}</span>
           </div>
         ) : (
           <div>
