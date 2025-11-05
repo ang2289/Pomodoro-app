@@ -1,106 +1,126 @@
-import { useTranslation } from 'react-i18next';
+import React from "react";
 import { Link } from "react-router-dom";
-import { Helmet } from "react-helmet-async";
-import OfficialSourceNote from '@/components/OfficialSourceNote';
+import FAQ from '@/components/FAQ';
+import ShareButtons from '@/components/ShareButtons';
 
 export default function AntiFraud2025() {
-  const { i18n } = useTranslation();
-  const lang = i18n.language;
-  const isEnglish = !lang.startsWith("zh");
-
   return (
-    <>
-      <Helmet>
-        {isEnglish ? (
-          <>
-            <title>⚠️ NT$10,000 Universal Subsidy Reminder｜Beware of Scams!｜RxV Finance</title>
-            <meta
-              name="description"
-              content="The government has launched the NT$10,000 Universal Cash Subsidy program. Citizens can apply through the official portal https://10000.gov.tw. However, beware of fake links or phishing SMS pretending to be the government."
-            />
-            <meta
-              name="keywords"
-              content="relief subsidy, anti-fraud, government subsidy, financial security, RxV blog"
-            />
-            <meta property="og:title" content="⚠️ NT$10,000 Universal Subsidy Reminder｜Beware of Scams!" />
-            <meta
-              property="og:description"
-              content="The government has launched the NT$10,000 Universal Cash Subsidy program. Beware of scams and verify the official website."
-            />
-          </>
-        ) : (
-          <>
-            <title>⚠️ 普發一萬元補助提醒｜認明官網防詐騙！｜RxV 健康理財專欄</title>
-            <meta
-              name="description"
-              content="全民普發現金即將開放，提醒大家小心詐騙、認明 10000.gov.tw 官網。"
-            />
-            <meta
-              name="keywords"
-              content="普發補助, 防詐騙, 政府補助, 理財安全, RxV 專欄"
-            />
-            <meta property="og:title" content="⚠️ 普發一萬元補助提醒｜認明官網防詐騙！" />
-            <meta
-              property="og:description"
-              content="政府推出全民普發現金一萬元政策，請務必認明官方網站，小心詐騙。"
-            />
-          </>
-        )}
-      </Helmet>
-      <div className="max-w-3xl mx-auto p-6 bg-gradient-to-b from-white to-blue-50 rounded-2xl shadow-sm mt-6 mb-10">
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">
-          ⚠️ {isEnglish
-            ? 'NT$10,000 Universal Subsidy Reminder｜Beware of Scams!'
-            : '普發一萬元補助提醒｜認明官網防詐騙！'}
+    <main className="max-w-3xl mx-auto px-4 py-8 leading-8">
+      <article className="bg-white p-6 md:p-8 rounded-xl shadow-sm border">
+
+        <h1 className="text-2xl md:text-3xl font-bold mb-2">
+          ⚠️ 普發一萬元補助提醒｜認明官網、防詐騙！
         </h1>
-
-        <p className="text-gray-500 mb-4">2025-11-04</p>
-
-        <p className="text-gray-700 leading-relaxed mb-4">
-          {isEnglish
-            ? 'The government has launched the "NT$10,000 Universal Cash Subsidy" program. Citizens can apply through the official portal https://10000.gov.tw. However, beware of fake links or phishing SMS pretending to be the government.'
-            : '政府推出「全民普發現金一萬元」政策，民眾可透過官網申請登記：https://10000.gov.tw。然而近期詐騙簡訊頻傳，請務必認明官方網站！'}
+        <p className="text-gray-500 text-sm mb-6">
+          更新：{new Date().toISOString().slice(0, 10)}
         </p>
 
-        <h2 className="font-semibold text-gray-800 mb-2">
-          {isEnglish ? '⚠️ Anti-Fraud Reminder:' : '防詐騙提醒：'}
-        </h2>
+        <p>
+          政府推出「全民普發現金補助」措施，民眾可透過 <strong>官方網站與郵局管道</strong> 申請或領取。
+          然而近期詐騙簡訊、假網站、假客服也同步增加，因此務必認明官方網站與正確領取方式。
+        </p>
 
-        <ul className="list-disc pl-5 text-gray-700 mb-4 space-y-2">
+        <h2 className="text-xl font-bold mt-8 mb-3">✅ 官方申請入口（務必核對網址）</h2>
+
+        <ul className="list-disc pl-6 space-y-2">
           <li>
-            {isEnglish
-              ? 'The government will never call, text, or ask you to operate an ATM.'
-              : '政府不會以電話或簡訊要求你匯款或操作 ATM。'}
+            申請官網：  
+            <a href="https://10000.gov.tw/" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+              https://10000.gov.tw/
+            </a>
           </li>
           <li>
-            {isEnglish
-              ? 'Applications are free. No deposit or fee is required.'
-              : '所有申請皆不需手續費或保證金。'}
+            郵局相關查詢：  
+            <a href="https://www.post.gov.tw" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+              中華郵政全球資訊網
+            </a>
           </li>
           <li>
-            {isEnglish
-              ? 'If you receive suspicious messages, call 165 Anti-Fraud Hotline for verification.'
-              : '收到可疑簡訊請撥打 165 反詐騙專線查詢。'}
-          </li>
-          <li>
-            {isEnglish
-              ? 'Stay calm and remind family and friends not to click suspicious links.'
-              : '領補助請安心，勿急著點擊不明連結，提醒長輩親友一起防詐！'}
+            防詐查證專區：
+            <a href="https://165.npa.gov.tw/" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline ml-1">
+              內政部警政署 165 反詐騙專區
+            </a>
+            （電話：<strong>165 反詐騙專線</strong>）
           </li>
         </ul>
 
-        <div className="flex justify-center mt-6">
+        <h2 className="text-xl font-bold mt-8 mb-3">🚫 常見詐騙手法</h2>
+        <ul className="list-disc pl-6 space-y-2">
+          <li>假冒「普發一萬」簡訊要求點擊連結填資料</li>
+          <li>假裝客服通知「資料異常，需重新驗證帳戶」</li>
+          <li>誘導民眾前往 ATM「重新操作銀行設定」</li>
+        </ul>
+
+        <div className="mt-4 p-4 border rounded-lg bg-red-50 leading-7">
+          <strong className="text-red-600">請牢記：</strong><br/>
+          <strong>政府不會要求：</strong>
+          <ul className="list-disc pl-6 space-y-1 mt-1">
+            <li>操作 ATM</li>
+            <li>提供存摺、提款卡或密碼</li>
+            <li>下載任何額外 APP</li>
+          </ul>
+        </div>
+
+        <h2 className="text-xl font-bold mt-8 mb-3">🔍 一看就能分辨真假網站的方法</h2>
+        <ul className="list-disc pl-6 space-y-2">
+          <li>網址必須以 <strong>.gov.tw</strong> 結尾</li>
+          <li>避免從簡訊或社群點擊 → 請自行手動輸入網址</li>
+          <li>若不確定 → 可直接撥打 165 查證</li>
+        </ul>
+
+        <FAQ
+          title="常見問題 Q&A"
+          items={[
+            { q: "我需要先繳費或付保證金嗎？", a: "不用。任何要求「先匯款」皆為詐騙。" },
+            { q: "我收到簡訊連結要求登入帳號？", a: "不要點。請自行手動輸入 https://10000.gov.tw/ 進入。" },
+            { q: "政府會打電話通知我嗎？", a: "不會主動致電要求操作 ATM、提供帳戶或密碼。" },
+            { q: "不確定是否為詐騙可以問誰？", a: "撥打 165 反詐騙專線，可立即查證。" }
+          ]}
+        />
+
+        <ShareButtons title="⚠️ 普發一萬元補助提醒｜認明官網、防詐騙！" />
+
+        <section className="mt-10 text-sm text-gray-500">
+          <p>資料來源：</p>
+          <ul className="list-disc pl-6 space-y-1 mt-1">
+            <li>
+              <a className="text-blue-600 underline" href="https://1966.gov.tw" target="_blank" rel="noopener noreferrer">
+                衛生福利部 長照資源整合平台（1966）
+              </a>
+            </li>
+            <li>
+              <a className="text-blue-600 underline" href="https://www.nhi.gov.tw/" target="_blank" rel="noopener noreferrer">
+                健保署官方網站（NHIA）
+              </a>
+            </li>
+            <li>
+              <a className="text-blue-600 underline" href="https://www.nhi.gov.tw/Content_List.aspx?n=11623" target="_blank" rel="noopener noreferrer">
+                健保署 民眾健康資料與服務入口
+              </a>
+            </li>
+            <li>
+              <a className="text-blue-600 underline" href="https://165.npa.gov.tw/" target="_blank" rel="noopener noreferrer">
+                內政部警政署 165 反詐騙專區
+              </a>
+            </li>
+          </ul>
+          <p className="italic mt-2">
+            本站為資訊整理平台，非政府機關。最終內容請以官方公告為準。
+          </p>
+        </section>
+
+        <div className="mt-10">
           <Link
             to="/finance"
-            className="px-5 py-2 bg-blue-600 !text-white rounded-full shadow hover:bg-blue-700 transition"
+            className="inline-block bg-blue-600 !text-white font-bold px-5 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            style={{ color: '#ffffff' }}
           >
-            {isEnglish ? '← Back to Health & Finance Section' : '← 回到健康與理財專欄'}
+            ← 回到健康與理財專欄
           </Link>
         </div>
 
-        <OfficialSourceNote />
-      </div>
-    </>
+      </article>
+    </main>
   );
 }
 

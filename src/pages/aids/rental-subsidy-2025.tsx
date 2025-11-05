@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { useTranslation } from "react-i18next";
+import ShareButtons from '@/components/ShareButtons';
 
 export default function RentalSubsidy2025() {
   const { t, i18n } = useTranslation();
@@ -299,6 +300,8 @@ export default function RentalSubsidy2025() {
             : "本文僅供摘要參考，實際補助金額、資格與申請流程以 內政部 及 地方政府 最新公告為準。"}
         </div>
       </section>
+
+      <ShareButtons title={isEnglish ? "2025 Rental Subsidy New System | 30 Billion Central Government Expanded Rental Subsidy Project" : "2025 租屋補助新制｜300 億中央擴大租金補貼專案"} />
 
       <div className="text-center mt-8">
         <Link

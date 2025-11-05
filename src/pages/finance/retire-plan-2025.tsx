@@ -1,143 +1,120 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Helmet } from "react-helmet-async";
-import { useTranslation } from "react-i18next";
+import FAQ from '@/components/FAQ';
+import ShareButtons from '@/components/ShareButtons';
 
 export default function RetirePlan2025() {
-  const { i18n } = useTranslation();
-  const lang = i18n.language;
-
   return (
-    <>
-      <Helmet>
-        {lang.startsWith("zh") ? (
-          <>
-            <title>退休健康金三角｜醫療、儲蓄與生活品質兼顧｜RxV 理財生活</title>
-            <meta
-              name="description"
-              content="退休規劃不只理財，還要兼顧健康與生活品質。了解醫療保障、儲蓄策略與心理健康的金三角平衡。"
-            />
-            <meta
-              name="keywords"
-              content="退休理財, 醫療保險, 退休健康, 生活品質, RxV 專欄"
-            />
-            <meta property="og:title" content="退休健康金三角｜醫療、儲蓄與生活品質兼顧" />
-            <meta
-              property="og:description"
-              content="從醫療保障、財務儲備與生活品質三角構面打造幸福退休人生。"
-            />
-          </>
-        ) : (
-          <>
-            <title>Retirement Wellness Triangle｜Health, Savings & Quality of Life｜RxV Finance</title>
-            <meta
-              name="description"
-              content="Retirement isn't just about money — it's about health, savings, and happiness. Learn to balance the three for a fulfilling life."
-            />
-            <meta
-              name="keywords"
-              content="retirement planning, health insurance, senior wellness, lifestyle finance, RxV blog"
-            />
-            <meta property="og:title" content="Retirement Wellness Triangle｜Health, Savings & Quality of Life" />
-            <meta
-              property="og:description"
-              content="Build your golden years on three pillars: medical security, financial savings, and joyful living."
-            />
-          </>
-        )}
-      </Helmet>
-      <div className="max-w-3xl mx-auto py-10 px-6">
-      <h1 className="text-2xl font-bold mb-4">
-        {lang.startsWith("zh")
-          ? "🧘‍♀️ 退休健康金三角｜醫療、儲蓄與生活品質兼顧"
-          : "🧘‍♀️ Retirement Wellness Triangle｜Health, Savings & Quality of Life"}
-      </h1>
+    <main className="max-w-3xl mx-auto px-4 py-8 leading-8">
+      <article className="bg-white p-6 md:p-8 rounded-xl shadow-sm border">
 
-      <p className="text-gray-600 mb-4">2025-11-04</p>
+        <h1 className="text-2xl md:text-3xl font-bold mb-2">
+          🧘‍♂️ 退休健康金三角｜醫療、儲蓄與生活品質兼顧
+        </h1>
+        <p className="text-gray-500 text-sm mb-6">
+          更新：{new Date().toISOString().slice(0, 10)}
+        </p>
 
-      <p className="mb-4">
-        {lang.startsWith("zh") ? (
-          <>
-            隨著平均壽命延長，退休生活可能長達 20 至 30 年。
-            若沒有完善的健康與財務規劃，晚年生活可能陷入「錢夠用但身體撐不住」的困境。
-            因此，建立「退休健康金三角」成為現代人必修課。
-          </>
-        ) : (
-          <>
-            As average life expectancy increases, retirement life may last 20 to 30 years. Without
-            proper health and financial planning, later life may fall into the dilemma of "having
-            enough money but not enough physical strength." Therefore, establishing the "Retirement
-            Wellness Triangle" has become essential for modern people.
-          </>
-        )}
-      </p>
+        <p>
+          隨著平均壽命延長，退休生活可能長達 20 至 30 年。若沒有完整的健康與財務規劃，
+          晚年生活可能落入「錢夠用但身體撐不住」或「身體健康但財務吃緊」的情況。
+          因此，「退休健康金三角」成為現代人必修的生活穩定架構。
+        </p>
 
-      <p className="mb-4">
-        {lang.startsWith("zh") ? (
-          <>
-            這個金三角包括三大核心：
-            <strong>醫療保障、財務儲備、生活品質。</strong>
-            第一，確保醫療與長照保險到位，減輕突發醫療支出壓力；
-            第二，持續儲蓄與穩健投資，讓資金能支撐長期生活；
-            第三，維持社交與興趣活動，避免心理孤立與失能。
-          </>
-        ) : (
-          <>
-            This golden triangle includes three core elements:{" "}
-            <strong>medical security, financial reserves, and quality of life.</strong> First,
-            ensure medical and long-term care insurance are in place to reduce the burden of sudden
-            medical expenses. Second, maintain savings and stable investments so funds can support
-            long-term living. Third, maintain social connections and interest activities to avoid
-            psychological isolation and disability.
-          </>
-        )}
-      </p>
+        <h2 className="text-xl font-bold mt-8 mb-3">什麼是退休健康金三角？</h2>
+        <p>
+          金三角由三大核心組成：
+        </p>
 
-      <p className="mb-4">
-        {lang.startsWith("zh") ? (
-          <>
-            建議從中年階段開始規劃，預留「健康基金」與「快樂基金」：
-            前者用於醫療與保健開銷，後者專門投資於學習、旅行或創作等生活成就。
-            這樣的分配能同時照顧身心與精神層面。
-          </>
-        ) : (
-          <>
-            It's recommended to start planning from middle age, setting aside a "Health Fund" and a
-            "Happiness Fund": the former for medical and healthcare expenses, the latter
-            specifically for investing in life achievements such as learning, travel, or creative
-            pursuits. This allocation can simultaneously care for physical, mental, and spiritual
-            aspects.
-          </>
-        )}
-      </p>
+        <ul className="list-disc pl-6 space-y-2 mt-3">
+          <li><strong>醫療保障：</strong>確保健保、長照及重大疾病照護到位</li>
+          <li><strong>財務儲備：</strong>規劃可持續的退休生活費與緊急備用金</li>
+          <li><strong>生活品質：</strong>保留社交、活動興趣與心理健康來源</li>
+        </ul>
 
-      <p className="mb-4">
-        {lang.startsWith("zh") ? (
-          <>
-            許多人認為理財只是為了退休金數字夠大，
-            但真正的退休力在於「能自由選擇過什麼樣的生活」。
-            若健康在、心境穩、金流順，退休後的每一天都能活得更自在。
-          </>
-        ) : (
-          <>
-            Many people think financial management is just about having a large retirement fund,
-            but true retirement power lies in "the freedom to choose what kind of life to live."
-            If health is present, the mind is stable, and cash flow is smooth, every day after
-            retirement can be lived more freely.
-          </>
-        )}
-      </p>
+        <h2 className="text-xl font-bold mt-8 mb-3">1) 醫療與長照保障</h2>
+        <p>
+          健康是退休生活的前提。以下是可直接執行的檢查項目：
+        </p>
+        <ul className="list-disc pl-6 space-y-2 mt-3">
+          <li>確認是否符合 <strong>重大傷病卡</strong> 條件（可降低醫療自費）</li>
+          <li>了解 <strong>長照 2.0 服務申請流程</strong></li>
+          <li>家中建立「就醫緊急聯絡與醫療資料備存」</li>
+        </ul>
 
-      <div className="text-center mt-8">
-        <Link
-          to="/finance"
-          className="bg-blue-600 hover:bg-blue-700 !text-white font-semibold py-2 px-6 rounded-full inline-block"
-        >
-          {lang.startsWith("zh") ? "← 回到健康與理財專欄" : "← Back to Health & Finance"}
-        </Link>
-      </div>
-      </div>
-    </>
+        <h2 className="text-xl font-bold mt-8 mb-3">2) 財務儲備：生活費 + 緊急金</h2>
+        <p>退休財務不是追求越多越好，而是追求「可預測、可長期維持」。</p>
+
+        <div className="mt-4 p-4 border rounded-lg bg-gray-50">
+          <strong>建議配置：</strong>
+          <ul className="list-disc pl-6 space-y-2 mt-2">
+            <li>日常生活費：以「每月必要支出 × 12」為一年額度</li>
+            <li>緊急醫療備用金：3～6 個月生活費</li>
+            <li>投資工具以穩定型為主，如：定存、債券、分散式退休方案</li>
+          </ul>
+        </div>
+
+        <h2 className="text-xl font-bold mt-8 mb-3">3) 生活品質：保持身心活力</h2>
+        <p>退休不是「停下來」，而是「換節奏」。</p>
+
+        <ul className="list-disc pl-6 space-y-2 mt-3">
+          <li>每週固定散步、拉筋或簡易運動</li>
+          <li>與朋友或社群保持穩定社交頻率</li>
+          <li>建立生活儀式感：例如喝茶、看書、手作、園藝</li>
+        </ul>
+
+        <FAQ
+          title="常見問題 Q&A"
+          items={[
+            { q: "退休金越多越好嗎？", a: "不一定。可長期維持、壓力低、風險可控的配置，才是最適合自己的退休金模式。" },
+            { q: "沒有太多存款怎麼辦？", a: "生活品質的關鍵不在花費，而在節奏、健康與社交支持結構。" },
+            { q: "醫療費會不會造成退休負擔？", a: "重大傷病卡、長照 2.0 與健保特殊補助，可大幅降低醫療支出壓力。" },
+            { q: "退休後會覺得空虛嗎？", a: "可建立「可期待的日常」：每周散步、手作、讀書或志工活動，即能穩定心理需求。" }
+          ]}
+        />
+
+        <ShareButtons title="🧘‍♂️ 退休健康金三角｜醫療、儲蓄與生活品質兼顧" />
+
+        <section className="mt-10 text-sm text-gray-500">
+          <p>資料來源：</p>
+          <ul className="list-disc pl-6 space-y-1 mt-1">
+            <li>
+              <a className="text-blue-600 underline" href="https://1966.gov.tw" target="_blank" rel="noopener noreferrer">
+                衛生福利部 長照資源整合平台（1966）
+              </a>
+            </li>
+            <li>
+              <a className="text-blue-600 underline" href="https://www.nhi.gov.tw/" target="_blank" rel="noopener noreferrer">
+                健保署官方網站（NHIA）
+              </a>
+            </li>
+            <li>
+              <a className="text-blue-600 underline" href="https://www.nhi.gov.tw/Content_List.aspx?n=11623" target="_blank" rel="noopener noreferrer">
+                健保署 民眾健康資料與服務入口
+              </a>
+            </li>
+            <li>
+              <a className="text-blue-600 underline" href="https://165.npa.gov.tw/" target="_blank" rel="noopener noreferrer">
+                內政部警政署 165 反詐騙專區
+              </a>
+            </li>
+          </ul>
+          <p className="italic mt-2">
+            本站為資訊整理平台，非政府機關。最終內容請以官方公告為準。
+          </p>
+        </section>
+
+        <div className="mt-10">
+          <Link
+            to="/finance"
+            className="inline-block bg-blue-600 !text-white font-bold px-5 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            style={{ color: '#ffffff' }}
+          >
+            ← 回到健康與理財專欄
+          </Link>
+        </div>
+      </article>
+    </main>
   );
 }
 

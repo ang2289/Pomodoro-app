@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { useTranslation } from "react-i18next";
+import ShareButtons from '@/components/ShareButtons';
 
 export default function InsuranceOldage2025() {
   const { i18n } = useTranslation();
@@ -147,6 +148,8 @@ export default function InsuranceOldage2025() {
               : "本文僅供參考，實際給付金額依勞保局公告與個人年資為準。"}
           </p>
         </div>
+
+        <ShareButtons title={isEnglish ? "Labor Insurance Old-Age Benefit Calculation Guide | 2025 Latest Retirement Pension Application" : "勞保老年給付計算指南｜2025 最新退休金申請"} />
 
         <div className="text-center mt-8">
           <Link
