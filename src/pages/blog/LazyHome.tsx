@@ -90,17 +90,17 @@ export default function LazyHome() {
             "hasPart": [
               {
                 "@type": "WebPage",
-                "name": "補助懶人包",
+                "name": isEnglish ? "Subsidy Package" : "補助懶人包",
                 "url": "https://rxv-dreamstudio.vercel.app/blog"
               },
               {
                 "@type": "WebPage",
-                "name": "健康與理財專欄",
+                "name": isEnglish ? "Health & Finance" : "健康與理財專欄",
                 "url": "https://rxv-dreamstudio.vercel.app/blog"
               },
               {
                 "@type": "WebPage",
-                "name": "勞保退休金試算",
+                "name": isEnglish ? "Pension Column" : "退休金專欄",
                 "url": "https://rxv-dreamstudio.vercel.app/blog"
               }
             ]
@@ -129,11 +129,9 @@ export default function LazyHome() {
             to="/aids"
             className="border rounded-xl p-6 bg-white shadow-sm hover:shadow-md transition-all"
           >
-            <h2 className="text-lg font-semibold text-gray-800 mb-2">💰 補助懶人包</h2>
+            <h2 className="text-lg font-semibold text-gray-800 mb-2">💰 {t('subsidy_package')}</h2>
             <p className="text-gray-600 text-sm">
-              {isEnglish
-                ? 'Find the latest housing, energy, and elderly support programs.'
-                : '查詢租屋補助、節能補貼與銀髮族補助等方案。'}
+              {t('subsidy_package_desc')}
             </p>
           </Link>
 
@@ -141,11 +139,9 @@ export default function LazyHome() {
             to="/finance"
             className="border rounded-xl p-6 bg-white shadow-sm hover:shadow-md transition-all"
           >
-            <h2 className="text-lg font-semibold text-gray-800 mb-2">🩺 健康與理財</h2>
+            <h2 className="text-lg font-semibold text-gray-800 mb-2">🩺 {t('health_finance')}</h2>
             <p className="text-gray-600 text-sm">
-              {isEnglish
-                ? 'Tips on managing health and finances for a stable life.'
-                : '健康理財觀念與生活平衡建議。'}
+              {t('health_finance_desc')}
             </p>
           </Link>
 
@@ -153,11 +149,9 @@ export default function LazyHome() {
             to="/retirement"
             className="border rounded-xl p-6 bg-white shadow-sm hover:shadow-md transition-all"
           >
-            <h2 className="text-lg font-semibold text-gray-800 mb-2">🏦 退休金專欄</h2>
+            <h2 className="text-lg font-semibold text-gray-800 mb-2">🏦 {t('pension_column')}</h2>
             <p className="text-gray-600 text-sm">
-              {isEnglish
-                ? 'Understand pension rules and financial security tips.'
-                : '掌握退休金新制與安心理財資訊。'}
+              {t('pension_column_desc')}
             </p>
           </Link>
         </div>

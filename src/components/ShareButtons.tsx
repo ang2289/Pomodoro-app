@@ -1,6 +1,8 @@
 import { useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export default function ShareButtons({ title }: { title: string }) {
+  const { t } = useTranslation();
   const lineButtonRef = useRef<HTMLButtonElement>(null);
   const facebookButtonRef = useRef<HTMLButtonElement>(null);
   const copyButtonRef = useRef<HTMLButtonElement>(null);
@@ -33,7 +35,7 @@ export default function ShareButtons({ title }: { title: string }) {
     // 因為 Facebook sharer.php 不能直接預填文字，所以需要用戶手動貼上
     navigator.clipboard.writeText(shareText).then(() => {
       // 先顯示提示，等用戶確認後再打開 Facebook 分享頁面
-      alert('📋 標題和連結已複製到剪貼簿！\n\n點擊「確定」後將開啟 Facebook 分享頁面\n\n請在分享框中貼上（Ctrl+V / Cmd+V）');
+      alert(t('facebook_share_copied_alert'));
       // 用戶確認後，打開 Facebook 分享頁面
       window.open(
         `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}`,
@@ -41,7 +43,7 @@ export default function ShareButtons({ title }: { title: string }) {
       );
     }).catch(() => {
       // 如果複製失敗，先顯示錯誤提示
-      alert('⚠️ 無法複製到剪貼簿，請手動複製以下內容：\n\n' + shareText);
+      alert(t('facebook_share_copy_failed_alert') + shareText);
       // 用戶確認後，仍然打開 Facebook 分享頁面
       window.open(
         `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}`,
@@ -52,7 +54,7 @@ export default function ShareButtons({ title }: { title: string }) {
 
   const handleCopy = () => {
     navigator.clipboard.writeText(shareText);
-    alert("✅ 已複製標題＋連結，可直接貼到群組分享！");
+    alert(t('copy_title_link_alert'));
   };
 
   return (
@@ -69,7 +71,7 @@ export default function ShareButtons({ title }: { title: string }) {
         onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#15803d' }}
         onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#16a34a' }}
       >
-        💬 分享到 LINE
+        💬 {t('share_to_line')}
       </button>
 
       <button
@@ -84,7 +86,7 @@ export default function ShareButtons({ title }: { title: string }) {
         onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#1d4ed8' }}
         onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#2563eb' }}
       >
-        📣 分享到 Facebook
+        📣 {t('share_to_facebook')}
       </button>
 
       <button
@@ -99,7 +101,7 @@ export default function ShareButtons({ title }: { title: string }) {
         onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#7e22ce' }}
         onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#9333ea' }}
       >
-        🔗 複製標題＋連結
+        🔗 {t('copy_title_link')}
       </button>
     </div>
   );

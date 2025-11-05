@@ -91,10 +91,7 @@ export default function SelfDialogueMeditation() {
 
         <hr className="my-8 border-gray-300" />
 
-        {/* ✅ 廣告區塊示意（可放 AdSense） */}
-        <div className="text-center text-gray-400 italic">
-          （這裡可放 AdSense 廣告代碼）
-        </div>
+        
       </article>
     </div>
   );

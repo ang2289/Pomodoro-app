@@ -45,11 +45,11 @@ export default function ModuleDropdown() {
       {/* 下拉選單按鈕 */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-3 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 whitespace-nowrap"
+        className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-3 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 max-w-[240px] sm:max-w-[280px] overflow-hidden"
         style={{ minWidth: '160px' }}
       >
         <div className="flex items-center">
-          <span className="text-sm sm:text-base font-medium text-gray-700">
+          <span className="text-sm sm:text-base font-medium text-gray-700 truncate">
             {t(getCurrentOption().labelKey || 'select_module')}
           </span>
         </div>
@@ -65,7 +65,7 @@ export default function ModuleDropdown() {
 
       {/* 下拉選單內容 */}
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-50 min-w-full">
+        <div className="absolute top-full left-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-50 min-w-full max-w-[320px]">
           <div className="py-1">
             {moduleOptions.map((option) => {
               const isActive = currentPath === option.value || 
@@ -76,7 +76,7 @@ export default function ModuleDropdown() {
                 <button
                   key={option.value}
                   onClick={() => handleChange(option.value)}
-                  className={`w-full text-left px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base transition-colors whitespace-nowrap ${
+                  className={`w-full text-left px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base transition-colors whitespace-normal break-words ${
                     isActive 
                       ? 'bg-blue-50 text-blue-700 font-medium' 
                       : 'text-gray-700 hover:bg-gray-50'
@@ -84,7 +84,7 @@ export default function ModuleDropdown() {
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
-                      <span className="whitespace-nowrap">{option.label || t(option.labelKey || '')}</span>
+                      <span className="break-words">{t(option.labelKey || '')}</span>
                     </div>
                     {isActive && (
                       <svg className="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">

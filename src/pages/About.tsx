@@ -1,41 +1,31 @@
-import React from "react"
-import { useTranslation } from 'react-i18next'
-import i18n from '../i18n'
-import ModuleDropdown from '../components/ModuleDropdown'
+import React from "react";
+import ModuleDropdown from '../components/ModuleDropdown';
 
 export default function AboutPage() {
-  const { t } = useTranslation()
-  
   return (
-    <div className="gradient-bg min-h-screen flex justify-center px-4 py-10">
-      <div className="bg-white/80 backdrop-blur-md shadow-xl rounded-2xl p-6 max-w-2xl w-full text-gray-800">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold">{t('about_page_title')}</h1>
-          <ModuleDropdown />
-        </div>
-        <p className="mb-4">{t('about_page_intro')}</p>
-        <p className="mb-4">
-          {t('about_page_independent')}
-          <strong className="mx-1">{t('about_page_studio')}</strong>
-          {t('about_page_features')}
-        </p>
-        <p className="mb-4">{t('about_page_not_affiliated')}</p>
-        
-        <hr className="my-6 border-gray-300" />
-        
-        <p className="mb-2">
-          📧 {t('about_page_contact')}{" "}
-          <a
-            href="mailto:rxv0227@gmail.com"
-            className="text-blue-600 underline hover:text-blue-800"
-          >
-            rxv0227@gmail.com
-          </a>
-        </p>
-        <p className="text-sm text-gray-500">
-          {t('about_page_update')}{i18n.language === 'en_US' ? ': ' : '：'}2025/11/04
-        </p>
+    <div className="max-w-3xl mx-auto px-4 py-10">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">關於我們</h1>
+        <ModuleDropdown />
       </div>
+
+      <p className="text-gray-700 leading-relaxed mb-4">
+        本網站由 <strong>RxV 夢想創作工作室</strong> 獨立開發與維運。
+      </p>
+
+      <p className="text-gray-700 leading-relaxed mb-4">
+        我們致力於整理政府公開資訊、補助申請方式、健康理財與退休金政策內容，
+        協助民眾快速理解並提升資訊透明度。
+      </p>
+
+      <p className="text-gray-700 leading-relaxed mb-4">
+        本站所有資料皆以政府機關正式公告為準，並提醒用戶提高警覺，
+        小心不明來源連結與詐騙網站。
+      </p>
+
+      <p className="text-gray-600 text-sm mt-6">
+        本站不屬於任何政府單位，為資訊整理服務平台。
+      </p>
     </div>
-  )
+  );
 }

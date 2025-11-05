@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { useTranslation } from "react-i18next";
+import ShareButtons from '@/components/ShareButtons';
 
 export default function SelfContribution2025() {
   const { i18n } = useTranslation();
@@ -135,6 +136,10 @@ export default function SelfContribution2025() {
             )}
           </p>
         </div>
+
+        <ShareButtons title={isEnglish
+          ? "Labor Pension Self-Contribution Guide | 2025 Benefits & Application Process"
+          : "勞退金自提教學｜2025 一次看懂自提 6% 的好處與申請流程"} />
 
         <div className="text-center mt-8">
           <Link

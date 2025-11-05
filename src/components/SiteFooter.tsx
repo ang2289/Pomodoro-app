@@ -51,7 +51,7 @@ export default function SiteFooter() {
       </div>
 
       <p className="mt-2 text-gray-500">
-        © 2025 RxV夢想創作工作室｜{isEnglish ? "Health Finance & Living Subsidy Platform" : "健康理財與生活補助平台"}
+        {t('copyright')}
       </p>
     </footer>
   )

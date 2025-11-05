@@ -40,7 +40,7 @@
     </url>
 
     <url>
-      <loc>https://rxv-dreamstudio.vercel.app/privacy-policy</loc>
+      <loc>https://rxv-dreamstudio.vercel.app/privacy</loc>
       <lastmod>2025-11-04</lastmod>
       <changefreq>monthly</changefreq>
       <priority>0.8</priority>
@@ -48,20 +48,6 @@
 
     <url>
       <loc>https://rxv-dreamstudio.vercel.app/terms</loc>
-      <lastmod>2025-11-04</lastmod>
-      <changefreq>monthly</changefreq>
-      <priority>0.8</priority>
-    </url>
-
-    <url>
-      <loc>https://rxv-dreamstudio.vercel.app/about</loc>
-      <lastmod>2025-11-04</lastmod>
-      <changefreq>monthly</changefreq>
-      <priority>0.8</priority>
-    </url>
-
-    <url>
-      <loc>https://rxv-dreamstudio.vercel.app/contact</loc>
       <lastmod>2025-11-04</lastmod>
       <changefreq>monthly</changefreq>
       <priority>0.8</priority>
@@ -146,7 +132,7 @@
 
     <url>
       <loc>https://rxv-dreamstudio.vercel.app/blog/evening-gratitude-journal</loc>
-      <lastmod>2025-11-03</lastmod>
+      <lastmod>2025-11-04</lastmod>
       <changefreq>weekly</changefreq>
       <priority>0.8</priority>
     </url>
@@ -202,14 +188,14 @@
 
     <url>
       <loc>https://rxv-dreamstudio.vercel.app/blog/moonlight-meditation-breath</loc>
-      <lastmod>2025-11-03</lastmod>
+      <lastmod>2025-11-04</lastmod>
       <changefreq>weekly</changefreq>
       <priority>0.8</priority>
     </url>
 
     <url>
       <loc>https://rxv-dreamstudio.vercel.app/blog/morning-affirmations</loc>
-      <lastmod>2025-11-03</lastmod>
+      <lastmod>2025-11-04</lastmod>
       <changefreq>weekly</changefreq>
       <priority>0.8</priority>
     </url>
@@ -251,7 +237,7 @@
 
     <url>
       <loc>https://rxv-dreamstudio.vercel.app/blog/power-of-silence</loc>
-      <lastmod>2025-11-03</lastmod>
+      <lastmod>2025-11-04</lastmod>
       <changefreq>weekly</changefreq>
       <priority>0.8</priority>
     </url>
@@ -265,14 +251,14 @@
 
     <url>
       <loc>https://rxv-dreamstudio.vercel.app/blog/sleep-sound-therapy</loc>
-      <lastmod>2025-11-03</lastmod>
+      <lastmod>2025-11-04</lastmod>
       <changefreq>weekly</changefreq>
       <priority>0.8</priority>
     </url>
 
     <url>
       <loc>https://rxv-dreamstudio.vercel.app/blog/three-minute-meditation</loc>
-      <lastmod>2025-11-03</lastmod>
+      <lastmod>2025-11-04</lastmod>
       <changefreq>weekly</changefreq>
       <priority>0.8</priority>
     </url>
