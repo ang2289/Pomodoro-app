@@ -103,7 +103,6 @@ const SearchRecords = ({ searchKeyword, onSearchKeywordChange, searchFields, onS
                                     gap: '12px'
                                 },                                 children: [
                                     { key: 'focusItem', label: t('focus_item') },
-                                    { key: 'description', label: t('description') },
                                     { key: 'time', label: t('completion_time') }
                                 ].map(({ key, label }) => (_jsxs("label", { style: {
                                         display: 'flex',

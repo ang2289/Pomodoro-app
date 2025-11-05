@@ -203,7 +203,6 @@ const SearchRecords: React.FC<SearchRecordsProps> = ({
           }}>
             {[
               { key: 'focusItem', label: t('focus_item') },
-              { key: 'description', label: t('description') },
               { key: 'time', label: t('completion_time') }
             ].map(({ key, label }) => (
               <label key={key} style={{

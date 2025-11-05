@@ -360,17 +360,24 @@ const PomodoroPage = () => {
         });
       }
       
-      // 日期範圍篩選
-      if (startDate || endDate) {
+      // 日期範圍篩選（僅在「完成時間」勾選時啟用）
+      if (searchFields.time && (startDate || endDate)) {
         filtered = filtered.filter(record => {
+          // 將記錄日期轉換為本地時間的日期字符串（YYYY-MM-DD）
           const recordDate = new Date(record.completedAt);
-          const recordDateStr = recordDate.toISOString().split('T')[0];
+          const year = recordDate.getFullYear();
+          const month = String(recordDate.getMonth() + 1).padStart(2, '0');
+          const day = String(recordDate.getDate()).padStart(2, '0');
+          const recordDateStr = `${year}-${month}-${day}`;
+          
           let matchesDate = true;
           
           if (startDate) {
+            // 確保日期字符串格式一致（YYYY-MM-DD）
             matchesDate = matchesDate && recordDateStr >= startDate;
           }
           if (endDate) {
+            // 確保日期字符串格式一致（YYYY-MM-DD）
             matchesDate = matchesDate && recordDateStr <= endDate;
           }
           
@@ -379,7 +386,8 @@ const PomodoroPage = () => {
       }
       
       // 檢查是否有任何有效的搜尋條件
-      const hasValidSearchConditions = searchKeyword.trim() || startDate || endDate;
+      const hasValidSearchConditions =
+        searchKeyword.trim() || (searchFields.time && (startDate || endDate));
       
       // 如果沒有任何搜尋條件，顯示所有記錄
       if (!hasValidSearchConditions) {
@@ -405,8 +413,14 @@ const PomodoroPage = () => {
   const handleClearSearch = () => {
     // 清除搜尋條件
     setSearchKeyword('');
-    setStartDate('');
-    setEndDate('');
+    // 將日期重置為「今天」，避免畫面顯示今天但狀態為空造成過濾失效
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const todayStr = `${yyyy}-${mm}-${dd}`;
+    setStartDate(todayStr);
+    setEndDate(todayStr);
     setFilteredRecords(records);
     setIsSearchActive(false);
     setShowSuggestions(false);
