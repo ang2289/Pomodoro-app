@@ -16,7 +16,7 @@ export default function RentalSubsidy2025() {
             : "🏠 2025 租屋補助新制｜300 億中央擴大租金補貼專案｜RxV"}
         </title>
       </Helmet>
-      <main className="max-w-4xl mx-auto px-4 py-10 leading-relaxed">
+      <main className="max-w-4xl mx-auto px-4 py-10 leading-relaxed text-lg">
         <section>
           <h1 className="text-3xl font-extrabold mb-4">
             {isEnglish

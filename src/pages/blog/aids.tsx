@@ -1,7 +1,6 @@
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import OfficialSourceNote from '@/components/OfficialSourceNote';
 
 export default function AidsPage() {
   const { t, i18n } = useTranslation();
@@ -132,7 +131,6 @@ export default function AidsPage() {
           </article>
         </section>
 
-        <OfficialSourceNote />
       </div>
     </>
   );

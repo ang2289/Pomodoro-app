@@ -10,7 +10,7 @@ export default function RetirePlan2025() {
 
   return (
     <main className="max-w-3xl mx-auto px-4 py-8 leading-8">
-      <article className="bg-white p-6 md:p-8 rounded-xl shadow-sm border">
+      <article className="bg-white p-6 md:p-8 rounded-xl shadow-sm border text-lg">
 
         <h1 className="text-2xl md:text-3xl font-bold mb-2">
           {isEnglish

@@ -49,7 +49,7 @@ export default function SelfContribution2025() {
         />
       </Helmet>
 
-      <main className="max-w-3xl mx-auto py-10 px-4">
+      <main className="max-w-3xl mx-auto py-10 px-4 text-lg">
         <h1 className="text-3xl font-bold mb-4">
           {isEnglish ? "Labor Pension Self-Contribution Guide" : "勞退金自提教學"}
         </h1>

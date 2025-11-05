@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { useTranslation } from "react-i18next";
-import OfficialSourceNote from '@/components/OfficialSourceNote';
 
 export default function RetirementPage() {
   const { t, i18n } = useTranslation();
@@ -111,7 +110,6 @@ export default function RetirementPage() {
           </div>
         </div>
 
-        <OfficialSourceNote />
       </main>
     </>
   );

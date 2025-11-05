@@ -46,7 +46,7 @@ export default function SleepBalance2025() {
           </>
         )}
       </Helmet>
-      <div className="max-w-3xl mx-auto py-10 px-6">
+      <div className="max-w-3xl mx-auto py-10 px-6 text-lg">
       <h1 className="text-2xl font-bold mb-4">
         {lang.startsWith("zh")
           ? "😴 睡眠力回春｜每天多睡一小時，健康財富都變好"

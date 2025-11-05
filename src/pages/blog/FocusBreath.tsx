@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 export default function FocusBreath() {
   return (
     <div className="gradient-bg min-h-screen flex justify-center px-4 py-10">
-      <article className="bg-white/80 backdrop-blur-lg shadow-xl rounded-2xl p-8 max-w-3xl w-full leading-relaxed text-gray-800">
+      <article className="bg-white/80 backdrop-blur-lg shadow-xl rounded-2xl p-8 max-w-3xl w-full leading-relaxed text-gray-800 text-lg">
         <Link to="/blog" className="text-blue-600 hover:text-blue-800 mb-4 inline-block">
           ← 返回文章列表
         </Link>

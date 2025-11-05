@@ -45,8 +45,8 @@ export default function ModuleDropdown() {
       {/* 下拉選單按鈕 */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-3 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 max-w-[240px] sm:max-w-[280px] overflow-hidden"
-        style={{ minWidth: '160px' }}
+        className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-3 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 max-w-[280px] sm:max-w-[320px] overflow-hidden"
+        style={{ minWidth: '200px' }}
       >
         <div className="flex items-center">
           <span className="text-sm sm:text-base font-medium text-gray-700 truncate">
@@ -65,7 +65,7 @@ export default function ModuleDropdown() {
 
       {/* 下拉選單內容 */}
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-50 min-w-full max-w-[320px]">
+        <div className="absolute top-full left-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-50 min-w-full max-w-[380px] sm:max-w-[400px]">
           <div className="py-1">
             {moduleOptions.map((option) => {
               const isActive = currentPath === option.value || 

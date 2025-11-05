@@ -15,7 +15,7 @@ export default function LTC2025Update() {
             : "👵 長照 2.0 更新｜114 年修法與給付擴充（2025）｜RxV"}
         </title>
       </Helmet>
-      <main className="max-w-4xl mx-auto px-4 py-10 leading-relaxed">
+      <main className="max-w-4xl mx-auto px-4 py-10 leading-relaxed text-lg">
         <section>
           <h1 className="text-3xl font-extrabold mb-4">
             {isEnglish

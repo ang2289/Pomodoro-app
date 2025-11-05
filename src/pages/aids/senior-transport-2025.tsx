@@ -15,7 +15,7 @@ export default function SeniorTransportAid2025() {
             : "🧓 2025 銀髮族交通補助與敬老卡懶人包｜RxV"}
         </title>
       </Helmet>
-      <div className="max-w-3xl mx-auto py-10 px-6 bg-gradient-to-b from-blue-50 to-white rounded-2xl shadow-sm">
+      <div className="max-w-3xl mx-auto py-10 px-6 bg-gradient-to-b from-blue-50 to-white rounded-2xl shadow-sm text-lg">
         <h1 className="text-2xl font-bold mb-4">
           {isEnglish
             ? "🧓 2025 Senior Transportation Subsidy & Senior Card Guide"

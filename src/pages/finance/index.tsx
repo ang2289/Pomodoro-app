@@ -2,7 +2,6 @@ import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import useFinanceArticles from "../../hooks/useFinanceArticles";
-import OfficialSourceNote from '@/components/OfficialSourceNote';
 
 export default function FinancePage() {
   const { t, i18n } = useTranslation();
@@ -111,7 +110,6 @@ export default function FinancePage() {
           ))}
         </section>
 
-        <OfficialSourceNote />
       </div>
     </>
   );

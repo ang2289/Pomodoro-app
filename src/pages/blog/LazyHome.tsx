@@ -3,7 +3,6 @@ import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import ModuleDropdown from "@/components/ModuleDropdown";
-import OfficialSourceNote from '@/components/OfficialSourceNote';
 
 const AidArticles = [
   {
@@ -127,7 +126,7 @@ export default function LazyHome() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 w-full max-w-4xl mx-auto">
           <Link
             to="/aids"
-            className="border rounded-xl p-6 bg-white shadow-sm hover:shadow-md transition-all"
+            className="border border-amber-200 rounded-xl p-6 bg-amber-50 shadow-sm hover:shadow-lg hover:scale-105 hover:bg-amber-100 hover:border-amber-300 active:scale-95 transition-all duration-200 cursor-pointer"
           >
             <h2 className="text-lg font-semibold text-gray-800 mb-2">💰 {t('subsidy_package')}</h2>
             <p className="text-gray-600 text-sm">
@@ -137,7 +136,7 @@ export default function LazyHome() {
 
           <Link
             to="/finance"
-            className="border rounded-xl p-6 bg-white shadow-sm hover:shadow-md transition-all"
+            className="border border-blue-200 rounded-xl p-6 bg-blue-50 shadow-sm hover:shadow-lg hover:scale-105 hover:bg-blue-100 hover:border-blue-300 active:scale-95 transition-all duration-200 cursor-pointer"
           >
             <h2 className="text-lg font-semibold text-gray-800 mb-2">🩺 {t('health_finance')}</h2>
             <p className="text-gray-600 text-sm">
@@ -147,7 +146,7 @@ export default function LazyHome() {
 
           <Link
             to="/retirement"
-            className="border rounded-xl p-6 bg-white shadow-sm hover:shadow-md transition-all"
+            className="border border-purple-200 rounded-xl p-6 bg-purple-50 shadow-sm hover:shadow-lg hover:scale-105 hover:bg-purple-100 hover:border-purple-300 active:scale-95 transition-all duration-200 cursor-pointer"
           >
             <h2 className="text-lg font-semibold text-gray-800 mb-2">🏦 {t('pension_column')}</h2>
             <p className="text-gray-600 text-sm">
@@ -196,7 +195,6 @@ export default function LazyHome() {
             </Link>
           </div>
 
-          <OfficialSourceNote />
         </section>
 
         {/* 暫時隱藏送審用 */}

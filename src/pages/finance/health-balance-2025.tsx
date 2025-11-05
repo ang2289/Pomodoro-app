@@ -10,7 +10,7 @@ export default function HealthBalance2025() {
 
   return (
     <main className="max-w-3xl mx-auto px-4 py-8">
-      <article className="bg-white p-6 rounded-2xl border shadow-sm">
+      <article className="bg-white p-6 rounded-2xl border shadow-sm text-lg">
         <h1 className="text-2xl md:text-3xl font-bold mb-3">
           {isEnglish
             ? "Mind-Body Balanced Financial Management | Building Stable Health and Finances from Daily Habits"

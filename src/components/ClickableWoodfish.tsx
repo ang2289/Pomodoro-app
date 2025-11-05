@@ -98,7 +98,7 @@ const ClickableWoodfish: React.FC<ClickableWoodfishProps> = ({ onWoodfishClick }
 
       {/* 自訂木魚圖片上傳 */}
       <div className="space-y-3">
-        <div className="flex gap-2">
+        <div className="flex gap-4 sm:gap-6">
           <label className="flex-1 cursor-pointer">
             <input
               type="file"

@@ -46,7 +46,7 @@ export default function DietMind2025() {
           </>
         )}
       </Helmet>
-      <div className="max-w-3xl mx-auto py-10 px-6">
+      <div className="max-w-3xl mx-auto py-10 px-6 text-lg">
       <h1 className="text-2xl font-bold mb-4">
         {lang.startsWith("zh")
           ? "🍎 飲食覺察｜從三餐開始打造心理健康"

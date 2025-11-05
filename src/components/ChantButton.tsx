@@ -47,22 +47,30 @@ export default function ChantButton({ onSoundPlay, onCount, customWoodfishImage,
 
   return (
     <div className="flex flex-col items-center gap-2">
-      {/* 木魚按鈕（立體漸層 + 陰影 + 壓下動畫） */}
+      {/* 木魚按鈕（按下響應效果） */}
       <div className="relative">
         <button
           type="button"
           onClick={handleClick}
-          className={`group w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gradient-to-br from-amber-300 via-yellow-400 to-amber-500 
-            shadow-[0_10px_20px_rgba(0,0,0,0.2)] !border-0 !outline-none !ring-0 focus:!outline-none focus:!ring-0 
-            flex items-center justify-center transition-all duration-200 
-            ${animate ? 'translate-y-[2px] shadow-[0_6px_14px_rgba(0,0,0,0.18)]' : 'active:translate-y-[2px] active:shadow-[0_6px_14px_rgba(0,0,0,0.18)]'}`}
+          className={`group w-40 h-40 sm:w-48 sm:h-48 rounded-full bg-amber-500 hover:bg-amber-600 
+            flex items-center justify-center transition-all duration-150
+            active:scale-95 active:brightness-90
+            !border-0 !outline-none !ring-0 !shadow-none`}
+          style={{ 
+            border: 'none',
+            outline: 'none',
+            boxShadow: 'none',
+            borderWidth: '0',
+            borderStyle: 'none',
+            borderColor: 'transparent'
+          }}
           aria-label="敲木魚"
         >
           <img
             src={customWoodfishImage || "/assets/woodfish.png"}
-            className={`w-16 h-16 sm:w-20 sm:h-20 select-none pointer-events-none border-0 outline-none ${animate ? 'woodfish-clicked' : ''}`}
+            className={`w-32 h-32 sm:w-40 sm:h-40 select-none pointer-events-none border-0 outline-none`}
             alt="敲木魚"
-            style={{ WebkitTapHighlightColor: 'transparent' }}
+            style={{ WebkitTapHighlightColor: 'transparent', border: 'none', outline: 'none' }}
           />
         </button>
         {showPlusOne && (
