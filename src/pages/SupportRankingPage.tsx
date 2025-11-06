@@ -15,42 +15,65 @@ export default function SupportRankingPage() {
       setLoading(true)
       setError(null)
       
-      // 從 chant_wish_supports 表取得所有支持記錄
-      const { data, error } = await supabase
-        .from('chant_wish_supports')
-        .select('*')
+      // 獲取所有集氣願望（chant_wishes）
+      const { data: wishes, error: wishesError } = await supabase
+        .from('chant_wishes')
+        .select('id, title, wish_no')
+        .order('created_at', { ascending: false })
       
-      if (error) {
-        console.error('讀取支持記錄失敗:', error)
-        setError(t('support_ranking_fetch_error', { error: error.message }))
+      if (wishesError) {
+        console.error('讀取願望失敗:', wishesError)
+        setError(t('support_ranking_fetch_error', { error: wishesError.message }))
         return
       }
       
-      // 按 user_id 分組統計支持次數
-      const userSupportCounts = new Map()
-      data?.forEach((record: any, index: number) => {
-        // 暫時使用索引作為使用者識別（等 anon_id 欄位建立後再改回）
-        const userId = `user_${index}`
-        const userName = t('anonymous_user')
-        
-        if (userSupportCounts.has(userId)) {
-          userSupportCounts.get(userId).count += 1
-        } else {
-          userSupportCounts.set(userId, { user_name: userName, count: 1 })
-        }
-      })
+      if (!wishes || wishes.length === 0) {
+        setRankings([])
+        return
+      }
       
-      // 轉換為陣列並排序
-      const rankingList = Array.from(userSupportCounts.entries())
-        .map(([user_id, data]: [string, any]) => ({
-          user_id,
-          user_name: data.user_name,
-          support_count: data.count
-        }))
+      // 為每個願望統計愛心支持數量（與集氣詳情頁的計算方式一致）
+      const wishesWithSupportCount = await Promise.all(
+        wishes.map(async (wish) => {
+          // 使用與集氣詳情頁相同的查詢方式
+          const { count, error: countError } = await supabase
+            .from('chant_wish_supports')
+            .select('*', { count: 'exact', head: true })
+            .eq('chant_wish_id', wish.id)
+          
+          if (countError) {
+            console.error(`查詢願望 ${wish.id} 支持數量失敗:`, countError)
+            // 如果 count 查詢失敗，嘗試直接查詢資料（與集氣詳情頁的容錯機制一致）
+            const { data: supportData, error: supportDataError } = await supabase
+              .from('chant_wish_supports')
+              .select('*')
+              .eq('chant_wish_id', wish.id)
+            
+            const manualCount = supportData?.length || 0
+            return {
+              wish_id: wish.id,
+              wish_title: wish.title,
+              wish_no: wish.wish_no,
+              support_count: manualCount
+            }
+          }
+          
+          return {
+            wish_id: wish.id,
+            wish_title: wish.title,
+            wish_no: wish.wish_no,
+            support_count: count || 0
+          }
+        })
+      )
+      
+      // 按支持數量排序，只顯示有支持的願望
+      const sortedRanking = wishesWithSupportCount
+        .filter(wish => wish.support_count > 0) // 只顯示有支持的願望
         .sort((a, b) => b.support_count - a.support_count)
         .slice(0, 100) // 取前100名
       
-      setRankings(rankingList)
+      setRankings(sortedRanking)
     } catch (err) {
       console.error('讀取支持排行榜失敗:', err)
       setError(t('support_ranking_load_error'))
@@ -126,12 +149,6 @@ export default function SupportRankingPage() {
           <p className="text-gray-600">{t('support_ranking_sort_by')}</p>
         </div>
 
-        {/* 篩選條件 */}
-        <div className="bg-white rounded-lg shadow-lg p-4 mb-6">
-          <h3 className="text-lg font-bold text-gray-800 mb-2">📅 {t('filter_conditions')}</h3>
-          <p className="text-gray-500 text-sm">{t('date_filter_coming_soon')}</p>
-        </div>
-
         {/* 排行榜 */}
         {rankings.length === 0 ? (
           <div className="bg-white rounded-lg shadow-lg p-6">
@@ -146,31 +163,30 @@ export default function SupportRankingPage() {
             <div className="p-6">
               <h2 className="text-xl font-bold text-gray-800 mb-6">🏆 {t('support_ranking_top_100')}</h2>
               <div className="space-y-3">
-                {rankings.map((user: any, index: number) => (
+                {rankings.map((wish: any, index: number) => (
                   <div
-                    key={user.user_id}
-                    className={`flex justify-between items-center px-4 py-3 rounded-lg border-l-4 ${
+                    key={wish.wish_id}
+                    className={`bg-white rounded-lg shadow-lg p-6 border-l-4 ${
                       index % 2 === 0
                         ? 'bg-blue-50 border-blue-200'
                         : 'bg-white border-blue-100'
                     }`}
                   >
-                    <div className="flex items-center">
-                      <span className="text-2xl mr-3">
-                        {medals[index] || '🏅'}
-                      </span>
-                      <div>
-                        <span className="font-bold text-gray-800">
-                          {t('ranking_position_template', { position: index + 1 })}
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start flex-1 min-w-0">
+                        <span className="text-3xl mr-3 flex-shrink-0">
+                          {medals[index] || '🏅'}
                         </span>
-                        <div className="text-sm text-gray-600">
-                          {user.user_name || t('anonymous_user')}
+                        <div className="flex-1 min-w-0">
+                          <h2 className="text-xl font-bold text-gray-800 mb-1">
+                            {t('ranking_position_template', { position: index + 1 })}: {wish.wish_title || '未命名願望'}
+                          </h2>
                         </div>
                       </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-xl font-bold text-pink-600">
-                        ❤️ {user.support_count} {t('times')}
+                      <div className="flex-shrink-0 ml-4 text-right">
+                        <div className="text-2xl font-bold text-pink-600 whitespace-nowrap">
+                          ❤️ {wish.support_count} {t('times')}
+                        </div>
                       </div>
                     </div>
                   </div>
