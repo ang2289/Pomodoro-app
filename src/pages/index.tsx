@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Helmet } from 'react-helmet-async'
+import SEO from '../components/SEO'
 
 interface FeatureCard {
   icon: string
@@ -42,6 +42,13 @@ export default function HomePage() {
       badge: { text: 'New', style: 'bg-purple-100 text-purple-700' },
     },
     {
+      icon: '📚',
+      title: 'AI Tools Guide',
+      description: '了解 AI 摘要工具的工作原理、技術架構與開發模板',
+      path: '/tools/ai-summary',
+      badge: { text: 'Guide', style: 'bg-indigo-100 text-indigo-700' },
+    },
+    {
       icon: '🏛️',
       title: '退休金專欄',
       description: '掌握退休金制度、安心理財與最新政策',
@@ -69,28 +76,13 @@ export default function HomePage() {
 
   return (
     <>
-      <Helmet>
-        <title>AI 工具與生活服務中心｜AI 摘要工具｜補助懶人包｜健康理財</title>
-        <meta
-          name="description"
-          content="全台最好用的 AI 摘要工具！支援文章、網址與 YouTube 摘要，免費使用每月 3 次。提供補助懶人包、健康理財與生活服務。"
-        />
-        <meta
-          name="keywords"
-          content="AI 摘要, AI 擷取重點, 免費 AI 工具, 補助懶人包, 健康理財"
-        />
-        <meta property="og:title" content="AI 工具與生活服務中心" />
-        <meta
-          property="og:description"
-          content="免費 AI 摘要工具，每月免費 3 次。支援 YouTube 摘要、文章重點擷取與關鍵字生成。"
-        />
-        <meta property="og:type" content="website" />
-        <meta
-          property="og:url"
-          content="https://pomodoro-app-eight-rouge.vercel.app"
-        />
-        <meta property="og:image" content="/seo-cover.png" />
-      </Helmet>
+      <SEO
+        title="AI Tools Hub — Free AI Summary, Price Comparison & Useful Utilities"
+        description="A collection of free AI tools including article summarizer, price comparison engine, government subsidy guides, and financial planning insights. Updated weekly."
+        keywords="AI tools, free AI summary, AI utilities, price comparison, government subsidies, financial planner"
+        url="https://pomodoro-app-eight-rouge.vercel.app"
+        image="/seo-cover.png"
+      />
 
       <main className="mx-auto max-w-4xl px-4 py-8 pb-24">
         {/* 置中大標題 */}

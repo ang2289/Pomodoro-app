@@ -75,10 +75,12 @@ import HomePage from './pages/index'
 import AidsPage from './pages/blog/aids'
 import FinancePage from './pages/finance/index'
 import SummaryPage from './pages/summary/index'
+import SummaryLanding from './pages/summary-landing'
 import SearchPage from './pages/SearchPage'
 import ShoppingSearchPage from './pages/shopping/search'
 import ShoppingResultsPage from './pages/shopping/results'
 import AIHome from './pages/AIHome'
+import AISummaryGuide from './pages/tools/ai-summary'
 import RetirementPage from './pages/retirement/index'
 import RentalSubsidy2025 from './pages/aids/rental-subsidy-2025'
 import LTC2025Update from './pages/aids/ltc-2025-update'
@@ -177,6 +179,7 @@ function App() {
             <Route path="pomodoro" element={<PomodoroPage />} />
             <Route path="wish" element={<WishWallPage />} />
             <Route path="summary" element={<SummaryPage />} />
+            <Route path="summary-landing" element={<SummaryLanding />} />
             <Route path="search" element={<SearchPage />} />
             <Route path="shopping/search" element={<ShoppingSearchPage />} />
             <Route path="shopping/results" element={<ShoppingResultsPage />} />
@@ -201,6 +204,7 @@ function App() {
             <Route path="ai-home" element={<AIHome />} />
             {/* 預留功能路由 */}
             <Route path="tools" element={<AIHome />} />
+            <Route path="tools/ai-summary" element={<AISummaryGuide />} />
             <Route path="automation" element={<AIHome />} />
           </Route>
           

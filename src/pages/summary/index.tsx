@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { Helmet } from 'react-helmet-async'
-import { buildSEO } from '../../lib/seo'
+import SEO from '../../components/SEO'
 import SectionHeader from '../../components/SectionHeader'
 
 const MAX_DAILY_FREE = 3
@@ -30,12 +29,6 @@ function increaseTodayUsage() {
   )
 }
 
-const seo = buildSEO({
-  title: 'AI 摘要工具',
-  description: '貼上文章內容，AI 自動生成摘要與關鍵字。支援繁中 / 英文切換，簡單快速抓重點。',
-  url: 'https://pomodoro-app-eight-rouge.vercel.app/summary',
-  image: '/seo/summary-tool.png',
-})
 
 // ===== 🔤 MVP 語系 =====
 const LANG_TEXT = {
@@ -175,9 +168,13 @@ export default function SummaryPage() {
 
   return (
     <>
-      <Helmet>
-        <title>{seo.title}</title>
-      </Helmet>
+      <SEO
+        title="AI Summary Tool — Free Daily Summaries (3 per day)"
+        description="Summarize articles, URLs, and YouTube videos using AI. Supports English & Chinese. Free 3 summaries per day. Powered by Supabase Edge Functions + Gemini Flash."
+        keywords="AI summary tool, article summarizer, YouTube summary, JSON schema, Supabase Edge Functions, Gemini Flash, free AI tools"
+        url="https://pomodoro-app-eight-rouge.vercel.app/summary"
+        image="/seo/summary-tool.png"
+      />
 
       {/* ===== Container ===== */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-4 lg:p-8 bg-[#EFF5FF] min-h-screen">

@@ -1,6 +1,6 @@
-import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import SEO from "../../components/SEO";
 import useFinanceArticles from "../../hooks/useFinanceArticles";
 
 export default function FinancePage() {
@@ -18,61 +18,12 @@ export default function FinancePage() {
 
   return (
     <>
-      <Helmet>
-        <title>
-          {isEnglish
-            ? "📖 Health & Finance Column | RxV Dream Creation Studio"
-            : "📖 健康與理財專欄｜RxV 夢想創作工作室"}
-        </title>
-        <meta
-          name="description"
-          content={
-            isEnglish
-              ? "Integrates healthy living and financial knowledge, exploring mind-body balance, retirement planning, and investment mindset. Help you find stability in a fast-paced life."
-              : "整合健康生活與理財知識，探討身心平衡、退休規劃與投資心態。幫助您在快節奏生活中找到安定力量。"
-          }
-        />
-        <meta
-          name="keywords"
-          content={
-            isEnglish
-              ? "health finance, retirement planning, investment mindset, wealth management, mental health, RxV"
-              : "健康理財, 退休規劃, 投資心態, 財富管理, 心靈健康, RxV"
-          }
-        />
-        <meta
-          property="og:title"
-          content={isEnglish ? "Health & Finance Column" : "健康與理財專欄"}
-        />
-        <meta
-          property="og:description"
-          content={
-            isEnglish
-              ? "Enhance quality of life from both spiritual and financial perspectives, mastering the balance between finance and health."
-              : "從心靈與財務兩面提升生活品質，掌握理財與健康平衡之道。"
-          }
-        />
-        <meta property="og:type" content="article" />
-        <meta property="og:url" content="https://rxv-dreamstudio.vercel.app/finance" />
-
-        <script type="application/ld+json">
-          {JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "WebPage",
-            "name": isEnglish ? "Health & Finance Column" : "健康與理財專欄",
-            "url": "https://rxv-dreamstudio.vercel.app/finance",
-            "description": isEnglish
-              ? "Integrates healthy living and retirement financial management topics, helping users build a balanced and happy life."
-              : "整合健康生活與退休理財的專題內容，幫助使用者建立平衡的幸福人生。",
-            "inLanguage": isEnglish ? "en-US" : "zh-TW",
-            "publisher": {
-              "@type": "Organization",
-              "name": "RxV 夢想創作工作室",
-              "url": "https://rxv-dreamstudio.vercel.app"
-            }
-          })}
-        </script>
-      </Helmet>
+      <SEO
+        title="Health & Financial Tips 2025 — Retirement, Tax, Insurance"
+        description="Practical guides for personal finance, retirement planning, tax optimization, and health-related advice. Updated weekly."
+        keywords="retirement planning, tax strategy, personal finance, health tips, financial planning, investment advice"
+        url="https://pomodoro-app-eight-rouge.vercel.app/finance"
+      />
 
       <div className="max-w-3xl mx-auto px-4 py-10">
         <div className="text-right mb-4">

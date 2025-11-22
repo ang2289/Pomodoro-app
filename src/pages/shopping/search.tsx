@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Helmet } from 'react-helmet-async'
+import SEO from '../../components/SEO'
 
 const popularKeywords = [
   '除濕機',
@@ -34,13 +34,12 @@ export default function ShoppingSearchPage() {
 
   return (
     <>
-      <Helmet>
-        <title>商品搜尋與比價工具｜AI 工具與生活服務中心</title>
-        <meta
-          name="description"
-          content="輸入商品名稱，即可自動整理蝦皮商品清單、價格、銷量、評價，並提供多種排序方式。"
-        />
-      </Helmet>
+      <SEO
+        title="AI Price Comparison Tool — Find Best Deals Instantly"
+        description="Search and compare product prices instantly. Powered by AI parsing and structured data. Supports Shopee and multi-platform price extraction."
+        keywords="price comparison, product search, Shopee tools, best deals, AI shopping assistant"
+        url="https://pomodoro-app-eight-rouge.vercel.app/shopping/search"
+      />
 
       <div className="max-w-xl mx-auto px-4 py-10">
         <h1 className="text-2xl font-bold mb-6 text-center">

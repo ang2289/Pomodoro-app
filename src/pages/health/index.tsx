@@ -1,6 +1,6 @@
-import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import SEO from "../../components/SEO";
 
 export default function HealthPage() {
   const { t, i18n } = useTranslation();
@@ -31,61 +31,12 @@ export default function HealthPage() {
 
   return (
     <>
-      <Helmet>
-        <title>
-          {isEnglish
-            ? "💚 Health Living Column | RxV Dream Creation Studio"
-            : "💚 健康生活專欄｜RxV 夢想創作工作室"}
-        </title>
-        <meta
-          name="description"
-          content={
-            isEnglish
-              ? "Integrates sleep, diet, and mental health knowledge, exploring mind-body balance and quality of life improvement. Help you establish healthy habits in a fast-paced life."
-              : "整合睡眠、飲食與心理健康知識，探討身心平衡與生活品質提升。幫助您在快節奏生活中建立健康習慣。"
-          }
-        />
-        <meta
-          name="keywords"
-          content={
-            isEnglish
-              ? "healthy living, sleep quality, mindful eating, mental health, quality of life, RxV"
-              : "健康生活, 睡眠品質, 飲食覺察, 心理健康, 生活品質, RxV"
-          }
-        />
-        <meta
-          property="og:title"
-          content={isEnglish ? "Health Living Column" : "健康生活專欄"}
-        />
-        <meta
-          property="og:description"
-          content={
-            isEnglish
-              ? "From sleep and diet to psychological awareness, comprehensively improve quality of life and physical and mental health."
-              : "從睡眠、飲食到心理覺察，全面提升生活品質與身心健康。"
-          }
-        />
-        <meta property="og:type" content="article" />
-        <meta property="og:url" content="https://rxv-dreamstudio.vercel.app/health" />
-
-        <script type="application/ld+json">
-          {JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "WebPage",
-            "name": isEnglish ? "Health Living Column" : "健康生活專欄",
-            "url": "https://rxv-dreamstudio.vercel.app/health",
-            "description": isEnglish
-              ? "Integrates sleep, diet, and mental health topics, helping users build a balanced healthy life."
-              : "整合睡眠、飲食與心理健康的專題內容，幫助使用者建立平衡的健康生活。",
-            "inLanguage": isEnglish ? "en-US" : "zh-TW",
-            "publisher": {
-              "@type": "Organization",
-              "name": "RxV 夢想創作工作室",
-              "url": "https://rxv-dreamstudio.vercel.app"
-            }
-          })}
-        </script>
-      </Helmet>
+      <SEO
+        title="Health & Financial Tips 2025 — Retirement, Tax, Insurance"
+        description="Practical guides for personal finance, retirement planning, tax optimization, and health-related advice. Updated weekly."
+        keywords="retirement planning, tax strategy, personal finance, health tips, financial planning, investment advice"
+        url="https://pomodoro-app-eight-rouge.vercel.app/health"
+      />
 
       <div className="max-w-3xl mx-auto px-4 py-10">
         <div className="text-right mb-4">

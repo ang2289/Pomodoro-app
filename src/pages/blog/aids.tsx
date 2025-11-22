@@ -1,6 +1,6 @@
-import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import SEO from "../../components/SEO";
 
 export default function AidsPage() {
   const { t, i18n } = useTranslation();
@@ -8,61 +8,12 @@ export default function AidsPage() {
 
   return (
     <>
-      <Helmet>
-        <title>
-          {isEnglish
-            ? "💰 Taiwan Living Subsidies Guide | RxV Dream Creation Studio"
-            : "💰 台灣生活補助懶人包｜RxV 夢想創作工作室"}
-        </title>
-        <meta
-          name="description"
-          content={
-            isEnglish
-              ? "Complete guide to Taiwan government subsidies and allowances, including childcare benefits, housing subsidies, long-term care support, and assistance programs. Compiled by RxV Dream Creation Studio to help you quickly access the latest subsidy information."
-              : "台灣各類政府補助與津貼懶人包，包含育兒津貼、房貸補貼、長照補助與弱勢照護計畫。由 RxV 夢想創作工作室整理，讓您快速掌握最新補助資訊。"
-          }
-        />
-        <meta
-          name="keywords"
-          content={
-            isEnglish
-              ? "Taiwan subsidies, government benefits, childcare allowance, housing subsidy, long-term care, RxV"
-              : "台灣補助, 政府補助, 育兒津貼, 房貸補貼, 長照補助, RxV"
-          }
-        />
-        <meta
-          property="og:title"
-          content={isEnglish ? "Taiwan Living Subsidies Guide" : "台灣生活補助懶人包"}
-        />
-        <meta
-          property="og:description"
-          content={
-            isEnglish
-              ? "The most comprehensive guide to living subsidies and allowances, helping you easily find suitable subsidy programs."
-              : "最完整的生活補助與津貼整理，協助您輕鬆找到適合的補助項目。"
-          }
-        />
-        <meta property="og:type" content="article" />
-        <meta property="og:url" content="https://rxv-dreamstudio.vercel.app/aids" />
-
-        <script type="application/ld+json">
-          {JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "WebPage",
-            "name": isEnglish ? "Taiwan Living Subsidies Guide" : "台灣生活補助懶人包",
-            "url": "https://rxv-dreamstudio.vercel.app/aids",
-            "description": isEnglish
-              ? "Taiwan government subsidies and allowances: including childcare benefits, housing subsidies, long-term care support, and latest policies."
-              : "台灣政府補助與津貼整理：包含育兒津貼、房貸補貼、長照補助等最新政策。",
-            "inLanguage": isEnglish ? "en-US" : "zh-TW",
-            "publisher": {
-              "@type": "Organization",
-              "name": "RxV 夢想創作工作室",
-              "url": "https://rxv-dreamstudio.vercel.app"
-            }
-          })}
-        </script>
-      </Helmet>
+      <SEO
+        title="Government Subsidy Guide 2025 — Financial Help & Application Tips"
+        description="Updated reminders and guides for Taiwan government subsidies. Easy-to-read financial planning content and useful public benefit updates."
+        keywords="government subsidy, Taiwan subsidy 2025, financial guide, anti-fraud, tax tips, government benefits"
+        url="https://pomodoro-app-eight-rouge.vercel.app/aids"
+      />
 
       <div className="max-w-5xl mx-auto px-4 py-10">
         <div className="text-right mb-4">
