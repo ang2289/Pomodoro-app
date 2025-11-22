@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import IconButton from '../components/ui/IconButton';
 import HeaderBar from '../components/HeaderBar';
 import ModuleDropdown from '../components/ModuleDropdown';
@@ -564,6 +565,17 @@ const PomodoroPage = () => {
         
         {/* 頁面標題 */}
         <HeaderBar icon="🍅" title="pomodoro" />
+        
+        {/* AI 摘要工具入口按鈕 */}
+        <div className="mb-4 flex justify-center">
+          <Link
+            to="/summary"
+            className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-200 text-sm sm:text-base"
+          >
+            <span className="mr-2">🤖</span>
+            AI 摘要工具
+          </Link>
+        </div>
       
       {/* 計時器面板 */}
       <TimerPanel

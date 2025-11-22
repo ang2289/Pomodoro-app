@@ -15,8 +15,8 @@ interface GoogleAdBannerProps {
 }
 
 export default function GoogleAdBanner({ 
-  adClient = "ca-pub-3940256099942544",
-  adSlot = "1234567890",
+  adClient = "ca-pub-4098050974072911",
+  adSlot = "1234567890", // 請在 AdSense 後台建立廣告單元後，將此替換為真實的廣告單元 ID
   showOnlyOnDesktop = false
 }: GoogleAdBannerProps) {
   const { isWebSubscribed } = useUserStore()

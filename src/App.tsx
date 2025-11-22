@@ -71,8 +71,14 @@ import ThreeMinuteMeditation from './pages/blog/ThreeMinuteMeditation'
 import AboutSpiritualGrowth from './pages/blog/AboutSpiritualGrowth'
 import BlogHome from './pages/blog/BlogHome'
 import LazyHome from './pages/blog/LazyHome'
+import HomePage from './pages/index'
 import AidsPage from './pages/blog/aids'
 import FinancePage from './pages/finance/index'
+import SummaryPage from './pages/summary/index'
+import SearchPage from './pages/SearchPage'
+import ShoppingSearchPage from './pages/shopping/search'
+import ShoppingResultsPage from './pages/shopping/results'
+import AIHome from './pages/AIHome'
 import RetirementPage from './pages/retirement/index'
 import RentalSubsidy2025 from './pages/aids/rental-subsidy-2025'
 import LTC2025Update from './pages/aids/ltc-2025-update'
@@ -91,9 +97,11 @@ import Footer from './components/Footer'
 import AdBanner from './components/AdBanner'
 // 已移除廣告
 import { Toaster } from 'react-hot-toast'
+import { useGATracker } from './hooks/useGATracker'
 
 function App() {
   const { t } = useTranslation()
+  useGATracker()
   const [showAd, setShowAd] = useState(false)
   const [isSubscribed, setIsSubscribed] = useState(false)
   // 自動偵測目前執行模式（App/PWA 或 Web）
@@ -162,12 +170,16 @@ function App() {
       <Routes>
           {/* 主要巢狀路由 - 使用 MainLayout */}
           <Route path="/" element={<MainLayout />}>
-            {/* 首頁根據執行模式顯示不同頁面：App → 番茄鐘；Web → 退休理財懶人包首頁 */}
-            <Route index element={isApp ? <PomodoroPage /> : <LazyHome />} />
+            {/* 首頁根據執行模式顯示不同頁面：App → 番茄鐘；Web → 功能入口首頁 */}
+            <Route index element={isApp ? <PomodoroPage /> : <HomePage />} />
             <Route path="chant" element={<ChantCounter />} />
             <Route path="todo" element={<TodoPage />} />
             <Route path="pomodoro" element={<PomodoroPage />} />
             <Route path="wish" element={<WishWallPage />} />
+            <Route path="summary" element={<SummaryPage />} />
+            <Route path="search" element={<SearchPage />} />
+            <Route path="shopping/search" element={<ShoppingSearchPage />} />
+            <Route path="shopping/results" element={<ShoppingResultsPage />} />
             
             {/* 退休理財懶人包頁面 */}
             <Route path="aids" element={<AidsPage />} />
@@ -186,6 +198,10 @@ function App() {
             <Route path="pension/self-contribution-2025" element={<SelfContribution2025 />} />
             <Route path="retirement" element={<RetirementPage />} />
             <Route path="announcements" element={<Announcements />} />
+            <Route path="ai-home" element={<AIHome />} />
+            {/* 預留功能路由 */}
+            <Route path="tools" element={<AIHome />} />
+            <Route path="automation" element={<AIHome />} />
           </Route>
           
           {/* 其他獨立頁面 */}

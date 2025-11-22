@@ -3,6 +3,7 @@ import AdBanner from './AdBanner'
 import { useUserStore } from '../store/userStore'
 
 const navigationItems = [
+  { path: '/summary', icon: '/src/assets/icon_flower.png', label: 'AI 摘要工具' },
   { path: '/chant', icon: '/src/assets/icon_flower.png', label: '唸經' },
   { path: '/todo', icon: '/src/assets/icon_todo.png', label: '待辦' },
   { path: '/pomodoro', icon: '/src/assets/icon_tomato.png', label: '專注' },
@@ -23,7 +24,8 @@ export default function Footer() {
       <div className="flex justify-around items-center py-3 px-2">
         {navigationItems.map((item) => {
           const isActive = currentPath === item.path || 
-                          (item.path === '/chant' && currentPath === '/')
+                          (item.path === '/chant' && currentPath === '/') ||
+                          (item.path === '/summary' && currentPath === '/summary')
 
           return (
             <Link

@@ -4,6 +4,9 @@
 /* 引入響應式佈局樣式 */
 @import './layout.css';
 
+/* 引入 Summary UI 樣式 */
+@import './styles/summary-ui.css';
+
 /* @plugin "tailwindcss-animate"; */
 
 /* 自訂動畫 */
@@ -878,4 +881,224 @@ input[type="time"] {
 .card:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 18px rgba(100, 180, 255, 0.3);
+}
+
+/* ======== 搜尋結果頁 Shopee 風格 ======== */
+
+.search-container {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.search-title {
+  font-size: 26px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.search-title .icon {
+  font-size: 28px;
+}
+
+.tabs {
+  display: flex;
+  gap: 32px;
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 24px;
+}
+
+.tab {
+  cursor: pointer;
+  color: #555;
+  padding-bottom: 6px;
+}
+
+.tab.active {
+  color: #ff5722;
+  border-bottom: 3px solid #ff5722;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 0;
+  color: #777;
+  font-size: 18px;
+}
+
+/* 相關搜尋 Chips */
+.related-search {
+  margin-top: 40px;
+}
+
+.related-title {
+  font-size: 22px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.chips {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.chip {
+  background-color: #fff3ed;
+  color: #ff5722;
+  border: 1px solid #ffb499;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: 0.15s ease;
+}
+
+.chip:hover {
+  background-color: #ffd9cc;
+}
+
+/* ======== 商品列表 Grid ======== */
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+/* ======== 商品卡片 ======== */
+.product-card {
+  background: #fff;
+  border-radius: 10px;
+  text-decoration: none;
+  color: #222;
+
+  border: 1px solid #eee;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+
+  transition: 0.18s ease;
+  overflow: hidden;
+}
+
+.product-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* 圖片框 */
+.product-image-box {
+  width: 100%;
+  height: 160px;
+  overflow: hidden;
+  background: #fafafa;
+}
+
+.product-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 文案 */
+.product-info {
+  padding: 10px 10px 14px;
+}
+
+/* 商品名稱（兩行） */
+.product-name {
+  font-size: 14px;
+  height: 38px;
+  line-height: 1.3;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* 價格 */
+.product-price {
+  margin-top: 6px;
+  font-size: 16px;
+  font-weight: bold;
+  color: #ff5722;
+}
+
+/* 月銷量、評價 */
+.product-sub {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #777;
+
+  display: flex;
+  justify-content: space-between;
+}
+
+/* 官方旗艦店 Tag */
+.product-tag {
+  margin-top: 8px;
+  display: inline-block;
+  padding: 3px 6px;
+  font-size: 11px;
+  border-radius: 4px;
+  background: #fff3e0;
+  color: #ff5722;
+  border: 1px solid #ffd3b0;
+}
+
+/* =========================================================
+   Shopee 風格排序列（置中、橫排、間距漂亮、手機可自動換行）
+   ========================================================= */
+.sort-bar {
+  width: 100%;
+  max-width: 900px; /* 讓區塊不會太寬 */
+  margin: 20px auto 10px; /* 置中 */
+
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+
+  gap: 28px;           /* 按鈕之間間距 */
+  flex-wrap: wrap;     /* 手機可換行 */
+}
+
+/* 單一排序按鈕 */
+.sort-btn {
+  background: none;
+  border: none;
+  outline: none;
+
+  cursor: pointer;
+  font-size: 17px;
+  padding: 6px 4px;
+
+  color: #5f5f5f;
+  border-bottom: 2px solid transparent;
+
+  transition: all 0.18s ease;
+}
+
+/* 滑過效果 */
+.sort-btn:hover {
+  color: #222;
+}
+
+/* 被選擇時（Shopee 橘色） */
+.sort-btn.active {
+  color: #ff5722;
+  font-weight: bold;
+  border-bottom: 2px solid #ff5722;
+}
+
+/* 價格排序 ↑↓ */
+.price-arrow {
+  margin-left: 4px;
+  font-size: 14px;
 }

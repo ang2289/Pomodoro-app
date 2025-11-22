@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
 const menuItems = [
+  { path: '/summary', labelKey: 'AI 摘要工具' },
   { path: '/chant', labelKey: 'chant' },
   { path: '/todo', labelKey: 'todo' },
   { path: 'pomodoro', labelKey: 'pomodoro' },
@@ -20,7 +21,14 @@ export default function HeaderMenu() {
       item.path === currentPath || 
       (item.path === '/chant' && currentPath === '/')
     )
-    return currentItem ? t(currentItem.labelKey) : t('menu')
+    if (currentItem) {
+      // 如果是自定義標籤（非翻譯鍵），直接返回
+      if (currentItem.labelKey === 'AI 摘要工具') {
+        return currentItem.labelKey
+      }
+      return t(currentItem.labelKey)
+    }
+    return t('menu')
   }
 
   const getCurrentPageIcon = () => {
@@ -52,7 +60,8 @@ export default function HeaderMenu() {
           <div className="py-2">
             {menuItems.map((item) => {
               const isActive = currentPath === item.path || 
-                              (item.path === '/chant' && currentPath === '/')
+                              (item.path === '/chant' && currentPath === '/') ||
+                              (item.path === '/summary' && currentPath === '/summary')
               
               return (
                 <Link
@@ -65,7 +74,7 @@ export default function HeaderMenu() {
                       : 'text-gray-700 hover:bg-gray-50'
                   }`}
                 >
-                  <span>{t(item.labelKey)}</span>
+                  <span>{item.labelKey === 'AI 摘要工具' ? item.labelKey : t(item.labelKey)}</span>
                   {isActive && (
                     <svg className="w-4 h-4 ml-auto text-blue-600" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />

@@ -53,6 +53,30 @@ export default function SiteFooter() {
       <p className="mt-2 text-gray-500">
         {t('copyright')}
       </p>
+      
+      <p className="text-xs text-center text-gray-500 mt-4">
+        Buy the AI JSON Summarizer Template →{' '}
+        <a
+          href="https://ko-fi.com/s/b5b4180ff1"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline text-blue-600"
+        >
+          Ko-fi Store
+        </a>
+      </p>
+      
+      <div className="text-center text-xs text-gray-500 mt-6 mb-4">
+        Build your own AI JSON summarizer →{' '}
+        <a
+          href="https://ko-fi.com/s/b5b4180ff1"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline text-blue-600 font-medium hover:text-blue-700"
+        >
+          Buy Template
+        </a>
+      </div>
     </footer>
   )
 }

@@ -10,6 +10,9 @@ declare global {
 export default function WebAdBanner() {
   const [isSubscribed, setIsSubscribed] = useState(false)
 
+  // 請在 AdSense 後台建立廣告單元後，將此替換為真實的廣告單元 ID
+  const adSlot = "1234567890"
+
   useEffect(() => {
     // 檢查訂閱狀態
     const stored = localStorage.getItem('rxv_isSubscribed')
@@ -39,8 +42,8 @@ export default function WebAdBanner() {
         <ins
           className="adsbygoogle block w-full"
           style={{ display: 'block', width: '100%', minHeight: '100px' }}
-          data-ad-client="ca-pub-3940256099942544" // Google 測試用代碼
-          data-ad-slot="1234567890"
+          data-ad-client="ca-pub-4098050974072911"
+          data-ad-slot={adSlot}
           data-ad-format="auto"
           data-full-width-responsive="true"
         ></ins>

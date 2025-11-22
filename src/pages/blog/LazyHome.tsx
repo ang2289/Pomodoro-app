@@ -116,11 +116,22 @@ export default function LazyHome() {
             ? 'Welcome to Subsidy Info Portal'
             : '補助懶人包資訊中心'}
         </h1>
-        <p className="text-gray-600 max-w-2xl mx-auto leading-relaxed mb-10 text-center">
+        <p className="text-gray-600 max-w-2xl mx-auto leading-relaxed mb-6 text-center">
           {isEnglish
             ? 'Explore verified government programs, subsidies, and official announcements in one place.'
             : '在這裡查詢最新政府補助、政策公告與防詐提醒資訊，資料皆來自官方網站。'}
         </p>
+        
+        {/* AI 摘要工具入口按鈕 */}
+        <div className="mb-10 flex justify-center">
+          <Link
+            to="/summary"
+            className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-200 text-sm sm:text-base"
+          >
+            <span className="mr-2">🤖</span>
+            AI 摘要工具
+          </Link>
+        </div>
 
         {/* 其他主題（示範區） */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 w-full max-w-4xl mx-auto">
