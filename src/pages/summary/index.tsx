@@ -1,37 +1,16 @@
 import { useState } from 'react'
-import SEO from '../../components/SEO'
+import { Helmet } from 'react-helmet-async'
+import { buildSEO } from '../../lib/seo'
 import SectionHeader from '../../components/SectionHeader'
 
-const MAX_INPUT_LENGTH = 2000
+const MAX_CHARACTERS = 2000
 
-// 每日限制已移除 - 可無限使用
-// const MAX_DAILY_FREE = 3
-
-// function getTodayUsage() {
-//   const data = localStorage.getItem('daily_summary_usage')
-//   if (!data) return 0
-
-//   const parsed = JSON.parse(data)
-
-//   const today = new Date().toDateString()
-//   if (parsed.date !== today) {
-//     // 日期不同，自動重置
-//     return 0
-//   }
-
-//   return parsed.count || 0
-// }
-
-// function increaseTodayUsage() {
-//   const today = new Date().toDateString()
-//   const count = getTodayUsage() + 1
-
-//   localStorage.setItem(
-//     'daily_summary_usage',
-//     JSON.stringify({ date: today, count })
-//   )
-// }
-
+const seo = buildSEO({
+  title: 'AI 摘要工具',
+  description: '貼上文章內容，AI 自動生成摘要與關鍵字。支援繁中 / 英文切換，簡單快速抓重點。',
+  url: 'https://pomodoro-app-eight-rouge.vercel.app/summary',
+  image: '/seo/summary-tool.png',
+})
 
 // ===== 🔤 MVP 語系 =====
 const LANG_TEXT = {
@@ -46,8 +25,6 @@ const LANG_TEXT = {
     pending: '（內容將顯示於此）',
     btn: '一鍵摘要',
     loading: '生成中…',
-    input_too_long: '目前測試階段，每次最多 2,000 字，請縮短文章後再試一次。',
-    wordLimit: '字數上限：2000 字',
     previewTitle: '✨ 即將上線功能（預告）',
     previewList: [
       '網址自動抓全文摘要',
@@ -57,7 +34,10 @@ const LANG_TEXT = {
       '深度重點提取（非一般摘要）',
       'AI 真人朗讀（未來付費功能）',
       '上傳 PDF → 自動擷取文字（未來進階功能）'
-    ]
+    ],
+    wordLimit: '字數上限：2000 字',
+    freeLimitTitle: '⚡ 免費版目前每次可摘要最多 2000 字。',
+    freeLimitSub: '📘 超過 2000 字的長文版本開發中，敬請期待。'
   },
   en: {
     langLabel: 'English',
@@ -70,8 +50,6 @@ const LANG_TEXT = {
     pending: '(Summary will appear here)',
     btn: 'Generate',
     loading: 'Generating…',
-    input_too_long: 'For now each request is limited to 2,000 characters. Please shorten the text and try again.',
-    wordLimit: 'Text limit: 2000 characters',
     previewTitle: '✨ Coming Soon Features',
     previewList: [
       'Auto URL full-text extraction',
@@ -81,7 +59,10 @@ const LANG_TEXT = {
       'Deep insight extraction',
       'AI human-voice reading (future paid feature)',
       'Upload PDF → extract text (future feature)'
-    ]
+    ],
+    wordLimit: 'Character limit: 2000 characters',
+    freeLimitTitle: '⚡ The free version currently supports up to 2000 characters per summary.',
+    freeLimitSub: '📘 Support for longer articles (2000+ characters) is in development. Stay tuned.'
   }
 }
 
@@ -107,23 +88,14 @@ export default function SummaryPage() {
       return
     }
 
-    if (input.length > MAX_INPUT_LENGTH) {
-      setError(t.input_too_long)
+    if (input.length > MAX_CHARACTERS) {
+      setError(
+        lang === 'zh-tw'
+          ? `字數超過上限，請控制在 ${MAX_CHARACTERS} 字以內`
+          : `Character limit exceeded. Please keep within ${MAX_CHARACTERS} characters`
+      )
       return
     }
-
-    // 每日限制檢查已移除 - 可無限使用
-    // const used = getTodayUsage()
-    // if (used >= MAX_DAILY_FREE) {
-    //   alert(
-    //     lang === 'zh-tw'
-    //       ? '今日免費使用次數已達上限 (3 次)，請明天再試。'
-    //       : 'Daily free usage limit reached (3 times). Please try again tomorrow.'
-    //   )
-    //   return
-    // }
-
-    // increaseTodayUsage()
 
     setError('')
     setLoading(true)
@@ -134,49 +106,29 @@ export default function SummaryPage() {
       // 自動偵測輸入文字的語言
       const detectedLang = detectLanguage(input)
 
-      // 從環境變數讀取 Edge Function URL
-      const edgeFunctionUrl = import.meta.env.VITE_SUMMARY_FUNCTION_URL
-
-      const res = await fetch(edgeFunctionUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        },
-        body: JSON.stringify({
-          content: input,
-          lang: detectedLang, // 自動偵測的語言
-        }),
-      })
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}))
-        const errorMessage = errorData.error || errorData.message || `HTTP ${res.status}: ${res.statusText}`
-        throw new Error(errorMessage)
-      }
+      const res = await fetch(
+        'https://icuxwmpdpsfhztsbyeds.supabase.co/functions/v1/auto-summary',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({ 
+            content: input,
+            lang: detectedLang, // 自動偵測的語言
+          }),
+        }
+      )
 
       const data = await res.json()
-      setSummary(data.summary || data.content || '')
-      setKeywords(data.keywords || [])
+
+      if (!res.ok) throw new Error(data.error)
+
+      setSummary(data.summary)
+      setKeywords(data.keywords)
     } catch (e: any) {
-      let errorMsg = e.message || (lang === 'zh-tw' ? '發生未知錯誤' : 'An unknown error occurred')
-      
-      // 處理網路錯誤
-      if (e instanceof TypeError && e.message.includes('Failed to fetch')) {
-        errorMsg = lang === 'zh-tw' 
-          ? '無法連接到伺服器，請檢查網路連線或稍後再試'
-          : 'Unable to connect to server. Please check your network connection or try again later'
-      }
-      
-      // 處理 DNS 解析錯誤
-      if (e.message && (e.message.includes('ERR_NAME_NOT_RESOLVED') || e.message.includes('getaddrinfo'))) {
-        errorMsg = lang === 'zh-tw' 
-          ? '無法解析伺服器位址，請檢查 Supabase URL 設定是否正確'
-          : 'Unable to resolve server address. Please check if Supabase URL is configured correctly'
-      }
-      
-      setError(errorMsg)
-      console.error('Summary API Error:', e)
+      setError(e.message)
     } finally {
       setLoading(false)
     }
@@ -201,27 +153,15 @@ export default function SummaryPage() {
 
   return (
     <>
-      <SEO
-        title="AI Summary Tool — Free AI Summaries"
-        description="Summarize articles, URLs, and YouTube videos using AI. Supports English & Chinese. Unlimited free summaries. Powered by Supabase Edge Functions + Gemini Flash."
-        keywords="AI summary tool, article summarizer, YouTube summary, JSON schema, Supabase Edge Functions, Gemini Flash, free AI tools"
-        url="https://pomodoro-app-eight-rouge.vercel.app/summary"
-        image="/seo/summary-tool.png"
-      />
+      <Helmet>
+        <title>{seo.title}</title>
+      </Helmet>
 
       {/* ===== Container ===== */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-4 lg:p-8 bg-[#EFF5FF] min-h-screen">
         
         {/* 語系選擇 */}
-        <div className="flex justify-end items-center gap-4 mb-4 lg:col-span-2">
-          <a
-            href="https://ko-fi.com/s/b5b4180ff1"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-500 underline hover:text-blue-600"
-          >
-            Buy Template
-          </a>
+        <div className="flex justify-end mb-4 lg:col-span-2">
           <div className="flex flex-col items-end">
             <label className="text-sm text-gray-600 mb-1">
               🌐 選擇語言 / Choose Language
@@ -241,6 +181,7 @@ export default function SummaryPage() {
         <div className="shadow-md border rounded-2xl p-5 bg-white transition">
           <SectionHeader title={t.inputTitle} />
 
+          {/* 顯示「字數上限：2000 字」或英文對應文字 */}
           <p className="text-sm text-gray-600 mb-2">
             {t.wordLimit}
           </p>
@@ -253,47 +194,42 @@ export default function SummaryPage() {
           />
 
           <p className="text-xs text-gray-500 mt-1">
-            {input.length} / {MAX_INPUT_LENGTH}
+            {lang === 'zh-tw'
+              ? `字數：${input.length} / ${MAX_CHARACTERS}`
+              : `Characters: ${input.length} / ${MAX_CHARACTERS}`}
           </p>
 
-          {/* 剩餘次數顯示已移除 */}
-          {/* <p className="text-sm text-gray-600 mt-2">
-            {lang === 'zh-tw' ? '今日剩餘免費次數：' : 'Daily remaining free uses: '}
-            {MAX_DAILY_FREE - getTodayUsage()} / {MAX_DAILY_FREE}
-          </p> */}
-
           <div className="mt-4"></div>
-          <button
-            onClick={handleSummary}
-            disabled={loading}
-            className={`w-full font-bold py-3 sm:py-4 px-3 sm:px-4 rounded-xl transition-all duration-200 transform flex items-center justify-center gap-2 ${
-              loading
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-md'
-                : 'bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 cursor-pointer shadow-md hover:shadow-lg hover:scale-105 active:scale-95'
-            }`}
-            style={
-              !loading
-                ? {
-                    color: '#ffffff',
-                  }
-                : undefined
-            }
-          >
-            {loading ? t.loading : t.btn}
-          </button>
+          <div className="space-y-3">
+            <button
+              onClick={handleSummary}
+              disabled={loading}
+              className={`w-full font-bold py-3 sm:py-4 px-3 sm:px-4 rounded-xl transition-all duration-200 transform flex items-center justify-center gap-2 ${
+                loading
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-md'
+                  : 'bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 cursor-pointer shadow-md hover:shadow-lg hover:scale-105 active:scale-95'
+              }`}
+              style={
+                !loading
+                  ? {
+                      color: '#ffffff',
+                    }
+                  : undefined
+              }
+            >
+              {loading ? t.loading : t.btn}
+            </button>
 
-          {/* 每日限制提示已移除 */}
-          {/* <p className="text-sm text-gray-600 mt-2 text-center">
-            {lang === 'zh-tw' ? (
-              <>
-                每天免費使用 3 次（自動重置）｜今日剩餘：{MAX_DAILY_FREE - getTodayUsage()} / {MAX_DAILY_FREE}
-              </>
-            ) : (
-              <>
-                Daily free use: 3 times (auto reset) | Remaining today: {MAX_DAILY_FREE - getTodayUsage()} / {MAX_DAILY_FREE}
-              </>
-            )}
-          </p> */}
+            {/* 免費版 2000 字限制提示卡片 */}
+            <div className="rounded-lg border border-yellow-200 bg-yellow-50 px-3 py-2 text-xs text-yellow-800">
+              <p className="font-semibold">
+                {t.freeLimitTitle}
+              </p>
+              <p className="mt-1 text-[11px]">
+                {t.freeLimitSub}
+              </p>
+            </div>
+          </div>
 
           {error && (
             <p className="mt-3 p-3 bg-red-100 border border-red-300 text-red-600 rounded">
@@ -317,29 +253,6 @@ export default function SummaryPage() {
               {summary || t.pending}
             </div>
           </div>
-
-          {/* CTA 卡片 - 暫時隱藏 */}
-          {false && (
-            summary && (
-              <div className="mt-6 p-5 rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100 shadow-sm">
-                <h3 className="text-lg font-semibold text-gray-800">
-                  Want to build your own AI JSON Summarizer?
-                </h3>
-                <p className="text-gray-600 mt-1">
-                  Get the full Supabase + Gemini + JSON Schema template and deploy your own tool in minutes.
-                </p>
-
-                <a
-                  href="https://ko-fi.com/s/b5b4180ff1"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block mt-4 px-5 py-2 text-white font-medium rounded-lg bg-blue-600 hover:bg-blue-700 transition"
-                >
-                  🔥 Buy Template – Full Source Code Included
-                </a>
-              </div>
-            )
-          )}
 
           {/* 關鍵字 */}
           <div className="shadow-md border rounded-2xl p-5 bg-white transition">
