@@ -134,29 +134,49 @@ export default function SummaryPage() {
       // 自動偵測輸入文字的語言
       const detectedLang = detectLanguage(input)
 
-      const res = await fetch(
-        'https://icuxwmpdpsfhztsbyeds.supabase.co/functions/v1/auto-summary',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          },
-          body: JSON.stringify({ 
-            content: input,
-            lang: detectedLang, // 自動偵測的語言
-          }),
-        }
-      )
+      // 從環境變數讀取 Edge Function URL
+      const edgeFunctionUrl = import.meta.env.VITE_SUMMARY_FUNCTION_URL
+
+      const res = await fetch(edgeFunctionUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          content: input,
+          lang: detectedLang, // 自動偵測的語言
+        }),
+      })
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}))
+        const errorMessage = errorData.error || errorData.message || `HTTP ${res.status}: ${res.statusText}`
+        throw new Error(errorMessage)
+      }
 
       const data = await res.json()
-
-      if (!res.ok) throw new Error(data.error)
-
-      setSummary(data.summary)
-      setKeywords(data.keywords)
+      setSummary(data.summary || data.content || '')
+      setKeywords(data.keywords || [])
     } catch (e: any) {
-      setError(e.message)
+      let errorMsg = e.message || (lang === 'zh-tw' ? '發生未知錯誤' : 'An unknown error occurred')
+      
+      // 處理網路錯誤
+      if (e instanceof TypeError && e.message.includes('Failed to fetch')) {
+        errorMsg = lang === 'zh-tw' 
+          ? '無法連接到伺服器，請檢查網路連線或稍後再試'
+          : 'Unable to connect to server. Please check your network connection or try again later'
+      }
+      
+      // 處理 DNS 解析錯誤
+      if (e.message && (e.message.includes('ERR_NAME_NOT_RESOLVED') || e.message.includes('getaddrinfo'))) {
+        errorMsg = lang === 'zh-tw' 
+          ? '無法解析伺服器位址，請檢查 Supabase URL 設定是否正確'
+          : 'Unable to resolve server address. Please check if Supabase URL is configured correctly'
+      }
+      
+      setError(errorMsg)
+      console.error('Summary API Error:', e)
     } finally {
       setLoading(false)
     }
