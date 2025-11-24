@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { buildSEO } from '../../lib/seo'
 import SectionHeader from '../../components/SectionHeader'
+import { config } from '../../config'
 
 const MAX_CHARACTERS = 2000
 
@@ -106,13 +107,28 @@ export default function SummaryPage() {
       // 自動偵測輸入文字的語言
       const detectedLang = detectLanguage(input)
 
+      // 檢查環境變數並使用 config
+      if (!config.summaryFunctionUrl) {
+        throw new Error('SUMMARY FUNCTION URL 不存在，請確認環境變數 VITE_SUMMARY_FUNCTION_URL 已於 Vercel 設定');
+      }
+
+      if (!config.supabaseAnonKey) {
+        throw new Error('VITE_SUPABASE_ANON_KEY 不存在，請確認環境變數已於 Vercel 設定');
+      }
+
+      console.log('🚀 呼叫摘要 API：', config.summaryFunctionUrl);
+      console.log('🔑 環境變數檢查：', {
+        summaryFunctionUrl: config.summaryFunctionUrl ? '✅ SET' : '❌ UNDEFINED',
+        supabaseAnonKey: config.supabaseAnonKey ? '✅ SET' : '❌ UNDEFINED',
+      });
+
       const res = await fetch(
-        'https://icuxwmpdpsfhztsbyeds.supabase.co/functions/v1/auto-summary',
+        config.summaryFunctionUrl,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            Authorization: `Bearer ${config.supabaseAnonKey}`,  // ⭐ 最重要：避免 401
           },
           body: JSON.stringify({ 
             content: input,
