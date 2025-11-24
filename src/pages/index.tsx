@@ -15,10 +15,10 @@ export default function HomePage() {
     {
       icon: '🤖',
       title: 'AI 摘要工具',
-      description: '貼上文章、網址或 YouTube 內容，AI 自動整理重點、摘要與關鍵字。每天免費使用 3 次（午夜自動重置）。支援中英文內容。',
+      description: '貼上文章、網址或 YouTube 內容，AI 自動整理重點、摘要與關鍵字。免費無限使用。支援中英文內容。',
       path: '/summary',
       isHighlight: true,
-      badge: { text: 'Free 3/day', style: 'bg-green-100 text-green-700' },
+      badge: { text: 'Free', style: 'bg-green-100 text-green-700' },
     },
     {
       icon: '🛍️',

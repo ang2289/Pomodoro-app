@@ -2,32 +2,35 @@ import { useState } from 'react'
 import SEO from '../../components/SEO'
 import SectionHeader from '../../components/SectionHeader'
 
-const MAX_DAILY_FREE = 3
+const MAX_INPUT_LENGTH = 2000
 
-function getTodayUsage() {
-  const data = localStorage.getItem('daily_summary_usage')
-  if (!data) return 0
+// 每日限制已移除 - 可無限使用
+// const MAX_DAILY_FREE = 3
 
-  const parsed = JSON.parse(data)
+// function getTodayUsage() {
+//   const data = localStorage.getItem('daily_summary_usage')
+//   if (!data) return 0
 
-  const today = new Date().toDateString()
-  if (parsed.date !== today) {
-    // 日期不同，自動重置
-    return 0
-  }
+//   const parsed = JSON.parse(data)
 
-  return parsed.count || 0
-}
+//   const today = new Date().toDateString()
+//   if (parsed.date !== today) {
+//     // 日期不同，自動重置
+//     return 0
+//   }
 
-function increaseTodayUsage() {
-  const today = new Date().toDateString()
-  const count = getTodayUsage() + 1
+//   return parsed.count || 0
+// }
 
-  localStorage.setItem(
-    'daily_summary_usage',
-    JSON.stringify({ date: today, count })
-  )
-}
+// function increaseTodayUsage() {
+//   const today = new Date().toDateString()
+//   const count = getTodayUsage() + 1
+
+//   localStorage.setItem(
+//     'daily_summary_usage',
+//     JSON.stringify({ date: today, count })
+//   )
+// }
 
 
 // ===== 🔤 MVP 語系 =====
@@ -43,6 +46,8 @@ const LANG_TEXT = {
     pending: '（內容將顯示於此）',
     btn: '一鍵摘要',
     loading: '生成中…',
+    input_too_long: '目前測試階段，每次最多 2,000 字，請縮短文章後再試一次。',
+    wordLimit: '字數上限：2000 字',
     previewTitle: '✨ 即將上線功能（預告）',
     previewList: [
       '網址自動抓全文摘要',
@@ -65,6 +70,8 @@ const LANG_TEXT = {
     pending: '(Summary will appear here)',
     btn: 'Generate',
     loading: 'Generating…',
+    input_too_long: 'For now each request is limited to 2,000 characters. Please shorten the text and try again.',
+    wordLimit: 'Text limit: 2000 characters',
     previewTitle: '✨ Coming Soon Features',
     previewList: [
       'Auto URL full-text extraction',
@@ -100,17 +107,23 @@ export default function SummaryPage() {
       return
     }
 
-    const used = getTodayUsage()
-    if (used >= MAX_DAILY_FREE) {
-      alert(
-        lang === 'zh-tw'
-          ? '今日免費使用次數已達上限 (3 次)，請明天再試。'
-          : 'Daily free usage limit reached (3 times). Please try again tomorrow.'
-      )
+    if (input.length > MAX_INPUT_LENGTH) {
+      setError(t.input_too_long)
       return
     }
 
-    increaseTodayUsage()
+    // 每日限制檢查已移除 - 可無限使用
+    // const used = getTodayUsage()
+    // if (used >= MAX_DAILY_FREE) {
+    //   alert(
+    //     lang === 'zh-tw'
+    //       ? '今日免費使用次數已達上限 (3 次)，請明天再試。'
+    //       : 'Daily free usage limit reached (3 times). Please try again tomorrow.'
+    //   )
+    //   return
+    // }
+
+    // increaseTodayUsage()
 
     setError('')
     setLoading(true)
@@ -169,8 +182,8 @@ export default function SummaryPage() {
   return (
     <>
       <SEO
-        title="AI Summary Tool — Free Daily Summaries (3 per day)"
-        description="Summarize articles, URLs, and YouTube videos using AI. Supports English & Chinese. Free 3 summaries per day. Powered by Supabase Edge Functions + Gemini Flash."
+        title="AI Summary Tool — Free AI Summaries"
+        description="Summarize articles, URLs, and YouTube videos using AI. Supports English & Chinese. Unlimited free summaries. Powered by Supabase Edge Functions + Gemini Flash."
         keywords="AI summary tool, article summarizer, YouTube summary, JSON schema, Supabase Edge Functions, Gemini Flash, free AI tools"
         url="https://pomodoro-app-eight-rouge.vercel.app/summary"
         image="/seo/summary-tool.png"
@@ -208,6 +221,10 @@ export default function SummaryPage() {
         <div className="shadow-md border rounded-2xl p-5 bg-white transition">
           <SectionHeader title={t.inputTitle} />
 
+          <p className="text-sm text-gray-600 mb-2">
+            {t.wordLimit}
+          </p>
+
           <textarea
             className="w-full h-[380px] bg-gray-50 border rounded-xl p-3 focus:ring-2 focus:ring-blue-500"
             placeholder={t.placeholder}
@@ -215,10 +232,15 @@ export default function SummaryPage() {
             onChange={(e) => setInput(e.target.value)}
           />
 
-          <p className="text-sm text-gray-600 mt-2">
+          <p className="text-xs text-gray-500 mt-1">
+            {input.length} / {MAX_INPUT_LENGTH}
+          </p>
+
+          {/* 剩餘次數顯示已移除 */}
+          {/* <p className="text-sm text-gray-600 mt-2">
             {lang === 'zh-tw' ? '今日剩餘免費次數：' : 'Daily remaining free uses: '}
             {MAX_DAILY_FREE - getTodayUsage()} / {MAX_DAILY_FREE}
-          </p>
+          </p> */}
 
           <div className="mt-4"></div>
           <button
@@ -240,7 +262,8 @@ export default function SummaryPage() {
             {loading ? t.loading : t.btn}
           </button>
 
-          <p className="text-sm text-gray-600 mt-2 text-center">
+          {/* 每日限制提示已移除 */}
+          {/* <p className="text-sm text-gray-600 mt-2 text-center">
             {lang === 'zh-tw' ? (
               <>
                 每天免費使用 3 次（自動重置）｜今日剩餘：{MAX_DAILY_FREE - getTodayUsage()} / {MAX_DAILY_FREE}
@@ -250,7 +273,7 @@ export default function SummaryPage() {
                 Daily free use: 3 times (auto reset) | Remaining today: {MAX_DAILY_FREE - getTodayUsage()} / {MAX_DAILY_FREE}
               </>
             )}
-          </p>
+          </p> */}
 
           {error && (
             <p className="mt-3 p-3 bg-red-100 border border-red-300 text-red-600 rounded">
@@ -275,25 +298,27 @@ export default function SummaryPage() {
             </div>
           </div>
 
-          {/* CTA 卡片 - 只在有摘要時顯示 */}
-          {summary && (
-            <div className="mt-6 p-5 rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100 shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-800">
-                Want to build your own AI JSON Summarizer?
-              </h3>
-              <p className="text-gray-600 mt-1">
-                Get the full Supabase + Gemini + JSON Schema template and deploy your own tool in minutes.
-              </p>
+          {/* CTA 卡片 - 暫時隱藏 */}
+          {false && (
+            summary && (
+              <div className="mt-6 p-5 rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100 shadow-sm">
+                <h3 className="text-lg font-semibold text-gray-800">
+                  Want to build your own AI JSON Summarizer?
+                </h3>
+                <p className="text-gray-600 mt-1">
+                  Get the full Supabase + Gemini + JSON Schema template and deploy your own tool in minutes.
+                </p>
 
-              <a
-                href="https://ko-fi.com/s/b5b4180ff1"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block mt-4 px-5 py-2 text-white font-medium rounded-lg bg-blue-600 hover:bg-blue-700 transition"
-              >
-                🔥 Buy Template – Full Source Code Included
-              </a>
-            </div>
+                <a
+                  href="https://ko-fi.com/s/b5b4180ff1"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block mt-4 px-5 py-2 text-white font-medium rounded-lg bg-blue-600 hover:bg-blue-700 transition"
+                >
+                  🔥 Buy Template – Full Source Code Included
+                </a>
+              </div>
+            )
           )}
 
           {/* 關鍵字 */}
