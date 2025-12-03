@@ -57,3 +57,4 @@ npm start
 - 影片長度預設為 15 秒，可在 `VIDEO_DURATION` 變數中調整
 - 影片格式為 1080x1920 (9:16)，適合 TikTok、YouTube Shorts、IG Reels
 
+

@@ -1,12 +1,15 @@
 import { useState } from 'react'
 import { Helmet } from 'react-helmet-async'
+import { searchShopee } from '../services/shopeeSearch'
 
 interface SearchResult {
-  itemid: string
+  id?: string
+  itemid?: string
   name: string
   price: number
   image: string
-  link: string
+  url?: string
+  link?: string
   rating: number
   sold: number
 }
@@ -21,13 +24,11 @@ const SearchPage = () => {
     setLoading(true)
 
     try {
-      const res = await fetch(
-        `/api/shopee-search?keyword=${encodeURIComponent(query)}`
-      )
-      const data = await res.json()
-      setResults(Array.isArray(data) ? data : data.items || [])
+      const items = await searchShopee(query)
+      setResults(items || [])
     } catch (err) {
       console.error(err)
+      setResults([])
     }
 
     setLoading(false)
@@ -75,32 +76,32 @@ const SearchPage = () => {
         {loading && <p className="text-gray-500">搜尋中...</p>}
 
         {/* 搜尋結果 */}
-        <div className="grid grid-cols-1 gap-4">
-          {results.map((item) => (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {results.map((item, index) => (
             <div
-              key={item.itemid}
-              className="border p-4 rounded-lg shadow-sm flex gap-4 hover:shadow-md transition-shadow"
+              key={item.id || item.itemid || index}
+              className="border p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow flex flex-col"
             >
               <img
                 src={item.image}
                 alt={item.name}
-                className="w-24 h-24 object-cover rounded"
+                className="w-full h-48 object-cover rounded mb-3"
               />
 
               <div className="flex-1">
-                <p className="font-medium line-clamp-2">{item.name}</p>
-                <p className="text-red-600 font-bold text-lg mt-1">
+                <p className="font-medium line-clamp-2 mb-2">{item.name}</p>
+                <p className="text-red-600 font-bold text-lg mb-2">
                   NT$ {item.price}
                 </p>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-500 mb-3">
                   ⭐ {item.rating} | 銷量 {item.sold}
                 </p>
 
                 <a
-                  href={item.link}
+                  href={item.url || item.link || '#'}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-block mt-2 bg-orange-500 text-white px-3 py-1 rounded hover:bg-orange-600 transition-colors"
+                  className="inline-block w-full text-center bg-orange-500 text-white px-3 py-2 rounded hover:bg-orange-600 transition-colors"
                 >
                   查看蝦皮商品
                 </a>
