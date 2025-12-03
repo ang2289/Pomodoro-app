@@ -1,40 +1,44 @@
-export const config = {
-  runtime: "nodejs",
-};
-
+import axios from "axios";
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const { keyword } = req.query;
-
-  if (!keyword) {
-    return res.status(400).json({ error: "缺少 keyword" });
-  }
-
   try {
-    const url = `https://shopeeapi.tw/api/search?keyword=${encodeURIComponent(String(keyword))}&limit=100`;
+    const { keyword } = req.query;
 
-    const response = await fetch(url);
+    // Debug log
+    console.log("Shopee API Key:", process.env.RAPIDAPI_KEY);
+    console.log("Search keyword:", keyword);
+    console.log("HOST 使用中: shopee-e-commerce-data.p.rapidapi.com");
 
-    const json = await response.json();
+    if (!keyword) {
+      return res.status(400).json({ error: "缺少 keyword" });
+    }
 
-    const items = json?.data?.items || [];
+    const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
+    if (!RAPIDAPI_KEY) {
+      console.error("RAPIDAPI_KEY is undefined!");
+      return res.status(400).json({ error: "未設定 RAPIDAPI_KEY" });
+    }
 
-    const cleanData = items.map((item: any) => {
-      return {
-        id: item.id,
-        name: item.name,
-        price: item.price,
-        image: item.image,
-        url: item.url,
-        sold: item.sold,
-        rating: item.rating,
-      };
-    });
+    const options = {
+      method: 'GET',
+      url: 'https://shopee-e-commerce-data.p.rapidapi.com/api/v1/search_items',
+      params: {
+        keyword: keyword,
+        offset: '0',
+        limit: '100'
+      },
+      headers: {
+        'x-rapidapi-key': RAPIDAPI_KEY,
+        'x-rapidapi-host': 'shopee-e-commerce-data.p.rapidapi.com'
+      }
+    };
 
-    res.status(200).json(cleanData);
-  } catch (err) {
-    res.status(500).json({ error: "抓取蝦皮資料時發生錯誤", detail: String(err) });
+    const response = await axios.request(options);
+    return res.status(200).json(response.data);
+
+  } catch (err: any) {
+    console.error(err);
+    return res.status(500).json({ error: "API 錯誤", detail: err.message });
   }
 }
-
