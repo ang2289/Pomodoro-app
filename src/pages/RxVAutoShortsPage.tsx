@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { searchShopeeItems } from "@/services/shopeeSearch";
 
 // 下載 JSON 工具函式
 function downloadJSON(data: any, filename: string) {
@@ -342,21 +343,9 @@ export default function RxVAutoShortsPage() {
                 setLoading(true);
 
                 try {
-                  const res = await fetch(`/api/shopee-search?keyword=${encodeURIComponent(keyword)}`);
-                  const data = await res.json();
-                  console.log("搜尋結果：", data);
-                  
-                  // 處理新的 API 回應格式：可能是 data.items 或 data.data
-                  const items = data.items || data.data || [];
+                  const items = await searchShopeeItems(keyword);
                   setItems(items);
-                  
-                  // 顯示商品筆數
-                  const itemCount = items.length;
-                  if (itemCount > 0) {
-                    console.log(`找到 ${itemCount} 筆商品`);
-                  } else {
-                    console.log("未找到商品");
-                  }
+                  console.log("[UI] 最終筆數 =", items.length);
                 } catch (error) {
                   console.error("抓取商品失敗:", error);
                   alert("抓取商品失敗，請稍後再試");

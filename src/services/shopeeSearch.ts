@@ -1,44 +1,19 @@
 import axios from "axios";
 
-const API_URL = "https://shopee-e-commerce-data.p.rapidapi.com/shopee/search/items/v2";
-const API_HOST = "shopee-e-commerce-data.p.rapidapi.com";
+export async function searchShopeeItems(keyword: string) {
+  console.log("[service] keyword =", keyword);
+  if (!keyword.trim()) return [];
 
-export async function searchShopee(keyword: string) {
-  const apiKey = import.meta.env.VITE_RAPIDAPI_SHOPEE_KEY;
-  
-  async function fetchPage(page: number) {
-    const params = {
-      keyword,
-      page: page.toString(),
-      pageSize: "30",
-      by: "relevancy",
-      order: "desc",
-      site: "my"
-    };
-
-    const response = await axios.get(API_URL, {
-      params,
-      headers: {
-        "x-rapidapi-key": apiKey,
-        "x-rapidapi-host": API_HOST
-      }
+  try {
+    const res = await axios.get(`/api/shopee-search`, {
+      params: { keyword },
     });
 
-    return response.data?.data?.items || [];
+    console.log("[service] 收到筆數 =", res.data?.items?.length);
+    return res.data?.items ?? [];
+  } catch (error: any) {
+    console.error("[service] API 錯誤", error?.response?.data || error.message);
+    return [];
   }
-
-  const allResults = [];
-
-  const pagesToFetch = [1, 2, 3, 4];
-
-  for (const p of pagesToFetch) {
-    try {
-      const items = await fetchPage(p);
-      allResults.push(...items);
-    } catch (err) {
-      console.error("Error fetching page", p, err);
-    }
-  }
-
-  return allResults.slice(0, 100);
 }
+

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Helmet } from 'react-helmet-async'
-import { searchShopee } from '../services/shopeeSearch'
+import { searchShopeeItems } from '../services/shopeeSearch'
 
 interface SearchResult {
   id?: string
@@ -24,7 +24,7 @@ const SearchPage = () => {
     setLoading(true)
 
     try {
-      const items = await searchShopee(query)
+      const items = await searchShopeeItems(query)
       setResults(items || [])
     } catch (err) {
       console.error(err)
