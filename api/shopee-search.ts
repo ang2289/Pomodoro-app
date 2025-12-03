@@ -22,11 +22,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const options = {
       method: 'GET',
-      url: 'https://shopee-e-commerce-data.p.rapidapi.com/api/v1/search_items',
+      url: 'https://shopee-e-commerce-data.p.rapidapi.com/shopee/search/items/v2',
       params: {
         keyword: keyword,
-        offset: '0',
-        limit: '100'
+        page: "1",
+        pageSize: "30",
+        by: "relevancy",
+        order: "desc",
+        site: "my"
       },
       headers: {
         'x-rapidapi-key': RAPIDAPI_KEY,

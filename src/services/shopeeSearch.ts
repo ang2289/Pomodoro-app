@@ -1,42 +1,44 @@
 import axios from "axios";
 
+const API_URL = "https://shopee-e-commerce-data.p.rapidapi.com/shopee/search/items/v2";
+const API_HOST = "shopee-e-commerce-data.p.rapidapi.com";
+
 export async function searchShopee(keyword: string) {
-  // Debug log
-  console.log("Shopee API Key:", import.meta.env.VITE_RAPIDAPI_KEY);
-  console.log("Search keyword:", keyword);
-  console.log("HOST 使用中:", import.meta.env.VITE_RAPIDAPI_HOST);
-
-  const apiKey = import.meta.env.VITE_RAPIDAPI_KEY;
-  const apiHost = import.meta.env.VITE_RAPIDAPI_HOST || "shopee-e-commerce-data.p.rapidapi.com";
+  const apiKey = import.meta.env.VITE_RAPIDAPI_SHOPEE_KEY;
   
-  if (!apiKey) {
-    console.error("VITE_RAPIDAPI_KEY is undefined!");
-    return [];
-  }
-
-  const url = "https://shopee-e-commerce-data.p.rapidapi.com/search/items";
-
-  const options = {
-    method: "GET",
-    url,
-    params: {
+  async function fetchPage(page: number) {
+    const params = {
       keyword,
-      page: "1",
-      limit: "100",
-      country: "TW"
-    },
-    headers: {
-      "X-RapidAPI-Key": apiKey,
-      "X-RapidAPI-Host": apiHost,
-    }
-  };
+      page: page.toString(),
+      pageSize: "30",
+      by: "relevancy",
+      order: "desc",
+      site: "my"
+    };
 
-  try {
-    const response = await axios.request(options);
-    return response.data.items; // 回傳商品列表
-  } catch (error) {
-    console.error("Shopee API ERROR:", error);
-    return [];
+    const response = await axios.get(API_URL, {
+      params,
+      headers: {
+        "x-rapidapi-key": apiKey,
+        "x-rapidapi-host": API_HOST
+      }
+    });
+
+    return response.data?.data?.items || [];
   }
-}
 
+  const allResults = [];
+
+  const pagesToFetch = [1, 2, 3, 4];
+
+  for (const p of pagesToFetch) {
+    try {
+      const items = await fetchPage(p);
+      allResults.push(...items);
+    } catch (err) {
+      console.error("Error fetching page", p, err);
+    }
+  }
+
+  return allResults.slice(0, 100);
+}
