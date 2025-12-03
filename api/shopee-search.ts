@@ -20,12 +20,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const apiKey = process.env.RAPIDAPI_KEY;
 
   if (!apiKey) {
-    console.error(
-      '[shopee-search] RAPIDAPI_KEY is not set in environment variables',
-    );
-    return res
-      .status(500)
-      .json({ error: 'Server configuration error: RAPIDAPI_KEY not set' });
+    console.error('[shopee-search] RAPIDAPI_KEY is missing!');
+    return res.status(500).json({ error: 'RAPIDAPI_KEY not set' });
   }
 
   try {
@@ -35,7 +31,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         by: 'relevancy',
         order: 'desc',
         page: 1,
-        pageSize: 50,
+        pageSize: 30,
         keyword: keyword.trim(),
       },
       headers: {
@@ -44,18 +40,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       },
     });
 
-    const raw = response.data;
-    const items = raw?.data?.items ?? raw?.items ?? [];
+    const items =
+      response?.data?.data?.items ??
+      response?.data?.items ??
+      [];
 
-    return res.status(200).json({ items, raw });
+    return res.status(200).json({ items });
   } catch (err: any) {
-    console.error(
-      '[shopee-search] API error:',
-      err?.response?.data || err.message || err,
-    );
-    return res
-      .status(500)
-      .json({ error: 'API 錯誤', detail: err?.message ?? String(err) });
+    console.error('[shopee-search] API error =', err?.response?.data || err.message);
+    return res.status(500).json({
+      error: 'API 錯誤',
+      detail: err?.response?.data || err?.message,
+    });
   }
 }
-
