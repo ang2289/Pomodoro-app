@@ -22,10 +22,10 @@ const SearchPage = () => {
 
     try {
       const res = await fetch(
-        `/api/shopee/search?q=${encodeURIComponent(query)}`
+        `/api/shopee-search?keyword=${encodeURIComponent(query)}`
       )
       const data = await res.json()
-      setResults(data.items || [])
+      setResults(Array.isArray(data) ? data : data.items || [])
     } catch (err) {
       console.error(err)
     }

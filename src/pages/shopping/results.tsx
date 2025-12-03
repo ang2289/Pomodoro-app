@@ -58,10 +58,10 @@ export default function ShoppingResultsPage() {
 
     setLoading(true)
 
-    fetch(`/api/shopee/search?q=${encodeURIComponent(q)}`)
+    fetch(`/api/shopee-search?keyword=${encodeURIComponent(q)}`)
       .then((res) => res.json())
       .then((data) => {
-        setItems(data.items || [])
+        setItems(Array.isArray(data) ? data : data.items || [])
         setLoading(false)
       })
       .catch((err) => {

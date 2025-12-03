@@ -1,0 +1,17 @@
+{
+  "name": "rxv-video-batch",
+  "version": "1.0.0",
+  "description": "批次產生短影片工具",
+  "main": "generate-videos.js",
+  "scripts": {
+    "start": "node generate-videos.js"
+  },
+  "keywords": ["video", "batch", "ffmpeg"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "node-fetch": "^2.7.0",
+    "archiver": "^7.0.1"
+  }
+}
+

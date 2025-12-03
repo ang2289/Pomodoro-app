@@ -70,6 +70,8 @@ import PowerOfSilence from './pages/blog/PowerOfSilence'
 import ThreeMinuteMeditation from './pages/blog/ThreeMinuteMeditation'
 import AboutSpiritualGrowth from './pages/blog/AboutSpiritualGrowth'
 import BlogHome from './pages/blog/BlogHome'
+import BlogPage from './pages/blog/index'
+import LanguageGuide from './pages/language-guide'
 import LazyHome from './pages/blog/LazyHome'
 import HomePage from './pages/index'
 import AidsPage from './pages/blog/aids'
@@ -81,6 +83,8 @@ import ShoppingSearchPage from './pages/shopping/search'
 import ShoppingResultsPage from './pages/shopping/results'
 import AIHome from './pages/AIHome'
 import AISummaryGuide from './pages/tools/ai-summary'
+import VideoGeneratorPage from './pages/tools/VideoGeneratorPage'
+import RxVAutoShortsPage from './pages/RxVAutoShortsPage'
 import RetirementPage from './pages/retirement/index'
 import RentalSubsidy2025 from './pages/aids/rental-subsidy-2025'
 import LTC2025Update from './pages/aids/ltc-2025-update'
@@ -205,7 +209,11 @@ function App() {
             {/* 預留功能路由 */}
             <Route path="tools" element={<AIHome />} />
             <Route path="tools/ai-summary" element={<AISummaryGuide />} />
+            <Route path="tools/video-generator" element={<VideoGeneratorPage />} />
             <Route path="automation" element={<AIHome />} />
+            <Route path="rxv-auto-shorts" element={<RxVAutoShortsPage />} />
+            <Route path="language-guide" element={<LanguageGuide />} />
+            <Route path="blog" element={<BlogPage />} />
           </Route>
           
           {/* 其他獨立頁面 */}
