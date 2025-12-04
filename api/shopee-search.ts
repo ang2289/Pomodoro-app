@@ -78,9 +78,9 @@ export default async (req: VercelRequest, res: VercelResponse) => {
 
       headers: {
 
-        "X-RapidAPI-Key": API_KEY,
+        'X-RapidAPI-Key': API_KEY,
 
-        "X-RapidAPI-Host": API_HOST,
+        'X-RapidAPI-Host': API_HOST,
 
       },
 
