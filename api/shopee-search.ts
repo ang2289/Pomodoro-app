@@ -38,35 +38,25 @@ export default async (req: VercelRequest, res: VercelResponse) => {
 
   const API_KEY = process.env.RAPIDAPI_KEY;
 
-  const API_HOST = process.env.RAPIDAPI_HOST;
+  const API_HOST = process.env.RAPIDAPI_HOST || "shopee-e-commerce-data.p.rapidapi.com";
 
 
 
-  console.log("[debug] keyword:", keyword);
+  if (!API_KEY) {
 
-  console.log("[debug] API_KEY:", API_KEY ? "✅ 有讀到" : "❌ 沒有讀到");
+    console.error("❌ RAPIDAPI_KEY 尚未設定（請檢查 .env 或 Vercel 設定）");
 
-  console.log("[debug] API_HOST:", API_HOST);
-
-
-
-  if (!API_KEY || !API_HOST) {
-
-    return res.status(500).json({
-
-      error: "Missing API key or host",
-
-      items: [],
-
-      total: 0
-
-    });
+    return res.status(500).json({ error: "API key not configured", items: [], total: 0 });
 
   }
 
 
 
   try {
+
+    console.log(`[Shopee API] ✅ 發送請求中: ${keyword}`);
+
+
 
     const response = await axios.get(API_URL, {
 
@@ -78,7 +68,7 @@ export default async (req: VercelRequest, res: VercelResponse) => {
 
         page: 1,
 
-        pageSize: 50,
+        pageSize: 100,
 
         by: "relevancy",
 
@@ -98,9 +88,21 @@ export default async (req: VercelRequest, res: VercelResponse) => {
 
 
 
-    const items = response?.data?.data?.items ?? [];
+    console.log("[Shopee API] ✅ 原始回傳資料：", response?.data);
 
-    console.log(`[Shopee API] ✅ 抓到 ${items.length} 筆資料`);
+
+
+    const items =
+
+      response?.data?.data?.items ??
+
+      response?.data?.items ??
+
+      [];
+
+
+
+    console.log(`[Shopee API] ✅ 成功抓取 ${items.length} 筆資料`);
 
 
 
@@ -116,7 +118,7 @@ export default async (req: VercelRequest, res: VercelResponse) => {
 
   } catch (err: any) {
 
-    console.error("[Shopee API] ❌ 錯誤：", err?.response?.data || err.message || err);
+    console.error("[Shopee API] ❌ 發生錯誤：", err?.response?.data || err.message || err);
 
     return res.status(200).json({ error: "fetch error", items: [], total: 0 });
 
