@@ -5,8 +5,17 @@
       <link>https://rxv-dreamstudio.vercel.app</link>
       <description>由 RxV 夢想創作工作室開發的中英雙語專注力、健康與理財平台。</description>
       <language>zh-TW,en</language>
-      <lastBuildDate>Mon, 24 Nov 2025 19:39:21 GMT</lastBuildDate>
+      <lastBuildDate>Thu, 04 Dec 2025 00:49:22 GMT</lastBuildDate>
       
+    <item>
+      <title><![CDATA[{currentContent.title}]]></title>
+      <link>https://rxv-dreamstudio.vercel.app/blog/index</link>
+      <guid>https://rxv-dreamstudio.vercel.app/blog/index</guid>
+      <pubDate>Tue, 02 Dec 2025 08:56:49 GMT</pubDate>
+      <description><![CDATA[{currentContent.subtitle}]]></description>
+      <language>zh-TW</language>
+    </item>
+
     <item>
       <title><![CDATA[🌱 關於靈性成長｜在靜心中找到生命的深度]]></title>
       <link>https://rxv-dreamstudio.vercel.app/blog/about-spiritual-growth</link>
