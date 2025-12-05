@@ -20,7 +20,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
 
-    const RAPIDAPI_HOST = process.env.RAPIDAPI_HOST; // shopee-api.p.rapidapi.com
+    const RAPIDAPI_HOST = process.env.RAPIDAPI_HOST; // shopee-e-commerce-data.p.rapidapi.com
 
 
 
@@ -72,11 +72,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
 
 
-    const data = await response.json();
-
-
-
     if (!response.ok) {
+
+      const data = await response.json();
 
       return res.status(500).json({
 
@@ -87,6 +85,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
 
     }
+
+
+
+    const data = await response.json();
 
 
 
