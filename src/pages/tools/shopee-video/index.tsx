@@ -6,45 +6,77 @@ import { generateVideoFromScript } from "@/services/video-api";
 
 export default function ShopeeVideoPage() {
 
-  const [url, setUrl] = useState("");
+  const [title, setTitle] = useState("");
 
-  const [loading, setLoading] = useState(false);
+  const [price, setPrice] = useState("");
 
-  const [product, setProduct] = useState(null);
+  const [imageUrl, setImageUrl] = useState("");
+
+  const [script, setScript] = useState("");
+
+  const [subtitle, setSubtitle] = useState("");
 
   const [videoUrl, setVideoUrl] = useState("");
+
+  const [loading, setLoading] = useState(false);
 
   const [error, setError] = useState("");
 
 
 
-  const fetchProduct = async () => {
+  // 自動產生腳本與字幕
+
+  const handleGenerateScripts = async () => {
+
+    if (!title.trim()) {
+
+      setError("請輸入商品名稱");
+
+      return;
+
+    }
+
+
 
     setLoading(true);
 
     setError("");
 
-    setProduct(null);
-
-    setVideoUrl("");
-
 
 
     try {
 
-      const res = await fetch(`/api/shopee-detail?url=${encodeURIComponent(url)}`, {
+      // 呼叫 generate-video API 來產生腳本和字幕
 
-        method: "GET",
+      const response = await fetch('/api/generate-video', {
+
+        method: 'POST',
+
+        headers: { 'Content-Type': 'application/json' },
+
+        body: JSON.stringify({
+
+          product: {
+
+            title: title,
+
+            price: price ? parseFloat(price) : 0,
+
+            image: imageUrl,
+
+          },
+
+        }),
 
       });
 
 
 
-      if (!res.ok) {
+      if (!response.ok) {
 
-        const err = await res.json();
+        const err = await response.json();
 
-        setError(err.error || "商品讀取失敗");
+        setError(err.error || "產生腳本失敗");
 
         setLoading(false);
 
@@ -54,91 +86,15 @@ export default function ShopeeVideoPage() {
 
 
 
-      const json = await res.json();
+      const data = await response.json();
 
+      setScript(data.script || "");
 
-
-      // 處理新的 API 回傳格式
-
-      if (json.ok && json.item) {
-
-        const item = json.item;
-
-        const formattedProduct = {
-
-          title: item.name || '未知商品',
-
-          price: item.price || 0,
-
-          image: item.images && item.images.length > 0 
-
-            ? (item.images[0].startsWith('http') ? item.images[0] : `https://cf.shopee.tw/file/${item.images[0]}`)
-
-            : '',
-
-        };
-
-
-
-        setProduct(formattedProduct);
-
-
-
-        // 取得商品資訊後，也取得腳本和字幕
-
-        try {
-
-          const scriptResponse = await fetch('/api/generate-video', {
-
-            method: 'POST',
-
-            headers: { 'Content-Type': 'application/json' },
-
-            body: JSON.stringify({
-
-              productUrl: url,
-
-              product: formattedProduct,
-
-            }),
-
-          });
-
-
-
-          if (scriptResponse.ok) {
-
-            const scriptData = await scriptResponse.json();
-
-            setProduct({
-
-              ...formattedProduct,
-
-              script: scriptData.script || '',
-
-              subtitle: scriptData.subtitle || '',
-
-            });
-
-          }
-
-        } catch (scriptErr) {
-
-          // 如果取得腳本失敗，仍然顯示商品資訊
-
-          console.error('取得腳本失敗:', scriptErr);
-
-        }
-
-      } else {
-
-        setError("API 回傳格式錯誤");
-
-      }
+      setSubtitle(data.subtitle || "");
 
     } catch (err) {
 
-      setError("呼叫後端 API 失敗，請稍後再試");
+      setError("產生腳本失敗，請稍後再試。");
 
     }
 
@@ -150,9 +106,17 @@ export default function ShopeeVideoPage() {
 
 
 
-  async function generateVideo() {
+  // 產生影片
 
-    if (!product) return;
+  const handleGenerateVideo = async () => {
+
+    if (!title.trim()) {
+
+      setError("請輸入商品名稱");
+
+      return;
+
+    }
 
 
 
@@ -166,11 +130,11 @@ export default function ShopeeVideoPage() {
 
       const video = await generateVideoFromScript({
 
-        title: product.title,
+        title: title,
 
-        price: product.price,
+        price: price ? parseFloat(price) : 0,
 
-        image: product.image,
+        image: imageUrl,
 
       });
 
@@ -186,7 +150,7 @@ export default function ShopeeVideoPage() {
 
     setLoading(false);
 
-  }
+  };
 
 
 
@@ -194,81 +158,127 @@ export default function ShopeeVideoPage() {
 
     <div className="w-full max-w-3xl mx-auto px-4 py-10">
 
-
-
       <h1 className="text-3xl font-bold mb-2 text-center">
 
         🎬 Shopee 自動短影片產生器（V2.6 專業版）
 
       </h1>
 
-      <div className="text-xs text-gray-400 mt-1 text-center">
-
-        RapidAPI Key Loaded: {import.meta.env.VITE_RAPIDAPI_KEY ? "Yes" : "No"}
-
-      </div>
-
       <p className="text-gray-600 text-center mb-8">
 
-        輸入商品網址 → 自動抓資料 → 產生短影音腳本、字幕與影片。
+        手動輸入商品資訊 → 自動產生短影音腳本、字幕與影片。
 
       </p>
 
 
 
-      {/* 商品網址輸入 */}
+      {/* 手動輸入模式 */}
 
-      <div className="bg-white p-5 rounded-xl shadow mb-8">
+      <div className="bg-white p-5 rounded-xl shadow mb-8 manual-mode">
 
-        <label className="font-medium">蝦皮商品網址</label>
-
-        <input
-
-          type="text"
-
-          className="w-full border rounded p-3 mt-2"
-
-          placeholder="請輸入蝦皮網址：如 https://shopee.tw/product/xxx"
-
-          value={url}
-
-          onChange={(e) => setUrl(e.target.value)}
-
-        />
+        <h2 className="text-xl font-bold mb-4">手動輸入商品資訊</h2>
 
 
 
-        <button
+        <div className="space-y-4">
 
-          onClick={fetchProduct}
+          <div>
 
-          disabled={loading}
+            <label className="block font-medium mb-2">商品名稱 *</label>
 
-          className="w-full bg-gradient-to-r from-purple-500 to-blue-500 text-white py-3 rounded-lg mt-4 text-lg font-semibold hover:opacity-90 transition"
+            <input
 
-          style={{ color: '#ffffff' }}
+              type="text"
 
-        >
+              value={title}
 
-          🔍 抓取商品資訊
+              onChange={(e) => setTitle(e.target.value)}
 
-        </button>
+              className="w-full border rounded p-3"
+
+              placeholder="例如：超值保養品組合"
+
+            />
+
+          </div>
 
 
 
-        {error && <p className="text-red-500 mt-3">❌ {error}</p>}
+          <div>
+
+            <label className="block font-medium mb-2">商品主圖片 URL</label>
+
+            <input
+
+              type="text"
+
+              value={imageUrl}
+
+              onChange={(e) => setImageUrl(e.target.value)}
+
+              className="w-full border rounded p-3"
+
+              placeholder="https://cf.shopee.tw/file/xxx.jpg"
+
+            />
+
+          </div>
+
+
+
+          <div>
+
+            <label className="block font-medium mb-2">價格（可選填）</label>
+
+            <input
+
+              type="number"
+
+              value={price}
+
+              onChange={(e) => setPrice(e.target.value)}
+
+              className="w-full border rounded p-3"
+
+              placeholder="例如：299"
+
+            />
+
+          </div>
+
+
+
+          <button
+
+            onClick={handleGenerateScripts}
+
+            disabled={loading || !title.trim()}
+
+            className="w-full bg-gradient-to-r from-purple-500 to-blue-500 text-white py-3 rounded-lg text-lg font-semibold hover:opacity-90 transition disabled:opacity-50"
+
+            style={{ color: '#ffffff' }}
+
+          >
+
+            ✨ 自動產生腳本與字幕
+
+          </button>
+
+
+
+          {error && <p className="text-red-500 mt-3">❌ {error}</p>}
+
+        </div>
 
       </div>
 
 
 
-      {/* 影片播放器（未輸入也顯示） */}
+      {/* 影片播放器 */}
 
       <div className="bg-white p-5 rounded-xl shadow mb-8">
 
         <h2 className="text-xl font-bold mb-3">🎞 影片預覽</h2>
-
-
 
         {videoUrl ? (
 
@@ -288,55 +298,47 @@ export default function ShopeeVideoPage() {
 
 
 
-      {/* 商品資訊（預設灰底） */}
+      {/* 商品資訊預覽 */}
 
-      <div className="bg-white p-5 rounded-xl shadow mb-8">
+      {(title || imageUrl) && (
 
-        <h2 className="text-xl font-bold mb-3">📦 商品資訊</h2>
+        <div className="bg-white p-5 rounded-xl shadow mb-8">
 
+          <h2 className="text-xl font-bold mb-3">📦 商品資訊預覽</h2>
 
+          {imageUrl && (
 
-        {product ? (
+            <img src={imageUrl} className="w-40 h-40 object-cover rounded mb-4" alt={title} />
 
-          <>
+          )}
 
-            <img src={product.image} className="w-40 h-40 object-cover rounded mb-4" />
+          {title && <p className="font-medium">{title}</p>}
 
-            <p className="font-medium">{product.title}</p>
+          {price && <p className="text-green-600 text-lg font-bold">NT$ {price}</p>}
 
-            <p className="text-green-600 text-lg font-bold">NT$ {product.price}</p>
+        </div>
 
-          </>
-
-        ) : (
-
-          <div className="space-y-3">
-
-            <div className="w-40 h-40 bg-gray-200 rounded"></div>
-
-            <div className="h-4 bg-gray-200 w-2/3 rounded"></div>
-
-            <div className="h-4 bg-gray-200 w-1/3 rounded"></div>
-
-          </div>
-
-        )}
-
-      </div>
+      )}
 
 
 
-      {/* 腳本（預設灰底） */}
+      {/* 腳本內容 */}
 
       <div className="bg-white p-5 rounded-xl shadow mb-8">
 
         <h2 className="text-xl font-bold mb-3">📝 影片腳本</h2>
 
+        {script ? (
 
+          <textarea
 
-        {product ? (
+            value={script}
 
-          <p className="leading-relaxed">{product.script || "產生腳本中…"}</p>
+            readOnly
+
+            className="w-full border rounded p-3 h-32"
+
+          />
 
         ) : (
 
@@ -356,17 +358,23 @@ export default function ShopeeVideoPage() {
 
 
 
-      {/* 字幕（預設灰底） */}
+      {/* 字幕內容 */}
 
       <div className="bg-white p-5 rounded-xl shadow mb-8">
 
         <h2 className="text-xl font-bold mb-3">💬 字幕內容</h2>
 
+        {subtitle ? (
 
+          <textarea
 
-        {product ? (
+            value={subtitle}
 
-          <p>{product.subtitle || "字幕產生中…"}</p>
+            readOnly
+
+            className="w-full border rounded p-3 h-32"
+
+          />
 
         ) : (
 
@@ -388,15 +396,15 @@ export default function ShopeeVideoPage() {
 
       {/* 產生影片按鈕 */}
 
-      {product && (
+      {script && (
 
         <button
 
-          onClick={generateVideo}
+          onClick={handleGenerateVideo}
 
           disabled={loading}
 
-          className="w-full bg-purple-600 text-white py-3 rounded-lg text-lg font-semibold hover:bg-purple-700"
+          className="w-full bg-purple-600 text-white py-3 rounded-lg text-lg font-semibold hover:bg-purple-700 disabled:opacity-50"
 
           style={{ color: '#ffffff' }}
 
