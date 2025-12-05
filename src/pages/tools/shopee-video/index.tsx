@@ -12,15 +12,73 @@ export default function ShopeeVideoPage() {
 
   const [imageUrl, setImageUrl] = useState("");
 
+  const [description, setDescription] = useState("");
+
+  const [sold, setSold] = useState("");
+
   const [script, setScript] = useState("");
 
   const [subtitle, setSubtitle] = useState("");
+
+  const [videoScript, setVideoScript] = useState("");
+
+  const [subtitles, setSubtitles] = useState<string[]>([]);
+
+  const [scenes, setScenes] = useState<any[]>([]);
 
   const [videoUrl, setVideoUrl] = useState("");
 
   const [loading, setLoading] = useState(false);
 
   const [error, setError] = useState("");
+
+
+
+  // 自動生成腳本功能
+
+  async function generateShortScript(product: any) {
+
+    try {
+
+      const resp = await fetch("/api/shopee-generate-script", {
+
+        method: "POST",
+
+        headers: { "Content-Type": "application/json" },
+
+        body: JSON.stringify({
+
+          title: product.title,
+
+          description: product.description,
+
+          price: product.price,
+
+          sold: product.historical_sold || product.sold
+
+        })
+
+      });
+
+
+
+      if (!resp.ok) {
+
+        throw new Error("腳本生成失敗");
+
+      }
+
+      return await resp.json();
+
+    } catch (err) {
+
+      console.error("腳本生成失敗:", err);
+
+      return null;
+
+    }
+
+  }
 
 
 
@@ -46,51 +104,41 @@ export default function ShopeeVideoPage() {
 
     try {
 
-      // 呼叫 generate-video API 來產生腳本和字幕
+      // 使用新的腳本生成 API
 
-      const response = await fetch('/api/generate-video', {
+      const scriptData = await generateShortScript({
 
-        method: 'POST',
+        title: title,
 
-        headers: { 'Content-Type': 'application/json' },
+        description: description,
 
-        body: JSON.stringify({
+        price: price ? parseFloat(price) : 0,
 
-          product: {
-
-            title: title,
-
-            price: price ? parseFloat(price) : 0,
-
-            image: imageUrl,
-
-          },
-
-        }),
+        sold: sold ? parseInt(sold) : undefined,
 
       });
 
 
 
-      if (!response.ok) {
+      if (scriptData && scriptData.success) {
 
-        const err = await response.json();
+        setVideoScript(scriptData.script);
 
-        setError(err.error || "產生腳本失敗");
+        setSubtitles(scriptData.subtitles || []);
 
-        setLoading(false);
+        setScenes(scriptData.scenes || []);
 
-        return;
+        // 保留舊的 script 和 subtitle 以向後相容
+
+        setScript(scriptData.script);
+
+        setSubtitle(scriptData.subtitles?.join("\n") || "");
+
+      } else {
+
+        setError("產生腳本失敗，請稍後再試。");
 
       }
-
-
-
-      const data = await response.json();
-
-      setScript(data.script || "");
-
-      setSubtitle(data.subtitle || "");
 
     } catch (err) {
 
@@ -248,6 +296,50 @@ export default function ShopeeVideoPage() {
 
 
 
+          <div>
+
+            <label className="block font-medium mb-2">商品描述（可選填）</label>
+
+            <textarea
+
+              value={description}
+
+              onChange={(e) => setDescription(e.target.value)}
+
+              className="w-full border rounded p-3"
+
+              placeholder="例如：高品質材質，適合日常使用。設計簡潔大方。網路評價高。"
+
+              rows={3}
+
+            />
+
+          </div>
+
+
+
+          <div>
+
+            <label className="block font-medium mb-2">累積銷量（可選填）</label>
+
+            <input
+
+              type="number"
+
+              value={sold}
+
+              onChange={(e) => setSold(e.target.value)}
+
+              className="w-full border rounded p-3"
+
+              placeholder="例如：1000"
+
+            />
+
+          </div>
+
+
+
           <button
 
             onClick={handleGenerateScripts}
@@ -358,7 +450,75 @@ export default function ShopeeVideoPage() {
 
 
 
-      {/* 字幕內容 */}
+      {/* 短影片腳本 */}
+
+      {videoScript && (
+
+        <div className="bg-white p-5 rounded-xl shadow mb-8">
+
+          <h3 className="text-lg font-bold mb-3">🎤 自動生成短影片腳本</h3>
+
+          <pre className="whitespace-pre-wrap mt-2 text-gray-700 bg-gray-50 p-4 rounded border">{videoScript}</pre>
+
+        </div>
+
+      )}
+
+
+
+      {/* 字幕 */}
+
+      {subtitles && subtitles.length > 0 && (
+
+        <div className="bg-white p-5 rounded-xl shadow mb-8">
+
+          <h3 className="text-lg font-bold mb-3">💬 自動字幕</h3>
+
+          <ul className="mt-2 space-y-1">
+
+            {subtitles.map((line, idx) => (
+
+              <li key={idx} className="text-gray-700">• {line}</li>
+
+            ))}
+
+          </ul>
+
+        </div>
+
+      )}
+
+
+
+      {/* 分鏡腳本 */}
+
+      {scenes && scenes.length > 0 && (
+
+        <div className="bg-white p-5 rounded-xl shadow mb-8">
+
+          <h3 className="text-lg font-bold mb-3">🎞️ 分鏡腳本</h3>
+
+          <ul className="space-y-2 mt-2">
+
+            {scenes.map((scene, idx) => (
+
+              <li key={idx} className="text-gray-700">
+
+                <strong>{scene.sec}s：</strong> {scene.text}（{scene.visual}）
+
+              </li>
+
+            ))}
+
+          </ul>
+
+        </div>
+
+      )}
+
+
+
+      {/* 字幕內容（保留舊版相容） */}
 
       <div className="bg-white p-5 rounded-xl shadow mb-8">
 
