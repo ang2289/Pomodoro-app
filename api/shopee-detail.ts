@@ -1,7 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
-import axios from "axios";
-
 
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -14,85 +12,125 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (!url) {
 
-      return res.status(400).json({ error: "缺少商品網址 url 參數" });
+      return res.status(400).json({ error: "缺少 URL" });
 
     }
 
 
 
-    // 解析商品網址 (https://shopee.tw/product/{shopid}/{itemid})
+    // 解析 Shopee URL
 
-    const match = url.match(/product\/(\d+)\/(\d+)/);
+    const cleanUrl = url.split("?")[0]; 
 
-    if (!match) {
-
-      return res.status(400).json({ error: "無法解析商品網址，請確認格式是否正確" });
-
-    }
+    const parts = cleanUrl.split("/product/")[1];
 
 
 
-    const shopId = match[1];
+    if (!parts) {
 
-    const itemId = match[2];
+      return res.status(400).json({
 
+        error: "無法解析 Shopee URL，請確認格式是否為 /product/{shopid}/{itemid}"
 
-
-    const API_KEY = process.env.RAPIDAPI_KEY;
-
-    const API_HOST = "shopee-e-commerce-data.p.rapidapi.com";
-
-
-
-    if (!API_KEY) {
-
-      return res.status(500).json({ error: "後端 RAPIDAPI_KEY 未設定" });
+      });
 
     }
 
 
 
-    const response = await axios.get(
+    const [shopid, itemid] = parts.split("/");
 
-      `https://${API_HOST}/shopee/item/get`,
 
-      {
 
-        params: {
+    if (!shopid || !itemid) {
 
-          itemid: itemId,
+      return res.status(400).json({
 
-          shopid: shopId,
+        error: "無法解析 Shopee URL，請確認格式是否為 /product/{shopid}/{itemid}"
 
-          site: "tw",
+      });
 
-        },
+    }
 
-        headers: {
 
-          "X-RapidAPI-Key": API_KEY,
 
-          "X-RapidAPI-Host": API_HOST,
+    // 自動偵測 site 從網址
 
-        },
+    let site = "tw";
+
+    if (cleanUrl.includes("shopee.my")) site = "my";
+
+    else if (cleanUrl.includes("shopee.ph")) site = "ph";
+
+    else if (cleanUrl.includes("shopee.sg")) site = "sg";
+
+    else if (cleanUrl.includes("shopee.com.tw")) site = "tw";
+
+    else if (cleanUrl.includes("shopee.tw")) site = "tw";
+
+
+
+    // RapidAPI call
+
+    const apiUrl = `https://shopee-e-commerce-data.p.rapidapi.com/item_detail?site=${site}&itemid=${itemid}&shopid=${shopid}`;
+
+
+
+    const response = await fetch(apiUrl, {
+
+      headers: {
+
+        "x-rapidapi-host": "shopee-e-commerce-data.p.rapidapi.com",
+
+        "x-rapidapi-key": process.env.RAPIDAPI_KEY ?? ""
 
       }
 
-    );
+    });
 
 
 
-    return res.status(200).json(response.data);
+    const data = await response.json();
+
+
+
+    if (!response.ok || data.error) {
+
+      return res.status(500).json({
+
+        error: "RapidAPI 商品讀取失敗",
+
+        detail: data
+
+      });
+
+    }
+
+
+
+    return res.status(200).json({
+
+      ok: true,
+
+      item: {
+
+        name: data.title || data.name || "",
+
+        price: data.price || data.price_min ? data.price_min / 100000 : 0,
+
+        images: data.images || (data.image ? [data.image] : []),
+
+        sold: data.historical_sold || data.sold || 0,
+
+        rating: data.item_rating?.rating_star || data.rating || 0
+
+      }
+
+    });
 
   } catch (err: any) {
 
-    return res.status(500).json({
-
-      error: "後端獲取商品資訊失敗",
-
-      detail: err.response?.data || err.message,
-
-    });
+    return res.status(500).json({ error: err.message });
 
   }
 

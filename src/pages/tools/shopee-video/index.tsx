@@ -32,15 +32,19 @@ export default function ShopeeVideoPage() {
 
     try {
 
-      const res = await fetch(`/api/shopee-detail?url=${encodeURIComponent(url)}`);
+      const res = await fetch(`/api/shopee-detail?url=${encodeURIComponent(url)}`, {
 
-      const json = await res.json();
+        method: "GET",
+
+      });
 
 
 
       if (!res.ok) {
 
-        setError(json.error || "無法取得商品資訊");
+        const err = await res.json();
+
+        setError(err.error || "商品讀取失敗");
 
         setLoading(false);
 
@@ -50,75 +54,85 @@ export default function ShopeeVideoPage() {
 
 
 
-      // RapidAPI 回傳格式 => json.data
-
-      const productData = json.data || json;
-
-      const itemBasic = productData.item_basic || productData.data?.item_basic || productData;
+      const json = await res.json();
 
 
 
-      // 整理商品資料格式
+      // 處理新的 API 回傳格式
 
-      const formattedProduct = {
+      if (json.ok && json.item) {
 
-        title: itemBasic.name || productData.title || '未知商品',
+        const item = json.item;
 
-        price: itemBasic.price_min ? itemBasic.price_min / 100000 : (itemBasic.price ? itemBasic.price / 100000 : 0),
+        const formattedProduct = {
 
-        image: itemBasic.image ? `https://cf.shopee.tw/file/${itemBasic.image}` : (productData.image || ''),
+          title: item.name || '未知商品',
 
-      };
+          price: item.price || 0,
 
+          image: item.images && item.images.length > 0 
 
+            ? (item.images[0].startsWith('http') ? item.images[0] : `https://cf.shopee.tw/file/${item.images[0]}`)
 
-      setProduct(formattedProduct);
+            : '',
 
-
-
-      // 取得商品資訊後，也取得腳本和字幕
-
-      try {
-
-        const scriptResponse = await fetch('/api/generate-video', {
-
-          method: 'POST',
-
-          headers: { 'Content-Type': 'application/json' },
-
-          body: JSON.stringify({
-
-            productUrl: url,
-
-            product: formattedProduct,
-
-          }),
-
-        });
+        };
 
 
 
-        if (scriptResponse.ok) {
+        setProduct(formattedProduct);
 
-          const scriptData = await scriptResponse.json();
 
-          setProduct({
 
-            ...formattedProduct,
+        // 取得商品資訊後，也取得腳本和字幕
 
-            script: scriptData.script || '',
+        try {
 
-            subtitle: scriptData.subtitle || '',
+          const scriptResponse = await fetch('/api/generate-video', {
+
+            method: 'POST',
+
+            headers: { 'Content-Type': 'application/json' },
+
+            body: JSON.stringify({
+
+              productUrl: url,
+
+              product: formattedProduct,
+
+            }),
 
           });
 
+
+
+          if (scriptResponse.ok) {
+
+            const scriptData = await scriptResponse.json();
+
+            setProduct({
+
+              ...formattedProduct,
+
+              script: scriptData.script || '',
+
+              subtitle: scriptData.subtitle || '',
+
+            });
+
+          }
+
+        } catch (scriptErr) {
+
+          // 如果取得腳本失敗，仍然顯示商品資訊
+
+          console.error('取得腳本失敗:', scriptErr);
+
         }
 
-      } catch (scriptErr) {
+      } else {
 
-        // 如果取得腳本失敗，仍然顯示商品資訊
-
-        console.error('取得腳本失敗:', scriptErr);
+        setError("API 回傳格式錯誤");
 
       }
 
