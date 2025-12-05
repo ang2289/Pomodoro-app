@@ -84,7 +84,9 @@ import ShoppingResultsPage from './pages/shopping/results'
 import AIHome from './pages/AIHome'
 import AISummaryGuide from './pages/tools/ai-summary'
 import ShopeeSingleVideoPage from './pages/tools/ShopeeSingleVideoPage'
+import ShopeeVideoPage from './pages/tools/shopee-video'
 import RxVAutoShortsPage from './pages/RxVAutoShortsPage'
+import RedirectShorts from './pages/rxv-auto-shorts'
 import RetirementPage from './pages/retirement/index'
 import RentalSubsidy2025 from './pages/aids/rental-subsidy-2025'
 import LTC2025Update from './pages/aids/ltc-2025-update'
@@ -210,9 +212,9 @@ function App() {
             <Route path="tools" element={<AIHome />} />
             <Route path="tools/ai-summary" element={<AISummaryGuide />} />
             <Route path="tools/shopee-single-video" element={<ShopeeSingleVideoPage />} />
-            <Route path="tools/shopee-video" element={<ShopeeSingleVideoPage />} />
+            <Route path="tools/shopee-video" element={<ShopeeVideoPage />} />
             <Route path="automation" element={<AIHome />} />
-            <Route path="rxv-auto-shorts" element={<RxVAutoShortsPage />} />
+            <Route path="rxv-auto-shorts" element={<RedirectShorts />} />
             <Route path="language-guide" element={<LanguageGuide />} />
             <Route path="blog" element={<BlogPage />} />
           </Route>

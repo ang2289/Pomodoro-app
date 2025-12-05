@@ -6,13 +6,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
 
-    const { productUrl } = req.body;
+    const { productUrl, product } = req.body;
 
 
 
-    if (!productUrl) {
+    // 支援兩種呼叫方式：productUrl 或 product 物件
 
-      return res.status(400).json({ error: 'Missing productUrl' });
+    if (!productUrl && !product) {
+
+      return res.status(400).json({ error: 'Missing productUrl or product' });
 
     }
 
@@ -32,81 +34,137 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
 
 
-    // 解析 ShopID / ItemID
+    // 解析 ShopID / ItemID（支援多種格式）
 
-    const match = productUrl.match(/\/product\/(\d+)\/(\d+)/);
+    let shopid: string | null = null;
 
-    if (!match) {
+    let itemid: string | null = null;
 
-      return res.status(400).json({ error: 'Invalid Shopee URL format' });
+    let productInfo: any = null;
+
+
+
+    // 如果直接提供 product 物件，使用它
+
+    if (product && product.shopid && product.itemid) {
+
+      shopid = product.shopid;
+
+      itemid = product.itemid;
+
+      productInfo = {
+
+        title: product.title || '未知商品',
+
+        price: product.price || 0,
+
+        image: product.image || '',
+
+      };
+
+    } else if (productUrl) {
+
+      // 格式 1: /product/{shopid}/{itemid}
+
+      const productMatch = productUrl.match(/\/product\/(\d+)\/(\d+)/);
+
+      if (productMatch) {
+
+        shopid = productMatch[1];
+
+        itemid = productMatch[2];
+
+      } else {
+
+        // 格式 2: i.{shopid}.{itemid}
+
+        const iMatch = productUrl.match(/i\.(\d+)\.(\d+)/);
+
+        if (iMatch) {
+
+          shopid = iMatch[1];
+
+          itemid = iMatch[2];
+
+        }
+
+      }
+
+
+
+      if (!shopid || !itemid) {
+
+        return res.status(400).json({ error: 'Invalid Shopee URL format' });
+
+      }
+
+    } else {
+
+      return res.status(400).json({ error: 'Missing productUrl or product' });
 
     }
 
 
 
-    const shopid = match[1];
+    // 如果沒有 productInfo，從 RapidAPI 取得
 
-    const itemid = match[2];
+    if (!productInfo && shopid && itemid) {
 
+      // 🔥 正確的 API endpoint
 
-
-    // 🔥 正確的 v2 API endpoint
-
-    const apiUrl = `https://${RAPIDAPI_HOST}/v2/item/get?itemid=${itemid}&shopid=${shopid}`;
+      const apiUrl = `https://${RAPIDAPI_HOST}/shopee/item/get?itemid=${itemid}&shopid=${shopid}&site=tw`;
 
 
 
-    const response = await fetch(apiUrl, {
+      const response = await fetch(apiUrl, {
 
-      method: 'GET',
+        method: 'GET',
 
-      headers: {
+        headers: {
 
-        'x-rapidapi-key': RAPIDAPI_KEY!,
+          'x-rapidapi-key': RAPIDAPI_KEY!,
 
-        'x-rapidapi-host': RAPIDAPI_HOST!,
+          'x-rapidapi-host': RAPIDAPI_HOST!,
 
-      },
-
-    });
-
-
-
-    if (!response.ok) {
-
-      const data = await response.json();
-
-      return res.status(500).json({
-
-        error: 'Failed to fetch product data from RapidAPI',
-
-        detail: data,
+        },
 
       });
 
+
+
+      if (!response.ok) {
+
+        const data = await response.json();
+
+        return res.status(500).json({
+
+          error: 'Failed to fetch product data from RapidAPI',
+
+          detail: data,
+
+        });
+
+      }
+
+
+
+      const data = await response.json();
+
+      const item = data?.data || {};
+
+
+
+      productInfo = {
+
+        title: item.name || '未知商品',
+
+        price: item.price_min / 100000 || 0,
+
+        image: item.image ? `https://cf.shopee.tw/file/${item.image}` : '',
+
+      };
+
     }
-
-
-
-    const data = await response.json();
-
-
-
-    // 商品資訊
-
-    const item = data?.data || {};
-
-
-
-    const productInfo = {
-
-      title: item.name || '未知商品',
-
-      price: item.price_min / 100000 || 0,
-
-      image: item.image ? `https://cf.shopee.tw/file/${item.image}` : '',
-
-    };
 
 
 

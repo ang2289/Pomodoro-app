@@ -46,15 +46,15 @@ const HomePage: React.FC = () => {
               </div>
 
               <div style={{ marginTop: "20px" }}>
-                <a href="/rxv-auto-shorts">
+                <Link to="/tools/shopee-video">
                   <button style={{
                     padding: "16px 20px",
                     width: "100%",
                     fontSize: "18px"
                   }}>
-                    🎬 RxV AI 自動短影音工廠
+                    🎬 RxV AI 自動短影音工具（V2 專業版）
                   </button>
-                </a>
+                </Link>
               </div>
 
               <p className="text-xs text-slate-500">
@@ -147,17 +147,17 @@ const HomePage: React.FC = () => {
             </Link>
 
             <Link
-              to="/rxv-auto-shorts"
+              to="/tools/shopee-video"
               className="group flex flex-col rounded-2xl bg-white/90 p-4 shadow-sm ring-1 ring-purple-100 hover:-translate-y-0.5 hover:bg-purple-50 hover:shadow-md transition"
             >
               <div className="flex items-center justify-between">
                 <span className="text-base font-semibold text-slate-900">
-                  🎬 RxV AI 自動短影音工廠
+                  🎬 RxV AI 自動短影音工具（V2 專業版）
                 </span>
                 <span className="text-xs text-purple-700">AI 工具</span>
               </div>
               <p className="mt-2 text-sm text-slate-600">
-                支援批次產生短影音，可用於商品、文章、開箱、教學、行銷、自媒體創作者等多用途內容。
+                自動抓商品資訊 + 一鍵生成商品短影音（支援蝦皮分潤、字幕、腳本、圖片處理）。
               </p>
             </Link>
 
