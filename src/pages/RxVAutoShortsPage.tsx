@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { searchShopeeItems } from "@/services/shopeeSearch";
 
 // 下載 JSON 工具函式
@@ -260,6 +261,17 @@ export default function RxVAutoShortsPage() {
           >
             來源 A：蝦皮商品（自動抓取前 100 筆）
           </button>
+
+          {/* ✅ 新增：單筆模式按鈕 */}
+          <Link
+            to="/tools/shopee-video"
+            className="mt-3 block w-full bg-purple-600 text-white text-center py-2 rounded hover:bg-purple-700"
+            style={{ marginTop: "12px", display: "block", width: "100%", backgroundColor: "#9333ea", color: "white", textAlign: "center", padding: "8px", borderRadius: "4px", textDecoration: "none" }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#7e22ce"}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "#9333ea"}
+          >
+            🔍 單筆模式：手動輸入蝦皮商品網址
+          </Link>
 
           {/* B：文章（Disable） */}
           <button

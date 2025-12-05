@@ -83,7 +83,7 @@ import ShoppingSearchPage from './pages/shopping/search'
 import ShoppingResultsPage from './pages/shopping/results'
 import AIHome from './pages/AIHome'
 import AISummaryGuide from './pages/tools/ai-summary'
-import VideoGeneratorPage from './pages/tools/VideoGeneratorPage'
+import ShopeeSingleVideoPage from './pages/tools/ShopeeSingleVideoPage'
 import RxVAutoShortsPage from './pages/RxVAutoShortsPage'
 import RetirementPage from './pages/retirement/index'
 import RentalSubsidy2025 from './pages/aids/rental-subsidy-2025'
@@ -209,7 +209,8 @@ function App() {
             {/* 預留功能路由 */}
             <Route path="tools" element={<AIHome />} />
             <Route path="tools/ai-summary" element={<AISummaryGuide />} />
-            <Route path="tools/video-generator" element={<VideoGeneratorPage />} />
+            <Route path="tools/shopee-single-video" element={<ShopeeSingleVideoPage />} />
+            <Route path="tools/shopee-video" element={<ShopeeSingleVideoPage />} />
             <Route path="automation" element={<AIHome />} />
             <Route path="rxv-auto-shorts" element={<RxVAutoShortsPage />} />
             <Route path="language-guide" element={<LanguageGuide />} />

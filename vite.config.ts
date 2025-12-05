@@ -15,6 +15,13 @@ export default defineConfig({
     port: 3000,
     hmr: {
       overlay: false
+    },
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000', // ❗ 這裡要對應 vercel dev 開啟 port
+        changeOrigin: true,
+        secure: false,
+      }
     }
   }
 })
