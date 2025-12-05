@@ -1,7 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-import axios from "axios";
-
 
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -16,19 +14,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
 
-    const { title, description, price, sold } = req.body;
+    const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
 
 
 
-    if (!title) {
+    const title = body?.title ?? "";
 
-      return res.status(400).json({ error: "缺少必要欄位：title" });
+    const description = body?.description ?? "";
 
-    }
+    const price = body?.price ?? "";
+
+    const sold = body?.sold ?? "";
 
 
 
-    // ---------- 生成短影片腳本 ----------
+    // 避免 description split 錯誤
+
+    const descParts = description ? description.split(".") : [];
+
+
+
+    const d1 = descParts[0] || "這款商品具有相當高的實用性。";
+
+    const d2 = descParts[1] || "使用起來方便、省力、提升生活效率。";
+
+    const d3 = descParts[2] || "網路評價普遍正面，是近期熱銷的選擇。";
+
+
+
+    // ---------- 影片腳本 ----------
 
     const script = `
 
@@ -36,79 +50,65 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
 這款商品是：「${title}」。
 
-目前售價約為 ${price ? price + "元" : "🔍 價格以頁面為主"}，
+目前售價約為 ${price || "請以蝦皮頁面為主"}，
 
-累積銷量達到 ${sold ?? "未知"} 件，是近期在蝦皮上很受歡迎的熱銷商品！
+累積銷量約 ${sold || "未知"} 件。
 
 
 
 【痛點】
 
-你是否也遇到這些問題？
+你是否也遇到以下問題？
 
-${description ? "- " + description.split(".")[0] : "- 產品特色在官網上多有提到，但使用後會更有感！"}
-
-
-
-【亮點】
-
-這款商品的亮點包含：
-
-1. ${description?.split(".")[1] ?? "設計簡潔好用，日常生活超方便"}
-
-2. ${description?.split(".")[2] ?? "網路評價高，許多使用者都持續回購"}
-
-3. CP 值高，屬於小資族也能輕鬆入手的好選擇
+- ${d1}
 
 
 
-【誰適合】
+【亮點整理】
 
-如果你是：
+1. ${d1}
 
-✔ 想要提升生活品質
+2. ${d2}
 
-✔ 喜歡方便、快速、好用商品
+3. ${d3}
+
+
+
+【適合族群】
+
+✔ 想提升生活品質  
+
+✔ 想要方便、快速、好用  
 
 ✔ 喜歡高 CP 值熱銷品  
-
-那你一定會喜歡這款！
 
 
 
 【行動 CTA】
 
-如果你也覺得不錯，
-
-可以直接點擊下方連結看看更多細節👇  
-
-影片下方有蝦皮商品連結，記得去看看！
+覺得不錯的話，歡迎點擊影片下方商品連結看看更多資訊！
 
     `.trim();
 
 
 
-    // ---------- 字幕切段 ----------
-
-    const subtitles = script.split("\n").filter(line => line.trim() !== "");
+    const subtitles = script.split("\n").filter(l => l.trim() !== "");
 
 
-
-    // ---------- 視覺鏡頭腳本 ----------
 
     const scenes = [
 
-      { sec: 0,  text: "商品名稱 + 商品封面圖", visual: "顯示商品主圖，加入光暈與文字動畫" },
+      { sec: 0, text: "商品名稱 + 商品封面", visual: "主圖展示 + 淡入動畫" },
 
-      { sec: 2,  text: "快速介紹商品亮點", visual: "放大商品照片，簡單過場動畫" },
+      { sec: 2, text: "介紹產品與價格", visual: "商品主圖放大 + 文字特效" },
 
-      { sec: 5,  text: "帶出使用痛點", visual: "弱光背景 + 簡單 emoji 製造情緒" },
+      { sec: 5, text: "使用痛點", visual: "背景模糊 + emoji 氛圍" },
 
-      { sec: 9,  text: "展示亮點 1～3", visual: "圖片輪播 or 商品細節特寫" },
+      { sec: 9, text: "亮點 1–3", visual: "三段式輪播" },
 
-      { sec: 14, text: "誰適合使用",   visual: "顯示 3 個 bullet points + Emoji" },
+      { sec: 14, text: "適合族群", visual: "白底 + icon" },
 
-      { sec: 18, text: "CTA：點擊連結購買", visual: "加入購買按鈕動畫 + Shake 效果" }
+      { sec: 18, text: "CTA 點擊購買", visual: "按鈕動畫" }
 
     ];
 
@@ -130,9 +130,10 @@ ${description ? "- " + description.split(".")[0] : "- 產品特色在官網上�
 
   } catch (err: any) {
 
-    return res.status(500).json({ error: err.message });
+    console.error("SCRIPT API ERROR:", err);
+
+    return res.status(500).json({ error: "腳本生成失敗", detail: err.message });
 
   }
 
 }
-
