@@ -1,126 +1,201 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
-import axios from "axios"; // 引入 Axios
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-// API HOST 常數
-const API_HOST = "shopee-e-commerce-data.p.rapidapi.com";
+import axios from 'axios';
+
+
+
+// 🔥 Step 1：處理短網址與自動跳轉
+
+async function resolveShopeeUrl(url: string): Promise<string> {
+
+  try {
+
+    const resp = await axios.get(url, {
+
+      maxRedirects: 5,
+
+      validateStatus: () => true,
+
+    });
+
+
+
+    const finalUrl =
+
+      resp.request?.res?.responseUrl ||
+
+      resp.headers?.location ||
+
+      url;
+
+
+
+    console.log("🔗 最終展開網址:", finalUrl);
+
+    return finalUrl;
+
+  } catch (err) {
+
+    console.error("⛔ 無法展開短網址", err);
+
+    return url;
+
+  }
+
+}
+
+
+
+// 🔥 Step 2：解析真正商品頁 URL（支援多種格式）
+
+function parseShopeeUrl(url: string) {
+
+  // 格式 1: https://shopee.tw/product/SHOP/ITEM
+
+  let match = url.match(/product\/(\d+)\/(\d+)/);
+
+  if (match) {
+
+    return { shopId: match[1], itemId: match[2] };
+
+  }
+
+
+
+  // 格式 2: https://shopee.tw/...shopid=XXX&itemid=XXX...
+
+  const shopId = url.match(/shopid=(\d+)/)?.[1];
+
+  const itemId = url.match(/itemid=(\d+)/)?.[1];
+
+  if (shopId && itemId) return { shopId, itemId };
+
+
+
+  return null;
+
+}
+
+
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-    // 提前檢查 API Key，如果沒有設置，則直接返回 500 錯誤
-    const API_KEY = process.env.RAPIDAPI_KEY?.trim();
-    if (!API_KEY) {
-        console.error("❌ RAPIDAPI_KEY 尚未設定（請檢查 Vercel Secrets）");
-        return res.status(500).json({ 
-            error: "API key not configured", 
-            detail: "Missing RAPIDAPI_KEY environment variable." 
-        });
+
+  try {
+
+    const url = req.query.url as string;
+
+    if (!url) {
+
+      return res.status(400).json({ error: "缺少商品網址" });
+
     }
 
-    try {
-        const url = req.query.url as string;
 
-        if (!url) {
-            return res.status(400).json({ error: "缺少 URL" });
-        }
 
-        // 解析 Shopee URL
-        const cleanUrl = url.split("?")[0];
-        const parts = cleanUrl.split("/product/")[1];
+    console.log("📌 原始輸入網址:", url);
 
-        if (!parts) {
-            return res.status(400).json({
-                error: "無法解析 Shopee URL，請確認格式是否為 /product/{shopid}/{itemid}"
-            });
-        }
 
-        const [shopid, itemid] = parts.split("/");
 
-        if (!shopid || !itemid) {
-            return res.status(400).json({
-                error: "無法解析 Shopee URL，請確認格式是否為 /product/{shopid}/{itemid}"
-            });
-        }
+    // Step 1：展開短網址
 
-        // 自動偵測 site
-        let site = "tw";
-        const domain = cleanUrl.match(/shopee\.(\w+)/);
-        if (domain && domain[1]) {
-            site = domain[1];
-        }
+    const resolvedUrl = await resolveShopeeUrl(url);
 
-        // RapidAPI call - 使用 /shopee/item/get endpoint
-        const apiUrl = `https://${API_HOST}/shopee/item/get`;
 
-        console.log(`[Shopee Detail] Fetching Item: ${itemid}, Shop: ${shopid} from site: ${site}`);
 
-        const response = await axios.get(apiUrl, {
-            params: {
-                site: site,
-                itemid: itemid,
-                shopid: shopid,
-            },
-            headers: {
-                "x-rapidapi-host": API_HOST,
-                "x-rapidapi-key": API_KEY,
-            }
-        });
+    // Step 2：解析 shopId / itemId
 
-        // Axios 只有在 2xx 範圍外才會拋出錯誤，因此這裡 response.status 總是 200
-        const data = response.data;
+    const parsed = parseShopeeUrl(resolvedUrl);
 
-        // 檢查 RapidAPI 回傳格式
-        const itemBasic = data?.data?.item_basic || data?.data || data;
 
-        if (!itemBasic || (!itemBasic.name && !itemBasic.title)) {
-            // 如果 RapidAPI 返回 200 OK，但內容是錯誤提示（例如 "Invalid Key" 訊息在 data 裡）
-             if (data?.error_code || data?.message) {
-                 console.error('[RapidAPI Content Error]:', data.message || data.error_code);
-                 return res.status(401).json({ // 假設內容錯誤多為授權或參數錯誤
-                     error: "RapidAPI 返回錯誤內容或 Key 無效",
-                     detail: data.message || JSON.stringify(data)
-                 });
-             }
-             
-            // 處理正常資料格式錯誤
-            return res.status(500).json({
-                error: "RapidAPI 回傳資料格式錯誤",
-                detail: data
-            });
-        }
 
-        // 成功回傳格式化後的商品資訊
-        return res.status(200).json({
-            ok: true,
-            item: {
-                name: itemBasic.name || itemBasic.title || "",
-                price: itemBasic.price_min ? itemBasic.price_min / 100000 : (itemBasic.price ? itemBasic.price / 100000 : 0),
-                images: itemBasic.images || (itemBasic.image ? [itemBasic.image] : []),
-                sold: itemBasic.historical_sold || itemBasic.sold || 0,
-                rating: itemBasic.item_rating?.rating_star || itemBasic.rating_star || itemBasic.rating || 0,
-                // 加入 shopid 和 itemid 以便後續使用
-                shopid: shopid, 
-                itemid: itemid 
-            }
-        });
+    if (!parsed) {
 
-    } catch (err: any) {
-        // 捕獲 Axios 拋出的非 2xx 狀態碼錯誤
-        if (err.response) {
-            const status = err.response.status;
-            const errorData = err.response.data;
-            console.error(`[RapidAPI Proxy] HTTP Error ${status}:`, errorData);
-            
-            // 將上游錯誤碼直接代理回去，避免所有錯誤都變成 500
-            return res.status(status).json({
-                error: `RapidAPI 請求失敗 (HTTP ${status})`,
-                detail: errorData,
-            });
-        }
+      return res.status(400).json({
 
-        // 捕獲其他網路或程式碼錯誤
-        console.error('Shopee Detail API Fatal Error:', err.message || String(err));
-        return res.status(500).json({
-            error: "後端獲取商品資訊失敗 (Proxy Fatal)",
-            detail: err.message || String(err)
-        });
+        error: "無法解析 Shopee 網址",
+
+        detail: resolvedUrl,
+
+      });
+
     }
+
+
+
+    console.log("🛍️ ShopID / ItemID:", parsed);
+
+
+
+    // Step 3：呼叫 RapidAPI
+
+    const rapidKey = process.env.RAPIDAPI_KEY;
+
+    if (!rapidKey) {
+
+      return res.status(500).json({ error: "缺少 RAPIDAPI_KEY" });
+
+    }
+
+
+
+    const options = {
+
+      method: "GET",
+
+      url: "https://shopee-e-commerce-data.p.rapidapi.com/shopee/item/get",
+
+      params: {
+
+        site: "tw",
+
+        itemid: parsed.itemId,
+
+        shopid: parsed.shopId,
+
+      },
+
+      headers: {
+
+        "X-RapidAPI-Key": rapidKey,
+
+        "X-RapidAPI-Host": "shopee-e-commerce-data.p.rapidapi.com",
+
+      },
+
+    };
+
+
+
+    const rapidResponse = await axios.request(options);
+
+
+
+    return res.status(200).json({
+
+      success: true,
+
+      product: rapidResponse.data,
+
+      parsedUrl: resolvedUrl,
+
+      shopId: parsed.shopId,
+
+      itemId: parsed.itemId,
+
+    });
+
+  } catch (err: any) {
+
+    console.error("🔥 後端錯誤:", err);
+
+    return res.status(500).json({
+
+      error: "後端錯誤",
+
+      detail: err.message,
+
+    });
+
+  }
+
 }
