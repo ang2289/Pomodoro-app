@@ -6,6 +6,8 @@ import { generateVideoFromScript } from "@/services/video-api";
 
 export default function ShopeeVideoPage() {
 
+  const [productUrl, setProductUrl] = useState("");
+
   const [title, setTitle] = useState("");
 
   const [price, setPrice] = useState("");
@@ -31,6 +33,76 @@ export default function ShopeeVideoPage() {
   const [loading, setLoading] = useState(false);
 
   const [error, setError] = useState("");
+
+
+
+  // 抓取商品資訊
+
+  const handleFetchProduct = async () => {
+
+    setLoading(true);
+
+    setError("");
+
+
+
+    try {
+
+      const res = await fetch("/api/shopee-detail", {
+
+        method: "POST",
+
+        headers: { "Content-Type": "application/json" },
+
+        body: JSON.stringify({ url: productUrl }),
+
+      });
+
+
+
+      const data = await res.json();
+
+
+
+      if (data.error) {
+
+        setError("❌ 商品無法解析，請確認網址是否正確");
+
+        setLoading(false);
+
+        return;
+
+      }
+
+
+
+      // 自動填入欄位
+
+      setTitle(data.title || "");
+
+      setPrice(data.price || "");
+
+      setDescription(data.description || "");
+
+      setSold(data.sold || "");
+
+      setImageUrl(data.image || "");
+
+
+
+      setLoading(false);
+
+
+
+    } catch (err) {
+
+      setError("❌ 解析失敗，請稍後再試");
+
+      setLoading(false);
+
+    }
+
+  };
 
 
 
@@ -214,9 +286,61 @@ export default function ShopeeVideoPage() {
 
       <p className="text-gray-600 text-center mb-8">
 
-        手動輸入商品資訊 → 自動產生短影音腳本、字幕與影片。
+        輸入商品網址或手動輸入商品資訊 → 自動產生短影音腳本、字幕與影片。
 
       </p>
+
+
+
+      {/* 商品網址輸入與抓取 */}
+
+      <div className="bg-white p-5 rounded-xl shadow mb-8">
+
+        <h2 className="text-xl font-bold mb-4">🔍 商品網址抓取</h2>
+
+        <div className="space-y-4">
+
+          <div>
+
+            <label className="block font-medium mb-2">蝦皮商品網址</label>
+
+            <input
+
+              type="text"
+
+              value={productUrl}
+
+              onChange={(e) => setProductUrl(e.target.value)}
+
+              className="w-full border rounded p-3"
+
+              placeholder="例如：https://shopee.tw/product/xxx 或 https://s.shopee.tw/xxx"
+
+            />
+
+          </div>
+
+
+
+          <button
+
+            onClick={handleFetchProduct}
+
+            disabled={loading || !productUrl.trim()}
+
+            className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white py-3 rounded-lg text-lg font-semibold hover:opacity-90 transition disabled:opacity-50"
+
+            style={{ color: '#ffffff' }}
+
+          >
+
+            🔍 抓取商品資訊
+
+          </button>
+
+        </div>
+
+      </div>
 
 
 

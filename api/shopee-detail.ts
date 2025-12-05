@@ -1,80 +1,14 @@
+// /api/shopee-detail.ts
+
+// ✅ 支援短網址解析 (s.shopee.tw)
+
+// ✅ 支援台灣 Shopee HTML Parser (不需要 API，不會被封)
+
+
+
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-import axios from 'axios';
-
-
-
-// 🔥 Step 1：處理短網址與自動跳轉
-
-async function resolveShopeeUrl(url: string): Promise<string> {
-
-  try {
-
-    const resp = await axios.get(url, {
-
-      maxRedirects: 5,
-
-      validateStatus: () => true,
-
-    });
-
-
-
-    const finalUrl =
-
-      resp.request?.res?.responseUrl ||
-
-      resp.headers?.location ||
-
-      url;
-
-
-
-    console.log("🔗 最終展開網址:", finalUrl);
-
-    return finalUrl;
-
-  } catch (err) {
-
-    console.error("⛔ 無法展開短網址", err);
-
-    return url;
-
-  }
-
-}
-
-
-
-// 🔥 Step 2：解析真正商品頁 URL（支援多種格式）
-
-function parseShopeeUrl(url: string) {
-
-  // 格式 1: https://shopee.tw/product/SHOP/ITEM
-
-  let match = url.match(/product\/(\d+)\/(\d+)/);
-
-  if (match) {
-
-    return { shopId: match[1], itemId: match[2] };
-
-  }
-
-
-
-  // 格式 2: https://shopee.tw/...shopid=XXX&itemid=XXX...
-
-  const shopId = url.match(/shopid=(\d+)/)?.[1];
-
-  const itemId = url.match(/itemid=(\d+)/)?.[1];
-
-  if (shopId && itemId) return { shopId, itemId };
-
-
-
-  return null;
-
-}
+import * as cheerio from "cheerio";
 
 
 
@@ -82,117 +16,117 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
 
-    const url = req.query.url as string;
+    const { url } = req.body || req.query;
+
+
 
     if (!url) {
 
-      return res.status(400).json({ error: "缺少商品網址" });
+      return res.status(400).json({ error: "缺少網址" });
 
     }
 
 
 
-    console.log("📌 原始輸入網址:", url);
+    let finalUrl = (url as string).trim();
 
 
 
-    // Step 1：展開短網址
+    // 1️⃣ 如果是短網址，先展開
 
-    const resolvedUrl = await resolveShopeeUrl(url);
+    if (finalUrl.includes("s.shopee.tw")) {
 
+      const res = await fetch(finalUrl, { redirect: "follow" });
 
-
-    // Step 2：解析 shopId / itemId
-
-    const parsed = parseShopeeUrl(resolvedUrl);
-
-
-
-    if (!parsed) {
-
-      return res.status(400).json({
-
-        error: "無法解析 Shopee 網址",
-
-        detail: resolvedUrl,
-
-      });
+      finalUrl = res.url; // 自動跳轉後的正式 URL
 
     }
 
 
 
-    console.log("🛍️ ShopID / ItemID:", parsed);
+    // 2️⃣ 抓取商品 HTML
+
+    const htmlResponse = await fetch(finalUrl);
+
+    const html = await htmlResponse.text();
+
+    const $ = cheerio.load(html);
 
 
 
-    // Step 3：呼叫 RapidAPI
+    // 3️⃣ 解析商品名稱
 
-    const rapidKey = process.env.RAPIDAPI_KEY;
+    const title =
 
-    if (!rapidKey) {
+      $('meta[property="og:title"]').attr("content") ||
 
-      return res.status(500).json({ error: "缺少 RAPIDAPI_KEY" });
-
-    }
+      $("title").text().replace(" | Shopee台灣", "").trim();
 
 
 
-    const options = {
+    // 4️⃣ 解析價格
 
-      method: "GET",
+    let price =
 
-      url: "https://shopee-e-commerce-data.p.rapidapi.com/shopee/item/get",
+      $('meta[property="product:price:amount"]').attr("content") ||
 
-      params: {
-
-        site: "tw",
-
-        itemid: parsed.itemId,
-
-        shopid: parsed.shopId,
-
-      },
-
-      headers: {
-
-        "X-RapidAPI-Key": rapidKey,
-
-        "X-RapidAPI-Host": "shopee-e-commerce-data.p.rapidapi.com",
-
-      },
-
-    };
+      $(".pqTWkA").first().text().replace(/[^\d]/g, "");
 
 
 
-    const rapidResponse = await axios.request(options);
+    // 5️⃣ 解析商品描述
+
+    const description =
+
+      $('meta[name="description"]').attr("content") ||
+
+      $(".product-description").text().trim();
+
+
+
+    // 6️⃣ 解析銷量（非必要，能抓到就抓）
+
+    let sold = $(".HmQo7V").first().text().replace(/[^\d]/g, "");
+
+
+
+    // 7️⃣ 解析商品圖片
+
+    const image =
+
+      $('meta[property="og:image"]').attr("content") ||
+
+      $('img[alt*="商品"]').first().attr("src") ||
+
+      "";
 
 
 
     return res.status(200).json({
 
-      success: true,
+      url: finalUrl,
 
-      product: rapidResponse.data,
+      title,
 
-      parsedUrl: resolvedUrl,
+      price,
 
-      shopId: parsed.shopId,
+      description,
 
-      itemId: parsed.itemId,
+      sold,
+
+      image,
 
     });
 
   } catch (err: any) {
 
-    console.error("🔥 後端錯誤:", err);
+    console.error("Shopee 解析錯誤:", err);
 
     return res.status(500).json({
 
-      error: "後端錯誤",
+      error: "無法解析商品資料",
 
-      detail: err.message,
+      detail: err.message
 
     });
 

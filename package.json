@@ -40,6 +40,7 @@
     "axios": "^1.13.2",
     "browser-image-compression": "^2.0.2",
     "canvas": "^3.2.0",
+    "cheerio": "^1.1.2",
     "class-variance-authority": "^0.7.1",
     "classnames": "^2.5.1",
     "clsx": "^2.1.1",
@@ -70,6 +71,7 @@
   "devDependencies": {
     "@capacitor/cli": "^5.7.8",
     "@tailwindcss/postcss": "^4.1.13",
+    "@types/cheerio": "^0.22.35",
     "@types/file-saver": "^2.0.7",
     "@types/react": "^18.2.37",
     "@types/react-dom": "^18.2.15",
