@@ -1,12 +1,14 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
 
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
 
-  if (req.method !== "POST") {
+  if (req.method !== 'POST') {
 
-    return res.status(405).json({ error: "Method not allowed" });
+    return res.status(405).json({ error: 'Method Not Allowed' });
 
   }
 
@@ -14,103 +16,99 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
 
-    const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+    const { title, price, description, sold } = req.body;
 
 
 
-    const title = body?.title ?? "";
+    if (!title) {
 
-    const description = body?.description ?? "";
+      return res.status(400).json({ error: "缺少商品名稱" });
 
-    const price = body?.price ?? "";
-
-    const sold = body?.sold ?? "";
+    }
 
 
 
-    // 避免 description split 錯誤
+    const apiKey = process.env.GEMINI_API_KEY;
 
-    const descParts = description ? description.split(".") : [];
+    if (!apiKey) {
 
+      return res.status(500).json({ error: "Gemini API 金鑰未設定" });
 
-
-    const d1 = descParts[0] || "這款商品具有相當高的實用性。";
-
-    const d2 = descParts[1] || "使用起來方便、省力、提升生活效率。";
-
-    const d3 = descParts[2] || "網路評價普遍正面，是近期熱銷的選擇。";
+    }
 
 
 
-    // ---------- 影片腳本 ----------
+    const genAI = new GoogleGenerativeAI(apiKey);
 
-    const script = `
-
-【快速介紹】
-
-這款商品是：「${title}」。
-
-目前售價約為 ${price || "請以蝦皮頁面為主"}，
-
-累積銷量約 ${sold || "未知"} 件。
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 
 
-【痛點】
+    const prompt = `
 
-你是否也遇到以下問題？
-
-- ${d1}
+你是一位短影音腳本生成師，請根據以下資料生成 20 秒影片腳本 + 逐字稿（中文字幕）：
 
 
 
-【亮點整理】
+商品名稱：${title}
 
-1. ${d1}
+價格：${price || "未提供"}
 
-2. ${d2}
+商品描述：${description || "未提供"}
 
-3. ${d3}
-
-
-
-【適合族群】
-
-✔ 想提升生活品質  
-
-✔ 想要方便、快速、好用  
-
-✔ 喜歡高 CP 值熱銷品  
+累積銷量：${sold || "未提供"}
 
 
 
-【行動 CTA】
-
-覺得不錯的話，歡迎點擊影片下方商品連結看看更多資訊！
-
-    `.trim();
+請以「強烈吸睛的 TikTok / Reels 風格」輸出：
 
 
 
-    const subtitles = script.split("\n").filter(l => l.trim() !== "");
+【最終必須回傳 JSON，格式如下，不要多字】
+
+{
+
+  "script": "三段式影片腳本，每段 1–2 句",
+
+  "subtitles": ["字幕1", "字幕2", "字幕3", ...]
+
+}
+
+`;
 
 
 
-    const scenes = [
+    const result = await model.generateContent(prompt);
 
-      { sec: 0, text: "商品名稱 + 商品封面", visual: "主圖展示 + 淡入動畫" },
+    const text = result.response.text();
 
-      { sec: 2, text: "介紹產品與價格", visual: "商品主圖放大 + 文字特效" },
 
-      { sec: 5, text: "使用痛點", visual: "背景模糊 + emoji 氛圍" },
 
-      { sec: 9, text: "亮點 1–3", visual: "三段式輪播" },
+    // 嘗試解析 JSON
 
-      { sec: 14, text: "適合族群", visual: "白底 + icon" },
+    let jsonData;
 
-      { sec: 18, text: "CTA 點擊購買", visual: "按鈕動畫" }
+    try {
 
-    ];
+      jsonData = JSON.parse(text);
+
+    } catch (e) {
+
+      // 如果直接解析失敗，嘗試提取 JSON 部分
+
+      const match = text.match(/\{[\s\S]*\}/);
+
+      if (match) {
+
+        jsonData = JSON.parse(match[0]);
+
+      } else {
+
+        throw new Error("AI 回傳格式錯誤，無法解析 JSON");
+
+      }
+
+    }
 
 
 
@@ -118,11 +116,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       success: true,
 
-      script,
-
-      subtitles,
-
-      scenes
+      ...jsonData
 
     });
 
@@ -130,9 +124,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   } catch (err: any) {
 
-    console.error("SCRIPT API ERROR:", err);
+    console.error("AI 腳本生成錯誤:", err);
 
-    return res.status(500).json({ error: "腳本生成失敗", detail: err.message });
+    return res.status(500).json({
+
+      error: "腳本生成失敗",
+
+      detail: err.message
+
+    });
 
   }
 
