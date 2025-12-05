@@ -1,7 +1,5 @@
 import { useState } from "react";
 
-import { fetchShopeeProduct } from "@/services/shopee-api";
-
 import { generateVideoFromScript } from "@/services/video-api";
 
 
@@ -20,7 +18,9 @@ export default function ShopeeVideoPage() {
 
 
 
-  async function fetchProduct() {
+  const fetchProduct = async () => {
+
+    setLoading(true);
 
     setError("");
 
@@ -30,11 +30,51 @@ export default function ShopeeVideoPage() {
 
 
 
-    setLoading(true);
-
     try {
 
-      const data = await fetchShopeeProduct(url);
+      const res = await fetch(`/api/shopee-detail?url=${encodeURIComponent(url)}`);
+
+      const json = await res.json();
+
+
+
+      if (!res.ok) {
+
+        setError(json.error || "無法取得商品資訊");
+
+        setLoading(false);
+
+        return;
+
+      }
+
+
+
+      // RapidAPI 回傳格式 => json.data
+
+      const productData = json.data || json;
+
+      const itemBasic = productData.item_basic || productData.data?.item_basic || productData;
+
+
+
+      // 整理商品資料格式
+
+      const formattedProduct = {
+
+        title: itemBasic.name || productData.title || '未知商品',
+
+        price: itemBasic.price_min ? itemBasic.price_min / 100000 : (itemBasic.price ? itemBasic.price / 100000 : 0),
+
+        image: itemBasic.image ? `https://cf.shopee.tw/file/${itemBasic.image}` : (productData.image || ''),
+
+      };
+
+
+
+      setProduct(formattedProduct);
+
+
 
       // 取得商品資訊後，也取得腳本和字幕
 
@@ -50,7 +90,7 @@ export default function ShopeeVideoPage() {
 
             productUrl: url,
 
-            product: data,
+            product: formattedProduct,
 
           }),
 
@@ -64,7 +104,7 @@ export default function ShopeeVideoPage() {
 
           setProduct({
 
-            ...data,
+            ...formattedProduct,
 
             script: scriptData.script || '',
 
@@ -72,29 +112,27 @@ export default function ShopeeVideoPage() {
 
           });
 
-        } else {
-
-          setProduct(data);
-
         }
 
       } catch (scriptErr) {
 
         // 如果取得腳本失敗，仍然顯示商品資訊
 
-        setProduct(data);
+        console.error('取得腳本失敗:', scriptErr);
 
       }
 
-    } catch (err: any) {
+    } catch (err) {
 
-      setError("無法取得商品資訊，請確認網址或 RapidAPI 設定。");
+      setError("呼叫後端 API 失敗，請稍後再試");
 
     }
 
+
+
     setLoading(false);
 
-  }
+  };
 
 
 
@@ -149,6 +187,12 @@ export default function ShopeeVideoPage() {
         🎬 Shopee 自動短影片產生器（V2.6 專業版）
 
       </h1>
+
+      <div className="text-xs text-gray-400 mt-1 text-center">
+
+        RapidAPI Key Loaded: {import.meta.env.VITE_RAPIDAPI_KEY ? "Yes" : "No"}
+
+      </div>
 
       <p className="text-gray-600 text-center mb-8">
 
