@@ -70,13 +70,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
 
 
-    // RapidAPI call
+    // RapidAPI call - 使用 /shopee/item/get endpoint
 
-    const apiUrl = `https://shopee-e-commerce-data.p.rapidapi.com/item_detail?site=${site}&itemid=${itemid}&shopid=${shopid}`;
+    const apiUrl = `https://shopee-e-commerce-data.p.rapidapi.com/shopee/item/get?site=${site}&itemid=${itemid}&shopid=${shopid}`;
 
 
 
     const response = await fetch(apiUrl, {
+
+      method: 'GET',
 
       headers: {
 
@@ -90,15 +92,39 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
 
 
-    const data = await response.json();
+    if (!response.ok) {
 
+      const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
 
-
-    if (!response.ok || data.error) {
+      console.error('RapidAPI Error:', errorData);
 
       return res.status(500).json({
 
         error: "RapidAPI 商品讀取失敗",
+
+        detail: errorData
+
+      });
+
+    }
+
+
+
+    const data = await response.json();
+
+
+
+    // 處理 RapidAPI 回傳格式
+
+    const itemBasic = data?.data?.item_basic || data?.data || data;
+
+
+
+    if (!itemBasic || (!itemBasic.name && !itemBasic.title)) {
+
+      return res.status(500).json({
+
+        error: "RapidAPI 回傳資料格式錯誤",
 
         detail: data
 
@@ -114,15 +140,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       item: {
 
-        name: data.title || data.name || "",
+        name: itemBasic.name || itemBasic.title || "",
 
-        price: data.price || data.price_min ? data.price_min / 100000 : 0,
+        price: itemBasic.price_min ? itemBasic.price_min / 100000 : (itemBasic.price ? itemBasic.price / 100000 : 0),
 
-        images: data.images || (data.image ? [data.image] : []),
+        images: itemBasic.images || (itemBasic.image ? [itemBasic.image] : []),
 
-        sold: data.historical_sold || data.sold || 0,
+        sold: itemBasic.historical_sold || itemBasic.sold || 0,
 
-        rating: data.item_rating?.rating_star || data.rating || 0
+        rating: itemBasic.item_rating?.rating_star || itemBasic.rating_star || itemBasic.rating || 0
 
       }
 
@@ -130,7 +156,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   } catch (err: any) {
 
-    return res.status(500).json({ error: err.message });
+    console.error('Shopee Detail API Error:', err);
+
+    return res.status(500).json({ 
+
+      error: "後端獲取商品資訊失敗",
+
+      detail: err.message || String(err)
+
+    });
 
   }
 
