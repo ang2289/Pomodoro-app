@@ -26,7 +26,7 @@ export default function ShopeeSingleVideoPage() {
 
     imageUrl: string;
 
-    price: string;
+    price: number;
 
   } | null>(null);
 
@@ -96,7 +96,15 @@ export default function ShopeeSingleVideoPage() {
 
       if (data.product) {
 
-        setProductInfo(data.product);
+        setProductInfo({
+
+          title: data.product.title || '未知商品',
+
+          imageUrl: data.product.image || '',
+
+          price: data.product.price || 0,
+
+        });
 
       }
 
@@ -180,7 +188,11 @@ export default function ShopeeSingleVideoPage() {
 
             <h2 className="text-lg font-semibold">{productInfo.title}</h2>
 
-            <p className="text-red-600 font-bold mt-2 text-xl">${productInfo.price}</p>
+            <p className="text-red-600 font-bold mt-2 text-xl">
+
+              ${productInfo.price}
+
+            </p>
 
           </div>
 
