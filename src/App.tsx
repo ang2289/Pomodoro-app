@@ -106,6 +106,7 @@ import AdBanner from './components/AdBanner'
 // 已移除廣告
 import { Toaster } from 'react-hot-toast'
 import { useGATracker } from './hooks/useGATracker'
+import { KeepAlivePing } from './components/KeepAlivePing'
 
 function App() {
   const { t } = useTranslation()
@@ -290,6 +291,9 @@ function App() {
           <Route path="/blog/three-minute-meditation" element={<ThreeMinuteMeditation />} />
           <Route path="/blog/about-spiritual-growth" element={<AboutSpiritualGrowth />} />
         </Routes>
+      
+      {/* Keep-Alive Ping */}
+      <KeepAlivePing />
       
       {/* AdBanner 廣告 */}
       {false && <AdBanner />}
