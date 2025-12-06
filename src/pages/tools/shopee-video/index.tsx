@@ -8,6 +8,12 @@ export default function ShopeeVideoPage() {
 
   const [productUrl, setProductUrl] = useState("");
 
+  const [expandedUrl, setExpandedUrl] = useState("");   // ⭐ 新增：短網址展開後的真實 URL 顯示用
+
+  const [loadingUrl, setLoadingUrl] = useState(false); // ⭐ 新增：短網址解析 loading 狀態
+
+  const [urlStatus, setUrlStatus] = useState("");      // ⭐ 新增：提示短網址解析狀態
+
   const [title, setTitle] = useState("");
 
   const [price, setPrice] = useState("");
@@ -42,6 +48,10 @@ export default function ShopeeVideoPage() {
 
     setError("");
 
+    setUrlStatus("");
+
+    setExpandedUrl("");
+
 
 
     // ✅ 新邏輯：短網址、正常網址都允許，讓後端統一解析
@@ -51,6 +61,82 @@ export default function ShopeeVideoPage() {
       setError("請輸入正確的 Shopee 商品連結");
 
       return;
+
+    }
+
+
+
+    // ⭐ 新邏輯：自動解析短網址（s.shopee.tw）
+
+    let finalUrl = productUrl; // 最終要使用的 URL
+
+    if (productUrl.includes("s.shopee.tw")) {
+
+      setLoadingUrl(true);
+
+      setUrlStatus("正在解析短網址…");
+
+
+
+      try {
+
+        const res = await fetch("/api/expand-url", {
+
+          method: "POST",
+
+          headers: { "Content-Type": "application/json" },
+
+          body: JSON.stringify({ url: productUrl }),
+
+        });
+
+
+
+        const data = await res.json();
+
+
+
+        if (!data.success) {
+
+          setError("短網址解析失敗，請確認網址是否有效");
+
+          setLoadingUrl(false);
+
+          setUrlStatus("❌ 短網址解析失敗");
+
+          return;
+
+        }
+
+
+
+        finalUrl = data.url; // 使用展開後的 URL
+
+        setExpandedUrl(data.url);
+
+        setUrlStatus("✔ 短網址解析成功");
+
+        setLoadingUrl(false);
+
+
+
+        // 將展開後的正式網址取代使用者輸入
+
+        setProductUrl(data.url);
+
+
+
+      } catch (err) {
+
+        setError("短網址解析失敗");
+
+        setLoadingUrl(false);
+
+        setUrlStatus("❌ 短網址解析失敗");
+
+        return;
+
+      }
 
     }
 
@@ -68,7 +154,11 @@ export default function ShopeeVideoPage() {
 
         headers: { "Content-Type": "application/json" },
 
-        body: JSON.stringify({ url: productUrl }),
+        body: JSON.stringify({
+
+          url: finalUrl,
+
+        }),
 
       });
 
@@ -336,11 +426,35 @@ export default function ShopeeVideoPage() {
 
 
 
+          {/* 短網址解析狀態顯示 */}
+
+          {urlStatus && (
+
+            <div className={`p-3 rounded-lg ${urlStatus.includes("✔") ? "bg-green-50 text-green-700" : urlStatus.includes("❌") ? "bg-red-50 text-red-700" : "bg-blue-50 text-blue-700"}`}>
+
+              <div className="font-medium">{urlStatus}</div>
+
+              {expandedUrl && urlStatus.includes("✔") && (
+
+                <div className="text-sm mt-2 break-all">
+
+                  展開網址：{expandedUrl}
+
+                </div>
+
+              )}
+
+            </div>
+
+          )}
+
+
+
           <button
 
             onClick={handleFetchProduct}
 
-            disabled={loading || !productUrl.trim()}
+            disabled={loading || loadingUrl || !productUrl.trim()}
 
             className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white py-3 rounded-lg text-lg font-semibold hover:opacity-90 transition disabled:opacity-50"
 
@@ -348,7 +462,7 @@ export default function ShopeeVideoPage() {
 
           >
 
-            🔍 抓取商品資訊
+            {loadingUrl ? "⏳ 正在解析短網址…" : "🔍 抓取商品資訊"}
 
           </button>
 
