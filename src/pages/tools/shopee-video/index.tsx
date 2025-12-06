@@ -40,9 +40,23 @@ export default function ShopeeVideoPage() {
 
   const handleFetchProduct = async () => {
 
-    setLoading(true);
-
     setError("");
+
+
+
+    // ✅ 新邏輯：短網址、正常網址都允許，讓後端統一解析
+
+    if (!productUrl.startsWith("https://")) {
+
+      setError("請輸入正確的 Shopee 商品連結");
+
+      return;
+
+    }
+
+
+
+    setLoading(true);
 
 
 
