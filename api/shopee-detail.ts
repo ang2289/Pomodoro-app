@@ -1,8 +1,13 @@
-// /api/shopee-detail.ts
-
-// ✅ 支援短網址解析 (s.shopee.tw)
-
-// ✅ 支援台灣 Shopee HTML Parser (不需要 API，不會被封)
+/**
+ * @deprecated 此 API 已棄用，不再被使用
+ * 新的 shopee-video 功能已改為本地輸入模式，不再依賴外部 API
+ * 請使用 /api/shopee-generate-script 和 /api/generate-video 替代
+ * 
+ * /api/shopee-detail.ts
+ * 
+ * ✅ 支援短網址解析 (s.shopee.tw)
+ * ✅ 支援台灣 Shopee HTML Parser (不需要 API，不會被封)
+ */
 
 
 

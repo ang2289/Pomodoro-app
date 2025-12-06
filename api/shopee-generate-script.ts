@@ -16,7 +16,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
 
-    const { title, price, description, sold } = req.body;
+    const { title, price, highlights } = req.body;
 
 
 
@@ -44,6 +44,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
 
 
+    // 處理賣點（highlights）
+    const highlightsText = Array.isArray(highlights) && highlights.length > 0
+      ? highlights.filter((h: string) => h.trim()).join("、")
+      : "未提供";
+
+
+
     const prompt = `
 
 你是一位短影音腳本生成師，請根據以下資料生成 20 秒影片腳本 + 逐字稿（中文字幕）：
@@ -54,13 +61,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
 價格：${price || "未提供"}
 
-商品描述：${description || "未提供"}
-
-累積銷量：${sold || "未提供"}
+商品賣點：${highlightsText}
 
 
 
-請以「強烈吸睛的 TikTok / Reels 風格」輸出：
+請以「強烈吸睛的 TikTok / Reels 風格」輸出，重點強調商品賣點：
 
 
 
@@ -68,7 +73,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
 {
 
-  "script": "三段式影片腳本，每段 1–2 句",
+  "script": "三段式影片腳本，每段 1–2 句，強調商品賣點",
 
   "subtitles": ["字幕1", "字幕2", "字幕3", ...]
 

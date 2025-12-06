@@ -1,37 +1,33 @@
-// 注意：前端直接呼叫 RapidAPI 會有 CORS 問題
-// 建議透過後端 API /api/shopee-detail 來呼叫
+// src/pages/tools/shopee-video/product-api.ts
 
-export async function fetchShopeeProduct(itemid: string, shopid: string) {
+import { parseProductId, expandShortUrl } from "./utils";
 
-  // 透過後端 API 來避免 CORS 問題
-
-  const response = await fetch('/api/shopee-detail', {
-
-    method: 'POST',
-
-    headers: { 'Content-Type': 'application/json' },
-
-    body: JSON.stringify({
-
-      url: `https://shopee.tw/product/${shopid}/${itemid}`,
-
-    }),
-
-  });
-
-
-
-  if (!response.ok) {
-
-    throw new Error('RapidAPI 商品查詢失敗');
-
-  }
-
-
-
-  const data = await response.json();
-
-  return data;
-
+export interface ParsedProductResult {
+  finalUrl: string;
+  productId: string | null;
 }
 
+/**
+ * 只負責：
+ * 1. 展開短網址
+ * 2. 嘗試從網址解析商品 ID
+ * 目前不打任何外部商品 API（避免被封鎖）
+ */
+export async function parseShopeeProductUrl(
+  url: string
+): Promise<ParsedProductResult> {
+  let finalUrl = url;
+
+  // 嘗試展開短網址
+  if (url.includes("s.shopee.tw")) {
+    try {
+      finalUrl = await expandShortUrl(url);
+    } catch (err) {
+      console.warn("[shopee-video] 短網址展開失敗，改用原網址繼續", err);
+      finalUrl = url;
+    }
+  }
+
+  const productId = parseProductId(finalUrl);
+  return { finalUrl, productId };
+}

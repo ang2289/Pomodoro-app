@@ -1,3 +1,8 @@
+/**
+ * @deprecated 此 API 已棄用，不再被使用
+ * 新的 shopee-video 功能已改為本地輸入模式，不再依賴 RapidAPI
+ * 請使用 /api/shopee-generate-script 和 /api/generate-video 替代
+ */
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import axios from "axios";
 

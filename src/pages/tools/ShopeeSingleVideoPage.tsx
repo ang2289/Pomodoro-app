@@ -1,4 +1,15 @@
-// src/pages/tools/shopee-video.tsx
+/**
+ * ⚠️ 注意：此檔案為舊版單支影片產生工具
+ * 
+ * 路由：/tools/shopee-single-video
+ * 
+ * 主要功能頁面請使用：
+ * - 路由：/tools/shopee-video
+ * - 檔案：src/pages/tools/shopee-video/index.tsx
+ * - 元件：ShopeeVideoPage（包含最新 UI 重構與完整功能）
+ * 
+ * 此檔案保留用於向後相容，未來可能移除。
+ */
 
 import { useState } from 'react';
 

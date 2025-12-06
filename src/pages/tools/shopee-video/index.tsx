@@ -1,801 +1,343 @@
+// src/pages/tools/shopee-video/index.tsx
+
 import { useState } from "react";
-
-import { generateVideoFromScript } from "@/services/video-api";
-
-
+import toast from "react-hot-toast";
+import { useSingleVideo } from "./hooks/useSingleVideo";
+import { useBatchVideo } from "./hooks/useBatchVideo";
+import { canGenerateScript, canGenerateVideo } from "./utils/validators";
+import TabSwitcher from "./components/TabSwitcher";
+import SectionCard from "./components/SectionCard";
+import HighlightsEditor from "./components/HighlightsEditor";
+import ImagesUploader from "./components/ImagesUploader";
+import ScriptCard from "./components/ScriptCard";
+import VideoPreview from "./components/VideoPreview";
+import BatchTaskCard from "./components/BatchTaskCard";
 
 export default function ShopeeVideoPage() {
-
+  const [mode, setMode] = useState<"single" | "batch">("single");
   const [productUrl, setProductUrl] = useState("");
 
-  const [expandedUrl, setExpandedUrl] = useState("");   // ⭐ 新增：短網址展開後的真實 URL 顯示用
+  // 單支模式 hook
+  const {
+    title,
+    price,
+    highlights,
+    images,
+    script,
+    setTitle,
+    setPrice,
+    setScript,
+    updateHighlight,
+    addHighlight,
+    removeHighlight,
+    updateImage,
+    setImage,
+    addImage,
+    removeImage,
+    generateScript,
+    generateVideo,
+    videoUrl,
+    loading,
+  } = useSingleVideo();
 
-  const [loadingUrl, setLoadingUrl] = useState(false); // ⭐ 新增：短網址解析 loading 狀態
+  // 解析 Shopee 商品網址（僅解析 og:title 和 og:image）
+  const [parsing, setParsing] = useState(false);
+  const handleParse = async () => {
+    const cleanUrl = productUrl.trim();
+    if (!cleanUrl) {
+      toast.error("請輸入蝦皮網址");
+      return;
+    }
 
-  const [urlStatus, setUrlStatus] = useState("");      // ⭐ 新增：提示短網址解析狀態
-
-  const [title, setTitle] = useState("");
-
-  const [price, setPrice] = useState("");
-
-  const [imageUrl, setImageUrl] = useState("");
-
-  const [description, setDescription] = useState("");
-
-  const [sold, setSold] = useState("");
-
-  const [script, setScript] = useState("");
-
-  const [subtitle, setSubtitle] = useState("");
-
-  const [videoScript, setVideoScript] = useState("");
-
-  const [subtitles, setSubtitles] = useState<string[]>([]);
-
-  const [scenes, setScenes] = useState<any[]>([]);
-
-  const [videoUrl, setVideoUrl] = useState("");
-
-  const [loading, setLoading] = useState(false);
-
-  const [error, setError] = useState("");
-
-
-
-  // 展開短網址
-
-  const expandShortUrl = async (url: string) => {
-
-    if (!url.includes("s.shopee.tw")) return url;
-
-
-
+    setParsing(true);
     try {
-
-      const res = await fetch("/api/expand-url", {
-
-        method: "POST",
-
-        headers: { "Content-Type": "application/json" },
-
-        body: JSON.stringify({ url }),
-
-      });
-
-
-
+      const apiUrl = `/api/shopee-parse?url=${encodeURIComponent(cleanUrl)}`;
+      const res = await fetch(apiUrl);
       const data = await res.json();
 
-
-
-      if (!data.success) {
-
-        throw new Error("短網址解析失敗");
-
-      }
-
-
-
-      return data.url;
-
-    } catch (err) {
-
-      throw err;
-
-    }
-
-  };
-
-
-
-  // 抓取商品資訊
-
-  const handleFetchProduct = async () => {
-
-    setError("");
-
-
-
-    // ⭐ 若是短網址 → 先展開
-
-    let finalUrl = productUrl;
-
-    try {
-
-      finalUrl = await expandShortUrl(productUrl);
-
-    } catch (err) {
-
-      setError("短網址解析失敗");
-
-      return;
-
-    }
-
-
-
-    // ⭐ 驗證正式網址格式
-
-    if (!finalUrl.includes("/product/")) {
-
-      setError("格式錯誤：請確認網址為 Shopee 商品頁");
-
-      return;
-
-    }
-
-
-
-    setLoading(true);
-
-
-
-    try {
-
-      const res = await fetch("/api/shopee-detail", {
-
-        method: "POST",
-
-        headers: { "Content-Type": "application/json" },
-
-        body: JSON.stringify({ url: finalUrl }),
-
-      });
-
-
-
-      const data = await res.json();
-
-
-
-      if (data.error) {
-
-        setError("商品資料解析失敗");
-
-        setLoading(false);
-
+      if (!data.ok) {
+        toast.error("解析失敗，請確認網址是否正確");
+        setParsing(false);
         return;
-
       }
 
-
-
-      // 自動填入欄位
-
+      // 將資料寫入畫面欄位
       setTitle(data.title || "");
 
-      setPrice(data.price || "");
-
-      setDescription(data.description || "");
-
-      setSold(data.sold || "");
-
-      setImageUrl(data.image || "");
-
-
-
-      setLoading(false);
-
-
-
-    } catch (err) {
-
-      setError("❌ 解析失敗，請稍後再試");
-
-      setLoading(false);
-
-    }
-
-  };
-
-
-
-  // 自動生成腳本功能
-
-  async function generateShortScript(product: any) {
-
-    try {
-
-      const resp = await fetch("/api/shopee-generate-script", {
-
-        method: "POST",
-
-        headers: { "Content-Type": "application/json" },
-
-        body: JSON.stringify({
-
-          title: product.title,
-
-          description: product.description,
-
-          price: product.price,
-
-          sold: product.historical_sold || product.sold
-
-        })
-
-      });
-
-
-
-      if (!resp.ok) {
-
-        throw new Error("腳本生成失敗");
-
+      // 設定封面圖片到 images[0]
+      if (data.image) {
+        if (images.length === 0) {
+          addImage(data.image);
+        } else {
+          setImage(0, data.image);
+        }
       }
 
-      return await resp.json();
-
+      toast.success("解析成功！");
     } catch (err) {
-
-      console.error("腳本生成失敗:", err);
-
-      return null;
-
+      console.error("解析錯誤：", err);
+      toast.error("解析錯誤");
+    } finally {
+      setParsing(false);
     }
-
-  }
-
-
-
-  // 自動產生腳本與字幕
-
-  const handleGenerateScripts = async () => {
-
-    if (!title.trim()) {
-
-      setError("請輸入商品名稱");
-
-      return;
-
-    }
-
-
-
-    setLoading(true);
-
-    setError("");
-
-
-
-    try {
-
-      // 使用新的腳本生成 API
-
-      const scriptData = await generateShortScript({
-
-        title: title,
-
-        description: description,
-
-        price: price ? parseFloat(price) : 0,
-
-        sold: sold ? parseInt(sold) : undefined,
-
-      });
-
-
-
-      if (scriptData && scriptData.success) {
-
-        setVideoScript(scriptData.script);
-
-        setSubtitles(scriptData.subtitles || []);
-
-        setScenes(scriptData.scenes || []);
-
-        // 保留舊的 script 和 subtitle 以向後相容
-
-        setScript(scriptData.script);
-
-        setSubtitle(scriptData.subtitles?.join("\n") || "");
-
-      } else {
-
-        setError("產生腳本失敗，請稍後再試。");
-
-      }
-
-    } catch (err) {
-
-      setError("產生腳本失敗，請稍後再試。");
-
-    }
-
-
-
-    setLoading(false);
-
   };
 
-
-
-  // 產生影片
-
-  const handleGenerateVideo = async () => {
-
-    if (!title.trim()) {
-
-      setError("請輸入商品名稱");
-
-      return;
-
-    }
-
-
-
-    setLoading(true);
-
-    setError("");
-
-
-
-    try {
-
-      const video = await generateVideoFromScript({
-
-        title: title,
-
-        price: price ? parseFloat(price) : 0,
-
-        image: imageUrl,
-
-      });
-
-      setVideoUrl(video);
-
-    } catch (err) {
-
-      setError("影片產生失敗，請稍後再試。");
-
-    }
-
-
-
-    setLoading(false);
-
-  };
-
-
+  // 批次模式 hook
+  const {
+    batchUrls,
+    setBatchUrls,
+    tasks,
+    loading: batchLoading,
+    createBatchTasks,
+    updateTask,
+    generateScript: generateBatchScript,
+    generateVideo: generateBatchVideo,
+  } = useBatchVideo();
 
   return (
-
-    <div className="w-full max-w-3xl mx-auto px-4 py-10">
-
-      <h1 className="text-3xl font-bold mb-2 text-center">
-
-        🎬 Shopee 自動短影片產生器（V2.6 專業版）
-
-      </h1>
-
-      <p className="text-gray-600 text-center mb-8">
-
-        輸入商品網址或手動輸入商品資訊 → 自動產生短影音腳本、字幕與影片。
-
-      </p>
-
-
-
-      {/* 商品網址輸入與抓取 */}
-
-      <div className="bg-white p-5 rounded-xl shadow mb-8">
-
-        <h2 className="text-xl font-bold mb-4">🔍 商品網址抓取</h2>
-
-        <div className="space-y-4">
-
-          <div>
-
-            <label className="block font-medium mb-2">蝦皮商品網址</label>
-
-            <input
-
-              type="text"
-
-              value={productUrl}
-
-              onChange={(e) => setProductUrl(e.target.value)}
-
-              className="w-full border rounded p-3"
-
-              placeholder="例如：https://shopee.tw/product/xxx 或 https://s.shopee.tw/xxx"
-
-            />
-
-          </div>
-
-
-
-          <button
-
-            onClick={handleFetchProduct}
-
-            disabled={loading || !productUrl.trim()}
-
-            className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white py-3 rounded-lg text-lg font-semibold hover:opacity-90 transition disabled:opacity-50"
-
-            style={{ color: '#ffffff' }}
-
-          >
-
-            🔍 抓取商品資訊
-
-          </button>
-
-        </div>
-
+    <div className="max-w-3xl mx-auto px-4 py-8">
+      {/* 頁面標題 */}
+      <div className="text-center mb-10">
+        <h1 className="text-3xl font-bold mb-2">
+          🎬 Shopee 自動短影片產生器
+        </h1>
+        <p className="text-gray-600">
+          輸入商品網址與資訊 → 自動產生短影音腳本與影片
+        </p>
       </div>
 
+      {/* 模式切換 */}
+      <TabSwitcher currentMode={mode} onChange={setMode} />
 
-
-      {/* 手動輸入模式 */}
-
-      <div className="bg-white p-5 rounded-xl shadow mb-8 manual-mode">
-
-        <h2 className="text-xl font-bold mb-4">手動輸入商品資訊</h2>
-
-
-
-        <div className="space-y-4">
-
-          <div>
-
-            <label className="block font-medium mb-2">商品名稱 *</label>
-
-            <input
-
-              type="text"
-
-              value={title}
-
-              onChange={(e) => setTitle(e.target.value)}
-
-              className="w-full border rounded p-3"
-
-              placeholder="例如：超值保養品組合"
-
-            />
-
+      {/* URL 輸入區塊（最上方） */}
+      {mode === "single" && (
+        <SectionCard title="商品網址解析">
+          <div className="space-y-4">
+            <label className="block text-gray-700 font-medium mb-2">
+              商品網址
+            </label>
+            <div style={{ display: "flex", gap: "16px", width: "100%", alignItems: "center" }}>
+              <input
+                type="text"
+                value={productUrl}
+                onChange={(e) => setProductUrl(e.target.value)}
+                disabled={false}
+                readOnly={false}
+                style={{
+                  fontSize: "16px",
+                  minHeight: "52px",
+                  height: "52px",
+                  lineHeight: "1.5",
+                  flex: "1 1 0%",
+                  minWidth: "300px",
+                  padding: "12px 16px",
+                  borderRadius: "12px",
+                  border: "1px solid #d1d5db",
+                  boxSizing: "border-box",
+                  backgroundColor: "#ffffff",
+                  color: "#000000",
+                  margin: "0",
+                  outline: "none",
+                  display: "block",
+                  pointerEvents: "auto",
+                  cursor: "text",
+                  WebkitAppearance: "none",
+                  MozAppearance: "textfield",
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = "#3b82f6";
+                  e.target.style.boxShadow = "0 0 0 2px rgba(59, 130, 246, 0.2)";
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = "#d1d5db";
+                  e.target.style.boxShadow = "none";
+                }}
+                placeholder="例如：https://shopee.tw/product/344095175/8554568924"
+              />
+              <button
+                type="button"
+                onClick={handleParse}
+                disabled={parsing || loading || !productUrl.trim()}
+                style={{ 
+                  minWidth: "100px", 
+                  height: "52px",
+                  fontSize: "16px",
+                  fontWeight: "600",
+                  flexShrink: "0",
+                  padding: "0 20px",
+                  borderRadius: "12px",
+                  backgroundColor: "#2563eb",
+                  color: "#ffffff",
+                  border: "none",
+                  cursor: parsing || loading || !productUrl.trim() ? "not-allowed" : "pointer",
+                  opacity: parsing || loading || !productUrl.trim() ? 0.5 : 1,
+                  margin: "0",
+                }}
+              >
+                解析
+              </button>
+            </div>
+            <p className="text-sm text-gray-500">
+              貼上商品網址後點擊「解析」，將自動填入商品名稱和封面圖片
+            </p>
           </div>
-
-
-
-          <div>
-
-            <label className="block font-medium mb-2">商品主圖片 URL</label>
-
-            <input
-
-              type="text"
-
-              value={imageUrl}
-
-              onChange={(e) => setImageUrl(e.target.value)}
-
-              className="w-full border rounded p-3"
-
-              placeholder="https://cf.shopee.tw/file/xxx.jpg"
-
-            />
-
-          </div>
-
-
-
-          <div>
-
-            <label className="block font-medium mb-2">價格（可選填）</label>
-
-            <input
-
-              type="number"
-
-              value={price}
-
-              onChange={(e) => setPrice(e.target.value)}
-
-              className="w-full border rounded p-3"
-
-              placeholder="例如：299"
-
-            />
-
-          </div>
-
-
-
-          <div>
-
-            <label className="block font-medium mb-2">商品描述（可選填）</label>
-
-            <textarea
-
-              value={description}
-
-              onChange={(e) => setDescription(e.target.value)}
-
-              className="w-full border rounded p-3"
-
-              placeholder="例如：高品質材質，適合日常使用。設計簡潔大方。網路評價高。"
-
-              rows={3}
-
-            />
-
-          </div>
-
-
-
-          <div>
-
-            <label className="block font-medium mb-2">累積銷量（可選填）</label>
-
-            <input
-
-              type="number"
-
-              value={sold}
-
-              onChange={(e) => setSold(e.target.value)}
-
-              className="w-full border rounded p-3"
-
-              placeholder="例如：1000"
-
-            />
-
-          </div>
-
-
-
-          <button
-
-            onClick={handleGenerateScripts}
-
-            disabled={loading || !title.trim()}
-
-            className="w-full bg-gradient-to-r from-purple-500 to-blue-500 text-white py-3 rounded-lg text-lg font-semibold hover:opacity-90 transition disabled:opacity-50"
-
-            style={{ color: '#ffffff' }}
-
-          >
-
-            ✨ 自動產生腳本與字幕
-
-          </button>
-
-
-
-          {error && <p className="text-red-500 mt-3">❌ {error}</p>}
-
-        </div>
-
-      </div>
-
-
-
-      {/* 影片播放器 */}
-
-      <div className="bg-white p-5 rounded-xl shadow mb-8">
-
-        <h2 className="text-xl font-bold mb-3">🎞 影片預覽</h2>
-
-        {videoUrl ? (
-
-          <video controls src={videoUrl} className="w-full rounded" />
-
-        ) : (
-
-          <div className="w-full h-48 bg-gray-200 flex items-center justify-center rounded text-gray-500">
-
-            尚未產生影片
-
-          </div>
-
-        )}
-
-      </div>
-
-
-
-      {/* 商品資訊預覽 */}
-
-      {(title || imageUrl) && (
-
-        <div className="bg-white p-5 rounded-xl shadow mb-8">
-
-          <h2 className="text-xl font-bold mb-3">📦 商品資訊預覽</h2>
-
-          {imageUrl && (
-
-            <img src={imageUrl} className="w-40 h-40 object-cover rounded mb-4" alt={title} />
-
-          )}
-
-          {title && <p className="font-medium">{title}</p>}
-
-          {price && <p className="text-green-600 text-lg font-bold">NT$ {price}</p>}
-
-        </div>
-
+        </SectionCard>
       )}
 
+      {/* 單支模式 */}
+      {mode === "single" && (
+        <div className="space-y-10">
+          {/* (A) 影片資訊輸入 */}
+          <SectionCard title="(A) 影片資訊輸入">
+            <div className="space-y-6">
 
+              {/* 商品名稱 */}
+              <div>
+                <label className="block text-gray-700 font-medium mb-2">
+                  商品名稱 *
+                </label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="w-full h-[52px] rounded-xl border border-gray-300 px-4 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  placeholder="例如：超值保養品組合"
+                />
+              </div>
 
-      {/* 腳本內容 */}
+              {/* 商品價格 */}
+              <div>
+                <label className="block text-gray-700 font-medium mb-2">
+                  商品價格（選填）
+                </label>
+                <input
+                  type="text"
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  className="w-full h-[52px] rounded-xl border border-gray-300 px-4 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  placeholder="例如：299"
+                />
+              </div>
 
-      <div className="bg-white p-5 rounded-xl shadow mb-8">
+              {/* 商品賣點 */}
+              <div>
+                <label className="block text-gray-700 font-medium mb-2">
+                  商品賣點 *（可填 1～3 點）
+                </label>
+                <HighlightsEditor
+                  highlights={highlights}
+                  onChange={(newHighlights) => {
+                    // 同步整個陣列：先更新現有的，再新增/刪除
+                    const maxLen = Math.max(highlights.length, newHighlights.length);
+                    for (let i = 0; i < maxLen; i++) {
+                      if (i < newHighlights.length && i < highlights.length) {
+                        if (newHighlights[i] !== highlights[i]) {
+                          updateHighlight(i, newHighlights[i]);
+                        }
+                      } else if (i < newHighlights.length && i >= highlights.length) {
+                        addHighlight();
+                        updateHighlight(i, newHighlights[i]);
+                      }
+                    }
+                    // 移除多餘的
+                    while (highlights.length > newHighlights.length) {
+                      removeHighlight(highlights.length - 1);
+                    }
+                  }}
+                />
+              </div>
+            </div>
+          </SectionCard>
 
-        <h2 className="text-xl font-bold mb-3">📝 影片腳本</h2>
-
-        {script ? (
-
-          <textarea
-
-            value={script}
-
-            readOnly
-
-            className="w-full border rounded p-3 h-32"
-
+          {/* (B) 圖片上傳區 */}
+          <ImagesUploader
+            images={images}
+            updateImage={updateImage}
+            addImage={addImage}
+            removeImage={removeImage}
           />
 
-        ) : (
+          {/* (C) 產生腳本與影片 */}
+          <SectionCard title="(C) 產生腳本與影片">
+            <div className="space-y-6">
+              {/* 按鈕 */}
+              <div className="space-y-3">
+                <button
+                  onClick={generateScript}
+                  disabled={loading || !canGenerateScript({ title, price, highlights, images })}
+                  className="w-full h-[52px] rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  ✨ 產生腳本
+                </button>
+                <button
+                  onClick={generateVideo}
+                  disabled={loading || !canGenerateVideo(script, images)}
+                  className="w-full h-[52px] rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  🎥 產生影片
+                </button>
+              </div>
 
-          <div className="space-y-2">
+              {/* 腳本 */}
+              <ScriptCard script={script} onChange={setScript} />
 
-            <div className="h-4 w-full bg-gray-200 rounded"></div>
-
-            <div className="h-4 w-5/6 bg-gray-200 rounded"></div>
-
-            <div className="h-4 w-4/6 bg-gray-200 rounded"></div>
-
-          </div>
-
-        )}
-
-      </div>
-
-
-
-      {/* 短影片腳本 */}
-
-      {videoScript && (
-
-        <div className="bg-white p-5 rounded-xl shadow mb-8">
-
-          <h3 className="text-lg font-bold mb-3">🎤 自動生成短影片腳本</h3>
-
-          <pre className="whitespace-pre-wrap mt-2 text-gray-700 bg-gray-50 p-4 rounded border">{videoScript}</pre>
-
+              {/* 影片預覽 */}
+              <VideoPreview videoUrl={videoUrl} />
+            </div>
+          </SectionCard>
         </div>
-
       )}
 
+      {/* 批次模式 */}
+      {mode === "batch" && (
+        <div className="space-y-10">
+          {/* 批次網址輸入 */}
+          <SectionCard title="批次網址輸入">
+            <div className="space-y-4">
+              <textarea
+                value={batchUrls}
+                onChange={(e) => setBatchUrls(e.target.value)}
+                className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:outline-none resize-y"
+                style={{
+                  fontSize: "16px",
+                  minHeight: "150px",
+                  padding: "12px 16px",
+                  borderRadius: "12px",
+                  border: "1px solid #d1d5db",
+                  boxSizing: "border-box",
+                }}
+                placeholder="每行一個商品網址&#10;例如：&#10;https://shopee.tw/product/344095175/8554568924&#10;https://shopee.tw/product/123456/789012"
+              />
+              <button
+                onClick={createBatchTasks}
+                className="w-full h-[52px] rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold hover:opacity-90 transition"
+              >
+                建立批次任務
+              </button>
+            </div>
+          </SectionCard>
 
-
-      {/* 字幕 */}
-
-      {subtitles && subtitles.length > 0 && (
-
-        <div className="bg-white p-5 rounded-xl shadow mb-8">
-
-          <h3 className="text-lg font-bold mb-3">💬 自動字幕</h3>
-
-          <ul className="mt-2 space-y-1">
-
-            {subtitles.map((line, idx) => (
-
-              <li key={idx} className="text-gray-700">• {line}</li>
-
-            ))}
-
-          </ul>
-
+          {/* 批次任務列表 */}
+          {tasks.map((task, idx) => (
+            <BatchTaskCard
+              key={task.id}
+              task={task}
+              taskIndex={idx}
+              onUpdate={updateTask}
+              onGenerateScript={generateBatchScript}
+              onGenerateVideo={generateBatchVideo}
+              loading={batchLoading}
+            />
+          ))}
         </div>
-
       )}
 
-
-
-      {/* 分鏡腳本 */}
-
-      {scenes && scenes.length > 0 && (
-
-        <div className="bg-white p-5 rounded-xl shadow mb-8">
-
-          <h3 className="text-lg font-bold mb-3">🎞️ 分鏡腳本</h3>
-
-          <ul className="space-y-2 mt-2">
-
-            {scenes.map((scene, idx) => (
-
-              <li key={idx} className="text-gray-700">
-
-                <strong>{scene.sec}s：</strong> {scene.text}（{scene.visual}）
-
-              </li>
-
-            ))}
-
-          </ul>
-
+      {/* Loading 狀態 */}
+      {(loading || batchLoading) && (
+        <div className="text-center text-lg text-indigo-600 mt-6">
+          ⏳ 處理中…請稍候
         </div>
-
       )}
-
-
-
-      {/* 字幕內容（保留舊版相容） */}
-
-      <div className="bg-white p-5 rounded-xl shadow mb-8">
-
-        <h2 className="text-xl font-bold mb-3">💬 字幕內容</h2>
-
-        {subtitle ? (
-
-          <textarea
-
-            value={subtitle}
-
-            readOnly
-
-            className="w-full border rounded p-3 h-32"
-
-          />
-
-        ) : (
-
-          <div className="space-y-2">
-
-            <div className="h-4 bg-gray-200 w-3/4 rounded"></div>
-
-            <div className="h-4 bg-gray-200 w-2/4 rounded"></div>
-
-            <div className="h-4 bg-gray-200 w-4/6 rounded"></div>
-
-          </div>
-
-        )}
-
-      </div>
-
-
-
-      {/* 產生影片按鈕 */}
-
-      {script && (
-
-        <button
-
-          onClick={handleGenerateVideo}
-
-          disabled={loading}
-
-          className="w-full bg-purple-600 text-white py-3 rounded-lg text-lg font-semibold hover:bg-purple-700 disabled:opacity-50"
-
-          style={{ color: '#ffffff' }}
-
-        >
-
-          🎥 產生短影片
-
-        </button>
-
-      )}
-
-
-
-      {/* Loading */}
-
-      {loading && (
-
-        <p className="text-center text-lg text-indigo-600 mt-4">⏳ 處理中…請稍候</p>
-
-      )}
-
     </div>
-
   );
-
 }
