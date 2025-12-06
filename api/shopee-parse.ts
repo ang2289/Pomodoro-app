@@ -10,9 +10,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const html = await fetch(url, {
       method: "GET",
       headers: {
-        "User-Agent": "Mozilla/5.0",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+        "Accept-Language": "zh-TW,zh;q=0.9",
       }
     }).then(r => r.text());
+
+    // ⬇⬇⬇ 新增：輸出前 300 字讓我們知道抓到什麼
+    const debugLog = html.substring(0, 300);
 
     // 解析 og:title
     let title = "";
@@ -26,9 +30,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     return res.status(200).json({
       ok: true,
-      title: title || "未找到商品名稱",
+      title,
       image,
+      debugLog   // <-- 加這個
     });
+
   } catch (err) {
     return res.status(500).json({
       ok: false,

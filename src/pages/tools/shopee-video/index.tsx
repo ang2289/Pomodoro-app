@@ -61,6 +61,11 @@ export default function ShopeeVideoPage() {
         return;
       }
 
+      // Debug: 輸出 HTML 前 300 字
+      if (data.debugLog) {
+        console.log("Debug HTML:", data.debugLog);
+      }
+
       // 將資料寫入畫面欄位
       setTitle(data.title || "");
 
