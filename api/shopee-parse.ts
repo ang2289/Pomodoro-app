@@ -1,60 +1,45 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-
-// 從 Shopee URL 抽取 shopid + itemid
-function extractIds(url: string) {
-  const match = url.match(/product\/(\d+)\/(\d+)/);
-  if (!match) return null;
-  return { shopid: match[1], itemid: match[2] };
-}
+import * as cheerio from "cheerio";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
-    const url = req.query.url as string;
+    const { url } = req.query;
 
     if (!url) {
-      return res.status(400).json({ ok: false, msg: "缺少 url 參數" });
+      return res.status(400).json({ error: "缺少商品網址" });
     }
 
-    const ids = extractIds(url);
-    if (!ids) {
-      return res.status(400).json({ ok: false, msg: "商品網址格式錯誤" });
-    }
-
-    const apiUrl = `https://shopee.tw/api/v4/item/get?itemid=${ids.itemid}&shopid=${ids.shopid}`;
-
-    const response = await fetch(apiUrl, {
+    // 1. 取得 Shopee 商品 HTML
+    const html = await fetch(url as string, {
       headers: {
-        "User-Agent": "Mozilla/5.0",
-        "Accept": "application/json"
-      }
-    });
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      },
+    }).then((res) => res.text());
 
-    const json = await response.json();
-    const item = json.data;
+    // 2. 用 Cheerio 抓商品名稱 & 圖片
+    const $ = cheerio.load(html);
 
-    if (!item) {
-      return res.status(500).json({ ok: false, msg: "Shopee Mobile API 無資料" });
-    }
+    // 商品標題在 <title>
+    let title = $("title").text().replace("| 蝦皮購物", "").trim();
 
-    const title = item.name || "";
-    const price = (item.price / 100000).toString();
-    const images =
-      item.images?.map((img: string) => `https://cf.shopee.tw/file/${img}`) || [];
+    // 商品圖片（從 meta og:image 抓）
+    let image = $('meta[property="og:image"]').attr("content") || "";
+
+    if (!title) title = "（找不到商品名稱）";
 
     return res.status(200).json({
-      ok: true,
+      success: true,
       title,
-      price,
-      images,
-      sold: item.historical_sold,
-      rating: item.item_rating?.rating_star || 0,
-      raw: item
+      image,
+      source: "HTML-cheerio",
     });
-  } catch (err) {
+  } catch (err: any) {
+    console.error("Shopee parser error:", err);
     return res.status(500).json({
-      ok: false,
-      msg: "解析錯誤",
-      error: String(err)
+      error: true,
+      message: "Shopee 解析失敗",
+      detail: err.message,
     });
   }
 }

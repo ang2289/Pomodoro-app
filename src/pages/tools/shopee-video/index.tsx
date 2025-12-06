@@ -56,8 +56,9 @@ export default function ShopeeVideoPage() {
 
       console.log("Shopee 解析結果:", data);
 
-      if (!data.ok) {
-        toast.error(data.msg || "無法解析商品網址");
+      // 處理新的回應格式 (success) 或舊格式 (ok)
+      if (data.error || (!data.success && !data.ok)) {
+        toast.error(data.message || data.msg || "無法解析商品網址");
         setParsing(false);
         return;
       }
@@ -65,21 +66,27 @@ export default function ShopeeVideoPage() {
       // 自動填入商品名稱
       setTitle(data.title || "");
 
-      // 自動填入價格
+      // 自動填入價格（如果有的話）
       if (data.price) {
         setPrice(data.price);
       }
 
-      // 自動填入所有圖片
-      if (data.images && data.images.length > 0) {
-        // 先清空現有圖片
+      // 處理圖片：新格式使用 image（單張），舊格式使用 images（陣列）
+      if (data.images && Array.isArray(data.images) && data.images.length > 0) {
+        // 舊格式：多張圖片陣列
         while (images.length > 0) {
           removeImage(0);
         }
-        // 添加所有圖片
         data.images.forEach((img: string) => {
           addImage(img);
         });
+      } else if (data.image) {
+        // 新格式：單張圖片
+        if (images.length === 0) {
+          addImage(data.image);
+        } else {
+          setImage(0, data.image);
+        }
       }
 
       toast.success("解析成功！");
