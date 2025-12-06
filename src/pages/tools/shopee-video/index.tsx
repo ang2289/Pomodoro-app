@@ -40,7 +40,7 @@ export default function ShopeeVideoPage() {
     loading,
   } = useSingleVideo();
 
-  // 解析 Shopee 商品網址（僅解析 og:title 和 og:image）
+  // 解析 Shopee 商品網址（使用 Mobile API）
   const [parsing, setParsing] = useState(false);
   const handleParse = async () => {
     const cleanUrl = productUrl.trim();
@@ -51,31 +51,35 @@ export default function ShopeeVideoPage() {
 
     setParsing(true);
     try {
-      const apiUrl = `/api/shopee-parse?url=${encodeURIComponent(cleanUrl)}`;
-      const res = await fetch(apiUrl);
+      const res = await fetch(`/api/shopee-parse?url=${encodeURIComponent(cleanUrl)}`);
       const data = await res.json();
 
+      console.log("Shopee 解析結果:", data);
+
       if (!data.ok) {
-        toast.error("解析失敗，請確認網址是否正確");
+        toast.error(data.msg || "無法解析商品網址");
         setParsing(false);
         return;
       }
 
-      // Debug: 輸出 HTML 前 300 字
-      if (data.debugLog) {
-        console.log("Debug HTML:", data.debugLog);
-      }
-
-      // 將資料寫入畫面欄位
+      // 自動填入商品名稱
       setTitle(data.title || "");
 
-      // 設定封面圖片到 images[0]
-      if (data.image) {
-        if (images.length === 0) {
-          addImage(data.image);
-        } else {
-          setImage(0, data.image);
+      // 自動填入價格
+      if (data.price) {
+        setPrice(data.price);
+      }
+
+      // 自動填入所有圖片
+      if (data.images && data.images.length > 0) {
+        // 先清空現有圖片
+        while (images.length > 0) {
+          removeImage(0);
         }
+        // 添加所有圖片
+        data.images.forEach((img: string) => {
+          addImage(img);
+        });
       }
 
       toast.success("解析成功！");
