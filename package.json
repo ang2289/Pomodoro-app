@@ -18,7 +18,8 @@
     "generate-sitemap": "tsx scripts/generateSitemap.ts",
     "generate-rss": "tsx scripts/generateRSS.ts",
     "vercel-build": "npm run generate-sitemap && npm run generate-rss && vite build",
-    "clean": "rimraf node_modules/.cache && rimraf .vite && rimraf .next"
+    "clean": "rimraf node_modules/.cache && rimraf .vite && rimraf .next",
+    "postinstall": "node scripts/copy-ffmpeg-core.js"
   },
   "dependencies": {
     "@capacitor-community/admob": "^7.0.3",
@@ -28,6 +29,9 @@
     "@capacitor/local-notifications": "^5.0.8",
     "@capacitor/preferences": "^5.0.7",
     "@capacitor/share": "^5.0.8",
+    "@ffmpeg/core": "^0.12.10",
+    "@ffmpeg/ffmpeg": "^0.12.15",
+    "@ffmpeg/util": "^0.12.2",
     "@google/generative-ai": "^0.24.1",
     "@headlessui/react": "^2.2.9",
     "@heroicons/react": "^2.2.0",

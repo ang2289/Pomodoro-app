@@ -132,6 +132,21 @@ const HomePage: React.FC = () => {
             </Link>
 
             <Link
+              to="/tools/homework-helper"
+              className="group flex flex-col rounded-2xl bg-white/90 p-4 shadow-sm ring-1 ring-sky-100 hover:-translate-y-0.5 hover:bg-sky-50 hover:shadow-md transition"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-base font-semibold text-slate-900">
+                  📘 AI 學生作業解題助手
+                </span>
+                <span className="text-xs text-sky-600">AI 工具</span>
+              </div>
+              <p className="mt-2 text-sm text-slate-600">
+                拍照或貼上問題即可解題，含步驟教學與白話說明，支援國小至高中。
+              </p>
+            </Link>
+
+            <Link
               to="/shopping/search"
               className="group flex flex-col rounded-2xl bg-white/90 p-4 shadow-sm ring-1 ring-emerald-100 hover:-translate-y-0.5 hover:bg-emerald-50 hover:shadow-md transition"
             >
@@ -290,6 +305,35 @@ const HomePage: React.FC = () => {
               <p className="mt-1 text-xs text-amber-800">
                 租屋、長照、交通補助與退休金制度懶人整理，讓你少跑一點冤枉路。
               </p>
+            </Link>
+          </div>
+        </section>
+
+        {/* 🛒 好物推薦入口區塊 - 首頁 */}
+        <section className="py-10 border-t mt-8 mb-10">
+          <h2 className="text-2xl font-bold mb-4">🛒 好物推薦</h2>
+          <p className="text-gray-600 mb-6">嚴選超值商品推薦，每篇皆附影片＋文字分析</p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {/* 商品卡片 1 */}
+            <Link 
+              to="/goods/airfryer-keshaui" 
+              className="block border rounded-lg p-4 hover:shadow-lg transition-shadow"
+            >
+              <img 
+                src="/assets/airfryer-keshaui-cover.png" 
+                alt="氣炸鍋推薦" 
+                className="w-full rounded mb-2 object-cover"
+              />
+              <h3 className="font-semibold text-lg">科帥氣炸鍋 AF606</h3>
+              <p className="text-sm text-gray-500">5.5L 大容量＋液晶觸控，附 12 件烘焙組</p>
+            </Link>
+            {/* 可加第 2 個商品卡片（未來擴充） */}
+          </div>
+
+          <div className="mt-4 text-right">
+            <Link to="/goods" className="text-blue-600 hover:underline">
+              👉 查看全部好物推薦
             </Link>
           </div>
         </section>

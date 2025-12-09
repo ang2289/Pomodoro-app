@@ -228,6 +228,33 @@ export default function BlogPage() {
           ))}
         </div>
 
+        {/* 🛍 文章首頁中的「好物推薦專區」 */}
+        <section className="mt-12 border-t pt-10">
+          <h2 className="text-2xl font-bold mb-4">🛒 好物推薦專區</h2>
+          <p className="text-gray-600 mb-6">每篇都有導購影片＋懶人介紹文＋Shopee 分潤連結</p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <Link 
+              to="/goods/airfryer-keshaui" 
+              className="block border rounded-lg p-4 hover:shadow-lg transition-shadow"
+            >
+              <img 
+                src="/assets/airfryer-keshaui-cover.png" 
+                alt="氣炸鍋封面" 
+                className="w-full rounded mb-2 object-cover"
+              />
+              <h3 className="font-semibold text-lg">科帥氣炸鍋推薦</h3>
+              <p className="text-sm text-gray-500">附影片｜限時送清潔泡泡＋12 件烘焙組</p>
+            </Link>
+          </div>
+
+          <div className="mt-4 text-right">
+            <Link to="/goods" className="text-blue-600 hover:underline">
+              👉 看更多好物推薦文章
+            </Link>
+          </div>
+        </section>
+
         {/* 返回首頁 */}
         <div className="mt-8 text-center">
           <Link

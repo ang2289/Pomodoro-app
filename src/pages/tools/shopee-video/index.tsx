@@ -1,10 +1,13 @@
 // src/pages/tools/shopee-video/index.tsx
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import toast from "react-hot-toast";
 import { useSingleVideo } from "./hooks/useSingleVideo";
 import { useBatchVideo } from "./hooks/useBatchVideo";
 import { canGenerateScript, canGenerateVideo } from "./utils/validators";
+import { parseShopeeViaIframe } from "@/services/shopee-iframe";
+import { generateVideoFromImages } from "@/services/video/generateVideoFromImages";
+import { generateShopeeVideo } from "@/services/videoGenerator";
 import TabSwitcher from "./components/TabSwitcher";
 import SectionCard from "./components/SectionCard";
 import HighlightsEditor from "./components/HighlightsEditor";
@@ -16,6 +19,12 @@ import BatchTaskCard from "./components/BatchTaskCard";
 export default function ShopeeVideoPage() {
   const [mode, setMode] = useState<"single" | "batch">("single");
   const [productUrl, setProductUrl] = useState("");
+  const [product, setProduct] = useState<{ title: string; price: string; image: string } | null>(null);
+  const [manualImage, setManualImage] = useState<string>("");
+  const [uploadedImages, setUploadedImages] = useState<File[]>([]);
+  const [manualVideoUrl, setManualVideoUrl] = useState<string>("");
+  const [loadingStage, setLoadingStage] = useState<"idle" | "loading-ffmpeg" | "generating-video">("idle");
+  const [videoError, setVideoError] = useState<Error | null>(null);
 
   // 單支模式 hook
   const {
@@ -40,63 +49,161 @@ export default function ShopeeVideoPage() {
     loading,
   } = useSingleVideo();
 
-  // 解析 Shopee 商品網址（使用 Mobile API）
+  // ⭐ 使用 iframe 解析 Shopee 商品（無法被封鎖的瀏覽器行為）
   const [parsing, setParsing] = useState(false);
   const handleParse = async () => {
-    const cleanUrl = productUrl.trim();
-    if (!cleanUrl) {
-      toast.error("請輸入蝦皮網址");
+    if (!productUrl.trim()) return;
+    setParsing(true);
+    try {
+      console.log("開始解析 Shopee（Iframe 版本）:", productUrl.trim());
+
+      const data = await parseShopeeViaIframe(productUrl.trim());
+      
+      console.log("Shopee 解析結果：", data);
+
+      if (!data.title || data.title === "") {
+        toast.error("商品解析失敗");
+      } else {
+        // 儲存商品資料用於預覽
+        setProduct(data);
+
+        // 設定商品名稱
+        if (data.title) {
+          setTitle(data.title);
+        }
+
+        // 設定價格
+        if (data.price) {
+          setPrice(data.price);
+        }
+
+        // 設定圖片（單張圖片）
+        if (data.image) {
+          // 清除現有圖片
+          while (images.length > 0) {
+            removeImage(0);
+          }
+          // 添加新圖片
+          addImage(data.image);
+        }
+
+        toast.success("解析成功！");
+      }
+    } catch (err) {
+      console.error("解析錯誤:", err);
+      toast.error("抓取失敗，請換成完整的蝦皮商品頁網址（不能用短網址）");
+    }
+    setParsing(false);
+  };
+
+  // 安全版單張圖片上傳（保留原有功能）
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      // 確保 Base64 正常存入
+      setManualImage(String(reader.result));
+    };
+    reader.onerror = () => {
+      console.error("圖片讀取失敗");
+      toast.error("圖片讀取失敗");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // 多圖片上傳處理函式（累加模式，不覆蓋前一張）
+  const handleMultipleImages = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
+
+    const newFiles = Array.from(e.target.files);
+
+    // 保留舊圖片 + 新選的圖片（累加模式）
+    setUploadedImages(prev => [...prev, ...newFiles]);
+
+    // 重置 input value，允許再次選擇相同的文件
+    e.target.value = "";
+  };
+
+  // 根據狀態對應進度條百分比
+  const getProgressPercent = () => {
+    switch (loadingStage) {
+      case "loading-ffmpeg":
+        return 33;
+      case "generating-video":
+        return 66;
+      default:
+        return 100;
+    }
+  };
+
+  // 從上傳的圖片產生影片
+  const handleGenerateVideo = async () => {
+    if (!uploadedImages || uploadedImages.length === 0) {
+      toast.error("請至少上傳 1 張圖片！");
       return;
     }
 
+    console.log("開始生成影片，圖片數量:", uploadedImages.length);
     setParsing(true);
+    setLoadingStage("loading-ffmpeg");
+    setVideoError(null);
+    toast.loading("正在生成影片，請稍候...", { id: "video-generating" });
+
     try {
-      const res = await fetch(`/api/shopee-parse?url=${encodeURIComponent(cleanUrl)}`);
-      const data = await res.json();
-
-      console.log("Shopee 解析結果:", data);
-
-      // 處理新的回應格式 (success) 或舊格式 (ok)
-      if (data.error || (!data.success && !data.ok)) {
-        toast.error(data.message || data.msg || "無法解析商品網址");
-        setParsing(false);
-        return;
+      console.log("調用 generateShopeeVideo...");
+      const videoUrl = await generateShopeeVideo(uploadedImages, (stage) => {
+        setLoadingStage(stage);
+      });
+      console.log("影片生成成功，URL:", videoUrl);
+      
+      if (!videoUrl) {
+        throw new Error("影片 URL 為空");
       }
-
-      // 自動填入商品名稱
-      setTitle(data.title || "");
-
-      // 自動填入價格（如果有的話）
-      if (data.price) {
-        setPrice(data.price);
-      }
-
-      // 處理圖片：新格式使用 image（單張），舊格式使用 images（陣列）
-      if (data.images && Array.isArray(data.images) && data.images.length > 0) {
-        // 舊格式：多張圖片陣列
-        while (images.length > 0) {
-          removeImage(0);
+      
+      // 清除舊的影片 URL（如果存在）
+      setManualVideoUrl((prevUrl) => {
+        if (prevUrl) {
+          console.log("清除舊的影片 URL");
+          URL.revokeObjectURL(prevUrl);
         }
-        data.images.forEach((img: string) => {
-          addImage(img);
-        });
-      } else if (data.image) {
-        // 新格式：單張圖片
-        if (images.length === 0) {
-          addImage(data.image);
-        } else {
-          setImage(0, data.image);
-        }
-      }
-
-      toast.success("解析成功！");
-    } catch (err) {
-      console.error("解析錯誤：", err);
-      toast.error("解析錯誤");
+        return videoUrl;
+      });
+      
+      console.log("影片 URL 已設置到 state");
+      localStorage.setItem("ffmpegCached", "true"); // 記錄快取狀態
+      setLoadingStage("idle");
+      toast.success("影片生成成功！", { id: "video-generating" });
+    } catch (err: any) {
+      console.error("影片生成錯誤:", err);
+      console.error("錯誤詳情:", {
+        message: err?.message,
+        stack: err?.stack,
+        name: err?.name,
+      });
+      const errorMessage = err?.message || "影片生成失敗，請再試一次";
+      setVideoError(err);
+      setLoadingStage("idle");
+      toast.error(errorMessage, { id: "video-generating" });
+      // 確保在錯誤時清除 loading 狀態和影片 URL
+      setManualVideoUrl("");
     } finally {
       setParsing(false);
     }
   };
+
+  // 為上傳的圖片創建 Object URL（用於預覽）
+  const imagePreviewUrls = useMemo(() => {
+    return uploadedImages.map((img) => URL.createObjectURL(img));
+  }, [uploadedImages]);
+
+  // 清理 Object URL 以避免內存洩漏
+  useEffect(() => {
+    return () => {
+      imagePreviewUrls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [imagePreviewUrls]);
 
   // 批次模式 hook
   const {
@@ -203,10 +310,9 @@ export default function ShopeeVideoPage() {
       {/* 單支模式 */}
       {mode === "single" && (
         <div className="space-y-10">
-          {/* (A) 影片資訊輸入 */}
-          <SectionCard title="(A) 影片資訊輸入">
+          {/* (A) 商品資訊 */}
+          <SectionCard title="(A) 商品資訊">
             <div className="space-y-6">
-
               {/* 商品名稱 */}
               <div>
                 <label className="block text-gray-700 font-medium mb-2">
@@ -235,70 +341,171 @@ export default function ShopeeVideoPage() {
                 />
               </div>
 
-              {/* 商品賣點 */}
-              <div>
-                <label className="block text-gray-700 font-medium mb-2">
-                  商品賣點 *（可填 1～3 點）
-                </label>
-                <HighlightsEditor
-                  highlights={highlights}
-                  onChange={(newHighlights) => {
-                    // 同步整個陣列：先更新現有的，再新增/刪除
-                    const maxLen = Math.max(highlights.length, newHighlights.length);
-                    for (let i = 0; i < maxLen; i++) {
-                      if (i < newHighlights.length && i < highlights.length) {
-                        if (newHighlights[i] !== highlights[i]) {
-                          updateHighlight(i, newHighlights[i]);
-                        }
-                      } else if (i < newHighlights.length && i >= highlights.length) {
-                        addHighlight();
-                        updateHighlight(i, newHighlights[i]);
-                      }
-                    }
-                    // 移除多餘的
-                    while (highlights.length > newHighlights.length) {
-                      removeHighlight(highlights.length - 1);
-                    }
-                  }}
-                />
-              </div>
+              {/* 商品預覽（如果有解析結果） */}
+              {product && (
+                <div className="mt-4 p-4 border rounded bg-gray-50">
+                  {product.title && (
+                    <p className="text-gray-700 mb-1">商品名稱：{product.title}</p>
+                  )}
+                  {product.price && (
+                    <p className="text-gray-700 mb-2">商品價格：{product.price}</p>
+                  )}
+                  {product.image && (
+                    <img
+                      src={product.image}
+                      alt="product"
+                      className="w-40 mt-2 border rounded"
+                    />
+                  )}
+                </div>
+              )}
             </div>
           </SectionCard>
 
-          {/* (B) 圖片上傳區 */}
-          <ImagesUploader
-            images={images}
-            updateImage={updateImage}
-            addImage={addImage}
-            removeImage={removeImage}
-          />
+          {/* (B) 多圖片上傳 */}
+          <SectionCard title="(B) 多圖片上傳">
+            <div className="space-y-4">
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleMultipleImages}
+                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+              />
 
-          {/* (C) 產生腳本與影片 */}
-          <SectionCard title="(C) 產生腳本與影片">
-            <div className="space-y-6">
-              {/* 按鈕 */}
-              <div className="space-y-3">
-                <button
-                  onClick={generateScript}
-                  disabled={loading || !canGenerateScript({ title, price, highlights, images })}
-                  className="w-full h-[52px] rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  ✨ 產生腳本
-                </button>
-                <button
-                  onClick={generateVideo}
-                  disabled={loading || !canGenerateVideo(script, images)}
-                  className="w-full h-[52px] rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  🎥 產生影片
-                </button>
-              </div>
+              {/* 圖片預覽區 */}
+              {uploadedImages.length > 0 && (
+                <div className="grid grid-cols-3 gap-3 mt-4">
+                  {uploadedImages.map((img, i) => (
+                    <div key={i} className="relative">
+                      <img
+                        src={imagePreviewUrls[i]}
+                        alt={`預覽 ${i + 1}`}
+                        className="w-full h-40 object-cover rounded shadow"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newImages = uploadedImages.filter((_, idx) => idx !== i);
+                          setUploadedImages(newImages);
+                        }}
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                        title="刪除"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </SectionCard>
 
-              {/* 腳本 */}
-              <ScriptCard script={script} onChange={setScript} />
+          {/* (C) 產生影片 */}
+          <SectionCard title="(C) 產生影片">
+            <div className="space-y-4">
+              <button
+                type="button"
+                onClick={handleGenerateVideo}
+                disabled={parsing || loading || uploadedImages.length === 0}
+                className="px-4 py-2 bg-purple-500 text-white rounded-lg w-full mt-6 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-purple-600 transition"
+              >
+                {parsing ? "⏳ 正在生成..." : "🎬 產生影片"}
+              </button>
+
+              {/* ✅ 進度條區塊 */}
+              {loadingStage !== "idle" && (
+                <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
+                  <div
+                    className="bg-blue-600 h-2.5 rounded-full transition-all duration-700"
+                    style={{ width: `${getProgressPercent()}%` }}
+                  ></div>
+                </div>
+              )}
+
+              {/* 狀態提示區塊 */}
+              {loadingStage === "loading-ffmpeg" && (
+                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-600 font-semibold">
+                    🛠️ FFmpeg 載入中...
+                  </p>
+                  <p className="text-xs text-blue-500 mt-1">
+                    正在從 CDN 下載約 20~30MB 的引擎文件，請保持網路穩定
+                  </p>
+                  <p className="text-xs text-blue-400 mt-1">
+                    首次使用可能需要 2-5 分鐘，請耐心等待...
+                  </p>
+                  <div className="mt-2">
+                    <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                  </div>
+                </div>
+              )}
+              {loadingStage === "generating-video" && (
+                <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-sm text-green-600 font-semibold">
+                    🎬 正在合成影片中，請稍候...
+                  </p>
+                  <div className="mt-2">
+                    <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-green-500"></div>
+                  </div>
+                </div>
+              )}
+              {videoError && (
+                <div className="mt-4 p-3 bg-red-100 border border-red-300 rounded-lg">
+                  <p className="text-sm text-red-800 font-semibold">
+                    ❌ 影片產生錯誤
+                  </p>
+                  <p className="text-xs text-red-700 mt-1">
+                    {videoError.message}
+                  </p>
+                </div>
+              )}
+
+              {/* ✅ FFmpeg 已快取提示 */}
+              {typeof window !== "undefined" && localStorage.getItem("ffmpegCached") === "true" && loadingStage === "idle" && manualVideoUrl && (
+                <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <p className="text-xs text-yellow-700 text-center">
+                    ⚡ FFmpeg 引擎已快取，下次使用將更快！
+                  </p>
+                </div>
+              )}
 
               {/* 影片預覽 */}
-              <VideoPreview videoUrl={videoUrl} />
+              {manualVideoUrl && !parsing && (
+                <div className="mt-4">
+                  <p className="text-sm text-gray-600 mb-2">生成的影片：</p>
+                  <video
+                    key={manualVideoUrl} // 強制重新渲染
+                    controls
+                    autoPlay
+                    src={manualVideoUrl}
+                    className="w-full max-w-md rounded-lg shadow mx-auto"
+                    onError={(e) => {
+                      console.error("影片載入錯誤:", e);
+                      console.error("影片 URL:", manualVideoUrl);
+                      toast.error("影片載入失敗，請檢查控制台");
+                    }}
+                    onLoadedData={() => {
+                      console.log("影片載入成功，URL:", manualVideoUrl);
+                    }}
+                    onLoadStart={() => {
+                      console.log("開始載入影片，URL:", manualVideoUrl);
+                    }}
+                  />
+                  <p className="text-xs text-gray-500 mt-2 text-center">
+                    影片 URL: {manualVideoUrl.substring(0, 50)}...
+                  </p>
+                </div>
+              )}
+              
+              {/* 調試信息（開發環境） */}
+              {process.env.NODE_ENV === 'development' && (
+                <div className="mt-4 text-xs text-gray-400">
+                  <p>Debug: manualVideoUrl = {manualVideoUrl ? "已設置" : "未設置"}</p>
+                  <p>Debug: parsing = {parsing ? "true" : "false"}</p>
+                  <p>Debug: uploadedImages.length = {uploadedImages.length}</p>
+                </div>
+              )}
             </div>
           </SectionCard>
         </div>

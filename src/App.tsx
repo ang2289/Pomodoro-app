@@ -81,10 +81,12 @@ import SummaryLanding from './pages/summary-landing'
 import SearchPage from './pages/SearchPage'
 import ShoppingSearchPage from './pages/shopping/search'
 import ShoppingResultsPage from './pages/shopping/results'
+import AirfryerPage from './pages/goods/airfryer-keshaui'
 import AIHome from './pages/AIHome'
 import AISummaryGuide from './pages/tools/ai-summary'
 import ShopeeSingleVideoPage from './pages/tools/ShopeeSingleVideoPage'
 import ShopeeVideoPage from './pages/tools/shopee-video/index.tsx'
+import HomeworkHelper from './pages/tools/homework-helper'
 import RxVAutoShortsPage from './pages/RxVAutoShortsPage'
 import RedirectShorts from './pages/rxv-auto-shorts'
 import RetirementPage from './pages/retirement/index'
@@ -191,6 +193,9 @@ function App() {
             <Route path="shopping/search" element={<ShoppingSearchPage />} />
             <Route path="shopping/results" element={<ShoppingResultsPage />} />
             
+            {/* 商品頁面 */}
+            <Route path="goods/airfryer-keshaui" element={<AirfryerPage />} />
+            
             {/* 退休理財懶人包頁面 */}
             <Route path="aids" element={<AidsPage />} />
             <Route path="aids/rental-subsidy-2025" element={<RentalSubsidy2025 />} />
@@ -214,6 +219,7 @@ function App() {
             <Route path="tools/ai-summary" element={<AISummaryGuide />} />
             <Route path="tools/shopee-single-video" element={<ShopeeSingleVideoPage />} />
             <Route path="tools/shopee-video" element={<ShopeeVideoPage />} />
+            <Route path="tools/homework-helper" element={<HomeworkHelper />} />
             <Route path="automation" element={<AIHome />} />
             <Route path="rxv-auto-shorts" element={<RedirectShorts />} />
             <Route path="language-guide" element={<LanguageGuide />} />

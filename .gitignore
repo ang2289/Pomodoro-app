@@ -41,3 +41,7 @@ android/
 ios/
 
 .vercel
+
+# SSL certificates (local development only)
+localhost.key
+localhost.crt

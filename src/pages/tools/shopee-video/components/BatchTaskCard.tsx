@@ -89,7 +89,16 @@ export default function BatchTaskCard({
           </label>
           <ImagesUploader
             images={task.images}
-            onChange={(newImages) => onUpdate(task.id, { images: newImages })}
+            updateImage={(index, value) => {
+              const newImages = [...task.images];
+              newImages[index] = value;
+              onUpdate(task.id, { images: newImages });
+            }}
+            addImage={(value) => onUpdate(task.id, { images: [...task.images, value] })}
+            removeImage={(index) => {
+              const newImages = task.images.filter((_, i) => i !== index);
+              onUpdate(task.id, { images: newImages });
+            }}
           />
         </div>
 
