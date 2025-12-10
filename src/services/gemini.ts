@@ -1,6 +1,7 @@
 export async function getGeminiAnswer(
   prompt: string,
-  mode: 'answerOnly' | 'simple' | 'detailed' | 'examples' = 'simple'
+  mode: 'answerOnly' | 'simple' | 'detailed' | 'examples' = 'simple',
+  language: 'zh' | 'en' | 'ja' = 'zh'
 ): Promise<string> {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY_HOMEWORK;
 
@@ -10,6 +11,13 @@ export async function getGeminiAnswer(
   }
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+
+  // 語言對應
+  const languageMap = {
+    zh: "繁體中文",
+    en: "English",
+    ja: "日本語"
+  };
 
   // 根據模式決定風格提示
   let finalPrompt = prompt;
@@ -22,6 +30,9 @@ export async function getGeminiAnswer(
   } else if (mode === 'examples') {
     finalPrompt = `請用日常生活的例子來幫助解釋：${prompt}`;
   }
+
+  // 加入語言指示
+  finalPrompt = `請使用 ${languageMap[language]} 回答：${finalPrompt}`;
 
   const body = {
     contents: [

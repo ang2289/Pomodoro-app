@@ -3,6 +3,8 @@ import { Helmet } from 'react-helmet-async'
 import { buildSEO } from '../../lib/seo'
 import SectionHeader from '../../components/SectionHeader'
 import { config } from '../../config'
+import { useDailyLimit } from '@/hooks/useDailyLimit'
+import { UpgradePopup } from '@/components/UpgradePopup'
 
 const MAX_CHARACTERS = 2000
 
@@ -71,6 +73,9 @@ export default function SummaryPage() {
   const [lang, setLang] = useState<'zh-tw' | 'en'>('zh-tw')
   const t = LANG_TEXT[lang]
 
+  const limit = useDailyLimit("summary", 5)
+  const [showPopup, setShowPopup] = useState(false)
+
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [summary, setSummary] = useState('')
@@ -84,6 +89,11 @@ export default function SummaryPage() {
   }
 
   const handleSummary = async () => {
+    if (limit.isExceeded) {
+      setShowPopup(true)
+      return
+    }
+
     if (!input.trim()) {
       setError(lang === 'zh-tw' ? '請貼上文章內容' : 'Please paste article content')
       return
@@ -97,6 +107,8 @@ export default function SummaryPage() {
       )
       return
     }
+
+    limit.addOne()
 
     setError('')
     setLoading(true)
@@ -172,7 +184,7 @@ export default function SummaryPage() {
       <Helmet>
         <title>{seo.title}</title>
       </Helmet>
-
+      {showPopup && <UpgradePopup onClose={() => setShowPopup(false)} />}
       {/* ===== Container ===== */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-4 lg:p-8 bg-[#EFF5FF] min-h-screen">
         

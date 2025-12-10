@@ -207,7 +207,8 @@ function extractProductData(apiResponse: any): {
   };
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+// ❌ 已停用：前端未使用此 API，暫時移除以減少部署函式
+// export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     // 取得 URL 參數
     const productUrl = (req.query.url as string) || "";

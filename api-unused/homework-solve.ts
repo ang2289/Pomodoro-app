@@ -4,7 +4,8 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 // 取得 API KEY（請確認 .env 有設定）
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+// ❌ 已停用：功能與 homework-helper.ts 重複
+// export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST")
     return res.status(405).json({ error: "只允許 POST" });
 

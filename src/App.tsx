@@ -89,6 +89,7 @@ import ShopeeVideoPage from './pages/tools/shopee-video/index.tsx'
 import HomeworkHelper from './pages/tools/homework-helper'
 import RxVAutoShortsPage from './pages/RxVAutoShortsPage'
 import RedirectShorts from './pages/rxv-auto-shorts'
+import NotFoundPage from './pages/NotFound'
 import RetirementPage from './pages/retirement/index'
 import RentalSubsidy2025 from './pages/aids/rental-subsidy-2025'
 import LTC2025Update from './pages/aids/ltc-2025-update'
@@ -187,10 +188,20 @@ function App() {
             <Route path="todo" element={<TodoPage />} />
             <Route path="pomodoro" element={<PomodoroPage />} />
             <Route path="wish" element={<WishWallPage />} />
-            <Route path="summary" element={<SummaryPage />} />
+            
+            {/*
+             =====================================================
+             🚫 路由封鎖：未完成工具全部先禁止訪問
+             =====================================================
+            */}
+            <Route path="summary" element={<NotFoundPage />} />
+            <Route path="homework-helper" element={<NotFoundPage />} />
+            <Route path="shopping/search" element={<NotFoundPage />} />
+            <Route path="shopee-video" element={<NotFoundPage />} />
+            {/* 若你其他工具也要暫時封鎖可以繼續加 */}
+            
             <Route path="summary-landing" element={<SummaryLanding />} />
             <Route path="search" element={<SearchPage />} />
-            <Route path="shopping/search" element={<ShoppingSearchPage />} />
             <Route path="shopping/results" element={<ShoppingResultsPage />} />
             
             {/* 商品頁面 */}
@@ -218,8 +229,9 @@ function App() {
             <Route path="tools" element={<AIHome />} />
             <Route path="tools/ai-summary" element={<AISummaryGuide />} />
             <Route path="tools/shopee-single-video" element={<ShopeeSingleVideoPage />} />
-            <Route path="tools/shopee-video" element={<ShopeeVideoPage />} />
-            <Route path="tools/homework-helper" element={<HomeworkHelper />} />
+            {/* 工具路由封鎖 */}
+            <Route path="tools/shopee-video" element={<NotFoundPage />} />
+            <Route path="tools/homework-helper" element={<NotFoundPage />} />
             <Route path="automation" element={<AIHome />} />
             <Route path="rxv-auto-shorts" element={<RedirectShorts />} />
             <Route path="language-guide" element={<LanguageGuide />} />
@@ -296,6 +308,9 @@ function App() {
           <Route path="/blog/power-of-silence" element={<PowerOfSilence />} />
           <Route path="/blog/three-minute-meditation" element={<ThreeMinuteMeditation />} />
           <Route path="/blog/about-spiritual-growth" element={<AboutSpiritualGrowth />} />
+          
+          {/* 404 - 必須放在最後 */}
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       
       {/* Keep-Alive Ping */}
