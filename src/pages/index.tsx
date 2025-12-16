@@ -1,10 +1,18 @@
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { featureFlags } from '@/config/featureFlags';
 
 const HomePage: React.FC = () => {
   useEffect(() => {
     document.title = 'AI 工具與生活服務中心 | RxV Pomodoro';
   }, []);
+
+  // 判斷是否為 localhost 環境
+  const isLocalhost =
+    typeof window !== "undefined" &&
+    (window.location.hostname === "localhost" ||
+     window.location.hostname === "127.0.0.1" ||
+     window.location.hostname === "::1");
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-50 via-white to-indigo-50">
@@ -29,13 +37,12 @@ const HomePage: React.FC = () => {
               </p>
 
               <div className="flex flex-wrap gap-3 pt-1">
-                {/* 先隱藏這兩個功能，等完成限制再打開 */}
-                {/* <Link
+                <Link
                   to="/summary"
                   className="inline-flex items-center rounded-full bg-sky-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-1"
                 >
                   🚀 直接試用 AI 摘要工具
-                </Link> */}
+                </Link>
                 <a
                   href="https://ko-fi.com/s/b5b4180ff1"
                   target="_blank"
@@ -46,17 +53,20 @@ const HomePage: React.FC = () => {
                 </a>
               </div>
 
-              <div style={{ marginTop: "20px" }}>
-                <Link to="/tools/shopee-video">
-                  <button style={{
-                    padding: "16px 20px",
-                    width: "100%",
-                    fontSize: "18px"
-                  }}>
-                    🎬 RxV AI 自動短影音工具（V2 專業版）
-                  </button>
-                </Link>
-              </div>
+              {/* 🔒 RxV AI 自動短影音工具 - 使用功能開關控制 */}
+              {featureFlags.videoTool && (
+                <div style={{ marginTop: "20px" }}>
+                  <Link to="/tools/shopee-video">
+                    <button style={{
+                      padding: "16px 20px",
+                      width: "100%",
+                      fontSize: "18px"
+                    }}>
+                      🎬 RxV AI 自動短影音工具（V2 專業版）
+                    </button>
+                  </Link>
+                </div>
+              )}
 
               <p className="text-xs text-slate-500">
                 ✅ 支援中英文內容 · ✅ 穩定 JSON Schema · ✅ 適合部落客 / 開發者 / 內容創作者
@@ -66,8 +76,7 @@ const HomePage: React.FC = () => {
             {/* 右側：主力工具小卡片 */}
             <div className="flex-1">
               <div className="grid gap-3 sm:grid-cols-2">
-                {/* 摘要工具 & 作業助手入口已暫時隱藏，完成每日限制後再開放 */}
-                {/* <Link
+                <Link
                   to="/summary"
                   className="flex flex-col justify-between rounded-2xl bg-gradient-to-br from-sky-500 to-indigo-500 p-4 text-white shadow-md hover:shadow-lg"
                 >
@@ -80,7 +89,7 @@ const HomePage: React.FC = () => {
                   <p className="mt-2 text-xs text-sky-50">
                     一鍵整理長文、文章或 YouTube 字幕，支援中英文摘要＋關鍵字。
                   </p>
-                </Link> */}
+                </Link>
 
                 <Link
                   to="/pomodoro"
@@ -118,8 +127,7 @@ const HomePage: React.FC = () => {
           {/* 卡片群組 */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {/* AI 工具 */}
-            {/* 摘要工具 & 作業助手入口已暫時隱藏，完成每日限制後再開放 */}
-            {/* <Link
+            <Link
               to="/summary"
               className="group flex flex-col rounded-2xl bg-white/90 p-4 shadow-sm ring-1 ring-sky-100 hover:-translate-y-0.5 hover:bg-sky-50 hover:shadow-md transition"
             >
@@ -132,53 +140,61 @@ const HomePage: React.FC = () => {
               <p className="mt-2 text-sm text-slate-600">
                 貼上文章 / 網站 / 字幕內容，一鍵產出摘要與關鍵字，可搭配 Ko-fi 模板做成自己的 API。
               </p>
-            </Link> */}
-
-              {/* 先隱藏這兩個功能，等完成限制再打開 */}
-              {/* <Link
-              to="/tools/homework-helper"
-              className="group flex flex-col rounded-2xl bg-white/90 p-4 shadow-sm ring-1 ring-sky-100 hover:-translate-y-0.5 hover:bg-sky-50 hover:shadow-md transition"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-base font-semibold text-slate-900">
-                  📘 AI 學生作業解題助手
-                </span>
-                <span className="text-xs text-sky-600">AI 工具</span>
-              </div>
-              <p className="mt-2 text-sm text-slate-600">
-                拍照或貼上問題即可解題，含步驟教學與白話說明，支援國小至高中。
-              </p>
-            </Link> */}
-
-            <Link
-              to="/shopping/search"
-              className="group flex flex-col rounded-2xl bg-white/90 p-4 shadow-sm ring-1 ring-emerald-100 hover:-translate-y-0.5 hover:bg-emerald-50 hover:shadow-md transition"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-base font-semibold text-slate-900">
-                  🛒 商品搜尋與比價工具
-                </span>
-                <span className="text-xs text-emerald-700">生活工具</span>
-              </div>
-              <p className="mt-2 text-sm text-slate-600">
-                輸入想找的商品，未來可整合蝦皮 / 比價結果，幫你找出划算選項。
-              </p>
             </Link>
 
-            <Link
-              to="/tools/shopee-video"
-              className="group flex flex-col rounded-2xl bg-white/90 p-4 shadow-sm ring-1 ring-purple-100 hover:-translate-y-0.5 hover:bg-purple-50 hover:shadow-md transition"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-base font-semibold text-slate-900">
-                  🎬 RxV AI 自動短影音工具（V2 專業版）
-                </span>
-                <span className="text-xs text-purple-700">AI 工具</span>
-              </div>
-              <p className="mt-2 text-sm text-slate-600">
-                自動抓商品資訊 + 一鍵生成商品短影音（支援蝦皮分潤、字幕、腳本、圖片處理）。
-              </p>
-            </Link>
+              {/* 作業解題助手：已暫時隱藏，等待審核完成後開放 */}
+              {false && (
+                <Link
+                  to="/tools/homework-helper"
+                  className="group flex flex-col rounded-2xl bg-white/90 p-4 shadow-sm ring-1 ring-sky-100 hover:-translate-y-0.5 hover:bg-sky-50 hover:shadow-md transition"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-base font-semibold text-slate-900">
+                      📘 AI 學生作業解題助手
+                    </span>
+                    <span className="text-xs text-sky-600">AI 工具</span>
+                  </div>
+                  <p className="mt-2 text-sm text-slate-600">
+                    拍照或貼上問題即可解題，含步驟教學與白話說明，支援國小至高中。
+                  </p>
+                </Link>
+              )}
+
+            {/* 🔒 商品搜尋與比價工具 - 使用功能開關控制 */}
+            {featureFlags.priceCompare && (
+              <Link
+                to="/shopping/search"
+                className="group flex flex-col rounded-2xl bg-white/90 p-4 shadow-sm ring-1 ring-emerald-100 hover:-translate-y-0.5 hover:bg-emerald-50 hover:shadow-md transition"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-base font-semibold text-slate-900">
+                    🛒 商品搜尋與比價工具
+                  </span>
+                  <span className="text-xs text-emerald-700">生活工具</span>
+                </div>
+                <p className="mt-2 text-sm text-slate-600">
+                  輸入想找的商品，未來可整合蝦皮 / 比價結果，幫你找出划算選項。
+                </p>
+              </Link>
+            )}
+
+            {/* 🔒 RxV AI 自動短影音工具 - 使用功能開關控制 */}
+            {featureFlags.videoTool && (
+              <Link
+                to="/tools/shopee-video"
+                className="group flex flex-col rounded-2xl bg-white/90 p-4 shadow-sm ring-1 ring-purple-100 hover:-translate-y-0.5 hover:bg-purple-50 hover:shadow-md transition"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-base font-semibold text-slate-900">
+                    🎬 RxV AI 自動短影音工具（V2 專業版）
+                  </span>
+                  <span className="text-xs text-purple-700">AI 工具</span>
+                </div>
+                <p className="mt-2 text-sm text-slate-600">
+                  自動抓商品資訊 + 一鍵生成商品短影音（支援蝦皮分潤、字幕、腳本、圖片處理）。
+                </p>
+              </Link>
+            )}
 
             {/* 生產力工具 */}
             <Link

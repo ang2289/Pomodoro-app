@@ -12,10 +12,14 @@
  */
 
 import { useState } from 'react';
-
-
+import { Navigate } from 'react-router-dom';
+import { featureFlags } from '@/config/featureFlags';
 
 export default function ShopeeSingleVideoPage() {
+  // 🔒 功能開關檢查：防止直接輸入網址進入
+  if (!featureFlags.videoTool) {
+    return <Navigate to="/" replace />;
+  }
 
   const [inputUrl, setInputUrl] = useState('');
 

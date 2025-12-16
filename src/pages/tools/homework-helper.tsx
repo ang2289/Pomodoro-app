@@ -1,10 +1,17 @@
 import { useState, useRef, useEffect } from "react";
-import { getGeminiAnswer } from "@/services/gemini";
+// ⚠️ 已停用前端直呼 Gemini：import { getGeminiAnswer } from "@/services/gemini";
 import { googleTTS } from "@/services/googleTTS";
 import ReadButton from "@/components/ReadButton";
 import { useVoiceEngine } from "@/hooks/useVoiceEngine";
 import { useDailyLimit } from "@/hooks/useDailyLimit";
 import { UpgradePopup } from "@/components/UpgradePopup";
+import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
+import NotFoundPage from "@/pages/NotFound";
+import { useAuthCredits } from "@/hooks/useAuthCredits";
+import CreditUsageNotice from "@/components/CreditUsageNotice";
+import CreditStatusBar, { updateUsedCharsAfterSuccess } from "@/components/CreditStatusBar";
+import { useNavigate } from "react-router-dom";
+import { useCreditCheck } from "@/hooks/useCreditCheck";
 
 // Google TTS 播放函式
 async function playGoogleTTS(text: string, lang: string = "zh-TW") {
@@ -156,6 +163,18 @@ function detectLanguage(text: string): 'zh' | 'en' | 'ja' {
 }
 
 export default function HomeworkHelper() {
+  // 判斷是否為 localhost 環境
+  const isLocalhost =
+    typeof window !== "undefined" &&
+    (window.location.hostname === "localhost" ||
+     window.location.hostname === "127.0.0.1" ||
+     window.location.hostname === "::1");
+
+  // 非 localhost 環境一律顯示 NotFound
+  if (!isLocalhost) {
+    return <NotFoundPage />;
+  }
+
   const [question, setQuestion] = useState("");
   const [mode, setMode] = useState<"answerOnly" | "simple" | "detailed" | "examples">("answerOnly");
   const [language, setLanguage] = useState<"zh" | "en" | "ja">("zh");
@@ -180,6 +199,13 @@ export default function HomeworkHelper() {
     message: string;
     upgradeButton?: string;
   } | null>(null);
+  const navigate = useNavigate();
+
+  // 使用 useAuthCredits Hook 自動取得並更新剩餘點數
+  const { remainingChars, loading: creditsLoading, refresh: refreshCredits } = useAuthCredits()
+  
+  // 使用共用的扣點檢查邏輯
+  const creditCheck = useCreditCheck(question.length)
 
   // 字數檢查函式
   function checkTtsLimit(text: string, userPlan: string) {
@@ -233,6 +259,60 @@ export default function HomeworkHelper() {
     lang: getSpeechLang(language),
   });
 
+  // 清理語音辨識結果，去除重複文字
+  const cleanTranscript = (text: string): string => {
+    if (!text) return "";
+    
+    // 1. 去除完全重複的片段（例如："今天 今天 今天是星期幾" → "今天是星期幾"）
+    let cleaned = text;
+    
+    // 2. 去除連續重複詞彙（"今天今天是星期幾" → "今天是星期幾"）
+    // 匹配連續重複的中文字詞（2-10個字）
+    cleaned = cleaned.replace(/([\u4e00-\u9fa5]{2,10})\1+/g, "$1");
+    
+    // 3. 去除完全重複的片段（以空格分隔的完整詞組）
+    const words = cleaned.split(/\s+/);
+    const uniqueWords: string[] = [];
+    let lastWord = "";
+    
+    for (const word of words) {
+      if (word && word !== lastWord) {
+        uniqueWords.push(word);
+        lastWord = word;
+      }
+    }
+    
+    cleaned = uniqueWords.join(" ");
+    
+    // 4. 去除語音 API 的時間戳重複截斷（例如："今天 今天" → "今天"）
+    // 再次檢查是否有連續重複的詞（包括空格）
+    cleaned = cleaned.replace(/([\u4e00-\u9fa5]+)\s+\1+/g, "$1");
+    
+    return cleaned.trim();
+  };
+
+  // 語音輸入功能
+  const {
+    supported: sttSupported,
+    listening: sttListening,
+    transcript: sttTranscript,
+    error: sttError,
+    start: startStt,
+    stop: stopStt,
+    reset: resetStt,
+  } = useSpeechRecognition({
+    lang: "zh-TW",
+    continuous: false,
+    interimResults: true,
+    onFinalResult: (text) => {
+      // 語音辨識完成後，清理重複文字並附加到題目輸入框
+      const cleanedText = cleanTranscript(text);
+      if (cleanedText) {
+        setQuestion((prev) => (prev ? prev + " " + cleanedText : cleanedText));
+      }
+    },
+  });
+
   const autoResizeTextarea = () => {
     const el = textareaRef.current;
     if (!el) return;
@@ -268,16 +348,98 @@ export default function HomeworkHelper() {
 
     if (!question) return;
     
+    // 使用共用的扣點檢查邏輯：在送出請求前先檢查字數是否足夠
+    if (!creditCheck.canProceed) {
+      // 阻擋送出請求，不呼叫任何 API
+      setModal({
+        title: '剩餘字數不足',
+        message: creditCheck.errorMessage || '剩餘字數不足，請升級方案（尚未開放）',
+      })
+      return
+    }
+    
     limit.addOne();
     
     setLoading(true);
     try {
-      // 使用使用者選擇的語言，不自動偵測
-      const res = await getGeminiAnswer(question, mode, language);
-      setResult(res);
-    } catch (err) {
+      // ✅ 改用後端 API（禁止前端直呼 Gemini）
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "https://icuxwmpdpsfhztsbyeds.supabase.co";
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      
+      if (!supabaseUrl || !supabaseAnonKey) {
+        throw new Error("Supabase 環境變數未設定");
+      }
+
+      // 將前端 mode 映射到後端 mode
+      const modeMap: Record<string, string> = {
+        answerOnly: "easy",  // 簡潔答案
+        simple: "kid",       // 簡單解釋
+        detailed: "pro",     // 詳細說明
+        examples: "easy",    // 舉例模式（暫時用 easy）
+      };
+
+      const backendMode = modeMap[mode] || "easy";
+
+      // 根據語言調整 prompt
+      const languageMap = {
+        zh: "請使用繁體中文回答：",
+        en: "Please answer in English:",
+        ja: "日本語で回答してください：",
+      };
+      const languagePrefix = languageMap[language] || "";
+
+      const response = await fetch(
+        `${supabaseUrl}/functions/v1/homework-helper`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${supabaseAnonKey}`,
+          },
+          body: JSON.stringify({
+            prompt: `${languagePrefix}${question}`,
+            mode: backendMode,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        
+        // 處理點數不足錯誤（403 或 NEED_PURCHASE）
+        if (response.status === 403 && (errorData.error === 'INSUFFICIENT_CREDITS' || errorData.error === 'NEED_PURCHASE')) {
+          // 重新取得最新剩餘點數
+          await refreshCredits()
+          
+          const currentRemaining = remainingChars || errorData.remaining || 0
+          const requested = question.length
+          
+          setModal({
+            title: '點數不足',
+            message: `你目前剩餘 ${currentRemaining.toLocaleString()} 字，本次需要 ${requested.toLocaleString()} 字\n點數不足，請購買點數繼續使用`,
+            upgradeButton: '前往購買點數',
+          })
+          return
+        }
+        
+        throw new Error(errorData.error || errorData.message || `API 錯誤：${response.status}`);
+      }
+
+      const data = await response.json();
+      setResult(data.result || "❌ 無法取得回答");
+      
+      // 接收後端回傳的最新剩餘點數（扣點後），並更新本地狀態
+      if (data.remaining !== undefined) {
+        // 使用 refreshCredits 來更新點數（會自動更新 useAuthCredits 的狀態）
+        await refreshCredits()
+        
+        // 更新已使用字數（用於未登入狀態的 localStorage）
+        const deductedChars = question.length
+        updateUsedCharsAfterSuccess(deductedChars)
+      }
+    } catch (err: any) {
       console.error("❌ 錯誤", err);
-      setResult("❌ 無法取得回答，請稍後再試");
+      setResult(`❌ 無法取得回答：${err.message || "請稍後再試"}`);
     } finally {
       setLoading(false);
     }
@@ -322,7 +484,53 @@ export default function HomeworkHelper() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
+      {/* 測試中提示 */}
+      <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-center">
+        <p className="text-sm text-yellow-800">
+          ⚠️ 測試中，未正式上線
+        </p>
+      </div>
+      
       <h1 className="text-3xl font-bold mb-8 text-center">🎓 作業解題神器</h1>
+
+      {/* 目前狀態顯示（用於 homework 頁面） */}
+      {!creditsLoading && remainingChars !== null && (
+        <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+          <p className="text-xs font-semibold text-gray-700 mb-2">
+            您的狀態：
+          </p>
+          {remainingChars > 0 ? (
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="text-green-600">✔</span>
+                <span className="text-sm font-medium text-gray-900">
+                  免費體驗使用中
+                </span>
+              </div>
+              <p className="text-xs text-gray-600 ml-6">
+                剩餘：{remainingChars.toLocaleString()} 字
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="text-red-600">⚠</span>
+                <span className="text-sm font-medium text-gray-900">
+                  免費體驗已用完
+                </span>
+              </div>
+              <p className="text-xs text-gray-600 ml-6">
+                請購買點數以繼續使用
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+      {creditsLoading && (
+        <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+          <p className="text-sm text-gray-500">載入點數中…</p>
+        </div>
+      )}
 
       {/* 測試用：訂閱方案切換按鈕 */}
       <div className="mb-3 flex items-center justify-end gap-2 text-xs text-slate-500">
@@ -438,6 +646,13 @@ export default function HomeworkHelper() {
         })}
       </div>
 
+      {/* 語音輸入小提示 - 暫時隱藏 */}
+      {false && (
+        <div className="mt-2 text-xs text-gray-500 mb-3">
+          💡 小提示：不想打字可以點右上角「🎤 語音輸入」，直接唸題目給 AI 聽，系統會自動幫你轉成文字。
+        </div>
+      )}
+
       {/* 【三、問題輸入框（白色圓角卡片）】 */}
       <div className="bg-white rounded-xl shadow-md p-6 mb-5 relative">
         <div className="relative w-full">
@@ -451,47 +666,90 @@ export default function HomeworkHelper() {
             style={{ minHeight: "150px" }}
             rows={4}
           />
-          {/* 朗讀按鈕 - 鎖定在輸入框右上角外側，不會遮擋文字 */}
-          <button
-            type="button"
-            onClick={() => {
-              const checkResult = checkTtsLimit(question, plan);
-              if (!checkResult.ok) {
-                // 免費用戶超過限制：改用機器音（不花錢）
-                if (plan === "free") {
+          {/* 按鈕容器 - 固定在輸入框右上角，水平排列 */}
+          <div className="absolute top-2 right-2 z-10 flex items-center gap-2">
+            {/* 語音輸入按鈕 - 暫時隱藏 */}
+            {false && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (!sttSupported) return;
+                  if (sttListening) {
+                    stopStt();
+                  } else {
+                    resetStt();
+                    startStt();
+                  }
+                }}
+                disabled={!sttSupported}
+                className="flex items-center gap-1 rounded-full border px-2 py-1 text-xs bg-white/80 hover:bg-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                title={sttListening ? "停止語音輸入" : sttSupported ? "開始語音輸入" : "瀏覽器不支援語音輸入"}
+              >
+                {sttListening ? (
+                  "⏹ 停止語音"
+                ) : sttSupported ? (
+                  "🎤 語音輸入"
+                ) : (
+                  "瀏覽器不支援"
+                )}
+              </button>
+            )}
+            
+            {/* 朗讀按鈕 */}
+            <button
+              type="button"
+              onClick={() => {
+                const checkResult = checkTtsLimit(question, plan);
+                if (!checkResult.ok) {
+                  // 免費用戶超過限制：改用機器音（不花錢）
+                  if (plan === "free") {
+                    setModal({
+                      title: "朗讀字數超限",
+                      message: "你已超過免費方案的朗讀字數限制（300 字）。\n升級 Pro 即可使用真人語音，並提升至 700 字朗讀上限。",
+                      upgradeButton: "🔼 升級 Pro（199/月）",
+                    });
+                    // 強制使用機器音（免費模式，0成本）
+                    freeVoice.speak(question);
+                    return;
+                  }
+                  // Pro 用戶超過限制
+                  if (plan === "premium") {
+                    setModal({
+                      title: "朗讀字數超限",
+                      message: "本次內容超過 700 字，無法朗讀。\n升級 PlusPro 可支援一次 1500 字。",
+                      upgradeButton: "🔼 升級 PlusPro（299/月）",
+                    });
+                    return; // ⛔ 停止朗讀
+                  }
+                  // PlusPro 用戶超過限制
                   setModal({
                     title: "朗讀字數超限",
-                    message: "你已超過免費方案的朗讀字數限制（300 字）。\n升級 Pro 即可使用真人語音，並提升至 700 字朗讀上限。",
-                    upgradeButton: "🔼 升級 Pro（199/月）",
-                  });
-                  // 強制使用機器音（免費模式，0成本）
-                  freeVoice.speak(question);
-                  return;
-                }
-                // Pro 用戶超過限制
-                if (plan === "premium") {
-                  setModal({
-                    title: "朗讀字數超限",
-                    message: "本次內容超過 700 字，無法朗讀。\n升級 PlusPro 可支援一次 1500 字。",
-                    upgradeButton: "🔼 升級 PlusPro（299/月）",
+                    message: "單次朗讀上限為 1500 字，請將題目分段朗讀。",
                   });
                   return; // ⛔ 停止朗讀
                 }
-                // PlusPro 用戶超過限制
-                setModal({
-                  title: "朗讀字數超限",
-                  message: "單次朗讀上限為 1500 字，請將題目分段朗讀。",
-                });
-                return; // ⛔ 停止朗讀
-              }
-              questionVoice.speak(question);
-            }}
-            className="absolute -top-2 -right-2 z-10 inline-flex items-center rounded-full px-2 py-1 text-xs border bg-white/80 hover:bg-white transition-colors"
-            title={questionVoice.isSpeaking ? "停止朗讀" : "朗讀題目"}
-          >
-            {questionVoice.isSpeaking ? "⏹ 停止朗讀" : "🔊 朗讀題目"}
-          </button>
+                questionVoice.speak(question);
+              }}
+              className="inline-flex items-center rounded-full px-2 py-1 text-xs border bg-white/80 hover:bg-white transition-colors"
+              title={questionVoice.isSpeaking ? "停止朗讀" : "朗讀題目"}
+            >
+              {questionVoice.isSpeaking ? "⏹ 停止朗讀" : "🔊 朗讀題目"}
+            </button>
+          </div>
         </div>
+        
+        {/* 語音辨識狀態顯示 - 暫時隱藏 */}
+        {false && (sttSupported && (sttListening || sttError || sttTranscript)) && (
+          <div className="mt-1 text-xs text-gray-500">
+            {sttListening && <span>🎙 正在聽你說話…</span>}
+            {sttError && !sttListening && (
+              <span>⚠ 語音辨識發生錯誤：{sttError}</span>
+            )}
+            {sttTranscript && !sttListening && !sttError && (
+              <span>📝 已辨識文字（會自動加到題目框）：{sttTranscript}</span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* 【四、按鈕區】 */}
@@ -519,31 +777,66 @@ export default function HomeworkHelper() {
           )}
         </div>
 
+        {/* 共用狀態列元件 */}
+        <CreditStatusBar
+          inputChars={question.length}
+          isLoading={loading}
+          featureName="homework"
+          lang="zh-tw"
+        />
+
         {/* 開始解題按鈕（主要按鈕 - 紫色漸層） */}
-        <button
-          onClick={handleAnalyze}
-          disabled={loading || !question}
-          className={`w-full font-bold py-4 px-4 rounded-xl transition-all duration-200 transform flex items-center justify-center gap-2 ${
-            loading || !question
-              ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-md'
-              : 'bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 cursor-pointer shadow-md hover:shadow-lg hover:scale-105 active:scale-95'
-          }`}
-          style={
-            !loading && question
-              ? {
-                  color: '#ffffff',
-                }
-              : undefined
+        {(() => {
+          // 🔒 使用共用的扣點檢查邏輯
+          const inputChars = question.length
+          const isQuotaInsufficient = !creditCheck.canProceed && inputChars > 0
+          // 狀態 0 / A：可點擊；狀態 B / C：disabled
+          // 初始化時（inputChars === 0）按鈕也應該 disabled，提示先輸入內容
+          const isButtonDisabled = loading || creditsLoading || isQuotaInsufficient || inputChars === 0
+          
+          // 按鈕文字
+          let buttonText = loading ? "分析中..." : "🚀 開始解題"
+          if (isQuotaInsufficient && !loading) {
+            buttonText = "點數不足，請先購買"
+          } else if (inputChars === 0 && !loading) {
+            buttonText = "請先輸入題目"
           }
-        >
-          {loading && (
-            <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-          )}
-          {loading ? "分析中..." : "🚀 開始解題"}
-        </button>
+          
+          // Hover 提示文字（disabled 時顯示）
+          const tooltipText = isQuotaInsufficient && creditCheck.remainingChars !== null
+            ? `本次需要 ${inputChars.toLocaleString()} 字，剩餘點數為 ${creditCheck.remainingChars.toLocaleString()} 字`
+            : inputChars === 0
+            ? '請先輸入題目'
+            : ''
+          
+          return (
+            <button
+              onClick={handleAnalyze}
+              disabled={isButtonDisabled}
+              title={tooltipText}
+              className={`w-full font-bold py-4 px-4 rounded-xl transition-all duration-200 transform flex items-center justify-center gap-2 ${
+                isButtonDisabled
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-md'
+                  : 'bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 cursor-pointer shadow-md hover:shadow-lg hover:scale-105 active:scale-95'
+              }`}
+              style={
+                !isButtonDisabled
+                  ? {
+                      color: '#ffffff',
+                    }
+                  : undefined
+              }
+            >
+              {loading && (
+                <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              )}
+              {buttonText}
+            </button>
+          )
+        })()}
       </div>
 
       {/* 【四、AI 回答卡片】- 始終顯示 */}
@@ -663,8 +956,8 @@ export default function HomeworkHelper() {
                 <button
                   type="button"
                   onClick={() => {
-                    // TODO: 導向升級頁面
                     setModal(null);
+                    navigate('/pricing');
                   }}
                   className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
                 >

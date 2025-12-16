@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useSearchParams, useNavigate, Navigate } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
+import { featureFlags } from '@/config/featureFlags'
 import ProductCard from '../../components/shopping/ProductCard'
 
 const ITEMS_PER_PAGE = 20
@@ -40,6 +41,11 @@ interface ShopeeItem {
 }
 
 export default function ShoppingResultsPage() {
+  // 🔒 功能開關檢查：防止直接輸入網址進入
+  if (!featureFlags.priceCompare) {
+    return <Navigate to="/" replace />;
+  }
+
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const q = searchParams.get('q') || ''

@@ -21,6 +21,9 @@ export default function SiteFooter() {
         <Link to="/contact" className="hover:underline">
           {t("contact_us")}
         </Link>
+        <Link to="/service-description" className="hover:underline">
+          Service Description (English)
+        </Link>
       </div>
 
       <div className="space-x-3">
@@ -53,6 +56,17 @@ export default function SiteFooter() {
       <p className="mt-2 text-gray-500">
         {t('copyright')}
       </p>
+
+      {/* 聯絡 Email */}
+      <div className="mt-4 text-center">
+        <p className="text-sm text-gray-600 mb-2">聯絡我們</p>
+        <a
+          href="mailto:rxv0227@gmail.com"
+          className="text-blue-600 hover:underline font-medium"
+        >
+          📧 rxv0227@gmail.com
+        </a>
+      </div>
       
       <p className="text-xs text-center text-gray-500 mt-4">
         Buy the AI JSON Summarizer Template →{' '}

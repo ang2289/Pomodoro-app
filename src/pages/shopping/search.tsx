@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Navigate } from 'react-router-dom'
 import SEO from '../../components/SEO'
+import { featureFlags } from '@/config/featureFlags'
 
 const popularKeywords = [
   '除濕機',
@@ -14,6 +15,10 @@ const popularKeywords = [
 ]
 
 export default function ShoppingSearchPage() {
+  // 🔒 功能開關檢查：防止直接輸入網址進入
+  if (!featureFlags.priceCompare) {
+    return <Navigate to="/" replace />;
+  }
   const [query, setQuery] = useState('')
   const navigate = useNavigate()
 

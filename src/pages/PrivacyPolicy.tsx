@@ -8,6 +8,15 @@ export default function PrivacyPolicyPage() {
         <h1 className="text-2xl font-bold">隱私權政策與 Cookie 政策</h1>
         <ModuleDropdown />
       </div>
+
+      {/* Beta 測試標示 */}
+      <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+        <p className="text-yellow-800 font-semibold mb-2">⚠️ Beta 測試中</p>
+        <p className="text-yellow-700 text-sm">
+          本服務目前處於 Beta 測試階段，隱私權政策可能會持續更新。如有任何疑問，歡迎透過 Email 聯絡我們。
+        </p>
+      </div>
+
       <p className="mb-3">
         本網站由 RxV 夢想創作工作室營運，重視使用者的個人資料與隱私權，並依據相關法律規定保護您的資料。當您使用本網站服務時，即表示您已閱讀、理解並同意以下條款。
       </p>
@@ -101,6 +110,18 @@ export default function PrivacyPolicyPage() {
           rxv0227@gmail.com
         </a>
       </p>
+
+      {/* Service Description Link for Payment Gateway Review */}
+      <div className="mt-6 pt-4 border-t border-gray-200">
+        <p className="mb-2 text-sm text-gray-600">
+          <a 
+            href="/service-description" 
+            className="text-blue-600 hover:underline font-medium"
+          >
+            Service Description (English)
+          </a>
+        </p>
+      </div>
 
       <p className="text-sm text-gray-500">更新日期：2025/11/04</p>
     </div>

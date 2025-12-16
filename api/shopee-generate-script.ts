@@ -2,6 +2,8 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+// ✅ 統一模型：gemini-1.5-flash（成本最佳化）
+
 
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {

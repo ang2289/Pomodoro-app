@@ -1,6 +1,8 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
-const MODEL = "gemini-pro"; // ✅ 改為穩定模型
+// ✅ 統一模型：gemini-1.5-flash（成本最佳化）
+// ⚠️ 已淘汰：gemini-pro（待移除）
+const MODEL = "gemini-1.5-flash";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {

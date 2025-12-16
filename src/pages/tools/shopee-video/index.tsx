@@ -1,7 +1,9 @@
 // src/pages/tools/shopee-video/index.tsx
 
 import { useState, useEffect, useMemo } from "react";
+import { Navigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { featureFlags } from "@/config/featureFlags";
 import { useSingleVideo } from "./hooks/useSingleVideo";
 import { useBatchVideo } from "./hooks/useBatchVideo";
 import { canGenerateScript, canGenerateVideo } from "./utils/validators";
@@ -17,6 +19,10 @@ import VideoPreview from "./components/VideoPreview";
 import BatchTaskCard from "./components/BatchTaskCard";
 
 export default function ShopeeVideoPage() {
+  // 🔒 功能開關檢查：防止直接輸入網址進入
+  if (!featureFlags.videoTool) {
+    return <Navigate to="/" replace />;
+  }
   const [mode, setMode] = useState<"single" | "batch">("single");
   const [productUrl, setProductUrl] = useState("");
   const [product, setProduct] = useState<{ title: string; price: string; image: string } | null>(null);

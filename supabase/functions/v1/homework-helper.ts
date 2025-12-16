@@ -1,7 +1,9 @@
 // functions/v1/homework-helper.ts
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const MODEL = "gemini-pro";
+// ✅ 統一模型：gemini-1.5-flash（成本最佳化）
+// ⚠️ 已淘汰：gemini-pro（待移除）
+const MODEL = "gemini-1.5-flash";
 
 serve(async (req) => {
   try {
@@ -65,6 +67,8 @@ serve(async (req) => {
     });
   }
 });
+
+
 
 
 

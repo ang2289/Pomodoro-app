@@ -37,6 +37,9 @@ import PrivacyPolicy from './pages/PrivacyPolicy'
 import Terms from './pages/Terms'
 import About from './pages/About'
 import Contact from './pages/Contact'
+import ServiceDescription from './pages/ServiceDescription'
+import PaymentInfo from './pages/PaymentInfo'
+import SystemStatus from './pages/SystemStatus'
 import FeaturesPage from './pages/FeaturesPage'
 import ArticleTemplate from './pages/blog/ArticleTemplate'
 import ChantFocusArticle from './pages/blog/ChantFocusArticle'
@@ -78,6 +81,10 @@ import AidsPage from './pages/blog/aids'
 import FinancePage from './pages/finance/index'
 import SummaryPage from './pages/summary/index'
 import SummaryLanding from './pages/summary-landing'
+import PricingPage from './pages/PricingPage'
+import PricingPageNew from './pages/pricing/index'
+import PaymentSuccessPage from './pages/pricing/success'
+import PaymentCancelPage from './pages/pricing/cancel'
 import SearchPage from './pages/SearchPage'
 import ShoppingSearchPage from './pages/shopping/search'
 import ShoppingResultsPage from './pages/shopping/results'
@@ -110,12 +117,16 @@ import AdBanner from './components/AdBanner'
 import { Toaster } from 'react-hot-toast'
 import { useGATracker } from './hooks/useGATracker'
 import { KeepAlivePing } from './components/KeepAlivePing'
+import { useAuthCredits } from './hooks/useAuthCredits'
 
 function App() {
   const { t } = useTranslation()
   useGATracker()
   const [showAd, setShowAd] = useState(false)
   const [isSubscribed, setIsSubscribed] = useState(false)
+  
+  // 自動初始化使用者免費試用點數（首次註冊/登入時）
+  useAuthCredits()
   // 自動偵測目前執行模式（App/PWA 或 Web）
   const isApp =
     (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
@@ -191,11 +202,16 @@ function App() {
             
             {/*
              =====================================================
-             🚫 路由封鎖：未完成工具全部先禁止訪問
+             ✅ 摘要功能已啟用
              =====================================================
             */}
-            <Route path="summary" element={<NotFoundPage />} />
-            <Route path="homework-helper" element={<NotFoundPage />} />
+            <Route path="summary" element={<SummaryPage />} />
+            <Route path="pricing" element={<PricingPageNew />} />
+            <Route path="pricing/success" element={<PaymentSuccessPage />} />
+            <Route path="pricing/cancel" element={<PaymentCancelPage />} />
+            <Route path="pricing-old" element={<PricingPage />} />
+            {/* 作業解題功能已暫時隱藏，等待審核完成後開放 */}
+            {/* <Route path="homework-helper" element={<HomeworkHelper />} /> */}
             <Route path="shopping/search" element={<NotFoundPage />} />
             <Route path="shopee-video" element={<NotFoundPage />} />
             {/* 若你其他工具也要暫時封鎖可以繼續加 */}
@@ -231,6 +247,8 @@ function App() {
             <Route path="tools/shopee-single-video" element={<ShopeeSingleVideoPage />} />
             {/* 工具路由封鎖 */}
             <Route path="tools/shopee-video" element={<NotFoundPage />} />
+            {/* 作業解題功能已暫時隱藏，等待審核完成後開放 */}
+            {/* <Route path="tools/homework-helper" element={<HomeworkHelper />} /> */}
             <Route path="tools/homework-helper" element={<NotFoundPage />} />
             <Route path="automation" element={<AIHome />} />
             <Route path="rxv-auto-shorts" element={<RedirectShorts />} />
@@ -270,9 +288,13 @@ function App() {
           
           {/* 網站基本頁面 */}
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/service-description" element={<ServiceDescription />} />
+          <Route path="/payment-info" element={<PaymentInfo />} />
+          <Route path="/status" element={<SystemStatus />} />
           <Route path="/features" element={<FeaturesPage />} />
           
           {/* Blog 教學文章 */}

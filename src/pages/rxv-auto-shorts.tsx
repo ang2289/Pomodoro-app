@@ -1,21 +1,19 @@
 // 自動導向新版 shopee-video 頁面（保留此檔避免 404）
 
 import { useEffect } from "react";
-
-import { useNavigate } from "react-router-dom";
-
-
+import { Navigate, useNavigate } from "react-router-dom";
+import { featureFlags } from "@/config/featureFlags";
 
 export default function RedirectShorts() {
+  // 🔒 功能開關檢查：防止直接輸入網址進入
+  if (!featureFlags.videoTool) {
+    return <Navigate to="/" replace />;
+  }
 
   const navigate = useNavigate();
 
-
-
   useEffect(() => {
-
     navigate("/tools/shopee-video", { replace: true });
-
   }, [navigate]);
 
 

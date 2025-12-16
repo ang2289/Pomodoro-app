@@ -1,4 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+// ✅ 統一模型：gemini-1.5-flash（成本最佳化）
+// 🛡️ 點數制：先扣點再呼叫 AI，避免成本浪費
 
 console.log("✅ Edge Function 'homework-helper' is running...");
 
@@ -30,6 +34,103 @@ serve(async (req: Request) => {
         status: 400,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
+    }
+
+    // 🛡️ 點數制：先扣點再呼叫 AI
+    const inputLength = prompt.length;
+
+    // 從請求中取得用戶識別
+    const authHeader = req.headers.get("authorization");
+    let userIdentifier = "anonymous";
+    
+    if (authHeader) {
+      try {
+        const token = authHeader.replace("Bearer ", "");
+        userIdentifier = token.length > 32 ? token.substring(0, 32) : token;
+      } catch (e) {
+        userIdentifier = req.headers.get("x-forwarded-for") || "anonymous";
+      }
+    } else {
+      userIdentifier = req.headers.get("x-forwarded-for") || "anonymous";
+    }
+
+    // 取得 Supabase 客戶端
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") || Deno.env.get("VITE_SUPABASE_URL");
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return new Response(
+        JSON.stringify({ error: "Supabase credentials not configured" }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // 🔒 先扣點數（原子操作）
+    try {
+      const { data: consumeResult, error: consumeError } = await supabase.rpc('consume_user_credits', {
+        p_user_id: userIdentifier,
+        p_used_chars: inputLength,
+      });
+
+      if (consumeError) {
+        // 點數不足
+        if (consumeError.message.includes('insufficient_credits') || consumeError.code === 'P0001') {
+          // 取得目前剩餘點數
+          const { data: currentData } = await supabase
+            .from('user_credits')
+            .select('remaining_chars')
+            .eq('user_id', userIdentifier)
+            .single();
+
+          const remaining = currentData?.remaining_chars || 0;
+
+          return new Response(
+            JSON.stringify({
+              error: "INSUFFICIENT_CREDITS",
+              message: "點數不足，請先購買點數",
+              remaining: remaining,
+              requested: inputLength,
+            }),
+            {
+              status: 403,
+              headers: { "Content-Type": "application/json", ...corsHeaders },
+            }
+          );
+        }
+
+        // 其他錯誤
+        console.error("❌ 扣點數失敗：", consumeError);
+        throw consumeError;
+      }
+
+      // 扣點成功，記錄使用紀錄（非同步）
+      supabase.from('usage_logs').insert({
+        user_id: userIdentifier,
+        used_chars: inputLength,
+        service_type: 'homework',
+        content_preview: prompt.substring(0, 100), // 只記錄前 100 字
+      }).catch((err) => {
+        console.error("❌ 記錄使用紀錄失敗：", err);
+      });
+
+      // ✅ 扣點成功，繼續執行 AI 呼叫
+    } catch (err) {
+      console.error("❌ 扣點數過程發生錯誤：", err);
+      return new Response(
+        JSON.stringify({
+          error: "扣點數失敗",
+          message: err.message || "未知錯誤",
+        }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
     }
 
     const systemPromptMap: Record<string, string> = {
