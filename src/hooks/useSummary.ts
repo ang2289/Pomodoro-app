@@ -9,23 +9,21 @@ export function useSummary() {
     setError(null);
 
     try {
-      if (!import.meta.env.VITE_SUMMARY_FUNCTION_URL) {
-        throw new Error("SUMMARY FUNCTION URL 不存在，請確認環境變數 VITE_SUMMARY_FUNCTION_URL 已於 Vercel 設定");
-      }
+      // 🧩 使用統一的摘要 API：/api/summary
+      // 不再需要檢查環境變數，直接使用 /api/summary
+      console.log("🚀 呼叫摘要 API：/api/summary");
 
-      if (!import.meta.env.VITE_SUPABASE_ANON_KEY) {
-        throw new Error("VITE_SUPABASE_ANON_KEY 不存在，請確認環境變數已於 Vercel 設定");
-      }
-
-      console.log("🚀 呼叫摘要 API：", import.meta.env.VITE_SUMMARY_FUNCTION_URL);
-
-      const res = await fetch(import.meta.env.VITE_SUMMARY_FUNCTION_URL, {
+      // 🧩 使用統一的摘要 API：/api/summary
+      // 透過 action: "generate" 來產生摘要
+      const res = await fetch('/api/summary', {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
         },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({ 
+          action: 'generate',
+          content 
+        }),
       });
 
       const data = await res.json().catch(() => ({}));

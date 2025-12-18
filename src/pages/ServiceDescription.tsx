@@ -56,8 +56,7 @@ export default function ServiceDescription() {
                 付款與金流狀態
               </h2>
               <p className="text-base text-gray-700 leading-relaxed">
-                本階段不涉及任何付款、訂閱或金流交易。
-                付費方案僅作為功能規劃展示，尚未開放購買。
+                目前金流（綠界）正在申請與審核中，本站暫不提供任何即時付款、訂閱扣款或自動續費功能。付費方案僅作為功能規劃展示，待審核完成後將另行公告並提供正式購買流程。
               </p>
             </section>
 

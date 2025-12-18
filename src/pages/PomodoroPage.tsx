@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import i18n from '../i18n';
 import { Link } from 'react-router-dom';
 import IconButton from '../components/ui/IconButton';
 import HeaderBar from '../components/HeaderBar';
@@ -25,10 +26,12 @@ import SearchRecords from '../components/Pomodoro/SearchRecords';
 import FocusItemModal from '../components/Pomodoro/FocusItemModal';
 import TimerPanel from './Pomodoro/components/TimerPanel';
 import { usePomodoroTimer } from './Pomodoro/hooks/usePomodoroTimer';
+import { trackToolClick } from '../hooks/useGATracker';
 import './PomodoroPage.css';
 
 const PomodoroPage = () => {
   const { t } = useTranslation();
+  const isEnglish = !i18n.language.startsWith("zh");
   
   // 計時器狀態 - 從 localStorage 讀取預設值
   const getInitialWorkMinutes = () => {
@@ -90,6 +93,19 @@ const PomodoroPage = () => {
 
   // 記錄顯示控制狀態
   const [displayCount, setDisplayCount] = useState(5); // 預設顯示5筆
+
+  // 專注完成提示狀態
+  const [showCompletionTip, setShowCompletionTip] = useState(false)
+
+  // 15秒後自動關閉完成提示
+  useEffect(() => {
+    if (showCompletionTip) {
+      const timer = setTimeout(() => {
+        setShowCompletionTip(false)
+      }, 15000) // 15秒
+      return () => clearTimeout(timer)
+    }
+  }, [showCompletionTip])
 
   // 初始化
   useEffect(() => {
@@ -198,6 +214,9 @@ const PomodoroPage = () => {
       // 記錄使用次數
       recordFocusItemUsage(selectedFocusItemId);
       loadFocusItems(); // 重新載入以更新使用次數
+      
+      // 顯示專注完成提示（非強制，會自動消失）
+      setShowCompletionTip(true);
     }
   };
 
@@ -566,16 +585,75 @@ const PomodoroPage = () => {
         {/* 頁面標題 */}
         <HeaderBar icon="🍅" title="pomodoro" />
         
-        {/* AI 摘要工具入口按鈕 */}
-        <div className="mb-4 flex justify-center">
-          <Link
-            to="/summary"
-            className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-200 text-sm sm:text-base"
-          >
-            <span className="mr-2">🤖</span>
-            AI 摘要工具
-          </Link>
+        {/* 工具導流列 */}
+        <div className="mb-4 text-center">
+          <p className="text-gray-600 text-sm mb-2">專注中也可以搭配使用：</p>
+          <div className="flex flex-wrap justify-center gap-2">
+            <Link
+              to="/summary"
+              className="inline-flex items-center px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium rounded-full border border-blue-200 transition-all duration-200 text-sm"
+              onClick={() => trackToolClick({ tool_name: 'ai_summary', page_name: 'pomodoro', position: 'header_tools' })}
+            >
+              <span className="mr-1">🤖</span>
+              AI 摘要工具
+            </Link>
+            <Link
+              to="/todo"
+              className="inline-flex items-center px-3 py-1.5 bg-green-50 hover:bg-green-100 text-green-700 font-medium rounded-full border border-green-200 transition-all duration-200 text-sm"
+              onClick={() => trackToolClick({ tool_name: 'todo_list', page_name: 'pomodoro', position: 'header_tools' })}
+            >
+              <span className="mr-1">📝</span>
+              待辦清單
+            </Link>
+            <Link
+              to="/blog"
+              className="inline-flex items-center px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 font-medium rounded-full border border-purple-200 transition-all duration-200 text-sm"
+              onClick={() => trackToolClick({ tool_name: 'focus_guide', page_name: 'pomodoro', position: 'header_tools' })}
+            >
+              <span className="mr-1">🎯</span>
+              專注力教學
+            </Link>
+          </div>
         </div>
+
+        {/* 專注完成提示（非強制，inline 區塊） */}
+        {showCompletionTip && (
+          <div className="mb-4 p-5 bg-gradient-to-br from-blue-50 to-sky-50 rounded-xl border border-blue-200 shadow-sm animate-fade-in">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <h3 className="text-base font-semibold text-gray-800 mb-3">
+                  🎉 專注完成！要不要把剛剛的內容整理一下？
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  <Link
+                    to="/summary"
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
+                    onClick={() => {
+                      trackToolClick({ tool_name: 'ai_summary', page_name: 'pomodoro', position: 'timer_complete' })
+                      setShowCompletionTip(false)
+                    }}
+                  >
+                    1️⃣ 用 AI 摘要整理內容
+                  </Link>
+                  <Link
+                    to="/tools/homework-helper"
+                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
+                    onClick={() => setShowCompletionTip(false)}
+                  >
+                    2️⃣ 我有題目要問
+                  </Link>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowCompletionTip(false)}
+                className="text-gray-400 hover:text-gray-600 p-1 transition-colors flex-shrink-0"
+                aria-label="關閉提示"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
       
       {/* 計時器面板 */}
       <TimerPanel
@@ -591,6 +669,63 @@ const PomodoroPage = () => {
         onSkip={timer.endSession}
         onTimeInput={timer.handleTimeInput}
       />
+
+      {/* 🚀 快速工具入口 */}
+      <div className="mt-6 mb-6">
+        <h3 className="text-lg font-semibold text-gray-700 mb-4 flex items-center">
+          <span className="mr-2">🚀</span>
+          快速工具入口
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* 作業解題神器 */}
+          <Link
+            to="/tools/homework-helper"
+            className="block p-4 bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all duration-200 group"
+          >
+            <h4 className="font-semibold text-gray-800 group-hover:text-blue-600 transition-colors mb-2">
+              作業解題神器
+            </h4>
+            <p className="text-sm text-gray-600 mb-3">
+              貼上題目，快速產生解題結果與扣點資訊。
+            </p>
+            <div className="text-blue-600 font-medium text-sm group-hover:underline">
+              前往 →
+            </div>
+          </Link>
+
+          {/* 文章摘要工具 */}
+          <Link
+            to="/summary"
+            className="block p-4 bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all duration-200 group"
+          >
+            <h4 className="font-semibold text-gray-800 group-hover:text-blue-600 transition-colors mb-2">
+              文章摘要工具
+            </h4>
+            <p className="text-sm text-gray-600 mb-3">
+              貼上文章，一鍵摘要並顯示本次使用點數。
+            </p>
+            <div className="text-blue-600 font-medium text-sm group-hover:underline">
+              前往 →
+            </div>
+          </Link>
+
+          {/* Shopee 短影音工具 */}
+          <div className="block p-4 bg-white rounded-xl border border-gray-200 opacity-60 cursor-not-allowed">
+            <h4 className="font-semibold text-gray-800 mb-2">
+              Shopee 短影音工具
+            </h4>
+            <p className="text-sm font-medium text-amber-600 mb-2">
+              🚧 即將開放（目前為功能規劃中）
+            </p>
+            <p className="text-sm text-gray-600 mb-3">
+              自動化產生導購短影音，搭配分潤內容更有效。目前此工具尚未開放使用，請期待未來更新。
+            </p>
+            <div className="text-gray-400 font-medium text-sm">
+              即將上線
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* 專注項目選擇器 */}
       <FocusItemSelector
@@ -652,6 +787,153 @@ const PomodoroPage = () => {
         totalRecords={records.length}
         showAllRecords={displayCount >= records.length}
       />
+
+      {/* 專注後延伸區塊 */}
+      <div className="mt-6 mb-8">
+        <h3 className="text-lg font-semibold text-gray-700 mb-4 flex items-center">
+          <span className="mr-2">🌱</span>
+          專注後，你還可以做這些事
+        </h3>
+        <div className="grid gap-3">
+          {/* AI 摘要工具 */}
+          <Link
+            to="/summary"
+            className="block p-4 bg-white rounded-xl border border-blue-100 hover:border-blue-300 hover:shadow-md transition-all duration-200 group"
+            onClick={() => trackToolClick({ tool_name: 'ai_summary', page_name: 'pomodoro', position: 'after_focus_section' })}
+          >
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">🤖</span>
+              <div className="flex-1">
+                <h4 className="font-medium text-gray-800 group-hover:text-blue-600 transition-colors">
+                  AI 摘要工具
+                </h4>
+                <p className="text-sm text-gray-500 mt-1">
+                  把專注內容快速整理成重點
+                </p>
+              </div>
+              <span className="text-gray-300 group-hover:text-blue-400 transition-colors">
+                →
+              </span>
+            </div>
+          </Link>
+
+          {/* 待辦清單 */}
+          <Link
+            to="/todo"
+            className="block p-4 bg-white rounded-xl border border-green-100 hover:border-green-300 hover:shadow-md transition-all duration-200 group"
+            onClick={() => trackToolClick({ tool_name: 'todo_list', page_name: 'pomodoro', position: 'after_focus_section' })}
+          >
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">📝</span>
+              <div className="flex-1">
+                <h4 className="font-medium text-gray-800 group-hover:text-green-600 transition-colors">
+                  待辦清單
+                </h4>
+                <p className="text-sm text-gray-500 mt-1">
+                  把剛剛想到的事記下來，避免忘記
+                </p>
+              </div>
+              <span className="text-gray-300 group-hover:text-green-400 transition-colors">
+                →
+              </span>
+            </div>
+          </Link>
+
+          {/* 專注力教學 */}
+          <Link
+            to="/blog"
+            className="block p-4 bg-white rounded-xl border border-purple-100 hover:border-purple-300 hover:shadow-md transition-all duration-200 group"
+            onClick={() => trackToolClick({ tool_name: 'focus_guide', page_name: 'pomodoro', position: 'after_focus_section' })}
+          >
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">🎯</span>
+              <div className="flex-1">
+                <h4 className="font-medium text-gray-800 group-hover:text-purple-600 transition-colors">
+                  專注力教學
+                </h4>
+                <p className="text-sm text-gray-500 mt-1">
+                  學習如何讓下一次專注更有效率
+                </p>
+              </div>
+              <span className="text-gray-300 group-hover:text-purple-400 transition-colors">
+                →
+              </span>
+            </div>
+          </Link>
+        </div>
+      </div>
+
+      {/* 🚀 快速 AI 工具導引 */}
+      <div className="mt-6 mb-8">
+        <h3 className="text-lg font-semibold text-gray-700 mb-4 flex items-center">
+          <span className="mr-2">🚀</span>
+          快速 AI 工具導引
+        </h3>
+        <div className="grid gap-3">
+          {/* 作業解題神器 */}
+          <Link
+            to="/tools/homework-helper"
+            className="block p-4 bg-white rounded-xl border border-blue-100 hover:border-blue-300 hover:shadow-md transition-all duration-200 group"
+          >
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <h4 className="font-medium text-gray-800 group-hover:text-blue-600 transition-colors mb-1">
+                  作業解題神器
+                </h4>
+                <p className="text-sm text-gray-500">
+                  遇到不會的題目，可以直接輸入題目取得解題與解釋。
+                </p>
+              </div>
+              <div className="ml-4 px-4 py-2 bg-blue-600 group-hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm group-hover:shadow-md transition-all duration-200">
+                前往
+              </div>
+            </div>
+          </Link>
+
+          {/* 文章摘要工具 */}
+          <Link
+            to="/summary"
+            className="block p-4 bg-white rounded-xl border border-green-100 hover:border-green-300 hover:shadow-md transition-all duration-200 group"
+          >
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <h4 className="font-medium text-gray-800 group-hover:text-green-600 transition-colors mb-1">
+                  文章摘要工具
+                </h4>
+                <p className="text-sm text-gray-500">
+                  貼上長文內容，快速產生摘要與關鍵字。
+                </p>
+              </div>
+              <div className="ml-4 px-4 py-2 bg-green-600 group-hover:bg-green-700 text-white text-sm font-medium rounded-lg shadow-sm group-hover:shadow-md transition-all duration-200">
+                前往
+              </div>
+            </div>
+          </Link>
+
+          {/* AI 短影音（規劃中） */}
+          <div className="block p-4 bg-white rounded-xl border border-gray-200 opacity-60 cursor-not-allowed">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <h4 className="font-medium text-gray-800 mb-1">
+                  AI 短影音 🧠（規劃中）
+                </h4>
+                <p className="text-sm font-medium text-amber-600 mb-2">
+                  🚧 即將開放（目前為功能規劃中）
+                </p>
+                <p className="text-sm text-gray-500">
+                  短影音產生工具，目前規劃中，敬請期待。目前此工具尚未開放使用，請期待未來更新。
+                </p>
+              </div>
+              <button 
+                disabled
+                className="ml-4 px-4 py-2 bg-gray-400 text-white text-sm font-medium rounded-lg cursor-not-allowed opacity-60"
+              >
+                即將開放
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* 專注項目管理彈窗 */}
       <FocusItemModal
@@ -824,6 +1106,176 @@ const PomodoroPage = () => {
           </div>
         </div>
       )}
+
+      {/* 專注體驗延伸區塊（未來可擴充為聯盟連結） */}
+      <div className="mt-8 mb-6 p-5 bg-gradient-to-br from-gray-50 to-slate-100 rounded-2xl border border-gray-200">
+        <h3 className="text-base font-semibold text-gray-700 mb-2 flex items-center">
+          <span className="mr-2">🔍</span>
+          專注體驗延伸
+        </h3>
+        <p className="text-sm text-gray-500 mb-4">
+          以下是一些能幫助專注的工具與方法，依需求選擇即可。
+        </p>
+        
+        <div className="space-y-3">
+          {/* AI 摘要工具 - 內部連結 */}
+          <Link
+            to="/summary"
+            className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-100 hover:border-blue-200 hover:bg-blue-50/30 transition-all duration-200 group"
+            data-affiliate-slot="focus-summary"
+            onClick={() => trackToolClick({ tool_name: 'ai_summary', page_name: 'pomodoro', position: 'footer_extension' })}
+          >
+            <span className="text-xl">🤖</span>
+            <div className="flex-1 min-w-0">
+              <h4 className="text-sm font-medium text-gray-700 group-hover:text-blue-600 transition-colors">
+                AI 摘要工具
+              </h4>
+              <p className="text-xs text-gray-400 mt-0.5">
+                將專注時間轉為可回顧的筆記
+              </p>
+            </div>
+            <span className="text-gray-300 group-hover:text-blue-400 text-sm transition-colors">→</span>
+          </Link>
+
+          {/* 專注輔助工具 - 未來可替換為外部聯盟連結 */}
+          <Link
+            to="/blog"
+            className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-100 hover:border-amber-200 hover:bg-amber-50/30 transition-all duration-200 group"
+            data-affiliate-slot="focus-audio"
+            onClick={() => trackToolClick({ tool_name: 'focus_tool', page_name: 'pomodoro', position: 'footer_extension' })}
+          >
+            <span className="text-xl">🎧</span>
+            <div className="flex-1 min-w-0">
+              <h4 className="text-sm font-medium text-gray-700 group-hover:text-amber-600 transition-colors">
+                專注輔助工具
+              </h4>
+              <p className="text-xs text-gray-400 mt-0.5">
+                有些人會搭配音樂或工具，讓環境更單純
+              </p>
+            </div>
+            <span className="text-gray-300 group-hover:text-amber-400 text-sm transition-colors">→</span>
+          </Link>
+
+          {/* 專注力訓練 - 未來可替換為外部聯盟連結 */}
+          <Link
+            to="/blog"
+            className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-100 hover:border-teal-200 hover:bg-teal-50/30 transition-all duration-200 group"
+            data-affiliate-slot="focus-training"
+            onClick={() => trackToolClick({ tool_name: 'focus_training', page_name: 'pomodoro', position: 'footer_extension' })}
+          >
+            <span className="text-xl">📚</span>
+            <div className="flex-1 min-w-0">
+              <h4 className="text-sm font-medium text-gray-700 group-hover:text-teal-600 transition-colors">
+                專注力訓練
+              </h4>
+              <p className="text-xs text-gray-400 mt-0.5">
+                學習提升長時間專注的技巧
+              </p>
+            </div>
+            <span className="text-gray-300 group-hover:text-teal-400 text-sm transition-colors">→</span>
+          </Link>
+        </div>
+      </div>
+
+      {/* 🔧 延伸效率工具推薦（不影響專注） */}
+      <div className="mt-8 mb-6 p-5 bg-gradient-to-br from-slate-50 to-blue-50 rounded-2xl border border-slate-200">
+        <h3 className="text-base font-semibold text-gray-700 mb-2 flex items-center">
+          <span className="mr-2">🔧</span>
+          延伸效率工具推薦（不影響專注）
+        </h3>
+        <p className="text-sm text-gray-600 mb-4">
+          若你習慣用番茄鐘專注，以下工具可在休息時間協助你整理內容與任務。
+        </p>
+        
+        <div className="grid gap-3 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+          {/* 專注白噪音／背景音樂 */}
+          <a
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+              // TODO: 替換為實際聯盟連結
+            }}
+            className="p-4 bg-white rounded-xl border border-purple-100 hover:border-purple-300 hover:shadow-md transition-all duration-200 block"
+          >
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">🎧</span>
+              <div className="flex-1">
+                <h4 className="font-medium text-gray-800 mb-1">
+                  專注白噪音／背景音樂
+                </h4>
+                <p className="text-sm text-gray-500 mb-1">
+                  適合搭配番茄鐘使用，在休息或工作時保持專注。
+                </p>
+                <p className="text-xs text-gray-400">
+                  聯盟推薦，不影響番茄鐘使用
+                </p>
+              </div>
+            </div>
+          </a>
+
+          {/* 任務 / 待辦管理工具 */}
+          <div className="p-4 bg-white rounded-xl border border-green-100 hover:border-green-300 hover:shadow-md transition-all duration-200">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">📝</span>
+              <div className="flex-1">
+                <h4 className="font-medium text-gray-800 mb-1">
+                  任務 / 待辦管理工具
+                </h4>
+                <p className="text-sm text-gray-500">
+                  管理你的任務與待辦事項
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* 專注音樂 / 白噪音 */}
+          <div className="p-4 bg-white rounded-xl border border-purple-100 hover:border-purple-300 hover:shadow-md transition-all duration-200">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">🎵</span>
+              <div className="flex-1">
+                <h4 className="font-medium text-gray-800 mb-1">
+                  專注音樂 / 白噪音
+                </h4>
+                <p className="text-sm text-gray-500">
+                  可之後換聯盟
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 專注輔助工具（番茄鐘補充） */}
+      <div className="mt-10 border-t pt-6 text-sm text-gray-600 max-w-screen-md mx-auto px-4">
+        <div className="font-semibold text-gray-800 mb-2">
+          🎧 {isEnglish ? "Focus Assistance Tools (Optional)" : "專注輔助工具（選用）"}
+        </div>
+
+        <p className="mb-3 leading-relaxed text-xs">
+          {isEnglish
+            ? "Some users use simple environmental assistance tools during Pomodoro focus sessions to reduce noise interference and improve focus stability. Whether to use them is up to personal preference."
+            : "有些使用者在進行番茄鐘專注時，會搭配簡單的環境輔助工具，以降低噪音干擾、提升專注穩定度。是否使用可依個人習慣自行決定。"}
+        </p>
+
+        <ul className="space-y-2 text-left">
+          <li>
+            ▸ <span className="font-medium">{isEnglish ? "Silent Focus Earplugs (Informational Reference)" : "靜音專注耳塞（資訊參考）"}</span><br />
+            <span className="text-gray-500 text-xs">
+              {isEnglish
+                ? "Suitable for use during focus, reading, or rest, helping to reduce external sound interference."
+                : "適合專注、閱讀或休息時使用，協助減少外在聲音干擾。"}
+            </span><br />
+            <a
+              href="https://s.shopee.tw/4q8h2wvGZe"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline inline-block mt-1 text-xs"
+            >
+              👉 {isEnglish ? "View Tool Information" : "查看工具資訊"}
+            </a>
+          </li>
+        </ul>
+      </div>
       </main>
     </div>
   );

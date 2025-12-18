@@ -64,7 +64,14 @@ export default function ShoppingResultsPage() {
 
     setLoading(true)
 
-    fetch(`/api/shopee-search?keyword=${encodeURIComponent(q)}`)
+    fetch('/api/commerce', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'shopeeSearch',
+        keyword: q,
+      }),
+    })
       .then(async (res) => {
         const result = await res.json();
         const items = result?.items || [];

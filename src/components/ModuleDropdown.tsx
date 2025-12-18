@@ -4,6 +4,8 @@ import { useNavigate, useLocation } from 'react-router-dom'
 
 const moduleOptions = [
   { value: '/', labelKey: 'homepage' },
+  { value: '/summary', labelKey: 'ai_summary' },
+  { value: '/tools/homework-helper', labelKey: 'homework_helper' },
   { value: '/aids', labelKey: 'subsidy_package' },
   { value: '/finance', labelKey: 'health_finance' },
   { value: '/retirement', labelKey: 'retirement_calc' },

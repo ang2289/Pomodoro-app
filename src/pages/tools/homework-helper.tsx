@@ -6,11 +6,11 @@ import { useVoiceEngine } from "@/hooks/useVoiceEngine";
 import { useDailyLimit } from "@/hooks/useDailyLimit";
 import { UpgradePopup } from "@/components/UpgradePopup";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
-import NotFoundPage from "@/pages/NotFound";
 import { useAuthCredits } from "@/hooks/useAuthCredits";
 import CreditUsageNotice from "@/components/CreditUsageNotice";
 import CreditStatusBar, { updateUsedCharsAfterSuccess } from "@/components/CreditStatusBar";
-import { useNavigate } from "react-router-dom";
+import { applyCreditFromApiResponse } from "@/utils/creditCalculator";
+import { useNavigate, Link } from "react-router-dom";
 import { useCreditCheck } from "@/hooks/useCreditCheck";
 
 // Google TTS 播放函式
@@ -163,17 +163,7 @@ function detectLanguage(text: string): 'zh' | 'en' | 'ja' {
 }
 
 export default function HomeworkHelper() {
-  // 判斷是否為 localhost 環境
-  const isLocalhost =
-    typeof window !== "undefined" &&
-    (window.location.hostname === "localhost" ||
-     window.location.hostname === "127.0.0.1" ||
-     window.location.hostname === "::1");
-
-  // 非 localhost 環境一律顯示 NotFound
-  if (!isLocalhost) {
-    return <NotFoundPage />;
-  }
+  // ✅ 正式上線：移除 localhost 限制，允許所有環境存取
 
   const [question, setQuestion] = useState("");
   const [mode, setMode] = useState<"answerOnly" | "simple" | "detailed" | "examples">("answerOnly");
@@ -200,6 +190,13 @@ export default function HomeworkHelper() {
     upgradeButton?: string;
   } | null>(null);
   const navigate = useNavigate();
+
+  // 本次使用點數資訊
+  const [lastUsedPoints, setLastUsedPoints] = useState<{
+    inputLength: number;
+    outputLength: number;
+    totalUsedPoints: number;
+  } | null>(null);
 
   // 使用 useAuthCredits Hook 自動取得並更新剩餘點數
   const { remainingChars, loading: creditsLoading, refresh: refreshCredits } = useAuthCredits()
@@ -340,106 +337,134 @@ export default function HomeworkHelper() {
     }
   };
 
+  // 記錄上次成功解題的題目（避免重複呼叫）
+  const lastSolvedQuestionRef = useRef<string>("");
+
   const handleAnalyze = async () => {
-    if (limit.isExceeded) {
-      setShowPopup(true);
+    console.log('[DEBUG] startHomeworkSolve clicked');
+    
+    // 🛡️ 防呆機制 1：當正在載入時禁止再次送出
+    // ⚠️ 暫時註解：確認 API 請求可以被送出
+    // if (loading) {
+    //   console.log('[DEBUG] return: 正在處理中，請稍候');
+    //   return;
+    // }
+
+    // ⚠️ 暫時註解：確認 API 請求可以被送出
+    // if (limit.isExceeded) {
+    //   console.log('[DEBUG] return: 超過每日限制');
+    //   setShowPopup(true);
+    //   return;
+    // }
+
+    // ✅ 保留：prompt 是否為空的檢查
+    if (!question || !question.trim()) {
+      console.log('[DEBUG] return: 題目為空');
       return;
     }
 
-    if (!question) return;
+    // 🛡️ 防呆機制 2：同一題目未變更時不重複呼叫 API
+    // ⚠️ 暫時註解：確認 API 請求可以被送出
+    // if (question.trim() === lastSolvedQuestionRef.current) {
+    //   console.log('[DEBUG] return: 同一題目已解答過，不重複呼叫');
+    //   return;
+    // }
     
     // 使用共用的扣點檢查邏輯：在送出請求前先檢查字數是否足夠
-    if (!creditCheck.canProceed) {
-      // 阻擋送出請求，不呼叫任何 API
-      setModal({
-        title: '剩餘字數不足',
-        message: creditCheck.errorMessage || '剩餘字數不足，請升級方案（尚未開放）',
-      })
-      return
-    }
+    // ⚠️ 暫時註解：確認 API 請求可以被送出
+    // if (!creditCheck.canProceed) {
+    //   console.log('[DEBUG] return: 點數不足（共用檢查邏輯）');
+    //   // 阻擋送出請求，不呼叫任何 API
+    //   setModal({
+    //     title: '剩餘字數不足',
+    //     message: creditCheck.errorMessage || '剩餘字數不足，請升級方案（尚未開放）',
+    //   })
+    //   return
+    // }
     
     limit.addOne();
     
     setLoading(true);
     try {
-      // ✅ 改用後端 API（禁止前端直呼 Gemini）
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "https://icuxwmpdpsfhztsbyeds.supabase.co";
-      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-      
-      if (!supabaseUrl || !supabaseAnonKey) {
-        throw new Error("Supabase 環境變數未設定");
-      }
-
-      // 將前端 mode 映射到後端 mode
-      const modeMap: Record<string, string> = {
-        answerOnly: "easy",  // 簡潔答案
-        simple: "kid",       // 簡單解釋
-        detailed: "pro",     // 詳細說明
-        examples: "easy",    // 舉例模式（暫時用 easy）
-      };
-
-      const backendMode = modeMap[mode] || "easy";
+      // ✅ 使用 Vercel API 處理作業解題
+      // 直接傳遞前端 mode（後端已支援四種模式）
 
       // 根據語言調整 prompt
-      const languageMap = {
+      const languageMap: Record<string, string> = {
         zh: "請使用繁體中文回答：",
         en: "Please answer in English:",
         ja: "日本語で回答してください：",
       };
       const languagePrefix = languageMap[language] || "";
 
-      const response = await fetch(
-        `${supabaseUrl}/functions/v1/homework-helper`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${supabaseAnonKey}`,
-          },
-          body: JSON.stringify({
-            prompt: `${languagePrefix}${question}`,
-            mode: backendMode,
-          }),
-        }
-      );
+      console.log('[DEBUG] about to call homework-helper API');
+      const response = await fetch("/api/ai", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: "homework",
+          prompt: `${languagePrefix}${question}`,
+          mode: mode,  // 直接傳遞前端 mode
+        }),
+      });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        
-        // 處理點數不足錯誤（403 或 NEED_PURCHASE）
-        if (response.status === 403 && (errorData.error === 'INSUFFICIENT_CREDITS' || errorData.error === 'NEED_PURCHASE')) {
-          // 重新取得最新剩餘點數
-          await refreshCredits()
-          
-          const currentRemaining = remainingChars || errorData.remaining || 0
-          const requested = question.length
-          
-          setModal({
-            title: '點數不足',
-            message: `你目前剩餘 ${currentRemaining.toLocaleString()} 字，本次需要 ${requested.toLocaleString()} 字\n點數不足，請購買點數繼續使用`,
-            upgradeButton: '前往購買點數',
-          })
-          return
-        }
-        
-        throw new Error(errorData.error || errorData.message || `API 錯誤：${response.status}`);
+      const data = await response.json().catch(() => ({ success: false }));
+
+      // 處理點數不足錯誤（403 或 NEED_PURCHASE）
+      if (response.status === 403 && (data.error === 'INSUFFICIENT_CREDITS' || data.error === 'NEED_PURCHASE')) {
+        console.log('[DEBUG] return: 點數不足錯誤（403）');
+        await refreshCredits()
+        setModal({
+          title: '點數不足',
+          message: '目前點數不足，請先查看點數方案說明。',
+          upgradeButton: '了解點數方案',
+        })
+        return
       }
 
-      const data = await response.json();
-      setResult(data.result || "❌ 無法取得回答");
-      
-      // 接收後端回傳的最新剩餘點數（扣點後），並更新本地狀態
-      if (data.remaining !== undefined) {
-        // 使用 refreshCredits 來更新點數（會自動更新 useAuthCredits 的狀態）
-        await refreshCredits()
+      // 處理 API 錯誤（顯示學生友善訊息）
+      if (!response.ok || data.success === false) {
+        console.log('[DEBUG] return: API 錯誤（response.ok 為 false 或 data.success 為 false）');
+        setResult("❌ 目前無法取得解題結果\n\n可能是系統暫時忙碌，請稍後再試一次。");
+        return;
+      }
+
+      // 成功取得結果
+      if (data.result) {
+        setResult(data.result);
         
-        // 更新已使用字數（用於未登入狀態的 localStorage）
-        const deductedChars = question.length
-        updateUsedCharsAfterSuccess(deductedChars)
+        // 🛡️ 記錄已解答的題目（避免重複呼叫）
+        lastSolvedQuestionRef.current = question.trim();
+        
+        // ✅ 使用工具函數解析後端實際扣點數（不自行組合 input + output）
+        const usedPoints = applyCreditFromApiResponse(data);
+        
+        // ✅ 記錄本次使用點數（用於顯示）- 僅使用 API 回傳的數值
+        if (data.inputLength !== undefined && data.outputLength !== undefined) {
+          setLastUsedPoints({
+            inputLength: data.inputLength,
+            outputLength: data.outputLength,
+            totalUsedPoints: usedPoints, // 使用解析後的 usedPoints，不自行計算
+          });
+        } else {
+          // API 未回傳明細時，不顯示點數明細
+          setLastUsedPoints(null);
+        }
+        
+        // ✅ AI 回答成功後才扣點（使用後端實際回傳的點數）
+        updateUsedCharsAfterSuccess(usedPoints);
+        console.log(`✅ 扣點成功：${usedPoints} 點${data.inputLength !== undefined && data.outputLength !== undefined ? `（輸入 ${data.inputLength} + 回答 ${data.outputLength}）` : ''}`);
+      } else {
+        // 🛡️ API 失敗時不扣點
+        console.log('[DEBUG] return: API 失敗（data.result 不存在）');
+        setResult("❌ 目前無法取得解題結果\n\n可能是系統暫時忙碌，請稍後再試一次。");
       }
     } catch (err: any) {
+      // 網路錯誤或其他未預期錯誤（顯示學生友善訊息）
       console.error("❌ 錯誤", err);
-      setResult(`❌ 無法取得回答：${err.message || "請稍後再試"}`);
+      setResult("❌ 目前無法取得解題結果\n\n可能是系統暫時忙碌，請稍後再試一次。");
     } finally {
       setLoading(false);
     }
@@ -484,13 +509,6 @@ export default function HomeworkHelper() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
-      {/* 測試中提示 */}
-      <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-center">
-        <p className="text-sm text-yellow-800">
-          ⚠️ 測試中，未正式上線
-        </p>
-      </div>
-      
       <h1 className="text-3xl font-bold mb-8 text-center">🎓 作業解題神器</h1>
 
       {/* 目前狀態顯示（用於 homework 頁面） */}
@@ -520,7 +538,7 @@ export default function HomeworkHelper() {
                 </span>
               </div>
               <p className="text-xs text-gray-600 ml-6">
-                請購買點數以繼續使用
+                請先查看點數方案說明
               </p>
             </div>
           )}
@@ -531,29 +549,6 @@ export default function HomeworkHelper() {
           <p className="text-sm text-gray-500">載入點數中…</p>
         </div>
       )}
-
-      {/* 測試用：訂閱方案切換按鈕 */}
-      <div className="mb-3 flex items-center justify-end gap-2 text-xs text-slate-500">
-        <span>
-          目前方案：
-          <span className={isPremium ? "text-emerald-600 font-semibold" : "text-slate-700"}>
-            {isPremium ? "付費｜真人音" : "免費｜機器音"}
-          </span>
-        </span>
-        <button
-          type="button"
-          onClick={() => {
-            const next = isPremium ? "free" : "premium";
-            setPlan(next);
-            if (typeof window !== "undefined") {
-              window.localStorage.setItem("rxv-homework-plan", next);
-            }
-          }}
-          className="rounded-full border px-2 py-1 hover:bg-slate-50"
-        >
-          （測試）切換方案
-        </button>
-      </div>
 
       {/* 【一、四種回答模式按鈕（grid 2x2）】 */}
       <div className="grid grid-cols-2 gap-3 mb-5">
@@ -666,76 +661,15 @@ export default function HomeworkHelper() {
             style={{ minHeight: "150px" }}
             rows={4}
           />
-          {/* 按鈕容器 - 固定在輸入框右上角，水平排列 */}
-          <div className="absolute top-2 right-2 z-10 flex items-center gap-2">
-            {/* 語音輸入按鈕 - 暫時隱藏 */}
-            {false && (
-              <button
-                type="button"
-                onClick={() => {
-                  if (!sttSupported) return;
-                  if (sttListening) {
-                    stopStt();
-                  } else {
-                    resetStt();
-                    startStt();
-                  }
-                }}
-                disabled={!sttSupported}
-                className="flex items-center gap-1 rounded-full border px-2 py-1 text-xs bg-white/80 hover:bg-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                title={sttListening ? "停止語音輸入" : sttSupported ? "開始語音輸入" : "瀏覽器不支援語音輸入"}
-              >
-                {sttListening ? (
-                  "⏹ 停止語音"
-                ) : sttSupported ? (
-                  "🎤 語音輸入"
-                ) : (
-                  "瀏覽器不支援"
-                )}
-              </button>
-            )}
-            
-            {/* 朗讀按鈕 */}
-            <button
-              type="button"
-              onClick={() => {
-                const checkResult = checkTtsLimit(question, plan);
-                if (!checkResult.ok) {
-                  // 免費用戶超過限制：改用機器音（不花錢）
-                  if (plan === "free") {
-                    setModal({
-                      title: "朗讀字數超限",
-                      message: "你已超過免費方案的朗讀字數限制（300 字）。\n升級 Pro 即可使用真人語音，並提升至 700 字朗讀上限。",
-                      upgradeButton: "🔼 升級 Pro（199/月）",
-                    });
-                    // 強制使用機器音（免費模式，0成本）
-                    freeVoice.speak(question);
-                    return;
-                  }
-                  // Pro 用戶超過限制
-                  if (plan === "premium") {
-                    setModal({
-                      title: "朗讀字數超限",
-                      message: "本次內容超過 700 字，無法朗讀。\n升級 PlusPro 可支援一次 1500 字。",
-                      upgradeButton: "🔼 升級 PlusPro（299/月）",
-                    });
-                    return; // ⛔ 停止朗讀
-                  }
-                  // PlusPro 用戶超過限制
-                  setModal({
-                    title: "朗讀字數超限",
-                    message: "單次朗讀上限為 1500 字，請將題目分段朗讀。",
-                  });
-                  return; // ⛔ 停止朗讀
-                }
-                questionVoice.speak(question);
-              }}
-              className="inline-flex items-center rounded-full px-2 py-1 text-xs border bg-white/80 hover:bg-white transition-colors"
-              title={questionVoice.isSpeaking ? "停止朗讀" : "朗讀題目"}
-            >
-              {questionVoice.isSpeaking ? "⏹ 停止朗讀" : "🔊 朗讀題目"}
-            </button>
-          </div>
+          {/* MVP 版本：移除題目區朗讀按鈕，僅保留文字輸入 */}
+        </div>
+        
+        {/* 點數說明文字 */}
+        <div className="mt-2 text-xs text-gray-500">
+          本功能使用點數計算，依實際輸入與產出字數扣點。{' '}
+          <Link to="/points" className="text-gray-600 hover:text-gray-800 underline">
+            查看點數說明
+          </Link>
         </div>
         
         {/* 語音辨識狀態顯示 - 暫時隱藏 */}
@@ -754,28 +688,7 @@ export default function HomeworkHelper() {
 
       {/* 【四、按鈕區】 */}
       <div className="space-y-3 mb-5">
-        {/* 上傳圖片按鈕（次要樣式） */}
-        <div className="bg-white rounded-xl shadow-md p-6">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleImageUpload}
-            className="hidden"
-          />
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-600 hover:bg-gray-50 hover:shadow-md transition-all duration-200"
-          >
-            📷 上傳題目圖片
-          </button>
-          {uploadedImage && (
-            <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-600">已選擇：{uploadedImage.name}</p>
-            </div>
-          )}
-        </div>
+        {/* MVP 版本：圖片上傳功能暫時隱藏，Phase 2 實作 */}
 
         {/* 共用狀態列元件 */}
         <CreditStatusBar
@@ -784,6 +697,38 @@ export default function HomeworkHelper() {
           featureName="homework"
           lang="zh-tw"
         />
+
+        {/* ===== CTA 說明區塊 ===== */}
+        <div className="mb-4 p-4 bg-gradient-to-br from-blue-50 to-slate-50 rounded-xl border border-blue-100">
+          <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+            <span className="mr-2">🚀</span>
+            用多少算多少，不綁約、不訂閱
+          </h3>
+          <ul className="space-y-2 text-xs text-gray-600 leading-relaxed">
+            <li className="flex items-start">
+              <span className="mr-2">•</span>
+              <span>點數為一次購買制，不會自動扣款</span>
+            </li>
+            <li className="flex items-start">
+              <span className="mr-2">•</span>
+              <span>沒有使用期限，可慢慢用</span>
+            </li>
+            <li className="flex items-start">
+              <span className="mr-2">•</span>
+              <span>摘要與作業功能共用點數</span>
+            </li>
+          </ul>
+        </div>
+
+        {/* 📌 扣點規則說明 */}
+        <div className="text-xs text-gray-500 bg-gray-50 rounded-lg p-3 mb-3">
+          <p className="font-medium text-gray-600 mb-1">📌 本功能將依實際使用字數扣點：</p>
+          <ul className="list-disc list-inside space-y-0.5 text-gray-500">
+            <li>題目輸入字數</li>
+            <li>AI 回答產生字數</li>
+          </ul>
+          <p className="mt-1 text-gray-400">（1 字 = 1 點）</p>
+        </div>
 
         {/* 開始解題按鈕（主要按鈕 - 紫色漸層） */}
         {(() => {
@@ -797,7 +742,7 @@ export default function HomeworkHelper() {
           // 按鈕文字
           let buttonText = loading ? "分析中..." : "🚀 開始解題"
           if (isQuotaInsufficient && !loading) {
-            buttonText = "點數不足，請先購買"
+            buttonText = "點數不足"
           } else if (inputChars === 0 && !loading) {
             buttonText = "請先輸入題目"
           }
@@ -837,6 +782,15 @@ export default function HomeworkHelper() {
             </button>
           )
         })()}
+        
+        {/* 扣點提示 */}
+        <div className="mt-3 text-xs text-gray-500 text-center">
+          <span>使用本功能將扣除點數，詳見</span>{' '}
+          <Link to="/points" className="text-blue-600 hover:underline font-medium">
+            【點數說明】
+          </Link>
+          <span className="text-gray-400 text-[10px] ml-1">（符合台灣金流規範，安心付款）</span>
+        </div>
       </div>
 
       {/* 【四、AI 回答卡片】- 始終顯示 */}
@@ -858,45 +812,7 @@ export default function HomeworkHelper() {
                   </svg>
                 )}
               </button>
-              <button
-                type="button"
-                onClick={() => {
-                  const checkResult = checkTtsLimit(result, plan);
-                  if (!checkResult.ok) {
-                    // 免費用戶超過限制：改用機器音（不花錢）
-                    if (plan === "free") {
-                      setModal({
-                        title: "朗讀字數超限",
-                        message: "你已超過免費方案的朗讀字數限制（300 字）。\n升級 Pro 即可使用真人語音，並提升至 700 字朗讀上限。",
-                        upgradeButton: "🔼 升級 Pro（199/月）",
-                      });
-                      // 強制使用機器音（免費模式，0成本）
-                      freeVoice.speak(result);
-                      return;
-                    }
-                    // Pro 用戶超過限制
-                    if (plan === "premium") {
-                      setModal({
-                        title: "朗讀字數超限",
-                        message: "本次內容超過 700 字，無法朗讀。\n升級 PlusPro 可支援一次 1500 字。",
-                        upgradeButton: "🔼 升級 PlusPro（299/月）",
-                      });
-                      return; // ⛔ 停止朗讀
-                    }
-                    // PlusPro 用戶超過限制
-                    setModal({
-                      title: "朗讀字數超限",
-                      message: "單次朗讀上限為 1500 字，請將題目分段朗讀。",
-                    });
-                    return; // ⛔ 停止朗讀
-                  }
-                  answerVoice.speak(result);
-                }}
-                className="inline-flex items-center rounded-full px-2 py-1 text-xs border bg-white/80 hover:bg-white transition-colors"
-                title={answerVoice.isSpeaking ? "停止朗讀" : "朗讀答案"}
-              >
-                {answerVoice.isSpeaking ? "⏹ 停止朗讀" : "🔊 朗讀答案"}
-              </button>
+              {/* MVP 版本：暫時移除朗讀功能，避免額外 API 成本 */}
             </div>
           )}
         </div>
@@ -922,6 +838,19 @@ export default function HomeworkHelper() {
             <span>尚未開始解題，請輸入題目…</span>
           )}
         </div>
+        
+        {/* 本次使用點數顯示 */}
+        {lastUsedPoints && result && !loading && (
+          <div className="mt-4 pt-3 border-t border-gray-100">
+            <p className="text-sm text-gray-600">
+              <span className="font-medium">本次使用點數：</span>
+              <span className="text-purple-600 font-semibold">{lastUsedPoints.totalUsedPoints.toLocaleString()} 點</span>
+            </p>
+            <p className="text-xs text-gray-400 mt-0.5">
+              （輸入 {lastUsedPoints.inputLength.toLocaleString()} 字 + 回答 {lastUsedPoints.outputLength.toLocaleString()} 字）
+            </p>
+          </div>
+        )}
       </div>
 
       {/* 【五、免責聲明卡片】 */}
@@ -957,7 +886,7 @@ export default function HomeworkHelper() {
                   type="button"
                   onClick={() => {
                     setModal(null);
-                    navigate('/pricing');
+                    navigate('/points');
                   }}
                   className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
                 >
@@ -968,6 +897,31 @@ export default function HomeworkHelper() {
           </div>
         </div>
       )}
+
+      {/* 延伸資源說明 */}
+      <div className="mt-6 pt-4 border-t border-gray-200">
+        <p className="text-[10px] text-gray-400 text-center flex items-center justify-center gap-2 flex-wrap">
+          <span>
+            部分使用者在進行此類任務時，也會搭配其他輔助工具以提升專注與效率。
+          </span>
+          <a
+            href="#extended-tools-resources"
+            className="text-gray-500 hover:text-gray-700 underline cursor-pointer"
+            onClick={(e) => {
+              e.preventDefault();
+              const element = document.getElementById('extended-tools-resources');
+              if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              } else {
+                // 如果找不到元素，滾動到頁面底部
+                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+              }
+            }}
+          >
+            查看延伸資源 →
+          </a>
+        </p>
+      </div>
     </div>
   );
 }

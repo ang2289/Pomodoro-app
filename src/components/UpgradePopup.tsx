@@ -14,8 +14,7 @@ export function UpgradePopup({ onClose }: UpgradePopupProps) {
 
         <ul className="text-sm mb-4 space-y-1">
           <li>✓ 摘要無限次</li>
-          {/* 作業助手功能已暫時隱藏 */}
-          {/* <li>✓ 作業助手無限次</li> */}
+          <li>✓ 作業助手無限次</li>
           <li>✓ 更快速度</li>
         </ul>
 

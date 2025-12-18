@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Helmet } from 'react-helmet-async'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { buildSEO } from '../../lib/seo'
 import SectionHeader from '../../components/SectionHeader'
 import { config } from '../../config'
@@ -9,6 +9,7 @@ import UpgradeModal from '@/components/UpgradeModal'
 import UsageMeter from '@/components/UsageMeter'
 import CreditUsageNotice from '@/components/CreditUsageNotice'
 import CreditStatusBar, { updateUsedCharsAfterSuccess } from '@/components/CreditStatusBar'
+import { applyCreditFromApiResponse } from '@/utils/creditCalculator'
 import { useAuthCredits } from '@/hooks/useAuthCredits'
 import { useCreditCheck } from '@/hooks/useCreditCheck'
 
@@ -119,6 +120,13 @@ export default function SummaryPage() {
   const [isQuotaExhausted, setIsQuotaExhausted] = useState(false) // 追蹤 403 狀態
   const [showInsufficientQuotaModal, setShowInsufficientQuotaModal] = useState(false) // 字數不足提示視窗
 
+  // 本次使用點數資訊
+  const [lastUsedPoints, setLastUsedPoints] = useState<{
+    inputLength: number
+    outputLength: number
+    totalUsedPoints: number
+  } | null>(null)
+
   // 使用 useAuthCredits Hook 自動取得並更新剩餘點數
   const { remainingChars, loading: creditsLoading, refresh: refreshCredits } = useAuthCredits()
   
@@ -221,6 +229,7 @@ export default function SummaryPage() {
     setLoading(true)
     setSummary('')
     setKeywords([])
+    setLastUsedPoints(null) // 清除上次的點數資訊
     // 確保在 API 調用前不會顯示升級提示
     setIsQuotaExhausted(false)
     setShowInsufficientQuotaModal(false)
@@ -229,30 +238,21 @@ export default function SummaryPage() {
       // 自動偵測輸入文字的語言
       const detectedLang = detectLanguage(input)
 
-      // 檢查環境變數並使用 config
-      if (!config.summaryFunctionUrl) {
-        throw new Error('SUMMARY FUNCTION URL 不存在，請確認環境變數 VITE_SUMMARY_FUNCTION_URL 已於 Vercel 設定');
-      }
+      // 🧩 使用統一的摘要 API：/api/ai（summary action）
+      // 不再需要檢查 VITE_SUMMARY_FUNCTION_URL，直接使用 /api/ai
+      console.log('🚀 呼叫摘要 API：/api/ai (action=summary)');
 
-      if (!config.supabaseAnonKey) {
-        throw new Error('VITE_SUPABASE_ANON_KEY 不存在，請確認環境變數已於 Vercel 設定');
-      }
-
-      console.log('🚀 呼叫摘要 API：', config.summaryFunctionUrl);
-      console.log('🔑 環境變數檢查：', {
-        summaryFunctionUrl: config.summaryFunctionUrl ? '✅ SET' : '❌ UNDEFINED',
-        supabaseAnonKey: config.supabaseAnonKey ? '✅ SET' : '❌ UNDEFINED',
-      });
-
+      // 🧩 使用統一的摘要 API：/api/ai
+      // 透過 action: "summary" 來產生摘要
       const res = await fetch(
-        config.summaryFunctionUrl,
+        '/api/ai',
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${config.supabaseAnonKey}`,  // ⭐ 最重要：避免 401
           },
           body: JSON.stringify({ 
+            action: 'summary', // 指定 action 為 summary（由 /api/ai 分流至摘要邏輯）
             content: input,
             lang: detectedLang, // 自動偵測的語言
           }),
@@ -303,20 +303,31 @@ export default function SummaryPage() {
       setKeywords(data.keywords)
       
       // 🔒 步驟 5：摘要成功後 → 才扣點（確認要執行摘要後才扣點）
-      // 從 API 回傳本次實際扣點數
-      // API 可能回傳：data.cost, data.deducted, data.usedChars 或使用 input.length 作為預設
-      const actualCost = data.cost ?? data.deducted ?? data.usedChars ?? inputChars
+      // 使用工具函數解析後端實際扣點數（不自行組合 input + output）
+      const usedPoints = applyCreditFromApiResponse(data)
+      
+      // ✅ 記錄本次使用點數（用於顯示）- 僅使用 API 回傳的數值
+      if (data.inputLength !== undefined && data.outputLength !== undefined) {
+        setLastUsedPoints({
+          inputLength: data.inputLength,
+          outputLength: data.outputLength,
+          totalUsedPoints: usedPoints, // 使用解析後的 usedPoints，不自行計算
+        })
+      } else {
+        // API 未回傳明細時，不顯示點數明細（舊 API 相容）
+        setLastUsedPoints(null)
+      }
       
       // 🔍 偵錯顯示：扣點前後的數值
       console.log('💰 [扣點執行] 摘要成功，開始扣點：', {
-        actualCost: actualCost.toLocaleString(),
+        usedPoints: usedPoints.toLocaleString(),
         beforeRemaining: currentRemainingPoints.toLocaleString(),
-        afterRemaining: (currentRemainingPoints - actualCost).toLocaleString(),
+        afterRemaining: (currentRemainingPoints - usedPoints).toLocaleString(),
       })
       
       // 🔒 步驟 6：前端即時更新點數
-      // 先更新未登入狀態的 localStorage（使用實際扣點數）
-      updateUsedCharsAfterSuccess(actualCost)
+      // 先更新未登入狀態的 localStorage（使用後端實際回傳的點數）
+      updateUsedCharsAfterSuccess(usedPoints)
       
       // 登入狀態：使用 refreshCredits 來更新點數（會自動更新 useAuthCredits 的狀態）
       // 這會從後端取得最新的 remainingChars（已扣點後）
@@ -333,6 +344,8 @@ export default function SummaryPage() {
       setIsQuotaExhausted(false)
     } catch (e: any) {
       setError(e.message)
+      // API 失敗時清除點數資訊
+      setLastUsedPoints(null)
     } finally {
       setLoading(false)
     }
@@ -401,6 +414,25 @@ export default function SummaryPage() {
             onChange={(e) => setInput(e.target.value)}
           />
 
+          {/* 點數說明文字 */}
+          <div className="mt-2 text-xs text-gray-500">
+            {lang === 'zh-tw' ? (
+              <>
+                本功能使用點數計算，依實際輸入與產出字數扣點。{' '}
+                <Link to="/points" className="text-gray-600 hover:text-gray-800 underline">
+                  查看點數說明
+                </Link>
+              </>
+            ) : (
+              <>
+                This feature uses point calculation, deducting points based on actual input and output characters.{' '}
+                <Link to="/points" className="text-gray-600 hover:text-gray-800 underline">
+                  View Points Plan
+                </Link>
+              </>
+            )}
+          </div>
+
           {/* 字數統計（僅顯示字數，扣點提示由 CreditUsageNotice 統一處理） */}
           {input.length > 0 && (
             <div className="mt-2">
@@ -462,20 +494,23 @@ export default function SummaryPage() {
               <div className="mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-700 text-center">
                 {lang === 'zh-tw' ? '⚠️ 目前僅開放試用，購買功能尚未開放' : '⚠️ Currently only trial is available, purchase function is not yet open'}
               </div>
-              <button
-                onClick={() => navigate('/pricing')}
-                className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-medium py-2.5 px-4 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
-                title={lang === 'zh-tw' ? '目前僅開放試用，購買功能尚未開放' : 'Currently only trial is available, purchase function is not yet open'}
-              >
-                {lang === 'zh-tw' ? '查看方案（尚未開放購買）' : 'View Plans (Purchase Not Available)'}
-              </button>
+            </div>
+          )}
 
-              {/* 消保安全免責說明 */}
-              <p className="text-[10px] text-gray-400 text-center pt-2 border-t border-gray-200">
-                ※ {lang === 'zh-tw' 
-                  ? '字數點數以實際頁面說明為準'
-                  : 'Character points are subject to actual page description'}
+          {/* 點數不足提示（非完全用完時） */}
+          {remainingChars !== null && remainingChars > 0 && input.length > 0 && creditCheck.remainingChars !== null && creditCheck.remainingChars < input.length && (
+            <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-4 space-y-3">
+              <p className="text-gray-700 text-sm mb-3">
+                {lang === 'zh-tw' 
+                  ? '目前點數不足，請先查看點數方案說明。'
+                  : 'Insufficient credits. Please check the points plan description.'}
               </p>
+              <Link
+                to="/points"
+                className="inline-block w-full text-center bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+              >
+                {lang === 'zh-tw' ? '了解點數方案' : 'Learn About Points Plan'}
+              </Link>
             </div>
           )}
 
@@ -538,6 +573,30 @@ export default function SummaryPage() {
                 </div>
               )
             })()}
+
+            {/* 扣點規則說明 */}
+            <div className="text-xs text-gray-500 bg-gray-50 rounded-lg p-3">
+              <p className="font-medium text-gray-600 mb-1">
+                {lang === 'zh-tw' ? '📌 扣點規則說明' : '📌 Points Deduction Rules'}
+              </p>
+              <p className="text-gray-500 leading-relaxed">
+                {lang === 'zh-tw' 
+                  ? '本功能將依「使用者輸入字數 + AI 產生摘要字數」扣除點數（1 字 = 1 點）。'
+                  : 'This feature will deduct points based on "User input characters + AI-generated summary characters" (1 character = 1 point).'}
+              </p>
+              <p className="text-gray-500 leading-relaxed mt-2">
+                {lang === 'zh-tw' 
+                  ? '使用本功能將扣除點數，詳見'
+                  : 'Using this feature will deduct points. See'}
+                {' '}
+                <Link to="/points" className="text-blue-600 hover:underline font-medium">
+                  {lang === 'zh-tw' ? '【點數說明】' : '【Points Plan】'}
+                </Link>
+                {lang === 'zh-tw' && (
+                  <span className="text-gray-400 text-[10px] ml-1">（符合台灣金流規範，安心付款）</span>
+                )}
+              </p>
+            </div>
 
             {/* 額度不足時的提示文字（顯示在按鈕下方，不惹怒版） */}
             {creditCheck.remainingChars <= 0 && (
@@ -616,7 +675,35 @@ export default function SummaryPage() {
             <div className="text-gray-700 leading-7 whitespace-pre-line">
               {summary || (lang === 'zh-tw' ? '摘要內容將顯示於此' : 'Summary content will appear here')}
             </div>
+
+            {/* 本次使用點數顯示 */}
+            {lastUsedPoints && summary && !loading && (
+              <div className="mt-4 pt-3 border-t border-gray-100">
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">{lang === 'zh-tw' ? '本次使用點數：' : 'Points Used:'}</span>
+                  <span className="text-purple-600 font-semibold ml-1">{lastUsedPoints.totalUsedPoints.toLocaleString()} {lang === 'zh-tw' ? '點' : 'pts'}</span>
+                </p>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {lang === 'zh-tw' 
+                    ? `（輸入 ${lastUsedPoints.inputLength.toLocaleString()} 字 + 回答 ${lastUsedPoints.outputLength.toLocaleString()} 字）`
+                    : `(Input: ${lastUsedPoints.inputLength.toLocaleString()} chars + Output: ${lastUsedPoints.outputLength.toLocaleString()} chars)`}
+                </p>
+              </div>
+            )}
           </div>
+
+          {/* 🧠 延伸 AI 輔助工具推薦 */}
+          {summary && !loading && (
+            <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+              <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                <span className="mr-2">🧠</span>
+                延伸 AI 輔助工具推薦
+              </h3>
+              <p className="text-xs text-gray-600 leading-relaxed">
+                若你常整理內容，可搭配以下工具進一步改寫、翻譯或製作簡報。
+              </p>
+            </div>
+          )}
 
           {/* 關鍵字 */}
           <div className="shadow-md border rounded-2xl p-5 bg-white transition">
@@ -640,6 +727,28 @@ export default function SummaryPage() {
             ) : (
               <p className="text-gray-400">{t.pending}</p>
             )}
+          </div>
+
+          {/* ===== CTA 說明區塊 ===== */}
+          <div className="mb-4 p-4 bg-gradient-to-br from-blue-50 to-slate-50 rounded-xl border border-blue-100">
+            <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+              <span className="mr-2">🚀</span>
+              用多少算多少，不綁約、不訂閱
+            </h3>
+            <ul className="space-y-2 text-xs text-gray-600 leading-relaxed">
+              <li className="flex items-start">
+                <span className="mr-2">•</span>
+                <span>點數為一次購買制，不會自動扣款</span>
+              </li>
+              <li className="flex items-start">
+                <span className="mr-2">•</span>
+                <span>沒有使用期限，可慢慢用</span>
+              </li>
+              <li className="flex items-start">
+                <span className="mr-2">•</span>
+                <span>摘要與作業功能共用點數</span>
+              </li>
+            </ul>
           </div>
 
           {/* ===== 方案說明區塊（已改為點數制） ===== */}
@@ -768,6 +877,33 @@ export default function SummaryPage() {
                 <li key={i}>{txt}</li>
               ))}
             </ul>
+          </div>
+
+          {/* 延伸資源說明 */}
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <p className="text-[10px] text-gray-400 text-center flex items-center justify-center gap-2 flex-wrap">
+              <span>
+                {lang === 'zh-tw'
+                  ? '部分使用者在進行此類任務時，也會搭配其他輔助工具以提升專注與效率。'
+                  : 'Some users also use other auxiliary tools alongside these tasks to improve focus and efficiency.'}
+              </span>
+              <a
+                href="#extended-tools-resources"
+                className="text-gray-500 hover:text-gray-700 underline cursor-pointer"
+                onClick={(e) => {
+                  e.preventDefault();
+                  const element = document.getElementById('extended-tools-resources');
+                  if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  } else {
+                    // 如果找不到元素，滾動到頁面底部
+                    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                  }
+                }}
+              >
+                {lang === 'zh-tw' ? '查看延伸資源 →' : 'View Extended Resources →'}
+              </a>
+            </p>
           </div>
         </div>
       </div>

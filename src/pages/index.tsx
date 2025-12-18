@@ -1,11 +1,156 @@
 import React, { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { featureFlags } from '@/config/featureFlags';
 
+interface ToolCard {
+  id: string;
+  title: string;
+  badge?: string;
+  description: string;
+  icon: string;
+  href: string | null;
+  disabled?: boolean;
+  category: string;
+  ringColor: string;
+  hoverColor: string;
+  badgeColor?: string;
+  onClick?: (e: React.MouseEvent) => void;
+  extraContent?: React.ReactNode;
+  featureFlag?: keyof typeof featureFlags;
+}
+
 const HomePage: React.FC = () => {
+  const navigate = useNavigate();
+
   useEffect(() => {
     document.title = 'AI 工具與生活服務中心 | RxV Pomodoro';
   }, []);
+
+  // 工具卡資料陣列
+  const toolCards: ToolCard[] = [
+    {
+      id: "ai-summary",
+      title: "AI 摘要工具",
+      description: "貼上文章 / 網站 / 字幕內容，一鍵產出摘要與關鍵字，可搭配 Ko-fi 模板做成自己的 API。",
+      icon: "🤖",
+      href: "/summary",
+      category: "AI 工具",
+      ringColor: "ring-sky-100",
+      hoverColor: "hover:bg-sky-50",
+      badgeColor: "text-sky-600"
+    },
+    {
+      id: "homework-helper",
+      title: "作業助手（解題輔助）",
+      description: "遇到不會的功課題目，可以直接輸入題目取得解題說明。",
+      icon: "📘",
+      href: "/tools/homework-helper",
+      category: "學習工具",
+      ringColor: "ring-amber-100",
+      hoverColor: "hover:bg-amber-50",
+      badgeColor: "text-amber-700"
+    },
+    {
+      id: "price-compare",
+      title: "商品搜尋與比價工具",
+      description: "輸入想找的商品，未來可整合蝦皮 / 比價結果，幫你找出划算選項。",
+      icon: "🛒",
+      href: "/shopping/search",
+      category: "生活工具",
+      ringColor: "ring-emerald-100",
+      hoverColor: "hover:bg-emerald-50",
+      badgeColor: "text-emerald-700",
+      featureFlag: "priceCompare"
+    },
+    {
+      id: "video-tool",
+      title: "AI 短影音工具",
+      badge: "即將推出",
+      description: "自動產生短影音內容，目前功能規劃中，敬請期待。",
+      icon: "🎬",
+      href: "/video-preview",
+      disabled: false,
+      category: "AI 工具",
+      ringColor: "ring-purple-100",
+      hoverColor: "hover:bg-purple-50",
+      badgeColor: "text-purple-700"
+    },
+    {
+      id: "pomodoro",
+      title: "番茄鐘專注計時",
+      description: "固定節奏工作＋休息，搭配提醒音效與統計表，幫你慢慢找回節奏。",
+      icon: "🍅",
+      href: "/pomodoro",
+      category: "生產力",
+      ringColor: "ring-rose-100",
+      hoverColor: "hover:bg-rose-50",
+      badgeColor: "text-rose-700"
+    },
+    {
+      id: "todo",
+      title: "待辦清單",
+      description: "依照狀態分類（未開始 / 進行中 / 已完成），可搭配番茄鐘使用。",
+      icon: "✅",
+      href: "/todo",
+      category: "任務管理",
+      ringColor: "ring-amber-100",
+      hoverColor: "hover:bg-amber-50",
+      badgeColor: "text-amber-700"
+    },
+    {
+      id: "chant",
+      title: "唸經 / 念佛計數器",
+      description: "支援多種經文或祈禱內容，可記錄次數、時間與備註，適合每日練習。",
+      icon: "🔔",
+      href: "/chant",
+      category: "靜心工具",
+      ringColor: "ring-indigo-100",
+      hoverColor: "hover:bg-indigo-50",
+      badgeColor: "text-indigo-700"
+    },
+    {
+      id: "chant-wish-wall",
+      title: "集氣願望牆 & 排行榜",
+      description: "發起集氣活動、許願、查看排行榜與統計，讓祈願不再只是自己一個人默默努力。",
+      icon: "🕯",
+      href: "/chant-wish-wall",
+      category: "社群集氣",
+      ringColor: "ring-purple-100",
+      hoverColor: "hover:bg-purple-50",
+      badgeColor: "text-purple-700",
+      extraContent: (
+        <div className="mt-2 flex flex-wrap gap-2 text-xs text-purple-700">
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate('/chant-wish-create');
+            }}
+            className="underline cursor-pointer hover:text-purple-900"
+          >
+            ➕ 發起新的集氣活動
+          </div>
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate('/chant-stats');
+            }}
+            className="underline cursor-pointer hover:text-purple-900"
+          >
+            📊 看集氣統計
+          </div>
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate('/chant-ranking');
+            }}
+            className="underline cursor-pointer hover:text-purple-900"
+          >
+            🏅 祈願排行
+          </div>
+        </div>
+      )
+    }
+  ];
 
   // 判斷是否為 localhost 環境
   const isLocalhost =
@@ -54,17 +199,29 @@ const HomePage: React.FC = () => {
               </div>
 
               {/* 🔒 RxV AI 自動短影音工具 - 使用功能開關控制 */}
+              {/* TODO: 影音工具正式上線後再開啟入口 */}
+              {/* 路由：/tools/shopee-video */}
               {featureFlags.videoTool && (
                 <div style={{ marginTop: "20px" }}>
-                  <Link to="/tools/shopee-video">
-                    <button style={{
-                      padding: "16px 20px",
-                      width: "100%",
-                      fontSize: "18px"
-                    }}>
-                      🎬 RxV AI 自動短影音工具（V2 專業版）
-                    </button>
-                  </Link>
+                  <div style={{
+                    padding: "16px 20px",
+                    width: "100%",
+                    fontSize: "18px",
+                    opacity: 0.6,
+                    cursor: "not-allowed",
+                    backgroundColor: "#f3f4f6",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "8px",
+                    textAlign: "center"
+                  }}>
+                    🎬 RxV AI 自動短影音工具（V2 專業版）
+                  </div>
+                  <p className="text-xs text-slate-500 mt-2 text-center">
+                    🚧 即將開放（目前為功能規劃中）
+                  </p>
+                  <p className="text-xs text-slate-500 mt-1 text-center">
+                    目前此工具尚未開放使用，請期待未來更新。
+                  </p>
                 </div>
               )}
 
@@ -110,6 +267,47 @@ const HomePage: React.FC = () => {
           </div>
         </section>
 
+        {/* 🚀 快速工具入口 */}
+        <section className="mb-10">
+          <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center">
+            <span className="mr-2">🚀</span>
+            快速工具入口
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* 作業解題神器 */}
+            <Link
+              to="/tools/homework-helper"
+              className="block p-4 bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all duration-200 group"
+            >
+              <h4 className="font-semibold text-gray-800 group-hover:text-blue-600 transition-colors mb-2">
+                作業解題神器
+              </h4>
+              <p className="text-sm text-gray-600 mb-3">
+                貼上題目，快速產生解題結果與扣點資訊。
+              </p>
+              <div className="text-blue-600 font-medium text-sm group-hover:underline">
+                前往 →
+              </div>
+            </Link>
+
+            {/* 文章摘要工具 */}
+            <Link
+              to="/summary"
+              className="block p-4 bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all duration-200 group"
+            >
+              <h4 className="font-semibold text-gray-800 group-hover:text-blue-600 transition-colors mb-2">
+                文章摘要工具
+              </h4>
+              <p className="text-sm text-gray-600 mb-3">
+                貼上文章，一鍵摘要並顯示本次使用點數。
+              </p>
+              <div className="text-blue-600 font-medium text-sm group-hover:underline">
+                前往 →
+              </div>
+            </Link>
+          </div>
+        </section>
+
         {/* 區塊 2：AI / 生產力 / 靜心工具卡片 */}
         <section className="mb-10 space-y-6">
           {/* 標題列 */}
@@ -126,148 +324,68 @@ const HomePage: React.FC = () => {
 
           {/* 卡片群組 */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {/* AI 工具 */}
-            <Link
-              to="/summary"
-              className="group flex flex-col rounded-2xl bg-white/90 p-4 shadow-sm ring-1 ring-sky-100 hover:-translate-y-0.5 hover:bg-sky-50 hover:shadow-md transition"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-base font-semibold text-slate-900">
-                  🤖 AI 摘要工具
-                </span>
-                <span className="text-xs text-sky-600">AI 工具</span>
-              </div>
-              <p className="mt-2 text-sm text-slate-600">
-                貼上文章 / 網站 / 字幕內容，一鍵產出摘要與關鍵字，可搭配 Ko-fi 模板做成自己的 API。
-              </p>
-            </Link>
+            {toolCards
+              .filter((card) => !card.featureFlag || featureFlags[card.featureFlag])
+              .map((card) => {
+                // disabled 狀態的樣式：停用 hover 效果，加上視覺提示
+                const baseClassName = `flex flex-col rounded-2xl bg-white/90 p-4 shadow-sm ring-1 ${card.ringColor} ${
+                  card.disabled
+                    ? 'opacity-60 cursor-not-allowed pointer-events-none'
+                    : `group hover:-translate-y-0.5 ${card.hoverColor} hover:shadow-md transition`
+                }`;
 
-              {/* 作業解題助手：已暫時隱藏，等待審核完成後開放 */}
-              {false && (
-                <Link
-                  to="/tools/homework-helper"
-                  className="group flex flex-col rounded-2xl bg-white/90 p-4 shadow-sm ring-1 ring-sky-100 hover:-translate-y-0.5 hover:bg-sky-50 hover:shadow-md transition"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-base font-semibold text-slate-900">
-                      📘 AI 學生作業解題助手
-                    </span>
-                    <span className="text-xs text-sky-600">AI 工具</span>
-                  </div>
-                  <p className="mt-2 text-sm text-slate-600">
-                    拍照或貼上問題即可解題，含步驟教學與白話說明，支援國小至高中。
-                  </p>
-                </Link>
-              )}
+                const cardContent = (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <span className="text-base font-semibold text-slate-900">
+                        {card.icon} {card.title}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        {/* disabled 時強制顯示「即將開放」badge */}
+                        {(card.disabled || card.badge) && (
+                          <span className="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+                            {card.badge || '即將開放'}
+                          </span>
+                        )}
+                        <span className={`text-xs ${card.badgeColor || 'text-slate-600'}`}>
+                          {card.category}
+                        </span>
+                      </div>
+                    </div>
+                    <p className="mt-2 text-sm text-slate-600">
+                      {card.description}
+                    </p>
+                    {card.extraContent && !card.disabled && card.extraContent}
+                  </>
+                );
 
-            {/* 🔒 商品搜尋與比價工具 - 使用功能開關控制 */}
-            {featureFlags.priceCompare && (
-              <Link
-                to="/shopping/search"
-                className="group flex flex-col rounded-2xl bg-white/90 p-4 shadow-sm ring-1 ring-emerald-100 hover:-translate-y-0.5 hover:bg-emerald-50 hover:shadow-md transition"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-base font-semibold text-slate-900">
-                    🛒 商品搜尋與比價工具
-                  </span>
-                  <span className="text-xs text-emerald-700">生活工具</span>
-                </div>
-                <p className="mt-2 text-sm text-slate-600">
-                  輸入想找的商品，未來可整合蝦皮 / 比價結果，幫你找出划算選項。
-                </p>
-              </Link>
-            )}
+                if (card.disabled || !card.href) {
+                  return (
+                    <div key={card.id} className={baseClassName}>
+                      {cardContent}
+                    </div>
+                  );
+                }
 
-            {/* 🔒 RxV AI 自動短影音工具 - 使用功能開關控制 */}
-            {featureFlags.videoTool && (
-              <Link
-                to="/tools/shopee-video"
-                className="group flex flex-col rounded-2xl bg-white/90 p-4 shadow-sm ring-1 ring-purple-100 hover:-translate-y-0.5 hover:bg-purple-50 hover:shadow-md transition"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-base font-semibold text-slate-900">
-                    🎬 RxV AI 自動短影音工具（V2 專業版）
-                  </span>
-                  <span className="text-xs text-purple-700">AI 工具</span>
-                </div>
-                <p className="mt-2 text-sm text-slate-600">
-                  自動抓商品資訊 + 一鍵生成商品短影音（支援蝦皮分潤、字幕、腳本、圖片處理）。
-                </p>
-              </Link>
-            )}
-
-            {/* 生產力工具 */}
-            <Link
-              to="/pomodoro"
-              className="group flex flex-col rounded-2xl bg-white/90 p-4 shadow-sm ring-1 ring-rose-100 hover:-translate-y-0.5 hover:bg-rose-50 hover:shadow-md transition"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-base font-semibold text-slate-900">
-                  🍅 番茄鐘專注計時
-                </span>
-                <span className="text-xs text-rose-700">生產力</span>
-              </div>
-              <p className="mt-2 text-sm text-slate-600">
-                固定節奏工作＋休息，搭配提醒音效與統計表，幫你慢慢找回節奏。
-              </p>
-            </Link>
-
-            <Link
-              to="/todo"
-              className="group flex flex-col rounded-2xl bg-white/90 p-4 shadow-sm ring-1 ring-amber-100 hover:-translate-y-0.5 hover:bg-amber-50 hover:shadow-md transition"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-base font-semibold text-slate-900">
-                  ✅ 待辦清單
-                </span>
-                <span className="text-xs text-amber-700">任務管理</span>
-              </div>
-              <p className="mt-2 text-sm text-slate-600">
-                依照狀態分類（未開始 / 進行中 / 已完成），可搭配番茄鐘使用。
-              </p>
-            </Link>
-
-            {/* 靜心與集氣工具 */}
-            <Link
-              to="/chant"
-              className="group flex flex-col rounded-2xl bg-white/90 p-4 shadow-sm ring-1 ring-indigo-100 hover:-translate-y-0.5 hover:bg-indigo-50 hover:shadow-md transition"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-base font-semibold text-slate-900">
-                  🔔 唸經 / 念佛計數器
-                </span>
-                <span className="text-xs text-indigo-700">靜心工具</span>
-              </div>
-              <p className="mt-2 text-sm text-slate-600">
-                支援多種經文或祈禱內容，可記錄次數、時間與備註，適合每日練習。
-              </p>
-            </Link>
-
-            <Link
-              to="/chant-wish-wall"
-              className="group flex flex-col rounded-2xl bg-white/90 p-4 shadow-sm ring-1 ring-purple-100 hover:-translate-y-0.5 hover:bg-purple-50 hover:shadow-md transition"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-base font-semibold text-slate-900">
-                  🕯 集氣願望牆 & 排行榜
-                </span>
-                <span className="text-xs text-purple-700">社群集氣</span>
-              </div>
-              <p className="mt-2 text-sm text-slate-600">
-                發起集氣活動、許願、查看排行榜與統計，讓祈願不再只是自己一個人默默努力。
-              </p>
-              <div className="mt-2 flex flex-wrap gap-2 text-xs text-purple-700">
-                <Link to="/chant-wish-create" className="underline">
-                  ➕ 發起新的集氣活動
-                </Link>
-                <Link to="/chant-stats" className="underline">
-                  📊 看集氣統計
-                </Link>
-                <Link to="/chant-ranking" className="underline">
-                  🏅 祈願排行
-                </Link>
-              </div>
-            </Link>
+                return (
+                  <Link
+                    key={card.id}
+                    to={card.href}
+                    className={baseClassName}
+                    onClick={(e) => {
+                      if (card.disabled) {
+                        e.preventDefault();
+                        return;
+                      }
+                      if (card.onClick) {
+                        card.onClick(e);
+                      }
+                    }}
+                  >
+                    {cardContent}
+                  </Link>
+                );
+              })}
           </div>
         </section>
 

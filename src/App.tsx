@@ -38,6 +38,7 @@ import Terms from './pages/Terms'
 import About from './pages/About'
 import Contact from './pages/Contact'
 import ServiceDescription from './pages/ServiceDescription'
+import PointsPage from './pages/points'
 import PaymentInfo from './pages/PaymentInfo'
 import SystemStatus from './pages/SystemStatus'
 import FeaturesPage from './pages/FeaturesPage'
@@ -97,6 +98,7 @@ import HomeworkHelper from './pages/tools/homework-helper'
 import RxVAutoShortsPage from './pages/RxVAutoShortsPage'
 import RedirectShorts from './pages/rxv-auto-shorts'
 import NotFoundPage from './pages/NotFound'
+import VideoPreviewPage from './pages/VideoPreviewPage'
 import RetirementPage from './pages/retirement/index'
 import RentalSubsidy2025 from './pages/aids/rental-subsidy-2025'
 import LTC2025Update from './pages/aids/ltc-2025-update'
@@ -118,6 +120,7 @@ import { Toaster } from 'react-hot-toast'
 import { useGATracker } from './hooks/useGATracker'
 import { KeepAlivePing } from './components/KeepAlivePing'
 import { useAuthCredits } from './hooks/useAuthCredits'
+import ScrollToTop from './components/ScrollToTop'
 
 function App() {
   const { t } = useTranslation()
@@ -190,6 +193,7 @@ function App() {
 
   return (
     <div className="w-full min-h-screen max-w-screen-md mx-auto">
+      <ScrollToTop />
       <Routes>
           {/* 主要巢狀路由 - 使用 MainLayout */}
           <Route path="/" element={<MainLayout />}>
@@ -210,8 +214,8 @@ function App() {
             <Route path="pricing/success" element={<PaymentSuccessPage />} />
             <Route path="pricing/cancel" element={<PaymentCancelPage />} />
             <Route path="pricing-old" element={<PricingPage />} />
-            {/* 作業解題功能已暫時隱藏，等待審核完成後開放 */}
-            {/* <Route path="homework-helper" element={<HomeworkHelper />} /> */}
+            {/* 作業解題功能 */}
+            <Route path="homework-helper" element={<HomeworkHelper />} />
             <Route path="shopping/search" element={<NotFoundPage />} />
             <Route path="shopee-video" element={<NotFoundPage />} />
             {/* 若你其他工具也要暫時封鎖可以繼續加 */}
@@ -247,11 +251,11 @@ function App() {
             <Route path="tools/shopee-single-video" element={<ShopeeSingleVideoPage />} />
             {/* 工具路由封鎖 */}
             <Route path="tools/shopee-video" element={<NotFoundPage />} />
-            {/* 作業解題功能已暫時隱藏，等待審核完成後開放 */}
-            {/* <Route path="tools/homework-helper" element={<HomeworkHelper />} /> */}
-            <Route path="tools/homework-helper" element={<NotFoundPage />} />
+            {/* 作業解題功能 */}
+            <Route path="tools/homework-helper" element={<HomeworkHelper />} />
             <Route path="automation" element={<AIHome />} />
             <Route path="rxv-auto-shorts" element={<RedirectShorts />} />
+            <Route path="video-preview" element={<VideoPreviewPage />} />
             <Route path="language-guide" element={<LanguageGuide />} />
             <Route path="blog" element={<BlogPage />} />
           </Route>
@@ -296,6 +300,7 @@ function App() {
           <Route path="/payment-info" element={<PaymentInfo />} />
           <Route path="/status" element={<SystemStatus />} />
           <Route path="/features" element={<FeaturesPage />} />
+          <Route path="/points" element={<PointsPage />} />
           
           {/* Blog 教學文章 */}
           <Route path="/blog" element={<BlogHome />} />

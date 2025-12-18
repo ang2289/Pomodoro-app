@@ -205,3 +205,19 @@ input.timer-input[readonly] {
   border: none !important;
 }
 
+/* 專注完成提示淡入動畫 */
+.animate-fade-in {
+  animation: fadeInSlide 0.4s ease-out;
+}
+
+@keyframes fadeInSlide {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+

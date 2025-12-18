@@ -9,7 +9,7 @@ export default function SystemStatus() {
     { name: 'Free trial credit initialization', completed: true, beta: false },
     { name: 'Credit deduction before AI processing', completed: true, beta: false },
     { name: 'Summary generation', completed: true, beta: false },
-    { name: 'Homework assistance', completed: true, beta: true },
+    { name: 'Homework assistance', completed: true, beta: false },
     { name: 'Credit purchase via ECPay', completed: true, beta: false },
     { name: 'Payment callback handling', completed: true, beta: false },
     { name: 'Credit balance update', completed: true, beta: false },

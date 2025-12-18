@@ -24,10 +24,6 @@ export default function UpgradeModal({
 
   if (!isOpen) return null
 
-  const handleGoToPricing = () => {
-    onClose()
-    navigate('/pricing')
-  }
 
   // 🧩 收尾 2：只有在 remainingChars === 0 時才顯示此彈窗
   // 視窗文案需標示「目前僅開放試用，購買功能尚未開放」
@@ -47,8 +43,8 @@ export default function UpgradeModal({
               : `You have completed the free trial (10,000 characters).\nCurrently only trial is available, purchase function is not yet open.`
           ) : (
             lang === 'zh-tw'
-              ? `本次需要 ${requiredChars.toLocaleString()} 字，你剩餘 ${remainingChars.toLocaleString()} 字`
-              : `This operation requires ${requiredChars.toLocaleString()} characters, but you only have ${remainingChars.toLocaleString()} characters remaining`
+              ? `目前點數不足，請先查看點數方案說明。`
+              : `Insufficient credits. Please check the points plan description.`
           )}
         </p>
         {isQuotaExhausted && (
@@ -65,12 +61,17 @@ export default function UpgradeModal({
           >
             {lang === 'zh-tw' ? '關閉' : 'Close'}
           </button>
-          <button
-            onClick={handleGoToPricing}
-            className="px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-medium rounded-lg hover:from-blue-600 hover:to-cyan-600 transition-all duration-200 shadow-md hover:shadow-lg"
-          >
-            {lang === 'zh-tw' ? '查看方案（尚未開放購買）' : 'View Plans (Purchase Not Available)'}
-          </button>
+          {!isQuotaExhausted && (
+            <button
+              onClick={() => {
+                onClose()
+                navigate('/points')
+              }}
+              className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-all duration-200 shadow-md hover:shadow-lg"
+            >
+              {lang === 'zh-tw' ? '了解點數方案' : 'Learn About Points Plan'}
+            </button>
+          )}
         </div>
       </div>
     </div>

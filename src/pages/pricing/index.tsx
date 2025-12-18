@@ -146,6 +146,35 @@ export default function PricingPage() {
           </h1>
         </div>
 
+        {/* 綠界合規說明 */}
+        <div className="mb-8 p-5 bg-red-50 border-2 border-red-200 rounded-lg">
+          <h2 className="text-lg font-bold text-red-900 mb-4">
+            {lang === 'zh-tw' ? '⚠️ 重要購買說明' : '⚠️ Important Purchase Information'}
+          </h2>
+          <ul className="list-disc ml-6 space-y-2 text-red-800 text-sm leading-relaxed">
+            <li>
+              {lang === 'zh-tw' 
+                ? '本站提供 AI 數位服務，採點數制'
+                : 'This site provides AI digital services using a point-based system'}
+            </li>
+            <li>
+              {lang === 'zh-tw' 
+                ? '點數僅限本站使用，無使用期限'
+                : 'Points are only valid on this site and have no expiration date'}
+            </li>
+            <li>
+              {lang === 'zh-tw' 
+                ? '每次使用依輸入與輸出字數扣點'
+                : 'Each use deducts points based on input and output character count'}
+            </li>
+            <li className="font-semibold">
+              {lang === 'zh-tw' 
+                ? '點數一經使用即視為服務完成，恕不退款'
+                : 'Once points are used, the service is considered completed and no refunds will be provided'}
+            </li>
+          </ul>
+        </div>
+
         {/* 方案卡片區塊 */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           

@@ -5,8 +5,9 @@ export async function searchShopeeItems(keyword: string) {
   if (!keyword.trim()) return [];
 
   try {
-    const res = await axios.get(`/api/shopee-search`, {
-      params: { keyword },
+    const res = await axios.post(`/api/commerce`, {
+      action: 'shopeeSearch',
+      keyword,
     });
 
     console.log("[service] 收到筆數 =", res.data?.items?.length);

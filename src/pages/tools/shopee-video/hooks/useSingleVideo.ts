@@ -82,10 +82,11 @@ export function useSingleVideo() {
     setError("");
 
     try {
-      const res = await fetch("/api/shopee-generate-script", {
+      const res = await fetch("/api/commerce", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          action: "shopeeGenerateScript",
           title,
           price: price || undefined,
           highlights: cleanHighlights,

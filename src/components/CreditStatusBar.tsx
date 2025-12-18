@@ -99,10 +99,10 @@ export default function CreditStatusBar({
   const currentUsed = getUsedChars()
 
   // 更新剩餘點數（API 成功後呼叫）
-  const updateRemainingChars = (deductedChars: number) => {
+  const updateRemainingChars = (usedPoints: number) => {
     if (remainingChars === null) {
       // 未登入：更新 localStorage
-      const newRemaining = Math.max(0, freeRemainingChars - deductedChars)
+      const newRemaining = Math.max(0, freeRemainingChars - usedPoints)
       setFreeRemainingChars(newRemaining)
       localStorage.setItem(FREE_REMAINING_KEY, newRemaining.toString())
       // 觸發自定義事件通知其他組件
@@ -153,9 +153,10 @@ export default function CreditStatusBar({
 }
 
 // 導出更新剩餘點數的方法（供 API 成功後呼叫）
-export const updateUsedCharsAfterSuccess = (deductedChars: number) => {
+// 只接受後端實際回傳的 usedPoints，不再自行計算
+export const updateUsedCharsAfterSuccess = (usedPoints: number) => {
   if (typeof window !== 'undefined' && (window as any).__updateRemainingChars) {
-    ;(window as any).__updateRemainingChars(deductedChars)
+    ;(window as any).__updateRemainingChars(usedPoints)
   }
 }
 

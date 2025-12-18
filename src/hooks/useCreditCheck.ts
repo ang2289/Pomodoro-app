@@ -26,6 +26,7 @@ export function useCreditCheck(inputLength: number): CreditCheckResult {
   const { remainingChars, loading: creditsLoading } = useAuthCredits()
 
   // 計算剩餘可用字數（優先使用登入狀態的 remainingChars，否則使用免費額度計算）
+  // ⚠️ 不在渲染階段寫入 localStorage，避免 side effect
   const getRemainingChars = (): number => {
     if (remainingChars !== null) {
       return remainingChars
@@ -38,8 +39,7 @@ export function useCreditCheck(inputLength: number): CreditCheckResult {
         // 確保不會是負數
         return Math.max(0, remaining)
       }
-      // 如果沒有值，初始化為 10,000
-      localStorage.setItem(FREE_REMAINING_KEY, FREE_TRIAL_QUOTA.toString())
+      // 如果沒有值，回傳預設額度（不在這裡寫入 localStorage）
       return FREE_TRIAL_QUOTA
     }
     return FREE_TRIAL_QUOTA

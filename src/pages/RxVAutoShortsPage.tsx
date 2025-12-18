@@ -447,10 +447,13 @@ export default function RxVAutoShortsPage() {
                     setScriptLoading(true);
 
                     try {
-                      const res = await fetch("/api/shopee-batch-script", {
+                      const res = await fetch("/api/commerce", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ items })
+                        body: JSON.stringify({
+                          action: "shopeeBatch",
+                          items,
+                        })
                       });
 
                       const data = await res.json();

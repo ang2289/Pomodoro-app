@@ -181,10 +181,11 @@ export function useBatchVideo() {
     setError("");
 
     try {
-      const res = await fetch("/api/shopee-generate-script", {
+      const res = await fetch("/api/commerce", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          action: "shopeeGenerateScript",
           title: task.title,
           price: task.price || undefined,
           highlights: cleanHighlights,
