@@ -238,26 +238,46 @@ export default function SummaryPage() {
       // 自動偵測輸入文字的語言
       const detectedLang = detectLanguage(input)
 
-      // 🧩 使用統一的摘要 API：/api/ai（summary action）
-      // 不再需要檢查 VITE_SUMMARY_FUNCTION_URL，直接使用 /api/ai
-      console.log('🚀 呼叫摘要 API：/api/ai (action=summary)');
+      // 🧩 本地開發環境：直接呼叫 Supabase Edge Function
+      // Production：使用統一的摘要 API：/api/ai
+      const isDev = import.meta.env.DEV
+      let apiUrl: string
+      let requestBody: any
 
-      // 🧩 使用統一的摘要 API：/api/ai
-      // 透過 action: "summary" 來產生摘要
-      const res = await fetch(
-        '/api/ai',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ 
-            action: 'summary', // 指定 action 為 summary（由 /api/ai 分流至摘要邏輯）
-            content: input,
-            lang: detectedLang, // 自動偵測的語言
-          }),
+      if (isDev) {
+        // 本地開發環境：直接呼叫 Supabase Edge Function
+        const functionUrl = import.meta.env.VITE_SUMMARY_FUNCTION_URL || 
+          'https://icuxwmpdpsfhztsbyeds.supabase.co/functions/v1/auto-summary'
+        const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 
+          import.meta.env.SUPABASE_ANON_KEY
+        
+        apiUrl = functionUrl
+        requestBody = {
+          content: input,
+          lang: detectedLang,
         }
-      )
+        console.log('🚀 [本地開發] 直接呼叫 Supabase Edge Function：', functionUrl)
+      } else {
+        // Production：使用統一的摘要 API：/api/ai
+        apiUrl = '/api/ai'
+        requestBody = {
+          action: 'summary',
+          content: input,
+          lang: detectedLang,
+        }
+        console.log('🚀 [Production] 呼叫摘要 API：/api/ai (action=summary)')
+      }
+
+      const res = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(isDev && import.meta.env.VITE_SUPABASE_ANON_KEY ? {
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.SUPABASE_ANON_KEY}`
+          } : {}),
+        },
+        body: JSON.stringify(requestBody),
+      })
 
       const data = await res.json()
 

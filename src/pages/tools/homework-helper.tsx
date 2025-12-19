@@ -397,20 +397,93 @@ export default function HomeworkHelper() {
       };
       const languagePrefix = languageMap[language] || "";
 
-      console.log('[DEBUG] about to call homework-helper API');
-      const response = await fetch("/api/ai", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          action: "homework",
-          prompt: `${languagePrefix}${question}`,
-          mode: mode,  // 直接傳遞前端 mode
-        }),
-      });
+      // 🧩 本地開發環境：直接呼叫 Supabase Edge Function
+      // Production：使用統一的作業解題 API：/api/ai
+      const isDev = import.meta.env.DEV
+      let response: Response
+      let data: any
 
-      const data = await response.json().catch(() => ({ success: false }));
+      if (isDev) {
+        // 本地開發環境：直接呼叫 Supabase Edge Function homework-helper
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 
+          'https://kagoxcvsluzalisjqnif.supabase.co'
+        const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 
+          import.meta.env.SUPABASE_ANON_KEY
+        const functionUrl = `${supabaseUrl}/functions/v1/homework-helper`
+        
+        console.log('[DEBUG] [本地開發] 直接呼叫 Supabase Edge Function：', functionUrl)
+        
+        response = await fetch(functionUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(anonKey ? { "Authorization": `Bearer ${anonKey}` } : {}),
+          },
+          body: JSON.stringify({
+            question: `${languagePrefix}${question}`,
+          }),
+        })
+
+        const edgeFunctionData = await response.json().catch(() => ({}))
+        
+        // 適配 Supabase Edge Function 回傳格式 { simple, normal, pro } 為統一格式
+        if (response.ok && (edgeFunctionData.simple || edgeFunctionData.normal || edgeFunctionData.pro)) {
+          // 根據 mode 選擇對應的結果
+          let resultText = ''
+          if (mode === 'simple' && edgeFunctionData.simple) {
+            resultText = edgeFunctionData.simple
+          } else if (mode === 'detailed' && edgeFunctionData.pro) {
+            resultText = edgeFunctionData.pro
+          } else if (edgeFunctionData.normal) {
+            resultText = edgeFunctionData.normal
+          } else if (edgeFunctionData.simple) {
+            resultText = edgeFunctionData.simple
+          } else if (edgeFunctionData.pro) {
+            resultText = edgeFunctionData.pro
+          }
+          
+          // 計算點數（與 production 邏輯一致）
+          const inputText = `${languagePrefix}${question}`
+          const outputText = resultText
+          const inputLength = inputText.length
+          const outputLength = outputText.length
+          const totalUsedPoints = inputLength + outputLength
+          
+          // 適配為統一格式
+          data = {
+            success: true,
+            data: {
+              result: resultText,
+              inputLength,
+              outputLength,
+              totalUsedPoints,
+            },
+            result: resultText, // 向後相容
+            inputLength,
+            outputLength,
+            totalUsedPoints,
+          }
+        } else {
+          // Edge Function 錯誤
+          data = { success: false, error: edgeFunctionData.error || '作業解題失敗' }
+        }
+      } else {
+        // Production：使用統一的作業解題 API：/api/ai
+        console.log('[DEBUG] [Production] 呼叫作業解題 API：/api/ai')
+        response = await fetch("/api/ai", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            action: "homework",
+            prompt: `${languagePrefix}${question}`,
+            mode: mode,  // 直接傳遞前端 mode
+          }),
+        })
+
+        data = await response.json().catch(() => ({ success: false }))
+      }
 
       // 處理點數不足錯誤（403 或 NEED_PURCHASE）
       if (response.status === 403 && (data.error === 'INSUFFICIENT_CREDITS' || data.error === 'NEED_PURCHASE')) {

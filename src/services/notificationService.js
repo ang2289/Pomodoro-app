@@ -9,7 +9,7 @@ class NotificationService {
             value: false
         });
     }
-    // 初始化通知服務
+    // 初始化通知服務（僅檢查權限，不主動請求）
     async initialize() {
         if (Capacitor.isNativePlatform()) {
             try {
@@ -24,9 +24,9 @@ class NotificationService {
             }
         }
         else {
-            // 瀏覽器環境
+            // 瀏覽器環境：只檢查現有權限，不主動請求（避免違反瀏覽器政策）
             if ('Notification' in window) {
-                const permission = await Notification.requestPermission();
+                const permission = Notification.permission;
                 this.hasPermission = permission === 'granted';
                 console.log('瀏覽器通知權限狀態:', this.hasPermission);
                 return this.hasPermission;
@@ -35,6 +35,23 @@ class NotificationService {
                 console.warn('瀏覽器不支援通知');
                 return false;
             }
+        }
+    }
+
+    // 請求通知權限（應在用戶手勢後調用，如點擊按鈕）
+    async requestPermission() {
+        if (Capacitor.isNativePlatform()) {
+            return await this.initialize();
+        }
+        else {
+            // 瀏覽器環境：只在用戶明確交互後請求
+            if ('Notification' in window) {
+                const permission = await Notification.requestPermission();
+                this.hasPermission = permission === 'granted';
+                console.log('瀏覽器通知權限狀態:', this.hasPermission);
+                return this.hasPermission;
+            }
+            return false;
         }
     }
     // 檢查是否有通知權限

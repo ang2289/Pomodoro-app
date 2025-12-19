@@ -55,6 +55,14 @@ interface AiResponse {
 }
 
 export default async function handler(req: any, res: any) {
+  // 開發環境測試回傳
+  if (process.env.NODE_ENV === 'development') {
+    return res.status(200).json({
+      success: true,
+      result: '【本地測試】摘要 API 正常回傳'
+    })
+  }
+
   // 外層總是 try/catch，避免 500
   try {
     console.log('[ai] handler entered', { method: req.method })
@@ -80,9 +88,20 @@ export default async function handler(req: any, res: any) {
 
     console.log('[ai] env check passed')
 
+    // 檢查 OPENAI_API_KEY（防呆，避免 API KEY 炸掉）
+    const OPENAI_API_KEY = process.env.OPENAI_API_KEY
+    if (!OPENAI_API_KEY || typeof OPENAI_API_KEY !== 'string' || OPENAI_API_KEY.trim().length === 0) {
+      console.error('❌ [ai] Missing OPENAI_API_KEY')
+      return res.status(500).json({
+        success: false,
+        error: 'Missing OPENAI_API_KEY',
+      })
+    }
+
     const body = req.body || {}
     const action = body.action
 
+    // action 分流處理
     if (action === 'homework') {
       const result = await handleHomeworkAction(body, {
         apiKey: GEMINI_API_KEY,
@@ -107,13 +126,12 @@ export default async function handler(req: any, res: any) {
       return res.status(status).json(summaryBody)
     }
 
-    // 其他 action 預留
+    // default 處理：未知的 action
     console.warn('⚠️ [ai] 未支援的 action', { action })
-    const resp: AiResponse = {
+    return res.status(400).json({
       success: false,
-      error: 'UNSUPPORTED_ACTION',
-    }
-    return res.status(200).json(resp)
+      error: 'Unknown action',
+    })
   } catch (err: any) {
     console.error('❌ [ai] 未預期錯誤：', {
       message: err?.message || 'Unknown error',
@@ -122,12 +140,11 @@ export default async function handler(req: any, res: any) {
       error: err,
     })
 
-    // 任何錯誤一律 200 + success:false
-    const resp: AiResponse = {
+    // 強制錯誤也回 JSON 格式（500 狀態碼）
+    return res.status(500).json({
       success: false,
-      error: 'INTERNAL_ERROR',
-    }
-    return res.status(200).json(resp)
+      error: err?.message || 'AI server error',
+    })
   }
 }
 
