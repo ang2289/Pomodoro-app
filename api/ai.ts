@@ -5,6 +5,9 @@
 // 其餘 action 僅預留，不實作
 // ============================================================
 
+// Vercel Serverless Function 配置
+export const config = { runtime: 'nodejs' }
+
 import { calculateAICredits } from './utils/creditCalculator'
 
 const MODEL = 'gemini-2.0-flash'
@@ -87,16 +90,6 @@ export default async function handler(req: any, res: any) {
     }
 
     console.log('[ai] env check passed')
-
-    // 檢查 OPENAI_API_KEY（防呆，避免 API KEY 炸掉）
-    const OPENAI_API_KEY = process.env.OPENAI_API_KEY
-    if (!OPENAI_API_KEY || typeof OPENAI_API_KEY !== 'string' || OPENAI_API_KEY.trim().length === 0) {
-      console.error('❌ [ai] Missing OPENAI_API_KEY')
-      return res.status(500).json({
-        success: false,
-        error: 'Missing OPENAI_API_KEY',
-      })
-    }
 
     const body = req.body || {}
     const action = body.action
