@@ -221,3 +221,22 @@ input.timer-input[readonly] {
   }
 }
 
+/* AI 短影音卡片強制橫向文字排列 */
+.ai-short-video-card,
+.ai-short-video-card * {
+  writing-mode: horizontal-tb !important;
+  text-orientation: mixed !important;
+  direction: ltr !important;
+  white-space: normal !important;
+  word-break: keep-all !important;
+  overflow-wrap: break-word !important;
+  text-align: left !important;
+}
+
+.ai-short-video-card h4,
+.ai-short-video-card p {
+  display: block !important;
+  width: 100% !important;
+  line-height: 1.5 !important;
+}
+

@@ -710,7 +710,17 @@ const PomodoroPage = () => {
           </Link>
 
           {/* Shopee 短影音工具 */}
-          <div className="block p-4 bg-white rounded-xl border border-gray-200 opacity-60 cursor-not-allowed">
+          <div 
+            className="block p-4 bg-white rounded-xl border border-gray-200 opacity-60 cursor-not-allowed" 
+            style={{ 
+              writingMode: 'horizontal-tb', 
+              textOrientation: 'mixed',
+              direction: 'ltr',
+              wordBreak: 'keep-all',
+              overflowWrap: 'break-word',
+              whiteSpace: 'normal'
+            }}
+          >
             <h4 className="font-semibold text-gray-800 mb-2">
               Shopee 短影音工具
             </h4>
@@ -869,7 +879,7 @@ const PomodoroPage = () => {
           <span className="mr-2">🚀</span>
           快速 AI 工具導引
         </h3>
-        <div className="grid gap-3">
+        <div className="grid gap-3" style={{ writingMode: 'horizontal-tb', direction: 'ltr' }}>
           {/* 作業解題神器 */}
           <Link
             to="/tools/homework-helper"
@@ -909,29 +919,6 @@ const PomodoroPage = () => {
               </div>
             </div>
           </Link>
-
-          {/* AI 短影音（規劃中） */}
-          <div className="block p-4 bg-white rounded-xl border border-gray-200 opacity-60 cursor-not-allowed">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <h4 className="font-medium text-gray-800 mb-1">
-                  AI 短影音 🧠（規劃中）
-                </h4>
-                <p className="text-sm font-medium text-amber-600 mb-2">
-                  🚧 即將開放（目前為功能規劃中）
-                </p>
-                <p className="text-sm text-gray-500">
-                  短影音產生工具，目前規劃中，敬請期待。目前此工具尚未開放使用，請期待未來更新。
-                </p>
-              </div>
-              <button 
-                disabled
-                className="ml-4 px-4 py-2 bg-gray-400 text-white text-sm font-medium rounded-lg cursor-not-allowed opacity-60"
-              >
-                即將開放
-              </button>
-            </div>
-          </div>
         </div>
       </div>
 
