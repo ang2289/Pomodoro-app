@@ -368,63 +368,67 @@ export default function HomeworkHelper() {
     //   return;
     // }
 
-    // ✅ 保留：prompt 是否為空的檢查
-    if (!question || !question.trim()) {
-      console.log('[DEBUG] return: 題目為空');
-      return;
-    }
+      // ✅ 保留：prompt 是否為空的檢查
+      if (!question || !question.trim()) {
+        console.log('[DEBUG] return: 題目為空');
+        return;
+      }
 
-    // 🛡️ 防呆機制 2：同一題目未變更時不重複呼叫 API
-    // ⚠️ 暫時註解：確認 API 請求可以被送出
-    // if (question.trim() === lastSolvedQuestionRef.current) {
-    //   console.log('[DEBUG] return: 同一題目已解答過，不重複呼叫');
-    //   return;
-    // }
-    
-    // 使用共用的扣點檢查邏輯：在送出請求前先檢查字數是否足夠
-    // ⚠️ 暫時註解：確認 API 請求可以被送出
-    // if (!creditCheck.canProceed) {
-    //   console.log('[DEBUG] return: 點數不足（共用檢查邏輯）');
-    //   // 阻擋送出請求，不呼叫任何 API
-    //   setModal({
-    //     title: '剩餘字數不足',
-    //     message: creditCheck.errorMessage || '剩餘字數不足，請升級方案（尚未開放）',
-    //   })
-    //   return
-    // }
-    
-    limit.addOne();
-    
-    setLoading(true);
-    try {
-      // ✅ 使用 Vercel API 處理作業解題
-      // 直接傳遞前端 mode（後端已支援四種模式）
-
-      // 根據語言調整 prompt
-      const languageMap: Record<string, string> = {
-        zh: "請使用繁體中文回答：",
-        en: "Please answer in English:",
-        ja: "日本語で回答してください：",
-      };
-      const languagePrefix = languageMap[language] || "";
-
-      // ✅ 統一使用 /api/ai 作為作業解題 API 入口
-      console.log('[DEBUG] 呼叫作業解題 API：/api/ai')
+      // 🛡️ 防呆機制 2：同一題目未變更時不重複呼叫 API
+      // ⚠️ 暫時註解：確認 API 請求可以被送出
+      // if (question.trim() === lastSolvedQuestionRef.current) {
+      //   console.log('[DEBUG] return: 同一題目已解答過，不重複呼叫');
+      //   return;
+      // }
       
-      // 使用 modeMap 映射到 Edge Function / Gemini 支援的模式
-      const finalMode = modeMap[mode] || 'easy'
+      // 使用共用的扣點檢查邏輯：在送出請求前先檢查字數是否足夠
+      // ⚠️ 暫時註解：確認 API 請求可以被送出
+      // if (!creditCheck.canProceed) {
+      //   console.log('[DEBUG] return: 點數不足（共用檢查邏輯）');
+      //   // 阻擋送出請求，不呼叫任何 API
+      //   setModal({
+      //     title: '剩餘字數不足',
+      //     message: creditCheck.errorMessage || '剩餘字數不足，請升級方案（尚未開放）',
+      //   })
+      //   return
+      // }
       
-      const response = await fetch("/api/ai", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          action: 'homework',
-          prompt: `${languagePrefix}${question}`,
-          mode: finalMode,
-        }),
-      })
+      limit.addOne();
+      
+      setLoading(true);
+      try {
+        // ✅ 直接呼叫 Supabase Edge Function homework-helper
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 
+          'https://icuxwmpdpsfhztsbyeds.supabase.co'
+        const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 
+          import.meta.env.SUPABASE_ANON_KEY
+        const functionUrl = `${supabaseUrl}/functions/v1/homework-helper`
+        
+        console.log('[DEBUG] 直接呼叫 Supabase Edge Function：', functionUrl)
+        
+        // 使用 modeMap 映射到 Edge Function / Gemini 支援的模式（'easy' | 'kid' | 'pro'）
+        const finalMode = modeMap[mode] || 'easy'
+        
+        const response = await fetch(functionUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(anonKey ? { "Authorization": `Bearer ${anonKey}` } : {}),
+          },
+          body: JSON.stringify({
+            prompt: question.trim(),
+            mode: finalMode,
+          }),
+        })
+
+      // 🛡️ 防呆：檢查 Content-Type 是否為 application/json
+      const contentType = response.headers.get('content-type') || ''
+      if (!contentType.includes('application/json')) {
+        console.error('❌ [作業解題 API] Content-Type 不是 application/json：', contentType)
+        setResult('AI 服務暫時異常，請稍後再試')
+        setLoading(false)
+        return
+      }
 
       // 1️⃣ 先用 response.text() 取得原始內容
       const text = await response.text()
@@ -436,13 +440,13 @@ export default function HomeworkHelper() {
       } catch (parseError) {
         // 3️⃣ 若 parse 失敗，顯示伺服器錯誤訊息
         console.error('❌ [作業解題 API] JSON 解析失敗：', parseError, '回應內容：', text.substring(0, 200))
-        setResult(`❌ 伺服器回傳非 JSON 格式：${text.substring(0, 200)}`)
+        setResult('AI 服務暫時異常，請稍後再試')
         setLoading(false)
         return
       }
 
-      // 處理點數不足錯誤（403 或 NEED_PURCHASE）
-      if (response.status === 403 && (data.error === 'INSUFFICIENT_CREDITS' || data.error === 'NEED_PURCHASE')) {
+      // 處理點數不足錯誤（403 或 INSUFFICIENT_CREDITS）
+      if (response.status === 403 || data.error === 'INSUFFICIENT_CREDITS') {
         console.log('[DEBUG] return: 點數不足錯誤（403）');
         await refreshCredits()
         setModal({
@@ -454,42 +458,38 @@ export default function HomeworkHelper() {
       }
 
       // 處理 API 錯誤（顯示學生友善訊息）
-      if (!response.ok || data.success === false) {
-        console.log('[DEBUG] return: API 錯誤（response.ok 為 false 或 data.success 為 false）');
-        setResult("❌ 目前無法取得解題結果\n\n可能是系統暫時忙碌，請稍後再試一次。");
+      if (!response.ok || data.error) {
+        console.log('[DEBUG] return: API 錯誤（response.ok 為 false 或 data.error 存在）');
+        setResult(`❌ 目前無法取得解題結果\n\n${data.error || data.message || '可能是系統暫時忙碌，請稍後再試一次。'}`);
         return;
       }
 
-      // 成功取得結果：使用 data.success 與 data.data.result 作為最終顯示內容
-      if (data.success && data.data && data.data.result) {
-        const resultText = data.data.result
+      // 成功取得結果：回傳格式只處理 { result: string }
+      if (data.result && typeof data.result === 'string') {
+        const resultText = data.result
         setResult(resultText);
         
         // 🛡️ 記錄已解答的題目（避免重複呼叫）
         lastSolvedQuestionRef.current = question.trim();
         
-        // ✅ 使用工具函數解析後端實際扣點數（不自行組合 input + output）
-        // 傳入 data.data 或 data，因為點數可能在 data.data.totalUsedPoints 或 data.totalUsedPoints
-        const usedPoints = applyCreditFromApiResponse(data.data || data);
+        // 計算點數（Edge Function 已扣點，這裡只計算用於顯示）
+        const inputLength = question.trim().length
+        const outputLength = resultText.length
+        const totalUsedPoints = inputLength + outputLength
         
-        // ✅ 記錄本次使用點數（用於顯示）- 僅使用 API 回傳的數值
-        if (data.data.inputLength !== undefined && data.data.outputLength !== undefined) {
-          setLastUsedPoints({
-            inputLength: data.data.inputLength,
-            outputLength: data.data.outputLength,
-            totalUsedPoints: usedPoints, // 使用解析後的 usedPoints，不自行計算
-          });
-        } else {
-          // API 未回傳明細時，不顯示點數明細
-          setLastUsedPoints(null);
-        }
+        // ✅ 記錄本次使用點數（用於顯示）
+        setLastUsedPoints({
+          inputLength,
+          outputLength,
+          totalUsedPoints,
+        });
         
-        // ✅ AI 回答成功後才扣點（使用後端實際回傳的點數）
-        updateUsedCharsAfterSuccess(usedPoints);
-        console.log(`✅ 扣點成功：${usedPoints} 點${data.data.inputLength !== undefined && data.data.outputLength !== undefined ? `（輸入 ${data.data.inputLength} + 回答 ${data.data.outputLength}）` : ''}`);
+        // ✅ AI 回答成功後才扣點（Edge Function 已扣點，這裡只更新前端顯示）
+        updateUsedCharsAfterSuccess(totalUsedPoints);
+        console.log(`✅ 扣點成功：${totalUsedPoints} 點（輸入 ${inputLength} + 回答 ${outputLength}）`);
       } else {
         // 🛡️ API 失敗時不扣點
-        console.log('[DEBUG] return: API 失敗（data.success 為 false 或 data.data.result 不存在）');
+        console.log('[DEBUG] return: API 失敗（data.result 不存在或不是字串）');
         setResult("❌ 目前無法取得解題結果\n\n可能是系統暫時忙碌，請稍後再試一次。");
       }
     } catch (err: any) {

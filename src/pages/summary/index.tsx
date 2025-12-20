@@ -12,6 +12,7 @@ import CreditStatusBar, { updateUsedCharsAfterSuccess } from '@/components/Credi
 import { applyCreditFromApiResponse } from '@/utils/creditCalculator'
 import { useAuthCredits } from '@/hooks/useAuthCredits'
 import { useCreditCheck } from '@/hooks/useCreditCheck'
+import { supabase } from '@/utils/supabaseClient'
 
 // 方案常數定義（只存字數，不寫死篇數）
 const PLANS = {
@@ -239,73 +240,21 @@ export default function SummaryPage() {
     setShowInsufficientQuotaModal(false)
 
     try {
-      // 自動偵測輸入文字的語言
-      const detectedLang = detectLanguage(input)
+      // ✅ 使用 supabase.functions.invoke 呼叫 summary Edge Function
+      console.log('🚀 呼叫 Supabase Edge Function：summary')
 
-      // 🧩 本地開發環境：直接呼叫 Supabase Edge Function
-      // Production：使用統一的摘要 API：/api/ai
-      const isDev = import.meta.env.DEV
-      let apiUrl: string
-      let requestBody: any
-
-      if (isDev) {
-        // 本地開發環境：直接呼叫 Supabase Edge Function
-        const functionUrl = import.meta.env.VITE_SUMMARY_FUNCTION_URL || 
-          'https://icuxwmpdpsfhztsbyeds.supabase.co/functions/v1/auto-summary'
-        const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 
-          import.meta.env.SUPABASE_ANON_KEY
-        
-        apiUrl = functionUrl
-        requestBody = {
-          content: input,
-          lang: detectedLang,
-        }
-        console.log('🚀 [本地開發] 直接呼叫 Supabase Edge Function：', functionUrl)
-      } else {
-        // Production：使用統一的摘要 API：/api/ai
-        apiUrl = '/api/ai'
-        requestBody = {
-          action: 'summary',
-          content: input,
-          lang: detectedLang,
-        }
-        console.log('🚀 [Production] 呼叫摘要 API：/api/ai (action=summary)')
-      }
-
-      const res = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(isDev && import.meta.env.VITE_SUPABASE_ANON_KEY ? {
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.SUPABASE_ANON_KEY}`
-          } : {}),
+      const { data: result, error } = await supabase.functions.invoke('summary', {
+        body: {
+          prompt: input,
         },
-        body: JSON.stringify(requestBody),
       })
 
-      // 防呆：在 Production 環境呼叫 /api/ai 時，先用 text() 取得回應，再嘗試解析 JSON
-      let data: any
-      if (!isDev && apiUrl === '/api/ai') {
-        const responseText = await res.text()
-        try {
-          data = JSON.parse(responseText)
-        } catch (parseError) {
-          console.error('❌ [摘要 API] JSON 解析失敗：', parseError, '回應內容：', responseText.substring(0, 200))
-          setError(lang === 'zh-tw' ? '伺服器暫時異常，請稍後再試' : 'Server temporarily unavailable, please try again later')
-          setLoading(false)
-          return
-        }
-      } else {
-        // 本地開發環境或非 /api/ai 的呼叫，使用原本的 .json()
-        data = await res.json()
-      }
-
-      if (!res.ok) {
-        // 🔒 步驟 5：只有在 API 回傳 403 錯誤時，才顯示升級提示
-        // 🧩 收尾 2：只有當 remainingChars === 0 時才顯示升級彈窗
-        if (res.status === 403 && (data.error === 'INSUFFICIENT_CREDITS' || data.error === 'NEED_PURCHASE')) {
-          console.log('⚠️ [API 403 錯誤] 後端回傳點數不足：', {
-            error: data.error,
+      // 處理錯誤
+      if (error) {
+        // 處理點數不足錯誤
+        if (error.message?.includes('INSUFFICIENT_CREDITS') || error.message?.includes('insufficient')) {
+          console.log('⚠️ [API 錯誤] 後端回傳點數不足：', {
+            error: error.message,
             remainingChars: currentRemainingPoints,
             inputChars: inputChars,
             whyUpgrade: 'apiReturned403',
@@ -314,9 +263,7 @@ export default function SummaryPage() {
           // 重新取得最新剩餘點數
           await refreshCredits()
           
-          // 🧩 收尾 2：只有當 remainingChars === 0 時才顯示升級彈窗
-          // refreshCredits 會更新 remainingChars，但由於是異步的，我們檢查當前值
-          // 如果當前 remainingChars === 0，才顯示升級彈窗
+          // 只有當 remainingChars === 0 時才顯示升級彈窗
           if (currentRemainingPoints === 0) {
             setIsQuotaExhausted(true)
             setShowInsufficientQuotaModal(true)
@@ -324,7 +271,7 @@ export default function SummaryPage() {
               ? '免費試用額度已使用完畢'
               : 'Free trial quota exhausted')
           } else {
-            // 剩餘點數 > 0 但 API 回傳 403，只顯示錯誤訊息，不顯示彈窗
+            // 剩餘點數 > 0 但 API 回傳錯誤，只顯示錯誤訊息，不顯示彈窗
             setError(lang === 'zh-tw' 
               ? '點數不足，請減少輸入字數'
               : 'Insufficient credits, please reduce input length')
@@ -333,40 +280,59 @@ export default function SummaryPage() {
           return
         }
         
-        // 其他錯誤
+        // 其他錯誤（包括非 JSON 回應）
+        console.error('❌ [摘要 API] 錯誤：', error)
         setIsQuotaExhausted(false)
-        throw new Error(data.error || data.message || '摘要失敗')
+        setError(lang === 'zh-tw' ? 'AI 服務暫時異常，請稍後再試' : 'AI service temporarily unavailable, please try again later')
+        setLoading(false)
+        return
       }
 
-      setSummary(data.summary)
-      setKeywords(data.keywords)
-      
-      // 🔒 步驟 5：摘要成功後 → 才扣點（確認要執行摘要後才扣點）
-      // 使用工具函數解析後端實際扣點數（不自行組合 input + output）
-      const usedPoints = applyCreditFromApiResponse(data)
-      
-      // ✅ 記錄本次使用點數（用於顯示）- 僅使用 API 回傳的數值
-      if (data.inputLength !== undefined && data.outputLength !== undefined) {
-        setLastUsedPoints({
-          inputLength: data.inputLength,
-          outputLength: data.outputLength,
-          totalUsedPoints: usedPoints, // 使用解析後的 usedPoints，不自行計算
-        })
-      } else {
-        // API 未回傳明細時，不顯示點數明細（舊 API 相容）
-        setLastUsedPoints(null)
+      // 🛡️ 防呆：檢查 result 是否為有效物件
+      if (!result || typeof result !== 'object') {
+        console.error('❌ [摘要 API] 回傳格式錯誤：result 不是物件', result)
+        setError(lang === 'zh-tw' ? 'AI 服務暫時異常，請稍後再試' : 'AI service temporarily unavailable, please try again later')
+        setLoading(false)
+        return
       }
+
+      // 處理回傳格式：只處理 { result: string }
+      if (!result.result) {
+        console.error('❌ [摘要 API] 回傳格式錯誤：缺少 result 欄位', result)
+        setError(lang === 'zh-tw' ? 'AI 服務暫時異常，請稍後再試' : 'AI service temporarily unavailable, please try again later')
+        setLoading(false)
+        return
+      }
+
+      // result.result 是摘要文字
+      const summaryText = typeof result.result === 'string' ? result.result : String(result.result)
+      setSummary(summaryText)
+      // keywords 設為空陣列（因為回傳格式只有 result）
+      setKeywords([])
+      
+      // 🔒 步驟 5：摘要成功後 → 計算點數（因為回傳格式只有 result，需要自行計算）
+      // 計算輸入和輸出字數
+      const inputLength = input.length
+      const outputLength = summaryText.length
+      const totalUsedPoints = inputLength + outputLength
+      
+      // ✅ 記錄本次使用點數（用於顯示）
+      setLastUsedPoints({
+        inputLength,
+        outputLength,
+        totalUsedPoints,
+      })
       
       // 🔍 偵錯顯示：扣點前後的數值
       console.log('💰 [扣點執行] 摘要成功，開始扣點：', {
-        usedPoints: usedPoints.toLocaleString(),
+        usedPoints: totalUsedPoints.toLocaleString(),
         beforeRemaining: currentRemainingPoints.toLocaleString(),
-        afterRemaining: (currentRemainingPoints - usedPoints).toLocaleString(),
+        afterRemaining: (currentRemainingPoints - totalUsedPoints).toLocaleString(),
       })
       
       // 🔒 步驟 6：前端即時更新點數
-      // 先更新未登入狀態的 localStorage（使用後端實際回傳的點數）
-      updateUsedCharsAfterSuccess(usedPoints)
+      // 先更新未登入狀態的 localStorage（使用計算的點數）
+      updateUsedCharsAfterSuccess(totalUsedPoints)
       
       // 登入狀態：使用 refreshCredits 來更新點數（會自動更新 useAuthCredits 的狀態）
       // 這會從後端取得最新的 remainingChars（已扣點後）
