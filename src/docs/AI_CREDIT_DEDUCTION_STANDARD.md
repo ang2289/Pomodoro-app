@@ -208,3 +208,4 @@ updateUsedCharsAfterSuccess(usedPoints)
 **最後更新**: 2025-01-XX  
 **維護者**: 開發團隊
 
+

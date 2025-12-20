@@ -116,12 +116,13 @@ export default async function handler(req: any, res: any) {
         anonKey: SUPABASE_ANON_KEY,
       })
 
-      return res.status(status).json(summaryBody)
+      // 統一使用 200 狀態碼，錯誤資訊在 JSON 中
+      return res.status(200).json(summaryBody)
     }
 
     // default 處理：未知的 action
     console.warn('⚠️ [ai] 未支援的 action', { action })
-    return res.status(400).json({
+    return res.status(200).json({
       success: false,
       error: 'Unknown action',
     })
@@ -133,8 +134,8 @@ export default async function handler(req: any, res: any) {
       error: err,
     })
 
-    // 強制錯誤也回 JSON 格式（500 狀態碼）
-    return res.status(500).json({
+    // 強制錯誤也回 JSON 格式（統一使用 200 狀態碼）
+    return res.status(200).json({
       success: false,
       error: err?.message || 'AI server error',
     })
@@ -475,8 +476,9 @@ async function handleSummaryAction(
   // 與 api/summary.ts 相同的輸入檢查
   if (!content || typeof content !== 'string' || content.trim().length === 0) {
     return {
-      status: 400,
+      status: 200,
       body: {
+        success: false,
         error: '缺少內容',
         message: '請提供要摘要的內容',
       },
@@ -485,8 +487,9 @@ async function handleSummaryAction(
 
   if (!functionUrl) {
     return {
-      status: 500,
+      status: 200,
       body: {
+        success: false,
         error: 'SUMMARY FUNCTION URL 未設定',
         message: '請確認環境變數 VITE_SUMMARY_FUNCTION_URL 已設定',
       },
@@ -495,8 +498,9 @@ async function handleSummaryAction(
 
   if (!anonKey) {
     return {
-      status: 500,
+      status: 200,
       body: {
+        success: false,
         error: 'SUPABASE_ANON_KEY 未設定',
         message: '請確認環境變數 VITE_SUPABASE_ANON_KEY 已設定',
       },
@@ -514,12 +518,31 @@ async function handleSummaryAction(
       body: JSON.stringify({ content, lang }),
     })
 
-    const data = await response.json()
+    // 防呆：先用 text() 取得回應，再嘗試解析 JSON，確保永遠回傳 JSON
+    const responseText = await response.text()
+    let data: any
+    try {
+      data = JSON.parse(responseText)
+    } catch (parseError) {
+      console.error('❌ [summary] JSON 解析失敗：', parseError, '回應內容：', responseText.substring(0, 200))
+      return {
+        status: 200,
+        body: {
+          success: false,
+          error: 'SUMMARY_API_RESPONSE_PARSE_ERROR',
+          message: '伺服器回應格式錯誤',
+        },
+      }
+    }
 
     if (!response.ok) {
       return {
-        status: response.status,
-        body: data,
+        status: 200,
+        body: {
+          success: false,
+          error: data?.error || 'Summary API error',
+          ...data,
+        },
       }
     }
 
@@ -552,9 +575,10 @@ async function handleSummaryAction(
   } catch (err: any) {
     console.error('❌ Summary API 錯誤：', err)
     return {
-      status: 500,
+      status: 200,
       body: {
-        error: '伺服器錯誤',
+        success: false,
+        error: err?.message || '伺服器錯誤',
         message: err?.message || '未知錯誤',
       },
     }

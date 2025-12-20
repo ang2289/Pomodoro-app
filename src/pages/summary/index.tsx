@@ -134,14 +134,18 @@ export default function SummaryPage() {
   const creditCheck = useCreditCheck(input.length)
 
   // 監聽 localStorage 變化，確保點數更新後重新計算
+  // 注意：此 useEffect 只設置事件監聽器，不會 set state，避免無限循環
   useEffect(() => {
     if (remainingChars !== null) return // 登入狀態不需要監聽 localStorage
 
     const handleStorageChange = () => {
       // 觸發重新渲染以更新 creditCheck
       // creditCheck 會在每次渲染時重新計算，所以這裡只需要觸發更新
-      const event = new Event('localStorageUpdate')
-      window.dispatchEvent(event)
+      // 使用 requestAnimationFrame 避免過度渲染
+      requestAnimationFrame(() => {
+        const event = new Event('localStorageUpdate')
+        window.dispatchEvent(event)
+      })
     }
 
     window.addEventListener('localStorageUpdate', handleStorageChange)
@@ -151,7 +155,7 @@ export default function SummaryPage() {
       window.removeEventListener('localStorageUpdate', handleStorageChange)
       window.removeEventListener('storage', handleStorageChange)
     }
-  }, [remainingChars])
+  }, [remainingChars]) // 只在 remainingChars 改變時重新設置監聽器（登入/登出時）
 
   // 自動偵測輸入文字的語言
   function detectLanguage(text: string): 'zh-TW' | 'en' {
@@ -279,7 +283,22 @@ export default function SummaryPage() {
         body: JSON.stringify(requestBody),
       })
 
-      const data = await res.json()
+      // 防呆：在 Production 環境呼叫 /api/ai 時，先用 text() 取得回應，再嘗試解析 JSON
+      let data: any
+      if (!isDev && apiUrl === '/api/ai') {
+        const responseText = await res.text()
+        try {
+          data = JSON.parse(responseText)
+        } catch (parseError) {
+          console.error('❌ [摘要 API] JSON 解析失敗：', parseError, '回應內容：', responseText.substring(0, 200))
+          setError(lang === 'zh-tw' ? '伺服器暫時異常，請稍後再試' : 'Server temporarily unavailable, please try again later')
+          setLoading(false)
+          return
+        }
+      } else {
+        // 本地開發環境或非 /api/ai 的呼叫，使用原本的 .json()
+        data = await res.json()
+      }
 
       if (!res.ok) {
         // 🔒 步驟 5：只有在 API 回傳 403 錯誤時，才顯示升級提示

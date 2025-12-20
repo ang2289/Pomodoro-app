@@ -22,3 +22,4 @@ export interface AICreditResult {
   totalUsedPoints: number;
 }
 
+

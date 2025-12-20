@@ -482,7 +482,16 @@ export default function HomeworkHelper() {
           }),
         })
 
-        data = await response.json().catch(() => ({ success: false }))
+        // 防呆：先用 text() 取得回應，再嘗試解析 JSON
+        const responseText = await response.text()
+        try {
+          data = JSON.parse(responseText)
+        } catch (parseError) {
+          console.error('❌ [作業解題 API] JSON 解析失敗：', parseError, '回應內容：', responseText.substring(0, 200))
+          setResult("❌ 伺服器暫時異常，請稍後再試一次。")
+          setLoading(false)
+          return
+        }
       }
 
       // 處理點數不足錯誤（403 或 NEED_PURCHASE）
@@ -543,12 +552,15 @@ export default function HomeworkHelper() {
     }
   };
 
-  // 自動滾動到回答區底部
+  // 自動滾動到回答區底部（使用 ref 追蹤，避免依賴 result/loading 導致不必要的重新執行）
+  const prevResultRef = useRef<string>("");
   useEffect(() => {
-    if (answerRef.current) {
+    // 只有當 result 真的改變時才滾動（忽略 loading 狀態變化）
+    if (result !== prevResultRef.current && answerRef.current) {
+      prevResultRef.current = result;
       answerRef.current.scrollTop = answerRef.current.scrollHeight;
     }
-  }, [result, loading]);
+  }, [result]); // 只依賴 result，loading 狀態變化不觸發滾動
 
   // 自動分段顯示回答
   const formatAnswer = (text: string) => {

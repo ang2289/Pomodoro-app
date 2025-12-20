@@ -44,3 +44,4 @@ export function applyCreditFromApiResponse(apiResponse: any): number {
   return 0
 }
 
+

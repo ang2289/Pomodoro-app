@@ -52,29 +52,38 @@ export default function CreditStatusBar({
       const saved = localStorage.getItem(FREE_REMAINING_KEY)
       if (saved !== null) {
         const remaining = parseInt(saved, 10)
-        setFreeRemainingChars(Math.max(0, remaining))
+        setFreeRemainingChars((prev) => {
+          const newValue = Math.max(0, remaining)
+          // 只有值真的改變時才更新，避免無限循環
+          return prev !== newValue ? newValue : prev
+        })
       }
     }
 
     // 監聽 storage 事件（跨標籤頁同步）
     window.addEventListener('storage', handleStorageChange)
+    // 監聽自定義事件（同標籤頁內更新）
+    window.addEventListener('localStorageUpdate', handleStorageChange)
     
     // 定期檢查 localStorage（處理同標籤頁內的更新）
     const interval = setInterval(() => {
       const saved = localStorage.getItem(FREE_REMAINING_KEY)
       if (saved !== null) {
         const remaining = parseInt(saved, 10)
-        if (remaining !== freeRemainingChars) {
-          setFreeRemainingChars(Math.max(0, remaining))
-        }
+        const newValue = Math.max(0, remaining)
+        setFreeRemainingChars((prev) => {
+          // 只有值真的改變時才更新，避免無限循環
+          return prev !== newValue ? newValue : prev
+        })
       }
     }, 500)
 
     return () => {
       window.removeEventListener('storage', handleStorageChange)
+      window.removeEventListener('localStorageUpdate', handleStorageChange)
       clearInterval(interval)
     }
-  }, [freeRemainingChars, remainingChars])
+  }, [remainingChars]) // 移除 freeRemainingChars 從依賴項，避免無限循環
 
   // 計算剩餘可用字數（優先使用登入狀態的 remainingChars，否則使用免費額度計算）
   const getRemainingChars = () => {
