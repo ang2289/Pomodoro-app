@@ -4,16 +4,31 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 // ✅ 統一模型：gemini-1.5-flash（成本最佳化）
 // 🛡️ 點數制：先扣點再呼叫 AI，避免成本浪費
 
+// ✅ CORS headers 設定（最上方）
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-api-version",
+};
+
 console.log("✅ Edge Function 'auto-summary' is running...");
 
 serve(async (req: Request) => {
-  const corsHeaders = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  };
+  // 🔍 DEBUG: 檢查所有相關 headers
+  console.log('🔍 [Edge Function] Request received:', {
+    method: req.method,
+    url: req.url,
+    hasAuthHeader: !!req.headers.get('authorization'),
+    authHeader: req.headers.get('authorization')?.substring(0, 50) + '...',
+    hasApikey: !!req.headers.get('apikey'),
+  })
 
+  // ✅ OPTIONS preflight 處理：必須在 handler 第一行，不能有任何 await 在它前面
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", {
+      status: 200,
+      headers: corsHeaders,
+    });
   }
 
   try {
@@ -23,11 +38,21 @@ serve(async (req: Request) => {
 
     if (!apiKey) {
       console.error("❌ Gemini API Key 未設定！");
+      const summary = "Gemini API Key 未設定";
+      const summaryText = typeof summary === "string"
+        ? summary
+        : JSON.stringify(summary);
+      console.log("AUTO_SUMMARY_RETURN", {
+        result: summaryText
+      });
       return new Response(
-        JSON.stringify({ error: "Gemini API Key 未設定" }),
+        JSON.stringify({
+          result: summaryText
+        }),
         {
-          status: 500,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
+          headers: {
+            "Content-Type": "application/json"
+          }
         }
       );
     }
@@ -35,11 +60,21 @@ serve(async (req: Request) => {
     const { content, lang = "zh-TW" } = await req.json();
 
     if (!content || typeof content !== "string" || content.trim().length === 0) {
+      const summary = "缺少內容";
+      const summaryText = typeof summary === "string"
+        ? summary
+        : JSON.stringify(summary);
+      console.log("AUTO_SUMMARY_RETURN", {
+        result: summaryText
+      });
       return new Response(
-        JSON.stringify({ error: "缺少內容" }),
+        JSON.stringify({
+          result: summaryText
+        }),
         {
-          status: 400,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
+          headers: {
+            "Content-Type": "application/json"
+          }
         }
       );
     }
@@ -47,69 +82,24 @@ serve(async (req: Request) => {
     // 🛡️ 點數制：先扣點再呼叫 AI
     const inputLength = content.length;
 
-    // 從請求中取得用戶識別
-    const authHeader = req.headers.get("authorization");
-    let userIdentifier = "anonymous";
-    
-    if (authHeader) {
-      try {
-        const token = authHeader.replace("Bearer ", "");
-        userIdentifier = token.length > 32 ? token.substring(0, 32) : token;
-      } catch (e) {
-        userIdentifier = req.headers.get("x-forwarded-for") || "anonymous";
-      }
-    } else {
-      userIdentifier = req.headers.get("x-forwarded-for") || "anonymous";
-    }
+    // 🔓 允許匿名（訪客）呼叫，不檢查認證
+    // 註解：原本的用戶識別和點數檢查邏輯已移除，允許訪客直接使用
+    // const authHeader = req.headers.get("authorization");
+    // let userIdentifier = "anonymous";
+    // ... (已註解，允許匿名呼叫)
 
-    // 取得 Supabase 客戶端
+    // 取得 Supabase 客戶端（僅用於可能的資料庫操作，不進行認證檢查）
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || Deno.env.get("VITE_SUPABASE_URL");
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     
-    if (!supabaseUrl || !supabaseServiceKey) {
-      return new Response(
-        JSON.stringify({ error: "Supabase credentials not configured" }),
-        {
-          status: 500,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
-      );
-    }
+    // 註解：Supabase 客戶端建立保留，但不進行認證檢查
+    // const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    // 🔒 先檢查點數是否足夠（預估總字數）
-    // 預估輸出字數（摘要通常約為輸入的 10-20%）
-    const estimatedOutputChars = Math.ceil(inputLength * 0.15); // 預估 15%
-    const estimatedTotalChars = inputLength + estimatedOutputChars;
-    
-    // 先檢查點數是否足夠（不扣點，只讀取）
-    const { data: creditCheck } = await supabase
-      .from('user_credits')
-      .select('remaining_chars')
-      .eq('user_id', userIdentifier)
-      .single();
-    
-    const currentRemaining = creditCheck?.remaining_chars || 0;
-    
-    if (currentRemaining < estimatedTotalChars) {
-      // 點數不足（即使預估）
-      return new Response(
-        JSON.stringify({
-          error: "INSUFFICIENT_CREDITS",
-          message: "點數不足，請先購買點數",
-          remaining: currentRemaining,
-          requested: estimatedTotalChars,
-        }),
-        {
-          status: 403,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
-      );
-    }
-
-    // 點數足夠，繼續呼叫 AI
-    // ⚠️ 注意：實際扣點會在 AI 回應成功後進行（知道實際的 outputChars）
+    // 🔓 訪客模式：跳過點數檢查，直接執行摘要
+    // 註解：原本的點數檢查邏輯已移除
+    // const estimatedOutputChars = Math.ceil(inputLength * 0.15);
+    // const estimatedTotalChars = inputLength + estimatedOutputChars;
+    // ... (已註解，允許訪客直接使用)
 
     // 檢查完成，開始生成摘要
     const isChinese = lang === "zh-TW" || lang === "zh-CN";
@@ -168,14 +158,21 @@ Please reply in JSON format:
     if (!geminiRes.ok) {
       const errorText = await geminiRes.text();
       console.error(`❌ Gemini API 狀態碼錯誤：${geminiRes.status}。原始回應：${errorText}`);
+      const summary = "Gemini API 連線失敗";
+      const summaryText = typeof summary === "string"
+        ? summary
+        : JSON.stringify(summary);
+      console.log("AUTO_SUMMARY_RETURN", {
+        result: summaryText
+      });
       return new Response(
         JSON.stringify({
-          error: "Gemini API 連線失敗",
-          status: geminiRes.status,
+          result: summaryText
         }),
         {
-          status: 502,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
+          headers: {
+            "Content-Type": "application/json"
+          }
         }
       );
     }
@@ -184,14 +181,21 @@ Please reply in JSON format:
 
     if (data.error) {
       console.error("❌ Gemini API 錯誤詳細資訊:", data.error);
+      const summary = data.error.message || "未知錯誤";
+      const summaryText = typeof summary === "string"
+        ? summary
+        : JSON.stringify(summary);
+      console.log("AUTO_SUMMARY_RETURN", {
+        result: summaryText
+      });
       return new Response(
         JSON.stringify({
-          error: "Gemini API 內部錯誤",
-          message: data.error.message || "未知錯誤",
+          result: summaryText
         }),
         {
-          status: 500,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
+          headers: {
+            "Content-Type": "application/json"
+          }
         }
       );
     }
@@ -202,13 +206,21 @@ Please reply in JSON format:
 
     if (!text) {
       console.error("❌ Gemini 回傳格式錯誤或內容空白：", data);
+      const summary = "Gemini 回傳格式錯誤或內容空白";
+      const summaryText = typeof summary === "string"
+        ? summary
+        : JSON.stringify(summary);
+      console.log("AUTO_SUMMARY_RETURN", {
+        result: summaryText
+      });
       return new Response(
         JSON.stringify({
-          error: "Gemini 回傳格式錯誤或內容空白",
+          result: summaryText
         }),
         {
-          status: 500,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
+          headers: {
+            "Content-Type": "application/json"
+          }
         }
       );
     }
@@ -221,7 +233,8 @@ Please reply in JSON format:
       if (jsonMatch) {
         result = JSON.parse(jsonMatch[0]);
       } else {
-        throw new Error("無法找到 JSON 格式");
+        // 無法找到 JSON 格式，使用 fallback 邏輯
+        result = null;
       }
     } catch (e) {
       // 如果解析失敗，嘗試手動提取
@@ -245,96 +258,86 @@ Please reply in JSON format:
       };
     }
 
-    // 🔒 AI 回應成功後，現在知道實際的輸出字數，執行扣點（在 transaction 中）
-    const outputChars = (result.summary || '').length + (result.keywords?.join(', ') || '').length;
-    const totalChars = inputLength + outputChars;
-
-    let remainingChars = 0;
-    let beforeRemaining = 0;
-    let afterRemaining = 0;
-
-    try {
-      // 呼叫核心扣點函數（在單一 transaction 中完成扣點和記錄）
-      const { data: consumeResult, error: consumeError } = await supabase.rpc('consume_credits', {
-        p_user_id: userIdentifier,
-        p_feature: 'summary',
-        p_input_chars: inputLength,
-        p_output_chars: outputChars,
+    // 如果 result 為 null（JSON 解析失敗且無法提取），回傳錯誤
+    if (!result) {
+      const summary = "無法解析 AI 回應格式";
+      const summaryText = typeof summary === "string"
+        ? summary
+        : JSON.stringify(summary);
+      console.log("AUTO_SUMMARY_RETURN", {
+        result: summaryText
       });
-
-      if (consumeError) {
-        // 點數不足（可能在 AI 處理期間被其他請求扣掉了）
-        if (consumeError.message.includes('insufficient_credits') || consumeError.code === 'P0001') {
-          // 取得目前剩餘點數
-          const { data: currentData } = await supabase
-            .from('user_credits')
-            .select('remaining_chars')
-            .eq('user_id', userIdentifier)
-            .single();
-
-          const remaining = currentData?.remaining_chars || 0;
-
-          return new Response(
-            JSON.stringify({
-              error: "INSUFFICIENT_CREDITS",
-              message: "點數不足，請先購買點數",
-              remaining: remaining,
-              requested: totalChars,
-            }),
-            {
-              status: 403,
-              headers: { "Content-Type": "application/json", ...corsHeaders },
-            }
-          );
+      return new Response(
+        JSON.stringify({
+          result: summaryText
+        }),
+        {
+          headers: {
+            "Content-Type": "application/json"
+          }
         }
-
-        // 其他錯誤
-        console.error("❌ 扣點數失敗：", consumeError);
-        throw consumeError;
-      }
-
-      // 扣點成功，取得剩餘點數
-      // consume_credits 函數已經在同一 transaction 中完成扣點和記錄
-      if (Array.isArray(consumeResult) && consumeResult.length > 0) {
-        const res = consumeResult[0];
-        remainingChars = res.remaining_chars || 0;
-        beforeRemaining = res.before_remaining || 0;
-        afterRemaining = res.after_remaining || 0;
-      } else if (typeof consumeResult === 'object' && consumeResult !== null) {
-        remainingChars = consumeResult.remaining_chars || 0;
-        beforeRemaining = consumeResult.before_remaining || 0;
-        afterRemaining = consumeResult.after_remaining || 0;
-      }
-
-    } catch (err) {
-      console.error("❌ 扣點數失敗：", err);
-      // 即使扣點失敗，仍然回傳 AI 結果（但記錄錯誤）
-      // 實際環境中可能需要更嚴格的處理
+      );
     }
 
-    const finalRemaining = remainingChars;
+    // 🔓 訪客模式：不執行扣點邏輯
+    // 註解：原本的扣點邏輯已移除，訪客模式不扣點
+    // const outputChars = (result.summary || '').length + (result.keywords?.join(', ') || '').length;
+    // ... (已註解，訪客模式不扣點)
+
+    // 產生摘要完成後，將摘要文字存入 summaryText 變數
+    const summary = typeof result.summary === 'string' 
+      ? result.summary 
+      : (result.summary || text.split("\n\n")[0].trim() || "");
+    const summaryText = typeof summary === "string"
+      ? summary
+      : JSON.stringify(summary);
+
+    // 產生 keywords 陣列（字串陣列）
+    const keywords: string[] = Array.isArray(result.keywords) && result.keywords.length > 0
+      ? result.keywords
+          .map((k: any) => typeof k === "string" ? k.trim() : String(k).trim())
+          .filter((k: string) => k.length > 0)
+          .slice(0, 5) // 最多 5 個關鍵字
+      : []; // 如果沒有關鍵字，回傳空陣列
+
+    console.log("AUTO_SUMMARY_RETURN", {
+      result: summaryText,
+      keywords: keywords
+    });
 
     return new Response(
       JSON.stringify({
-        summary: result.summary || "",
-        keywords: result.keywords || [],
-        remaining: finalRemaining, // 扣點後的最新剩餘點數
+        result: summaryText,
+        keywords: keywords
       }),
       {
-        status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
+        headers: {
+          "Content-Type": "application/json"
+        }
       }
     );
   } catch (err: any) {
     console.error("❌ 伺服器捕獲的未預期錯誤:", err);
+    console.error("❌ 錯誤詳細資訊:", {
+      message: err.message,
+      stack: err.stack,
+      name: err.name,
+    });
+    const summary = err.message || "未知錯誤";
+    const summaryText = typeof summary === "string"
+      ? summary
+      : JSON.stringify(summary);
+    console.log("AUTO_SUMMARY_RETURN", {
+      result: summaryText
+    });
     return new Response(
       JSON.stringify({
-        error: "伺服器致命錯誤",
-        message: err.message || "未知錯誤",
+        result: summaryText
       }),
       {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
+        headers: {
+          "Content-Type": "application/json"
+        }
       }
     );
   }

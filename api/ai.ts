@@ -1,8 +1,24 @@
 // ============================================================
-// 🔧 /api/ai - 統一 AI 服務入口（Serverless Function）
+// ⚠️ DEPRECATED: /api/ai - 統一 AI 服務入口（Serverless Function）
 // ============================================================
-// 目前只實作 action = "homework"
-// 其餘 action 僅預留，不實作
+// 
+// 🚫 此 API 已標記為 deprecated，不再使用 Vercel Serverless 作為 AI 代理層
+// 
+// 📌 遷移指南：
+// - 後續所有 AI 功能一律改為直接呼叫 Supabase Edge Function
+// - 作業解題：使用 supabase.functions.invoke('homework-helper', { body: { prompt, mode } })
+// - 摘要功能：使用 supabase.functions.invoke('summary', { body: { prompt } })
+// 
+// ⚠️ 注意：
+// - 作業解題功能已完全停用，不再支援 action = "homework"
+// - 摘要功能已完全停用，不再支援 action = "summary"
+// - 建議所有新功能直接使用 Supabase Edge Functions
+// 
+// ============================================================
+// 歷史記錄：
+// - 原本實作 action = "homework" 和 action = "summary"
+// - 作業解題功能已遷移至 Supabase Edge Functions 並停用此 API 的作業解題處理
+// - 摘要功能已遷移至 Supabase Edge Functions 並停用此 API 的摘要處理
 // ============================================================
 
 // Vercel Serverless Function 配置
@@ -57,12 +73,22 @@ interface AiResponse {
   error?: string
 }
 
+/**
+ * @deprecated 此 API 已不再使用，請改用 Supabase Edge Functions
+ * - 作業解題：supabase.functions.invoke('homework-helper', { body: { prompt, mode } })
+ * - 摘要功能：supabase.functions.invoke('summary', { body: { prompt } })
+ * 
+ * ⚠️ 注意：作業解題功能（action = "homework"）已在此 API 中停用
+ */
 export default async function handler(req: any, res: any) {
+  // ⚠️ DEPRECATED: 此 API 已標記為 deprecated
+  // 建議所有新功能直接使用 Supabase Edge Functions
+  
   // 開發環境測試回傳
   if (process.env.NODE_ENV === 'development') {
     return res.status(200).json({
       success: true,
-      result: '【本地測試】摘要 API 正常回傳'
+      result: '【本地測試】摘要 API 正常回傳（已 deprecated）'
     })
   }
 
@@ -95,30 +121,43 @@ export default async function handler(req: any, res: any) {
     const action = body.action
 
     // action 分流處理
-    if (action === 'homework') {
-      const result = await handleHomeworkAction(body, {
-        apiKey: GEMINI_API_KEY,
-        model: MODEL,
-      })
-      return res.status(200).json(result)
-    }
+    // ============================================================
+    // 🚫 作業解題功能已停用（已遷移至 Supabase Edge Function）
+    // ============================================================
+    // 作業解題功能已不再使用此 API，請直接使用：
+    // supabase.functions.invoke('homework-helper', { body: { prompt, mode } })
+    // ============================================================
+    // if (action === 'homework') {
+    //   const result = await handleHomeworkAction(body, {
+    //     apiKey: GEMINI_API_KEY,
+    //     model: MODEL,
+    //   })
+    //   return res.status(200).json(result)
+    // }
 
-    if (action === 'summary') {
-      // 取得與 api/summary.ts 相同的設定與行為
-      const SUPABASE_FUNCTION_URL =
-        process.env.VITE_SUMMARY_FUNCTION_URL ||
-        'https://icuxwmpdpsfhztsbyeds.supabase.co/functions/v1/auto-summary'
-      const SUPABASE_ANON_KEY =
-        process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY
-
-      const { status, body: summaryBody } = await handleSummaryAction(body, {
-        functionUrl: SUPABASE_FUNCTION_URL,
-        anonKey: SUPABASE_ANON_KEY,
-      })
-
-      // 統一使用 200 狀態碼，錯誤資訊在 JSON 中
-      return res.status(200).json(summaryBody)
-    }
+    // ============================================================
+    // 🚫 摘要功能已停用（已遷移至 Supabase Edge Function）
+    // ============================================================
+    // 摘要功能已不再使用此 API，請直接使用：
+    // supabase.functions.invoke('summary', { body: { content, lang } })
+    // 或 supabase.functions.invoke('auto-summary', { body: { content, lang } })
+    // ============================================================
+    // if (action === 'summary') {
+    //   // 取得與 api/summary.ts 相同的設定與行為
+    //   const SUPABASE_FUNCTION_URL =
+    //     process.env.VITE_SUMMARY_FUNCTION_URL ||
+    //     'https://icuxwmpdpsfhztsbyeds.supabase.co/functions/v1/auto-summary'
+    //   const SUPABASE_ANON_KEY =
+    //     process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY
+    //
+    //   const { status, body: summaryBody } = await handleSummaryAction(body, {
+    //     functionUrl: SUPABASE_FUNCTION_URL,
+    //     anonKey: SUPABASE_ANON_KEY,
+    //   })
+    //
+    //   // 統一使用 200 狀態碼，錯誤資訊在 JSON 中
+    //   return res.status(200).json(summaryBody)
+    // }
 
     // default 處理：未知的 action
     console.warn('⚠️ [ai] 未支援的 action', { action })
@@ -143,10 +182,16 @@ export default async function handler(req: any, res: any) {
 }
 
 // ============================================================
+// 🚫 作業解題功能已停用（已遷移至 Supabase Edge Function）
+// ============================================================
+// 此函數已不再使用，作業解題功能已遷移至 Supabase Edge Function
+// 請直接使用：supabase.functions.invoke('homework-helper', { body: { prompt, mode } })
+// ============================================================
 // action = "homework" 的主要邏輯
 // 來源：原 api/homework-helper.ts 的核心流程，調整為統一回傳格式
 // ============================================================
-
+/*
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function handleHomeworkAction(
   body: any,
   opts: { apiKey: string; model: string },
@@ -455,6 +500,7 @@ async function handleHomeworkAction(
     }
   }
 }
+*/
 
 // ============================================================
 // action = "summary" 的主要邏輯

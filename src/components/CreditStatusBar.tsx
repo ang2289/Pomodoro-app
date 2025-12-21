@@ -2,7 +2,7 @@
 // 用於摘要和解題頁面，提供即時的字數狀態顯示
 
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useAuthCredits } from '@/hooks/useAuthCredits'
 
 interface CreditStatusBarProps {
@@ -138,25 +138,90 @@ export default function CreditStatusBar({
   const displayUsed = currentUsed
   const displayRemaining = currentRemaining
 
+  // 檢查是否為開發模式
+  const isDevMode = import.meta.env.DEV === true
+  
+  // 檢查是否為體驗點數且剩餘低於 2,000 點
+  const isLowBalance = displayRemaining < 2000 && displayRemaining > 0
+  // 檢查體驗點數是否已用完
+  const isExhausted = displayRemaining === 0
+
   return (
-    <div className="mt-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-      <div className="space-y-1.5">
-        <p className="text-sm text-gray-700">
-          {lang === 'zh-tw' 
-            ? `試用總額：${displayTotal.toLocaleString()} 字`
-            : `Trial Total: ${displayTotal.toLocaleString()} characters`}
-        </p>
-        <p className="text-sm text-gray-700">
-          {lang === 'zh-tw' 
-            ? `已使用：${displayUsed.toLocaleString()} 字`
-            : `Used: ${displayUsed.toLocaleString()} characters`}
-        </p>
-        <p className="text-sm text-gray-700">
-          {lang === 'zh-tw' 
-            ? `剩餘可用：${displayRemaining.toLocaleString()} 字`
-            : `Remaining: ${displayRemaining.toLocaleString()} characters`}
-        </p>
+    <div className="relative">
+      <div className="mt-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+        <div className="space-y-1.5">
+          <p className="text-sm text-gray-700">
+            {lang === 'zh-tw' 
+              ? `試用總額：${displayTotal.toLocaleString()} 字`
+              : `Trial Total: ${displayTotal.toLocaleString()} characters`}
+          </p>
+          <p className="text-sm text-gray-700">
+            {lang === 'zh-tw' 
+              ? `已使用：${displayUsed.toLocaleString()} 字`
+              : `Used: ${displayUsed.toLocaleString()} characters`}
+          </p>
+          <p className="text-sm text-gray-700">
+            {lang === 'zh-tw' 
+              ? `剩餘可用：${displayRemaining.toLocaleString()} 字`
+              : `Remaining: ${displayRemaining.toLocaleString()} characters`}
+          </p>
+        </div>
       </div>
+      
+      {/* 開發模式提示（畫面角落小字） */}
+      {isDevMode && (
+        <div className="absolute top-0 right-0 mt-1 mr-1">
+          <p className="text-[10px] text-gray-400 font-mono">
+            {lang === 'zh-tw' ? '開發模式：不計算點數' : 'Dev Mode: No Points Deduction'}
+          </p>
+        </div>
+      )}
+      
+      {/* 體驗點數即將用完提示（非彈窗）- 開發模式下不顯示 */}
+      {!isDevMode && isLowBalance && !isExhausted && (
+        <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+          <p className="text-sm text-amber-800 text-center">
+            {lang === 'zh-tw' 
+              ? '你的體驗點數即將用完，歡迎繼續試用或之後再回來使用 😊'
+              : 'Your trial credits are running low. Feel free to continue or come back later 😊'}
+          </p>
+        </div>
+      )}
+
+      {/* 體驗點數已用完提示（友善說明，非錯誤訊息）- 開發模式下不顯示 */}
+      {!isDevMode && isExhausted && (
+        <div className="mt-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="space-y-3">
+            <p className="text-sm text-blue-800 text-center leading-relaxed">
+              {lang === 'zh-tw' 
+                ? (
+                  <>
+                    體驗點數已使用完畢 🎉<br />
+                    如果你覺得這個功能對你有幫助，<br />
+                    之後可購買點數繼續使用。<br />
+                    付費點數為永久有效，不限使用期限。
+                  </>
+                )
+                : (
+                  <>
+                    Trial credits have been used up 🎉<br />
+                    If you find this feature helpful,<br />
+                    you can purchase credits to continue using it.<br />
+                    Paid credits are permanent with no expiration date.
+                  </>
+                )}
+            </p>
+            <div className="flex justify-center">
+              <Link
+                to="/points"
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md"
+              >
+                {lang === 'zh-tw' ? '了解點數方案' : 'Learn About Points Plan'}
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

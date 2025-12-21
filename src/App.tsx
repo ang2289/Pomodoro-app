@@ -113,6 +113,7 @@ import PensionPage from './pages/pension/index'
 import InsuranceOldage2025 from './pages/pension/insurance-oldage-2025'
 import SelfContribution2025 from './pages/pension/self-contribution-2025'
 import Announcements from './pages/Announcements'
+import LoginPage from './pages/LoginPage'
 import Footer from './components/Footer'
 import AdBanner from './components/AdBanner'
 // 已移除廣告
@@ -291,6 +292,7 @@ function App() {
           <Route path="/chant-support-leaderboard" element={<SupportRankingPage />} />
           
           {/* 網站基本頁面 */}
+          <Route path="/login" element={<LoginPage />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<Terms />} />

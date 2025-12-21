@@ -45,7 +45,13 @@ serve(async (req: Request) => {
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   };
 
+  // ✅ OPTIONS preflight request 回傳 status 200
   if (req.method === "OPTIONS") {
+    return new Response("ok", { 
+      status: 200,
+      headers: corsHeaders 
+    });
+  }
     return new Response("ok", { headers: corsHeaders });
   }
 

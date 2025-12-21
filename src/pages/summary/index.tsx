@@ -12,6 +12,7 @@ import CreditStatusBar, { updateUsedCharsAfterSuccess } from '@/components/Credi
 import { applyCreditFromApiResponse } from '@/utils/creditCalculator'
 import { useAuthCredits } from '@/hooks/useAuthCredits'
 import { useCreditCheck } from '@/hooks/useCreditCheck'
+import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/utils/supabaseClient'
 
 // 方案常數定義（只存字數，不寫死篇數）
@@ -120,6 +121,7 @@ export default function SummaryPage() {
   const [error, setError] = useState('')
   const [isQuotaExhausted, setIsQuotaExhausted] = useState(false) // 追蹤 403 狀態
   const [showInsufficientQuotaModal, setShowInsufficientQuotaModal] = useState(false) // 字數不足提示視窗
+  const [isTrialExpired, setIsTrialExpired] = useState(false) // 追蹤體驗是否過期
 
   // 本次使用點數資訊
   const [lastUsedPoints, setLastUsedPoints] = useState<{
@@ -133,6 +135,9 @@ export default function SummaryPage() {
   
   // 使用共用的扣點檢查邏輯
   const creditCheck = useCreditCheck(input.length)
+
+  // 🔐 登入狀態檢查（僅用於檢查是否登入）
+  const { user } = useAuth()
 
   // 監聽 localStorage 變化，確保點數更新後重新計算
   // 注意：此 useEffect 只設置事件監聽器，不會 set state，避免無限循環
@@ -173,59 +178,118 @@ export default function SummaryPage() {
     // 🔒 步驟 1：計算本次輸入字數
     const inputChars = input.length
 
-    // 🔒 步驟 2：取得當前剩餘點數和相關數值（用於偵錯顯示）
-    const currentRemainingPoints = creditCheck.remainingChars
-    const totalChars = 10000 // 試用總額
-    const usedChars = totalChars - currentRemainingPoints
+    // 🔒 步驟 2：判斷是否為訪客試用模式（未登入或 remainingChars === null）
+    const isGuestMode = !user || remainingChars === null
 
-    // 🔍 偵錯顯示：在檢查前顯示所有關鍵數值
-    console.log('🔍 [摘要扣點檢查] 關鍵數值：', {
-      totalChars: totalChars.toLocaleString(),
-      usedChars: usedChars.toLocaleString(),
-      remainingChars: currentRemainingPoints.toLocaleString(),
-      inputChars: inputChars.toLocaleString(),
-      willRemainAfter: (currentRemainingPoints - inputChars).toLocaleString(),
-    })
+    // 🔒 步驟 3：只有在已登入且 remainingChars 為數字時才檢查點數
+    if (!isGuestMode) {
+      // 已登入狀態：進行點數檢查
+      const currentRemainingPoints = creditCheck.remainingChars
+      const totalChars = 10000 // 試用總額
+      const usedChars = totalChars - currentRemainingPoints
 
-    // 🔒 步驟 3：檢查扣點後是否會小於 0（remainingChars - inputChars < 0）
-    // 🧩 收尾 1：點數不足時，按鈕維持可點但不觸發 API
-    if (currentRemainingPoints - inputChars < 0) {
-      const whyUpgrade = currentRemainingPoints === 0 
-        ? 'remaining===0' 
-        : 'notEnoughForThisRun'
-      
-      console.log('⚠️ [點數不足] 原因：', whyUpgrade, {
-        remainingChars: currentRemainingPoints,
-        inputChars: inputChars,
-        willRemainAfter: currentRemainingPoints - inputChars,
+      // 🔍 偵錯顯示：在檢查前顯示所有關鍵數值
+      console.log('🔍 [摘要扣點檢查] 關鍵數值：', {
+        totalChars: totalChars.toLocaleString(),
+        usedChars: usedChars.toLocaleString(),
+        remainingChars: currentRemainingPoints.toLocaleString(),
+        inputChars: inputChars.toLocaleString(),
+        willRemainAfter: (currentRemainingPoints - inputChars).toLocaleString(),
       })
 
-      // 🧩 收尾 1：只有當 remainingPoints === 0 時才顯示升級彈窗
-      // 若 remainingPoints > 0 但 < inputChars，只顯示錯誤訊息，不顯示彈窗，不呼叫 API
-      if (currentRemainingPoints === 0) {
-        // 剩餘點數 = 0 → 顯示升級提示（但標註未開放購買）
-        setIsQuotaExhausted(true)
-        setShowInsufficientQuotaModal(true)
-        setError(lang === 'zh-tw' 
-          ? '免費試用額度已使用完畢'
-          : 'Free trial quota exhausted')
-      } else {
-        // 剩餘點數 > 0 但不足 → 只顯示錯誤訊息，不顯示彈窗，不呼叫 API
-        setError(lang === 'zh-tw' 
-          ? `剩餘字數不足（需要 ${inputChars.toLocaleString()} 字，僅剩 ${currentRemainingPoints.toLocaleString()} 字）`
-          : `Insufficient credits (need ${inputChars.toLocaleString()} chars, only ${currentRemainingPoints.toLocaleString()} remaining)`)
-        // 不設置 setIsQuotaExhausted 和 setShowInsufficientQuotaModal，避免顯示彈窗
-      }
-      // 絕對不可送出 API 請求
-      return
-    }
+      // 🔒 步驟 3：檢查扣點後是否會小於 0（remainingChars - inputChars < 0）
+      // 🧩 收尾 1：點數不足時，按鈕維持可點但不觸發 API
+      if (currentRemainingPoints - inputChars < 0) {
+        const whyUpgrade = currentRemainingPoints === 0 
+          ? 'remaining===0' 
+          : 'notEnoughForThisRun'
+        
+        console.log('⚠️ [點數不足] 原因：', whyUpgrade, {
+          remainingChars: currentRemainingPoints,
+          inputChars: inputChars,
+          willRemainAfter: currentRemainingPoints - inputChars,
+        })
 
-    // 🔒 步驟 4：字數足夠 → 才呼叫摘要 API（扣點在 API 成功後才執行）
-    console.log('✅ [檢查通過] 字數足夠，準備呼叫摘要 API', {
-      remainingChars: currentRemainingPoints.toLocaleString(),
-      inputChars: inputChars.toLocaleString(),
-      willRemainAfter: (currentRemainingPoints - inputChars).toLocaleString(),
-    })
+        // 🧩 收尾 1：只有當 remainingPoints === 0 時才顯示升級彈窗
+        // 若 remainingPoints > 0 但 < inputChars，只顯示錯誤訊息，不顯示彈窗，不呼叫 API
+        if (currentRemainingPoints === 0) {
+          // 剩餘點數 = 0 → 顯示升級提示（但標註未開放購買）
+          setIsQuotaExhausted(true)
+          setShowInsufficientQuotaModal(true)
+          setError(lang === 'zh-tw' 
+            ? '免費試用額度已使用完畢'
+            : 'Free trial quota exhausted')
+        } else {
+          // 剩餘點數 > 0 但不足 → 只顯示錯誤訊息，不顯示彈窗，不呼叫 API
+          setError(lang === 'zh-tw' 
+            ? `剩餘字數不足（需要 ${inputChars.toLocaleString()} 字，僅剩 ${currentRemainingPoints.toLocaleString()} 字）`
+            : `Insufficient credits (need ${inputChars.toLocaleString()} chars, only ${currentRemainingPoints.toLocaleString()} remaining)`)
+          // 不設置 setIsQuotaExhausted 和 setShowInsufficientQuotaModal，避免顯示彈窗
+        }
+        // 絕對不可送出 API 請求
+        return
+      }
+
+      // 🔒 步驟 4：字數足夠 → 才呼叫摘要 API（扣點在 API 成功後才執行）
+      console.log('✅ [檢查通過] 字數足夠，準備呼叫摘要 API', {
+        remainingChars: currentRemainingPoints.toLocaleString(),
+        inputChars: inputChars.toLocaleString(),
+        willRemainAfter: (currentRemainingPoints - inputChars).toLocaleString(),
+      })
+    } else {
+      // 訪客試用模式：檢查 localStorage 中的剩餘點數
+      const FREE_REMAINING_KEY = 'free_characters_remaining'
+      const FREE_TRIAL_QUOTA = 10000
+      
+      // 從 localStorage 讀取剩餘點數
+      let guestRemainingChars = FREE_TRIAL_QUOTA
+      if (typeof window !== 'undefined') {
+        const saved = localStorage.getItem(FREE_REMAINING_KEY)
+        if (saved !== null) {
+          guestRemainingChars = Math.max(0, parseInt(saved, 10))
+        } else {
+          // 如果沒有值，初始化為 10,000
+          localStorage.setItem(FREE_REMAINING_KEY, FREE_TRIAL_QUOTA.toString())
+          guestRemainingChars = FREE_TRIAL_QUOTA
+        }
+      }
+      
+      console.log('✅ [訪客試用模式] 檢查剩餘點數', {
+        isGuestMode: true,
+        inputChars: inputChars.toLocaleString(),
+        guestRemainingChars: guestRemainingChars.toLocaleString(),
+        willRemainAfter: (guestRemainingChars - inputChars).toLocaleString(),
+      })
+      
+      // 檢查剩餘點數是否 <= 0
+      if (guestRemainingChars <= 0) {
+        console.log('⚠️ [訪客模式] 訪客免費額度已用完', {
+          guestRemainingChars,
+        })
+        setError(lang === 'zh-tw' 
+          ? '免費額度已用完，請登入後繼續使用'
+          : 'Free quota exhausted. Please log in to continue')
+        return
+      }
+      
+      // 檢查本次輸入是否會超過剩餘點數
+      if (guestRemainingChars - inputChars < 0) {
+        console.log('⚠️ [訪客模式] 剩餘點數不足', {
+          guestRemainingChars,
+          inputChars,
+          willRemainAfter: guestRemainingChars - inputChars,
+        })
+        setError(lang === 'zh-tw' 
+          ? `剩餘字數不足（需要 ${inputChars.toLocaleString()} 字，僅剩 ${guestRemainingChars.toLocaleString()} 字）。免費額度已用完，請登入後繼續使用`
+          : `Insufficient credits (need ${inputChars.toLocaleString()} chars, only ${guestRemainingChars.toLocaleString()} remaining). Free quota exhausted. Please log in to continue`)
+        return
+      }
+      
+      console.log('✅ [訪客試用模式] 點數檢查通過，準備執行摘要', {
+        guestRemainingChars: guestRemainingChars.toLocaleString(),
+        inputChars: inputChars.toLocaleString(),
+      })
+    }
 
     // 🔒 步驟 4：remainingPoints > 0 且字數足夠 → 直接呼叫摘要 API
     limit.addOne()
@@ -239,48 +303,155 @@ export default function SummaryPage() {
     setIsQuotaExhausted(false)
     setShowInsufficientQuotaModal(false)
 
+    // 🔐 登入檢查：已移除，訪客試用模式可直接使用
+
     try {
-      // ✅ 使用 supabase.functions.invoke 呼叫 summary Edge Function
-      console.log('🚀 呼叫 Supabase Edge Function：summary')
+      // 自動偵測輸入文字的語言
+      const detectedLang = detectLanguage(input)
 
-      const { data: result, error } = await supabase.functions.invoke('summary', {
-        body: {
-          prompt: input,
-        },
-      })
+      // 🔒 統一點數檢查流程（在實際呼叫 Edge Function 前）
+      const { checkCreditBeforeApiCall } = await import('@/utils/creditCheck')
+      const creditCheckResult = checkCreditBeforeApiCall(remainingChars)
+      
+      if (!creditCheckResult.allowed) {
+        if (creditCheckResult.reason === 'TRIAL_EXPIRED') {
+          // 體驗已過期：顯示友善提示，不顯示錯誤訊息
+          setIsTrialExpired(true)
+          setLoading(false)
+          return
+        }
+        // 其他原因也阻止執行
+        setError(lang === 'zh-tw' 
+          ? '無法使用此功能，請稍後再試'
+          : 'Unable to use this feature. Please try again later')
+        setLoading(false)
+        return
+      }
+      
+      // 檢查通過，清除體驗過期提示
+      setIsTrialExpired(false)
 
-      // 處理錯誤
+      let data: any = null
+      let error: any = null
+
+      // ✅ 根據登入狀態選擇不同的呼叫方式
+      if (isGuestMode) {
+        // 訪客模式：使用 fetch 直接呼叫，明確傳送 anon key
+        console.log('🚀 [訪客模式] 使用 fetch 呼叫 Edge Function：auto-summary', {
+          hasAnonKey: !!import.meta.env.VITE_SUPABASE_ANON_KEY,
+          supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
+        })
+
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+        const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+        if (!supabaseUrl || !anonKey) {
+          throw new Error('Supabase 環境變數未設定')
+        }
+
+        const response = await fetch(`${supabaseUrl}/functions/v1/auto-summary`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${anonKey}`,
+            'Content-Type': 'application/json',
+            'apikey': anonKey,
+          },
+          body: JSON.stringify({
+            content: input,
+            lang: detectedLang,
+          }),
+        })
+
+        if (!response.ok) {
+          const errorText = await response.text()
+          let errorMessage = ''
+          try {
+            const errorJson = JSON.parse(errorText)
+            errorMessage = errorJson.error || errorJson.message || errorText
+          } catch {
+            errorMessage = errorText || `HTTP ${response.status}`
+          }
+          
+          error = {
+            message: errorMessage,
+            status: response.status,
+          }
+        } else {
+          try {
+            data = await response.json()
+          } catch (parseError) {
+            error = {
+              message: 'Failed to parse response',
+              status: response.status,
+            }
+          }
+        }
+      } else {
+        // 已登入模式：使用 supabase.functions.invoke（維持原本邏輯）
+        console.log('🚀 [已登入模式] 使用 supabase.functions.invoke 呼叫 Edge Function：auto-summary')
+
+        const invokeResult = await supabase.functions.invoke('auto-summary', {
+          body: {
+            content: input,
+            lang: detectedLang,
+          },
+        })
+
+        data = invokeResult.data
+        error = invokeResult.error
+      }
+      
+      // 🔍 DEBUG: 記錄詳細錯誤資訊
+      if (error) {
+        console.error('❌ [摘要 API] 詳細錯誤資訊:', {
+          error,
+          message: error?.message,
+          status: error?.status,
+          context: error?.context,
+          name: error?.name,
+        })
+      }
+
+      // 🛡️ 統一錯誤處理：使用 Supabase invoke 或 fetch 回傳的 error 物件判斷
       if (error) {
         // 處理點數不足錯誤
-        if (error.message?.includes('INSUFFICIENT_CREDITS') || error.message?.includes('insufficient')) {
-          console.log('⚠️ [API 錯誤] 後端回傳點數不足：', {
-            error: error.message,
-            remainingChars: currentRemainingPoints,
-            inputChars: inputChars,
-            whyUpgrade: 'apiReturned403',
-          })
-          
-          // 重新取得最新剩餘點數
-          await refreshCredits()
-          
-          // 只有當 remainingChars === 0 時才顯示升級彈窗
-          if (currentRemainingPoints === 0) {
-            setIsQuotaExhausted(true)
-            setShowInsufficientQuotaModal(true)
-            setError(lang === 'zh-tw' 
-              ? '免費試用額度已使用完畢'
-              : 'Free trial quota exhausted')
+        const errorMessage = error.message || String(error) || ''
+        if (errorMessage.includes('INSUFFICIENT_CREDITS') || errorMessage.includes('insufficient')) {
+          // 訪客模式下不應該出現點數不足錯誤，但保留處理邏輯
+          if (!isGuestMode) {
+            console.log('⚠️ [API 錯誤] 後端回傳點數不足：', {
+              remainingChars: creditCheck.remainingChars,
+              inputChars: inputChars,
+              whyUpgrade: 'apiReturned403',
+            })
+            
+            // 重新取得最新剩餘點數
+            await refreshCredits()
+            
+            const currentRemainingPoints = creditCheck.remainingChars || 0
+            // 只有當 remainingChars === 0 時才顯示升級彈窗
+            if (currentRemainingPoints === 0) {
+              setIsQuotaExhausted(true)
+              setShowInsufficientQuotaModal(true)
+              setError(lang === 'zh-tw' 
+                ? '免費試用額度已使用完畢'
+                : 'Free trial quota exhausted')
+            } else {
+              // 剩餘點數 > 0 但 API 回傳錯誤，只顯示錯誤訊息，不顯示彈窗
+              setError(lang === 'zh-tw' 
+                ? '點數不足，請減少輸入字數'
+                : 'Insufficient credits, please reduce input length')
+            }
           } else {
-            // 剩餘點數 > 0 但 API 回傳錯誤，只顯示錯誤訊息，不顯示彈窗
-            setError(lang === 'zh-tw' 
-              ? '點數不足，請減少輸入字數'
-              : 'Insufficient credits, please reduce input length')
+            // 訪客模式下出現點數不足錯誤（不應該發生）
+            setError(lang === 'zh-tw' ? 'AI 服務暫時異常，請稍後再試' : 'AI service temporarily unavailable, please try again later')
           }
           // 不要清空使用者貼上的文章內容
+          setLoading(false)
           return
         }
         
-        // 其他錯誤（包括非 JSON 回應）
+        // 其他錯誤：UI 僅顯示友善錯誤訊息，不顯示 raw error string
         console.error('❌ [摘要 API] 錯誤：', error)
         setIsQuotaExhausted(false)
         setError(lang === 'zh-tw' ? 'AI 服務暫時異常，請稍後再試' : 'AI service temporarily unavailable, please try again later')
@@ -288,27 +459,48 @@ export default function SummaryPage() {
         return
       }
 
-      // 🛡️ 防呆：檢查 result 是否為有效物件
-      if (!result || typeof result !== 'object') {
-        console.error('❌ [摘要 API] 回傳格式錯誤：result 不是物件', result)
+      // 🛡️ 防呆：檢查 data 是否為有效物件（不再假設回傳一定是 JSON）
+      if (!data || typeof data !== 'object') {
+        console.error('❌ [摘要 API] 回傳格式錯誤：data 不是物件', data)
         setError(lang === 'zh-tw' ? 'AI 服務暫時異常，請稍後再試' : 'AI service temporarily unavailable, please try again later')
         setLoading(false)
         return
       }
 
-      // 處理回傳格式：只處理 { result: string }
-      if (!result.result) {
-        console.error('❌ [摘要 API] 回傳格式錯誤：缺少 result 欄位', result)
-        setError(lang === 'zh-tw' ? 'AI 服務暫時異常，請稍後再試' : 'AI service temporarily unavailable, please try again later')
+      // 處理回傳格式：統一讀取 data.result 作為摘要文字（使用多層 fallback）
+      const result =
+        typeof data?.result === "string"
+          ? data.result
+          : typeof data?.summary === "string"
+            ? data.summary
+            : ""
+
+      // 如果 result 為空字串，顯示友善錯誤訊息
+      if (!result || result.trim().length === 0) {
+        console.error('❌ [摘要 API] 回傳格式錯誤：result 為空', data)
+        setError(lang === 'zh-tw' ? '摘要產生失敗，請稍後再試' : 'Summary generation failed, please try again later')
         setLoading(false)
         return
       }
 
-      // result.result 是摘要文字
-      const summaryText = typeof result.result === 'string' ? result.result : String(result.result)
+      // result 是摘要文字
+      const summaryText = result
       setSummary(summaryText)
-      // keywords 設為空陣列（因為回傳格式只有 result）
-      setKeywords([])
+      
+      // 處理 keywords 陣列（使用多層 fallback）
+      const keywordList =
+        Array.isArray(data.keywords)
+          ? data.keywords
+          : Array.isArray(data.tags)
+            ? data.tags
+            : []
+      
+      // 確保 keywordList 中的元素都是字串
+      const cleanKeywordList = keywordList
+        .map((k: any) => typeof k === "string" ? k.trim() : String(k).trim())
+        .filter((k: string) => k.length > 0)
+      
+      setKeywords(cleanKeywordList)
       
       // 🔒 步驟 5：摘要成功後 → 計算點數（因為回傳格式只有 result，需要自行計算）
       // 計算輸入和輸出字數
@@ -323,32 +515,104 @@ export default function SummaryPage() {
         totalUsedPoints,
       })
       
-      // 🔍 偵錯顯示：扣點前後的數值
-      console.log('💰 [扣點執行] 摘要成功，開始扣點：', {
-        usedPoints: totalUsedPoints.toLocaleString(),
-        beforeRemaining: currentRemainingPoints.toLocaleString(),
-        afterRemaining: (currentRemainingPoints - totalUsedPoints).toLocaleString(),
-      })
-      
-      // 🔒 步驟 6：前端即時更新點數
-      // 先更新未登入狀態的 localStorage（使用計算的點數）
-      updateUsedCharsAfterSuccess(totalUsedPoints)
-      
-      // 登入狀態：使用 refreshCredits 來更新點數（會自動更新 useAuthCredits 的狀態）
-      // 這會從後端取得最新的 remainingChars（已扣點後）
-      await refreshCredits()
-      
-      // 🔒 步驟 7：確保點數完全同步
-      // refreshCredits 會更新 remainingChars，creditCheck 會在下一次渲染時自動重新計算
-      // 不需要手動更新，因為 useAuthCredits 和 useCreditCheck 會自動同步
-      
-      console.log('✅ [扣點完成] 點數已更新')
+      // 🔒 步驟 6：前端即時更新點數（僅在已登入狀態下執行）
+      if (!isGuestMode) {
+        // 判斷是否為本地端環境
+        const isLocalhost = typeof window !== 'undefined' && (
+          window.location.hostname === 'localhost' ||
+          window.location.hostname === '127.0.0.1' ||
+          window.location.hostname.startsWith('127.') ||
+          window.location.hostname.startsWith('192.168.')
+        )
+        
+        // 本地端不扣點，正式網站才扣點
+        if (!isLocalhost) {
+          // 已登入狀態：進行扣點
+          const currentRemainingPoints = creditCheck.remainingChars || 0
+          
+          // 🔍 偵錯顯示：扣點前後的數值
+          console.log('💰 [扣點執行] 摘要成功，開始扣點：', {
+            usedPoints: totalUsedPoints.toLocaleString(),
+            beforeRemaining: currentRemainingPoints.toLocaleString(),
+            afterRemaining: (currentRemainingPoints - totalUsedPoints).toLocaleString(),
+          })
+          
+          // 先更新未登入狀態的 localStorage（使用計算的點數）
+          updateUsedCharsAfterSuccess(totalUsedPoints)
+          
+          // 登入狀態：使用 refreshCredits 來更新點數（會自動更新 useAuthCredits 的狀態）
+          // 這會從後端取得最新的 remainingChars（已扣點後）
+          await refreshCredits()
+          
+          // 🔒 步驟 7：確保點數完全同步
+          // refreshCredits 會更新 remainingChars，creditCheck 會在下一次渲染時自動重新計算
+          // 不需要手動更新，因為 useAuthCredits 和 useCreditCheck 會自動同步
+          
+          console.log('✅ [扣點完成] 點數已更新')
+        } else {
+          // 本地端環境：不扣點
+          console.log('✅ [本地端模式] 本地端測試模式，不扣點', {
+            usedPoints: totalUsedPoints.toLocaleString(),
+            hostname: window.location.hostname,
+          })
+        }
+      } else {
+        // 訪客試用模式：進行扣點（使用 localStorage）
+        const FREE_REMAINING_KEY = 'free_characters_remaining'
+        
+        // 從 localStorage 讀取當前剩餘點數
+        let currentGuestRemaining = 10000
+        if (typeof window !== 'undefined') {
+          const saved = localStorage.getItem(FREE_REMAINING_KEY)
+          if (saved !== null) {
+            currentGuestRemaining = Math.max(0, parseInt(saved, 10))
+          }
+        }
+        
+        console.log('💰 [訪客模式扣點] 摘要成功，開始扣點：', {
+          usedPoints: totalUsedPoints.toLocaleString(),
+          beforeRemaining: currentGuestRemaining.toLocaleString(),
+          afterRemaining: (currentGuestRemaining - totalUsedPoints).toLocaleString(),
+        })
+        
+        // 判斷是否為本地端環境
+        const isLocalhost = typeof window !== 'undefined' && (
+          window.location.hostname === 'localhost' ||
+          window.location.hostname === '127.0.0.1' ||
+          window.location.hostname.startsWith('127.') ||
+          window.location.hostname.startsWith('192.168.')
+        )
+        
+        // 本地端不扣點，正式網站才扣點
+        if (!isLocalhost) {
+          // 更新 localStorage 中的剩餘點數
+          const newRemaining = Math.max(0, currentGuestRemaining - totalUsedPoints)
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(FREE_REMAINING_KEY, newRemaining.toString())
+            // 觸發自定義事件通知其他組件
+            window.dispatchEvent(new Event('localStorageUpdate'))
+          }
+          
+          console.log('✅ [訪客模式] 訪客模式摘要成功，已扣點', {
+            usedPoints: totalUsedPoints.toLocaleString(),
+            newRemaining: newRemaining.toLocaleString(),
+          })
+        } else {
+          // 本地端環境：不扣點
+          console.log('✅ [本地端模式] 本地端測試模式，不扣點', {
+            usedPoints: totalUsedPoints.toLocaleString(),
+            hostname: window.location.hostname,
+          })
+        }
+      }
       
       // 清除錯誤訊息和 403 狀態（摘要成功）
       setError('')
       setIsQuotaExhausted(false)
     } catch (e: any) {
-      setError(e.message)
+      // 統一錯誤處理：UI 僅顯示友善錯誤訊息，不顯示 raw error string
+      console.error('❌ [摘要 API] 未預期錯誤：', e)
+      setError(lang === 'zh-tw' ? 'AI 服務暫時異常，請稍後再試' : 'AI service temporarily unavailable, please try again later')
       // API 失敗時清除點數資訊
       setLastUsedPoints(null)
     } finally {
@@ -427,6 +691,10 @@ export default function SummaryPage() {
                 <Link to="/points" className="text-gray-600 hover:text-gray-800 underline">
                   查看點數說明
                 </Link>
+                <br />
+                <span className="text-gray-600 mt-1 block">
+                  提示：貼上網址摘要通常較省點數，適合快速掌握新聞或文章重點。
+                </span>
               </>
             ) : (
               <>
@@ -521,6 +789,41 @@ export default function SummaryPage() {
 
           <div className="mt-4"></div>
           <div className="space-y-3">
+            {/* 體驗過期提示（友善說明，非錯誤訊息） */}
+            {isTrialExpired && (
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="space-y-3">
+                  <p className="text-sm text-blue-800 text-center leading-relaxed">
+                    {lang === 'zh-tw' 
+                      ? (
+                        <>
+                          免費體驗已結束 🎈<br />
+                          感謝你的試用！<br />
+                          若需要長期使用，可購買點數繼續使用，<br />
+                          付費點數永久有效，不限期限。
+                        </>
+                      )
+                      : (
+                        <>
+                          Free trial has ended 🎈<br />
+                          Thank you for trying!<br />
+                          If you need long-term use, you can purchase credits to continue,<br />
+                          Paid credits are permanent with no expiration date.
+                        </>
+                      )}
+                  </p>
+                  <div className="flex justify-center">
+                    <Link
+                      to="/points"
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md"
+                    >
+                      {lang === 'zh-tw' ? '了解點數方案' : 'Learn About Points Plan'}
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* 共用狀態列元件 */}
             <CreditStatusBar
               inputChars={input.length}
@@ -578,6 +881,21 @@ export default function SummaryPage() {
                 </div>
               )
             })()}
+
+            {/* 使用說明（移至按鈕下方，次要資訊樣式） */}
+            <div className="mt-2 p-2.5 bg-gray-50/50 border border-gray-100 rounded-md opacity-75">
+              <p className="text-[11px] text-gray-400 mb-1.5">支援三種方式：</p>
+              <ul className="text-[11px] text-gray-400 space-y-1 ml-0.5">
+                <li>① 直接貼上文章全文</li>
+                <li>② 貼上新聞或網頁網址</li>
+                <li>③ 貼上任意文字內容</li>
+              </ul>
+              <p className="text-[11px] text-gray-400 mt-2 leading-relaxed">
+                系統會依照實際輸入字數計算點數。
+                <br />
+                直接貼網址時，因輸入內容較短，通常會比貼全文更省點數。
+              </p>
+            </div>
 
             {/* 扣點規則說明 */}
             <div className="text-xs text-gray-500 bg-gray-50 rounded-lg p-3">

@@ -9,9 +9,9 @@ import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { useAuthCredits } from "@/hooks/useAuthCredits";
 import CreditUsageNotice from "@/components/CreditUsageNotice";
 import CreditStatusBar, { updateUsedCharsAfterSuccess } from "@/components/CreditStatusBar";
-import { applyCreditFromApiResponse } from "@/utils/creditCalculator";
 import { useNavigate, Link } from "react-router-dom";
 import { useCreditCheck } from "@/hooks/useCreditCheck";
+import { supabase } from "@/utils/supabaseClient";
 
 // Google TTS 播放函式
 async function playGoogleTTS(text: string, lang: string = "zh-TW") {
@@ -162,22 +162,43 @@ function detectLanguage(text: string): 'zh' | 'en' | 'ja' {
   return 'zh';
 }
 
+// 模式文字對照表
+const modeLabelMap: Record<string, string> = {
+  answer: '只秀答案',
+  easy: '簡單解釋',
+  pro: '詳細說明',
+  example: '舉例模式',
+}
+
 export default function HomeworkHelper() {
   // ✅ 正式上線：移除 localhost 限制，允許所有環境存取
 
+  // 🔍 判斷是否為本地端／開發環境
+  const isLocalhost = typeof window !== 'undefined' && (
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1' ||
+    window.location.hostname.startsWith('127.') ||
+    window.location.hostname.startsWith('192.168.') ||
+    import.meta.env.DEV || // Vite 開發模式
+    import.meta.env.MODE === 'development' // 開發模式
+  )
+
   // Mode 映射表：將前端模式映射到 Edge Function / Gemini 支援的模式
   const modeMap: Record<string, string> = {
+    answer: 'easy',
+    easy: 'kid',
+    pro: 'pro',
+    example: 'pro',
+    // 保留舊的映射以向後相容
     answerOnly: 'easy',
     simple: 'kid',
     detailed: 'pro',
     examples: 'pro',
-    easy: 'easy',
     kid: 'kid',
-    pro: 'pro',
   }
 
   const [question, setQuestion] = useState("");
-  const [mode, setMode] = useState<"answerOnly" | "simple" | "detailed" | "examples">("answerOnly");
+  const [mode, setMode] = useState<'answer' | 'easy' | 'pro' | 'example'>('answer');
   const [language, setLanguage] = useState<"zh" | "en" | "ja">("zh");
 
   // TODO: 之後改成從 Supabase / RevenueCat 取得用戶方案
@@ -395,78 +416,91 @@ export default function HomeworkHelper() {
       
       limit.addOne();
       
+      // 🔒 統一點數檢查流程（在實際呼叫 Edge Function 前）
+      const { checkCreditBeforeApiCall } = await import('@/utils/creditCheck')
+      const creditCheckResult = checkCreditBeforeApiCall(remainingChars)
+      
+      if (!creditCheckResult.allowed) {
+        if (creditCheckResult.reason === 'TRIAL_EXPIRED') {
+          // 體驗已過期：顯示友善提示（非錯誤訊息）
+          setModal({
+            title: '免費體驗已結束 🎈',
+            message: '感謝你的試用！若需要長期使用，可購買點數繼續使用，付費點數永久有效，不限期限。',
+            upgradeButton: '了解點數方案',
+          })
+          setLoading(false)
+          return
+        }
+        // 其他原因也阻止執行
+        setModal({
+          title: '無法使用此功能',
+          message: '無法使用此功能，請稍後再試',
+        })
+        setLoading(false)
+        return
+      }
+      
       setLoading(true);
       try {
-        // ✅ 直接呼叫 Supabase Edge Function homework-helper
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 
-          'https://icuxwmpdpsfhztsbyeds.supabase.co'
-        const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 
-          import.meta.env.SUPABASE_ANON_KEY
-        const functionUrl = `${supabaseUrl}/functions/v1/homework-helper`
+        // ✅ 使用 supabase.functions.invoke 直接呼叫 homework-helper Edge Function
+        console.log('[DEBUG] 呼叫 Supabase Edge Function：homework-helper')
         
-        console.log('[DEBUG] 直接呼叫 Supabase Edge Function：', functionUrl)
+        // ✅ 直接傳送前端 mode 值（'answer' | 'easy' | 'pro' | 'example'）
+        // 後端會根據 mode 值進行相應處理
         
-        // 使用 modeMap 映射到 Edge Function / Gemini 支援的模式（'easy' | 'kid' | 'pro'）
-        const finalMode = modeMap[mode] || 'easy'
+        // 📝 送出前：記錄 payload
+        const payload = {
+          prompt: question.trim(),
+          mode: mode, // 直接傳送 'answer' | 'easy' | 'pro' | 'example'
+        }
+        console.log('[Homework] invoke Edge Function payload:', payload)
         
-        const response = await fetch(functionUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(anonKey ? { "Authorization": `Bearer ${anonKey}` } : {}),
-          },
-          body: JSON.stringify({
-            prompt: question.trim(),
-            mode: finalMode,
-          }),
+        const { data, error } = await supabase.functions.invoke('homework-helper', {
+          body: payload,
+          headers: { Authorization: undefined },
         })
 
-      // 🛡️ 防呆：檢查 Content-Type 是否為 application/json
-      const contentType = response.headers.get('content-type') || ''
-      if (!contentType.includes('application/json')) {
-        console.error('❌ [作業解題 API] Content-Type 不是 application/json：', contentType)
-        setResult('AI 服務暫時異常，請稍後再試')
-        setLoading(false)
-        return
-      }
+        // ✅ 1. 若 supabase.functions.invoke 回傳 error，直接顯示錯誤訊息
+        if (error) {
+          // 📝 失敗：記錄 error
+          console.log('[Homework] Edge Function error:', error)
+          
+          // 處理點數不足錯誤
+          const errorMessage = error.message || String(error) || ''
+          if (errorMessage.includes('INSUFFICIENT_CREDITS') || errorMessage.includes('insufficient')) {
+            console.log('[DEBUG] return: 點數不足錯誤');
+            await refreshCredits()
+            setModal({
+              title: '點數不足',
+              message: '目前點數不足，請先查看點數方案說明。',
+              upgradeButton: '了解點數方案',
+            })
+            setLoading(false)
+            return
+          }
+          
+          // 其他錯誤：直接顯示友善錯誤訊息
+          console.error('❌ [作業解題 API] 錯誤：', error)
+          setResult('AI 服務暫時異常，請稍後再試')
+          setLoading(false)
+          return
+        }
 
-      // 1️⃣ 先用 response.text() 取得原始內容
-      const text = await response.text()
-      
-      // 2️⃣ try JSON.parse
-      let data: any
-      try {
-        data = JSON.parse(text)
-      } catch (parseError) {
-        // 3️⃣ 若 parse 失敗，顯示伺服器錯誤訊息
-        console.error('❌ [作業解題 API] JSON 解析失敗：', parseError, '回應內容：', text.substring(0, 200))
-        setResult('AI 服務暫時異常，請稍後再試')
-        setLoading(false)
-        return
-      }
+        // ✅ 2. 若成功，僅使用 data.result 顯示 AI 回答
+        // 禁止任何 JSON.parse(text) 類型的處理，Supabase SDK 已自動處理 JSON
+        if (!data || typeof data !== 'object' || typeof data.result !== 'string') {
+          console.error('❌ [作業解題 API] 回傳格式錯誤', data)
+          setResult('AI 服務暫時異常，請稍後再試')
+          setLoading(false)
+          return
+        }
 
-      // 處理點數不足錯誤（403 或 INSUFFICIENT_CREDITS）
-      if (response.status === 403 || data.error === 'INSUFFICIENT_CREDITS') {
-        console.log('[DEBUG] return: 點數不足錯誤（403）');
-        await refreshCredits()
-        setModal({
-          title: '點數不足',
-          message: '目前點數不足，請先查看點數方案說明。',
-          upgradeButton: '了解點數方案',
-        })
-        return
-      }
-
-      // 處理 API 錯誤（顯示學生友善訊息）
-      if (!response.ok || data.error) {
-        console.log('[DEBUG] return: API 錯誤（response.ok 為 false 或 data.error 存在）');
-        setResult(`❌ 目前無法取得解題結果\n\n${data.error || data.message || '可能是系統暫時忙碌，請稍後再試一次。'}`);
-        return;
-      }
-
-      // 成功取得結果：回傳格式只處理 { result: string }
-      if (data.result && typeof data.result === 'string') {
+        // 直接使用 data.result，不進行任何 JSON 解析
         const resultText = data.result
+        
+        // 📝 成功後：記錄 result
+        console.log('[Homework] Edge Function result:', resultText)
+        
         setResult(resultText);
         
         // 🛡️ 記錄已解答的題目（避免重複呼叫）
@@ -484,18 +518,24 @@ export default function HomeworkHelper() {
           totalUsedPoints,
         });
         
-        // ✅ AI 回答成功後才扣點（Edge Function 已扣點，這裡只更新前端顯示）
-        updateUsedCharsAfterSuccess(totalUsedPoints);
-        console.log(`✅ 扣點成功：${totalUsedPoints} 點（輸入 ${inputLength} + 回答 ${outputLength}）`);
-      } else {
-        // 🛡️ API 失敗時不扣點
-        console.log('[DEBUG] return: API 失敗（data.result 不存在或不是字串）');
-        setResult("❌ 目前無法取得解題結果\n\n可能是系統暫時忙碌，請稍後再試一次。");
-      }
+        // 🔒 本地端／開發環境：強制關閉實際扣點寫回行為
+        if (!isLocalhost) {
+          // ✅ 正式環境：AI 回答成功後才扣點（Edge Function 已扣點，這裡只更新前端顯示）
+          updateUsedCharsAfterSuccess(totalUsedPoints);
+          console.log(`✅ 扣點成功：${totalUsedPoints} 點（輸入 ${inputLength} + 回答 ${outputLength}）`);
+        } else {
+          // 🔓 開發環境：不扣點，僅顯示試用字數 UI
+          console.log(`✅ [開發模式] 解題成功，不扣點（開發環境）：${totalUsedPoints} 點（輸入 ${inputLength} + 回答 ${outputLength}）`, {
+            hostname: window.location.hostname,
+            mode: import.meta.env.MODE,
+          });
+        }
     } catch (err: any) {
-      // 網路錯誤或其他未預期錯誤（顯示學生友善訊息）
-      console.error("❌ 錯誤", err);
-      setResult("❌ 目前無法取得解題結果\n\n可能是系統暫時忙碌，請稍後再試一次。");
+      // 📝 失敗：記錄未預期錯誤
+      console.log('[Homework] Edge Function error:', err)
+      // 統一錯誤處理：UI 僅顯示友善錯誤訊息，不顯示 raw error string
+      console.error("❌ [作業解題 API] 未預期錯誤：", err);
+      setResult("AI 服務暫時異常，請稍後再試");
     } finally {
       setLoading(false);
     }
@@ -588,7 +628,7 @@ export default function HomeworkHelper() {
       <div className="grid grid-cols-2 gap-3 mb-5">
         {[
           { 
-            key: "answerOnly", 
+            key: "answer", 
             label: "🎯 只秀答案",
             activeGradient: "from-blue-500 to-cyan-500",
             hoverGradient: "hover:from-blue-600 hover:to-cyan-600",
@@ -596,7 +636,7 @@ export default function HomeworkHelper() {
             inactiveHover: "hover:from-blue-500 hover:to-cyan-500"
           },
           { 
-            key: "simple", 
+            key: "easy", 
             label: "👶 簡單解釋",
             activeGradient: "from-green-500 to-emerald-500",
             hoverGradient: "hover:from-green-600 hover:to-emerald-600",
@@ -604,7 +644,7 @@ export default function HomeworkHelper() {
             inactiveHover: "hover:from-green-500 hover:to-emerald-500"
           },
           { 
-            key: "detailed", 
+            key: "pro", 
             label: "📘 詳細說明",
             activeGradient: "from-purple-500 to-indigo-500",
             hoverGradient: "hover:from-purple-600 hover:to-indigo-600",
@@ -612,7 +652,7 @@ export default function HomeworkHelper() {
             inactiveHover: "hover:from-purple-500 hover:to-indigo-500"
           },
           { 
-            key: "examples", 
+            key: "example", 
             label: "✨ 舉例模式",
             activeGradient: "from-orange-500 to-pink-500",
             hoverGradient: "hover:from-orange-600 hover:to-pink-600",
@@ -732,6 +772,19 @@ export default function HomeworkHelper() {
           lang="zh-tw"
         />
 
+        {/* 🔍 開發環境說明文字（僅在 localhost 時顯示） */}
+        {isLocalhost && (
+          <p className="mt-2 text-xs text-gray-500 text-center">
+            目前為開發／測試環境，字數僅供顯示，不會實際扣除。
+            <br />
+            正式上線後，將依實際使用字數扣點。
+          </p>
+        )}
+
+        <p className="mt-1 text-xs text-gray-400">
+          進階解題模式（詳細說明、舉例）將消耗較多點數
+        </p>
+
         {/* ===== CTA 說明區塊 ===== */}
         <div className="mb-4 p-4 bg-gradient-to-br from-blue-50 to-slate-50 rounded-xl border border-blue-100">
           <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
@@ -813,6 +866,9 @@ export default function HomeworkHelper() {
                 </svg>
               )}
               {buttonText}
+              <span className="ml-3 text-xs text-gray-400">
+                模式：{modeLabelMap[mode]}
+              </span>
             </button>
           )
         })()}
@@ -829,6 +885,15 @@ export default function HomeworkHelper() {
 
       {/* 【四、AI 回答卡片】- 始終顯示 */}
       <div className="shadow-md border rounded-2xl p-5 bg-white transition mb-5">
+        {/* 模式標籤顯示（在結果上方） */}
+        {result && (
+          <div className="mb-2 text-sm text-gray-500">
+            目前解題模式：
+            <span className="ml-1 font-semibold text-indigo-600">
+              {modeLabelMap[mode]}
+            </span>
+          </div>
+        )}
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-bold text-xl">🧠 AI 回答</h2>
           {result && (

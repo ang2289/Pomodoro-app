@@ -107,3 +107,5 @@ updateUsedCharsAfterSuccess(usedPoints)
 
 
 
+
+

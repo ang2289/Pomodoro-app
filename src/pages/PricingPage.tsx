@@ -151,6 +151,35 @@ export default function PricingPage() {
               </div>
             </div>
 
+            {/* 點數使用說明 */}
+            <div className="shadow-md border rounded-2xl p-6 bg-white">
+              <SectionHeader title="點數使用說明" />
+              
+              <div className="text-gray-700 space-y-4 text-sm">
+                <div>
+                  <p className="font-medium text-gray-800 mb-2">🎁 新用戶體驗點數</p>
+                  <p className="text-gray-700 leading-relaxed">
+                    首次使用即可獲得 10,000 點體驗點數，
+                    體驗點數僅供功能試用，需於 7 日內使用完畢。
+                  </p>
+                </div>
+                <div>
+                  <p className="font-medium text-gray-800 mb-2">💳 付費購買點數</p>
+                  <p className="text-gray-700 leading-relaxed">
+                    付費購買之點數為永久點數，
+                    不限使用期限、不會過期，可長期累積使用。
+                  </p>
+                </div>
+                <div>
+                  <p className="font-medium text-gray-800 mb-2">📌 點數扣除說明</p>
+                  <p className="text-gray-700 leading-relaxed">
+                    點數僅在實際使用 AI 服務時才會扣除，
+                    未使用不會產生任何費用。
+                  </p>
+                </div>
+              </div>
+            </div>
+
             {/* 字數如何計算 */}
             <div className="shadow-md border rounded-2xl p-6 bg-white">
               <SectionHeader title="📊 字數如何計算？" />
