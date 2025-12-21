@@ -102,10 +102,29 @@ serve(async (req: Request) => {
     // ... (已註解，允許訪客直接使用)
 
     // 檢查完成，開始生成摘要
-    const isChinese = lang === "zh-TW" || lang === "zh-CN";
+    // ✅ 根據 language 參數強制指定回復語言（不允許模型自行判斷）
+    let languageInstruction = '';
+    let promptLanguage = '';
+    
+    if (lang === "zh-TW" || lang === "zh-CN" || lang === "zh") {
+      languageInstruction = '請用繁體中文回答。';
+      promptLanguage = 'zh';
+    } else if (lang === "en") {
+      languageInstruction = 'Please answer in English only.';
+      promptLanguage = 'en';
+    } else if (lang === "ja") {
+      languageInstruction = '日本語でのみ回答してください。';
+      promptLanguage = 'ja';
+    } else {
+      // 預設繁體中文
+      languageInstruction = '請用繁體中文回答。';
+      promptLanguage = 'zh';
+    }
 
-    const prompt = isChinese
-      ? `請分析以下文章內容，並提供：
+    const prompt = promptLanguage === 'zh'
+      ? `${languageInstruction}
+
+請分析以下文章內容，並提供：
 
 1. 摘要：用 200-300 字總結文章重點
 2. 關鍵字：提取 5 個最重要的關鍵字，用逗號分隔
@@ -118,7 +137,25 @@ ${content}
   "summary": "摘要內容",
   "keywords": ["關鍵字1", "關鍵字2", "關鍵字3", "關鍵字4", "關鍵字5"]
 }`
-      : `Please analyze the following article content and provide:
+      : promptLanguage === 'ja'
+      ? `${languageInstruction}
+
+以下の記事内容を分析し、以下を提供してください：
+
+1. 要約：200-300文字で記事の要点をまとめてください
+2. キーワード：最も重要なキーワードを5つ抽出してください
+
+記事内容：
+${content}
+
+以下の形式（JSON）で回答してください：
+{
+  "summary": "要約内容",
+  "keywords": ["キーワード1", "キーワード2", "キーワード3", "キーワード4", "キーワード5"]
+}`
+      : `${languageInstruction}
+
+Please analyze the following article content and provide:
 
 1. Summary: Summarize the key points in 200-300 words
 2. Keywords: Extract 5 most important keywords
@@ -238,12 +275,16 @@ Please reply in JSON format:
       }
     } catch (e) {
       // 如果解析失敗，嘗試手動提取
-      const summaryMatch = isChinese
+      const summaryMatch = promptLanguage === 'zh'
         ? text.match(/摘要[：:]\s*(.+?)(?=關鍵字|$)/s)
+        : promptLanguage === 'ja'
+        ? text.match(/要約[：:]\s*(.+?)(?=キーワード|$)/s)
         : text.match(/Summary[：:]\s*(.+?)(?=Keywords|$)/is);
       
-      const keywordsMatch = isChinese
+      const keywordsMatch = promptLanguage === 'zh'
         ? text.match(/關鍵字[：:]\s*\[(.+?)\]/)
+        : promptLanguage === 'ja'
+        ? text.match(/キーワード[：:]\s*\[(.+?)\]/)
         : text.match(/Keywords[：:]\s*\[(.+?)\]/i);
 
       result = {

@@ -230,6 +230,9 @@ export default function HomeworkHelper() {
     totalUsedPoints: number;
   } | null>(null);
 
+  // 控制點數資訊折疊顯示
+  const [showCreditInfo, setShowCreditInfo] = useState(false);
+
   // 使用 useAuthCredits Hook 自動取得並更新剩餘點數
   const { remainingChars, loading: creditsLoading, refresh: refreshCredits } = useAuthCredits()
   
@@ -452,6 +455,7 @@ export default function HomeworkHelper() {
         const payload = {
           prompt: question.trim(),
           mode: mode, // 直接傳送 'answer' | 'easy' | 'pro' | 'example'
+          language: language, // ✅ 傳送語言參數 'zh' | 'en' | 'ja'
         }
         console.log('[Homework] invoke Edge Function payload:', payload)
         
@@ -503,6 +507,11 @@ export default function HomeworkHelper() {
         
         setResult(resultText);
         
+        // 有結果時自動展開點數資訊
+        if (resultText) {
+          setShowCreditInfo(true);
+        }
+        
         // 🛡️ 記錄已解答的題目（避免重複呼叫）
         lastSolvedQuestionRef.current = question.trim();
         
@@ -541,15 +550,16 @@ export default function HomeworkHelper() {
     }
   };
 
-  // 自動滾動到回答區底部（使用 ref 追蹤，避免依賴 result/loading 導致不必要的重新執行）
+  // 當 answer 狀態更新後，自動將滾動位置重置到頂部（只在有新內容時觸發）
   const prevResultRef = useRef<string>("");
   useEffect(() => {
-    // 只有當 result 真的改變時才滾動（忽略 loading 狀態變化）
+    // 只有當 result 真的改變時才重置滾動位置（忽略 loading 狀態變化）
     if (result !== prevResultRef.current && answerRef.current) {
       prevResultRef.current = result;
-      answerRef.current.scrollTop = answerRef.current.scrollHeight;
+      // 將滾動位置重置到頂部
+      answerRef.current.scrollTop = 0;
     }
-  }, [result]); // 只依賴 result，loading 狀態變化不觸發滾動
+  }, [result]); // 只依賴 result，確保只在 answer 有新內容時才觸發，不影響其他狀態
 
   // 自動分段顯示回答
   const formatAnswer = (text: string) => {
@@ -738,14 +748,6 @@ export default function HomeworkHelper() {
           {/* MVP 版本：移除題目區朗讀按鈕，僅保留文字輸入 */}
         </div>
         
-        {/* 點數說明文字 */}
-        <div className="mt-2 text-xs text-gray-500">
-          本功能使用點數計算，依實際輸入與產出字數扣點。{' '}
-          <Link to="/points" className="text-gray-600 hover:text-gray-800 underline">
-            查看點數說明
-          </Link>
-        </div>
-        
         {/* 語音辨識狀態顯示 - 暫時隱藏 */}
         {false && (sttSupported && (sttListening || sttError || sttTranscript)) && (
           <div className="mt-1 text-xs text-gray-500">
@@ -761,62 +763,7 @@ export default function HomeworkHelper() {
       </div>
 
       {/* 【四、按鈕區】 */}
-      <div className="space-y-3 mb-5">
-        {/* MVP 版本：圖片上傳功能暫時隱藏，Phase 2 實作 */}
-
-        {/* 共用狀態列元件 */}
-        <CreditStatusBar
-          inputChars={question.length}
-          isLoading={loading}
-          featureName="homework"
-          lang="zh-tw"
-        />
-
-        {/* 🔍 開發環境說明文字（僅在 localhost 時顯示） */}
-        {isLocalhost && (
-          <p className="mt-2 text-xs text-gray-500 text-center">
-            目前為開發／測試環境，字數僅供顯示，不會實際扣除。
-            <br />
-            正式上線後，將依實際使用字數扣點。
-          </p>
-        )}
-
-        <p className="mt-1 text-xs text-gray-400">
-          進階解題模式（詳細說明、舉例）將消耗較多點數
-        </p>
-
-        {/* ===== CTA 說明區塊 ===== */}
-        <div className="mb-4 p-4 bg-gradient-to-br from-blue-50 to-slate-50 rounded-xl border border-blue-100">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
-            <span className="mr-2">🚀</span>
-            用多少算多少，不綁約、不訂閱
-          </h3>
-          <ul className="space-y-2 text-xs text-gray-600 leading-relaxed">
-            <li className="flex items-start">
-              <span className="mr-2">•</span>
-              <span>點數為一次購買制，不會自動扣款</span>
-            </li>
-            <li className="flex items-start">
-              <span className="mr-2">•</span>
-              <span>沒有使用期限，可慢慢用</span>
-            </li>
-            <li className="flex items-start">
-              <span className="mr-2">•</span>
-              <span>摘要與作業功能共用點數</span>
-            </li>
-          </ul>
-        </div>
-
-        {/* 📌 扣點規則說明 */}
-        <div className="text-xs text-gray-500 bg-gray-50 rounded-lg p-3 mb-3">
-          <p className="font-medium text-gray-600 mb-1">📌 本功能將依實際使用字數扣點：</p>
-          <ul className="list-disc list-inside space-y-0.5 text-gray-500">
-            <li>題目輸入字數</li>
-            <li>AI 回答產生字數</li>
-          </ul>
-          <p className="mt-1 text-gray-400">（1 字 = 1 點）</p>
-        </div>
-
+      <div className="mb-5">
         {/* 開始解題按鈕（主要按鈕 - 紫色漸層） */}
         {(() => {
           // 🔒 使用共用的扣點檢查邏輯
@@ -846,7 +793,7 @@ export default function HomeworkHelper() {
               onClick={handleAnalyze}
               disabled={isButtonDisabled}
               title={tooltipText}
-              className={`w-full font-bold py-4 px-4 rounded-xl transition-all duration-200 transform flex items-center justify-center gap-2 ${
+              className={`w-full font-bold py-4 px-4 rounded-xl transition-all duration-200 transform flex items-center justify-center gap-2 relative ${
                 isButtonDisabled
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-md'
                   : 'bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 cursor-pointer shadow-md hover:shadow-lg hover:scale-105 active:scale-95'
@@ -866,34 +813,17 @@ export default function HomeworkHelper() {
                 </svg>
               )}
               {buttonText}
-              <span className="ml-3 text-xs text-gray-400">
+              {/* 模式文字：右下角小字，半透明白色 */}
+              <span className="absolute bottom-1 right-2 text-xs text-white/80">
                 模式：{modeLabelMap[mode]}
               </span>
             </button>
           )
         })()}
-        
-        {/* 扣點提示 */}
-        <div className="mt-3 text-xs text-gray-500 text-center">
-          <span>使用本功能將扣除點數，詳見</span>{' '}
-          <Link to="/points" className="text-blue-600 hover:underline font-medium">
-            【點數說明】
-          </Link>
-          <span className="text-gray-400 text-[10px] ml-1">（符合台灣金流規範，安心付款）</span>
-        </div>
       </div>
 
-      {/* 【四、AI 回答卡片】- 始終顯示 */}
+      {/* 【五、AI 回答卡片】- 緊接在按鈕下方，優先顯示答案內容 */}
       <div className="shadow-md border rounded-2xl p-5 bg-white transition mb-5">
-        {/* 模式標籤顯示（在結果上方） */}
-        {result && (
-          <div className="mb-2 text-sm text-gray-500">
-            目前解題模式：
-            <span className="ml-1 font-semibold text-indigo-600">
-              {modeLabelMap[mode]}
-            </span>
-          </div>
-        )}
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-bold text-xl">🧠 AI 回答</h2>
           {result && (
@@ -915,6 +845,7 @@ export default function HomeworkHelper() {
             </div>
           )}
         </div>
+        {/* AI 回答內容 - 優先顯示，確保在畫面第一視角 */}
         <div 
           ref={answerRef}
           className={`text-gray-700 leading-relaxed whitespace-pre-wrap ${
@@ -922,7 +853,7 @@ export default function HomeworkHelper() {
           }`}
           style={{ 
             maxHeight: '300px', 
-            overflowY: result ? 'auto' : 'visible' 
+            overflowY: 'auto'
           }}
         >
           {loading ? (
@@ -937,32 +868,147 @@ export default function HomeworkHelper() {
             <span>尚未開始解題，請輸入題目…</span>
           )}
         </div>
-        
-        {/* 本次使用點數顯示 */}
-        {lastUsedPoints && result && !loading && (
-          <div className="mt-4 pt-3 border-t border-gray-100">
-            <p className="text-sm text-gray-600">
-              <span className="font-medium">本次使用點數：</span>
-              <span className="text-purple-600 font-semibold">{lastUsedPoints.totalUsedPoints.toLocaleString()} 點</span>
-            </p>
-            <p className="text-xs text-gray-400 mt-0.5">
-              （輸入 {lastUsedPoints.inputLength.toLocaleString()} 字 + 回答 {lastUsedPoints.outputLength.toLocaleString()} 字）
-            </p>
-          </div>
-        )}
       </div>
 
-      {/* 【五、免責聲明卡片】 */}
-      {result && (
-        <div className="bg-white rounded-xl shadow-md p-6">
-          <div className="flex items-start gap-3">
-            <span className="text-yellow-500 text-xl">⚠️</span>
-            <div className="text-sm text-gray-600 leading-relaxed">
-              <p className="font-semibold mb-2 text-gray-700">免責聲明</p>
-              <p className="mb-1">本工具之答案由 AI 生成，僅供學習參考，不保證 100% 正確。</p>
-              <p>請使用者自行判斷與驗算，本工具不提供代寫作業服務。</p>
+      {/* 【六、點數資訊區塊】- 在 AI 回答下方 */}
+      {!creditsLoading && (
+        <div className="bg-gray-50 rounded-xl p-4 mb-5">
+          {(() => {
+            // 試用總額常數
+            const FREE_TRIAL_QUOTA = 10000;
+            
+            // 計算點數資訊
+            let totalQuota = FREE_TRIAL_QUOTA;
+            let usedChars = 0;
+            let remaining = 0;
+            
+            if (remainingChars !== null) {
+              // 已登入狀態：使用 remainingChars
+              remaining = remainingChars;
+              usedChars = totalQuota - remaining;
+            } else {
+              // 未登入狀態：從 localStorage 讀取訪客點數
+              const FREE_REMAINING_KEY = 'free_characters_remaining';
+              let guestRemaining = FREE_TRIAL_QUOTA;
+              
+              if (typeof window !== 'undefined') {
+                const saved = localStorage.getItem(FREE_REMAINING_KEY);
+                if (saved !== null) {
+                  guestRemaining = Math.max(0, parseInt(saved, 10));
+                }
+              }
+              
+              remaining = guestRemaining;
+              usedChars = totalQuota - remaining;
+            }
+            
+            return (
+              <div className="space-y-2">
+                {/* 試用總額 */}
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">📊</span>
+                  <span className="text-sm text-gray-700">
+                    試用總額：<span className="font-medium">{totalQuota.toLocaleString()} 字</span>
+                  </span>
+                </div>
+                
+                {/* 已使用點數 */}
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">📝</span>
+                  <span className="text-sm text-gray-700">
+                    已使用點數：<span className="font-medium">{usedChars.toLocaleString()} 字</span>
+                  </span>
+                </div>
+                
+                {/* 剩餘可用點數 */}
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">💎</span>
+                  <span className="text-sm text-gray-700">
+                    剩餘可用點數：<span className={`font-medium ${remaining > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {remaining.toLocaleString()} 字
+                    </span>
+                  </span>
+                </div>
+                
+                {/* 測試環境提示 */}
+                {isLocalhost && (
+                  <div className="mt-2 pt-2 border-t border-gray-200">
+                    <p className="text-xs text-gray-500 italic">
+                      ⚠️ 測試環境：僅顯示，不實際扣點
+                    </p>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
+      {/* 【七、點數說明與免責聲明 - 次要資訊（可折疊，移至最下方）】 */}
+      {(result || showCreditInfo) && (
+        <div className="mt-4">
+          {/* 折疊按鈕 */}
+          <button
+            onClick={() => setShowCreditInfo(!showCreditInfo)}
+            className="w-full text-xs text-gray-400 hover:text-gray-600 flex items-center justify-center gap-1 py-2 transition-colors"
+          >
+            <span>{showCreditInfo ? '▲' : '▼'}</span>
+            <span>點數說明與免責聲明</span>
+          </button>
+
+          {/* 折疊內容 */}
+          {showCreditInfo && (
+            <div className="mt-2 space-y-3 text-xs text-gray-400">
+              {/* 本次使用點數 */}
+              {lastUsedPoints && result && !loading && (
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <p className="text-gray-500">
+                    本次使用：<span className="font-medium text-gray-600">{lastUsedPoints.totalUsedPoints.toLocaleString()} 點</span>
+                    <span className="ml-2 text-gray-400">
+                      （輸入 {lastUsedPoints.inputLength.toLocaleString()} 字 + 回答 {lastUsedPoints.outputLength.toLocaleString()} 字）
+                    </span>
+                  </p>
+                </div>
+              )}
+
+              {/* 剩餘點數狀態 */}
+              {!creditsLoading && remainingChars !== null && (
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <p className="text-gray-500">
+                    剩餘點數：<span className="font-medium text-gray-600">{remainingChars.toLocaleString()} 字</span>
+                  </p>
+                </div>
+              )}
+
+              {/* 開發環境說明 */}
+              {isLocalhost && (
+                <p className="text-gray-400 italic">
+                  目前為開發／測試環境，字數僅供顯示，不會實際扣除。
+                </p>
+              )}
+
+              {/* 點數說明 */}
+              <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+                <p className="text-gray-500">
+                  本功能依實際使用字數扣點（1 字 = 1 點），包含題目輸入與 AI 回答字數。
+                </p>
+                <p className="text-gray-500">
+                  詳見 <Link to="/points" className="text-gray-600 hover:text-gray-800 underline">點數說明</Link>
+                  <span className="text-gray-400">（符合台灣金流規範，安心付款）</span>
+                </p>
+              </div>
+
+              {/* 免責聲明 */}
+              {result && (
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <p className="text-gray-500 font-medium mb-1">⚠️ 免責聲明</p>
+                  <p className="text-gray-400 leading-relaxed">
+                    本工具之答案由 AI 生成，僅供學習參考，不保證 100% 正確。請使用者自行判斷與驗算，本工具不提供代寫作業服務。
+                  </p>
+                </div>
+              )}
             </div>
-          </div>
+          )}
         </div>
       )}
 
