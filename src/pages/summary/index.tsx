@@ -14,6 +14,7 @@ import { useAuthCredits } from '@/hooks/useAuthCredits'
 import { useCreditCheck } from '@/hooks/useCreditCheck'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/utils/supabaseClient'
+import { isDevelopment } from '@/utils/envUtils'
 
 // 方案常數定義（只存字數，不寫死篇數）
 const PLANS = {
@@ -517,13 +518,8 @@ export default function SummaryPage() {
       
       // 🔒 步驟 6：前端即時更新點數（僅在已登入狀態下執行）
       if (!isGuestMode) {
-        // 判斷是否為本地端環境
-        const isLocalhost = typeof window !== 'undefined' && (
-          window.location.hostname === 'localhost' ||
-          window.location.hostname === '127.0.0.1' ||
-          window.location.hostname.startsWith('127.') ||
-          window.location.hostname.startsWith('192.168.')
-        )
+        // ✅ 使用統一的環境判斷函數，正式網域（非 localhost）時強制視為 production
+        const isLocalhost = isDevelopment()
         
         // 本地端不扣點，正式網站才扣點
         if (!isLocalhost) {
@@ -575,13 +571,8 @@ export default function SummaryPage() {
           afterRemaining: (currentGuestRemaining - totalUsedPoints).toLocaleString(),
         })
         
-        // 判斷是否為本地端環境
-        const isLocalhost = typeof window !== 'undefined' && (
-          window.location.hostname === 'localhost' ||
-          window.location.hostname === '127.0.0.1' ||
-          window.location.hostname.startsWith('127.') ||
-          window.location.hostname.startsWith('192.168.')
-        )
+        // ✅ 使用統一的環境判斷函數，正式網域（非 localhost）時強制視為 production
+        const isLocalhost = isDevelopment()
         
         // 本地端不扣點，正式網站才扣點
         if (!isLocalhost) {

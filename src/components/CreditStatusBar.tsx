@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuthCredits } from '@/hooks/useAuthCredits'
+import { isDevelopment } from '@/utils/envUtils'
 
 interface CreditStatusBarProps {
   /** 當前輸入字數 */
@@ -138,8 +139,8 @@ export default function CreditStatusBar({
   const displayUsed = currentUsed
   const displayRemaining = currentRemaining
 
-  // 檢查是否為開發模式
-  const isDevMode = import.meta.env.DEV === true
+  // ✅ 使用統一的環境判斷函數，正式網域（非 localhost）時強制視為 production
+  const isDevMode = isDevelopment()
   
   // 檢查是否為體驗點數且剩餘低於 2,000 點
   const isLowBalance = displayRemaining < 2000 && displayRemaining > 0

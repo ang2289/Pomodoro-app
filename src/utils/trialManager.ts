@@ -8,6 +8,8 @@
  * - 不會因為切換模組而重設
  */
 
+import { isDevelopment } from './envUtils'
+
 const TRIAL_START_AT_KEY = 'trial_start_at'
 
 /**
@@ -74,7 +76,7 @@ export function ensureTrialStartAt(): string {
  * 檢查免費體驗是否已過期（7 日內需使用完畢）
  * 
  * 規則：
- * - 若為開發模式（DEV），一律回傳 false
+ * - 若為開發環境（localhost），一律回傳 false（不計算過期）
  * - 若不存在 trial_start_at，視為尚未開始體驗，回傳 false
  * - 若目前時間 - trial_start_at >= 7 天，回傳 true
  * - 否則回傳 false
@@ -82,8 +84,9 @@ export function ensureTrialStartAt(): string {
  * @returns 是否已過期
  */
 export function isTrialExpired(): boolean {
-  // 開發模式下，一律回傳 false（不計算過期）
-  if (import.meta.env.DEV === true) {
+  // ✅ 使用統一的環境判斷函數，正式網域（非 localhost）時強制視為 production
+  // 開發環境下，一律回傳 false（不計算過期）
+  if (isDevelopment()) {
     return false
   }
 

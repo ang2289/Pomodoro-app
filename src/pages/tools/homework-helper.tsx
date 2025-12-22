@@ -12,6 +12,8 @@ import CreditStatusBar, { updateUsedCharsAfterSuccess } from "@/components/Credi
 import { useNavigate, Link } from "react-router-dom";
 import { useCreditCheck } from "@/hooks/useCreditCheck";
 import { supabase } from "@/utils/supabaseClient";
+import { isDevelopment } from "@/utils/envUtils";
+import { useAuth } from "@/hooks/useAuth";
 
 // Google TTS 播放函式
 async function playGoogleTTS(text: string, lang: string = "zh-TW") {
@@ -171,17 +173,9 @@ const modeLabelMap: Record<string, string> = {
 }
 
 export default function HomeworkHelper() {
-  // ✅ 正式上線：移除 localhost 限制，允許所有環境存取
-
-  // 🔍 判斷是否為本地端／開發環境
-  const isLocalhost = typeof window !== 'undefined' && (
-    window.location.hostname === 'localhost' ||
-    window.location.hostname === '127.0.0.1' ||
-    window.location.hostname.startsWith('127.') ||
-    window.location.hostname.startsWith('192.168.') ||
-    import.meta.env.DEV || // Vite 開發模式
-    import.meta.env.MODE === 'development' // 開發模式
-  )
+  // ✅ 使用統一的環境判斷函數，正式網域（非 localhost）時強制視為 production
+  // 🔍 判斷是否為開發環境（正式網域時強制視為 production）
+  const isLocalhost = isDevelopment()
 
   // Mode 映射表：將前端模式映射到 Edge Function / Gemini 支援的模式
   const modeMap: Record<string, string> = {
@@ -235,6 +229,9 @@ export default function HomeworkHelper() {
 
   // 使用 useAuthCredits Hook 自動取得並更新剩餘點數
   const { remainingChars, loading: creditsLoading, refresh: refreshCredits } = useAuthCredits()
+  
+  // 取得當前使用者資訊（用於扣點）
+  const { user } = useAuth()
   
   // 使用共用的扣點檢查邏輯
   const creditCheck = useCreditCheck(question.length)
@@ -443,6 +440,9 @@ export default function HomeworkHelper() {
         return
       }
       
+      // 🔒 記錄扣點前的點數（用於驗證扣點是否成功）
+      const creditsBeforeDeduction = remainingChars;
+      
       setLoading(true);
       try {
         // ✅ 使用 supabase.functions.invoke 直接呼叫 homework-helper Edge Function
@@ -452,10 +452,19 @@ export default function HomeworkHelper() {
         // 後端會根據 mode 值進行相應處理
         
         // 📝 送出前：記錄 payload
+        // ✅ deduct 欄位：僅在 localhost 時為 false，正式環境一律為 true
+        // 計算總字數（預估：輸入字數 + 預估輸出字數）
+        const inputChars = question.trim().length
+        const estimatedOutputChars = Math.ceil(inputChars * 0.5) // 預估輸出為輸入的 50%
+        const estimatedTotalChars = inputChars + estimatedOutputChars
+        
         const payload = {
           prompt: question.trim(),
           mode: mode, // 直接傳送 'answer' | 'easy' | 'pro' | 'example'
           language: language, // ✅ 傳送語言參數 'zh' | 'en' | 'ja'
+          deduct: !isLocalhost, // ✅ 正式環境時 deduct = true，localhost 時 deduct = false
+          user_id: user?.id || null, // ✅ 傳送 user_id（未登入時為 null）
+          totalChars: estimatedTotalChars, // ✅ 傳送預估總字數
         }
         console.log('[Homework] invoke Edge Function payload:', payload)
         
@@ -505,6 +514,51 @@ export default function HomeworkHelper() {
         // 📝 成功後：記錄 result
         console.log('[Homework] Edge Function result:', resultText)
         
+        // 計算點數（Edge Function 已扣點，這裡只計算用於顯示）
+        const inputLength = question.trim().length
+        const outputLength = resultText.length
+        const totalUsedPoints = inputLength + outputLength
+        
+        // 🔒 驗證扣點是否成功（僅在正式環境且 deduct === true 時驗證）
+        if (!isLocalhost && user?.id && creditsBeforeDeduction !== null) {
+          // ✅ 重新 fetch 使用者點數
+          await refreshCredits()
+          
+          // 等待點數更新完成（給 state 時間更新）
+          await new Promise(resolve => setTimeout(resolve, 300))
+          
+          // 直接從 creditService 取得最新點數（避免 state 更新延遲）
+          const { getRemainingCredits } = await import('@/lib/creditService')
+          const creditsAfterDeduction = await getRemainingCredits()
+          
+          // ✅ 驗證點數是否正確扣除
+          if (creditsAfterDeduction !== null) {
+            const expectedCreditsAfter = creditsBeforeDeduction - totalUsedPoints
+            const actualCreditsAfter = creditsAfterDeduction
+            
+            console.log('🔍 [扣點驗證]', {
+              creditsBefore: creditsBeforeDeduction,
+              creditsAfter: actualCreditsAfter,
+              expectedAfter: expectedCreditsAfter,
+              totalUsed: totalUsedPoints,
+              creditsChanged: creditsBeforeDeduction !== actualCreditsAfter,
+            })
+            
+            // ⚠️ 如果點數未變動，顯示錯誤提示並清除結果（避免使用者無限白嫖）
+            if (creditsBeforeDeduction === actualCreditsAfter) {
+              console.error('❌ 扣點失敗：點數未變動')
+              setResult('')
+              setModal({
+                title: '點數扣除失敗',
+                message: '點數扣除失敗，請重新整理或聯絡客服',
+              })
+              setLoading(false)
+              return
+            }
+          }
+        }
+        
+        // ✅ 扣點驗證通過，顯示結果
         setResult(resultText);
         
         // 有結果時自動展開點數資訊
@@ -514,11 +568,6 @@ export default function HomeworkHelper() {
         
         // 🛡️ 記錄已解答的題目（避免重複呼叫）
         lastSolvedQuestionRef.current = question.trim();
-        
-        // 計算點數（Edge Function 已扣點，這裡只計算用於顯示）
-        const inputLength = question.trim().length
-        const outputLength = resultText.length
-        const totalUsedPoints = inputLength + outputLength
         
         // ✅ 記錄本次使用點數（用於顯示）
         setLastUsedPoints({
@@ -931,7 +980,8 @@ export default function HomeworkHelper() {
                 </div>
                 
                 {/* 測試環境提示 */}
-                {isLocalhost && (
+                {/* ✅ 僅在 localhost 或 VITE_APP_ENV === 'dev' 時顯示，production 環境一律不顯示 */}
+                {(isLocalhost || import.meta.env.VITE_APP_ENV === 'dev') && (
                   <div className="mt-2 pt-2 border-t border-gray-200">
                     <p className="text-xs text-gray-500 italic">
                       ⚠️ 測試環境：僅顯示，不實際扣點
@@ -981,7 +1031,8 @@ export default function HomeworkHelper() {
               )}
 
               {/* 開發環境說明 */}
-              {isLocalhost && (
+              {/* ✅ 僅在 localhost 或 VITE_APP_ENV === 'dev' 時顯示，production 環境一律不顯示 */}
+              {(isLocalhost || import.meta.env.VITE_APP_ENV === 'dev') && (
                 <p className="text-gray-400 italic">
                   目前為開發／測試環境，字數僅供顯示，不會實際扣除。
                 </p>

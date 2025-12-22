@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // ✅ CORS headers 設定（最上方）
 const corsHeaders = {
@@ -34,8 +35,15 @@ serve(async (req: Request) => {
       );
     }
 
-    // ✅ 1. 解析請求 body，確保有解構 language
-    const { prompt, mode = 'answer', language = 'zh' } = await req.json();
+    // ✅ 1. 解析請求 body，確保有解構 user_id, deduct, totalChars
+    const { 
+      prompt, 
+      mode = 'answer', 
+      language = 'zh', 
+      deduct = true,
+      user_id,
+      totalChars
+    } = await req.json();
 
     if (!prompt || typeof prompt !== "string" || prompt.trim().length === 0) {
       return new Response(
@@ -192,9 +200,110 @@ serve(async (req: Request) => {
       );
     }
 
+    const resultText = text.trim();
+
+    // ✅ 2. 當 deduct === true 時，執行扣點邏輯
+    if (deduct === true) {
+      // 驗證必要參數
+      if (!user_id || typeof user_id !== 'string') {
+        console.error("❌ 扣點失敗：缺少 user_id");
+        return new Response(
+          JSON.stringify({ error: "扣點失敗：缺少 user_id" }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      // 取得 Supabase 客戶端
+      const supabaseUrl = Deno.env.get("SUPABASE_URL") || Deno.env.get("VITE_SUPABASE_URL");
+      const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      
+      if (!supabaseUrl || !supabaseServiceKey) {
+        console.error("❌ Supabase credentials 未設定");
+        return new Response(
+          JSON.stringify({ error: "扣點失敗：伺服器設定錯誤" }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+      // 計算實際的 inputChars 和 outputChars
+      const inputChars = prompt.trim().length;
+      const outputChars = resultText.length;
+      // ✅ 使用實際計算的 totalChars（inputChars + outputChars），不使用前端預估值
+      const actualTotalChars = inputChars + outputChars;
+
+      try {
+        // 🔒 呼叫核心扣點函數（在單一 transaction 中完成扣點和記錄）
+        const { data: consumeResult, error: consumeError } = await supabase.rpc('consume_credits', {
+          p_user_id: user_id,
+          p_feature: 'homework',
+          p_input_chars: inputChars,
+          p_output_chars: outputChars,
+        });
+
+        if (consumeError) {
+          console.error("❌ 扣點失敗：", consumeError);
+          
+          // 點數不足錯誤
+          if (consumeError.message.includes('insufficient_credits') || consumeError.code === 'P0001') {
+            return new Response(
+              JSON.stringify({ error: "INSUFFICIENT_CREDITS" }),
+              {
+                status: 400,
+                headers: { ...corsHeaders, "Content-Type": "application/json" },
+              }
+            );
+          }
+
+          // 其他錯誤：回傳錯誤，不可靜默略過
+          return new Response(
+            JSON.stringify({ error: consumeError.message || "扣點失敗" }),
+            {
+              status: 500,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            }
+          );
+        }
+
+        // ✅ 扣點成功，記錄使用紀錄（非同步）
+        supabase.from('usage_logs').insert({
+          user_id: user_id,
+          used_chars: actualTotalChars,
+          service_type: 'homework',
+          content_preview: prompt.substring(0, 100), // 只記錄前 100 字
+        }).catch((err) => {
+          console.error("❌ 記錄使用紀錄失敗：", err);
+          // 記錄失敗不影響主流程，但記錄錯誤
+        });
+
+        console.log(`✅ 扣點成功：user_id=${user_id}, totalChars=${actualTotalChars}`);
+
+      } catch (err: any) {
+        console.error("❌ 扣點過程發生錯誤：", err);
+        // ✅ 扣點失敗要回傳錯誤，不可靜默略過
+        return new Response(
+          JSON.stringify({ error: err.message || "扣點過程發生錯誤" }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+    } else {
+      console.log(`🔓 跳過扣點：deduct=false, user_id=${user_id || 'N/A'}`);
+    }
+
+    // ✅ 成功回傳結果：統一格式 { result: string }
     return new Response(
       JSON.stringify({
-        result: text.trim(),
+        result: resultText,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
