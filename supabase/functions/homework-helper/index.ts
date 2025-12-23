@@ -35,14 +35,49 @@ serve(async (req: Request) => {
       );
     }
 
-    // ✅ 1. 解析請求 body，確保有解構 user_id, deduct, totalChars
+    // ✅ 1. 從 request headers 讀取 Authorization
+    const authHeader = req.headers.get("authorization");
+    let userId: string | null = null;
+    let isGuest = true;
+
+    // 取得 Supabase 客戶端（用於驗證 token）
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") || Deno.env.get("VITE_SUPABASE_URL");
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    
+    if (authHeader && supabaseUrl && supabaseServiceKey) {
+      try {
+        // 建立 Supabase client（使用 anon key 來驗證 token）
+        const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("VITE_SUPABASE_ANON_KEY");
+        if (supabaseAnonKey) {
+          const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+            global: {
+              headers: {
+                Authorization: authHeader,
+              },
+            },
+          });
+
+          // 驗證 token 並取得使用者資訊
+          const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+          
+          if (!authError && user) {
+            userId = user.id;
+            isGuest = false;
+            console.log(`✅ [認證成功] user_id=${userId}`);
+          } else {
+            console.log(`⚠️ [認證失敗] 視為訪客模式`, authError);
+          }
+        }
+      } catch (err) {
+        console.log(`⚠️ [認證錯誤] 視為訪客模式`, err);
+      }
+    }
+
+    // ✅ 2. 解析請求 body
     const { 
       prompt, 
       mode = 'answer', 
-      language = 'zh', 
-      deduct = true,
-      user_id,
-      totalChars
+      language = 'zh'
     } = await req.json();
 
     if (!prompt || typeof prompt !== "string" || prompt.trim().length === 0) {
@@ -202,28 +237,32 @@ serve(async (req: Request) => {
 
     const resultText = text.trim();
 
-    // ✅ 2. 當 deduct === true 時，執行扣點邏輯
-    if (deduct === true) {
-      // 驗證必要參數
-      if (!user_id || typeof user_id !== 'string') {
-        console.error("❌ 扣點失敗：缺少 user_id");
-        return new Response(
-          JSON.stringify({ error: "扣點失敗：缺少 user_id" }),
-          {
-            status: 400,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
-        );
-      }
+    // ✅ 3. 計算實際使用字數
+    const inputChars = prompt.trim().length;
+    const outputChars = resultText.length;
+    const totalUsedPoints = inputChars + outputChars;
 
-      // 取得 Supabase 客戶端
-      const supabaseUrl = Deno.env.get("SUPABASE_URL") || Deno.env.get("VITE_SUPABASE_URL");
-      const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    // ✅ 4. 根據使用者狀態執行扣點邏輯
+    if (isGuest) {
+      // 🔓 訪客模式：不寫入資料庫，僅回傳使用點數
+      console.log(`🔓 [訪客模式] 不寫入資料庫，使用點數=${totalUsedPoints}`);
       
+      return new Response(
+        JSON.stringify({
+          result: resultText,
+          guest_used_points: totalUsedPoints,
+          is_guest: true,
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    } else {
+      // 🔒 登入使用者：執行正式扣點邏輯
       if (!supabaseUrl || !supabaseServiceKey) {
         console.error("❌ Supabase credentials 未設定");
         return new Response(
-          JSON.stringify({ error: "扣點失敗：伺服器設定錯誤" }),
+          JSON.stringify({ error: "伺服器設定錯誤" }),
           {
             status: 500,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -233,28 +272,69 @@ serve(async (req: Request) => {
 
       const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-      // 計算實際的 inputChars 和 outputChars
-      const inputChars = prompt.trim().length;
-      const outputChars = resultText.length;
-      // ✅ 使用實際計算的 totalChars（inputChars + outputChars），不使用前端預估值
-      const actualTotalChars = inputChars + outputChars;
-
       try {
-        // 🔒 呼叫核心扣點函數（在單一 transaction 中完成扣點和記錄）
-        const { data: consumeResult, error: consumeError } = await supabase.rpc('consume_credits', {
-          p_user_id: user_id,
-          p_feature: 'homework',
-          p_input_chars: inputChars,
-          p_output_chars: outputChars,
-        });
+        // 🔒 步驟 1：查詢使用者點數
+        const { data: creditData, error: creditError } = await supabase
+          .from('user_credits')
+          .select('remaining_chars, total_credits, used_credits')
+          .eq('user_id', userId)
+          .single();
 
-        if (consumeError) {
-          console.error("❌ 扣點失敗：", consumeError);
-          
-          // 點數不足錯誤
-          if (consumeError.message.includes('insufficient_credits') || consumeError.code === 'P0001') {
+        if (creditError) {
+          // 如果記錄不存在，嘗試初始化
+          if (creditError.code === 'PGRST116') {
+            console.log(`🆕 [初始化點數] user_id=${userId}`);
+            const { error: initError } = await supabase
+              .from('user_credits')
+              .insert({
+                user_id: userId,
+                total_credits: 10000,
+                used_credits: 0,
+                remaining_chars: 10000,
+              });
+
+            if (initError) {
+              console.error("❌ 初始化點數失敗：", initError);
+              return new Response(
+                JSON.stringify({ error: "初始化點數失敗" }),
+                {
+                  status: 500,
+                  headers: { ...corsHeaders, "Content-Type": "application/json" },
+                }
+              );
+            }
+
+            // 重新查詢
+            const { data: retryData } = await supabase
+              .from('user_credits')
+              .select('remaining_chars, total_credits, used_credits')
+              .eq('user_id', userId)
+              .single();
+
+            if (!retryData || retryData.remaining_chars <= 0) {
+              return new Response(
+                JSON.stringify({ error: "點數不足，請購買" }),
+                {
+                  status: 400,
+                  headers: { ...corsHeaders, "Content-Type": "application/json" },
+                }
+              );
+            }
+          } else {
+            console.error("❌ 查詢點數失敗：", creditError);
             return new Response(
-              JSON.stringify({ error: "INSUFFICIENT_CREDITS" }),
+              JSON.stringify({ error: "查詢點數失敗" }),
+              {
+                status: 500,
+                headers: { ...corsHeaders, "Content-Type": "application/json" },
+              }
+            );
+          }
+        } else {
+          // 🔒 步驟 2：檢查點數是否足夠
+          if (!creditData || creditData.remaining_chars <= 0) {
+            return new Response(
+              JSON.stringify({ error: "點數不足，請購買" }),
               {
                 status: 400,
                 headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -262,9 +342,69 @@ serve(async (req: Request) => {
             );
           }
 
-          // 其他錯誤：回傳錯誤，不可靜默略過
+          // 🔒 步驟 3：檢查扣點後是否會超過總額
+          if (creditData.remaining_chars < totalUsedPoints) {
+            return new Response(
+              JSON.stringify({ error: "點數不足，請購買" }),
+              {
+                status: 400,
+                headers: { ...corsHeaders, "Content-Type": "application/json" },
+              }
+            );
+          }
+        }
+
+        // 🔒 步驟 4：成功產生 AI 回答後，執行扣點
+        // 重新查詢以確保取得最新資料
+        const { data: currentCreditData, error: lockError } = await supabase
+          .from('user_credits')
+          .select('remaining_chars, total_credits, used_credits')
+          .eq('user_id', userId)
+          .single();
+
+        if (lockError || !currentCreditData) {
+          console.error("❌ 查詢點數記錄失敗：", lockError);
           return new Response(
-            JSON.stringify({ error: consumeError.message || "扣點失敗" }),
+            JSON.stringify({ error: "扣點失敗：無法查詢點數記錄" }),
+            {
+              status: 500,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            }
+          );
+        }
+
+        // 再次檢查點數是否足夠（防止在 AI 處理期間點數被其他請求扣除）
+        if (currentCreditData.remaining_chars < totalUsedPoints) {
+          return new Response(
+            JSON.stringify({ error: "點數不足，請購買" }),
+            {
+              status: 400,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            }
+          );
+        }
+
+        // 計算新的已使用點數和剩餘點數
+        const currentUsed = currentCreditData.used_credits || 0;
+        const currentTotal = currentCreditData.total_credits || 10000;
+        const newUsed = currentUsed + totalUsedPoints;
+        const newRemaining = currentTotal - newUsed;
+
+        // 更新資料庫：used_credits += 扣點，remaining_chars = total_credits - used_credits
+        // 注意：remaining_chars 會由觸發器自動同步，但這裡也明確設定以確保一致性
+        const { error: updateError } = await supabase
+          .from('user_credits')
+          .update({
+            used_credits: newUsed,
+            remaining_chars: newRemaining,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('user_id', userId);
+
+        if (updateError) {
+          console.error("❌ 扣點失敗：", updateError);
+          return new Response(
+            JSON.stringify({ error: "扣點失敗" }),
             {
               status: 500,
               headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -274,8 +414,8 @@ serve(async (req: Request) => {
 
         // ✅ 扣點成功，記錄使用紀錄（非同步）
         supabase.from('usage_logs').insert({
-          user_id: user_id,
-          used_chars: actualTotalChars,
+          user_id: userId,
+          used_chars: totalUsedPoints,
           service_type: 'homework',
           content_preview: prompt.substring(0, 100), // 只記錄前 100 字
         }).catch((err) => {
@@ -283,7 +423,20 @@ serve(async (req: Request) => {
           // 記錄失敗不影響主流程，但記錄錯誤
         });
 
-        console.log(`✅ 扣點成功：user_id=${user_id}, totalChars=${actualTotalChars}`);
+        console.log(`✅ [扣點成功] user_id=${userId}, totalUsedPoints=${totalUsedPoints}, remaining=${newRemaining}`);
+
+        // ✅ 成功回傳結果
+        return new Response(
+          JSON.stringify({
+            result: resultText,
+            is_guest: false,
+            used_points: totalUsedPoints,
+            remaining_chars: newRemaining,
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
 
       } catch (err: any) {
         console.error("❌ 扣點過程發生錯誤：", err);
@@ -296,19 +449,7 @@ serve(async (req: Request) => {
           }
         );
       }
-    } else {
-      console.log(`🔓 跳過扣點：deduct=false, user_id=${user_id || 'N/A'}`);
     }
-
-    // ✅ 成功回傳結果：統一格式 { result: string }
-    return new Response(
-      JSON.stringify({
-        result: resultText,
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
   } catch (err: any) {
     console.error("❌ 伺服器捕獲的未預期錯誤:", err);
     return new Response(

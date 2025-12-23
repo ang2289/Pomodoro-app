@@ -14,6 +14,7 @@ import { useCreditCheck } from "@/hooks/useCreditCheck";
 import { supabase } from "@/utils/supabaseClient";
 import { isDevelopment } from "@/utils/envUtils";
 import { useAuth } from "@/hooks/useAuth";
+import { getGuestCreditsInfo } from "@/utils/guestCredits";
 
 // Google TTS 播放函式
 async function playGoogleTTS(text: string, lang: string = "zh-TW") {
@@ -194,6 +195,9 @@ export default function HomeworkHelper() {
   const [question, setQuestion] = useState("");
   const [mode, setMode] = useState<'answer' | 'easy' | 'pro' | 'example'>('answer');
   const [language, setLanguage] = useState<"zh" | "en" | "ja">("zh");
+  
+  // 轉換 language 為 UnifiedCreditDisplay 需要的 lang 格式
+  const lang: 'zh-tw' | 'en' = language === 'zh' ? 'zh-tw' : language === 'ja' ? 'zh-tw' : 'en';
 
   // TODO: 之後改成從 Supabase / RevenueCat 取得用戶方案
   // 目前先用 localStorage 模擬：'free' | 'premium'
@@ -232,6 +236,47 @@ export default function HomeworkHelper() {
   
   // 取得當前使用者資訊（用於扣點）
   const { user } = useAuth()
+  
+  // 初始化點數狀態（與摘要頁共用邏輯）
+  const isGuest = !user || remainingChars === null
+  const [credits, setCredits] = useState<{ total_credits: number; used_credits: number } | null>(null)
+  const guestCreditsInfo = isGuest ? getGuestCreditsInfo() : null
+  const guestCredits = guestCreditsInfo?.total || 0
+  const guestUsed = guestCreditsInfo?.used || 0
+  const guestRemaining = guestCreditsInfo?.remaining || 0
+
+  // 查詢完整的 credits 資訊（僅在已登入時）
+  useEffect(() => {
+    if (!user || isGuest) {
+      setCredits(null)
+      return
+    }
+
+    const fetchCredits = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('user_credits')
+          .select('total_credits, used_credits')
+          .eq('user_id', user.id)
+          .single()
+
+        if (error) {
+          console.error('❌ 查詢點數失敗：', error)
+          setCredits(null)
+        } else {
+          setCredits({
+            total_credits: data.total_credits || 0,
+            used_credits: data.used_credits || 0,
+          })
+        }
+      } catch (err) {
+        console.error('❌ 查詢點數異常：', err)
+        setCredits(null)
+      }
+    }
+
+    fetchCredits()
+  }, [user, isGuest, remainingChars])
   
   // 使用共用的扣點檢查邏輯
   const creditCheck = useCreditCheck(question.length)
@@ -919,80 +964,48 @@ export default function HomeworkHelper() {
         </div>
       </div>
 
-      {/* 【六、點數資訊區塊】- 在 AI 回答下方 */}
-      {!creditsLoading && (
-        <div className="bg-gray-50 rounded-xl p-4 mb-5">
-          {(() => {
-            // 試用總額常數
-            const FREE_TRIAL_QUOTA = 10000;
-            
-            // 計算點數資訊
-            let totalQuota = FREE_TRIAL_QUOTA;
-            let usedChars = 0;
-            let remaining = 0;
-            
-            if (remainingChars !== null) {
-              // 已登入狀態：使用 remainingChars
-              remaining = remainingChars;
-              usedChars = totalQuota - remaining;
-            } else {
-              // 未登入狀態：從 localStorage 讀取訪客點數
-              const FREE_REMAINING_KEY = 'free_characters_remaining';
-              let guestRemaining = FREE_TRIAL_QUOTA;
-              
-              if (typeof window !== 'undefined') {
-                const saved = localStorage.getItem(FREE_REMAINING_KEY);
-                if (saved !== null) {
-                  guestRemaining = Math.max(0, parseInt(saved, 10));
-                }
-              }
-              
-              remaining = guestRemaining;
-              usedChars = totalQuota - remaining;
-            }
-            
-            return (
-              <div className="space-y-2">
-                {/* 試用總額 */}
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">📊</span>
-                  <span className="text-sm text-gray-700">
-                    試用總額：<span className="font-medium">{totalQuota.toLocaleString()} 字</span>
-                  </span>
-                </div>
-                
-                {/* 已使用點數 */}
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">📝</span>
-                  <span className="text-sm text-gray-700">
-                    已使用點數：<span className="font-medium">{usedChars.toLocaleString()} 字</span>
-                  </span>
-                </div>
-                
-                {/* 剩餘可用點數 */}
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">💎</span>
-                  <span className="text-sm text-gray-700">
-                    剩餘可用點數：<span className={`font-medium ${remaining > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {remaining.toLocaleString()} 字
-                    </span>
-                  </span>
-                </div>
-                
-                {/* 測試環境提示 */}
-                {/* ✅ 僅在 localhost 或 VITE_APP_ENV === 'dev' 時顯示，production 環境一律不顯示 */}
-                {(isLocalhost || import.meta.env.VITE_APP_ENV === 'dev') && (
-                  <div className="mt-2 pt-2 border-t border-gray-200">
-                    <p className="text-xs text-gray-500 italic">
-                      ⚠️ 測試環境：僅顯示，不實際扣點
-                    </p>
-                  </div>
-                )}
-              </div>
-            );
-          })()}
-        </div>
-      )}
+      {/* 【六、點數顯示區塊】- 在 AI 回答卡片下方（無條件顯示） */}
+      <div className="mb-4 rounded-lg border bg-slate-50 p-4 text-sm text-slate-700">
+        {isGuest ? (
+          <>
+            <div className="font-medium text-slate-800">
+              👤 訪客試用
+            </div>
+            <div>試用總額：10,000 字（7 天內有效）</div>
+            <div>已使用：{guestUsed.toLocaleString()} 字</div>
+            <div>
+              剩餘可用：
+              <span className="font-semibold text-blue-600">
+                {guestRemaining.toLocaleString()}
+              </span>{" "}
+              字
+            </div>
+          </>
+        ) : credits ? (
+          <>
+            <div className="font-medium text-slate-800">
+              💳 我的點數
+            </div>
+            <div>
+              總點數：{credits.total_credits.toLocaleString()} 字
+            </div>
+            <div>
+              已使用：{credits.used_credits.toLocaleString()} 字
+            </div>
+            <div>
+              剩餘可用：
+              <span className="font-semibold text-green-600">
+                {(credits.total_credits - credits.used_credits).toLocaleString()}
+              </span>{" "}
+              字
+            </div>
+          </>
+        ) : (
+          <div className="text-slate-500">
+            點數讀取中…
+          </div>
+        )}
+      </div>
 
       {/* 【七、點數說明與免責聲明 - 次要資訊（可折疊，移至最下方）】 */}
       {(result || showCreditInfo) && (

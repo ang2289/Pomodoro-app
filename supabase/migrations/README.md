@@ -4,8 +4,9 @@
 
 請按照以下順序在 Supabase Dashboard > SQL Editor 中執行：
 
-1. **create_user_credits_system.sql** - 建立資料表、索引、RLS
-2. **create_consume_credits_function.sql** - 建立扣點數函數
+1. **create_user_credits_table.sql** - 建立/更新 user_credits 資料表（符合用戶需求）
+2. **create_user_credits_system.sql** - 建立資料表、索引、RLS（舊版，可選）
+3. **create_consume_credits_function.sql** - 建立扣點數函數
 
 ## 資料表說明
 

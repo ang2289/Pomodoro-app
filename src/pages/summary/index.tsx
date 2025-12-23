@@ -674,66 +674,122 @@ export default function SummaryPage() {
             onChange={(e) => setInput(e.target.value)}
           />
 
-          {/* 點數說明文字 */}
-          <div className="mt-2 text-xs text-gray-500">
-            {lang === 'zh-tw' ? (
-              <>
-                本功能使用點數計算，依實際輸入與產出字數扣點。{' '}
-                <Link to="/points" className="text-gray-600 hover:text-gray-800 underline">
-                  查看點數說明
-                </Link>
-                <br />
-                <span className="text-gray-600 mt-1 block">
-                  提示：貼上網址摘要通常較省點數，適合快速掌握新聞或文章重點。
-                </span>
-              </>
-            ) : (
-              <>
-                This feature uses point calculation, deducting points based on actual input and output characters.{' '}
-                <Link to="/points" className="text-gray-600 hover:text-gray-800 underline">
-                  View Points Plan
-                </Link>
-              </>
-            )}
+          {/* 一鍵摘要按鈕 */}
+          <div className="mt-4">
+            {(() => {
+              // 🧩 收尾 1：按鈕維持可點，不因點數不足而 disabled
+              // 只有 loading 或 inputChars === 0 時才 disabled
+              // 點數不足時按鈕仍可點擊，但點擊後只顯示錯誤訊息，不觸發 API
+              const inputChars = input.length
+              const isButtonDisabled = loading || inputChars === 0
+              
+              // 🧩 收尾 1：按鈕文字（不因點數不足而改變，維持可點狀態）
+              let buttonText = loading ? t.loading : t.btn
+              if (inputChars === 0 && !loading) {
+                buttonText = lang === 'zh-tw' ? '請先輸入內容' : 'Please enter content'
+              }
+              
+              // Hover 提示文字
+              const tooltipText = inputChars === 0
+                ? (lang === 'zh-tw' ? '請先輸入內容' : 'Please enter content')
+                : ''
+              
+              return (
+                <div className="relative">
+                  <button
+                    onClick={handleSummary}
+                    disabled={isButtonDisabled}
+                    title={tooltipText}
+                    className={`w-full font-bold py-3 sm:py-4 px-3 sm:px-4 rounded-xl transition-all duration-200 transform flex items-center justify-center gap-2 ${
+                      isButtonDisabled
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-md'
+                        : 'bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 cursor-pointer shadow-md hover:shadow-lg hover:scale-105 active:scale-95'
+                    }`}
+                    style={
+                      !isButtonDisabled
+                        ? {
+                            color: '#ffffff',
+                          }
+                        : undefined
+                    }
+                  >
+                    {loading && (
+                      <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    )}
+                    {buttonText}
+                  </button>
+                </div>
+              )
+            })()}
           </div>
 
-          {/* 字數統計（僅顯示字數，扣點提示由 CreditUsageNotice 統一處理） */}
+          {/* 點數與說明區塊 - 移到按鈕下方 */}
+          <div className="mt-4 space-y-3">
+            {/* 點數說明文字 */}
+            <div className="text-xs text-gray-500">
+              {lang === 'zh-tw' ? (
+                <>
+                  本功能使用點數計算，依實際輸入與產出字數扣點。{' '}
+                  <Link to="/points" className="text-gray-600 hover:text-gray-800 underline">
+                    查看點數說明
+                  </Link>
+                  <br />
+                  <span className="text-gray-600 mt-1 block">
+                    提示：貼上網址摘要通常較省點數，適合快速掌握新聞或文章重點。
+                  </span>
+                </>
+              ) : (
+                <>
+                  This feature uses point calculation, deducting points based on actual input and output characters.{' '}
+                  <Link to="/points" className="text-gray-600 hover:text-gray-800 underline">
+                    View Points Plan
+                  </Link>
+                </>
+              )}
+            </div>
+
+            {/* 扣點規則說明 */}
+            <div className="text-xs text-gray-500 bg-gray-50 rounded-lg p-3">
+              <p className="font-medium text-gray-600 mb-1">
+                {lang === 'zh-tw' ? '📌 扣點規則說明' : '📌 Points Deduction Rules'}
+              </p>
+              <p className="text-gray-500 leading-relaxed">
+                {lang === 'zh-tw' 
+                  ? '本功能將依「使用者輸入字數 + AI 產生摘要字數」扣除點數（1 字 = 1 點）。'
+                  : 'This feature will deduct points based on "User input characters + AI-generated summary characters" (1 character = 1 point).'}
+              </p>
+              <p className="text-gray-500 leading-relaxed mt-2">
+                {lang === 'zh-tw' 
+                  ? '使用本功能將扣除點數，詳見'
+                  : 'Using this feature will deduct points. See'}
+                {' '}
+                <Link to="/points" className="text-blue-600 hover:underline font-medium">
+                  {lang === 'zh-tw' ? '【點數說明】' : '【Points Plan】'}
+                </Link>
+                {lang === 'zh-tw' && (
+                  <span className="text-gray-400 text-[10px] ml-1">（符合台灣金流規範，安心付款）</span>
+                )}
+              </p>
+            </div>
+          </div>
+
+          {/* 統一點數顯示區塊 */}
+          {/* UnifiedCreditDisplay 暫時隱藏 */}
+          {/* <div className="mt-4">
+            <UnifiedCreditDisplay lang={lang} />
+          </div> */}
+          
+          {/* 本次輸入字數顯示 */}
           {input.length > 0 && (
             <div className="mt-2">
-              <div className="text-xs text-gray-500">
-                {lang === 'zh-tw' 
-                  ? `本篇文章字數：${input.length.toLocaleString()} 字`
-                  : `Article length: ${input.length.toLocaleString()} characters`}
-              </div>
-            </div>
-          )}
-
-          {/* 用量顯示元件（UsageMeter） */}
-          {remainingChars !== null && (
-            <UsageMeter
-              currentInput={input.length}
-              remainingChars={remainingChars}
-              planId="free"
-              lang={lang}
-              showInsufficientModal={showInsufficientQuotaModal}
-              onCloseModal={() => setShowInsufficientQuotaModal(false)}
-            />
-          )}
-
-          {/* 點數顯示區塊 - 僅在登入狀態且已載入完成時顯示 */}
-          {remainingChars !== null && (
-            <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-              <p className="text-sm font-semibold text-gray-900 mb-2">
-                {lang === 'zh-tw' 
-                  ? `目前可用點數：${remainingChars.toLocaleString()} 字`
-                  : `Available Credits: ${remainingChars.toLocaleString()} characters`}
-              </p>
               <p className="text-xs text-gray-500">
                 {lang === 'zh-tw' 
                   ? '本次輸入字數：' + input.length.toLocaleString() + ' 字'
                   : 'Current Input: ' + input.length.toLocaleString() + ' characters'}
               </p>
-              {/* 扣點提示已統一由 CreditUsageNotice 元件處理 */}
             </div>
           )}
 
@@ -823,55 +879,7 @@ export default function SummaryPage() {
               lang={lang}
             />
 
-            {/* 一鍵摘要按鈕 */}
-            {(() => {
-              // 🧩 收尾 1：按鈕維持可點，不因點數不足而 disabled
-              // 只有 loading 或 inputChars === 0 時才 disabled
-              // 點數不足時按鈕仍可點擊，但點擊後只顯示錯誤訊息，不觸發 API
-              const inputChars = input.length
-              const isButtonDisabled = loading || inputChars === 0
-              
-              // 🧩 收尾 1：按鈕文字（不因點數不足而改變，維持可點狀態）
-              let buttonText = loading ? t.loading : t.btn
-              if (inputChars === 0 && !loading) {
-                buttonText = lang === 'zh-tw' ? '請先輸入內容' : 'Please enter content'
-              }
-              
-              // Hover 提示文字
-              const tooltipText = inputChars === 0
-                ? (lang === 'zh-tw' ? '請先輸入內容' : 'Please enter content')
-                : ''
-              
-              return (
-                <div className="relative">
-                  <button
-                    onClick={handleSummary}
-                    disabled={isButtonDisabled}
-                    title={tooltipText}
-                    className={`w-full font-bold py-3 sm:py-4 px-3 sm:px-4 rounded-xl transition-all duration-200 transform flex items-center justify-center gap-2 ${
-                      isButtonDisabled
-                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-md'
-                        : 'bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 cursor-pointer shadow-md hover:shadow-lg hover:scale-105 active:scale-95'
-                    }`}
-                    style={
-                      !isButtonDisabled
-                        ? {
-                            color: '#ffffff',
-                          }
-                        : undefined
-                    }
-                  >
-                    {loading && (
-                      <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                    )}
-                    {buttonText}
-                  </button>
-                </div>
-              )
-            })()}
+            {/* 一鍵摘要按鈕 - 已剪下，待重新放置 */}
 
             {/* 使用說明（移至按鈕下方，次要資訊樣式） */}
             <div className="mt-2 p-2.5 bg-gray-50/50 border border-gray-100 rounded-md opacity-75">
