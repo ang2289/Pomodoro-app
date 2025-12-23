@@ -66,7 +66,7 @@ export default function UsageMeter({
   if (remainingChars === null) {
     return (
       <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-center text-sm text-gray-500">
-        {lang === 'zh-tw' ? '點數讀取中…' : 'Loading credits...'}
+        {lang === 'zh-tw' ? '使用額度讀取中…' : 'Loading usage quota...'}
       </div>
     )
   }
@@ -86,8 +86,8 @@ export default function UsageMeter({
           {/* 剩餘點數（主要顯示） */}
           <p className="text-gray-800 font-semibold text-lg">
             {lang === 'zh-tw'
-              ? `目前可用點數：${remainingChars.toLocaleString()} 字`
-              : `Available Credits: ${remainingChars.toLocaleString()} characters`}
+              ? `目前可用字數：${remainingChars.toLocaleString()} 字`
+              : `Available Characters: ${remainingChars.toLocaleString()} characters`}
           </p>
         </div>
 
@@ -103,7 +103,7 @@ export default function UsageMeter({
         <div className="text-[10px] text-gray-400 pt-1">
           <p>
             {lang === 'zh-tw' 
-              ? '※ 實際扣除點數以系統計算為準'
+              ? '※ 實際扣除字數以系統計算為準'
               : '※ Actual deduction is based on system calculation'}
           </p>
         </div>
@@ -136,8 +136,8 @@ export default function UsageMeter({
             </h3>
             <p className="text-gray-700 mb-4 whitespace-pre-line">
               {lang === 'zh-tw'
-                ? `你目前剩餘 ${remainingChars.toLocaleString()} 字，本次需要 ${currentInput.toLocaleString()} 字\n請前往購買字數點數後再使用`
-                : `You currently have ${remainingChars.toLocaleString()} characters remaining, but need ${currentInput.toLocaleString()} characters.\nPlease purchase character points before using.`}
+                ? `你目前剩餘 ${remainingChars.toLocaleString()} 字，本次需要 ${currentInput.toLocaleString()} 字\n請前往購買使用方案後再使用`
+                : `You currently have ${remainingChars.toLocaleString()} characters remaining, but need ${currentInput.toLocaleString()} characters.\nPlease purchase a usage plan before using.`}
             </p>
             <div className="flex gap-3 justify-end">
               <button

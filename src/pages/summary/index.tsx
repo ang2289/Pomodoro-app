@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet-async'
 import { useNavigate, Link } from 'react-router-dom'
 import { buildSEO } from '../../lib/seo'
 import SectionHeader from '../../components/SectionHeader'
-import { config } from '../../config'
+import { config, PLANS, FREE_TRIAL_QUOTA } from '../../config'
 import { useDailyLimit } from '@/hooks/useDailyLimit'
 import UpgradeModal from '@/components/UpgradeModal'
 import UsageMeter from '@/components/UsageMeter'
@@ -14,29 +14,10 @@ import { useAuthCredits } from '@/hooks/useAuthCredits'
 import { useCreditCheck } from '@/hooks/useCreditCheck'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/utils/supabaseClient'
-import { isDevelopment } from '@/utils/envUtils'
+import TwoColumnToolLayout from '@/components/TwoColumnToolLayout'
+import PricingPlanCard from '@/components/PricingPlanCard'
 
-// 方案常數定義（只存字數，不寫死篇數）
-const PLANS = {
-  free: {
-    name: '免費方案',
-    nameEn: 'Free Plan',
-    price: 0,
-    monthlyQuota: 10000, // 總可用字數（不限月份）
-  },
-  plan99: {
-    name: '點數方案',
-    nameEn: 'Point Plan',
-    price: 99,
-    monthlyQuota: 100000, // 購買字數（點數）
-  },
-  plan199: {
-    name: '點數方案',
-    nameEn: 'Point Plan',
-    price: 199,
-    monthlyQuota: 300000, // 購買字數（點數）
-  },
-};
+// 方案常數定義已移至 src/config.ts（單一來源）
 
 // 範例文章字數基準（僅用於顯示換算，不是限制）
 const EXAMPLE_ARTICLE_LENGTH = 2500;
@@ -118,7 +99,15 @@ export default function SummaryPage() {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [summary, setSummary] = useState('')
-  const [keywords, setKeywords] = useState<string[]>([])
+  // 預設示意關鍵字（初次進入頁面時顯示）
+  const defaultKeywords = [
+    '重點摘要',
+    '關鍵事件',
+    '核心人物',
+    '時間脈絡',
+    '後續影響'
+  ]
+  const [keywords, setKeywords] = useState<string[]>(defaultKeywords)
   const [error, setError] = useState('')
   const [isQuotaExhausted, setIsQuotaExhausted] = useState(false) // 追蹤 403 狀態
   const [showInsufficientQuotaModal, setShowInsufficientQuotaModal] = useState(false) // 字數不足提示視窗
@@ -133,6 +122,8 @@ export default function SummaryPage() {
 
   // 使用 useAuthCredits Hook 自動取得並更新剩餘點數
   const { remainingChars, loading: creditsLoading, refresh: refreshCredits } = useAuthCredits()
+  const [showCreditInfo, setShowCreditInfo] = useState(false)
+  const totalTrialChars = PLANS.free.monthlyQuota
   
   // 使用共用的扣點檢查邏輯
   const creditCheck = useCreditCheck(input.length)
@@ -170,6 +161,75 @@ export default function SummaryPage() {
     return chineseRegex.test(text) ? 'zh-TW' : 'en'
   }
 
+  // 從摘要文字自動產生關鍵字（fallback 邏輯）
+  function generateKeywordsFromSummary(summaryText: string, maxKeywords: number = 5): string[] {
+    if (!summaryText || summaryText.trim().length === 0) {
+      return []
+    }
+
+    // 移除標點符號和特殊字符，保留中文、英文、數字
+    const cleanedText = summaryText
+      .replace(/[。，、；：！？「」『』（）【】《》〈〉〔〕［］｛｝【】『』「」""''（）()\[\]{}.,;:!?\-_=+*&^%$#@~`|\\/<>]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+
+    if (cleanedText.length === 0) {
+      return []
+    }
+
+    // 判斷是否為中文
+    const isChinese = /[\u4e00-\u9fa5]/.test(cleanedText)
+    
+    let words: string[] = []
+
+    if (isChinese) {
+      // 中文處理：提取 2-4 字的詞組
+      const chineseWords: string[] = []
+      const textArray = cleanedText.split('')
+      
+      // 提取 2 字詞
+      for (let i = 0; i < textArray.length - 1; i++) {
+        const word = textArray[i] + textArray[i + 1]
+        if (/[\u4e00-\u9fa5]{2}/.test(word)) {
+          chineseWords.push(word)
+        }
+      }
+      
+      // 提取 3 字詞
+      for (let i = 0; i < textArray.length - 2; i++) {
+        const word = textArray[i] + textArray[i + 1] + textArray[i + 2]
+        if (/[\u4e00-\u9fa5]{3}/.test(word)) {
+          chineseWords.push(word)
+        }
+      }
+      
+      words = chineseWords
+    } else {
+      // 英文處理：按空格分割，過濾過短詞
+      words = cleanedText
+        .toLowerCase()
+        .split(/\s+/)
+        .filter(word => word.length > 2) // 過濾 <= 2 字符的詞
+        .filter(word => !/^\d+$/.test(word)) // 過濾純數字
+    }
+
+    // 統計詞頻
+    const wordFreq: Record<string, number> = {}
+    words.forEach(word => {
+      if (word.length > 1) { // 確保長度 > 1
+        wordFreq[word] = (wordFreq[word] || 0) + 1
+      }
+    })
+
+    // 按頻率排序，取前 maxKeywords 個
+    const sortedWords = Object.entries(wordFreq)
+      .sort((a, b) => b[1] - a[1]) // 按頻率降序
+      .slice(0, maxKeywords)
+      .map(([word]) => word)
+
+    return sortedWords
+  }
+
   const handleSummary = async () => {
     if (!input.trim()) {
       setError(lang === 'zh-tw' ? '請貼上文章內容' : 'Please paste article content')
@@ -186,7 +246,7 @@ export default function SummaryPage() {
     if (!isGuestMode) {
       // 已登入狀態：進行點數檢查
       const currentRemainingPoints = creditCheck.remainingChars
-      const totalChars = 10000 // 試用總額
+      const totalChars = FREE_TRIAL_QUOTA // 試用總額（從共用配置讀取）
       const usedChars = totalChars - currentRemainingPoints
 
       // 🔍 偵錯顯示：在檢查前顯示所有關鍵數值
@@ -240,7 +300,7 @@ export default function SummaryPage() {
     } else {
       // 訪客試用模式：檢查 localStorage 中的剩餘點數
       const FREE_REMAINING_KEY = 'free_characters_remaining'
-      const FREE_TRIAL_QUOTA = 10000
+      // FREE_TRIAL_QUOTA 已從共用配置導入
       
       // 從 localStorage 讀取剩餘點數
       let guestRemainingChars = FREE_TRIAL_QUOTA
@@ -298,7 +358,7 @@ export default function SummaryPage() {
     setError('')
     setLoading(true)
     setSummary('')
-    setKeywords([])
+    // 不清除 keywords，保留預設示意關鍵字，直到 API 回傳實際關鍵字
     setLastUsedPoints(null) // 清除上次的點數資訊
     // 確保在 API 調用前不會顯示升級提示
     setIsQuotaExhausted(false)
@@ -440,8 +500,8 @@ export default function SummaryPage() {
             } else {
               // 剩餘點數 > 0 但 API 回傳錯誤，只顯示錯誤訊息，不顯示彈窗
               setError(lang === 'zh-tw' 
-                ? '點數不足，請減少輸入字數'
-                : 'Insufficient credits, please reduce input length')
+                ? '使用額度不足，請減少輸入字數'
+                : 'Insufficient usage quota, please reduce input length')
             }
           } else {
             // 訪客模式下出現點數不足錯誤（不應該發生）
@@ -489,19 +549,32 @@ export default function SummaryPage() {
       setSummary(summaryText)
       
       // 處理 keywords 陣列（使用多層 fallback）
-      const keywordList =
-        Array.isArray(data.keywords)
-          ? data.keywords
-          : Array.isArray(data.tags)
-            ? data.tags
-            : []
+      let keywordList: string[] = []
       
-      // 確保 keywordList 中的元素都是字串
+      // 1. 優先使用 API 回傳的 keywords
+      if (Array.isArray(data.keywords) && data.keywords.length > 0) {
+        keywordList = data.keywords
+      } 
+      // 2. 其次使用 API 回傳的 tags
+      else if (Array.isArray(data.tags) && data.tags.length > 0) {
+        keywordList = data.tags
+      }
+      // 3. 若 API 未回傳關鍵字，從摘要文字自動產生
+      else {
+        keywordList = generateKeywordsFromSummary(summaryText, 5)
+      }
+      
+      // 確保 keywordList 中的元素都是字串，並清理
       const cleanKeywordList = keywordList
         .map((k: any) => typeof k === "string" ? k.trim() : String(k).trim())
         .filter((k: string) => k.length > 0)
+        .slice(0, 5) // 最多取 5 個
       
-      setKeywords(cleanKeywordList)
+      // 只有在有實際關鍵字時才覆蓋預設示意關鍵字
+      if (cleanKeywordList.length > 0) {
+        setKeywords(cleanKeywordList)
+      }
+      // 若 API 未回傳關鍵字且自動生成也失敗，保留預設示意關鍵字
       
       // 🔒 步驟 5：摘要成功後 → 計算點數（因為回傳格式只有 result，需要自行計算）
       // 計算輸入和輸出字數
@@ -515,11 +588,54 @@ export default function SummaryPage() {
         outputLength,
         totalUsedPoints,
       })
+
+      // ✅ 更新本地試用點數統計（rxv_trial_summary）
+      try {
+        if (typeof window !== 'undefined') {
+          const TRIAL_KEY = 'rxv_trial_summary'
+          const total = totalTrialChars
+
+          let used = 0
+          const raw = window.localStorage.getItem(TRIAL_KEY)
+          if (raw) {
+            try {
+              const parsed = JSON.parse(raw)
+              if (typeof parsed?.used === 'number') {
+                used = parsed.used
+              }
+            } catch {
+              // 解析失敗時忽略，使用預設 0
+            }
+          }
+
+          // 本次消耗：輸入字數 + 摘要輸出字數
+          used = Math.max(0, used + totalUsedPoints)
+          if (used > total) used = total
+
+          const remaining = Math.max(0, total - used)
+
+          window.localStorage.setItem(
+            TRIAL_KEY,
+            JSON.stringify({
+              total,
+              used,
+              remaining,
+            }),
+          )
+        }
+      } catch (e) {
+        console.warn('⚠️ 無法更新本地試用點數統計 rxv_trial_summary：', e)
+      }
       
       // 🔒 步驟 6：前端即時更新點數（僅在已登入狀態下執行）
       if (!isGuestMode) {
-        // ✅ 使用統一的環境判斷函數，正式網域（非 localhost）時強制視為 production
-        const isLocalhost = isDevelopment()
+        // 判斷是否為本地端環境
+        const isLocalhost = typeof window !== 'undefined' && (
+          window.location.hostname === 'localhost' ||
+          window.location.hostname === '127.0.0.1' ||
+          window.location.hostname.startsWith('127.') ||
+          window.location.hostname.startsWith('192.168.')
+        )
         
         // 本地端不扣點，正式網站才扣點
         if (!isLocalhost) {
@@ -557,7 +673,7 @@ export default function SummaryPage() {
         const FREE_REMAINING_KEY = 'free_characters_remaining'
         
         // 從 localStorage 讀取當前剩餘點數
-        let currentGuestRemaining = 10000
+        let currentGuestRemaining = FREE_TRIAL_QUOTA // 從共用配置讀取
         if (typeof window !== 'undefined') {
           const saved = localStorage.getItem(FREE_REMAINING_KEY)
           if (saved !== null) {
@@ -571,8 +687,13 @@ export default function SummaryPage() {
           afterRemaining: (currentGuestRemaining - totalUsedPoints).toLocaleString(),
         })
         
-        // ✅ 使用統一的環境判斷函數，正式網域（非 localhost）時強制視為 production
-        const isLocalhost = isDevelopment()
+        // 判斷是否為本地端環境
+        const isLocalhost = typeof window !== 'undefined' && (
+          window.location.hostname === 'localhost' ||
+          window.location.hostname === '127.0.0.1' ||
+          window.location.hostname.startsWith('127.') ||
+          window.location.hostname.startsWith('192.168.')
+        )
         
         // 本地端不扣點，正式網站才扣點
         if (!isLocalhost) {
@@ -624,12 +745,14 @@ export default function SummaryPage() {
 
   const copyKeywords = () => {
     if (keywords.length > 0) {
-      copyText(keywords.join(', '))
+      // 根據語言使用不同的分隔符：中文用「、」，英文用「, 」
+      const separator = lang === 'zh-tw' ? '、' : ', '
+      copyText(keywords.join(separator))
     }
   }
 
   return (
-    <>
+    <div>
       <Helmet>
         <title>{seo.title}</title>
       </Helmet>
@@ -643,53 +766,28 @@ export default function SummaryPage() {
         lang={lang}
       />
       
-      {/* ===== Container ===== */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-4 lg:p-8 bg-[#EFF5FF] min-h-screen">
-        
-        {/* 語系選擇 */}
-        <div className="flex justify-end mb-4 lg:col-span-2">
-          <div className="flex flex-col items-end">
-            <label className="text-sm text-gray-600 mb-1">
-              🌐 選擇語言 / Choose Language
-            </label>
-            <select
-              value={lang}
-              onChange={(e) => setLang(e.target.value as any)}
-              className="w-[150px] p-2 border rounded-lg bg-white shadow-sm"
-            >
-              <option value="zh-tw">繁體中文</option>
-              <option value="en">English</option>
-            </select>
-          </div>
-        </div>
-        
-        {/* ===== 左側：輸入 ===== */}
-        <div className="shadow-md border rounded-2xl p-5 bg-white transition">
-          <SectionHeader title={t.inputTitle} />
+      <TwoColumnToolLayout
+        left={
+          <>
+            {/* 輸入框 */}
+            <div className="shadow-md border rounded-2xl p-5 bg-white transition">
+              <SectionHeader title={t.inputTitle} />
+              <textarea
+                className="w-full h-[380px] bg-gray-50 border rounded-xl p-3 focus:ring-2 focus:ring-blue-500"
+                placeholder={t.placeholder}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+              />
+            </div>
 
-          <textarea
-            className="w-full h-[380px] bg-gray-50 border rounded-xl p-3 focus:ring-2 focus:ring-blue-500"
-            placeholder={t.placeholder}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-          />
-
-          {/* 一鍵摘要按鈕 */}
-          <div className="mt-4">
+            {/* 一鍵摘要按鈕 */}
             {(() => {
-              // 🧩 收尾 1：按鈕維持可點，不因點數不足而 disabled
-              // 只有 loading 或 inputChars === 0 時才 disabled
-              // 點數不足時按鈕仍可點擊，但點擊後只顯示錯誤訊息，不觸發 API
               const inputChars = input.length
               const isButtonDisabled = loading || inputChars === 0
-              
-              // 🧩 收尾 1：按鈕文字（不因點數不足而改變，維持可點狀態）
               let buttonText = loading ? t.loading : t.btn
               if (inputChars === 0 && !loading) {
                 buttonText = lang === 'zh-tw' ? '請先輸入內容' : 'Please enter content'
               }
-              
-              // Hover 提示文字
               const tooltipText = inputChars === 0
                 ? (lang === 'zh-tw' ? '請先輸入內容' : 'Please enter content')
                 : ''
@@ -724,511 +822,149 @@ export default function SummaryPage() {
                 </div>
               )
             })()}
-          </div>
 
-          {/* 點數與說明區塊 - 移到按鈕下方 */}
-          <div className="mt-4 space-y-3">
-            {/* 點數說明文字 */}
-            <div className="text-xs text-gray-500">
-              {lang === 'zh-tw' ? (
-                <>
-                  本功能使用點數計算，依實際輸入與產出字數扣點。{' '}
-                  <Link to="/points" className="text-gray-600 hover:text-gray-800 underline">
-                    查看點數說明
-                  </Link>
-                  <br />
-                  <span className="text-gray-600 mt-1 block">
-                    提示：貼上網址摘要通常較省點數，適合快速掌握新聞或文章重點。
-                  </span>
-                </>
-              ) : (
-                <>
-                  This feature uses point calculation, deducting points based on actual input and output characters.{' '}
-                  <Link to="/points" className="text-gray-600 hover:text-gray-800 underline">
-                    View Points Plan
-                  </Link>
-                </>
+            {/* 使用額度卡片（左欄專屬，只出現一次） */}
+            <div className="mt-4">
+              <CreditStatusBar
+                inputChars={input.length}
+                isLoading={loading}
+                featureName="summary"
+                lang={lang}
+              />
+            </div>
+
+            {/* 方案說明卡片 */}
+            <PricingPlanCard />
+
+            {/* 使用說明文字 */}
+            <p className="text-sm text-gray-500">
+              本功能依實際輸入與 AI 輸出內容計算使用量，
+              僅供學習、作業理解與內容整理輔助用途。
+            </p>
+
+            {/* 簡易使用說明：僅顯示連結到完整說明頁 */}
+            <div className="mt-2 text-xs text-gray-500 text-center">
+              <Link to="/points" className="text-blue-600 hover:underline">
+                查看完整使用說明 →
+              </Link>
+            </div>
+
+            {error && (
+              <p className="mt-3 p-3 bg-red-100 border border-red-300 text-red-600 rounded">
+                {error}
+              </p>
+            )}
+          </>
+        }
+        right={
+          <>
+            {/* AI 摘要結果 */}
+            <div className="shadow-md border rounded-2xl p-5 bg-white transition">
+              <SectionHeader
+                title={t.summaryTitle}
+                actionLabel={t.copySummary}
+                onAction={copySummary}
+              />
+              <div className="text-gray-700 leading-7 whitespace-pre-line">
+                {summary || (lang === 'zh-tw' ? '摘要內容將顯示於此' : 'Summary content will appear here')}
+              </div>
+              {/* 本次使用額度顯示 */}
+              {lastUsedPoints && summary && !loading && (
+                <div className="mt-4 pt-3 border-t border-gray-100">
+                  <p className="text-sm text-gray-600">
+                    <span className="font-medium">{lang === 'zh-tw' ? '本次使用額度：' : 'Usage This Run:'}</span>
+                    <span className="text-purple-600 font-semibold ml-1">{lastUsedPoints.totalUsedPoints.toLocaleString()} {lang === 'zh-tw' ? '字' : 'chars'}</span>
+                  </p>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {lang === 'zh-tw' 
+                      ? `（輸入 ${lastUsedPoints.inputLength.toLocaleString()} 字 + 回答 ${lastUsedPoints.outputLength.toLocaleString()} 字）`
+                      : `(Input: ${lastUsedPoints.inputLength.toLocaleString()} chars + Output: ${lastUsedPoints.outputLength.toLocaleString()} chars)`}
+                  </p>
+                </div>
               )}
             </div>
 
-            {/* 扣點規則說明 */}
-            <div className="text-xs text-gray-500 bg-gray-50 rounded-lg p-3">
-              <p className="font-medium text-gray-600 mb-1">
-                {lang === 'zh-tw' ? '📌 扣點規則說明' : '📌 Points Deduction Rules'}
-              </p>
-              <p className="text-gray-500 leading-relaxed">
-                {lang === 'zh-tw' 
-                  ? '本功能將依「使用者輸入字數 + AI 產生摘要字數」扣除點數（1 字 = 1 點）。'
-                  : 'This feature will deduct points based on "User input characters + AI-generated summary characters" (1 character = 1 point).'}
-              </p>
-              <p className="text-gray-500 leading-relaxed mt-2">
-                {lang === 'zh-tw' 
-                  ? '使用本功能將扣除點數，詳見'
-                  : 'Using this feature will deduct points. See'}
-                {' '}
-                <Link to="/points" className="text-blue-600 hover:underline font-medium">
-                  {lang === 'zh-tw' ? '【點數說明】' : '【Points Plan】'}
-                </Link>
-                {lang === 'zh-tw' && (
-                  <span className="text-gray-400 text-[10px] ml-1">（符合台灣金流規範，安心付款）</span>
-                )}
-              </p>
-            </div>
-          </div>
-
-          {/* 統一點數顯示區塊 */}
-          {/* UnifiedCreditDisplay 暫時隱藏 */}
-          {/* <div className="mt-4">
-            <UnifiedCreditDisplay lang={lang} />
-          </div> */}
-          
-          {/* 本次輸入字數顯示 */}
-          {input.length > 0 && (
-            <div className="mt-2">
-              <p className="text-xs text-gray-500">
-                {lang === 'zh-tw' 
-                  ? '本次輸入字數：' + input.length.toLocaleString() + ' 字'
-                  : 'Current Input: ' + input.length.toLocaleString() + ' characters'}
-              </p>
-            </div>
-          )}
-
-          {/* 🧩 收尾 2：剩餘點數 = 0 才顯示「升級提示（未開放）」 */}
-          {/* 只有在點數完全用完（=== 0）時才顯示升級提示 */}
-          {remainingChars !== null && remainingChars === 0 && (
-            <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-4 space-y-3">
-              <div className="text-red-700 text-sm leading-relaxed">
-                <p className="font-semibold mb-2">
-                  {lang === 'zh-tw' 
-                    ? '⚠️ 免費試用額度已用完'
-                    : '⚠️ Free trial quota exhausted'}
+            {/* 關鍵字建議卡片（永遠顯示，只要 keywords.length > 0） */}
+            {keywords && keywords.length > 0 && (
+              <div className="mt-6 shadow-md border rounded-2xl p-5 bg-white transition">
+                <SectionHeader
+                  title={lang === 'zh-tw' ? '關鍵字建議' : 'Keyword Suggestions'}
+                  actionLabel={t.copyKeywords}
+                  onAction={copyKeywords}
+                />
+                <p className="text-xs text-gray-500 mb-3">
+                  {lang === 'zh-tw' ? '一鍵複製，適合貼到作業、報告或筆記中' : 'One-click copy, suitable for pasting into assignments, reports, or notes'}
                 </p>
-                <p>
-                  {lang === 'zh-tw' 
-                    ? '您已完成本次免費試用（10,000 字）。目前僅開放試用，購買功能尚未開放。'
-                    : 'You have completed the free trial (10,000 characters). Currently only trial is available, purchase function is not yet open.'}
-                </p>
-              </div>
-
-              {/* 🧩 收尾 2：標註「尚未開放購買」，不可出現付款、結帳、信用卡等字樣 */}
-              <div className="mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-700 text-center">
-                {lang === 'zh-tw' ? '⚠️ 目前僅開放試用，購買功能尚未開放' : '⚠️ Currently only trial is available, purchase function is not yet open'}
-              </div>
-            </div>
-          )}
-
-          {/* 點數不足提示（非完全用完時） */}
-          {remainingChars !== null && remainingChars > 0 && input.length > 0 && creditCheck.remainingChars !== null && creditCheck.remainingChars < input.length && (
-            <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-4 space-y-3">
-              <p className="text-gray-700 text-sm mb-3">
-                {lang === 'zh-tw' 
-                  ? '目前點數不足，請先查看點數方案說明。'
-                  : 'Insufficient credits. Please check the points plan description.'}
-              </p>
-              <Link
-                to="/points"
-                className="inline-block w-full text-center bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
-              >
-                {lang === 'zh-tw' ? '了解點數方案' : 'Learn About Points Plan'}
-              </Link>
-            </div>
-          )}
-
-          <div className="mt-4"></div>
-          <div className="space-y-3">
-            {/* 體驗過期提示（友善說明，非錯誤訊息） */}
-            {isTrialExpired && (
-              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="space-y-3">
-                  <p className="text-sm text-blue-800 text-center leading-relaxed">
-                    {lang === 'zh-tw' 
-                      ? (
-                        <>
-                          免費體驗已結束 🎈<br />
-                          感謝你的試用！<br />
-                          若需要長期使用，可購買點數繼續使用，<br />
-                          付費點數永久有效，不限期限。
-                        </>
-                      )
-                      : (
-                        <>
-                          Free trial has ended 🎈<br />
-                          Thank you for trying!<br />
-                          If you need long-term use, you can purchase credits to continue,<br />
-                          Paid credits are permanent with no expiration date.
-                        </>
-                      )}
-                  </p>
-                  <div className="flex justify-center">
-                    <Link
-                      to="/points"
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md"
+                <div className="flex flex-wrap gap-2">
+                  {keywords.slice(0, 5).map((keyword, index) => (
+                    <span
+                      key={index}
+                      className="inline-block px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium border border-blue-200 hover:bg-blue-100 transition-colors"
                     >
-                      {lang === 'zh-tw' ? '了解點數方案' : 'Learn About Points Plan'}
-                    </Link>
-                  </div>
+                      {keyword}
+                    </span>
+                  ))}
                 </div>
               </div>
             )}
 
-            {/* 共用狀態列元件 */}
-            <CreditStatusBar
-              inputChars={input.length}
-              isLoading={loading}
-              featureName="summary"
-              lang={lang}
-            />
-
-            {/* 一鍵摘要按鈕 - 已剪下，待重新放置 */}
-
-            {/* 使用說明（移至按鈕下方，次要資訊樣式） */}
-            <div className="mt-2 p-2.5 bg-gray-50/50 border border-gray-100 rounded-md opacity-75">
-              <p className="text-[11px] text-gray-400 mb-1.5">支援三種方式：</p>
-              <ul className="text-[11px] text-gray-400 space-y-1 ml-0.5">
-                <li>① 直接貼上文章全文</li>
-                <li>② 貼上新聞或網頁網址</li>
-                <li>③ 貼上任意文字內容</li>
-              </ul>
-              <p className="text-[11px] text-gray-400 mt-2 leading-relaxed">
-                系統會依照實際輸入字數計算點數。
-                <br />
-                直接貼網址時，因輸入內容較短，通常會比貼全文更省點數。
-              </p>
-            </div>
-
-            {/* 扣點規則說明 */}
-            <div className="text-xs text-gray-500 bg-gray-50 rounded-lg p-3">
-              <p className="font-medium text-gray-600 mb-1">
-                {lang === 'zh-tw' ? '📌 扣點規則說明' : '📌 Points Deduction Rules'}
-              </p>
-              <p className="text-gray-500 leading-relaxed">
-                {lang === 'zh-tw' 
-                  ? '本功能將依「使用者輸入字數 + AI 產生摘要字數」扣除點數（1 字 = 1 點）。'
-                  : 'This feature will deduct points based on "User input characters + AI-generated summary characters" (1 character = 1 point).'}
-              </p>
-              <p className="text-gray-500 leading-relaxed mt-2">
-                {lang === 'zh-tw' 
-                  ? '使用本功能將扣除點數，詳見'
-                  : 'Using this feature will deduct points. See'}
-                {' '}
-                <Link to="/points" className="text-blue-600 hover:underline font-medium">
-                  {lang === 'zh-tw' ? '【點數說明】' : '【Points Plan】'}
-                </Link>
-                {lang === 'zh-tw' && (
-                  <span className="text-gray-400 text-[10px] ml-1">（符合台灣金流規範，安心付款）</span>
-                )}
-              </p>
-            </div>
-
-            {/* 額度不足時的提示文字（顯示在按鈕下方，不惹怒版） */}
-            {creditCheck.remainingChars <= 0 && (
-              <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line mb-2">
-                  {lang === 'zh-tw' 
-                    ? '你已完成本次免費試用（10,000 字）。\n目前摘要功能仍可查看已產生內容。'
-                    : 'You\'ve reached the free trial limit (10,000 characters).\nYou can still view previously generated summaries.'}
-                </p>
-                <p className="text-sm text-gray-600 leading-relaxed">
-                  {lang === 'zh-tw' 
-                    ? '💡 付費方案即將開放，敬請期待。'
-                    : '💡 Paid plans will be available soon.'}
-                </p>
-              </div>
-            )}
-
-            {/* 字數計算方式說明 */}
-            {lang === 'zh-tw' && (
-              <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-4 space-y-3">
-                <h3 className="font-semibold text-blue-900 text-sm mb-2">
-                  📌 字數計算方式說明
-                </h3>
-                
-                <div className="text-xs text-blue-800 space-y-2 leading-relaxed">
-                  <p>
-                    每次使用時，系統會依「實際輸入的文字字數」扣除點數。
-                  </p>
-                  
-                  <div className="bg-white rounded-lg p-3 border border-blue-200">
-                    <p className="font-medium mb-1 text-blue-900">範例說明：</p>
-                    <ul className="list-disc ml-4 space-y-0.5 text-blue-700">
-                      <li>輸入 2,500 字文章摘要 → 扣 2,500 字</li>
-                      <li>解題輸入 300 字題目 → 扣 300 字</li>
-                    </ul>
-                  </div>
-                  
-                  <p className="font-medium text-blue-900">
-                    字數為一次性點數，不限使用期限，用完為止。
-                  </p>
-                </div>
-              </div>
-            )}
-            
-            {/* 英文版本的簡化說明（維持原有） */}
-            {lang === 'en' && (
-            <div className="rounded-lg border border-yellow-200 bg-yellow-50 px-3 py-2 text-xs text-yellow-800">
-              <p className="font-semibold">
-                {t.freeLimitTitle}
-              </p>
-              <p className="mt-1 text-[11px]">
-                {t.freeLimitSub}
-              </p>
-            </div>
-            )}
-          </div>
-
-          {error && (
-            <p className="mt-3 p-3 bg-red-100 border border-red-300 text-red-600 rounded">
-              {error}
-            </p>
-          )}
-        </div>
-
-        {/* ===== 右側：摘要 + 關鍵字 ===== */}
-        <div className="flex flex-col gap-6">
-
-          {/* 摘要區塊 */}
-          <div className="shadow-md border rounded-2xl p-5 bg-white transition">
-            <SectionHeader
-              title={t.summaryTitle}
-              actionLabel={t.copySummary}
-              onAction={copySummary}
-            />
-
-            <div className="text-gray-700 leading-7 whitespace-pre-line">
-              {summary || (lang === 'zh-tw' ? '摘要內容將顯示於此' : 'Summary content will appear here')}
-            </div>
-
-            {/* 本次使用點數顯示 */}
-            {lastUsedPoints && summary && !loading && (
-              <div className="mt-4 pt-3 border-t border-gray-100">
-                <p className="text-sm text-gray-600">
-                  <span className="font-medium">{lang === 'zh-tw' ? '本次使用點數：' : 'Points Used:'}</span>
-                  <span className="text-purple-600 font-semibold ml-1">{lastUsedPoints.totalUsedPoints.toLocaleString()} {lang === 'zh-tw' ? '點' : 'pts'}</span>
-                </p>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  {lang === 'zh-tw' 
-                    ? `（輸入 ${lastUsedPoints.inputLength.toLocaleString()} 字 + 回答 ${lastUsedPoints.outputLength.toLocaleString()} 字）`
-                    : `(Input: ${lastUsedPoints.inputLength.toLocaleString()} chars + Output: ${lastUsedPoints.outputLength.toLocaleString()} chars)`}
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* 🧠 延伸 AI 輔助工具推薦 */}
-          {summary && !loading && (
-            <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
-              <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center">
-                <span className="mr-2">🧠</span>
-                延伸 AI 輔助工具推薦
+            {/* 使用方案與可處理字數說明卡片 */}
+            <div className="mt-6 shadow-md border rounded-2xl p-5 bg-white transition">
+              <h3 className="text-lg font-semibold text-gray-800 mb-3">
+                {lang === 'zh-tw' ? '使用方案說明' : 'Usage Plan Information'}
               </h3>
-              <p className="text-xs text-gray-600 leading-relaxed">
-                若你常整理內容，可搭配以下工具進一步改寫、翻譯或製作簡報。
+              <div className="space-y-3 text-sm">
+                <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <p className="font-medium text-gray-700 mb-1">
+                    {lang === 'zh-tw' ? '🆓 免費方案' : '🆓 Free Plan'}
+                  </p>
+                  <p className="text-gray-600">
+                    {lang === 'zh-tw' 
+                      ? `可處理字數：${PLANS.free.monthlyQuota.toLocaleString()} 字`
+                      : `Processable characters: ${PLANS.free.monthlyQuota.toLocaleString()} chars`}
+                  </p>
+                </div>
+                <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <p className="font-medium text-blue-700 mb-1">
+                    {lang === 'zh-tw' ? '💎 標準方案（NT$99）' : '💎 Standard Plan (NT$99)'}
+                  </p>
+                  <p className="text-blue-600">
+                    {lang === 'zh-tw' 
+                      ? `可處理字數：${PLANS.plan99.monthlyQuota.toLocaleString()} 字`
+                      : `Processable characters: ${PLANS.plan99.monthlyQuota.toLocaleString()} chars`}
+                  </p>
+                </div>
+                <div className="p-3 bg-purple-50 rounded-lg border border-purple-200">
+                  <p className="font-medium text-purple-700 mb-1">
+                    {lang === 'zh-tw' ? '🚀 進階方案（NT$199）' : '🚀 Advanced Plan (NT$199)'}
+                  </p>
+                  <p className="text-purple-600">
+                    {lang === 'zh-tw' 
+                      ? `可處理字數：${PLANS.plan199.monthlyQuota.toLocaleString()} 字`
+                      : `Processable characters: ${PLANS.plan199.monthlyQuota.toLocaleString()} chars`}
+                  </p>
+                </div>
+                <p className="text-xs text-gray-500 mt-3 pt-3 border-t border-gray-200">
+                  {lang === 'zh-tw' 
+                    ? '※ 本服務依實際輸入與 AI 輸出字數計算使用額度，僅供學習與內容整理輔助使用。'
+                    : '※ Usage quota is calculated based on actual input and AI output characters, for learning and content organization assistance only.'}
+                </p>
+              </div>
+            </div>
+
+            {/* 延伸工具說明（純說明，不是功能） */}
+            <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h3 className="font-medium mb-1 flex items-center gap-1">
+                🧠 延伸 AI 輔助工具說明
+              </h3>
+              <p className="text-sm text-gray-600">
+                若你常整理內容，可搭配本站其他 AI 學習與內容整理輔助工具，
+                進一步進行改寫、翻譯或製作簡報。
               </p>
             </div>
-          )}
-
-          {/* 關鍵字 */}
-          <div className="shadow-md border rounded-2xl p-5 bg-white transition">
-            <SectionHeader
-              title={t.keywordTitle}
-              actionLabel={t.copyKeywords}
-              onAction={copyKeywords}
-            />
-
-            {keywords.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {keywords.map((k, i) => (
-                  <span
-                    key={i}
-                    className="px-3 py-1 bg-blue-100 text-blue-700 border border-blue-300 rounded-full text-sm"
-                  >
-                    #{k}
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-400">{t.pending}</p>
-            )}
-          </div>
-
-          {/* ===== CTA 說明區塊 ===== */}
-          <div className="mb-4 p-4 bg-gradient-to-br from-blue-50 to-slate-50 rounded-xl border border-blue-100">
-            <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
-              <span className="mr-2">🚀</span>
-              用多少算多少，不綁約、不訂閱
-            </h3>
-            <ul className="space-y-2 text-xs text-gray-600 leading-relaxed">
-              <li className="flex items-start">
-                <span className="mr-2">•</span>
-                <span>點數為一次購買制，不會自動扣款</span>
-              </li>
-              <li className="flex items-start">
-                <span className="mr-2">•</span>
-                <span>沒有使用期限，可慢慢用</span>
-              </li>
-              <li className="flex items-start">
-                <span className="mr-2">•</span>
-                <span>摘要與作業功能共用點數</span>
-              </li>
-            </ul>
-          </div>
-
-          {/* ===== 方案說明區塊（已改為點數制） ===== */}
-          <div className="shadow-md border rounded-2xl p-5 bg-white transition">
-            <SectionHeader title={lang === 'zh-tw' ? '💳 字數點數方案' : '💳 Character Point Plans'} />
-
-            {/* Your Status 區塊 */}
-            {!creditsLoading && remainingChars !== null && (
-              <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                <p className="text-xs font-semibold text-gray-700 mb-2">
-                  {lang === 'zh-tw' ? '您的狀態：' : 'Your Status:'}
-                </p>
-                {remainingChars > 0 ? (
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-green-600">✔</span>
-                      <span className="text-sm font-medium text-gray-900">
-                        {lang === 'zh-tw' ? '可使用' : 'Available'}
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-600 ml-6">
-                      {lang === 'zh-tw' 
-                        ? `剩餘：${remainingChars.toLocaleString()} 字`
-                        : `Remaining: ${remainingChars.toLocaleString()} characters`}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-red-600">⚠</span>
-                      <span className="text-sm font-medium text-gray-900">
-                        {lang === 'zh-tw' ? '無可用點數' : 'No credits available'}
-                      </span>
-                    </div>
-                    {/* 免費額度用完時不顯示購買按鈕 */}
-                    {false && (
-                      <button
-                        onClick={() => navigate('/pricing')}
-                        className="w-full px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded-lg transition-colors"
-                      >
-                        {lang === 'zh-tw' ? '購買點數' : 'Buy Credits'}
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-            {creditsLoading && (
-              <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                <p className="text-xs text-gray-500">
-                  {lang === 'zh-tw' ? '載入中...' : 'Loading...'}
-                </p>
-              </div>
-            )}
-
-            <div className="space-y-4">
-              {/* 免費方案 */}
-              <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                <div className="mb-3">
-                  <h3 className="font-semibold text-gray-900 mb-1">
-                    {lang === 'zh-tw' ? '免費體驗' : 'Free Trial'}
-                  </h3>
-                  <p className="text-lg font-bold text-gray-900">
-                    {PLANS.free.monthlyQuota.toLocaleString()} 字
-                  </p>
-                </div>
-
-                <div className="text-xs text-gray-600 space-y-1">
-                  <p>📌 {lang === 'zh-tw' ? '不需信用卡' : 'No credit card required'}</p>
-                  <p>📌 {lang === 'zh-tw' ? '不限使用期限' : 'No expiration date'}</p>
-                  <p>📌 {lang === 'zh-tw' ? '摘要與作業解題共用' : 'Shared for summary and homework'}</p>
-                </div>
-              </div>
-
-              {/* 99 元方案 */}
-              <div className="border border-blue-200 rounded-lg p-4 bg-blue-50">
-                <div className="mb-3">
-                  <h3 className="font-semibold text-blue-900 mb-1">
-                    {lang === 'zh-tw' ? `NT$${PLANS.plan99.price} 方案` : `NT$${PLANS.plan99.price} Plan`}
-                  </h3>
-                  <p className="text-lg font-bold text-blue-900">
-                    100,000 字
-                  </p>
-                </div>
-
-                <div className="text-xs text-blue-700 space-y-1">
-                  <p>📌 {lang === 'zh-tw' ? '一次購買' : 'One-time purchase'}</p>
-                  <p>📌 {lang === 'zh-tw' ? '不自動續費' : 'No auto-renewal'}</p>
-                  <p>📌 {lang === 'zh-tw' ? '不限使用期限' : 'No expiration date'}</p>
-                </div>
-              </div>
-
-              {/* 199 元方案 */}
-              <div className="border border-purple-200 rounded-lg p-4 bg-purple-50">
-                <div className="mb-3">
-                  <h3 className="font-semibold text-purple-900 mb-1">
-                    {lang === 'zh-tw' ? `NT$${PLANS.plan199.price} 方案` : `NT$${PLANS.plan199.price} Plan`}
-                  </h3>
-                  <p className="text-lg font-bold text-purple-900">
-                    300,000 字
-                  </p>
-                </div>
-
-                <div className="text-xs text-purple-700 space-y-1">
-                  <p>📌 {lang === 'zh-tw' ? '一次購買' : 'One-time purchase'}</p>
-                  <p>📌 {lang === 'zh-tw' ? '不自動續費' : 'No auto-renewal'}</p>
-                  <p>📌 {lang === 'zh-tw' ? '不限使用期限' : 'No expiration date'}</p>
-                </div>
-              </div>
-
-              {/* 法律安全註記 */}
-              <div className="pt-3 border-t border-gray-200">
-                <p className="text-[10px] text-gray-400 text-center">
-                  ※ {lang === 'zh-tw' ? '所有功能共用同一字數池，字數永久有效' : 'All features share the same character pool, characters never expire'}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* ===== 未來功能（預告） ===== */}
-          <div className="shadow-md border rounded-2xl p-5 bg-white transition">
-            <SectionHeader title={t.previewTitle} />
-
-            <ul className="list-disc ml-5 text-gray-700 leading-7">
-              {t.previewList.map((txt, i) => (
-                <li key={i}>{txt}</li>
-              ))}
-            </ul>
-          </div>
-
-          {/* 延伸資源說明 */}
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <p className="text-[10px] text-gray-400 text-center flex items-center justify-center gap-2 flex-wrap">
-              <span>
-                {lang === 'zh-tw'
-                  ? '部分使用者在進行此類任務時，也會搭配其他輔助工具以提升專注與效率。'
-                  : 'Some users also use other auxiliary tools alongside these tasks to improve focus and efficiency.'}
-              </span>
-              <a
-                href="#extended-tools-resources"
-                className="text-gray-500 hover:text-gray-700 underline cursor-pointer"
-                onClick={(e) => {
-                  e.preventDefault();
-                  const element = document.getElementById('extended-tools-resources');
-                  if (element) {
-                    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  } else {
-                    // 如果找不到元素，滾動到頁面底部
-                    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-                  }
-                }}
-              >
-                {lang === 'zh-tw' ? '查看延伸資源 →' : 'View Extended Resources →'}
-              </a>
-            </p>
-          </div>
-        </div>
-      </div>
-    </>
+          </>
+        }
+      />
+    </div>
   )
 }

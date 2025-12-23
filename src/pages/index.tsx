@@ -299,7 +299,7 @@ const HomePage: React.FC = () => {
                 文章摘要工具
               </h4>
               <p className="text-sm text-gray-600 mb-3">
-                貼上文章，一鍵摘要並顯示本次使用點數。
+                貼上文章，一鍵摘要並顯示本次使用字數。
               </p>
               <div className="text-blue-600 font-medium text-sm group-hover:underline">
                 前往 →

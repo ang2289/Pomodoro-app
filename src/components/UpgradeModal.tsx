@@ -43,8 +43,8 @@ export default function UpgradeModal({
               : `You have completed the free trial (10,000 characters).\nCurrently only trial is available, purchase function is not yet open.`
           ) : (
             lang === 'zh-tw'
-              ? `目前點數不足，請先查看點數方案說明。`
-              : `Insufficient credits. Please check the points plan description.`
+              ? `目前使用額度不足，請先查看使用方案說明。`
+              : `Insufficient usage quota. Please check the usage plan description.`
           )}
         </p>
         {isQuotaExhausted && (
@@ -69,7 +69,7 @@ export default function UpgradeModal({
               }}
               className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-all duration-200 shadow-md hover:shadow-lg"
             >
-              {lang === 'zh-tw' ? '了解點數方案' : 'Learn About Points Plan'}
+              {lang === 'zh-tw' ? '了解使用方案' : 'Learn About Usage Plan'}
             </button>
           )}
         </div>

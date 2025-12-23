@@ -35,50 +35,8 @@ serve(async (req: Request) => {
       );
     }
 
-    // ✅ 1. 從 request headers 讀取 Authorization
-    const authHeader = req.headers.get("authorization");
-    let userId: string | null = null;
-    let isGuest = true;
-
-    // 取得 Supabase 客戶端（用於驗證 token）
-    const supabaseUrl = Deno.env.get("SUPABASE_URL") || Deno.env.get("VITE_SUPABASE_URL");
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    
-    if (authHeader && supabaseUrl && supabaseServiceKey) {
-      try {
-        // 建立 Supabase client（使用 anon key 來驗證 token）
-        const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("VITE_SUPABASE_ANON_KEY");
-        if (supabaseAnonKey) {
-          const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
-            global: {
-              headers: {
-                Authorization: authHeader,
-              },
-            },
-          });
-
-          // 驗證 token 並取得使用者資訊
-          const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
-          
-          if (!authError && user) {
-            userId = user.id;
-            isGuest = false;
-            console.log(`✅ [認證成功] user_id=${userId}`);
-          } else {
-            console.log(`⚠️ [認證失敗] 視為訪客模式`, authError);
-          }
-        }
-      } catch (err) {
-        console.log(`⚠️ [認證錯誤] 視為訪客模式`, err);
-      }
-    }
-
-    // ✅ 2. 解析請求 body
-    const { 
-      prompt, 
-      mode = 'answer', 
-      language = 'zh'
-    } = await req.json();
+    // ✅ 1. 解析請求 body，確保有解構 language
+    const { prompt, mode = 'answer', language = 'zh' } = await req.json();
 
     if (!prompt || typeof prompt !== "string" || prompt.trim().length === 0) {
       return new Response(
@@ -90,23 +48,73 @@ serve(async (req: Request) => {
       );
     }
 
-    // ✅ 正規化語言參數
-    const normalizedLang = (language === 'zh' || language === 'zh-TW' || language === 'zh-CN') ? 'zh' : 
-                          (language === 'ja') ? 'ja' : 'en';
-
-    // ✅ 2. 根據 language 生成硬性語言指令
-    let languageInstruction = '';
-    if (normalizedLang === 'zh') {
-      languageInstruction = '請用繁體中文回答。';
-    } else if (normalizedLang === 'en') {
-      languageInstruction = 'Please answer in English only.';
-    } else if (normalizedLang === 'ja') {
-      languageInstruction = '日本語でのみ回答してください。';
-    } else {
-      languageInstruction = 'Please answer in English only.';
+    // 🛡️ 點數制：取得使用者 ID 並準備扣點
+    const inputLength = prompt.trim().length;
+    
+    // 取得 Supabase 客戶端
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") || Deno.env.get("VITE_SUPABASE_URL");
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    
+    let userId: string | null = null;
+    let supabase: any = null;
+    
+    if (supabaseUrl && supabaseServiceKey) {
+      supabase = createClient(supabaseUrl, supabaseServiceKey);
+      
+      // 嘗試從 authorization header 取得使用者 ID
+      const authHeader = req.headers.get("authorization");
+      if (authHeader) {
+        try {
+          const token = authHeader.replace("Bearer ", "");
+          // 使用 Supabase 驗證 token 並取得使用者 ID
+          const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+          if (!authError && user) {
+            userId = user.id;
+          }
+        } catch (e) {
+          console.log("⚠️ 無法從 token 取得使用者 ID，將使用訪客模式");
+        }
+      }
+      
+      // 如果沒有登入使用者，使用 session_id 或 guest_${fingerprint} 作為訪客 ID
+      if (!userId) {
+        // 嘗試從請求中取得 session_id 或 fingerprint
+        const sessionId = req.headers.get("x-session-id") || 
+                         req.headers.get("x-fingerprint") ||
+                         "anonymous";
+        userId = sessionId.startsWith("guest_") ? sessionId : `guest_${sessionId}`;
+      }
+      
+      // 預先檢查點數是否足夠（預估輸出字數為輸入的 50%）
+      if (userId && supabase) {
+        const estimatedOutputChars = Math.ceil(inputLength * 0.5);
+        const estimatedTotalChars = inputLength + estimatedOutputChars;
+        
+        const { data: creditData, error: creditError } = await supabase
+          .from('user_credits')
+          .select('remaining_chars')
+          .eq('user_id', userId)
+          .single();
+        
+        const currentRemaining = creditData?.remaining_chars || 0;
+        
+        // 如果點數不足（即使預估），回傳錯誤
+        if (currentRemaining < estimatedTotalChars) {
+          return new Response(
+            JSON.stringify({ 
+              error: "INSUFFICIENT_CREDITS",
+              message: "點數不足，請先購買點數",
+            }),
+            {
+              status: 403,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            }
+          );
+        }
+      }
     }
 
-    // ✅ 3. 根據 mode 和 language 生成模式指令（統一合併到 systemInstruction）
+    // ✅ 2. 根據 language 動態生成模式提示（不寫死任何語言）
     const getModeInstruction = (mode: string, lang: string): string => {
       const modeMap: Record<string, Record<string, string>> = {
         answer: {
@@ -157,19 +165,41 @@ serve(async (req: Request) => {
         },
       };
 
-      return modeMap[mode]?.[lang] || modeMap['answer'][lang] || modeMap['answer']['en'];
+      const normalizedLang = (lang === 'zh' || lang === 'zh-TW' || lang === 'zh-CN') ? 'zh' : 
+                            (lang === 'ja') ? 'ja' : 'en';
+      return modeMap[mode]?.[normalizedLang] || modeMap['answer'][normalizedLang] || modeMap['answer']['en'];
     };
 
-    const modeInstruction = getModeInstruction(mode, normalizedLang);
+    const modeInstruction = getModeInstruction(mode, language);
 
-    // ✅ 4. 組合 systemInstruction（語言指令 + mode 指令，統一合併）
-    // 使用明確的字串連接，避免 template 字串破壞格式
-    const systemInstructionText = languageInstruction + '\n\n' + modeInstruction;
+    // ✅ 3. 根據 language 生成硬性語言指令（用於 systemInstruction）
+    let systemLanguageInstruction = '';
+    if (language === 'zh' || language === 'zh-TW' || language === 'zh-CN') {
+      systemLanguageInstruction = '請用繁體中文回答。';
+    } else if (language === 'en') {
+      systemLanguageInstruction = 'Please answer in English only.';
+    } else if (language === 'ja') {
+      systemLanguageInstruction = '日本語でのみ回答してください。';
+    } else {
+      // 預設英文
+      systemLanguageInstruction = 'Please answer in English only.';
+    }
 
-    // ✅ 5. user prompt 僅保留純題目文字（移除所有標籤、指令、語言判斷）
-    const userPromptText = prompt.trim();
+    // ✅ 4. 根據 language 動態生成題目標籤（不寫死任何語言）
+    const getQuestionLabel = (lang: string): string => {
+      if (lang === 'zh' || lang === 'zh-TW' || lang === 'zh-CN') {
+        return '題目：';
+      } else if (lang === 'ja') {
+        return '質問：';
+      } else {
+        return 'Question: ';
+      }
+    };
 
-    // ✅ 6. 呼叫 Gemini API，systemInstruction 作為獨立頂層屬性
+    // ✅ 5. 組合 user prompt（不包含語言指令，語言指令放在 systemInstruction）
+    const userPrompt = `${modeInstruction}\n\n${getQuestionLabel(language)}${prompt}`;
+
+    // ✅ 6. 呼叫 Gemini API，語言指令放在 systemInstruction（system role）
     const geminiRes = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
       {
@@ -179,11 +209,11 @@ serve(async (req: Request) => {
           contents: [
             {
               role: "user",
-              parts: [{ text: userPromptText }],
+              parts: [{ text: userPrompt }],
             },
           ],
           systemInstruction: {
-            parts: [{ text: systemInstructionText }],
+            parts: [{ text: systemLanguageInstruction }],
           },
           generationConfig: {
             temperature: 0.7,
@@ -235,221 +265,78 @@ serve(async (req: Request) => {
       );
     }
 
-    const resultText = text.trim();
+    const outputLength = text.trim().length;
+    const usedTokens = inputLength + outputLength;
 
-    // ✅ 3. 計算實際使用字數
-    const inputChars = prompt.trim().length;
-    const outputChars = resultText.length;
-    const totalUsedPoints = inputChars + outputChars;
-
-    // ✅ 4. 根據使用者狀態執行扣點邏輯
-    if (isGuest) {
-      // 🔓 訪客模式：不寫入資料庫，僅回傳使用點數
-      console.log(`🔓 [訪客模式] 不寫入資料庫，使用點數=${totalUsedPoints}`);
-      
-      return new Response(
-        JSON.stringify({
-          result: resultText,
-          guest_used_points: totalUsedPoints,
-          is_guest: true,
-        }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    } else {
-      // 🔒 登入使用者：執行正式扣點邏輯
-      if (!supabaseUrl || !supabaseServiceKey) {
-        console.error("❌ Supabase credentials 未設定");
-        return new Response(
-          JSON.stringify({ error: "伺服器設定錯誤" }),
-          {
-            status: 500,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
-        );
-      }
-
-      const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
+    // ✅ 正式扣點（訪客 or 登入都適用）
+    if (userId && supabase) {
       try {
-        // 🔒 步驟 1：查詢使用者點數
-        const { data: creditData, error: creditError } = await supabase
+        // 先讀取目前點數
+        const { data: currentData, error: readError } = await supabase
           .from('user_credits')
-          .select('remaining_chars, total_credits, used_credits')
+          .select('remaining_chars, used')
           .eq('user_id', userId)
           .single();
-
-        if (creditError) {
-          // 如果記錄不存在，嘗試初始化
-          if (creditError.code === 'PGRST116') {
-            console.log(`🆕 [初始化點數] user_id=${userId}`);
-            const { error: initError } = await supabase
+        
+        if (readError && readError.code !== 'PGRST116') {
+          // 讀取錯誤（非記錄不存在）
+          console.error("❌ 讀取點數失敗：", readError);
+        } else {
+          // 計算新點數
+          const currentRemaining = currentData?.remaining_chars || 0;
+          const currentUsed = currentData?.used || 0;
+          const newRemaining = Math.max(0, currentRemaining - usedTokens);
+          const newUsed = currentUsed + usedTokens;
+          
+          // 直接更新 credits 表
+          if (currentData) {
+            // 記錄存在，更新
+            const { error: updateError } = await supabase
+              .from('user_credits')
+              .update({
+                remaining_chars: newRemaining,
+                used: newUsed,
+              })
+              .eq('user_id', userId);
+            
+            if (updateError) {
+              console.error("❌ 扣點失敗：", updateError);
+            } else {
+              console.log(`✅ 扣點成功：${usedTokens} 字（輸入 ${inputLength} + 輸出 ${outputLength}）`);
+            }
+          } else {
+            // 記錄不存在，建立新記錄（預設 10000，扣除已使用）
+            const { error: insertError } = await supabase
               .from('user_credits')
               .insert({
                 user_id: userId,
-                total_credits: 10000,
-                used_credits: 0,
-                remaining_chars: 10000,
+                remaining_chars: Math.max(0, 10000 - usedTokens),
+                used: usedTokens,
               });
-
-            if (initError) {
-              console.error("❌ 初始化點數失敗：", initError);
-              return new Response(
-                JSON.stringify({ error: "初始化點數失敗" }),
-                {
-                  status: 500,
-                  headers: { ...corsHeaders, "Content-Type": "application/json" },
-                }
-              );
+            
+            if (insertError) {
+              console.error("❌ 建立點數記錄失敗：", insertError);
+            } else {
+              console.log(`✅ 扣點成功（新記錄）：${usedTokens} 字（輸入 ${inputLength} + 輸出 ${outputLength}）`);
             }
-
-            // 重新查詢
-            const { data: retryData } = await supabase
-              .from('user_credits')
-              .select('remaining_chars, total_credits, used_credits')
-              .eq('user_id', userId)
-              .single();
-
-            if (!retryData || retryData.remaining_chars <= 0) {
-              return new Response(
-                JSON.stringify({ error: "點數不足，請購買" }),
-                {
-                  status: 400,
-                  headers: { ...corsHeaders, "Content-Type": "application/json" },
-                }
-              );
-            }
-          } else {
-            console.error("❌ 查詢點數失敗：", creditError);
-            return new Response(
-              JSON.stringify({ error: "查詢點數失敗" }),
-              {
-                status: 500,
-                headers: { ...corsHeaders, "Content-Type": "application/json" },
-              }
-            );
-          }
-        } else {
-          // 🔒 步驟 2：檢查點數是否足夠
-          if (!creditData || creditData.remaining_chars <= 0) {
-            return new Response(
-              JSON.stringify({ error: "點數不足，請購買" }),
-              {
-                status: 400,
-                headers: { ...corsHeaders, "Content-Type": "application/json" },
-              }
-            );
-          }
-
-          // 🔒 步驟 3：檢查扣點後是否會超過總額
-          if (creditData.remaining_chars < totalUsedPoints) {
-            return new Response(
-              JSON.stringify({ error: "點數不足，請購買" }),
-              {
-                status: 400,
-                headers: { ...corsHeaders, "Content-Type": "application/json" },
-              }
-            );
           }
         }
-
-        // 🔒 步驟 4：成功產生 AI 回答後，執行扣點
-        // 重新查詢以確保取得最新資料
-        const { data: currentCreditData, error: lockError } = await supabase
-          .from('user_credits')
-          .select('remaining_chars, total_credits, used_credits')
-          .eq('user_id', userId)
-          .single();
-
-        if (lockError || !currentCreditData) {
-          console.error("❌ 查詢點數記錄失敗：", lockError);
-          return new Response(
-            JSON.stringify({ error: "扣點失敗：無法查詢點數記錄" }),
-            {
-              status: 500,
-              headers: { ...corsHeaders, "Content-Type": "application/json" },
-            }
-          );
-        }
-
-        // 再次檢查點數是否足夠（防止在 AI 處理期間點數被其他請求扣除）
-        if (currentCreditData.remaining_chars < totalUsedPoints) {
-          return new Response(
-            JSON.stringify({ error: "點數不足，請購買" }),
-            {
-              status: 400,
-              headers: { ...corsHeaders, "Content-Type": "application/json" },
-            }
-          );
-        }
-
-        // 計算新的已使用點數和剩餘點數
-        const currentUsed = currentCreditData.used_credits || 0;
-        const currentTotal = currentCreditData.total_credits || 10000;
-        const newUsed = currentUsed + totalUsedPoints;
-        const newRemaining = currentTotal - newUsed;
-
-        // 更新資料庫：used_credits += 扣點，remaining_chars = total_credits - used_credits
-        // 注意：remaining_chars 會由觸發器自動同步，但這裡也明確設定以確保一致性
-        const { error: updateError } = await supabase
-          .from('user_credits')
-          .update({
-            used_credits: newUsed,
-            remaining_chars: newRemaining,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('user_id', userId);
-
-        if (updateError) {
-          console.error("❌ 扣點失敗：", updateError);
-          return new Response(
-            JSON.stringify({ error: "扣點失敗" }),
-            {
-              status: 500,
-              headers: { ...corsHeaders, "Content-Type": "application/json" },
-            }
-          );
-        }
-
-        // ✅ 扣點成功，記錄使用紀錄（非同步）
-        supabase.from('usage_logs').insert({
-          user_id: userId,
-          used_chars: totalUsedPoints,
-          service_type: 'homework',
-          content_preview: prompt.substring(0, 100), // 只記錄前 100 字
-        }).catch((err) => {
-          console.error("❌ 記錄使用紀錄失敗：", err);
-          // 記錄失敗不影響主流程，但記錄錯誤
-        });
-
-        console.log(`✅ [扣點成功] user_id=${userId}, totalUsedPoints=${totalUsedPoints}, remaining=${newRemaining}`);
-
-        // ✅ 成功回傳結果
-        return new Response(
-          JSON.stringify({
-            result: resultText,
-            is_guest: false,
-            used_points: totalUsedPoints,
-            remaining_chars: newRemaining,
-          }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
-        );
-
-      } catch (err: any) {
-        console.error("❌ 扣點過程發生錯誤：", err);
-        // ✅ 扣點失敗要回傳錯誤，不可靜默略過
-        return new Response(
-          JSON.stringify({ error: err.message || "扣點過程發生錯誤" }),
-          {
-            status: 500,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
-        );
+      } catch (deductError: any) {
+        // 扣點錯誤不阻擋回應，只記錄
+        console.error("❌ 扣點時發生錯誤（不阻擋回應）：", deductError);
       }
+    } else {
+      console.warn("⚠️ 無法扣點：缺少 Supabase 設定或使用者 ID");
     }
+
+    return new Response(
+      JSON.stringify({
+        result: text.trim(),
+      }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
   } catch (err: any) {
     console.error("❌ 伺服器捕獲的未預期錯誤:", err);
     return new Response(

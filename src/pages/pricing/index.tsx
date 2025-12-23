@@ -5,8 +5,8 @@ import { buildSEO } from '../../lib/seo'
 import { PLANS, getPlanChars, getPlanLabel, getAllPlans, type PlanId } from '../../lib/usagePlans'
 
 const seo = buildSEO({
-  title: '字數點數方案',
-  description: '一次購買字數點數，依實際使用的文字量扣除，不限使用期限、不自動續費。',
+  title: '使用額度方案',
+  description: '一次購買使用額度，依實際使用的文字量扣除，不限使用期限、不自動續費。',
   url: 'https://pomodoro-app-eight-rouge.vercel.app/pricing',
   image: '/seo/pricing.png',
 })
@@ -142,7 +142,7 @@ export default function PricingPage() {
         {/* 主要標題 */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {lang === 'zh-tw' ? '字數點數方案（一次購買，用完為止）' : 'Character Point Plans (One-time Purchase, Use Until Exhausted)'}
+            {lang === 'zh-tw' ? '使用額度方案（一次購買，用完為止）' : 'Usage Quota Plans (One-time Purchase, Use Until Exhausted)'}
           </h1>
         </div>
 
@@ -154,23 +154,23 @@ export default function PricingPage() {
           <ul className="list-disc ml-6 space-y-2 text-red-800 text-sm leading-relaxed">
             <li>
               {lang === 'zh-tw' 
-                ? '本站提供 AI 數位服務，採點數制'
-                : 'This site provides AI digital services using a point-based system'}
+                ? '本站提供 AI 數位服務，採使用額度制'
+                : 'This site provides AI digital services using a usage quota system'}
             </li>
             <li>
               {lang === 'zh-tw' 
-                ? '點數僅限本站使用，無使用期限'
-                : 'Points are only valid on this site and have no expiration date'}
+                ? '使用額度僅限本站使用，無使用期限'
+                : 'Usage quota is only valid on this site and has no expiration date'}
             </li>
             <li>
               {lang === 'zh-tw' 
-                ? '每次使用依輸入與輸出字數扣點'
-                : 'Each use deducts points based on input and output character count'}
+                ? '每次使用依輸入與輸出字數計算使用額度'
+                : 'Each use calculates usage quota based on input and output character count'}
             </li>
             <li className="font-semibold">
               {lang === 'zh-tw' 
-                ? '點數一經使用即視為服務完成，恕不退款'
-                : 'Once points are used, the service is considered completed and no refunds will be provided'}
+                ? '使用額度一經使用即視為服務完成，恕不退款'
+                : 'Once usage quota is used, the service is considered completed and no refunds will be provided'}
             </li>
           </ul>
         </div>
@@ -324,7 +324,7 @@ export default function PricingPage() {
               
               <div className="text-blue-800 space-y-3 text-sm">
                 <p>
-                  每次使用時，系統會依「實際輸入的文字字數」扣除點數。
+                  每次使用時，系統會依「實際輸入的文字字數」計算使用額度。
                 </p>
                 
                 <div className="bg-white rounded-lg p-4 border border-blue-200">
@@ -336,7 +336,7 @@ export default function PricingPage() {
                 </div>
                 
                 <p className="font-medium text-blue-900">
-                  字數為一次性點數，不限使用期限，用完為止。
+                  字數為一次性使用額度，不限使用期限，用完為止。
                 </p>
               </div>
             </>

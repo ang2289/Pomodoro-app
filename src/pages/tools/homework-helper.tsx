@@ -12,9 +12,6 @@ import CreditStatusBar, { updateUsedCharsAfterSuccess } from "@/components/Credi
 import { useNavigate, Link } from "react-router-dom";
 import { useCreditCheck } from "@/hooks/useCreditCheck";
 import { supabase } from "@/utils/supabaseClient";
-import { isDevelopment } from "@/utils/envUtils";
-import { useAuth } from "@/hooks/useAuth";
-import { getGuestCreditsInfo } from "@/utils/guestCredits";
 
 // Google TTS 播放函式
 async function playGoogleTTS(text: string, lang: string = "zh-TW") {
@@ -174,9 +171,20 @@ const modeLabelMap: Record<string, string> = {
 }
 
 export default function HomeworkHelper() {
-  // ✅ 使用統一的環境判斷函數，正式網域（非 localhost）時強制視為 production
-  // 🔍 判斷是否為開發環境（正式網域時強制視為 production）
-  const isLocalhost = isDevelopment()
+  // ✅ 正式上線：移除 localhost 限制，允許所有環境存取
+
+  // 🔍 判斷是否為本地端／開發環境
+  const isLocalhost = typeof window !== 'undefined' && (
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1' ||
+    window.location.hostname.startsWith('127.') ||
+    window.location.hostname.startsWith('192.168.') ||
+    import.meta.env.DEV || // Vite 開發模式
+    import.meta.env.MODE === 'development' // 開發模式
+  )
+
+  // 🔍 判斷是否為預覽模式（正式環境設為 false）
+  const isPreview = false // 正式環境：設為 false，表示會實際扣點
 
   // Mode 映射表：將前端模式映射到 Edge Function / Gemini 支援的模式
   const modeMap: Record<string, string> = {
@@ -195,9 +203,6 @@ export default function HomeworkHelper() {
   const [question, setQuestion] = useState("");
   const [mode, setMode] = useState<'answer' | 'easy' | 'pro' | 'example'>('answer');
   const [language, setLanguage] = useState<"zh" | "en" | "ja">("zh");
-  
-  // 轉換 language 為 UnifiedCreditDisplay 需要的 lang 格式
-  const lang: 'zh-tw' | 'en' = language === 'zh' ? 'zh-tw' : language === 'ja' ? 'zh-tw' : 'en';
 
   // TODO: 之後改成從 Supabase / RevenueCat 取得用戶方案
   // 目前先用 localStorage 模擬：'free' | 'premium'
@@ -228,55 +233,8 @@ export default function HomeworkHelper() {
     totalUsedPoints: number;
   } | null>(null);
 
-  // 控制點數資訊折疊顯示
-  const [showCreditInfo, setShowCreditInfo] = useState(false);
-
   // 使用 useAuthCredits Hook 自動取得並更新剩餘點數
   const { remainingChars, loading: creditsLoading, refresh: refreshCredits } = useAuthCredits()
-  
-  // 取得當前使用者資訊（用於扣點）
-  const { user } = useAuth()
-  
-  // 初始化點數狀態（與摘要頁共用邏輯）
-  const isGuest = !user || remainingChars === null
-  const [credits, setCredits] = useState<{ total_credits: number; used_credits: number } | null>(null)
-  const guestCreditsInfo = isGuest ? getGuestCreditsInfo() : null
-  const guestCredits = guestCreditsInfo?.total || 0
-  const guestUsed = guestCreditsInfo?.used || 0
-  const guestRemaining = guestCreditsInfo?.remaining || 0
-
-  // 查詢完整的 credits 資訊（僅在已登入時）
-  useEffect(() => {
-    if (!user || isGuest) {
-      setCredits(null)
-      return
-    }
-
-    const fetchCredits = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('user_credits')
-          .select('total_credits, used_credits')
-          .eq('user_id', user.id)
-          .single()
-
-        if (error) {
-          console.error('❌ 查詢點數失敗：', error)
-          setCredits(null)
-        } else {
-          setCredits({
-            total_credits: data.total_credits || 0,
-            used_credits: data.used_credits || 0,
-          })
-        }
-      } catch (err) {
-        console.error('❌ 查詢點數異常：', err)
-        setCredits(null)
-      }
-    }
-
-    fetchCredits()
-  }, [user, isGuest, remainingChars])
   
   // 使用共用的扣點檢查邏輯
   const creditCheck = useCreditCheck(question.length)
@@ -470,8 +428,8 @@ export default function HomeworkHelper() {
           // 體驗已過期：顯示友善提示（非錯誤訊息）
           setModal({
             title: '免費體驗已結束 🎈',
-            message: '感謝你的試用！若需要長期使用，可購買點數繼續使用，付費點數永久有效，不限期限。',
-            upgradeButton: '了解點數方案',
+            message: '感謝你的試用！若需要長期使用，可購買使用方案繼續使用，付費方案永久有效，不限期限。',
+            upgradeButton: '了解使用方案',
           })
           setLoading(false)
           return
@@ -485,9 +443,6 @@ export default function HomeworkHelper() {
         return
       }
       
-      // 🔒 記錄扣點前的點數（用於驗證扣點是否成功）
-      const creditsBeforeDeduction = remainingChars;
-      
       setLoading(true);
       try {
         // ✅ 使用 supabase.functions.invoke 直接呼叫 homework-helper Edge Function
@@ -497,19 +452,10 @@ export default function HomeworkHelper() {
         // 後端會根據 mode 值進行相應處理
         
         // 📝 送出前：記錄 payload
-        // ✅ deduct 欄位：僅在 localhost 時為 false，正式環境一律為 true
-        // 計算總字數（預估：輸入字數 + 預估輸出字數）
-        const inputChars = question.trim().length
-        const estimatedOutputChars = Math.ceil(inputChars * 0.5) // 預估輸出為輸入的 50%
-        const estimatedTotalChars = inputChars + estimatedOutputChars
-        
         const payload = {
           prompt: question.trim(),
           mode: mode, // 直接傳送 'answer' | 'easy' | 'pro' | 'example'
           language: language, // ✅ 傳送語言參數 'zh' | 'en' | 'ja'
-          deduct: !isLocalhost, // ✅ 正式環境時 deduct = true，localhost 時 deduct = false
-          user_id: user?.id || null, // ✅ 傳送 user_id（未登入時為 null）
-          totalChars: estimatedTotalChars, // ✅ 傳送預估總字數
         }
         console.log('[Homework] invoke Edge Function payload:', payload)
         
@@ -529,9 +475,9 @@ export default function HomeworkHelper() {
             console.log('[DEBUG] return: 點數不足錯誤');
             await refreshCredits()
             setModal({
-              title: '點數不足',
-              message: '目前點數不足，請先查看點數方案說明。',
-              upgradeButton: '了解點數方案',
+              title: '使用額度不足',
+              message: '目前使用額度不足，請先查看使用方案說明。',
+              upgradeButton: '了解使用方案',
             })
             setLoading(false)
             return
@@ -559,60 +505,15 @@ export default function HomeworkHelper() {
         // 📝 成功後：記錄 result
         console.log('[Homework] Edge Function result:', resultText)
         
+        setResult(resultText);
+        
+        // 🛡️ 記錄已解答的題目（避免重複呼叫）
+        lastSolvedQuestionRef.current = question.trim();
+        
         // 計算點數（Edge Function 已扣點，這裡只計算用於顯示）
         const inputLength = question.trim().length
         const outputLength = resultText.length
         const totalUsedPoints = inputLength + outputLength
-        
-        // 🔒 驗證扣點是否成功（僅在正式環境且 deduct === true 時驗證）
-        if (!isLocalhost && user?.id && creditsBeforeDeduction !== null) {
-          // ✅ 重新 fetch 使用者點數
-          await refreshCredits()
-          
-          // 等待點數更新完成（給 state 時間更新）
-          await new Promise(resolve => setTimeout(resolve, 300))
-          
-          // 直接從 creditService 取得最新點數（避免 state 更新延遲）
-          const { getRemainingCredits } = await import('@/lib/creditService')
-          const creditsAfterDeduction = await getRemainingCredits()
-          
-          // ✅ 驗證點數是否正確扣除
-          if (creditsAfterDeduction !== null) {
-            const expectedCreditsAfter = creditsBeforeDeduction - totalUsedPoints
-            const actualCreditsAfter = creditsAfterDeduction
-            
-            console.log('🔍 [扣點驗證]', {
-              creditsBefore: creditsBeforeDeduction,
-              creditsAfter: actualCreditsAfter,
-              expectedAfter: expectedCreditsAfter,
-              totalUsed: totalUsedPoints,
-              creditsChanged: creditsBeforeDeduction !== actualCreditsAfter,
-            })
-            
-            // ⚠️ 如果點數未變動，顯示錯誤提示並清除結果（避免使用者無限白嫖）
-            if (creditsBeforeDeduction === actualCreditsAfter) {
-              console.error('❌ 扣點失敗：點數未變動')
-              setResult('')
-              setModal({
-                title: '點數扣除失敗',
-                message: '點數扣除失敗，請重新整理或聯絡客服',
-              })
-              setLoading(false)
-              return
-            }
-          }
-        }
-        
-        // ✅ 扣點驗證通過，顯示結果
-        setResult(resultText);
-        
-        // 有結果時自動展開點數資訊
-        if (resultText) {
-          setShowCreditInfo(true);
-        }
-        
-        // 🛡️ 記錄已解答的題目（避免重複呼叫）
-        lastSolvedQuestionRef.current = question.trim();
         
         // ✅ 記錄本次使用點數（用於顯示）
         setLastUsedPoints({
@@ -623,12 +524,12 @@ export default function HomeworkHelper() {
         
         // 🔒 本地端／開發環境：強制關閉實際扣點寫回行為
         if (!isLocalhost) {
-          // ✅ 正式環境：AI 回答成功後才扣點（Edge Function 已扣點，這裡只更新前端顯示）
+          // ✅ 正式環境：AI 回答成功後才扣除使用額度（Edge Function 已扣除，這裡只更新前端顯示）
           updateUsedCharsAfterSuccess(totalUsedPoints);
-          console.log(`✅ 扣點成功：${totalUsedPoints} 點（輸入 ${inputLength} + 回答 ${outputLength}）`);
+          console.log(`✅ 使用額度扣除成功（僅開發用）：${totalUsedPoints} 字（輸入 ${inputLength} + 回答 ${outputLength}）`);
         } else {
-          // 🔓 開發環境：不扣點，僅顯示試用字數 UI
-          console.log(`✅ [開發模式] 解題成功，不扣點（開發環境）：${totalUsedPoints} 點（輸入 ${inputLength} + 回答 ${outputLength}）`, {
+          // 🔓 開發環境：不扣除使用額度，僅顯示試用字數 UI
+          console.log(`✅ [開發模式] 解題成功，不扣除使用額度（開發環境）：${totalUsedPoints} 字（輸入 ${inputLength} + 回答 ${outputLength}）`, {
             hostname: window.location.hostname,
             mode: import.meta.env.MODE,
           });
@@ -644,16 +545,15 @@ export default function HomeworkHelper() {
     }
   };
 
-  // 當 answer 狀態更新後，自動將滾動位置重置到頂部（只在有新內容時觸發）
+  // 自動滾動到回答區底部（使用 ref 追蹤，避免依賴 result/loading 導致不必要的重新執行）
   const prevResultRef = useRef<string>("");
   useEffect(() => {
-    // 只有當 result 真的改變時才重置滾動位置（忽略 loading 狀態變化）
+    // 只有當 result 真的改變時才滾動（忽略 loading 狀態變化）
     if (result !== prevResultRef.current && answerRef.current) {
       prevResultRef.current = result;
-      // 將滾動位置重置到頂部
-      answerRef.current.scrollTop = 0;
+      answerRef.current.scrollTop = answerRef.current.scrollHeight;
     }
-  }, [result]); // 只依賴 result，確保只在 answer 有新內容時才觸發，不影響其他狀態
+  }, [result]); // 只依賴 result，loading 狀態變化不觸發滾動
 
   // 自動分段顯示回答
   const formatAnswer = (text: string) => {
@@ -716,7 +616,7 @@ export default function HomeworkHelper() {
                 </span>
               </div>
               <p className="text-xs text-gray-600 ml-6">
-                請先查看點數方案說明
+                請先查看使用方案說明
               </p>
             </div>
           )}
@@ -724,7 +624,7 @@ export default function HomeworkHelper() {
       )}
       {creditsLoading && (
         <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-          <p className="text-sm text-gray-500">載入點數中…</p>
+          <p className="text-sm text-gray-500">載入使用額度中…</p>
         </div>
       )}
 
@@ -826,7 +726,7 @@ export default function HomeworkHelper() {
         </div>
       )}
 
-      {/* 【三、問題輸入框（白色圓角卡片）】 */}
+      {/* ===== 問題輸入框區塊 START ===== */}
       <div className="bg-white rounded-xl shadow-md p-6 mb-5 relative">
         <div className="relative w-full">
           <textarea
@@ -855,9 +755,19 @@ export default function HomeworkHelper() {
           </div>
         )}
       </div>
+      {/* ===== 問題輸入框區塊 END ===== */}
 
-      {/* 【四、按鈕區】 */}
-      <div className="mb-5">
+      {/* ===== 按鈕區 START ===== */}
+      <div className="space-y-3 mb-5">
+        {/* MVP 版本：圖片上傳功能暫時隱藏，Phase 2 實作 */}
+
+        {/* 🔍 預覽模式說明文字（僅在 isPreview 為 true 時顯示） */}
+        {isPreview && (
+          <p className="mt-2 text-xs text-gray-500 text-center">
+            字數僅供顯示，不會實際扣除
+          </p>
+        )}
+
         {/* 開始解題按鈕（主要按鈕 - 紫色漸層） */}
         {(() => {
           // 🔒 使用共用的扣點檢查邏輯
@@ -870,14 +780,14 @@ export default function HomeworkHelper() {
           // 按鈕文字
           let buttonText = loading ? "分析中..." : "🚀 開始解題"
           if (isQuotaInsufficient && !loading) {
-            buttonText = "點數不足"
+            buttonText = "使用額度不足"
           } else if (inputChars === 0 && !loading) {
             buttonText = "請先輸入題目"
           }
           
           // Hover 提示文字（disabled 時顯示）
           const tooltipText = isQuotaInsufficient && creditCheck.remainingChars !== null
-            ? `本次需要 ${inputChars.toLocaleString()} 字，剩餘點數為 ${creditCheck.remainingChars.toLocaleString()} 字`
+            ? `本次需要 ${inputChars.toLocaleString()} 字，剩餘可用額度為 ${creditCheck.remainingChars.toLocaleString()} 字`
             : inputChars === 0
             ? '請先輸入題目'
             : ''
@@ -887,7 +797,7 @@ export default function HomeworkHelper() {
               onClick={handleAnalyze}
               disabled={isButtonDisabled}
               title={tooltipText}
-              className={`w-full font-bold py-4 px-4 rounded-xl transition-all duration-200 transform flex items-center justify-center gap-2 relative ${
+              className={`w-full font-bold py-4 px-4 rounded-xl transition-all duration-200 transform flex items-center justify-center gap-2 ${
                 isButtonDisabled
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-md'
                   : 'bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 cursor-pointer shadow-md hover:shadow-lg hover:scale-105 active:scale-95'
@@ -907,17 +817,33 @@ export default function HomeworkHelper() {
                 </svg>
               )}
               {buttonText}
-              {/* 模式文字：右下角小字，半透明白色 */}
-              <span className="absolute bottom-1 right-2 text-xs text-white/80">
+              <span className="ml-3 text-xs text-gray-400">
                 模式：{modeLabelMap[mode]}
               </span>
             </button>
           )
         })()}
+        
+        {/* 簡易提示 */}
+        <div className="mt-3 text-xs text-gray-500 text-center">
+          <Link to="/points" className="text-blue-600 hover:underline">
+            查看完整使用說明 →
+          </Link>
+        </div>
       </div>
+      {/* ===== 按鈕區 END ===== */}
 
-      {/* 【五、AI 回答卡片】- 緊接在按鈕下方，優先顯示答案內容 */}
+      {/* ===== AI 回答區塊 START ===== */}
       <div className="shadow-md border rounded-2xl p-5 bg-white transition mb-5">
+        {/* 模式標籤顯示（在結果上方） */}
+        {result && (
+          <div className="mb-2 text-sm text-gray-500">
+            目前解題模式：
+            <span className="ml-1 font-semibold text-indigo-600">
+              {modeLabelMap[mode]}
+            </span>
+          </div>
+        )}
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-bold text-xl">🧠 AI 回答</h2>
           {result && (
@@ -939,15 +865,14 @@ export default function HomeworkHelper() {
             </div>
           )}
         </div>
-        {/* AI 回答內容 - 優先顯示，確保在畫面第一視角 */}
         <div 
           ref={answerRef}
           className={`text-gray-700 leading-relaxed whitespace-pre-wrap ${
             result ? '' : 'text-gray-400 italic'
           }`}
           style={{ 
-            maxHeight: '300px', 
-            overflowY: 'auto'
+            maxHeight: '420px', 
+            overflowY: result ? 'auto' : 'visible' 
           }}
         >
           {loading ? (
@@ -962,119 +887,55 @@ export default function HomeworkHelper() {
             <span>尚未開始解題，請輸入題目…</span>
           )}
         </div>
-      </div>
-
-      {/* 【六、點數顯示區塊】- 在 AI 回答卡片下方（無條件顯示） */}
-      <div className="mb-4 rounded-lg border bg-slate-50 p-4 text-sm text-slate-700">
-        {isGuest ? (
-          <>
-            <div className="font-medium text-slate-800">
-              👤 訪客試用
-            </div>
-            <div>試用總額：10,000 字（7 天內有效）</div>
-            <div>已使用：{guestUsed.toLocaleString()} 字</div>
-            <div>
-              剩餘可用：
-              <span className="font-semibold text-blue-600">
-                {guestRemaining.toLocaleString()}
-              </span>{" "}
-              字
-            </div>
-          </>
-        ) : credits ? (
-          <>
-            <div className="font-medium text-slate-800">
-              💳 我的點數
-            </div>
-            <div>
-              總點數：{credits.total_credits.toLocaleString()} 字
-            </div>
-            <div>
-              已使用：{credits.used_credits.toLocaleString()} 字
-            </div>
-            <div>
-              剩餘可用：
-              <span className="font-semibold text-green-600">
-                {(credits.total_credits - credits.used_credits).toLocaleString()}
-              </span>{" "}
-              字
-            </div>
-          </>
-        ) : (
-          <div className="text-slate-500">
-            點數讀取中…
+        
+        {/* 本次使用顯示 */}
+        {lastUsedPoints && result && !loading && (
+          <div className="mt-4 pt-3 border-t border-gray-100">
+            <p className="text-sm text-gray-600">
+              <span className="font-medium">本次使用：</span>
+              <span className="text-purple-600 font-semibold">{lastUsedPoints.totalUsedPoints.toLocaleString()} 字</span>
+            </p>
+            <p className="text-xs text-gray-400 mt-0.5">
+              （輸入 {lastUsedPoints.inputLength.toLocaleString()} 字 + 回答 {lastUsedPoints.outputLength.toLocaleString()} 字）
+            </p>
           </div>
         )}
       </div>
+      {/* ===== AI 回答區塊 END ===== */}
 
-      {/* 【七、點數說明與免責聲明 - 次要資訊（可折疊，移至最下方）】 */}
-      {(result || showCreditInfo) && (
-        <div className="mt-4">
-          {/* 折疊按鈕 */}
-          <button
-            onClick={() => setShowCreditInfo(!showCreditInfo)}
-            className="w-full text-xs text-gray-400 hover:text-gray-600 flex items-center justify-center gap-1 py-2 transition-colors"
-          >
-            <span>{showCreditInfo ? '▲' : '▼'}</span>
-            <span>點數說明與免責聲明</span>
-          </button>
+      {/* ===== 試用點數卡片（始終顯示） ===== */}
+      <div className="mt-6">
+        <CreditStatusBar
+          inputChars={question.length}
+          isLoading={loading}
+          featureName="homework"
+          lang="zh-tw"
+        />
+      </div>
 
-          {/* 折疊內容 */}
-          {showCreditInfo && (
-            <div className="mt-2 space-y-3 text-xs text-gray-400">
-              {/* 本次使用點數 */}
-              {lastUsedPoints && result && !loading && (
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-gray-500">
-                    本次使用：<span className="font-medium text-gray-600">{lastUsedPoints.totalUsedPoints.toLocaleString()} 點</span>
-                    <span className="ml-2 text-gray-400">
-                      （輸入 {lastUsedPoints.inputLength.toLocaleString()} 字 + 回答 {lastUsedPoints.outputLength.toLocaleString()} 字）
-                    </span>
-                  </p>
-                </div>
-              )}
-
-              {/* 剩餘點數狀態 */}
-              {!creditsLoading && remainingChars !== null && (
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-gray-500">
-                    剩餘點數：<span className="font-medium text-gray-600">{remainingChars.toLocaleString()} 字</span>
-                  </p>
-                </div>
-              )}
-
-              {/* 開發環境說明 */}
-              {/* ✅ 僅在 localhost 或 VITE_APP_ENV === 'dev' 時顯示，production 環境一律不顯示 */}
-              {(isLocalhost || import.meta.env.VITE_APP_ENV === 'dev') && (
-                <p className="text-gray-400 italic">
-                  目前為開發／測試環境，字數僅供顯示，不會實際扣除。
-                </p>
-              )}
-
-              {/* 點數說明 */}
-              <div className="bg-gray-50 rounded-lg p-3 space-y-2">
-                <p className="text-gray-500">
-                  本功能依實際使用字數扣點（1 字 = 1 點），包含題目輸入與 AI 回答字數。
-                </p>
-                <p className="text-gray-500">
-                  詳見 <Link to="/points" className="text-gray-600 hover:text-gray-800 underline">點數說明</Link>
-                  <span className="text-gray-400">（符合台灣金流規範，安心付款）</span>
-                </p>
-              </div>
-
-              {/* 免責聲明 */}
-              {result && (
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-gray-500 font-medium mb-1">⚠️ 免責聲明</p>
-                  <p className="text-gray-400 leading-relaxed">
-                    本工具之答案由 AI 生成，僅供學習參考，不保證 100% 正確。請使用者自行判斷與驗算，本工具不提供代寫作業服務。
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
+      {/* 簡易點數顯示：僅顯示連結到完整說明頁 */}
+      {result && (
+        <div className="mt-4 text-xs text-gray-500 text-center">
+          <Link to="/points" className="text-blue-600 hover:underline">
+            查看完整使用說明 →
+          </Link>
         </div>
       )}
+
+      {/* ===== 免責聲明卡片 START（僅在有答案時顯示） ===== */}
+      {result && (
+        <div className="bg-white rounded-xl shadow-md p-6">
+          <div className="flex items-start gap-3">
+            <span className="text-yellow-500 text-xl">⚠️</span>
+            <div className="text-sm text-gray-600 leading-relaxed">
+              <p className="font-semibold mb-2 text-gray-700">免責聲明</p>
+              <p className="mb-1">本工具之答案由 AI 生成，僅供學習參考，不保證 100% 正確。</p>
+              <p>請使用者自行判斷與驗算，本工具不提供代寫作業服務。</p>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ===== 免責聲明卡片 END ===== */}
 
       {/* 字數超限 Modal */}
       {modal && (

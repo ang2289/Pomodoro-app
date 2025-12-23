@@ -1,10 +1,10 @@
-// 共用的扣點檢查邏輯 Hook
+// 共用的使用額度檢查邏輯 Hook
 // 用於摘要和解題功能，在送出請求前檢查字數是否足夠
 
 import { useAuthCredits } from './useAuthCredits'
+import { FREE_TRIAL_QUOTA } from '@/config'
 
-const FREE_TRIAL_QUOTA = 10000 // 免費體驗額度：10,000 字
-const FREE_REMAINING_KEY = 'free_characters_remaining' // localStorage key（儲存剩餘點數）
+const FREE_REMAINING_KEY = 'free_characters_remaining' // localStorage key（儲存剩餘可用額度）
 
 interface CreditCheckResult {
   /** 是否可以送出請求 */
@@ -18,7 +18,7 @@ interface CreditCheckResult {
 }
 
 /**
- * 共用的扣點檢查 Hook
+ * 共用的使用額度檢查 Hook
  * @param inputLength 使用者輸入的字數
  * @returns 檢查結果
  */
@@ -31,7 +31,7 @@ export function useCreditCheck(inputLength: number): CreditCheckResult {
     if (remainingChars !== null) {
       return remainingChars
     }
-    // 未登入時從 localStorage 讀取剩餘點數
+    // 未登入時從 localStorage 讀取剩餘可用額度
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem(FREE_REMAINING_KEY)
       if (saved !== null) {
@@ -59,7 +59,7 @@ export function useCreditCheck(inputLength: number): CreditCheckResult {
   const currentRemaining = getRemainingChars()
   const currentUsed = getUsedChars()
 
-  // 如果正在載入點數，暫時允許（避免在載入時阻擋）
+  // 如果正在載入使用額度，暫時允許（避免在載入時阻擋）
   if (creditsLoading) {
     return {
       canProceed: true,
@@ -68,13 +68,13 @@ export function useCreditCheck(inputLength: number): CreditCheckResult {
     }
   }
 
-  // 檢查字數是否足夠（剩餘點數 <= 0 時也阻擋）
+  // 檢查字數是否足夠（剩餘可用額度 <= 0 時也阻擋）
   if (currentRemaining <= 0) {
     return {
       canProceed: false,
       remainingChars: currentRemaining,
       usedChars: currentUsed,
-      errorMessage: '點數已用完，請升級方案（尚未開放）',
+      errorMessage: '使用額度已用完，請升級方案（尚未開放）',
     }
   }
 
@@ -96,7 +96,7 @@ export function useCreditCheck(inputLength: number): CreditCheckResult {
 }
 
 /**
- * 更新未登入使用者的剩餘點數（扣點後呼叫）
+ * 更新未登入使用者的剩餘可用額度（使用額度扣除後呼叫）
  * @param deductedChars 扣除的字數
  */
 export function updateFreeRemainingChars(deductedChars: number): void {

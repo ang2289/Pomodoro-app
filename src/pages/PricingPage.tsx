@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { buildSEO } from '../lib/seo'
 import SectionHeader from '../components/SectionHeader'
+import { PLANS } from '../config'
 
 const seo = buildSEO({
   title: '方案與價格',
@@ -10,23 +11,8 @@ const seo = buildSEO({
   image: '/seo/pricing.png',
 })
 
-// 方案常數定義（點數制，一次購買）
-const PLANS = {
-  free: {
-    name: '免費方案',
-    quota: 10000, // 免費體驗額度（字數）
-  },
-  plan99: {
-    name: '點數方案',
-    price: 99,
-    quota: 100000, // 購買字數（點數）
-  },
-  plan199: {
-    name: '點數方案',
-    price: 199,
-    quota: 300000, // 購買字數（點數）
-  },
-};
+// 方案常數定義已移至 src/config.ts（單一來源）
+// 使用 PLANS.free.monthlyQuota, PLANS.plan99.monthlyQuota, PLANS.plan199.monthlyQuota
 
 export default function PricingPage() {
   const [lang, setLang] = useState<'zh-tw' | 'en'>('zh-tw')
@@ -61,7 +47,7 @@ export default function PricingPage() {
         {/* 主要標題 */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {lang === 'zh-tw' ? '字數點數方案（一次購買，用完為止）' : 'Character Point Plans (One-time Purchase, Use Until Exhausted)'}
+            {lang === 'zh-tw' ? '使用方案（一次購買，用完為止）' : 'Usage Plans (One-time Purchase, Use Until Exhausted)'}
           </h1>
         </div>
 
@@ -85,7 +71,7 @@ export default function PricingPage() {
               
               <div className="text-gray-700 space-y-3">
                 <p className="text-2xl font-bold text-gray-900 mb-3">
-                  {PLANS.free.quota.toLocaleString()} 字
+                  可處理約 {PLANS.free.monthlyQuota.toLocaleString()} 字
                 </p>
                 <ul className="list-disc ml-5 space-y-2 text-sm">
                   <li>不需信用卡</li>
@@ -95,7 +81,7 @@ export default function PricingPage() {
               </div>
             </div>
 
-            {/* NT$99 點數方案 */}
+            {/* NT$99 方案 */}
             <div className="shadow-md border-2 border-blue-300 rounded-2xl p-6 bg-blue-50">
               <div className="flex items-center mb-4">
                 <span className="text-2xl mr-2">💎</span>
@@ -104,7 +90,7 @@ export default function PricingPage() {
               
               <div className="text-blue-800 space-y-3">
                 <p className="text-2xl font-bold text-blue-900 mb-3">
-                  {PLANS.plan99.quota.toLocaleString()} 字
+                  可處理 {PLANS.plan99.monthlyQuota.toLocaleString()} 字
                 </p>
                 
                 <ul className="list-disc ml-5 space-y-2 text-sm">
@@ -112,6 +98,10 @@ export default function PricingPage() {
                   <li><strong>不自動續費</strong></li>
                   <li><strong>不限使用期限</strong></li>
                 </ul>
+                
+                <p className="text-xs text-blue-600 mt-3 pt-3 border-t border-blue-200">
+                  數位服務使用授權，非儲值、非點數
+                </p>
 
                 {/* 購買按鈕 */}
                 <button
@@ -123,7 +113,7 @@ export default function PricingPage() {
               </div>
             </div>
 
-            {/* NT$199 點數方案 */}
+            {/* NT$199 方案 */}
             <div className="shadow-md border-2 border-purple-300 rounded-2xl p-6 bg-purple-50">
               <div className="flex items-center mb-4">
                 <span className="text-2xl mr-2">💎</span>
@@ -132,7 +122,7 @@ export default function PricingPage() {
               
               <div className="text-purple-800 space-y-3">
                 <p className="text-2xl font-bold text-purple-900 mb-3">
-                  {PLANS.plan199.quota.toLocaleString()} 字
+                  可處理 {PLANS.plan199.monthlyQuota.toLocaleString()} 字
                 </p>
                 
                 <ul className="list-disc ml-5 space-y-2 text-sm">
@@ -140,6 +130,10 @@ export default function PricingPage() {
                   <li><strong>不自動續費</strong></li>
                   <li><strong>不限使用期限</strong></li>
                 </ul>
+                
+                <p className="text-xs text-purple-600 mt-3 pt-3 border-t border-purple-200">
+                  數位服務使用授權，非儲值、非點數
+                </p>
 
                 {/* 購買按鈕 */}
                 <button
@@ -151,30 +145,36 @@ export default function PricingPage() {
               </div>
             </div>
 
-            {/* 點數使用說明 */}
+            {/* 使用說明 */}
             <div className="shadow-md border rounded-2xl p-6 bg-white">
-              <SectionHeader title="點數使用說明" />
+              <SectionHeader title="使用說明" />
               
               <div className="text-gray-700 space-y-4 text-sm">
                 <div>
-                  <p className="font-medium text-gray-800 mb-2">🎁 新用戶體驗點數</p>
+                  <p className="font-medium text-gray-800 mb-2">🎁 新用戶免費體驗額度</p>
                   <p className="text-gray-700 leading-relaxed">
-                    首次使用即可獲得 10,000 點體驗點數，
-                    體驗點數僅供功能試用，需於 7 日內使用完畢。
+                    首次使用即可獲得可處理約 {PLANS.free.monthlyQuota.toLocaleString()} 字的免費體驗額度，
+                    體驗額度僅供功能試用，需於 7 日內使用完畢。
                   </p>
                 </div>
                 <div>
-                  <p className="font-medium text-gray-800 mb-2">💳 付費購買點數</p>
+                  <p className="font-medium text-gray-800 mb-2">💳 付費使用方案</p>
                   <p className="text-gray-700 leading-relaxed">
-                    付費購買之點數為永久點數，
-                    不限使用期限、不會過期，可長期累積使用。
+                    <strong>NT$99 方案：</strong>可處理 {PLANS.plan99.monthlyQuota.toLocaleString()} 字<br />
+                    <strong>NT$199 方案：</strong>可處理 {PLANS.plan199.monthlyQuota.toLocaleString()} 字<br />
+                    付費購買之使用方案為永久有效，不限使用期限、不會過期，可長期累積使用。
                   </p>
                 </div>
                 <div>
-                  <p className="font-medium text-gray-800 mb-2">📌 點數扣除說明</p>
+                  <p className="font-medium text-gray-800 mb-2">📌 使用額度計算說明</p>
                   <p className="text-gray-700 leading-relaxed">
-                    點數僅在實際使用 AI 服務時才會扣除，
+                    使用額度僅在實際使用 AI 服務時才會計算，
                     未使用不會產生任何費用。
+                  </p>
+                </div>
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    <strong>重要說明：</strong>本服務為數位服務使用授權，非儲值、非點數。
                   </p>
                 </div>
               </div>
@@ -187,8 +187,8 @@ export default function PricingPage() {
               <div className="text-gray-700 space-y-2 text-sm">
                 <ul className="list-disc ml-5 space-y-2">
                   <li>系統會依照你實際送出與產生的文字數量累計</li>
-                  <li>使用中可即時查看「已用字數」與「剩餘字數」</li>
-                  <li>點數用完後，服務將暫停，需再次購買點數才能繼續使用</li>
+                  <li>使用中可即時查看「已使用」與「剩餘可用」</li>
+                  <li>使用額度用完後，服務將暫停，需再次購買使用方案才能繼續使用</li>
                 </ul>
               </div>
             </div>
@@ -199,19 +199,19 @@ export default function PricingPage() {
               
               <div className="text-blue-800 space-y-3 text-sm">
                 <p>
-                  每次使用時，系統會依「實際輸入的文字字數」扣除點數。
+                  每次使用時，系統會依「實際輸入的文字字數」計算使用額度。
                 </p>
                 
                 <div className="bg-white rounded-lg p-4 border border-blue-200">
                   <p className="font-medium mb-2 text-blue-900">範例說明：</p>
                   <ul className="list-disc ml-5 space-y-1 text-blue-700">
-                    <li>輸入 2,500 字文章摘要 → 扣 2,500 字</li>
-                    <li>解題輸入 300 字題目 → 扣 300 字</li>
+                    <li>輸入 2,500 字文章摘要 → 使用 2,500 字</li>
+                    <li>解題輸入 300 字題目 → 使用 300 字</li>
                   </ul>
                 </div>
                 
                 <p className="font-medium text-blue-900">
-                  字數為一次性點數，不限使用期限，用完為止。
+                  可處理字數為一次性使用額度，不限使用期限，用完為止。
                 </p>
               </div>
             </div>
@@ -235,22 +235,25 @@ export default function PricingPage() {
             <div className="shadow-md border rounded-2xl p-6 bg-white">
               <h2 className="text-xl font-bold text-gray-900 mb-4">🆓 Free Trial</h2>
               <ul className="list-disc ml-5 space-y-2 text-sm text-gray-700">
-                <li>{PLANS.free.quota.toLocaleString()} characters</li>
+                <li>Processable about {PLANS.free.monthlyQuota.toLocaleString()} characters</li>
                 <li>No expiration date</li>
-                <li>Shared quota for summary and homework</li>
+                <li>Shared usage limit for summary and homework</li>
               </ul>
             </div>
 
             <div className="shadow-md border rounded-2xl p-6 bg-blue-50">
               <h2 className="text-xl font-bold text-blue-900 mb-4">
-                💎 Point Plan - NT${PLANS.plan99.price}
+                💎 Usage Plan - NT${PLANS.plan99.price}
               </h2>
               <ul className="list-disc ml-5 space-y-2 text-sm text-blue-800">
-                <li>{PLANS.plan99.quota.toLocaleString()} characters</li>
+                <li>Processable {PLANS.plan99.monthlyQuota.toLocaleString()} characters</li>
                 <li><strong>No expiration date</strong></li>
                 <li><strong>No auto-renewal</strong></li>
                 <li>Purchase again when used up</li>
               </ul>
+              <p className="text-xs text-blue-600 mt-3 pt-3 border-t border-blue-200">
+                Digital service usage license, not stored value, not points
+              </p>
               {/* 購買按鈕 */}
               <button
                 onClick={() => setShowNotAvailableModal(true)}
@@ -262,14 +265,17 @@ export default function PricingPage() {
 
             <div className="shadow-md border rounded-2xl p-6 bg-purple-50">
               <h2 className="text-xl font-bold text-purple-900 mb-4">
-                💎 Point Plan - NT${PLANS.plan199.price}
+                💎 Usage Plan - NT${PLANS.plan199.price}
               </h2>
               <ul className="list-disc ml-5 space-y-2 text-sm text-purple-800">
-                <li>{PLANS.plan199.quota.toLocaleString()} characters</li>
+                <li>Processable {PLANS.plan199.monthlyQuota.toLocaleString()} characters</li>
                 <li><strong>No expiration date</strong></li>
                 <li><strong>No auto-renewal</strong></li>
                 <li>Purchase again when used up</li>
               </ul>
+              <p className="text-xs text-purple-600 mt-3 pt-3 border-t border-purple-200">
+                Digital service usage license, not stored value, not points
+              </p>
               {/* 購買按鈕 */}
               <button
                 onClick={() => setShowNotAvailableModal(true)}
@@ -290,19 +296,19 @@ export default function PricingPage() {
             
             <div className="text-blue-800 space-y-3 text-sm">
               <p>
-                每次使用時，系統會依「實際輸入的文字字數」扣除點數。
+                每次使用時，系統會依「實際輸入的文字字數」計算使用額度。
               </p>
               
               <div className="bg-white rounded-lg p-4 border border-blue-200">
                 <p className="font-medium mb-2 text-blue-900">範例說明：</p>
                 <ul className="list-disc ml-5 space-y-1 text-blue-700">
-                  <li>輸入 2,500 字文章摘要 → 扣 2,500 字</li>
-                  <li>解題輸入 300 字題目 → 扣 300 字</li>
+                  <li>輸入 2,500 字文章摘要 → 使用 2,500 字</li>
+                  <li>解題輸入 300 字題目 → 使用 300 字</li>
                 </ul>
               </div>
               
               <p className="font-medium text-blue-900">
-                字數為一次性點數，不限使用期限，用完為止。
+                可處理字數為一次性使用額度，不限使用期限，用完為止。
               </p>
             </div>
           </div>
@@ -328,8 +334,8 @@ export default function PricingPage() {
             </h3>
             <p className="text-gray-700 mb-6 whitespace-pre-line">
               {lang === 'zh-tw' 
-                ? '目前僅開放免費試用 10,000 字，\n付費方案（NT$99 / NT$199）尚未開放購買。\n顯示價格僅供正式上線前參考。'
-                : 'Currently only free trial of 10,000 characters is available.\nPaid plans (NT$99 / NT$199) are not yet available for purchase.\nPrices shown are for reference only before official launch.'}
+                ? `目前僅開放免費試用可處理約 ${PLANS.free.monthlyQuota.toLocaleString()} 字，\n付費方案（NT$99 / NT$199）尚未開放購買。\n顯示價格僅供正式上線前參考。`
+                : `Currently only free trial of ${PLANS.free.monthlyQuota.toLocaleString()} processable characters is available.\nPaid plans (NT$99 / NT$199) are not yet available for purchase.\nPrices shown are for reference only before official launch.`}
             </p>
             <div className="flex justify-end">
               <button

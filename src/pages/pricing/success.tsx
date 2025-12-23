@@ -61,10 +61,10 @@ export default function PaymentSuccessPage() {
                 付款成功！
               </h1>
               <p className="text-gray-600 mb-6">
-                點數已入帳，可立即使用
+                使用額度已入帳，可立即使用
               </p>
               <p className="text-sm text-gray-500 mb-6">
-                您的點數已成功加入帳戶，可以立即使用 AI 摘要和解題功能。
+                您的使用額度已成功加入帳戶，可以立即使用 AI 摘要和解題功能。
               </p>
 
               {/* 付款資訊 */}

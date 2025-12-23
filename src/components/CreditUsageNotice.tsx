@@ -31,7 +31,7 @@ export default function CreditUsageNotice({
     return (
       <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
         <p className="text-sm text-gray-500 text-center">
-          {lang === 'zh-tw' ? '載入點數中…' : 'Loading credits...'}
+          {lang === 'zh-tw' ? '載入使用額度中…' : 'Loading usage quota...'}
         </p>
       </div>
     )
@@ -55,7 +55,7 @@ export default function CreditUsageNotice({
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1">
             <p className="text-sm font-medium text-red-800 mb-1">
-              {lang === 'zh-tw' ? '⚠️ 點數不足' : '⚠️ Insufficient Credits'}
+              {lang === 'zh-tw' ? '⚠️ 使用額度不足' : '⚠️ Insufficient Usage Quota'}
             </p>
             <p className="text-sm text-red-700">
               {lang === 'zh-tw'
@@ -67,7 +67,7 @@ export default function CreditUsageNotice({
             onClick={() => navigate('/pricing')}
             className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors whitespace-nowrap"
           >
-            {lang === 'zh-tw' ? '購買點數' : 'Buy Credits'}
+            {lang === 'zh-tw' ? '購買使用方案' : 'Purchase Usage Plan'}
           </button>
         </div>
       </div>

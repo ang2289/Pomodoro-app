@@ -1,10 +1,10 @@
-// 共用的字數 / 點數狀態列元件
+// 共用的字數 / 使用額度狀態列元件
 // 用於摘要和解題頁面，提供即時的字數狀態顯示
 
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuthCredits } from '@/hooks/useAuthCredits'
-import { isDevelopment } from '@/utils/envUtils'
+import { FREE_TRIAL_QUOTA } from '@/config'
 
 interface CreditStatusBarProps {
   /** 當前輸入字數 */
@@ -17,8 +17,7 @@ interface CreditStatusBarProps {
   lang?: 'zh-tw' | 'en'
 }
 
-const FREE_TRIAL_QUOTA = 10000 // 免費體驗額度：10,000 字
-const FREE_REMAINING_KEY = 'free_characters_remaining' // localStorage key（儲存剩餘點數）
+const FREE_REMAINING_KEY = 'free_characters_remaining' // localStorage key（儲存剩餘可用額度）
 
 export default function CreditStatusBar({
   inputChars,
@@ -30,7 +29,7 @@ export default function CreditStatusBar({
   // 不讀取 creditsLoading，避免初始畫面顯示載入中
   const { remainingChars } = useAuthCredits()
   
-  // 從 localStorage 讀取剩餘點數（未登入時使用）
+  // 從 localStorage 讀取剩餘可用額度（未登入時使用）
   const [freeRemainingChars, setFreeRemainingChars] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem(FREE_REMAINING_KEY)
@@ -108,7 +107,7 @@ export default function CreditStatusBar({
   const currentRemaining = getRemainingChars()
   const currentUsed = getUsedChars()
 
-  // 更新剩餘點數（API 成功後呼叫）
+  // 更新剩餘可用額度（API 成功後呼叫）
   const updateRemainingChars = (usedPoints: number) => {
     if (remainingChars === null) {
       // 未登入：更新 localStorage
@@ -130,7 +129,7 @@ export default function CreditStatusBar({
     }
   }, [freeRemainingChars, remainingChars])
 
-  // 固定顯示三項：試用總額、已使用、剩餘可用
+  // 固定顯示三項：可處理字數、已使用、剩餘可用
   // 不顯示 loading、空白或「—」，頁面載入時即顯示
   // 若使用者尚未輸入內容：已使用字數顯示為 0，剩餘字數顯示為 10,000
   
@@ -139,12 +138,12 @@ export default function CreditStatusBar({
   const displayUsed = currentUsed
   const displayRemaining = currentRemaining
 
-  // ✅ 使用統一的環境判斷函數，正式網域（非 localhost）時強制視為 production
-  const isDevMode = isDevelopment()
+  // 檢查是否為開發模式
+  const isDevMode = import.meta.env.DEV === true
   
-  // 檢查是否為體驗點數且剩餘低於 2,000 點
+  // 檢查是否為可處理字數且剩餘低於 2,000 字
   const isLowBalance = displayRemaining < 2000 && displayRemaining > 0
-  // 檢查體驗點數是否已用完
+  // 檢查可處理字數是否已用完
   const isExhausted = displayRemaining === 0
 
   return (
@@ -153,8 +152,8 @@ export default function CreditStatusBar({
         <div className="space-y-1.5">
           <p className="text-sm text-gray-700">
             {lang === 'zh-tw' 
-              ? `試用總額：${displayTotal.toLocaleString()} 字`
-              : `Trial Total: ${displayTotal.toLocaleString()} characters`}
+              ? `可處理字數：${displayTotal.toLocaleString()} 字`
+              : `Processable Characters: ${displayTotal.toLocaleString()} characters`}
           </p>
           <p className="text-sm text-gray-700">
             {lang === 'zh-tw' 
@@ -173,23 +172,23 @@ export default function CreditStatusBar({
       {isDevMode && (
         <div className="absolute top-0 right-0 mt-1 mr-1">
           <p className="text-[10px] text-gray-400 font-mono">
-            {lang === 'zh-tw' ? '開發模式：不計算點數' : 'Dev Mode: No Points Deduction'}
+            {lang === 'zh-tw' ? '開發模式：不計算使用額度' : 'Dev Mode: No Usage Deduction'}
           </p>
         </div>
       )}
       
-      {/* 體驗點數即將用完提示（非彈窗）- 開發模式下不顯示 */}
+      {/* 可處理字數即將用完提示（非彈窗）- 開發模式下不顯示 */}
       {!isDevMode && isLowBalance && !isExhausted && (
         <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
           <p className="text-sm text-amber-800 text-center">
             {lang === 'zh-tw' 
-              ? '你的體驗點數即將用完，歡迎繼續試用或之後再回來使用 😊'
-              : 'Your trial credits are running low. Feel free to continue or come back later 😊'}
+              ? '你的可處理字數即將用完，歡迎繼續試用或之後再回來使用 😊'
+              : 'Your processable characters are running low. Feel free to continue or come back later 😊'}
           </p>
         </div>
       )}
 
-      {/* 體驗點數已用完提示（友善說明，非錯誤訊息）- 開發模式下不顯示 */}
+      {/* 可處理字數已用完提示（友善說明，非錯誤訊息）- 開發模式下不顯示 */}
       {!isDevMode && isExhausted && (
         <div className="mt-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
           <div className="space-y-3">
@@ -197,18 +196,18 @@ export default function CreditStatusBar({
               {lang === 'zh-tw' 
                 ? (
                   <>
-                    體驗點數已使用完畢 🎉<br />
+                    可處理字數已使用完畢 🎉<br />
                     如果你覺得這個功能對你有幫助，<br />
-                    之後可購買點數繼續使用。<br />
-                    付費點數為永久有效，不限使用期限。
+                    之後可購買 AI 服務使用方案繼續使用。<br />
+                    付費方案為一次性服務，無訂閱、無自動扣款。
                   </>
                 )
                 : (
                   <>
-                    Trial credits have been used up 🎉<br />
+                    Processable characters have been used up 🎉<br />
                     If you find this feature helpful,<br />
-                    you can purchase credits to continue using it.<br />
-                    Paid credits are permanent with no expiration date.
+                    you can purchase an AI service plan to continue.<br />
+                    Paid plans are one-time; no subscription or auto-billing.
                   </>
                 )}
             </p>
@@ -217,7 +216,7 @@ export default function CreditStatusBar({
                 to="/points"
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md"
               >
-                {lang === 'zh-tw' ? '了解點數方案' : 'Learn About Points Plan'}
+                {lang === 'zh-tw' ? '了解使用方案' : 'Learn About Plans'}
               </Link>
             </div>
           </div>

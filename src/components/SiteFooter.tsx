@@ -52,7 +52,7 @@ export default function SiteFooter() {
       {/* 導覽連結 */}
       <div className="space-x-4 mb-2">
         <Link to="/points" className="hover:underline">
-          {isEnglish ? "Points Information" : "點數說明"}
+          {isEnglish ? "Usage Information" : "使用說明"}
         </Link>
         <Link to="/terms" className="hover:underline">
           {t("terms")}
@@ -110,8 +110,8 @@ export default function SiteFooter() {
         </p>
         <p className="text-xs text-gray-500 max-w-2xl mx-auto px-4 leading-relaxed">
           {isEnglish
-            ? "This section provides external resource links related to focus, learning, and efficiency improvement, for informational and reference purposes only, with no direct connection to this site's points, features, or services."
-            : "本區提供與專注、學習、效率提升相關的外部資源連結，僅作為資訊補充與參考，與本站點數、功能與服務無直接關聯。"}
+            ? "This section provides external resource links related to focus, learning, and efficiency improvement, for informational and reference purposes only, with no direct connection to this site's usage quota, features, or services."
+            : "本區提供與專注、學習、效率提升相關的外部資源連結，僅作為資訊補充與參考，與本站使用額度、功能與服務無直接關聯。"}
         </p>
       </div>
 

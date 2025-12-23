@@ -102,7 +102,7 @@ export default function CreditUsageDisplay({ lang = 'zh-tw' }: CreditUsageDispla
     return (
       <div className="card" style={{ backgroundColor: '#ffffff', color: '#213547' }}>
         <h2 className="text-lg sm:text-xl font-medium text-gray-700 mb-4 sm:mb-6">
-          💳 {lang === 'zh-tw' ? '點數使用狀況' : 'Credit Usage'}
+          💳 {lang === 'zh-tw' ? '使用額度狀況' : 'Usage Quota Status'}
         </h2>
         <div className="text-center py-4">
           <p className="text-gray-500 text-sm">
@@ -116,7 +116,7 @@ export default function CreditUsageDisplay({ lang = 'zh-tw' }: CreditUsageDispla
   return (
     <div className="card" style={{ backgroundColor: '#ffffff', color: '#213547' }}>
       <h2 className="text-lg sm:text-xl font-medium text-gray-700 mb-4 sm:mb-6">
-        💳 {lang === 'zh-tw' ? '點數使用狀況' : 'Credit Usage'}
+        💳 {lang === 'zh-tw' ? '使用額度狀況' : 'Usage Quota Status'}
       </h2>
 
       {/* 目前剩餘點數 */}
@@ -124,7 +124,7 @@ export default function CreditUsageDisplay({ lang = 'zh-tw' }: CreditUsageDispla
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm text-gray-600 mb-1">
-              {lang === 'zh-tw' ? '目前剩餘點數' : 'Remaining Credits'}
+              {lang === 'zh-tw' ? '目前剩餘可用字數' : 'Remaining Available Characters'}
             </p>
             <p className="text-2xl font-bold text-blue-700">
               {remainingChars !== null ? remainingChars.toLocaleString() : '0'} 
@@ -134,7 +134,7 @@ export default function CreditUsageDisplay({ lang = 'zh-tw' }: CreditUsageDispla
             </p>
             <p className="text-[10px] text-gray-400 mt-1">
               {lang === 'zh-tw' 
-                ? '※ 實際扣除點數以系統計算為準'
+                ? '※ 實際扣除字數以系統計算為準'
                 : '※ Actual deduction is based on system calculation'}
             </p>
           </div>
@@ -142,7 +142,7 @@ export default function CreditUsageDisplay({ lang = 'zh-tw' }: CreditUsageDispla
             onClick={() => navigate('/pricing')}
             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
           >
-            {lang === 'zh-tw' ? '購買點數' : 'Buy Credits'}
+            {lang === 'zh-tw' ? '購買使用方案' : 'Purchase Usage Plan'}
           </button>
         </div>
       </div>

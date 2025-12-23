@@ -3,7 +3,7 @@
  * 在所有 AI 模組「實際呼叫 Edge Function 前」使用
  * 
  * 流程順序：
- * 1. 如果是開發環境（localhost）→ 直接放行
+ * 1. 如果是 DEV 模式 → 直接放行
  * 2. 如果是付費點數 > 0 → 直接放行
  * 3. 如果是體驗點數：
  *    - 若 isTrialExpired() === true → 阻止執行
@@ -11,9 +11,7 @@
  */
 
 import { isTrialExpired, ensureTrialStartAt } from './trialManager'
-import { isDevelopment } from './envUtils'
-
-const FREE_TRIAL_QUOTA = 10000 // 免費體驗額度：10,000 字
+import { FREE_TRIAL_QUOTA } from '@/config'
 
 interface CreditCheckResult {
   /** 是否允許執行 */
@@ -31,9 +29,8 @@ interface CreditCheckResult {
  * @returns 檢查結果
  */
 export function checkCreditBeforeApiCall(remainingChars: number | null): CreditCheckResult {
-  // 1. 如果是開發環境（localhost）→ 直接放行
-  // ✅ 使用統一的環境判斷函數，正式網域（非 localhost）時強制視為 production
-  if (isDevelopment()) {
+  // 1. 如果是 DEV 模式 → 直接放行
+  if (import.meta.env.DEV === true) {
     return {
       allowed: true,
       reason: 'DEV_MODE',

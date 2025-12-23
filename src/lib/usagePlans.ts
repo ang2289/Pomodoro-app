@@ -1,46 +1,61 @@
-// 方案與額度規則（單一來源）
-// 定義所有字數點數方案的統一規則
-// ⚠️ 重要：此檔案為單一來源，修改方案規則請只改此檔案
+// ============================================
+// 方案工具函數（非數值定義來源）
+// ============================================
+// ⚠️ 重要：此檔案僅提供方案相關的工具函數，不包含任何硬編碼數值
+// 所有方案數值一律從 src/config.ts 讀取（單一來源）
+// 實際方案數值定義請修改 src/config.ts
+
+import { PLANS as CONFIG_PLANS } from '../config'
 
 export type PlanId = 'free' | 'pack99' | 'pack199';
 
-// 方案定義
+/**
+ * 使用方案定義（向後相容結構映射）
+ * 此物件僅作為向後相容的結構映射，所有數值直接從 config.ts 的 PLANS 讀取
+ * 
+ * 映射關係：
+ * - free.chars ← CONFIG_PLANS.free.monthlyQuota
+ * - pack99.chars ← CONFIG_PLANS.plan99.monthlyQuota
+ * - pack199.chars ← CONFIG_PLANS.plan199.monthlyQuota
+ * 
+ * ⚠️ 注意：實際方案數值定義請修改 src/config.ts，此檔案僅為映射層
+ */
 export const PLANS = {
   free: {
     id: 'free' as PlanId,
-    name: '免費方案',
-    nameEn: 'Free Plan',
-    chars: 10000, // 贈送 10,000 字
+    name: CONFIG_PLANS.free.name,
+    nameEn: CONFIG_PLANS.free.nameEn,
+    chars: CONFIG_PLANS.free.monthlyQuota, // 從 src/config.ts 讀取（單一來源）
   },
   pack99: {
     id: 'pack99' as PlanId,
-    name: '點數方案',
-    nameEn: 'Point Plan',
-    chars: 100000, // 購買後增加 100,000 字
-    price: 99,
+    name: CONFIG_PLANS.plan99.name,
+    nameEn: CONFIG_PLANS.plan99.nameEn,
+    chars: CONFIG_PLANS.plan99.monthlyQuota, // 從 src/config.ts 讀取（單一來源）
+    price: CONFIG_PLANS.plan99.price,
   },
   pack199: {
     id: 'pack199' as PlanId,
-    name: '點數方案',
-    nameEn: 'Point Plan',
-    chars: 300000, // 購買後增加 300,000 字
-    price: 199,
+    name: CONFIG_PLANS.plan199.name,
+    nameEn: CONFIG_PLANS.plan199.nameEn,
+    chars: CONFIG_PLANS.plan199.monthlyQuota, // 從 src/config.ts 讀取（單一來源）
+    price: CONFIG_PLANS.plan199.price,
   },
 } as const;
 
 /**
- * 取得方案可用字數
+ * 取得方案可處理字數（從 config.ts 讀取）
  * @param planId 方案 ID
- * @returns 該方案可用字數
+ * @returns 該方案可處理字數
  */
 export function getPlanChars(planId: PlanId): number {
   return PLANS[planId].chars;
 }
 
 /**
- * 取得方案顯示名稱
+ * 取得使用方案顯示名稱（從 config.ts 讀取）
  * @param planId 方案 ID
- * @returns 方案顯示名稱（例如：NT$99 方案）
+ * @returns 使用方案顯示名稱（例如：NT$99 方案）
  */
 export function getPlanLabel(planId: PlanId): string {
   const plan = PLANS[planId];
@@ -53,8 +68,8 @@ export function getPlanLabel(planId: PlanId): string {
 }
 
 /**
- * 取得所有方案清單（給 pricing 頁用）
- * @returns 所有方案的陣列
+ * 取得所有使用方案清單（從 config.ts 讀取）
+ * @returns 所有使用方案的陣列
  */
 export function getAllPlans() {
   return [
@@ -75,6 +90,7 @@ export function getPlanLimit(planId: PlanId): number {
 
 /**
  * @deprecated 請使用 getPlanLabel 取代
+ * 格式化使用方案顯示名稱（從 config.ts 讀取）
  */
 export function formatPlanLabel(planId: PlanId, lang: 'zh-tw' | 'en' = 'zh-tw'): string {
   const plan = PLANS[planId];
