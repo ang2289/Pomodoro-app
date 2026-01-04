@@ -92,7 +92,6 @@ export default function PointsPage() {
             <ul className="list-disc ml-6 space-y-2 text-gray-700">
               <li>使用額度資訊僅作為功能使用說明與資源分配展示用途</li>
               <li>不構成即時金流交易、訂閱扣款或自動續費</li>
-              <li>可在未登入或未付款狀態下體驗部分功能</li>
               <li>系統會依使用狀況設定體驗上限，以維持服務品質</li>
             </ul>
           </div>

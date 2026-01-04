@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import i18n from '../i18n'
-import { supabase } from '../utils/supabaseClient'
+import { supabase } from '../lib/supabase'
 import { deleteChantWish } from '../utils/deleteChantWish'
 import { config } from '../config'
 
@@ -42,13 +42,10 @@ export default function ChantWishCard({ wish }: ChantWishCardProps) {
   const [lightCount, setLightCount] = useState<number>(0)
   const [user, setUser] = useState<any>(null)
 
-  // 獲取當前用戶資訊
+  // ⚠️ 已移除 Supabase Auth 相關邏輯
   useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      setUser(user)
-    }
-    getUser()
+    // 已停用
+    setUser(null)
   }, [])
 
   useEffect(() => {

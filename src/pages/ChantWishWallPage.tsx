@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { supabase } from '../utils/supabaseClient'
+import { supabase } from '../lib/supabase'
 import { useNavigate, Link } from 'react-router-dom'
 import ChantWishCard from '../components/ChantWishCard'
 import SearchForm, { SearchFilters } from '../components/SearchForm'

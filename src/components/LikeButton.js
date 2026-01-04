@@ -1,6 +1,6 @@
 import { jsxs as _jsxs } from "react/jsx-runtime";
 import { useEffect, useState } from 'react';
-import { supabase } from '../utils/supabaseClient';
+import { supabase } from '../lib/supabase';
 export default function LikeButton({ wishId }) {
     const [count, setCount] = useState(0);
     const [liked, setLiked] = useState(false);

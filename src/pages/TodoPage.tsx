@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import ModuleDropdown from '../components/ModuleDropdown'
 import { defaultCategories, Category } from '../lib/defaultCategories'
 import TodoExportButton from '../components/TodoExportButton'
+import PrimaryButton from '@/components/ui/PrimaryButton'
 
 interface Todo {
   id: string
@@ -463,12 +464,15 @@ export default function TodoPage() {
           {/* 清除已完成 */}
           {todos.some(todo => todo.status === t('todo_config.status.completed')) && (
             <div className="mt-6 pt-4 border-t border-gray-200">
-              <button
-                onClick={clearCompleted}
-                className="w-full max-w-xs lg:w-40 mx-auto block px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
-              >
-                {t('todo_config.button.clear_completed')}
-              </button>
+              <div className="w-full max-w-xs lg:w-40 mx-auto">
+                <PrimaryButton
+                  onClick={clearCompleted}
+                  fullWidth
+                  className="bg-red-500 hover:bg-red-600"
+                >
+                  {t('todo_config.button.clear_completed')}
+                </PrimaryButton>
+              </div>
             </div>
           )}
         </div>

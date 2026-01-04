@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { supabase } from '../utils/supabaseClient';
+import { supabase } from '../lib/supabase';
 import { containsSensitiveWords } from '../utils/sensitiveWords';
 
 const CreateWishPage: React.FC = () => {

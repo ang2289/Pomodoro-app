@@ -2,7 +2,7 @@ import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import imageCompression from 'browser-image-compression';
-import { supabase } from '../utils/supabaseClient';
+import { supabase } from '../lib/supabase';
 export default function ImageUpload({ onUpload }) {
     const { t } = useTranslation();
     const [uploading, setUploading] = useState(false);

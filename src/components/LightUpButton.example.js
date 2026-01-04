@@ -1,7 +1,7 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 // 使用範例：如何在集氣活動詳情頁中使用 LightUpButton
 import { useState, useEffect } from 'react';
-import { supabase } from '../utils/supabaseClient';
+import { supabase } from '../lib/supabase';
 import LightUpButton from './LightUpButton';
 export default function LightUpButtonExample({ chantWishId }) {
     const [lightCount, setLightCount] = useState(0);

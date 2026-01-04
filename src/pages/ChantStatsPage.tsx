@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import i18n from '../i18n'
-import { supabase } from '../utils/supabaseClient'
+import { supabase } from '../lib/supabase'
 import ChantSummaryItem from '../components/ChantSummaryItem'
 
 interface ChantLog {

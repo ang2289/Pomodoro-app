@@ -1,4 +1,4 @@
-import { supabase } from './supabaseClient';
+import { supabase } from '../lib/supabase';
 export const deleteChantWish = async ({ id, imageUrl }) => {
     try {
         // 1. 如果有圖片，先從 Storage 刪除

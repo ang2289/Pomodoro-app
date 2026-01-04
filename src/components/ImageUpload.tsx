@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import imageCompression from 'browser-image-compression'
-import { supabase } from '../utils/supabaseClient'
+import { supabase } from '../lib/supabase'
 
 async function isImageSafe(base64DataUrl: string): Promise<boolean> {
   const labels = ['safe', 'porn', 'naked', 'violence', 'blood', 'hate', 'weapon']

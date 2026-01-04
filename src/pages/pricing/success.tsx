@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { buildSEO } from '../../lib/seo'
+import { supabase } from '@/lib/supabase'
+import PrimaryButton from '@/components/ui/PrimaryButton'
 
 const seo = buildSEO({
   title: '付款成功',
@@ -15,8 +17,56 @@ export default function PaymentSuccessPage() {
   const [searchParams] = useSearchParams()
   const [paymentInfo, setPaymentInfo] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [remainingChars, setRemainingChars] = useState<number | null>(null)
+  const [creditsAdded, setCreditsAdded] = useState(false)
 
   useEffect(() => {
+    // ✅ STEP 6：購買點數（綠界回來只做一件事）
+    const handlePaymentSuccess = async () => {
+      try {
+        // 1. 從 localStorage 讀取 anon_token
+        const anonToken = localStorage.getItem('anon_token')
+        
+        if (!anonToken) {
+          console.error('❌ [PaymentSuccess] 找不到 anon_token')
+          setLoading(false)
+          return
+        }
+
+        // 2. 呼叫 Supabase RPC：add_credits
+        // 注意：根據方案，這裡固定加 100000 字（99 元方案）
+        // 如果需要根據不同方案加不同字數，可以從 URL 參數或 localStorage 讀取方案資訊
+        // ⚠️ RPC 回傳 VOID，不會回傳新剩餘字數
+        const { error: rpcError } = await supabase.rpc('add_credits', {
+          p_anon_token: anonToken,
+          p_add_chars: 100000, // 固定 100000 字（99 元方案）
+        })
+
+        if (rpcError) {
+          console.error('❌ [PaymentSuccess] 加點失敗：', rpcError)
+          // 即使加點失敗，也顯示付款成功頁面
+        } else {
+          console.log('✅ [PaymentSuccess] 加點成功')
+          // 3. 更新前端顯示的 remainingChars
+          // 由於 RPC 不回傳值，需要重新查詢剩餘字數
+          const { data: creditsData, error: queryError } = await supabase
+            .from('user_credits')
+            .select('remaining_chars')
+            .eq('anon_token', anonToken)
+            .single()
+          
+          if (!queryError && creditsData) {
+            setRemainingChars(creditsData.remaining_chars)
+            setCreditsAdded(true)
+          }
+        }
+      } catch (err: any) {
+        console.error('❌ [PaymentSuccess] 處理付款成功時發生錯誤：', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
     // 從 URL 參數取得付款資訊（綠界會回傳）
     const merchantTradeNo = searchParams.get('MerchantTradeNo')
     const tradeAmt = searchParams.get('TradeAmt')
@@ -31,7 +81,9 @@ export default function PaymentSuccessPage() {
         paymentType,
       })
     }
-    setLoading(false)
+
+    // 處理付款成功（加點）
+    handlePaymentSuccess()
   }, [searchParams])
 
   return (
@@ -63,6 +115,17 @@ export default function PaymentSuccessPage() {
               <p className="text-gray-600 mb-6">
                 使用額度已入帳，可立即使用
               </p>
+              
+              {/* 顯示剩餘字數（如果已加點） */}
+              {creditsAdded && remainingChars !== null && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                  <p className="text-sm text-blue-800 mb-2">目前剩餘字數</p>
+                  <p className="text-3xl font-bold text-blue-900">
+                    {remainingChars.toLocaleString()} 字
+                  </p>
+                </div>
+              )}
+              
               <p className="text-sm text-gray-500 mb-6">
                 您的使用額度已成功加入帳戶，可以立即使用 AI 摘要和解題功能。
               </p>
@@ -100,18 +163,20 @@ export default function PaymentSuccessPage() {
 
               {/* 操作按鈕 */}
               <div className="space-y-3">
-                <button
+                <PrimaryButton
                   onClick={() => navigate('/summary')}
-                  className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+                  fullWidth
+                  className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
                 >
                   前往使用 AI 摘要
-                </button>
-                <button
+                </PrimaryButton>
+                <PrimaryButton
                   onClick={() => navigate('/pricing')}
-                  className="w-full bg-gray-200 text-gray-700 font-medium py-3 px-4 rounded-lg hover:bg-gray-300 transition"
+                  fullWidth
+                  className="bg-gray-200 text-gray-700 hover:bg-gray-300"
                 >
                   返回方案頁面
-                </button>
+                </PrimaryButton>
               </div>
 
               {/* 提示訊息 */}

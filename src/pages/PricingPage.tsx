@@ -1,8 +1,20 @@
+/*
+⚠️ DEPRECATED（已棄用）
+此頁面已由新版流程取代，請勿再使用或修改。
+正式流程請見：
+- 方案頁：/pricing
+- 匯款頁：/payment/bank-transfer
+- 匯款回報：/payment/report
+- 後台管理：/admin/payments
+*/
+
 import { useState } from 'react'
 import { Helmet } from 'react-helmet-async'
+import { Link } from 'react-router-dom'
 import { buildSEO } from '../lib/seo'
 import SectionHeader from '../components/SectionHeader'
 import { PLANS } from '../config'
+import PrimaryButton from '@/components/ui/PrimaryButton'
 
 const seo = buildSEO({
   title: '方案與價格',
@@ -316,12 +328,14 @@ export default function PricingPage() {
 
         {/* 返回摘要頁面 */}
         <div className="mt-8 text-center">
-          <a
-            href="/summary"
-            className="inline-block px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-medium rounded-lg hover:from-blue-600 hover:to-cyan-600 transition-all duration-200 shadow-md hover:shadow-lg"
-          >
-            {lang === 'zh-tw' ? '返回摘要工具' : 'Back to Summary Tool'}
-          </a>
+          <Link to="/summary" className="block">
+            <PrimaryButton
+              fullWidth={false}
+              className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
+            >
+              {lang === 'zh-tw' ? '返回摘要工具' : 'Back to Summary Tool'}
+            </PrimaryButton>
+          </Link>
         </div>
       </div>
 

@@ -51,8 +51,11 @@ export default function SiteFooter() {
 
       {/* 導覽連結 */}
       <div className="space-x-4 mb-2">
+        <Link to="/help" className="hover:underline">
+          {isEnglish ? "Help" : "使用說明"}
+        </Link>
         <Link to="/points" className="hover:underline">
-          {isEnglish ? "Usage Information" : "使用說明"}
+          {isEnglish ? "Usage Information" : "使用資訊"}
         </Link>
         <Link to="/terms" className="hover:underline">
           {t("terms")}

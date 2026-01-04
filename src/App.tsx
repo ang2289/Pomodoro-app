@@ -1,6 +1,8 @@
-import { Routes, Route, Link } from 'react-router-dom'
+import { Routes, Route, Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useEffect, useState } from 'react'
+import { supabase } from './lib/supabase'
+import { generateUUID } from './services/taskRegistrationService'
 import i18n from './i18n'
 import { notificationService } from './services/notificationService'
 import MainLayout from './layouts/MainLayout'
@@ -42,6 +44,17 @@ import PointsPage from './pages/points'
 import PaymentInfo from './pages/PaymentInfo'
 import SystemStatus from './pages/SystemStatus'
 import FeaturesPage from './pages/FeaturesPage'
+// ⚠️ DEPRECATED: 以下 import 已棄用，保留僅供參考
+// import TopupReportPage from './pages/topup/report'
+// import TopupAdminPage from './pages/topup/admin'
+import BankTransferPage from './pages/payment/bank-transfer'
+import PaymentReportPage from './pages/payment/report'
+import PaymentSuccessRedirectPage from './pages/payment/success'
+import DeprecatedPage from './pages/DeprecatedPage'
+import AdminPaymentsPage from './pages/admin/payments'
+import HelpPage from './pages/help/index'
+import AdminDashboardPage from './pages/admin/dashboard'
+// ⚠️ 已移除 UpgradeSuccessToast 和 useAuthCredits
 import ArticleTemplate from './pages/blog/ArticleTemplate'
 import ChantFocusArticle from './pages/blog/ChantFocusArticle'
 import MorningMeditationArticle from './pages/blog/MorningMeditationArticle'
@@ -82,7 +95,8 @@ import AidsPage from './pages/blog/aids'
 import FinancePage from './pages/finance/index'
 import SummaryPage from './pages/summary/index'
 import SummaryLanding from './pages/summary-landing'
-import PricingPage from './pages/PricingPage'
+// ⚠️ DEPRECATED: 以下 import 已棄用，保留僅供參考
+// import PricingPage from './pages/PricingPage'
 import PricingPageNew from './pages/pricing/index'
 import PaymentSuccessPage from './pages/pricing/success'
 import PaymentCancelPage from './pages/pricing/cancel'
@@ -120,22 +134,23 @@ import AdBanner from './components/AdBanner'
 import { Toaster } from 'react-hot-toast'
 import { useGATracker } from './hooks/useGATracker'
 import { KeepAlivePing } from './components/KeepAlivePing'
-import { useAuthCredits } from './hooks/useAuthCredits'
 import ScrollToTop from './components/ScrollToTop'
 
 function App() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   useGATracker()
   const [showAd, setShowAd] = useState(false)
   const [isSubscribed, setIsSubscribed] = useState(false)
   
-  // 自動初始化使用者免費試用點數（首次註冊/登入時）
-  useAuthCredits()
+  // ⚠️ 已移除所有 Auth 相關邏輯
   // 自動偵測目前執行模式（App/PWA 或 Web）
   const isApp =
     (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
     /Capacitor|Android|iPhone|iPad/i.test(navigator.userAgent)
 
+  // ⚠️ 已移除匿名使用者初始化邏輯
+  
   // 初始化主題設定
   useEffect(() => {
     // 從 localStorage 讀取並套用主題設定
@@ -155,11 +170,28 @@ function App() {
 
     // 初始化通知服務
     notificationService.initialize().then(hasPermission => {
-      console.log('通知權限初始化完成:', hasPermission)
+      // console.log('通知權限初始化完成:', hasPermission)
     }).catch(error => {
       console.error('通知權限初始化失敗:', error)
     })
-  }, [])
+
+    // ⚠️ 已移除：OAuth callback 處理邏輯
+    // const handleOAuthCallback = async () => {
+    //   try {
+    //     // 檢查 URL hash 中是否有 access_token（OAuth callback 標記）
+    //     if (window.location.hash.includes('access_token')) {
+    //       const { data: { session } } = await supabase.auth.getSession()
+    //       if (session?.user) {
+    //         // OAuth 登入成功，導向 /summary
+    //         navigate('/summary', { replace: true })
+    //       }
+    //     }
+    //   } catch (error) {
+    //     console.error('處理 OAuth callback 失敗:', error)
+    //   }
+    // }
+    // handleOAuthCallback()
+  }, [navigate])
 
   // AdMob 初始化
   useEffect(() => {
@@ -194,6 +226,9 @@ function App() {
 
   return (
     <div className="w-full min-h-screen max-w-screen-md mx-auto">
+      {/* ⚠️ 已移除升級成功提示 */}
+      
+      {/* Auth buttons removed for testing */}
       <ScrollToTop />
       <Routes>
           {/* 主要巢狀路由 - 使用 MainLayout */}
@@ -214,7 +249,8 @@ function App() {
             <Route path="pricing" element={<PricingPageNew />} />
             <Route path="pricing/success" element={<PaymentSuccessPage />} />
             <Route path="pricing/cancel" element={<PaymentCancelPage />} />
-            <Route path="pricing-old" element={<PricingPage />} />
+            {/* ⚠️ DEPRECATED: 舊版方案頁，已改為顯示棄用提示 */}
+            <Route path="pricing-old" element={<DeprecatedPage oldPath="/pricing-old" newPath="/pricing" message="此頁面已棄用，請前往新版方案頁" />} />
             {/* 作業解題功能 */}
             <Route path="homework-helper" element={<HomeworkHelper />} />
             <Route path="shopping/search" element={<NotFoundPage />} />
@@ -303,6 +339,22 @@ function App() {
           <Route path="/status" element={<SystemStatus />} />
           <Route path="/features" element={<FeaturesPage />} />
           <Route path="/points" element={<PointsPage />} />
+          
+          {/* ⚠️ DEPRECATED: 舊版加點相關頁面，已改為顯示棄用提示 */}
+          <Route path="/topup/report" element={<DeprecatedPage oldPath="/topup/report" newPath="/payment/report" message="此頁面已棄用，請前往新版匯款回報頁" />} />
+          <Route path="/topup/admin" element={<DeprecatedPage oldPath="/topup/admin" newPath="/admin/payments" message="此頁面已棄用，請前往新版後台管理頁" />} />
+          
+          {/* 管理者頁面 */}
+          <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
+          <Route path="/admin/payments" element={<AdminPaymentsPage />} />
+          
+          {/* 付款相關頁面 */}
+          <Route path="/payment/bank-transfer" element={<BankTransferPage />} />
+          <Route path="/payment/report" element={<PaymentReportPage />} />
+          <Route path="/payment/success" element={<PaymentSuccessRedirectPage />} />
+          
+          {/* 使用說明 */}
+          <Route path="/help" element={<HelpPage />} />
           
           {/* Blog 教學文章 */}
           <Route path="/blog" element={<BlogHome />} />

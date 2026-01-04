@@ -74,13 +74,13 @@ export function trackToolClick(params: ToolClickParams): void {
       
       // 開發環境下輸出追蹤日誌
       if (import.meta.env.DEV) {
-        console.log('📊 [GA4] tool_click:', params)
+        // console.log('📊 [GA4] tool_click:', params)
       }
     }
   } catch (error) {
     // 安全忽略錯誤，避免影響使用者體驗
     if (import.meta.env.DEV) {
-      console.warn('⚠️ [GA4] 追蹤失敗:', error)
+      // console.warn('⚠️ [GA4] 追蹤失敗:', error)
     }
   }
 }
@@ -101,13 +101,13 @@ export function trackEvent(eventName: string, eventParams?: Record<string, unkno
       
       // 開發環境下輸出追蹤日誌
       if (import.meta.env.DEV) {
-        console.log(`📊 [GA4] ${eventName}:`, eventParams)
+        // console.log(`📊 [GA4] ${eventName}:`, eventParams)
       }
     }
   } catch (error) {
     // 安全忽略錯誤
     if (import.meta.env.DEV) {
-      console.warn('⚠️ [GA4] 追蹤失敗:', error)
+      // console.warn('⚠️ [GA4] 追蹤失敗:', error)
     }
   }
 }

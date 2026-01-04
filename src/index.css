@@ -184,21 +184,8 @@ h1 {
   line-height: 1.1;
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.8em 1.5em;
-  font-size: 1.2em;
-  font-weight: 600;
-  font-family: inherit;
-  background-color: transparent;
-  color: inherit;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
+/* 全域 button 樣式已移除，避免覆蓋 Tailwind 按鈕樣式 */
+/* 如需特定按鈕樣式，請使用 Tailwind 類別或特定選擇器 */
 button:focus,
 button:focus-visible {
   outline: none !important;
@@ -503,10 +490,8 @@ button:focus-visible:not(.no-focus-outline) {
     color: #213547 !important;
   }
 
-  /* 2) 全站按鈕：只設定圓角與內距，不覆蓋顏色，避免按鈕底色被蓋掉 */
-  button {
-    border-radius: 0.25rem; padding-left: 1rem; padding-right: 1rem; padding-top: 0.5rem; padding-bottom: 0.5rem;
-  }
+  /* 2) 全站按鈕：已移除，避免覆蓋 Tailwind 按鈕樣式 */
+  /* 如需特定按鈕樣式，請使用 Tailwind 類別或特定選擇器 */
 
   /* 3) 列表項卡片：亮色卡片、圓角、陰影與間距 */
   .card,
@@ -571,10 +556,10 @@ button {
 }
 
 /* 移除行動裝置點擊高亮與任何預設外框線條 */
+/* 注意：不設定 border: 0，避免覆蓋 Tailwind 按鈕邊框樣式 */
 button, img {
   -webkit-tap-highlight-color: transparent;
   outline: none;
-  border: 0;
 }
 
 /* 強制支持按鈕的文字為深色，避免被外層白色字覆蓋 */

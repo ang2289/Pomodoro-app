@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { supabase } from '../utils/supabaseClient'
+import { supabase } from '../lib/supabase'
 
 interface ChantLogInputProps {
   wishId: string

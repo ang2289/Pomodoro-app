@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import i18n from '../i18n'
-import { supabase } from '../utils/supabaseClient'
+import { supabase } from '../lib/supabase'
 
 interface ChantWish {
   id: string

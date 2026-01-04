@@ -5,6 +5,6 @@ export const ENV = {
 };
 
 if (!ENV.GEMINI_API_KEY) {
-  console.warn("⚠️  GEMINI_API_KEY 未設定！請確認 Vercel Environment Variables 或 .env.local 已加入。");
+  // console.warn("⚠️  GEMINI_API_KEY 未設定！請確認 Vercel Environment Variables 或 .env.local 已加入。");
 }
 

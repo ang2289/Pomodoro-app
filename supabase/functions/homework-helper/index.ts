@@ -8,7 +8,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-api-version",
 };
 
-console.log("✅ Edge Function 'homework-helper' is running...");
+// console.log("✅ Edge Function 'homework-helper' is running...");
 
 serve(async (req: Request) => {
   // ✅ OPTIONS preflight 處理：必須在 handler 第一行，不能有任何 await 在它前面
@@ -72,7 +72,7 @@ serve(async (req: Request) => {
             userId = user.id;
           }
         } catch (e) {
-          console.log("⚠️ 無法從 token 取得使用者 ID，將使用訪客模式");
+          // console.log("⚠️ 無法從 token 取得使用者 ID，將使用訪客模式");
         }
       }
       
@@ -302,7 +302,7 @@ serve(async (req: Request) => {
             if (updateError) {
               console.error("❌ 扣點失敗：", updateError);
             } else {
-              console.log(`✅ 扣點成功：${usedTokens} 字（輸入 ${inputLength} + 輸出 ${outputLength}）`);
+              // console.log(`✅ 扣點成功：${usedTokens} 字（輸入 ${inputLength} + 輸出 ${outputLength}）`);
             }
           } else {
             // 記錄不存在，建立新記錄（預設 10000，扣除已使用）
@@ -317,7 +317,7 @@ serve(async (req: Request) => {
             if (insertError) {
               console.error("❌ 建立點數記錄失敗：", insertError);
             } else {
-              console.log(`✅ 扣點成功（新記錄）：${usedTokens} 字（輸入 ${inputLength} + 輸出 ${outputLength}）`);
+              // console.log(`✅ 扣點成功（新記錄）：${usedTokens} 字（輸入 ${inputLength} + 輸出 ${outputLength}）`);
             }
           }
         }
@@ -326,7 +326,7 @@ serve(async (req: Request) => {
         console.error("❌ 扣點時發生錯誤（不阻擋回應）：", deductError);
       }
     } else {
-      console.warn("⚠️ 無法扣點：缺少 Supabase 設定或使用者 ID");
+      // console.warn("⚠️ 無法扣點：缺少 Supabase 設定或使用者 ID");
     }
 
     return new Response(

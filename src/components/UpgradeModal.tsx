@@ -37,15 +37,9 @@ export default function UpgradeModal({
           {lang === 'zh-tw' ? '免費試用額度已用完' : 'Free Trial Quota Exhausted'}
         </h3>
         <p className="text-gray-700 mb-4 whitespace-pre-line">
-          {isQuotaExhausted ? (
-            lang === 'zh-tw'
-              ? `您已完成本次免費試用（10,000 字）。\n目前僅開放試用，購買功能尚未開放。`
-              : `You have completed the free trial (10,000 characters).\nCurrently only trial is available, purchase function is not yet open.`
-          ) : (
-            lang === 'zh-tw'
-              ? `目前使用額度不足，請先查看使用方案說明。`
-              : `Insufficient usage quota. Please check the usage plan description.`
-          )}
+          {lang === 'zh-tw'
+            ? `目前使用額度不足，請先查看使用方案說明。`
+            : `Insufficient usage quota. Please check the usage plan description.`}
         </p>
         {isQuotaExhausted && (
           <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-700">

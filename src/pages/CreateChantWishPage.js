@@ -2,7 +2,7 @@ import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from '../i18n';
-import { supabase } from '../utils/supabaseClient';
+import { supabase } from '../lib/supabase';
 import ImageUpload from '../components/ImageUpload.tsx';
 import { useNavigate } from 'react-router-dom';
 import { containsSensitiveWords } from '../utils/sensitiveWords';

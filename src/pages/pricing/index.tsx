@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Helmet } from 'react-helmet-async'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { buildSEO } from '../../lib/seo'
 import { PLANS, getPlanChars, getPlanLabel, getAllPlans, type PlanId } from '../../lib/usagePlans'
+import { supabase } from '../../lib/supabase'
+import { useAuth } from '../../hooks/useAuth'
 
 const seo = buildSEO({
   title: '使用額度方案',
@@ -16,14 +18,21 @@ const seo = buildSEO({
 async function startEcpayCheckout(
   planId: PlanId, 
   event?: React.MouseEvent<HTMLButtonElement>,
-  lang: 'zh-tw' | 'en' = 'zh-tw' // 新增 lang 參數以正確顯示載入和錯誤訊息
+  lang: 'zh-tw' | 'en' = 'zh-tw', // 新增 lang 參數以正確顯示載入和錯誤訊息
+  userId?: string // 從 session 取得的使用者 ID
 ) {
   try {
-    console.log('🛒 開始綠界金流結帳流程：', planId, lang)
+    // console.log('🛒 開始綠界金流結帳流程：', planId, lang)
     
-    // 取得使用者 ID（從 localStorage 或 Supabase session）
-    // TODO: 實際應從 Supabase Auth 取得
-    const userId = localStorage.getItem('user_id') || 'anonymous_' + Date.now()
+    // ⚠️ 關鍵：只以 supabase.auth.getSession() 回傳的 session 判斷登入狀態
+    // 取得使用者 ID（從 Supabase session）
+    if (!userId) {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user?.id) {
+        throw new Error(lang === 'en' ? 'Please log in first' : '請先登入')
+      }
+      userId = session.user.id
+    }
     
     // 顯示載入狀態（多語言支援）
     const button = event?.currentTarget as HTMLButtonElement
@@ -102,6 +111,47 @@ async function startEcpayCheckout(
 export default function PricingPage() {
   const navigate = useNavigate()
   const [lang, setLang] = useState<'zh-tw' | 'en'>('zh-tw')
+  const { user } = useAuth()
+  const [isInTrial, setIsInTrial] = useState<boolean | null>(null) // null = 載入中
+
+  // 檢查使用者是否在試用期間
+  useEffect(() => {
+    const checkTrialStatus = async () => {
+      if (!user) {
+        setIsInTrial(false)
+        return
+      }
+
+      try {
+        const { data, error } = await supabase.rpc('get_user_credits_info', {
+          p_user_id: user.id,
+        })
+
+        if (error || !data) {
+          setIsInTrial(false)
+          return
+        }
+
+        // RPC 返回的是陣列，取第一筆
+        const creditsInfo = Array.isArray(data) ? data[0] : data
+        const trialExpiresAt = creditsInfo?.trial_expires_at
+
+        // 檢查 trial_expires_at 是否尚未到期
+        if (trialExpiresAt) {
+          const expiresAt = new Date(trialExpiresAt).getTime()
+          const now = new Date().getTime()
+          setIsInTrial(expiresAt > now)
+        } else {
+          setIsInTrial(false)
+        }
+      } catch (err) {
+        console.error('❌ 檢查試用狀態失敗:', err)
+        setIsInTrial(false)
+      }
+    }
+
+    checkTrialStatus()
+  }, [user])
 
   return (
     <>
@@ -209,6 +259,13 @@ export default function PricingPage() {
             >
               {lang === 'zh-tw' ? '立即使用' : 'Start Using'}
             </button>
+            
+            {/* 未登入使用者提示 */}
+            {!user && (
+              <p className="mt-3 text-xs text-center text-gray-600">
+                {lang === 'zh-tw' ? '登入後即可啟用 10,000 字免費試用' : 'Log in to activate 10,000 characters free trial'}
+              </p>
+            )}
           </div>
 
           {/* NT$99 方案卡 */}
@@ -244,21 +301,33 @@ export default function PricingPage() {
               </p>
             </div>
 
-            {/* 🔒 購買功能尚未開放 - 標註「尚未開放購買」 */}
+            {/* 🔒 購買功能狀態提示 */}
             <div className="mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-700 text-center">
-              {lang === 'zh-tw' ? '⚠️ 尚未開放購買' : '⚠️ Purchase Not Available'}
+              {isInTrial === true
+                ? (lang === 'zh-tw' ? '🔒 免費試用進行中，試用結束後即可購買' : '🔒 Free trial in progress, purchase available after trial ends')
+                : (lang === 'zh-tw' ? '⚠️ 尚未開放購買' : '⚠️ Purchase Not Available')
+              }
             </div>
             <button
               onClick={(e) => {
                 e.preventDefault()
-                alert(lang === 'zh-tw' 
-                  ? '目前僅開放免費試用 10,000 字，付費方案尚未開放購買。顯示價格僅供正式上線前參考。'
-                  : 'Currently only free trial of 10,000 characters is available. Paid plans are not yet available for purchase. Prices shown are for reference only.')
+                if (isInTrial === true) {
+                  alert(lang === 'zh-tw' 
+                    ? '您目前正在免費試用期間，試用結束後即可購買付費方案。'
+                    : 'You are currently in the free trial period. Paid plans will be available after the trial ends.')
+                } else {
+                  alert(lang === 'zh-tw' 
+                    ? '目前僅開放免費試用 10,000 字，付費方案尚未開放購買。顯示價格僅供正式上線前參考。'
+                    : 'Currently only free trial of 10,000 characters is available. Paid plans are not yet available for purchase. Prices shown are for reference only.')
+                }
               }}
               disabled
               className="w-full bg-gray-400 text-white font-medium py-3 px-4 rounded-lg cursor-not-allowed opacity-60"
             >
-              {lang === 'zh-tw' ? '購買 99 方案（尚未開放）' : 'Purchase NT$99 Plan (Not Available)'}
+              {isInTrial === true
+                ? (lang === 'zh-tw' ? '購買 99 方案（試用中）' : 'Purchase NT$99 Plan (Trial Active)')
+                : (lang === 'zh-tw' ? '購買 99 方案（尚未開放）' : 'Purchase NT$99 Plan (Not Available)')
+              }
             </button>
           </div>
 
@@ -295,21 +364,33 @@ export default function PricingPage() {
               </p>
             </div>
 
-            {/* 🔒 購買功能尚未開放 - 標註「尚未開放購買」 */}
+            {/* 🔒 購買功能狀態提示 */}
             <div className="mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-700 text-center">
-              {lang === 'zh-tw' ? '⚠️ 尚未開放購買' : '⚠️ Purchase Not Available'}
+              {isInTrial === true
+                ? (lang === 'zh-tw' ? '🔒 免費試用進行中，試用結束後即可購買' : '🔒 Free trial in progress, purchase available after trial ends')
+                : (lang === 'zh-tw' ? '⚠️ 尚未開放購買' : '⚠️ Purchase Not Available')
+              }
             </div>
             <button
               onClick={(e) => {
                 e.preventDefault()
-                alert(lang === 'zh-tw' 
-                  ? '目前僅開放免費試用 10,000 字，付費方案尚未開放購買。顯示價格僅供正式上線前參考。'
-                  : 'Currently only free trial of 10,000 characters is available. Paid plans are not yet available for purchase. Prices shown are for reference only.')
+                if (isInTrial === true) {
+                  alert(lang === 'zh-tw' 
+                    ? '您目前正在免費試用期間，試用結束後即可購買付費方案。'
+                    : 'You are currently in the free trial period. Paid plans will be available after the trial ends.')
+                } else {
+                  alert(lang === 'zh-tw' 
+                    ? '目前僅開放免費試用 10,000 字，付費方案尚未開放購買。顯示價格僅供正式上線前參考。'
+                    : 'Currently only free trial of 10,000 characters is available. Paid plans are not yet available for purchase. Prices shown are for reference only.')
+                }
               }}
               disabled
               className="w-full bg-gray-400 text-white font-medium py-3 px-4 rounded-lg cursor-not-allowed opacity-60"
             >
-              {lang === 'zh-tw' ? '購買 199 方案（尚未開放）' : 'Purchase NT$199 Plan (Not Available)'}
+              {isInTrial === true
+                ? (lang === 'zh-tw' ? '購買 199 方案（試用中）' : 'Purchase NT$199 Plan (Trial Active)')
+                : (lang === 'zh-tw' ? '購買 199 方案（尚未開放）' : 'Purchase NT$199 Plan (Not Available)')
+              }
             </button>
           </div>
         </div>
@@ -367,14 +448,24 @@ export default function PricingPage() {
           )}
         </div>
 
-        {/* 返回摘要頁面 */}
-        <div className="mt-8 text-center">
-          <button
-            onClick={() => navigate('/summary')}
-            className="inline-block px-6 py-3 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition"
-          >
-            {lang === 'zh-tw' ? '返回摘要工具' : 'Back to Summary Tool'}
-          </button>
+        {/* 使用說明與返回按鈕 */}
+        <div className="mt-8 text-center space-y-4">
+          <div>
+            <Link
+              to="/help"
+              className="inline-block px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition"
+            >
+              {lang === 'zh-tw' ? '📖 使用說明' : '📖 Help'}
+            </Link>
+          </div>
+          <div>
+            <button
+              onClick={() => navigate('/summary')}
+              className="inline-block px-6 py-3 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition"
+            >
+              {lang === 'zh-tw' ? '返回摘要工具' : 'Back to Summary Tool'}
+            </button>
+          </div>
         </div>
       </div>
     </>

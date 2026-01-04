@@ -1,6 +1,9 @@
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { supabase } from '@/utils/supabaseClient'
+// 登入/註冊頁面
+// 使用傳統帳號密碼，不使用 Supabase Auth
+
+import { useState } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
+import PrimaryButton from '@/components/ui/PrimaryButton'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -9,156 +12,111 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // 🔍 DEBUG: 檢查頁面載入時的 session（用於 OAuth callback 後驗證）
-  useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-      console.log('🔍 [LoginPage] 頁面載入時檢查 session:', {
-        hasSession: !!session,
-        userId: session?.user?.id,
-        userEmail: session?.user?.email,
-        error: sessionError,
-      })
-    }
-    checkSession()
-  }, [])
+  // 登入處理
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError(null)
+    setLoading(true)
 
-  // Google 登入
-  const handleGoogleLogin = async () => {
     try {
-      setLoading(true)
-      setError(null)
-
-      console.log('🔍 [LoginPage] 開始 Google OAuth 登入流程...')
-
-      const { error: signInError } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/`,
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ email, password }),
       })
 
-      if (signInError) {
-        console.error('❌ [LoginPage] Google OAuth 登入錯誤:', signInError)
-        setError('Google 登入失敗：' + signInError.message)
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || '登入失敗')
         setLoading(false)
+        return
+      }
+
+      if (data.success && data.userId) {
+        // 成功時：儲存 userId 到 localStorage
+        localStorage.setItem('userId', data.userId)
+        // 導向 /summary
+        navigate('/summary')
       } else {
-        console.log('✅ [LoginPage] Google OAuth 登入請求已送出，即將跳轉到 Google...')
-        // 如果成功，會自動跳轉到 Google，不需要手動處理
-      }
-    } catch (err: any) {
-      console.error('❌ [LoginPage] Google OAuth 登入例外:', err)
-      setError('Google 登入失敗：' + (err.message || '未知錯誤'))
-      setLoading(false)
-    }
-  }
-
-  // Email 登入
-  const handleEmailLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!email || !password) {
-      setError('請輸入 Email 和密碼')
-      return
-    }
-
-    try {
-      setLoading(true)
-      setError(null)
-
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-
-      if (signInError) {
-        console.error('❌ [LoginPage] Email 登入錯誤:', signInError)
-        setError('Email 或密碼錯誤')
+        setError('登入失敗：未收到使用者 ID')
         setLoading(false)
-        return
       }
-
-      // 🔍 DEBUG: 登入成功後檢查 session
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-      console.log('🔍 [LoginPage] Email 登入成功，檢查 session:', {
-        hasSession: !!session,
-        userId: session?.user?.id,
-        userEmail: session?.user?.email,
-        error: sessionError,
-      })
-
-      // 登入成功，導向首頁
-      navigate('/')
     } catch (err: any) {
-      setError('登入失敗：' + (err.message || '未知錯誤'))
+      console.error('[LoginPage] Login error:', err)
+      setError(err.message || '登入時發生錯誤')
       setLoading(false)
     }
   }
 
-  // Email 註冊
-  const handleEmailSignUp = async (e: React.FormEvent) => {
+  // 註冊處理
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!email || !password) {
-      setError('請輸入 Email 和密碼')
-      return
-    }
-
-    if (password.length < 6) {
-      setError('密碼長度至少需要 6 個字元')
-      return
-    }
+    setError(null)
+    setLoading(true)
 
     try {
-      setLoading(true)
-      setError(null)
-
-      const { error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
+      const response = await fetch('https://pomodoro-app.vercel.app/api/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
       })
 
-      if (signUpError) {
-        if (signUpError.message.includes('already registered') || signUpError.message.includes('已存在')) {
-          setError('此 Email 已存在，請直接登入')
-        } else {
-          setError('註冊失敗：' + signUpError.message)
+      if (!response.ok) {
+        // 處理不同錯誤狀態
+        let errorMsg = '註冊失敗'
+        try {
+          const errorData = await response.json()
+          if (response.status === 409) {
+            errorMsg = '此 Email 已註冊，請直接登入'
+          } else {
+            errorMsg = errorData.error || errorMsg
+          }
+        } catch {
+          if (response.status === 409) {
+            errorMsg = '此 Email 已註冊，請直接登入'
+          } else {
+            errorMsg = `註冊失敗 (${response.status})`
+          }
         }
+        setError(errorMsg)
         setLoading(false)
         return
       }
 
-      // 註冊成功，導向首頁
-      navigate('/')
+      const data = await response.json()
+
+      // 規格：響應格式為 { "userId": "<users.id>" }
+      if (data.userId) {
+        // 成功時：儲存 userId 到 localStorage
+        localStorage.setItem('userId', data.userId)
+        // 導向 /summary
+        navigate('/summary')
+      } else {
+        setError('註冊失敗：未收到使用者 ID')
+        setLoading(false)
+      }
     } catch (err: any) {
-      setError('註冊失敗：' + (err.message || '未知錯誤'))
+      console.error('[LoginPage] Register error:', err)
+      setError(err.message || '註冊時發生錯誤')
       setLoading(false)
     }
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-md bg-white rounded-lg shadow-md p-8">
-        <h1 className="text-2xl font-bold text-center mb-6">登入</h1>
+      <div className="w-full max-w-md bg-white rounded-xl shadow-lg px-8 py-10 mx-auto mt-24">
+        <h1 className="text-2xl font-bold text-gray-900 mb-6 text-center">登入 RxV AI 工具中心</h1>
 
-        {/* Google 登入按鈕 */}
-        <button
-          onClick={handleGoogleLogin}
-          disabled={loading}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors mb-6 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          使用 Google 登入（推薦）
-        </button>
-
-        <div className="relative mb-6">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300"></div>
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-gray-500">或</span>
-          </div>
-        </div>
+        {/* 副標 */}
+        <p className="text-sm text-gray-500 mt-2 mb-6 text-center">使用 Email 和密碼登入或註冊</p>
 
         {/* Email / 密碼表單 */}
-        <form onSubmit={handleEmailLogin} className="space-y-4">
+        <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
               Email
@@ -188,50 +146,46 @@ export default function LoginPage() {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
               placeholder="至少 6 個字元"
               required
+              minLength={6}
             />
           </div>
 
-          {/* 錯誤訊息 */}
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
               {error}
             </div>
           )}
 
-          {/* 按鈕組 */}
-          <div className="space-y-2">
+          <div className="mt-6 space-y-3">
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-3 bg-gray-900 hover:bg-gray-800 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? '處理中...' : 'Email 登入'}
+              {loading ? '處理中...' : '登入'}
             </button>
 
             <button
               type="button"
-              onClick={handleEmailSignUp}
+              onClick={handleRegister}
               disabled={loading}
-              className="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-3 border border-gray-300 hover:border-gray-400 text-gray-700 hover:text-gray-900 rounded-lg bg-white transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Email 註冊
+              註冊
             </button>
           </div>
         </form>
 
         {/* 返回首頁連結 */}
-        <div className="mt-6 text-center">
-          <button
-            onClick={() => navigate('/')}
-            className="text-sm text-gray-600 hover:text-gray-800 underline"
+        <Link to="/" className="block mt-4">
+          <PrimaryButton
+            fullWidth
+            className="bg-white text-blue-700 border border-blue-200 hover:bg-blue-50 active:bg-blue-100"
           >
             返回首頁
-          </button>
-        </div>
+          </PrimaryButton>
+        </Link>
       </div>
     </div>
   )
 }
-
-
-

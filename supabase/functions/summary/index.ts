@@ -8,7 +8,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-console.log("✅ Edge Function 'summary' is running...");
+// console.log("✅ Edge Function 'summary' is running...");
 
 serve(async (req: Request) => {
   // ✅ OPTIONS preflight 處理：必須在 handler 第一行，不能有任何 await 在它前面

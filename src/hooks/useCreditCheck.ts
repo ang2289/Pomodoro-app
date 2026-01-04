@@ -1,110 +1,30 @@
-// 共用的使用額度檢查邏輯 Hook
-// 用於摘要和解題功能，在送出請求前檢查字數是否足夠
-
-import { useAuthCredits } from './useAuthCredits'
-import { FREE_TRIAL_QUOTA } from '@/config'
-
-const FREE_REMAINING_KEY = 'free_characters_remaining' // localStorage key（儲存剩餘可用額度）
+// ⚠️ 已停用：此 Hook 已不再使用
+// 原因：移除 Supabase Auth 和舊點數系統
+// 如需檢查點數，請使用 src/lib/userCredits.ts
 
 interface CreditCheckResult {
-  /** 是否可以送出請求 */
   canProceed: boolean
-  /** 剩餘可用字數 */
   remainingChars: number
-  /** 已使用字數 */
   usedChars: number
-  /** 錯誤訊息（如果無法送出） */
   errorMessage?: string
+  reason?: string
 }
 
 /**
- * 共用的使用額度檢查 Hook
- * @param inputLength 使用者輸入的字數
- * @returns 檢查結果
+ * @deprecated 已停用，不再支援舊點數系統
  */
 export function useCreditCheck(inputLength: number): CreditCheckResult {
-  const { remainingChars, loading: creditsLoading } = useAuthCredits()
-
-  // 計算剩餘可用字數（優先使用登入狀態的 remainingChars，否則使用免費額度計算）
-  // ⚠️ 不在渲染階段寫入 localStorage，避免 side effect
-  const getRemainingChars = (): number => {
-    if (remainingChars !== null) {
-      return remainingChars
-    }
-    // 未登入時從 localStorage 讀取剩餘可用額度
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem(FREE_REMAINING_KEY)
-      if (saved !== null) {
-        const remaining = parseInt(saved, 10)
-        // 確保不會是負數
-        return Math.max(0, remaining)
-      }
-      // 如果沒有值，回傳預設額度（不在這裡寫入 localStorage）
-      return FREE_TRIAL_QUOTA
-    }
-    return FREE_TRIAL_QUOTA
-  }
-
-  // 計算已使用字數
-  const getUsedChars = (): number => {
-    if (remainingChars !== null && remainingChars < FREE_TRIAL_QUOTA) {
-      // 登入狀態：已使用 = 免費額度 - 剩餘
-      return FREE_TRIAL_QUOTA - remainingChars
-    }
-    // 未登入狀態：已使用 = 免費額度 - 剩餘
-    const remaining = getRemainingChars()
-    return FREE_TRIAL_QUOTA - remaining
-  }
-
-  const currentRemaining = getRemainingChars()
-  const currentUsed = getUsedChars()
-
-  // 如果正在載入使用額度，暫時允許（避免在載入時阻擋）
-  if (creditsLoading) {
-    return {
-      canProceed: true,
-      remainingChars: currentRemaining,
-      usedChars: currentUsed,
-    }
-  }
-
-  // 檢查字數是否足夠（剩餘可用額度 <= 0 時也阻擋）
-  if (currentRemaining <= 0) {
-    return {
-      canProceed: false,
-      remainingChars: currentRemaining,
-      usedChars: currentUsed,
-      errorMessage: '使用額度已用完，請升級方案（尚未開放）',
-    }
-  }
-
-  // 檢查字數是否足夠
-  if (inputLength > 0 && inputLength > currentRemaining) {
-    return {
-      canProceed: false,
-      remainingChars: currentRemaining,
-      usedChars: currentUsed,
-      errorMessage: '剩餘字數不足，請升級方案（尚未開放）',
-    }
-  }
-
+  // 已停用：不再進行任何檢查
   return {
     canProceed: true,
-    remainingChars: currentRemaining,
-    usedChars: currentUsed,
+    remainingChars: 0,
+    usedChars: 0,
   }
 }
 
 /**
- * 更新未登入使用者的剩餘可用額度（使用額度扣除後呼叫）
- * @param deductedChars 扣除的字數
+ * @deprecated 已停用
  */
 export function updateFreeRemainingChars(deductedChars: number): void {
-  if (typeof window === 'undefined') return
-  
-  const saved = localStorage.getItem(FREE_REMAINING_KEY)
-  const currentRemaining = saved !== null ? parseInt(saved, 10) : FREE_TRIAL_QUOTA
-  const newRemaining = Math.max(0, currentRemaining - deductedChars)
-  localStorage.setItem(FREE_REMAINING_KEY, newRemaining.toString())
+  // 已停用
 }
-

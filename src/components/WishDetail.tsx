@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../utils/supabaseClient';
+import { supabase } from '../lib/supabase';
 import LightWishForm from './LightWishForm';
 import WishLightsList from './WishLightsList';
 import { config } from '../config';

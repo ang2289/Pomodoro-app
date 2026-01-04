@@ -147,8 +147,10 @@ pomodoro-app/
 - 其他業務邏輯服務
 
 ### 工具函數 (`src/utils/`)
-- `supabaseClient.ts` - Supabase 客戶端
 - 其他工具函數
+
+### Supabase 客戶端 (`src/lib/`)
+- `supabase.ts` - 統一的 Supabase 客戶端初始化
 
 ### 配置檔案
 - `config.ts` - 網站配置（API URL、環境變數）

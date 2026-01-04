@@ -1,6 +1,6 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useEffect, useState } from 'react';
-import { supabase } from '../utils/supabaseClient';
+import { supabase } from '../lib/supabase';
 import WishCard from '../components/WishCard';
 export default function WishWallPage() {
     const [wishes, setWishes] = useState([]);

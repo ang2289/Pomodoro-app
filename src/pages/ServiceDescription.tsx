@@ -46,7 +46,7 @@ export default function ServiceDescription() {
                 免費試用階段
               </h2>
               <p className="text-base text-gray-700 leading-relaxed">
-                目前服務為免費試用階段，使用者可在未登入、未付款的情況下，體驗固定字數的摘要功能。
+                可直接體驗固定字數的摘要功能。
                 系統會依實際輸入字數進行使用量計算，並於達到試用上限後停止提供新摘要服務。
               </p>
             </section>

@@ -11,7 +11,7 @@ export function toggleSpeak(text: string, lang = "zh-TW") {
 
   // 若沒有播放 → 開始播放
   if (!window.speechSynthesis) {
-    console.warn("speech synthesis not supported");
+    // console.warn("speech synthesis not supported");
     return;
   }
 

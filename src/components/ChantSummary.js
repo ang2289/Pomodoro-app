@@ -1,6 +1,6 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useEffect, useState } from 'react';
-import { supabase } from '../utils/supabaseClient';
+import { supabase } from '../lib/supabase';
 export default function ChantSummary({ wishId, refreshKey }) {
     const [total, setTotal] = useState(0);
     const [ranking, setRanking] = useState([]);

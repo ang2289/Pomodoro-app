@@ -29,7 +29,7 @@ export function useVoiceEngine({ mode, lang = "zh-TW" }: UseVoiceEngineOptions) 
         audioRef.current = null;
       }
     } catch (e) {
-      console.warn("停止語音時發生例外", e);
+      // console.warn("停止語音時發生例外", e);
     } finally {
       setIsSpeaking(false);
       setProgress(0);
@@ -54,7 +54,7 @@ export function useVoiceEngine({ mode, lang = "zh-TW" }: UseVoiceEngineOptions) 
       if (mode === "free") {
         try {
           if (!("speechSynthesis" in window)) {
-            console.warn("此瀏覽器不支援語音朗讀");
+            // console.warn("此瀏覽器不支援語音朗讀");
             setIsSpeaking(false);
             return;
           }
@@ -150,6 +150,13 @@ export function useVoiceEngine({ mode, lang = "zh-TW" }: UseVoiceEngineOptions) 
     stop,
   };
 }
+
+
+
+
+
+
+
 
 
 

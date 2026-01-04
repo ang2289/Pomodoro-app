@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import HeaderBar from '../components/HeaderBar';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import NotificationSettings from '../components/NotificationSettings';
@@ -8,8 +9,11 @@ import { backupDataToFile, restoreDataFromFile } from '../utils/backupUtils';
 import { Preferences } from '@capacitor/preferences';
 import { Capacitor } from '@capacitor/core';
 import PayPalSubscribeButton from '../components/PayPalSubscribeButton';
+import { supabase } from '../lib/supabase';
+import PrimaryButton from '../components/ui/PrimaryButton';
+import EmailAuth from '../components/auth/EmailAuth';
 
-console.log('✅ SettingsPage 載入中');
+// console.log('✅ SettingsPage 載入中');
 
 export default function SettingsPage() {
   const { t, i18n } = useTranslation();
@@ -17,6 +21,7 @@ export default function SettingsPage() {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
   const [isApp, setIsApp] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   
   // 判斷是否為 App 環境
   useEffect(() => {
@@ -32,10 +37,80 @@ export default function SettingsPage() {
   useEffect(() => {
     const loadSubscriptionStatus = async () => {
       const { value } = await Preferences.get({ key: 'isSubscribed' });
-      console.log('設定頁面讀取訂閱狀態:', value);
+      // console.log('設定頁面讀取訂閱狀態:', value);
       setIsSubscribed(value === 'true');
     };
     loadSubscriptionStatus();
+  }, []);
+
+  // 檢查管理員權限
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const { data, error } = await supabase.rpc('is_admin');
+          if (!error && data === true) {
+            setIsAdmin(true);
+          } else {
+            setIsAdmin(false);
+          }
+        } else {
+          setIsAdmin(false);
+        }
+      } catch (error) {
+        console.error('檢查管理員權限失敗:', error);
+        setIsAdmin(false);
+      }
+    };
+
+    checkAdminStatus();
+
+    // ⚠️ 已停用：不再使用 onAuthStateChange 監聽認證狀態
+    // 目前只允許用 getSession() 主動判斷登入狀態
+    // const {
+    //   data: { subscription },
+    // } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    //   if (session?.user) {
+    //     try {
+    //       const { data, error } = await supabase.rpc('is_admin');
+    //       if (!error && data === true) {
+    //         setIsAdmin(true);
+    //       } else {
+    //         setIsAdmin(false);
+    //       }
+    //     } catch (error) {
+    //       console.error('檢查管理員權限失敗:', error);
+    //       setIsAdmin(false);
+    //     }
+    //   } else {
+    //     setIsAdmin(false);
+    //   }
+    // });
+    
+    // 定期檢查 session 狀態並更新管理員權限（用於更新 UI）
+    const interval = setInterval(async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        try {
+          const { data, error } = await supabase.rpc('is_admin');
+          if (!error && data === true) {
+            setIsAdmin(true);
+          } else {
+            setIsAdmin(false);
+          }
+        } catch (error) {
+          console.error('檢查管理員權限失敗:', error);
+          setIsAdmin(false);
+        }
+      } else {
+        setIsAdmin(false);
+      }
+    }, 2000);
+
+    return () => {
+      clearInterval(interval);
+    };
   }, []);
 
   const handleRestore = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -75,6 +150,12 @@ export default function SettingsPage() {
 
       <div className="responsive-container">
         <HeaderBar icon="⚙️" title={t('settings')} showHomeButton={true} />
+        
+        {/* EmailAuth 元件：登入/註冊/登出 */}
+        <div className="mb-4">
+          <EmailAuth />
+        </div>
+        
         <LanguageSwitcher />
         
         <div className="flex flex-col gap-4 sm:gap-6">
@@ -103,7 +184,7 @@ export default function SettingsPage() {
                   onChange={async (e) => {
                     const checked = e.target.checked;
                     setIsSubscribed(checked);
-                    console.log('設定訂閱狀態為:', checked ? 'true' : 'false');
+                    // console.log('設定訂閱狀態為:', checked ? 'true' : 'false');
                     await Preferences.set({ key: 'isSubscribed', value: checked ? 'true' : 'false' });
                     
                     try {
@@ -115,13 +196,13 @@ export default function SettingsPage() {
                           position: BannerAdPosition.BOTTOM_CENTER,
                           isTesting: true
                         });
-                        console.log('已顯示廣告');
+                        // console.log('已顯示廣告');
                       } else {
                         await AdMob.hideBanner();
-                        console.log('已隱藏廣告');
+                        // console.log('已隱藏廣告');
                       }
                     } catch (error) {
-                      console.warn('更新廣告顯示狀態失敗:', error);
+                      // console.warn('更新廣告顯示狀態失敗:', error);
                     }
                   }} 
                   className="w-5 h-5" 
@@ -196,6 +277,22 @@ export default function SettingsPage() {
               />
             </div>
           </div>
+
+          {/* 管理員工具區塊（僅管理員可見） */}
+          {isAdmin && (
+            <div className="card" style={{ backgroundColor: '#ffffff', color: '#213547' }}>
+              <h2 className="text-lg sm:text-xl font-medium text-gray-700 mb-4 sm:mb-6">
+                管理員工具
+              </h2>
+              <div>
+                <Link to="/admin/payments" className="block w-full">
+                  <PrimaryButton fullWidth className="bg-blue-600 hover:bg-blue-700">
+                    匯款補點管理
+                  </PrimaryButton>
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

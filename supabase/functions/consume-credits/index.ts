@@ -12,7 +12,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-console.log("✅ Edge Function 'consume-credits' is running...");
+// console.log("✅ Edge Function 'consume-credits' is running...");
 
 // 錯誤類型
 export class InsufficientCreditsError extends Error {
@@ -101,7 +101,7 @@ serve(async (req: Request) => {
     // 計算總使用字數
     const totalChars = inputChars + outputChars;
 
-    console.log(`🔒 開始扣點數交易：user=${userId}, feature=${feature}, input=${inputChars}, output=${outputChars}, total=${totalChars}`);
+    // console.log(`🔒 開始扣點數交易：user=${userId}, feature=${feature}, input=${inputChars}, output=${outputChars}, total=${totalChars}`);
 
     // 🛡️ 核心扣點數邏輯（在 PostgreSQL 函數中的單一 transaction）
     // 函數會：
@@ -173,7 +173,7 @@ serve(async (req: Request) => {
       afterRemaining = consumeResult.after_remaining || 0;
     }
 
-    console.log(`✅ 扣點數成功：remaining=${remainingChars}, before=${beforeRemaining}, after=${afterRemaining}`);
+    // console.log(`✅ 扣點數成功：remaining=${remainingChars}, before=${beforeRemaining}, after=${afterRemaining}`);
 
     // 回傳成功結果
     const response: ConsumeCreditsResponse = {

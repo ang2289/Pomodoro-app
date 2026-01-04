@@ -1,20 +1,12 @@
-// 重新導出統一的 Supabase 客戶端
-export { supabase } from '../utils/supabaseClient'
+import { createClient } from '@supabase/supabase-js'
 
-// 願望相關的型別定義
-export interface Wish {
-  id: string
-  user_name: string
-  content: string
-  created_at: string
-  likes: number
-}
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-export interface Comment {
-  id: string
-  wish_id: string
-  user_name: string
-  comment: string
-  created_at: string
-}
-
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: false, // ✅ 已移除 OAuth，不再處理 callback
+  },
+})

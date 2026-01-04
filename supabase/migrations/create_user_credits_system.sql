@@ -15,6 +15,10 @@ CREATE TABLE IF NOT EXISTS public.user_credits (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
 );
 
+-- 添加 trial_expires_at 欄位（如果不存在）
+ALTER TABLE public.user_credits
+ADD COLUMN IF NOT EXISTS trial_expires_at TIMESTAMP WITH TIME ZONE;
+
 -- 建立 updated_at 自動更新 trigger
 CREATE OR REPLACE FUNCTION public.update_user_credits_updated_at()
 RETURNS TRIGGER AS $$
@@ -34,6 +38,7 @@ COMMENT ON TABLE public.user_credits IS '使用者點數帳戶表，每個使用
 COMMENT ON COLUMN public.user_credits.user_id IS '使用者 ID（關聯 auth.users）';
 COMMENT ON COLUMN public.user_credits.remaining_chars IS '剩餘可用字數點數';
 COMMENT ON COLUMN public.user_credits.updated_at IS '最後更新時間';
+COMMENT ON COLUMN public.user_credits.trial_expires_at IS '試用期到期時間（7 天試用）';
 
 -- ==========================================
 -- 2. 建立 usage_logs 表
@@ -111,23 +116,35 @@ CREATE OR REPLACE FUNCTION public.init_user_credits_if_not_exists(
   p_user_id UUID,
   p_initial_chars INTEGER DEFAULT 10000
 )
-RETURNS INTEGER AS $$
+RETURNS INTEGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
 DECLARE
   v_remaining INTEGER;
 BEGIN
-  -- 嘗試插入，如果已存在則不做任何事
-  INSERT INTO public.user_credits (user_id, remaining_chars)
-  VALUES (p_user_id, p_initial_chars)
+  INSERT INTO public.user_credits (
+    user_id,
+    remaining_chars,
+    total_credits,
+    trial_expires_at
+  )
+  VALUES (
+    p_user_id,
+    p_initial_chars,
+    p_initial_chars,
+    NOW() + INTERVAL '7 days'
+  )
   ON CONFLICT (user_id) DO NOTHING;
-  
-  -- 取得剩餘點數
-  SELECT remaining_chars INTO v_remaining
+
+  SELECT remaining_chars
+  INTO v_remaining
   FROM public.user_credits
   WHERE user_id = p_user_id;
-  
+
   RETURN COALESCE(v_remaining, 0);
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 COMMENT ON FUNCTION public.init_user_credits_if_not_exists IS '初始化使用者點數（如果不存在），並回傳剩餘點數';
 

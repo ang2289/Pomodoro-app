@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { supabase } from '../utils/supabaseClient'
+import { supabase } from '../lib/supabase'
 import ChantLogInput from '../components/ChantLogInput'
 import ChantSummary from '../components/ChantSummary'
 import CommentForm from '../components/CommentForm'

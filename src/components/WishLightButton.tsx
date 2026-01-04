@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import clsx from 'clsx'
-import { supabase } from '../utils/supabaseClient'
+import { supabase } from '../lib/supabase'
 
 interface WishLightRecord {
   id: string

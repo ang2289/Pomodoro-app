@@ -5,6 +5,39 @@
 
 ---
 
+## 🔐 登入 / 註冊規則（定案 - 不要改）
+
+### 使用 users 表
+- `email` + `password`（bcrypt）
+- **不使用 Supabase Auth**
+- 登入成功 → 回傳 `{ userId }`
+- 前端只存 `localStorage.userId`
+
+---
+
+## 🎁 試用點數規則（定案 - 不要改）
+
+### 註冊成功時：
+1. `users` 建立一筆
+2. **立刻建立** `user_credits`
+3. `remaining_chars = 10000`
+4. **不存在 `user_credits` = 系統錯誤（不可自動補）**
+
+---
+
+## 💸 扣點規則（定案 - 不要改）
+
+### 每次呼叫 `/api/summary`：
+1. **必須傳 `userId`**
+2. 查 `user_credits.remaining_chars`
+3. **不夠 → 直接回錯誤**
+4. AI 成功後：
+   - 扣點（update `user_credits`）
+   - **一定寫一筆 `usage_logs`**
+5. `usage_logs` 只做紀錄，不參與計算
+
+---
+
 ## 📱 App 模組功能列表
 
 ### ✅ 主畫面（HomePage.tsx）

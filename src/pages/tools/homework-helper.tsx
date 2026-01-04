@@ -6,12 +6,8 @@ import { useVoiceEngine } from "@/hooks/useVoiceEngine";
 import { useDailyLimit } from "@/hooks/useDailyLimit";
 import { UpgradePopup } from "@/components/UpgradePopup";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
-import { useAuthCredits } from "@/hooks/useAuthCredits";
-import CreditUsageNotice from "@/components/CreditUsageNotice";
-import CreditStatusBar, { updateUsedCharsAfterSuccess } from "@/components/CreditStatusBar";
 import { useNavigate, Link } from "react-router-dom";
-import { useCreditCheck } from "@/hooks/useCreditCheck";
-import { supabase } from "@/utils/supabaseClient";
+import { supabase } from "@/lib/supabase";
 
 // Google TTS 播放函式
 async function playGoogleTTS(text: string, lang: string = "zh-TW") {
@@ -224,6 +220,7 @@ export default function HomeworkHelper() {
     message: string;
     upgradeButton?: string;
   } | null>(null);
+  // ⚠️ 已移除點數不足提示狀態
   const navigate = useNavigate();
 
   // 本次使用點數資訊
@@ -233,11 +230,10 @@ export default function HomeworkHelper() {
     totalUsedPoints: number;
   } | null>(null);
 
-  // 使用 useAuthCredits Hook 自動取得並更新剩餘點數
-  const { remainingChars, loading: creditsLoading, refresh: refreshCredits } = useAuthCredits()
+  // ⚠️ 已移除所有點數相關邏輯
   
-  // 使用共用的扣點檢查邏輯
-  const creditCheck = useCreditCheck(question.length)
+  // 錯誤訊息狀態
+  const [error, setError] = useState<string>("")
 
   // 字數檢查函式
   function checkTtsLimit(text: string, userPlan: string) {
@@ -376,7 +372,7 @@ export default function HomeworkHelper() {
   const lastSolvedQuestionRef = useRef<string>("");
 
   const handleAnalyze = async () => {
-    console.log('[DEBUG] startHomeworkSolve clicked');
+    // console.log('[DEBUG] startHomeworkSolve clicked');
     
     // 🛡️ 防呆機制 1：當正在載入時禁止再次送出
     // ⚠️ 暫時註解：確認 API 請求可以被送出
@@ -394,7 +390,7 @@ export default function HomeworkHelper() {
 
       // ✅ 保留：prompt 是否為空的檢查
       if (!question || !question.trim()) {
-        console.log('[DEBUG] return: 題目為空');
+        // console.log('[DEBUG] return: 題目為空');
         return;
       }
 
@@ -419,34 +415,14 @@ export default function HomeworkHelper() {
       
       limit.addOne();
       
-      // 🔒 統一點數檢查流程（在實際呼叫 Edge Function 前）
-      const { checkCreditBeforeApiCall } = await import('@/utils/creditCheck')
-      const creditCheckResult = checkCreditBeforeApiCall(remainingChars)
-      
-      if (!creditCheckResult.allowed) {
-        if (creditCheckResult.reason === 'TRIAL_EXPIRED') {
-          // 體驗已過期：顯示友善提示（非錯誤訊息）
-          setModal({
-            title: '免費體驗已結束 🎈',
-            message: '感謝你的試用！若需要長期使用，可購買使用方案繼續使用，付費方案永久有效，不限期限。',
-            upgradeButton: '了解使用方案',
-          })
-          setLoading(false)
-          return
-        }
-        // 其他原因也阻止執行
-        setModal({
-          title: '無法使用此功能',
-          message: '無法使用此功能，請稍後再試',
-        })
-        setLoading(false)
-        return
-      }
+      // ⚠️ 已移除 checkCreditBeforeApiCall（使用 trialManager），改為直接檢查登入狀態
+      // 登入檢查已在函數最前面完成
       
       setLoading(true);
+      setError(''); // 清除之前的錯誤
       try {
-        // ✅ 使用 supabase.functions.invoke 直接呼叫 homework-helper Edge Function
-        console.log('[DEBUG] 呼叫 Supabase Edge Function：homework-helper')
+        // ✅ 直接呼叫 API，不進行任何阻擋
+        // console.log('[DEBUG] 呼叫 Supabase Edge Function：homework-helper')
         
         // ✅ 直接傳送前端 mode 值（'answer' | 'easy' | 'pro' | 'example'）
         // 後端會根據 mode 值進行相應處理
@@ -457,86 +433,65 @@ export default function HomeworkHelper() {
           mode: mode, // 直接傳送 'answer' | 'easy' | 'pro' | 'example'
           language: language, // ✅ 傳送語言參數 'zh' | 'en' | 'ja'
         }
-        console.log('[Homework] invoke Edge Function payload:', payload)
+        // console.log('[Homework] invoke Edge Function payload:', payload)
         
         const { data, error } = await supabase.functions.invoke('homework-helper', {
           body: payload,
           headers: { Authorization: undefined },
         })
 
-        // ✅ 1. 若 supabase.functions.invoke 回傳 error，直接顯示錯誤訊息
+        // ✅ 1. 若 supabase.functions.invoke 回傳 error，顯示錯誤訊息但不阻擋結果顯示
         if (error) {
           // 📝 失敗：記錄 error
-          console.log('[Homework] Edge Function error:', error)
+          // console.log('[Homework] Edge Function error:', error)
           
-          // 處理點數不足錯誤
+          // 處理錯誤（僅顯示提示，不阻擋）
           const errorMessage = error.message || String(error) || ''
           if (errorMessage.includes('INSUFFICIENT_CREDITS') || errorMessage.includes('insufficient')) {
-            console.log('[DEBUG] return: 點數不足錯誤');
-            await refreshCredits()
-            setModal({
-              title: '使用額度不足',
-              message: '目前使用額度不足，請先查看使用方案說明。',
-              upgradeButton: '了解使用方案',
-            })
-            setLoading(false)
-            return
+            // 點數不足：僅顯示錯誤訊息，不阻擋結果顯示
+            setError('使用額度不足，請先查看使用方案說明')
+          } else {
+            // 其他錯誤：顯示友善錯誤訊息
+            console.error('❌ [作業解題 API] 錯誤：', error)
+            setError('AI 服務暫時異常，請稍後再試')
           }
-          
-          // 其他錯誤：直接顯示友善錯誤訊息
-          console.error('❌ [作業解題 API] 錯誤：', error)
-          setResult('AI 服務暫時異常，請稍後再試')
-          setLoading(false)
-          return
+          // 不 return，讓結果可以顯示（如果有）
         }
 
         // ✅ 2. 若成功，僅使用 data.result 顯示 AI 回答
         // 禁止任何 JSON.parse(text) 類型的處理，Supabase SDK 已自動處理 JSON
-        if (!data || typeof data !== 'object' || typeof data.result !== 'string') {
-          console.error('❌ [作業解題 API] 回傳格式錯誤', data)
-          setResult('AI 服務暫時異常，請稍後再試')
-          setLoading(false)
-          return
-        }
-
-        // 直接使用 data.result，不進行任何 JSON 解析
-        const resultText = data.result
-        
-        // 📝 成功後：記錄 result
-        console.log('[Homework] Edge Function result:', resultText)
-        
-        setResult(resultText);
-        
-        // 🛡️ 記錄已解答的題目（避免重複呼叫）
-        lastSolvedQuestionRef.current = question.trim();
-        
-        // 計算點數（Edge Function 已扣點，這裡只計算用於顯示）
-        const inputLength = question.trim().length
-        const outputLength = resultText.length
-        const totalUsedPoints = inputLength + outputLength
-        
-        // ✅ 記錄本次使用點數（用於顯示）
-        setLastUsedPoints({
-          inputLength,
-          outputLength,
-          totalUsedPoints,
-        });
-        
-        // 🔒 本地端／開發環境：強制關閉實際扣點寫回行為
-        if (!isLocalhost) {
-          // ✅ 正式環境：AI 回答成功後才扣除使用額度（Edge Function 已扣除，這裡只更新前端顯示）
-          updateUsedCharsAfterSuccess(totalUsedPoints);
-          console.log(`✅ 使用額度扣除成功（僅開發用）：${totalUsedPoints} 字（輸入 ${inputLength} + 回答 ${outputLength}）`);
-        } else {
-          // 🔓 開發環境：不扣除使用額度，僅顯示試用字數 UI
-          console.log(`✅ [開發模式] 解題成功，不扣除使用額度（開發環境）：${totalUsedPoints} 字（輸入 ${inputLength} + 回答 ${outputLength}）`, {
-            hostname: window.location.hostname,
-            mode: import.meta.env.MODE,
+        if (data && typeof data === 'object' && typeof data.result === 'string') {
+          // 直接使用 data.result，不進行任何 JSON 解析
+          const resultText = data.result
+          
+          // 📝 成功後：記錄 result
+          // console.log('[Homework] Edge Function result:', resultText)
+          
+          // 🛡️ 記錄已解答的題目（避免重複呼叫）
+          lastSolvedQuestionRef.current = question.trim();
+          
+          // 計算本次實際使用的點數（總額，用於顯示）
+          const inputLength = question.trim().length
+          const outputLength = resultText.length
+          const totalAmount = inputLength + outputLength
+          
+          // ✅ 記錄本次使用點數（用於顯示）
+          setLastUsedPoints({
+            inputLength,
+            outputLength,
+            totalUsedPoints: totalAmount,
           });
+          
+          // ✅ 設定結果
+          setResult(resultText)
+        } else if (data) {
+          // 回傳格式錯誤，但仍有資料，顯示錯誤訊息
+          console.error('❌ [作業解題 API] 回傳格式錯誤', data)
+          setError('AI 服務暫時異常，請稍後再試')
         }
     } catch (err: any) {
       // 📝 失敗：記錄未預期錯誤
-      console.log('[Homework] Edge Function error:', err)
+      // console.log('[Homework] Edge Function error:', err)
       // 統一錯誤處理：UI 僅顯示友善錯誤訊息，不顯示 raw error string
       console.error("❌ [作業解題 API] 未預期錯誤：", err);
       setResult("AI 服務暫時異常，請稍後再試");
@@ -589,44 +544,7 @@ export default function HomeworkHelper() {
     <div className="max-w-2xl mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8 text-center">🎓 作業解題神器</h1>
 
-      {/* 目前狀態顯示（用於 homework 頁面） */}
-      {!creditsLoading && remainingChars !== null && (
-        <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-          <p className="text-xs font-semibold text-gray-700 mb-2">
-            您的狀態：
-          </p>
-          {remainingChars > 0 ? (
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="text-green-600">✔</span>
-                <span className="text-sm font-medium text-gray-900">
-                  免費體驗使用中
-                </span>
-              </div>
-              <p className="text-xs text-gray-600 ml-6">
-                剩餘：{remainingChars.toLocaleString()} 字
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="text-red-600">⚠</span>
-                <span className="text-sm font-medium text-gray-900">
-                  免費體驗已用完
-                </span>
-              </div>
-              <p className="text-xs text-gray-600 ml-6">
-                請先查看使用方案說明
-              </p>
-            </div>
-          )}
-        </div>
-      )}
-      {creditsLoading && (
-        <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-          <p className="text-sm text-gray-500">載入使用額度中…</p>
-        </div>
-      )}
+      {/* ⚠️ 已移除點數狀態顯示 */}
 
       {/* 【一、四種回答模式按鈕（grid 2x2）】 */}
       <div className="grid grid-cols-2 gap-3 mb-5">
@@ -769,60 +687,27 @@ export default function HomeworkHelper() {
         )}
 
         {/* 開始解題按鈕（主要按鈕 - 紫色漸層） */}
-        {(() => {
-          // 🔒 使用共用的扣點檢查邏輯
-          const inputChars = question.length
-          const isQuotaInsufficient = !creditCheck.canProceed && inputChars > 0
-          // 狀態 0 / A：可點擊；狀態 B / C：disabled
-          // 初始化時（inputChars === 0）按鈕也應該 disabled，提示先輸入內容
-          const isButtonDisabled = loading || creditsLoading || isQuotaInsufficient || inputChars === 0
-          
-          // 按鈕文字
-          let buttonText = loading ? "分析中..." : "🚀 開始解題"
-          if (isQuotaInsufficient && !loading) {
-            buttonText = "使用額度不足"
-          } else if (inputChars === 0 && !loading) {
-            buttonText = "請先輸入題目"
-          }
-          
-          // Hover 提示文字（disabled 時顯示）
-          const tooltipText = isQuotaInsufficient && creditCheck.remainingChars !== null
-            ? `本次需要 ${inputChars.toLocaleString()} 字，剩餘可用額度為 ${creditCheck.remainingChars.toLocaleString()} 字`
-            : inputChars === 0
-            ? '請先輸入題目'
-            : ''
-          
-          return (
-            <button
-              onClick={handleAnalyze}
-              disabled={isButtonDisabled}
-              title={tooltipText}
-              className={`w-full font-bold py-4 px-4 rounded-xl transition-all duration-200 transform flex items-center justify-center gap-2 ${
-                isButtonDisabled
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-md'
-                  : 'bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 cursor-pointer shadow-md hover:shadow-lg hover:scale-105 active:scale-95'
-              }`}
-              style={
-                !isButtonDisabled
-                  ? {
-                      color: '#ffffff',
-                    }
-                  : undefined
-              }
-            >
-              {loading && (
-                <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-              )}
-              {buttonText}
-              <span className="ml-3 text-xs text-gray-400">
-                模式：{modeLabelMap[mode]}
-              </span>
-            </button>
-          )
-        })()}
+        <button
+          onClick={() => {
+            console.log("[HOMEWORK] button clicked")
+            handleAnalyze()
+          }}
+          className="w-full font-bold py-4 px-4 rounded-xl transition-all duration-200 transform flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 cursor-pointer shadow-md hover:shadow-lg hover:scale-105 active:scale-95"
+          style={{
+            color: '#ffffff',
+          }}
+        >
+          {loading && (
+            <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          )}
+          {loading ? "分析中..." : "🚀 開始解題"}
+          <span className="ml-3 text-xs text-gray-400">
+            模式：{modeLabelMap[mode]}
+          </span>
+        </button>
         
         {/* 簡易提示 */}
         <div className="mt-3 text-xs text-gray-500 text-center">
@@ -903,15 +788,7 @@ export default function HomeworkHelper() {
       </div>
       {/* ===== AI 回答區塊 END ===== */}
 
-      {/* ===== 試用點數卡片（始終顯示） ===== */}
-      <div className="mt-6">
-        <CreditStatusBar
-          inputChars={question.length}
-          isLoading={loading}
-          featureName="homework"
-          lang="zh-tw"
-        />
-      </div>
+      {/* ⚠️ 已移除點數相關提示和狀態顯示 */}
 
       {/* 簡易點數顯示：僅顯示連結到完整說明頁 */}
       {result && (
