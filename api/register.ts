@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import bcrypt from 'bcryptjs'
 import { v4 as uuidv4 } from 'uuid'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { setCorsHeaders } from './_utils/cors'
 
 interface RegisterRequest {
   email: string
@@ -9,16 +10,8 @@ interface RegisterRequest {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // ===== CORS =====
-  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3001')
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
-  // =================
-
-  // Preflight
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end()
-  }
+  setCorsHeaders(res, req)
+  if (req.method === 'OPTIONS') return res.status(200).end()
 
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, error: 'Method not allowed' })

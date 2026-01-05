@@ -4,9 +4,7 @@
 import { createClient } from '@supabase/supabase-js'
 import bcrypt from 'bcryptjs'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-
-// Vercel Serverless Function 配置
-export const config = { runtime: 'nodejs' }
+import { setCorsHeaders } from './_utils/cors'
 
 // 在函數內部初始化 Supabase（確保環境變數已載入）
 function getSupabaseClient() {
@@ -36,6 +34,9 @@ interface LoginRequest {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  setCorsHeaders(res, req)
+  if (req.method === 'OPTIONS') return res.status(200).end()
+
   // 只接受 POST 請求
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, error: 'Method not allowed' })
