@@ -1,9 +1,10 @@
-// 管理者查詢用量 API（客服糾紛處理用）
-// GET /api/admin/usage?userId=xxx
-// 僅限 admin role 存取
+// 管理者統一 API（合併 usage 和 active-promos）
+// 使用 req.query.action 判斷要執行哪個功能
 
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
+
+// ===== 共用函數：驗證管理者權限 =====
 
 /**
  * 驗證是否為管理者
@@ -27,15 +28,9 @@ async function verifyAdmin(userEmail?: string, userId?: string): Promise<boolean
   return false
 }
 
-/**
- * 取得使用者的使用紀錄
- */
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // 只接受 GET 請求
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' })
-  }
+// ===== 處理函數：查詢使用紀錄 =====
 
+async function handleUsage(req: VercelRequest, res: VercelResponse) {
   try {
     // ==========================================
     // 1. 驗證管理者權限
@@ -159,7 +154,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     })
 
   } catch (error: any) {
-    console.error('❌ 管理者查詢用量 API 錯誤：', error)
+    console.error('❌ [admin/usage] 管理者查詢用量 API 錯誤：', error)
     return res.status(500).json({ 
       error: 'Internal server error',
       message: error.message || 'Unknown error' 
@@ -167,3 +162,80 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 }
 
+// ===== 處理函數：查詢活動狀態 =====
+
+async function handlePromo(req: VercelRequest, res: VercelResponse) {
+  try {
+    const now = new Date()
+    const start = new Date('2026-01-06T00:00:00+08:00') // 台灣時間
+    const end = new Date('2026-01-10T23:59:59+08:00') // 台灣時間
+
+    if (now >= start && now <= end) {
+      return res.status(200).json({
+        active: true,
+        bonus_percent: 10,
+        ends_at: end.toISOString(),
+      })
+    } else {
+      return res.status(200).json({
+        active: false,
+      })
+    }
+  } catch (error: any) {
+    console.error('❌ [admin/promo] 查詢活動狀態錯誤：', error)
+    return res.status(500).json({
+      error: error.message || 'Internal server error',
+    })
+  }
+}
+
+// ===== 主 Handler =====
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // ===== CORS =====
+  // 統一設定 CORS headers（promo 功能需要，usage 功能也可用）
+  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end()
+  }
+
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
+
+  // ===== 解析 action =====
+  const { action } = req.query
+
+  if (!action || typeof action !== 'string') {
+    return res.status(400).json({
+      error: 'Bad Request',
+      message: 'Missing action parameter. Expected: usage or promo'
+    })
+  }
+
+  // ===== 路由到對應的處理函數 =====
+  try {
+    switch (action) {
+      case 'usage':
+        return await handleUsage(req, res)
+
+      case 'promo':
+        return await handlePromo(req, res)
+
+      default:
+        return res.status(400).json({
+          error: 'Bad Request',
+          message: `Invalid action: ${action}. Expected: usage or promo`
+        })
+    }
+  } catch (error: any) {
+    console.error(`❌ [admin/${action}] 處理錯誤：`, error)
+    return res.status(500).json({
+      error: 'Internal server error',
+      message: error.message || 'Unknown error'
+    })
+  }
+}

@@ -19,54 +19,9 @@ export default function PaymentSuccessPage() {
   const [loading, setLoading] = useState(true)
   const [remainingChars, setRemainingChars] = useState<number | null>(null)
   const [creditsAdded, setCreditsAdded] = useState(false)
+  const [purchaseLog, setPurchaseLog] = useState<{ points: number; bonusPoints: number } | null>(null)
 
   useEffect(() => {
-    // ✅ STEP 6：購買點數（綠界回來只做一件事）
-    const handlePaymentSuccess = async () => {
-      try {
-        // 1. 從 localStorage 讀取 anon_token
-        const anonToken = localStorage.getItem('anon_token')
-        
-        if (!anonToken) {
-          console.error('❌ [PaymentSuccess] 找不到 anon_token')
-          setLoading(false)
-          return
-        }
-
-        // 2. 呼叫 Supabase RPC：add_credits
-        // 注意：根據方案，這裡固定加 100000 字（99 元方案）
-        // 如果需要根據不同方案加不同字數，可以從 URL 參數或 localStorage 讀取方案資訊
-        // ⚠️ RPC 回傳 VOID，不會回傳新剩餘字數
-        const { error: rpcError } = await supabase.rpc('add_credits', {
-          p_anon_token: anonToken,
-          p_add_chars: 100000, // 固定 100000 字（99 元方案）
-        })
-
-        if (rpcError) {
-          console.error('❌ [PaymentSuccess] 加點失敗：', rpcError)
-          // 即使加點失敗，也顯示付款成功頁面
-        } else {
-          console.log('✅ [PaymentSuccess] 加點成功')
-          // 3. 更新前端顯示的 remainingChars
-          // 由於 RPC 不回傳值，需要重新查詢剩餘字數
-          const { data: creditsData, error: queryError } = await supabase
-            .from('user_credits')
-            .select('remaining_chars')
-            .eq('anon_token', anonToken)
-            .single()
-          
-          if (!queryError && creditsData) {
-            setRemainingChars(creditsData.remaining_chars)
-            setCreditsAdded(true)
-          }
-        }
-      } catch (err: any) {
-        console.error('❌ [PaymentSuccess] 處理付款成功時發生錯誤：', err)
-      } finally {
-        setLoading(false)
-      }
-    }
-
     // 從 URL 參數取得付款資訊（綠界會回傳）
     const merchantTradeNo = searchParams.get('MerchantTradeNo')
     const tradeAmt = searchParams.get('TradeAmt')
@@ -80,10 +35,42 @@ export default function PaymentSuccessPage() {
         paymentDate,
         paymentType,
       })
-    }
 
-    // 處理付款成功（加點）
-    handlePaymentSuccess()
+      // 根據 MerchantTradeNo 查詢購點紀錄獲取 points 和 bonus_points
+      const fetchOrder = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('purchase_logs')
+            .select('points, bonus_points, amount, status')
+            .eq('merchant_trade_no', merchantTradeNo)
+            .single()
+
+          if (error) {
+            console.error('[PaymentSuccess] 查詢購點紀錄失敗：', error)
+          } else if (data) {
+            // 如果查詢到紀錄，更新點數資訊
+            const points = data.points || 0
+            const bonusPoints = data.bonus_points || 0
+            const totalPoints = points + bonusPoints
+            setRemainingChars(totalPoints) // 顯示總點數（包含加贈）
+            setCreditsAdded(true)
+            // 儲存購點紀錄資訊以供顯示
+            setPurchaseLog({
+              points,
+              bonusPoints,
+            })
+          }
+        } catch (err: any) {
+          console.error('[PaymentSuccess] 查詢購點紀錄錯誤：', err)
+        } finally {
+          setLoading(false)
+        }
+      }
+
+      fetchOrder()
+    } else {
+      setLoading(false)
+    }
   }, [searchParams])
 
   return (
@@ -116,13 +103,19 @@ export default function PaymentSuccessPage() {
                 使用額度已入帳，可立即使用
               </p>
               
-              {/* 顯示剩餘字數（如果已加點） */}
-              {creditsAdded && remainingChars !== null && (
+              {/* 顯示購買的點數（包含加贈） */}
+              {creditsAdded && remainingChars !== null && purchaseLog && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                  <p className="text-sm text-blue-800 mb-2">目前剩餘字數</p>
+                  <p className="text-sm text-blue-800 mb-2">您已成功獲得</p>
                   <p className="text-3xl font-bold text-blue-900">
-                    {remainingChars.toLocaleString()} 字
+                    {remainingChars.toLocaleString()} 點
                   </p>
+                  {purchaseLog.bonusPoints > 0 && (
+                    <p className="text-sm text-blue-700 mt-2">
+                      （含加贈 <strong>{purchaseLog.bonusPoints.toLocaleString()}</strong> 點）
+                    </p>
+                  )}
+                  <p className="text-xs text-blue-600 mt-2">可立即使用！</p>
                 </div>
               )}
               

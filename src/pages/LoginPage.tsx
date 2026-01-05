@@ -138,9 +138,17 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-              密碼
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                密碼
+              </label>
+              <Link
+                to="/reset"
+                className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+              >
+                忘記密碼？
+              </Link>
+            </div>
             <input
               id="password"
               type="password"
@@ -177,6 +185,13 @@ export default function LoginPage() {
             >
               註冊
             </button>
+          </div>
+
+          {/* 忘記密碼連結 */}
+          <div className="mt-4 text-center">
+            <Link to="/reset-password" className="text-sm text-blue-600 hover:underline">
+              忘記密碼？
+            </Link>
           </div>
         </form>
 

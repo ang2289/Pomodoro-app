@@ -352,7 +352,7 @@ export default function SummaryLayout(props: SummaryLayoutProps) {
             </button>
 
             {/* 點數顯示 */}
-            <div className="mt-3 text-xs text-gray-500 space-y-1">
+            <div className="mt-3 text-sm text-gray-500 space-y-1">
               <div>已用點數：{(usedChars ?? 0).toLocaleString()}</div>
               <div>剩餘點數：{remainingChars !== null ? remainingChars.toLocaleString() : '—'}</div>
               <div>本方案上限：{planLimit ? planLimit.toLocaleString() : '10,000'} 點</div>
@@ -409,6 +409,11 @@ export default function SummaryLayout(props: SummaryLayoutProps) {
                 {summary.content && summary.content.trim() !== '' ? (
                   <>
                     <p className="text-gray-800 leading-relaxed">{summary.content}</p>
+                    {lastUsedPoints && (
+                      <div className="mt-2 text-sm text-gray-500">
+                        共輸入 <strong>{lastUsedPoints.inputLength}</strong> 字，輸出 <strong>{lastUsedPoints.outputLength}</strong> 字，合計扣除 <strong>{lastUsedPoints.totalUsedPoints}</strong> 點。
+                      </div>
+                    )}
                     {usageChars !== null && (
                       <div className="text-sm text-gray-500">
                         本次使用字數：{usageChars.toLocaleString()} 字

@@ -5,6 +5,7 @@ import { buildSEO } from '../../lib/seo'
 import { PLANS, getPlanChars, getPlanLabel, getAllPlans, type PlanId } from '../../lib/usagePlans'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../hooks/useAuth'
+import PromoCountdown from '../../components/PromoCountdown'
 
 const seo = buildSEO({
   title: '使用額度方案',
@@ -46,13 +47,16 @@ async function startEcpayCheckout(
     
     // 呼叫後端 API 創建綠界付款表單（一次性付款）
     // ✅ 中英文版本都使用同一支 API
+    // 將 planId 轉換為 amount 和 points
+    const plan = PLANS[planId]
     const response = await fetch('/api/ecpay/create-credit-order', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        planId,
+        amount: plan.price,
+        points: plan.chars,
         userId,
       }),
     })
@@ -178,16 +182,9 @@ export default function PricingPage() {
 
       {/* ===== Container ===== */}
       <div className="max-w-6xl mx-auto px-4 py-8 bg-[#EFF5FF] min-h-screen">
+        {/* 限時活動倒數計時 */}
+        <PromoCountdown />
         
-        {/* 🔒 購買功能尚未開放標示 */}
-        <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-center">
-          <p className="text-yellow-800 font-semibold mb-1">⚠️ {lang === 'zh-tw' ? '尚未開放購買' : 'Purchase Not Available'}</p>
-          <p className="text-yellow-700 text-sm">
-            {lang === 'zh-tw' 
-              ? '目前僅開放免費試用 10,000 字，所有付費方案（NT$99 / NT$199）尚未開放購買與收費。顯示價格僅供正式上線前參考。'
-              : 'Currently only free trial of 10,000 characters is available. All paid plans (NT$99 / NT$199) are not yet available for purchase. Prices shown are for reference only before official launch.'}
-          </p>
-        </div>
 
         {/* 主要標題 */}
         <div className="text-center mb-8">
@@ -301,33 +298,11 @@ export default function PricingPage() {
               </p>
             </div>
 
-            {/* 🔒 購買功能狀態提示 */}
-            <div className="mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-700 text-center">
-              {isInTrial === true
-                ? (lang === 'zh-tw' ? '🔒 免費試用進行中，試用結束後即可購買' : '🔒 Free trial in progress, purchase available after trial ends')
-                : (lang === 'zh-tw' ? '⚠️ 尚未開放購買' : '⚠️ Purchase Not Available')
-              }
-            </div>
             <button
-              onClick={(e) => {
-                e.preventDefault()
-                if (isInTrial === true) {
-                  alert(lang === 'zh-tw' 
-                    ? '您目前正在免費試用期間，試用結束後即可購買付費方案。'
-                    : 'You are currently in the free trial period. Paid plans will be available after the trial ends.')
-                } else {
-                  alert(lang === 'zh-tw' 
-                    ? '目前僅開放免費試用 10,000 字，付費方案尚未開放購買。顯示價格僅供正式上線前參考。'
-                    : 'Currently only free trial of 10,000 characters is available. Paid plans are not yet available for purchase. Prices shown are for reference only.')
-                }
-              }}
-              disabled
-              className="w-full bg-gray-400 text-white font-medium py-3 px-4 rounded-lg cursor-not-allowed opacity-60"
+              onClick={(e) => startEcpayCheckout('pack99', e, lang, user?.id)}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
             >
-              {isInTrial === true
-                ? (lang === 'zh-tw' ? '購買 99 方案（試用中）' : 'Purchase NT$99 Plan (Trial Active)')
-                : (lang === 'zh-tw' ? '購買 99 方案（尚未開放）' : 'Purchase NT$99 Plan (Not Available)')
-              }
+              {lang === 'zh-tw' ? '購買 99 方案' : 'Purchase NT$99 Plan'}
             </button>
           </div>
 
@@ -364,36 +339,23 @@ export default function PricingPage() {
               </p>
             </div>
 
-            {/* 🔒 購買功能狀態提示 */}
-            <div className="mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-700 text-center">
-              {isInTrial === true
-                ? (lang === 'zh-tw' ? '🔒 免費試用進行中，試用結束後即可購買' : '🔒 Free trial in progress, purchase available after trial ends')
-                : (lang === 'zh-tw' ? '⚠️ 尚未開放購買' : '⚠️ Purchase Not Available')
-              }
-            </div>
             <button
-              onClick={(e) => {
-                e.preventDefault()
-                if (isInTrial === true) {
-                  alert(lang === 'zh-tw' 
-                    ? '您目前正在免費試用期間，試用結束後即可購買付費方案。'
-                    : 'You are currently in the free trial period. Paid plans will be available after the trial ends.')
-                } else {
-                  alert(lang === 'zh-tw' 
-                    ? '目前僅開放免費試用 10,000 字，付費方案尚未開放購買。顯示價格僅供正式上線前參考。'
-                    : 'Currently only free trial of 10,000 characters is available. Paid plans are not yet available for purchase. Prices shown are for reference only.')
-                }
-              }}
-              disabled
-              className="w-full bg-gray-400 text-white font-medium py-3 px-4 rounded-lg cursor-not-allowed opacity-60"
+              onClick={(e) => startEcpayCheckout('pack199', e, lang, user?.id)}
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
             >
-              {isInTrial === true
-                ? (lang === 'zh-tw' ? '購買 199 方案（試用中）' : 'Purchase NT$199 Plan (Trial Active)')
-                : (lang === 'zh-tw' ? '購買 199 方案（尚未開放）' : 'Purchase NT$199 Plan (Not Available)')
-              }
+              {lang === 'zh-tw' ? '購買 199 方案' : 'Purchase NT$199 Plan'}
             </button>
           </div>
         </div>
+
+        {/* 促購提示區塊 */}
+        {lang === 'zh-tw' && (
+          <div className="mt-6 bg-yellow-50 border border-yellow-200 p-4 rounded-lg text-sm text-yellow-800 text-center">
+            💡 最多人選擇的方案！每 <strong>萬字</strong> 不到 <strong>NT$1</strong>，幫你節省大量時間。
+            <br />
+            ✅ 系統自動加值點數，付款成功後即可立即使用。
+          </div>
+        )}
 
         {/* 字數計算方式說明 / Payment Information */}
         <div className="mt-8 shadow-md border rounded-2xl p-6 bg-blue-50">

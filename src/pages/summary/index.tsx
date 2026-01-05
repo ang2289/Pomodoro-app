@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSummaryAction } from '@/hooks/useSummaryAction'
 import SummaryLayout from './SummaryLayout'
+import { supabase } from '@/lib/supabase'
 
 export default function SummaryPage() {
   const navigate = useNavigate()
   const [lang, setLang] = useState<'zh-tw' | 'en'>('zh-tw')
+  const [remainingChars, setRemainingChars] = useState<number | null>(null)
 
   // 登入狀態檢查：頁面載入時檢查是否有 userId
   useEffect(() => {
@@ -13,11 +15,38 @@ export default function SummaryPage() {
     if (!userId) {
       // 若不存在，導向登入頁
       navigate('/login')
+      return
     }
+
+    // 獲取用戶點數
+    const fetchUserCredits = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('user_credits')
+          .select('remaining_chars')
+          .eq('user_id', userId)
+          .single()
+
+        if (error) {
+          console.error('[SummaryPage] Fetch credits error:', error)
+          return
+        }
+
+        if (data) {
+          setRemainingChars(data.remaining_chars ?? null)
+        }
+      } catch (err) {
+        console.error('[SummaryPage] Fetch credits error:', err)
+      }
+    }
+
+    fetchUserCredits()
   }, [navigate])
 
   const [input, setInput] = useState('')
   const [summary, setSummary] = useState<{ content: string; isPreview?: boolean }>({ content: '' })
+  const [inputLength, setInputLength] = useState<number>(0)
+  const [outputLength, setOutputLength] = useState<number>(0)
   // 預設示意關鍵字（初次進入頁面時顯示）
   const defaultKeywords = [
     '重點摘要',
@@ -75,11 +104,13 @@ export default function SummaryPage() {
 
   // 包裝 runSummary 以傳入 input，並處理響應結果
   const handleSummary = async () => {
+    setInputLength(input.length)
     const result = await runSummary(input)
     if (result) {
       // 更新 summary
       if (result.summary) {
         setSummary({ content: result.summary })
+        setOutputLength(result.summary.length)
       }
       // 更新 keywords
       if (result.keywords && Array.isArray(result.keywords)) {
@@ -90,7 +121,10 @@ export default function SummaryPage() {
         setTrafficKeywords(result.traffic_keywords)
         setTrafficKeywordsReady(true)
       }
-      // 更新 remaining_chars（如果有的話）
+      // 更新 remaining_chars（如果 API 有返回）
+      if (typeof result.remaining_chars === 'number') {
+        setRemainingChars(result.remaining_chars)
+      }
       // 注意：這裡不更新 usageChars，因為規格中沒有要求
     }
   }
@@ -102,6 +136,10 @@ export default function SummaryPage() {
     }
   }, [summaryError])
 
+  // 計算已用點數（初始 10000 - 剩餘點數）
+  const INITIAL_CREDITS = 10000
+  const usedChars = remainingChars !== null ? INITIAL_CREDITS - remainingChars : 0
+
   return (
     <SummaryLayout
       lang={lang}
@@ -112,10 +150,15 @@ export default function SummaryPage() {
       onInputChange={(value) => setInput(value)}
       loading={loading}
       onSubmit={handleSummary}
-      remainingChars={null}
+      remainingChars={remainingChars}
       summary={summary}
-      lastUsedPoints={null}
+      lastUsedPoints={inputLength > 0 || outputLength > 0 ? {
+        inputLength,
+        outputLength,
+        totalUsedPoints: inputLength + outputLength
+      } : null}
       usageChars={usageChars}
+      usedChars={usedChars}
       keywords={keywords}
       trafficKeywords={trafficKeywords}
       trafficKeywordsReady={trafficKeywordsReady}
@@ -127,6 +170,7 @@ export default function SummaryPage() {
       paidRemaining={null}
       totalRemaining={null}
       anonRemainingChars={null}
+      planLimit={INITIAL_CREDITS}
     />
   )
 }

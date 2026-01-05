@@ -128,6 +128,8 @@ import InsuranceOldage2025 from './pages/pension/insurance-oldage-2025'
 import SelfContribution2025 from './pages/pension/self-contribution-2025'
 import Announcements from './pages/Announcements'
 import LoginPage from './pages/LoginPage'
+import ResetPasswordPage from './pages/reset'
+import ResetPasswordPageNew from './pages/ResetPasswordPage'
 import Footer from './components/Footer'
 import AdBanner from './components/AdBanner'
 // 已移除廣告
@@ -329,6 +331,8 @@ function App() {
           
           {/* 網站基本頁面 */}
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/reset" element={<ResetPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPageNew />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<Terms />} />

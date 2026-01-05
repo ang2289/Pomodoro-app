@@ -5,6 +5,7 @@ import HeaderBar from '../components/HeaderBar';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import NotificationSettings from '../components/NotificationSettings';
 import CreditUsageDisplay from '../components/CreditUsageDisplay';
+import PurchaseHistory from '../components/PurchaseHistory';
 import { backupDataToFile, restoreDataFromFile } from '../utils/backupUtils';
 import { Preferences } from '@capacitor/preferences';
 import { Capacitor } from '@capacitor/core';
@@ -161,6 +162,9 @@ export default function SettingsPage() {
         <div className="flex flex-col gap-4 sm:gap-6">
           {/* 點數使用狀況（新增） */}
           <CreditUsageDisplay lang={lang} />
+
+          {/* 購點紀錄 */}
+          <PurchaseHistory />
 
           <NotificationSettings />
           

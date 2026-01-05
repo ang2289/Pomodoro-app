@@ -8,6 +8,7 @@ import { UpgradePopup } from "@/components/UpgradePopup";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
+import { isLoggedIn } from "@/lib/auth";
 
 // Google TTS 播放函式
 async function playGoogleTTS(text: string, lang: string = "zh-TW") {
@@ -230,7 +231,37 @@ export default function HomeworkHelper() {
     totalUsedPoints: number;
   } | null>(null);
 
-  // ⚠️ 已移除所有點數相關邏輯
+  // 點數狀態
+  const [remainingChars, setRemainingChars] = useState<number | null>(null)
+
+  // 獲取用戶點數
+  useEffect(() => {
+    const userId = localStorage.getItem('userId')
+    if (!userId) return
+
+    const fetchUserCredits = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('user_credits')
+          .select('remaining_chars')
+          .eq('user_id', userId)
+          .single()
+
+        if (error) {
+          console.error('[HomeworkHelper] Fetch credits error:', error)
+          return
+        }
+
+        if (data) {
+          setRemainingChars(data.remaining_chars ?? null)
+        }
+      } catch (err) {
+        console.error('[HomeworkHelper] Fetch credits error:', err)
+      }
+    }
+
+    fetchUserCredits()
+  }, [])
   
   // 錯誤訊息狀態
   const [error, setError] = useState<string>("")
@@ -374,6 +405,12 @@ export default function HomeworkHelper() {
   const handleAnalyze = async () => {
     // console.log('[DEBUG] startHomeworkSolve clicked');
     
+    // ✅ 登入檢查：與摘要工具一致
+    if (!isLoggedIn()) {
+      alert('請先註冊或登入，才能使用本功能')
+      return
+    }
+    
     // 🛡️ 防呆機制 1：當正在載入時禁止再次送出
     // ⚠️ 暫時註解：確認 API 請求可以被送出
     // if (loading) {
@@ -481,6 +518,41 @@ export default function HomeworkHelper() {
             outputLength,
             totalUsedPoints: totalAmount,
           });
+          
+          // ✅ 調用 API 扣點
+          try {
+            const userId = localStorage.getItem('userId')
+            if (userId) {
+              const apiBase = import.meta.env.VITE_API_BASE || ''
+              const apiUrl = apiBase ? `${apiBase}/api/homework` : '/api/homework'
+              
+              await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  userId,
+                  inputText: question.trim(),
+                  outputText: resultText,
+                  inputChars: inputLength,
+                  outputChars: outputLength,
+                }),
+              })
+
+              // 更新剩餘點數
+              const { data: creditsData } = await supabase
+                .from('user_credits')
+                .select('remaining_chars')
+                .eq('user_id', userId)
+                .single()
+
+              if (creditsData) {
+                setRemainingChars(creditsData.remaining_chars ?? null)
+              }
+            }
+          } catch (creditErr) {
+            console.error('[HomeworkHelper] Credit deduction error:', creditErr)
+            // 扣點失敗不影響結果顯示
+          }
           
           // ✅ 設定結果
           setResult(resultText)
@@ -785,6 +857,13 @@ export default function HomeworkHelper() {
             </p>
           </div>
         )}
+
+        {/* 點數顯示 */}
+        <div className="mt-3 text-sm text-gray-500 space-y-1">
+          <div>已用點數：{remainingChars !== null ? (10000 - remainingChars).toLocaleString() : '0'}</div>
+          <div>剩餘點數：{remainingChars !== null ? remainingChars.toLocaleString() : '—'}</div>
+          <div>本方案上限：10,000 點</div>
+        </div>
       </div>
       {/* ===== AI 回答區塊 END ===== */}
 
