@@ -103,8 +103,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(401).json({ success: false, error: 'Invalid email or password' })
     }
 
-    // 3. 成功回傳（規格：{ "userId": "<users.id>" }）
-    return res.status(200).json({ userId: user.id })
+    // 3. 成功回傳（規格：{ "success": true, "userId": "<users.id>" }）
+    console.log('[login] SUCCESS userId:', user.id)
+    console.log('[login] response payload:', { success: true, userId: user.id })
+    return res.status(200).json({ success: true, userId: user.id })
   } catch (error: any) {
     console.error('[login] Error:', error)
     console.error('[login] Error stack:', error.stack)
