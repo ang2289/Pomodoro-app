@@ -45,3 +45,5 @@ ios/
 # SSL certificates (local development only)
 localhost.key
 localhost.crt
+.vercel
+.env*.local

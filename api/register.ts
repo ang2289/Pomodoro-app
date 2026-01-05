@@ -112,7 +112,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
 
     if (creditsError) {
-      console.error('[CREDITS ERROR]', creditsError)
+      console.error('[CREDITS ERROR]', {
+        userId,
+        error: creditsError,
+        code: creditsError.code,
+        message: creditsError.message,
+        details: creditsError.details,
+        hint: creditsError.hint
+      })
       return res.status(500).json({
         success: false,
         error: 'Failed to create user credits',

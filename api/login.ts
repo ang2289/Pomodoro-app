@@ -74,24 +74,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const normalizedEmail = email.toLowerCase().trim()
 
     // 1. 從 public.users 表查詢該 email
-    const { data: user, error: queryError } = await supabase
-      .from('users')
-      .select('id, password_hash')
-      .eq('email', normalizedEmail)
-      .maybeSingle()
-
-    if (queryError) {
-      console.error('[login] Query users error:', {
-        code: queryError.code,
-        message: queryError.message,
-        details: queryError.details
-      })
-      // 查詢錯誤，回傳通用錯誤訊息（不洩露使用者是否存在）
-      return res.status(401).json({ success: false, error: 'Invalid email or password' })
-    }
+    const user = await (async () => {
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, password_hash')
+        .eq('email', normalizedEmail)
+      if (error) throw new Error('查詢失敗: ' + error.message)
+      if (!data || data.length === 0) throw new Error('使用者不存在')
+      return data[0]
+    })().catch((err) => {
+      // 查詢錯誤或使用者不存在，回傳通用錯誤訊息（不洩露使用者是否存在）
+      console.error('[login] Query users error:', err.message)
+      return null
+    })
 
     if (!user) {
-      // 使用者不存在
       return res.status(401).json({ success: false, error: 'Invalid email or password' })
     }
 
