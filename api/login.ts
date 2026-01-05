@@ -4,7 +4,6 @@
 import { createClient } from '@supabase/supabase-js'
 import bcrypt from 'bcryptjs'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { setCorsHeaders } from './_utils/cors'
 
 // 在函數內部初始化 Supabase（確保環境變數已載入）
 function getSupabaseClient() {
@@ -34,8 +33,14 @@ interface LoginRequest {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  setCorsHeaders(res, req)
-  if (req.method === 'OPTIONS') return res.status(200).end()
+  // 直接設定 CORS headers（不依賴外部函數）
+  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+  
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end()
+  }
 
   // 只接受 POST 請求
   if (req.method !== 'POST') {

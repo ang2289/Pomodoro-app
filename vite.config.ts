@@ -29,9 +29,9 @@ export default defineConfig({
     },
     proxy: {
       '/api': {
-        target: httpsEnabled ? 'https://localhost:3000' : 'http://localhost:3000',
+        target: 'https://pomodoro-app.vercel.app',
         changeOrigin: true,
-        secure: false,
+        secure: true
       }
     }
   }

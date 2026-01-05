@@ -2,7 +2,6 @@ import { createClient } from '@supabase/supabase-js'
 import bcrypt from 'bcryptjs'
 import { v4 as uuidv4 } from 'uuid'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { setCorsHeaders } from './_utils/cors'
 
 interface RegisterRequest {
   email: string
@@ -10,8 +9,14 @@ interface RegisterRequest {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  setCorsHeaders(res, req)
-  if (req.method === 'OPTIONS') return res.status(200).end()
+  // 直接設定 CORS headers（不依賴外部函數）
+  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+  
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end()
+  }
 
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, error: 'Method not allowed' })
@@ -24,13 +29,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
     if (!supabaseUrl || !serviceKey) {
-      console.error('[ENV]', {
-        supabaseUrl: !!supabaseUrl,
-        serviceKey: !!serviceKey,
+      console.error('[REGISTER] ENV Missing:', {
+        hasSupabaseUrl: !!supabaseUrl,
+        hasServiceKey: !!serviceKey,
+        envKeys: Object.keys(process.env).filter(k => k.includes('SUPABASE'))
       })
       return res.status(500).json({
         success: false,
-        error: 'Server env not configured',
+        error: 'Server configuration error',
+        message: 'Missing required environment variables',
       })
     }
 

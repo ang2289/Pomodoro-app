@@ -19,7 +19,9 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      const response = await fetch('/api/login', {
+      const apiBase = import.meta.env.VITE_API_BASE || ''
+      const apiUrl = apiBase ? `${apiBase}/api/login` : '/api/login'
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -58,7 +60,9 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      const response = await fetch('https://pomodoro-app.vercel.app/api/register', {
+      const apiBase = import.meta.env.VITE_API_BASE || ''
+      const apiUrl = apiBase ? `${apiBase}/api/register` : '/api/register'
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
