@@ -434,42 +434,91 @@ async function handleWebhook(req: VercelRequest, res: VercelResponse) {
       console.log(`🎁 限時活動期間！加贈 ${bonusPoints} 點（原 ${points} 點 + 10% 加贈）`)
     }
 
-    // 記錄付款結果（包含加贈點數）
-    await logPurchase(merchantTradeNo, userId, amount, points, 'success', bonusPoints)
+    // ✅ 寫入 orders 表和 purchase_logs 表，並更新 user_credits
+    if (supabaseUrl && supabaseKey) {
+      const supabase = createClient(supabaseUrl, supabaseKey, {
+        auth: { persistSession: false },
+      })
 
-    // 更新訂單狀態（如果有 orders 表的話）
-    try {
-      if (supabaseUrl && supabaseKey) {
-        const supabase = createClient(supabaseUrl, supabaseKey, {
-          auth: { persistSession: false },
-        })
+      try {
+        // 1. 檢查 orders 表是否存在該訂單，避免重複寫入
+        const { data: existingOrder } = await supabase
+          .from('orders')
+          .select('id')
+          .eq('order_no', merchantTradeNo)
+          .maybeSingle()
 
-        // 嘗試更新 orders 表（如果表存在的話）
-        await supabase.from('orders').update({
-          status: 'paid',
-          paid_at: new Date().toISOString(),
-        }).eq('order_no', merchantTradeNo).catch((err) => {
-          // 表不存在時僅記錄，不中斷流程
-          console.log('[ecpay/webhook] orders 表更新失敗（可能表不存在）：', err.message)
+        if (!existingOrder) {
+          // 如果訂單不存在，則插入新訂單
+          await supabase.from('orders').insert({
+            order_no: merchantTradeNo,
+            user_id: userId,
+            amount: amount,
+            description: 'RxV 點數購買',
+            status: 'paid',
+            created_at: new Date().toISOString(),
+          })
+          console.log(`✅ 已寫入 orders 表：${merchantTradeNo}`)
+        } else {
+          console.log(`ℹ️ 訂單 ${merchantTradeNo} 已存在於 orders 表，跳過插入`)
+        }
+
+        // 2. 寫入 purchase_logs 表
+        await supabase.from('purchase_logs').insert({
+          user_id: userId,
+          order_no: merchantTradeNo,
+          amount: amount,
+          points: points,
+          bonus_points: bonusPoints,
+          created_at: new Date().toISOString(),
         })
+        console.log(`✅ 已寫入 purchase_logs 表：${merchantTradeNo}`)
+      } catch (dbError: any) {
+        console.error('❌ 資料庫寫入失敗：', dbError)
+        // 不中斷流程，繼續處理點數更新
       }
-    } catch (orderError: any) {
-      // 訂單狀態更新失敗不影響點數增加流程
-      console.log('[ecpay/webhook] 訂單狀態更新失敗：', orderError.message)
-    }
 
-    // 若付款成功，增加使用者點數（使用總點數，包含加贈）
-    try {
+      // 3. 同步更新 user_credits 點數
+      try {
+        // 讀取目前點數
+        const { data: currentCredits } = await supabase
+          .from('user_credits')
+          .select('remaining_chars')
+          .eq('user_id', userId)
+          .maybeSingle()
+
+        if (currentCredits) {
+          // 更新現有記錄
+          await supabase.from('user_credits')
+            .update({
+              remaining_chars: currentCredits.remaining_chars + totalPoints,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('user_id', userId)
+          if (bonusPoints > 0) {
+            console.log(`✅ 已為使用者 ${userId} 增加 ${totalPoints} 字點數（原 ${points} 點 + 加贈 ${bonusPoints} 點）`)
+          } else {
+            console.log(`✅ 已為使用者 ${userId} 增加 ${points} 字點數`)
+          }
+        } else {
+          // 建立新記錄
+          await supabase.from('user_credits').insert({
+            user_id: userId,
+            remaining_chars: totalPoints,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          console.log(`✅ 已為新使用者 ${userId} 建立點數記錄：${totalPoints} 點`)
+        }
+      } catch (creditsError: any) {
+        console.error('❌ 更新 user_credits 失敗：', creditsError)
+        // 即使更新失敗，仍回傳成功給綠界（避免重複通知）
+        // 但應記錄錯誤以便後續處理
+      }
+    } else {
+      // 如果沒有 Supabase 設定，使用舊的 logPurchase 函數作為備用
+      await logPurchase(merchantTradeNo, userId, amount, points, 'success', bonusPoints)
       await addUserCredits(userId, totalPoints)
-      if (bonusPoints > 0) {
-        console.log(`✅ 已為使用者 ${userId} 增加 ${totalPoints} 字點數（原 ${points} 點 + 加贈 ${bonusPoints} 點）`)
-      } else {
-        console.log(`✅ 已為使用者 ${userId} 增加 ${points} 字點數`)
-      }
-    } catch (error: any) {
-      console.error('❌ 增加點數失敗：', error)
-      // 即使更新失敗，仍回傳成功給綠界（避免重複通知）
-      // 但應記錄錯誤以便後續處理
     }
 
     // 回傳給綠界（必須回傳 1|OK 或 0|Error）
