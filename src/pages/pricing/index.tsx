@@ -31,7 +31,17 @@ async function startEcpayCheckout(
       userId = getCurrentUserId() || ''
     }
     
-    if (!userId || !isLoggedIn()) {
+    // 如果仍然沒有 userId，則檢查是否已登入
+    if (!userId) {
+      // 再次嘗試從 localStorage 讀取
+      const storedUserId = localStorage.getItem('userId')
+      if (storedUserId) {
+        userId = storedUserId
+      }
+    }
+    
+    // 驗證 userId 是否存在且不為空
+    if (!userId || userId.trim() === '') {
       throw new Error(lang === 'en' ? 'Please log in first' : '請先登入')
     }
     
