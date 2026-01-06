@@ -5,6 +5,7 @@ import { buildSEO } from '../../lib/seo'
 import { PLANS, getPlanChars, getPlanLabel, getAllPlans, type PlanId } from '../../lib/usagePlans'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../hooks/useAuth'
+import { getCurrentUserId, isLoggedIn } from '../../lib/auth'
 import PromoCountdown from '../../components/PromoCountdown'
 
 const seo = buildSEO({
@@ -25,14 +26,13 @@ async function startEcpayCheckout(
   try {
     // console.log('🛒 開始綠界金流結帳流程：', planId, lang)
     
-    // ⚠️ 關鍵：只以 supabase.auth.getSession() 回傳的 session 判斷登入狀態
-    // 取得使用者 ID（從 Supabase session）
+    // 檢查登入狀態（使用 localStorage 的 userId）
     if (!userId) {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.user?.id) {
-        throw new Error(lang === 'en' ? 'Please log in first' : '請先登入')
-      }
-      userId = session.user.id
+      userId = getCurrentUserId() || ''
+    }
+    
+    if (!userId || !isLoggedIn()) {
+      throw new Error(lang === 'en' ? 'Please log in first' : '請先登入')
     }
     
     // 顯示載入狀態（多語言支援）
@@ -298,7 +298,7 @@ export default function PricingPage() {
             </div>
 
             <button
-              onClick={(e) => startEcpayCheckout('pack99', e, lang, user?.id)}
+              onClick={(e) => startEcpayCheckout('pack99', e, lang)}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
             >
               {lang === 'zh-tw' ? '購買 99 方案' : 'Purchase NT$99 Plan'}
@@ -339,7 +339,7 @@ export default function PricingPage() {
             </div>
 
             <button
-              onClick={(e) => startEcpayCheckout('pack199', e, lang, user?.id)}
+              onClick={(e) => startEcpayCheckout('pack199', e, lang)}
               className="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
             >
               {lang === 'zh-tw' ? '購買 199 方案' : 'Purchase NT$199 Plan'}
