@@ -1,6 +1,7 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { featureFlags } from '@/config/featureFlags';
+import { isLoggedIn, logout } from '@/lib/auth';
 
 interface ToolCard {
   id: string;
@@ -21,10 +22,37 @@ interface ToolCard {
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
+  const [loggedIn, setLoggedIn] = useState(false);
 
   useEffect(() => {
     document.title = 'AI 工具與生活服務中心 | RxV Pomodoro';
+    // 檢查登入狀態
+    setLoggedIn(isLoggedIn());
+    
+    // 監聽 localStorage 變化
+    const handleStorageChange = () => {
+      setLoggedIn(isLoggedIn());
+    };
+    window.addEventListener('storage', handleStorageChange);
+    
+    // 定期檢查登入狀態
+    const interval = setInterval(() => {
+      setLoggedIn(isLoggedIn());
+    }, 1000);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
   }, []);
+
+  // 登出處理
+  const handleLogout = () => {
+    logout();
+    setLoggedIn(false);
+    alert('已登出');
+    navigate('/');
+  };
 
   // 工具卡資料陣列
   const toolCards: ToolCard[] = [
@@ -161,6 +189,25 @@ const HomePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-50 via-white to-indigo-50">
+      {/* 登入/登出按鈕 - 右上角固定位置 */}
+      <div className="fixed top-4 right-4 z-50">
+        {loggedIn ? (
+          <button
+            onClick={handleLogout}
+            className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-colors text-sm"
+          >
+            登出
+          </button>
+        ) : (
+          <Link
+            to="/login"
+            className="inline-block px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors text-sm"
+          >
+            登入
+          </Link>
+        )}
+      </div>
+      
       {/* 頁面最大寬度 */}
       <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:py-10 lg:py-12">
         {/* Hero 區：標題＋主推工具 */}
