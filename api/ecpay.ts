@@ -253,8 +253,8 @@ async function handleCreateOrder(req: VercelRequest, res: VercelResponse) {
       MerchantTradeDate: merchantTradeDate,
       PaymentType: 'aio',
       TotalAmount: amount.toString(),
-      TradeDesc: `RxV 點數包`,
-      ItemName: `RxV 點數 ${points.toLocaleString()} 點`,
+      TradeDesc: 'RxV點數包', // 移除空格，避免編碼問題
+      ItemName: `RxV點數${points.toLocaleString()}點`, // 移除空格，避免編碼問題
       ReturnURL: returnUrl,
       OrderResultURL: orderResultURL,
       ChoosePayment: 'ALL', // 支援所有付款方式
