@@ -230,10 +230,14 @@ async function handleCreateOrder(req: VercelRequest, res: VercelResponse) {
     // Webhook URL（綠界會主動通知）
     const orderResultURL = ecpayConfig.RETURN_URL
 
-    // 產生訂單編號（格式：MerchantID + 時間戳記 + 隨機數）
-    const timestamp = Date.now()
-    const random = Math.floor(Math.random() * 10000)
-    const merchantTradeNo = `CREDIT_${merchantID}_${timestamp}_${random}`
+    // 產生訂單編號（格式：MerchantID + 時間戳記後10位 + 隨機數，總長度不超過20字元）
+    // 綠界限制：MerchantTradeNo 長度限制為 20 字元
+    const timestamp = Date.now().toString().slice(-10) // 取時間戳最後 10 位
+    const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0') // 4 位隨機數
+    // 格式：MerchantID(7) + 時間戳(10) + 隨機數(4) = 21 字元，需縮短
+    // 改用：MerchantID(7) + 時間戳(9) + 隨機數(4) = 20 字元
+    const timestampShort = Date.now().toString().slice(-9) // 取時間戳最後 9 位
+    const merchantTradeNo = `${merchantID}${timestampShort}${random}` // 總長度 = 7 + 9 + 4 = 20 字元
 
     // 建立綠界付款參數（一次性付款）
     const ecpayParams: Record<string, string> = {
