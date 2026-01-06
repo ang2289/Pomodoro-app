@@ -5,6 +5,35 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import crypto from 'crypto'
 import { createClient } from '@supabase/supabase-js'
 
+// ===== 綠界金流設定 =====
+
+/**
+ * 取得綠界金流設定
+ * 與前端 src/lib/ecpayConfig.ts 保持一致
+ */
+export const getEcpayConfig = () => {
+  const isTestMode = true  // ✅ 測試模式開啟
+
+  if (isTestMode) {
+    return {
+      MERCHANT_ID: '2000132',
+      HASH_KEY: '5294y06JbISpM5x9',
+      HASH_IV: 'v77hoKGq4kWxNNIS',
+      RETURN_URL: 'https://pomodoro-app-eight-rouge.vercel.app/api/ecpay?event=webhook',
+      CLIENT_BACK_URL: 'https://pomodoro-app-eight-rouge.vercel.app/pricing/success',
+    }
+  }
+
+  // TODO: 上線時請改為正式參數
+  return {
+    MERCHANT_ID: process.env.ECPAY_MERCHANT_ID || process.env.VITE_ECPAY_MERCHANT_ID || '',
+    HASH_KEY: process.env.ECPAY_HASH_KEY || process.env.VITE_ECPAY_HASH_KEY || '',
+    HASH_IV: process.env.ECPAY_HASH_IV || process.env.VITE_ECPAY_HASH_IV || '',
+    RETURN_URL: process.env.ECPAY_RETURN_URL || process.env.VITE_ECPAY_RETURN_URL || '',
+    CLIENT_BACK_URL: process.env.ECPAY_CLIENT_BACK_URL || process.env.VITE_ECPAY_CLIENT_BACK_URL || '',
+  }
+}
+
 // ===== 共用函數：CheckMacValue 計算 =====
 
 /**
@@ -189,21 +218,17 @@ async function handleCreateOrder(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'userId 為必填' })
     }
 
-    // 取得綠界設定（從環境變數）
-    const merchantID = process.env.ECPAY_MERCHANT_ID || process.env.VITE_ECPAY_MERCHANT_ID || '3002607'
-    const hashKey = process.env.ECPAY_HASH_KEY || process.env.VITE_ECPAY_HASH_KEY || 'pwFHCqoQD1i0sxYd6Mvz5T8B3nK9L2J'
-    const hashIV = process.env.ECPAY_HASH_IV || process.env.VITE_ECPAY_HASH_IV || 'EkRm7iFT261i5s4qiyWu3D2e7uP8hN1'
-    const isTestMode = process.env.ECPAY_TEST_MODE !== 'false'
-    
-    const baseUrl = process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}` 
-      : process.env.VITE_APP_URL || 'https://pomodoro-app-eight-rouge.vercel.app'
+    // 取得綠界設定（使用 getEcpayConfig()）
+    const ecpayConfig = getEcpayConfig()
+    const merchantID = ecpayConfig.MERCHANT_ID
+    const hashKey = ecpayConfig.HASH_KEY
+    const hashIV = ecpayConfig.HASH_IV
+    const isTestMode = ecpayConfig.MERCHANT_ID === '2000132' // 測試模式判斷
     
     // 一次性付款：ReturnURL（付款成功後跳轉）
-    const returnUrl = `${baseUrl}/pricing/success`
+    const returnUrl = ecpayConfig.CLIENT_BACK_URL
     // Webhook URL（綠界會主動通知）
-    // ⚠️ 注意：合併後需要更新為 /api/ecpay?event=webhook
-    const orderResultURL = `${baseUrl}/api/ecpay?event=webhook`
+    const orderResultURL = ecpayConfig.RETURN_URL
 
     // 產生訂單編號（格式：MerchantID + 時間戳記 + 隨機數）
     const timestamp = Date.now()
@@ -298,9 +323,10 @@ async function handleCreateOrder(req: VercelRequest, res: VercelResponse) {
 
 async function handleWebhook(req: VercelRequest, res: VercelResponse) {
   try {
-    // 取得綠界設定
-    const hashKey = process.env.ECPAY_HASH_KEY || process.env.VITE_ECPAY_HASH_KEY || 'pwFHCqoQD1i0sxYd6Mvz5T8B3nK9L2J'
-    const hashIV = process.env.ECPAY_HASH_IV || process.env.VITE_ECPAY_HASH_IV || 'EkRm7iFT261i5s4qiyWu3D2e7uP8hN1'
+    // 取得綠界設定（使用 getEcpayConfig()）
+    const ecpayConfig = getEcpayConfig()
+    const hashKey = ecpayConfig.HASH_KEY
+    const hashIV = ecpayConfig.HASH_IV
 
     // 取得回傳參數（綠界會以 POST 表單傳送）
     const params = req.method === 'POST' && req.body ? req.body : {}
