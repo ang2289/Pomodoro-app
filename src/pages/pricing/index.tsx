@@ -48,15 +48,14 @@ async function startEcpayCheckout(
     // 呼叫後端 API 創建綠界付款表單（一次性付款）
     // ✅ 中英文版本都使用同一支 API
     // 將 planId 轉換為 amount 和 points
-    const plan = PLANS[planId]
     const response = await fetch('/api/ecpay', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          amount: plan.price,
-          points: plan.chars,
+          amount: planId === 'pack99' ? 99 : 199,
+          points: planId === 'pack99' ? 100000 : 300000,
           userId,
         }),
       })
