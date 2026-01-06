@@ -240,10 +240,20 @@ async function handleCreateOrder(req: VercelRequest, res: VercelResponse) {
     const merchantTradeNo = `${merchantID}${timestampShort}${random}` // 總長度 = 7 + 9 + 4 = 20 字元
 
     // 建立綠界付款參數（一次性付款）
+    // 格式化交易日期時間為綠界要求的格式：yyyy/MM/dd HH:mm:ss
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = String(now.getMonth() + 1).padStart(2, '0')
+    const day = String(now.getDate()).padStart(2, '0')
+    const hours = String(now.getHours()).padStart(2, '0')
+    const minutes = String(now.getMinutes()).padStart(2, '0')
+    const seconds = String(now.getSeconds()).padStart(2, '0')
+    const merchantTradeDate = `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`
+    
     const ecpayParams: Record<string, string> = {
       MerchantID: merchantID,
       MerchantTradeNo: merchantTradeNo,
-      MerchantTradeDate: new Date().toISOString().replace(/[-:]/g, '').split('.')[0],
+      MerchantTradeDate: merchantTradeDate,
       PaymentType: 'aio',
       TotalAmount: amount.toString(),
       TradeDesc: `RxV 點數包`,
