@@ -1,8 +1,10 @@
 import { Helmet } from 'react-helmet-async'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 import SectionHeader from '../../components/SectionHeader'
 import { PLANS } from '../../config'
+import { getPlanChars } from '../../lib/usagePlans'
+import { isLoggedIn } from '@/lib/auth'
 import UpgradeModal from '@/components/UpgradeModal'
 import TwoColumnToolLayout from '@/components/TwoColumnToolLayout'
 import PricingPlanCard from '@/components/PricingPlanCard'
@@ -176,8 +178,18 @@ export default function SummaryLayout(props: SummaryLayoutProps) {
 
   // UI 僅做狀態顯示，不碰資料來源
   const t = LANG_TEXT[lang]
+  const navigate = useNavigate()
 
-  // UI 僅做狀態顯示，不碰資料來源
+  // 處理購買方案按鈕點擊（檢查登入狀態）
+  const handlePurchaseClick = (e: React.MouseEvent) => {
+    if (!isLoggedIn()) {
+      e.preventDefault()
+      alert('請先註冊或登入，才能使用本功能')
+      navigate('/login')
+      return
+    }
+    // 已登入，允許跳轉到 /pricing
+  }
 
   // Copy functions
   const copyText = (text: string) => {
@@ -265,64 +277,6 @@ export default function SummaryLayout(props: SummaryLayoutProps) {
       )}
 
       {/* ⚠️ 已移除試用字數提醒（localStorage remaining_trial_chars） */}
-
-      {/* 點數不足升級提示區塊：當 remainingChars < 2000 時顯示 */}
-      {remainingChars !== null && remainingChars < 2000 && (
-        <div className="mb-6 bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-xl p-6 shadow-md">
-          <div className="text-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              {lang === 'zh-tw' ? '點數即將用完' : 'Credits Running Low'}
-            </h2>
-            <p className="text-gray-700">
-              {lang === 'zh-tw' ? '升級方案後可繼續使用 AI 摘要功能' : 'Upgrade your plan to continue using AI summary features'}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* 標準方案 NT$99 */}
-            <div className="bg-white rounded-lg p-5 border-2 border-blue-300 shadow-sm hover:shadow-md transition">
-              <div className="text-center mb-4">
-                <span className="text-3xl mb-2 block">💎</span>
-                <h3 className="text-lg font-bold text-blue-900 mb-1">
-                  {lang === 'zh-tw' ? '標準方案' : 'Standard Plan'}
-                </h3>
-                <p className="text-xl font-bold text-blue-900">
-                  NT${PLANS.plan99.price}
-                </p>
-                <p className="text-sm text-gray-600 mt-1">
-                  {getPlanChars('pack99').toLocaleString()} {lang === 'zh-tw' ? '字' : 'chars'}
-                </p>
-              </div>
-              <Link to="/pricing" className="block">
-                <PrimaryButton fullWidth className="mt-4">
-                  {lang === 'zh-tw' ? '立即升級' : 'Upgrade Now'}
-                </PrimaryButton>
-              </Link>
-            </div>
-
-            {/* 進階方案 NT$199 */}
-            <div className="bg-white rounded-lg p-5 border-2 border-purple-300 shadow-sm hover:shadow-md transition">
-              <div className="text-center mb-4">
-                <span className="text-3xl mb-2 block">💎</span>
-                <h3 className="text-lg font-bold text-purple-900 mb-1">
-                  {lang === 'zh-tw' ? '進階方案' : 'Advanced Plan'}
-                </h3>
-                <p className="text-xl font-bold text-purple-900">
-                  NT${PLANS.plan199.price}
-                </p>
-                <p className="text-sm text-gray-600 mt-1">
-                  {getPlanChars('pack199').toLocaleString()} {lang === 'zh-tw' ? '字' : 'chars'}
-                </p>
-              </div>
-              <Link to="/pricing" className="block">
-                <PrimaryButton fullWidth className="mt-4">
-                  {lang === 'zh-tw' ? '立即升級' : 'Upgrade Now'}
-                </PrimaryButton>
-              </Link>
-            </div>
-          </div>
-        </div>
-      )}
       
       <TwoColumnToolLayout
         left={
@@ -356,6 +310,62 @@ export default function SummaryLayout(props: SummaryLayoutProps) {
               <div>已用點數：{(usedChars ?? 0).toLocaleString()}</div>
               <div>剩餘點數：{remainingChars !== null ? remainingChars.toLocaleString() : '—'}</div>
               <div>本方案上限：{planLimit ? planLimit.toLocaleString() : '10,000'} 點</div>
+            </div>
+
+            {/* 購買點數方案區塊（永久顯示） */}
+            <div className="mt-6 bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-xl p-6 shadow-md">
+              <div className="text-center mb-6">
+                <h2 className="text-xl font-bold text-gray-900 mb-2">
+                  {lang === 'zh-tw' ? '購買點數方案' : 'Purchase Credits'}
+                </h2>
+                <p className="text-sm text-gray-700">
+                  {lang === 'zh-tw' ? '升級方案後可繼續使用 AI 摘要功能' : 'Upgrade your plan to continue using AI summary features'}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* 標準方案 NT$99 */}
+                <div className="bg-white rounded-lg p-5 border-2 border-blue-300 shadow-sm hover:shadow-md transition">
+                  <div className="text-center mb-4">
+                    <span className="text-3xl mb-2 block">💎</span>
+                    <h3 className="text-lg font-bold text-blue-900 mb-1">
+                      {lang === 'zh-tw' ? '標準方案' : 'Standard Plan'}
+                    </h3>
+                    <p className="text-xl font-bold text-blue-900">
+                      NT${PLANS.plan99.price}
+                    </p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {getPlanChars('pack99').toLocaleString()} {lang === 'zh-tw' ? '字' : 'chars'}
+                    </p>
+                  </div>
+                  <Link to="/pricing" onClick={handlePurchaseClick} className="block">
+                    <PrimaryButton fullWidth className="mt-4">
+                      {lang === 'zh-tw' ? '立即升級' : 'Upgrade Now'}
+                    </PrimaryButton>
+                  </Link>
+                </div>
+
+                {/* 進階方案 NT$199 */}
+                <div className="bg-white rounded-lg p-5 border-2 border-purple-300 shadow-sm hover:shadow-md transition">
+                  <div className="text-center mb-4">
+                    <span className="text-3xl mb-2 block">💎</span>
+                    <h3 className="text-lg font-bold text-purple-900 mb-1">
+                      {lang === 'zh-tw' ? '進階方案' : 'Advanced Plan'}
+                    </h3>
+                    <p className="text-xl font-bold text-purple-900">
+                      NT${PLANS.plan199.price}
+                    </p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {getPlanChars('pack199').toLocaleString()} {lang === 'zh-tw' ? '字' : 'chars'}
+                    </p>
+                  </div>
+                  <Link to="/pricing" onClick={handlePurchaseClick} className="block">
+                    <PrimaryButton fullWidth className="mt-4">
+                      {lang === 'zh-tw' ? '立即升級' : 'Upgrade Now'}
+                    </PrimaryButton>
+                  </Link>
+                </div>
+              </div>
             </div>
 
             {/* 低點數提醒：當 remainingChars < 5000 且 > 0 時顯示 */}
