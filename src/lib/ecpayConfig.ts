@@ -6,7 +6,7 @@ export const getEcpayConfig = () => {
       MERCHANT_ID: '2000132',
       HASH_KEY: '5294y06JbISpM5x9',
       HASH_IV: 'v77hoKGq4kWxNNIS',
-      RETURN_URL: 'https://pomodoro-app-eight-rouge.vercel.app/api/ecpay/credit-webhook',
+      RETURN_URL: 'https://pomodoro-app-eight-rouge.vercel.app/api/ecpay?event=webhook',
       CLIENT_BACK_URL: 'https://pomodoro-app-eight-rouge.vercel.app/pricing/success',
     }
   }
