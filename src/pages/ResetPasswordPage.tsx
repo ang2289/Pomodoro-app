@@ -30,11 +30,11 @@ export default function ResetPasswordPage() {
     setLoading(true)
     try {
       const apiBase = import.meta.env.VITE_API_BASE || ''
-      const apiUrl = apiBase ? `${apiBase}/api/reset-password` : '/api/reset-password'
+      const apiUrl = apiBase ? `${apiBase}/api/auth` : '/api/auth'
       const res = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password: newPassword })
+        body: JSON.stringify({ action: 'reset-password', email, password: newPassword })
       })
       const result = await res.json()
       if (!res.ok) throw new Error(result.error || '變更失敗')

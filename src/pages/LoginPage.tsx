@@ -20,13 +20,13 @@ export default function LoginPage() {
 
     try {
       const apiBase = import.meta.env.VITE_API_BASE || ''
-      const apiUrl = apiBase ? `${apiBase}/api/login` : '/api/login'
+      const apiUrl = apiBase ? `${apiBase}/api/auth` : '/api/auth'
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ action: 'login', email, password }),
       })
 
       const data = await response.json()
@@ -61,13 +61,13 @@ export default function LoginPage() {
 
     try {
       const apiBase = import.meta.env.VITE_API_BASE || ''
-      const apiUrl = apiBase ? `${apiBase}/api/register` : '/api/register'
+      const apiUrl = apiBase ? `${apiBase}/api/auth` : '/api/auth'
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ action: 'register', email, password }),
       })
 
       if (!response.ok) {

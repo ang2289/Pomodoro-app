@@ -28,12 +28,13 @@ export function useSummaryAction() {
       console.log('[SUMMARY] request start')
 
       const payload = {
+        action: 'summary',
         userId: userId,
         text: inputText,
       }
       console.log('[SUMMARY] payload', payload)
 
-      const res = await fetch('/api/summary', {
+      const res = await fetch('/api/ai-tools', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

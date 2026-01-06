@@ -11,12 +11,12 @@ export default function ResetPasswordPage() {
 
     try {
       const apiBase = import.meta.env.VITE_API_BASE || ''
-      const apiUrl = apiBase ? `${apiBase}/api/reset-password` : '/api/reset-password'
+      const apiUrl = apiBase ? `${apiBase}/api/auth` : '/api/auth'
 
       const res = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ action: 'reset-password', email }),
       })
 
       const data = await res.json()

@@ -41,7 +41,7 @@ export function getEcpayConfig(): EcpayConfig {
   
   // Webhook URL（應設定為你的 API 端點）
   const baseUrl = import.meta.env.VITE_APP_URL || 'https://pomodoro-app-eight-rouge.vercel.app'
-  const webhookUrl = `${baseUrl}/api/ecpay/credit-webhook`
+  const webhookUrl = `${baseUrl}/api/ecpay?event=webhook`
   
   // 成功付款後跳轉網址
   const returnUrl = `${baseUrl}/pricing/success`

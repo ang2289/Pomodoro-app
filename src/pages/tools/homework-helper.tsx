@@ -524,12 +524,13 @@ export default function HomeworkHelper() {
             const userId = localStorage.getItem('userId')
             if (userId) {
               const apiBase = import.meta.env.VITE_API_BASE || ''
-              const apiUrl = apiBase ? `${apiBase}/api/homework` : '/api/homework'
+              const apiUrl = apiBase ? `${apiBase}/api/ai-tools` : '/api/ai-tools'
               
               await fetch(apiUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
+                  action: 'homework',
                   userId,
                   inputText: question.trim(),
                   outputText: resultText,

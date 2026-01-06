@@ -49,17 +49,17 @@ async function startEcpayCheckout(
     // ✅ 中英文版本都使用同一支 API
     // 將 planId 轉換為 amount 和 points
     const plan = PLANS[planId]
-    const response = await fetch('/api/ecpay/create-credit-order', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        amount: plan.price,
-        points: plan.chars,
-        userId,
-      }),
-    })
+    const response = await fetch('/api/ecpay', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: plan.price,
+          points: plan.chars,
+          userId,
+        }),
+      })
 
     if (!response.ok) {
       const error = await response.json()
