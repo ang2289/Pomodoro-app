@@ -39,25 +39,35 @@ export const getEcpayConfig = () => {
 /**
  * 產生綠界 CheckMacValue（驗證碼）
  * 使用 SHA256 雜湊
+ * 綠界規範：
+ * 1. 依 key 名稱排序（A-Z）
+ * 2. 前後加上 HashKey / HashIV
+ * 3. 整體 URL encode + toLowerCase() + %20 改成 +
+ * 4. SHA256 計算 → toUpperCase()
  */
 function generateCheckMacValue(params: Record<string, string>, hashKey: string, hashIV: string): string {
-  // 1. 將參數依 A-Z 排序
-  const sortedKeys = Object.keys(params).sort()
+  // 1. 將參數依 A-Z 排序（排除 CheckMacValue）
+  const paramsForCheck = { ...params }
+  delete paramsForCheck['CheckMacValue'] // 計算時不包含 CheckMacValue 本身
+  const sortedKeys = Object.keys(paramsForCheck).sort()
   
   // 2. 組合字串：Key1=Value1&Key2=Value2...
   const checkString = sortedKeys
-    .map(key => `${key}=${params[key]}`)
+    .map(key => `${key}=${paramsForCheck[key]}`)
     .join('&')
   
   // 3. 加上 HashKey 和 HashIV
+  // 格式：HashKey=xxx&Key1=Value1&Key2=Value2&...&HashIV=yyy
   const fullString = `HashKey=${hashKey}&${checkString}&HashIV=${hashIV}`
   
-  // 4. URL Encode（轉小寫）
-  const encoded = encodeURIComponent(fullString).toLowerCase()
+  // 4. URL Encode + toLowerCase() + 將 %20 改成 +
+  let encoded = encodeURIComponent(fullString).toLowerCase()
+  encoded = encoded.replace(/%20/g, '+') // 將空格編碼 %20 改成 +
   
   // 5. SHA256 雜湊
   const hash = crypto.createHash('sha256').update(encoded).digest('hex')
   
+  // 6. 轉大寫
   return hash.toUpperCase()
 }
 
@@ -70,21 +80,8 @@ function verifyCheckMacValue(params: Record<string, string>, hashKey: string, ha
     return false
   }
 
-  // 移除 CheckMacValue 後重新計算
-  const paramsWithoutCheckMac = { ...params }
-  delete paramsWithoutCheckMac['CheckMacValue']
-
-  // 產生 CheckMacValue（與 create-order 相同邏輯）
-  const sortedKeys = Object.keys(paramsWithoutCheckMac).sort()
-  const checkString = sortedKeys
-    .map(key => `${key}=${paramsWithoutCheckMac[key]}`)
-    .join('&')
-  const fullString = `HashKey=${hashKey}&${checkString}&HashIV=${hashIV}`
-  const encoded = encodeURIComponent(fullString).toLowerCase()
-  
-  // SHA256 雜湊
-  const hash = crypto.createHash('sha256').update(encoded).digest('hex')
-  const calculatedCheckMac = hash.toUpperCase()
+  // 使用統一的 CheckMacValue 計算函數
+  const calculatedCheckMac = generateCheckMacValue(params, hashKey, hashIV)
 
   return calculatedCheckMac === receivedCheckMac
 }
