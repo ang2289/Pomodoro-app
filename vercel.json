@@ -4,5 +4,11 @@
     { "source": "/(.*)", "destination": "/" }
   ],
   "ignoreCommand": "echo .vercelignore used",
-  "cleanUrls": true
+  "cleanUrls": true,
+  "crons": [
+    {
+      "path": "/api/ping-supabase",
+      "schedule": "0 22 * * 0"
+    }
+  ]
 }

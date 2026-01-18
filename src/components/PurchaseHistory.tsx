@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase'
 interface PurchaseLog {
   id: string
   user_id: string
-  merchant_trade_no: string
+  order_no: string
   amount: number
   points: number
   status: string
@@ -84,7 +84,7 @@ export default function PurchaseHistory() {
           <tbody>
             {logs.map((log) => (
               <tr key={log.id} className="border-b border-gray-200 hover:bg-gray-50">
-                <td className="p-2 font-mono text-xs">{log.merchant_trade_no}</td>
+                <td className="p-2 font-mono text-xs">{log.order_no}</td>
                 <td className="p-2">NT${log.amount}</td>
                 <td className="p-2">{log.points.toLocaleString()} 點</td>
                 <td className="p-2">

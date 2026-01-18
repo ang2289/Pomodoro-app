@@ -1,10 +1,11 @@
 // 點數不足提示區塊元件
 // 當 consume_credits 回傳 false 時顯示
 
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { PLANS } from '@/config'
 import { getPlanChars } from '@/lib/usagePlans'
 import PrimaryButton from '@/components/ui/PrimaryButton'
+import { trackEvent } from '@/utils/analytics'
 
 interface InsufficientCreditsPromptProps {
   /** 語言設定 */
@@ -17,6 +18,13 @@ export default function InsufficientCreditsPrompt({
   lang = 'zh-tw',
   className = '',
 }: InsufficientCreditsPromptProps) {
+  const location = useLocation()
+  
+  const handlePricingClick = () => {
+    const sourcePage = location.pathname || 'unknown'
+    trackEvent('click_pricing', { source_page: sourcePage })
+  }
+  
   return (
     <div className={`mb-6 bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-200 rounded-xl p-6 shadow-md ${className}`}>
       <div className="text-center mb-6">
@@ -32,14 +40,14 @@ export default function InsufficientCreditsPrompt({
 
       <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
         {/* 按鈕 1：NT$199（主要按鈕樣式） */}
-        <Link to="/pricing" className="flex-1">
+        <Link to="/pricing" onClick={handlePricingClick} className="flex-1">
           <PrimaryButton fullWidth className="bg-purple-600 hover:bg-purple-700">
             {lang === 'zh-tw' ? `NT$${PLANS.plan199.price} - ${getPlanChars('pack199').toLocaleString()} 字` : `NT$${PLANS.plan199.price} - ${getPlanChars('pack199').toLocaleString()} chars`}
           </PrimaryButton>
         </Link>
 
         {/* 按鈕 2：NT$99（次要按鈕樣式） */}
-        <Link to="/pricing" className="flex-1">
+        <Link to="/pricing" onClick={handlePricingClick} className="flex-1">
           <PrimaryButton 
             fullWidth 
             className="bg-white text-blue-700 border-2 border-blue-300 hover:bg-blue-50"

@@ -2,14 +2,23 @@ import { Link, useLocation } from 'react-router-dom'
 import AdBanner from './AdBanner'
 import { useUserStore } from '../store/userStore'
 
-const navigationItems = [
+// TODO: 為了上線摘要與作業功能，暫時隱藏集氣願望模組
+// 日後可透過環境變數 VITE_ENABLE_CHANT=true 或 NEXT_PUBLIC_ENABLE_CHANT=true 再次開啟
+const isChantWishEnabled = import.meta.env.VITE_ENABLE_CHANT === 'true' || import.meta.env.NEXT_PUBLIC_ENABLE_CHANT === 'true';
+
+const baseNavigationItems = [
   { path: '/summary', icon: '/src/assets/icon_flower.png', label: 'AI 摘要工具' },
   { path: '/chant', icon: '/src/assets/icon_flower.png', label: '唸經' },
   { path: '/todo', icon: '/src/assets/icon_todo.png', label: '待辦' },
   { path: '/pomodoro', icon: '/src/assets/icon_tomato.png', label: '專注' },
-  { path: '/wish', icon: '/src/assets/icon_wish.png', label: '許願' },
   { path: '/settings', icon: '/src/assets/icon_settings.png', label: '設定' }
-]
+];
+
+const chantWishNavigationItems = isChantWishEnabled ? [
+  { path: '/wish', icon: '/src/assets/icon_wish.png', label: '許願' }
+] : [];
+
+const navigationItems = [...baseNavigationItems, ...chantWishNavigationItems];
 
 export default function Footer() {
   const location = useLocation()

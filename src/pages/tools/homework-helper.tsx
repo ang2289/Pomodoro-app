@@ -8,7 +8,14 @@ import { UpgradePopup } from "@/components/UpgradePopup";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
-import { isLoggedIn } from "@/lib/auth";
+import { isLoggedIn, getCurrentUserId } from "@/lib/auth";
+import PricingPlanCard from "@/components/PricingPlanCard";
+import PrimaryButton from "@/components/ui/PrimaryButton";
+import { PLANS } from "../../config";
+import { getPlanChars } from "../../lib/usagePlans";
+import { trackEvent } from "@/utils/analytics";
+import { useFreeTrialCheck } from "@/hooks/useFreeTrialCheck";
+import FreeTrialExhaustedPrompt from "@/components/FreeTrialExhaustedPrompt";
 
 // Google TTS 播放函式
 async function playGoogleTTS(text: string, lang: string = "zh-TW") {
@@ -224,6 +231,9 @@ export default function HomeworkHelper() {
   // ⚠️ 已移除點數不足提示狀態
   const navigate = useNavigate();
 
+  // 免費試用檢查
+  const freeTrialCheck = useFreeTrialCheck();
+
   // 本次使用點數資訊
   const [lastUsedPoints, setLastUsedPoints] = useState<{
     inputLength: number;
@@ -233,19 +243,27 @@ export default function HomeworkHelper() {
 
   // 點數狀態
   const [remainingChars, setRemainingChars] = useState<number | null>(null)
+  const [totalPurchasedPoints, setTotalPurchasedPoints] = useState<number>(0)
+  const [totalUsedChars, setTotalUsedChars] = useState<number>(0)
 
-  // 獲取用戶點數
+  // 追蹤頁面瀏覽事件
+  useEffect(() => {
+    trackEvent('view_homework_solver')
+  }, [])
+
+  // 獲取用戶點數和購買總額
   useEffect(() => {
     const userId = localStorage.getItem('userId')
     if (!userId) return
 
     const fetchUserCredits = async () => {
       try {
+        // 1. 查詢剩餘點數（使用 remaining_chars 欄位）
         const { data, error } = await supabase
           .from('user_credits')
           .select('remaining_chars')
           .eq('user_id', userId)
-          .single()
+          .maybeSingle()
 
         if (error) {
           console.error('[HomeworkHelper] Fetch credits error:', error)
@@ -254,6 +272,45 @@ export default function HomeworkHelper() {
 
         if (data) {
           setRemainingChars(data.remaining_chars ?? null)
+        } else {
+          // 如果沒有記錄，不自動初始化（讓 Edge Function 或後端處理）
+          setRemainingChars(null)
+        }
+
+        // 2. 查詢用戶購買的總點數（從 purchase_logs 累加所有成功購買的 points）
+        const { data: purchaseLogs, error: purchaseError } = await supabase
+          .from('purchase_logs')
+          .select('points')
+          .eq('user_id', userId)
+          .in('status', ['success', 'paid'])
+
+        if (purchaseError) {
+          console.error('[HomeworkHelper] Fetch purchase logs error:', purchaseError)
+          setTotalPurchasedPoints(0)
+          // 不 return，繼續執行後續的 usage_logs 查詢，確保已用點數能正確計算
+        } else {
+          // 計算總購買點數
+          const totalPoints = purchaseLogs
+            ? purchaseLogs.reduce((sum, log) => sum + (log.points || 0), 0)
+            : 0
+          setTotalPurchasedPoints(totalPoints)
+        }
+
+        // 3. 查詢已用點數（從 usage_logs 累加）
+        const { data: usageLogs, error: usageError } = await supabase
+          .from('usage_logs')
+          .select('total_chars')
+          .eq('user_id', userId)
+
+        if (usageError) {
+          console.error('[HomeworkHelper] Fetch usage logs error:', usageError)
+          setTotalUsedChars(0)
+        } else {
+          // 計算總已用點數
+          const totalUsed = usageLogs
+            ? usageLogs.reduce((sum, log) => sum + (log.total_chars || 0), 0)
+            : 0
+          setTotalUsedChars(totalUsed)
         }
       } catch (err) {
         console.error('[HomeworkHelper] Fetch credits error:', err)
@@ -405,9 +462,9 @@ export default function HomeworkHelper() {
   const handleAnalyze = async () => {
     // console.log('[DEBUG] startHomeworkSolve clicked');
     
-    // ✅ 登入檢查：與摘要工具一致
-    if (!isLoggedIn()) {
-      alert('請先註冊或登入，才能使用本功能')
+    // ✅ API 呼叫前檢查：免費試用或登入狀態
+    if (!freeTrialCheck.checkBeforeApiCall()) {
+      // 免費試用已用完，提示已由 hook 處理
       return
     }
     
@@ -465,16 +522,30 @@ export default function HomeworkHelper() {
         // 後端會根據 mode 值進行相應處理
         
         // 📝 送出前：記錄 payload
-        const payload = {
+        const userId = getCurrentUserId()
+        console.log('[HOMEWORK] Current userId:', userId)
+        const payload: any = {
           prompt: question.trim(),
           mode: mode, // 直接傳送 'answer' | 'easy' | 'pro' | 'example'
           language: language, // ✅ 傳送語言參數 'zh' | 'en' | 'ja'
         }
-        // console.log('[Homework] invoke Edge Function payload:', payload)
         
+        // ✅ 如果有 userId，加入 payload（讓 Edge Function 可以扣點）
+        if (userId) {
+          payload.userId = userId
+          console.log('[HOMEWORK] Added userId to payload:', userId)
+        } else {
+          console.warn('[HOMEWORK] No userId found, credit deduction will be skipped')
+        }
+        
+        console.log('[HOMEWORK] Final payload:', payload)
+        
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData?.session?.access_token;
+
         const { data, error } = await supabase.functions.invoke('homework-helper', {
           body: payload,
-          headers: { Authorization: undefined },
+          headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
         })
 
         // ✅ 1. 若 supabase.functions.invoke 回傳 error，顯示錯誤訊息但不阻擋結果顯示
@@ -487,6 +558,8 @@ export default function HomeworkHelper() {
           if (errorMessage.includes('INSUFFICIENT_CREDITS') || errorMessage.includes('insufficient')) {
             // 點數不足：僅顯示錯誤訊息，不阻擋結果顯示
             setError('使用額度不足，請先查看使用方案說明')
+            // 追蹤免費額度不足事件
+            trackEvent('reach_homework_free_limit')
           } else {
             // 其他錯誤：顯示友善錯誤訊息
             console.error('❌ [作業解題 API] 錯誤：', error)
@@ -509,7 +582,7 @@ export default function HomeworkHelper() {
           
           // 計算本次實際使用的點數（總額，用於顯示）
           const inputLength = question.trim().length
-          const outputLength = resultText.length
+          const outputLength = resultText.trim().length  // 使用 trim() 移除前後空白字符
           const totalAmount = inputLength + outputLength
           
           // ✅ 記錄本次使用點數（用於顯示）
@@ -519,44 +592,50 @@ export default function HomeworkHelper() {
             totalUsedPoints: totalAmount,
           });
           
-          // ✅ 調用 API 扣點
-          try {
-            const userId = localStorage.getItem('userId')
-            if (userId) {
-              const apiBase = import.meta.env.VITE_API_BASE || ''
-              const apiUrl = apiBase ? `${apiBase}/api/ai-tools` : '/api/ai-tools'
-              
-              await fetch(apiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  action: 'homework',
-                  userId,
-                  inputText: question.trim(),
-                  outputText: resultText,
-                  inputChars: inputLength,
-                  outputChars: outputLength,
-                }),
-              })
+          // ✅ 記錄免費試用使用（僅在 API 成功回傳後）
+          freeTrialCheck.recordSuccessfulUse()
+          
+          // ✅ 更新點數（從 API response 讀取，與 SummaryPage 相同邏輯）
+          const updateUsageStats = async (userId: string) => {
+            const { data: usageLogs, error: usageError } = await supabase
+              .from('usage_logs')
+              .select('total_chars')
+              .eq('user_id', userId)
 
-              // 更新剩餘點數
-              const { data: creditsData } = await supabase
-                .from('user_credits')
-                .select('remaining_chars')
-                .eq('user_id', userId)
-                .single()
-
-              if (creditsData) {
-                setRemainingChars(creditsData.remaining_chars ?? null)
-              }
+            if (usageError) {
+              console.error('[HomeworkHelper] Fetch usage logs error:', usageError)
+            } else {
+              const totalUsed = usageLogs
+                ? usageLogs.reduce((sum, log) => sum + (log.total_chars || 0), 0)
+                : 0
+              setTotalUsedChars(totalUsed)
             }
-          } catch (creditErr) {
-            console.error('[HomeworkHelper] Credit deduction error:', creditErr)
-            // 扣點失敗不影響結果顯示
           }
+
+          const currentUserId = getCurrentUserId()
+          // ✅ 從 API response 讀取 remaining_chars（與 SummaryPage 相同）
+          if (typeof data.balance === 'number') {
+            setRemainingChars(data.balance)
+            if (currentUserId) {
+              await updateUsageStats(currentUserId)
+            }
+          } else if (typeof data.remaining_chars === 'number') {
+            setRemainingChars(data.remaining_chars)
+            if (currentUserId) {
+              await updateUsageStats(currentUserId)
+            }
+          }
+          // ⚠️ 若 remaining_chars 不存在，不補扣（避免雙扣）
           
           // ✅ 設定結果
           setResult(resultText)
+          
+          // 追蹤作業解題成功事件
+          trackEvent('use_homework_solver', {
+            subject: mode, // 'answer' | 'easy' | 'pro' | 'example'
+            input_chars: inputLength,
+            output_chars: outputLength,
+          })
         } else if (data) {
           // 回傳格式錯誤，但仍有資料，顯示錯誤訊息
           console.error('❌ [作業解題 API] 回傳格式錯誤', data)
@@ -615,7 +694,17 @@ export default function HomeworkHelper() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8 text-center">🎓 作業解題神器</h1>
+      {/* 頁面標題與首頁按鈕 */}
+      <div className="mb-8 flex items-center justify-between">
+        <h1 className="text-3xl font-bold text-gray-900 flex-1 text-center">🎓 作業解題（教學版）</h1>
+        <Link
+          to="/"
+          className="inline-flex items-center justify-center px-3 py-1.5 bg-blue-600 hover:bg-blue-700 font-bold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 text-sm sm:text-base"
+          style={{ color: '#ffffff' }}
+        >
+          <span style={{ color: '#ffffff' }}>首頁</span>
+        </Link>
+      </div>
 
       {/* ⚠️ 已移除點數狀態顯示 */}
 
@@ -658,7 +747,7 @@ export default function HomeworkHelper() {
           <button
             key={item.key}
             onClick={() => setMode(item.key as any)}
-            className={`w-full px-4 py-3 rounded-xl font-medium transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105 active:scale-95 bg-gradient-to-r ${
+            className={`w-full px-4 py-3 rounded-xl font-bold transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105 active:scale-95 bg-gradient-to-r ${
               mode === item.key
                 ? `${item.activeGradient} ${item.hoverGradient}`
                 : `${item.inactiveGradient} ${item.inactiveHover}`
@@ -725,7 +814,7 @@ export default function HomeworkHelper() {
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             onInput={autoResizeTextarea}
-            placeholder="請輸入你想問的問題，例如：為什麼天空是藍色？"
+            placeholder="例如：請用換分法，將 3/8 和 4/16 通分，並一步一步說明。"
             className="w-full p-4 border rounded-xl text-lg outline-none resize-none"
             style={{ minHeight: "150px" }}
             rows={4}
@@ -777,7 +866,7 @@ export default function HomeworkHelper() {
             </svg>
           )}
           {loading ? "分析中..." : "🚀 開始解題"}
-          <span className="ml-3 text-xs text-gray-400">
+          <span className="ml-3 text-xs text-white">
             模式：{modeLabelMap[mode]}
           </span>
         </button>
@@ -861,12 +950,259 @@ export default function HomeworkHelper() {
 
         {/* 點數顯示 */}
         <div className="mt-3 text-sm text-gray-500 space-y-1">
-          <div>已用點數：{remainingChars !== null ? (10000 - remainingChars).toLocaleString() : '0'}</div>
-          <div>剩餘點數：{remainingChars !== null ? remainingChars.toLocaleString() : '—'}</div>
-          <div>本方案上限：10,000 點</div>
+          {isLoggedIn() ? (() => {
+            const FREE_TRIAL_CREDITS = 10000
+            // 總方案上限計算：
+            // 1. 如果有購買記錄，則總額 = 購買總額 + 免費體驗額度
+            // 2. 如果沒有購買記錄但剩餘點數 > 免費額度，則總額 = 剩餘點數 + 已用點數（從 usage_logs）
+            // 3. 否則總額 = 免費體驗額度
+            const totalPlanLimit = totalPurchasedPoints > 0
+              ? totalPurchasedPoints + FREE_TRIAL_CREDITS  // 購買的點數 + 免費體驗額度
+              : (remainingChars !== null && remainingChars > FREE_TRIAL_CREDITS)
+              ? remainingChars + totalUsedChars  // 沒有購買記錄但剩餘點數超過免費額度，使用剩餘點數 + 已用點數作為上限
+              : FREE_TRIAL_CREDITS  // 沒有購買，只顯示免費體驗額度
+            
+            // 已用點數計算：
+            // 1. 優先使用從 usage_logs 查詢的已用點數（如果 > 0）
+            // 2. 如果 usage_logs 沒有資料或為 0，但 remainingChars 有值，則計算已用點數
+            // 3. 計算邏輯：
+            //    - 如果有購買記錄：已用 = (購買點數 + 免費額度) - 剩餘點數
+            //    - 如果沒有購買記錄但剩餘點數 <= 免費額度：已用 = 免費額度 - 剩餘點數
+            //    - 如果沒有購買記錄但剩餘點數 > 免費額度：已用 = 總方案上限 - 剩餘點數
+            let usedPoints = 0
+            
+            if (totalUsedChars > 0) {
+              // 優先使用從 usage_logs 查詢的已用點數
+              usedPoints = totalUsedChars
+            } else if (remainingChars !== null) {
+              if (totalPurchasedPoints > 0) {
+                // 如果有購買記錄，使用購買點數 + 免費額度作為總額
+                const totalLimit = totalPurchasedPoints + FREE_TRIAL_CREDITS
+                const calculatedUsed = totalLimit - remainingChars
+                usedPoints = Math.max(0, calculatedUsed)
+              } else if (remainingChars <= FREE_TRIAL_CREDITS) {
+                // 如果剩餘點數 <= 免費額度，使用免費額度計算
+                const calculatedUsed = FREE_TRIAL_CREDITS - remainingChars
+                usedPoints = Math.max(0, calculatedUsed)
+              } else {
+                // 如果沒有購買記錄但剩餘點數 > 免費額度
+                // 嘗試從 totalPlanLimit 計算
+                if (totalPlanLimit > remainingChars) {
+                  const calculatedUsed = totalPlanLimit - remainingChars
+                  usedPoints = Math.max(0, calculatedUsed)
+                } else {
+                  // 如果無法準確計算，至少嘗試顯示差額
+                  // 這種情況可能是用戶剛購買但 purchase_logs 還沒查詢到
+                  usedPoints = 0
+                }
+              }
+            }
+
+            return (
+              <>
+                <div>已用點數：{usedPoints.toLocaleString()}</div>
+                <div>剩餘點數：{remainingChars !== null ? remainingChars.toLocaleString() : '—'}</div>
+              </>
+            )
+          })() : (
+            <>
+              <div>
+                已使用 {freeTrialCheck.usedCount} / 3 次免費體驗
+              </div>
+              {freeTrialCheck.remainingCount > 0 && (
+                <div className="text-blue-600 font-medium">
+                  剩餘 {freeTrialCheck.remainingCount} 次免費體驗
+                </div>
+              )}
+            </>
+          )}
         </div>
+
+        {/* AI 回答免責聲明 */}
+        {result && (
+          <div className="mt-4 pt-3 border-t border-gray-200">
+            <p className="text-xs text-gray-500 leading-relaxed">
+              本系統回覆內容為 AI 推論結果，僅供參考，無法保證正確性與完整性，請自行判斷與核實資訊。
+            </p>
+          </div>
+        )}
       </div>
       {/* ===== AI 回答區塊 END ===== */}
+
+      {/* 💡 數學題輸入範例提示區塊 */}
+      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-5">
+        <div className="flex items-start gap-2 mb-3">
+          <span className="text-blue-600 text-lg">💡</span>
+          <h3 className="font-semibold text-blue-900 text-sm">數學題輸入範例</h3>
+        </div>
+        
+        <div className="space-y-3 text-sm text-gray-700">
+          <div>
+            <div className="font-medium text-blue-800 mb-1">【範例一｜分數題】</div>
+            <div className="text-gray-700 pl-2">請用換分法，將 3/8 和 4/16 通分，並說明每個步驟。</div>
+          </div>
+          
+          <div>
+            <div className="font-medium text-blue-800 mb-1">【範例二｜應用題】</div>
+            <div className="text-gray-700 pl-2">小明有 12 顆糖，平均分給 3 個人，每個人可以分到幾顆？請寫出計算過程。</div>
+          </div>
+          
+          <div>
+            <div className="font-medium text-blue-800 mb-1">【範例三｜比較大小】</div>
+            <div className="text-gray-700 pl-2">5/6 和 7/8 哪一個比較大？請說明你的判斷理由。</div>
+          </div>
+        </div>
+        
+        <div className="mt-3 pt-3 border-t border-blue-200 text-xs text-gray-600">
+          不需要拍照，只要用文字打出題目意思即可。
+        </div>
+      </div>
+
+      {/* 購買點數方案區塊 */}
+      <div className="mt-6 bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-xl p-6 shadow-md">
+        <div className="text-center mb-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-2">
+            購買點數方案
+          </h2>
+          <p className="text-sm text-gray-700">
+            升級方案後可繼續使用 AI 解題功能
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* 標準方案 NT$99 */}
+          <div className="bg-white rounded-lg p-5 border-2 border-blue-300 shadow-sm hover:shadow-md transition">
+            <div className="text-center mb-4">
+              <span className="text-3xl mb-2 block">💎</span>
+              <h3 className="text-lg font-bold text-blue-900 mb-1">
+                標準方案
+              </h3>
+              <p className="text-xl font-bold text-blue-900">
+                NT${PLANS.plan99.price}
+              </p>
+              <p className="text-sm text-gray-600 mt-1">
+                {getPlanChars('pack99').toLocaleString()} 字
+              </p>
+            </div>
+            <Link 
+              to="/pricing" 
+              onClick={(e) => {
+                if (!isLoggedIn()) {
+                  e.preventDefault();
+                  alert('請先註冊或登入，才能使用本功能');
+                  navigate('/login');
+                  return;
+                }
+                trackEvent('click_homework_upgrade')
+              }}
+              className="block"
+            >
+              <PrimaryButton fullWidth className="mt-4">
+                立即升級
+              </PrimaryButton>
+            </Link>
+          </div>
+
+          {/* 進階方案 NT$199 */}
+          <div className="bg-white rounded-lg p-5 border-2 border-purple-300 shadow-sm hover:shadow-md transition">
+            <div className="text-center mb-4">
+              <span className="text-3xl mb-2 block">💎</span>
+              <h3 className="text-lg font-bold text-purple-900 mb-1">
+                進階方案
+              </h3>
+              <p className="text-xl font-bold text-purple-900">
+                NT${PLANS.plan199.price}
+              </p>
+              <p className="text-sm text-gray-600 mt-1">
+                {getPlanChars('pack199').toLocaleString()} 字
+              </p>
+            </div>
+            <Link 
+              to="/pricing" 
+              onClick={(e) => {
+                if (!isLoggedIn()) {
+                  e.preventDefault();
+                  alert('請先註冊或登入，才能使用本功能');
+                  navigate('/login');
+                  return;
+                }
+                trackEvent('click_homework_upgrade')
+              }}
+              className="block"
+            >
+              <PrimaryButton fullWidth className="mt-4">
+                立即升級
+              </PrimaryButton>
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* 方案說明卡片 */}
+      <div className="mt-6">
+        <PricingPlanCard />
+      </div>
+
+      {/* ===== 教學模式說明區塊 START ===== */}
+      <div className="mt-6 bg-white rounded-xl shadow-md p-6 border border-gray-200">
+        <h2 className="text-xl font-bold text-gray-900 mb-4">
+          作業解題教學模式說明
+        </h2>
+        <div className="space-y-3 text-gray-700">
+          <p className="text-sm leading-relaxed mb-4">
+            本功能為教學與學習輔助用途，依不同模式提供參考回答與說明。
+          </p>
+          
+          <div className="space-y-3">
+            <div className="flex items-start gap-3">
+              <span className="text-xl">🔵</span>
+              <div>
+                <p className="font-semibold text-gray-900">只秀答案（教學）</p>
+                <p className="text-sm text-gray-600 mt-1">
+                  快速提供參考回答結果，適合先了解答案方向。
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-3">
+              <span className="text-xl">🟢</span>
+              <div>
+                <p className="font-semibold text-gray-900">簡單解釋（教學）</p>
+                <p className="text-sm text-gray-600 mt-1">
+                  在提供參考回答的同時，搭配簡要說明，幫助理解題目重點。
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-3">
+              <span className="text-xl">🟣</span>
+              <div>
+                <p className="font-semibold text-gray-900">詳細說明（教學）</p>
+                <p className="text-sm text-gray-600 mt-1">
+                  提供較完整的解題說明與思路，適合深入學習與理解。
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-3">
+              <span className="text-xl">🟠</span>
+              <div>
+                <p className="font-semibold text-gray-900">舉例模式（教學）</p>
+                <p className="text-sm text-gray-600 mt-1">
+                  透過實際例子輔助說明概念，幫助將題目與情境連結理解。
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="mt-4 pt-3 border-t border-gray-200">
+            <p className="text-xs text-gray-500">
+              目前支援語言：中文（繁體）、English、日本語
+            </p>
+          </div>
+        </div>
+      </div>
+      {/* ===== 教學模式說明區塊 END ===== */}
 
       {/* ⚠️ 已移除點數相關提示和狀態顯示 */}
 
@@ -913,6 +1249,7 @@ export default function HomeworkHelper() {
                   type="button"
                   onClick={() => {
                     setModal(null);
+                    trackEvent('click_homework_upgrade');
                     navigate('/points');
                   }}
                   className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
@@ -949,6 +1286,13 @@ export default function HomeworkHelper() {
           </a>
         </p>
       </div>
+
+      {/* 免費試用用完提示 */}
+      {freeTrialCheck.showExhaustedPrompt && (
+        <FreeTrialExhaustedPrompt
+          onDismiss={freeTrialCheck.dismissPrompt}
+        />
+      )}
     </div>
   );
 }

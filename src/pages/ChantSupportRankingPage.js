@@ -1,7 +1,12 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+// TODO: 為了上線摘要與作業功能，暫時隱藏 chant 模組
+// 日後可透過環境變數 VITE_ENABLE_CHANT=true 或 NEXT_PUBLIC_ENABLE_CHANT=true 再次開啟
 export default function ChantSupportRankingPage() {
+    if (import.meta.env.VITE_ENABLE_CHANT !== 'true' && import.meta.env.NEXT_PUBLIC_ENABLE_CHANT !== 'true') {
+        return null;
+    }
     const [rankings, setRankings] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);

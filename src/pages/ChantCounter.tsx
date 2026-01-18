@@ -277,32 +277,36 @@ const ChantCounter = () => {
           </p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
-          <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">🔗 相關功能</h2>
-          
-          <div className="space-y-2 sm:space-y-3">
-            <button
-              onClick={() => navigate('/chant-wish-wall')}
-              className="w-full p-2 sm:p-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all text-sm sm:text-base"
-            >
-              🙏 發起集氣活動
-            </button>
+        {/* TODO: 為了上線摘要與作業功能，暫時隱藏 chant 模組 */}
+        {/* 日後可透過環境變數 VITE_ENABLE_CHANT=true 或 NEXT_PUBLIC_ENABLE_CHANT=true 再次開啟 */}
+        {(import.meta.env.VITE_ENABLE_CHANT === 'true' || import.meta.env.NEXT_PUBLIC_ENABLE_CHANT === 'true') && (
+          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">🔗 相關功能</h2>
             
-            <button
-              onClick={() => navigate('/chant-wish-wall')}
-              className="w-full p-2 sm:p-3 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg hover:from-blue-600 hover:to-indigo-600 transition-all text-sm sm:text-base"
-            >
-              📣 查看集氣牆
-            </button>
-            
-            <button
-              onClick={() => navigate('/chant-ranking')}
-              className="w-full p-2 sm:p-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg hover:from-yellow-600 hover:to-orange-600 transition-all text-sm sm:text-base"
-            >
-              🏆 排行榜
-            </button>
+            <div className="space-y-2 sm:space-y-3">
+              <button
+                onClick={() => navigate('/chant-wish-wall')}
+                className="w-full p-2 sm:p-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all text-sm sm:text-base"
+              >
+                🙏 發起集氣活動
+              </button>
+              
+              <button
+                onClick={() => navigate('/chant-wish-wall')}
+                className="w-full p-2 sm:p-3 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg hover:from-blue-600 hover:to-indigo-600 transition-all text-sm sm:text-base"
+              >
+                📣 查看集氣牆
+              </button>
+              
+              <button
+                onClick={() => navigate('/chant-ranking')}
+                className="w-full p-2 sm:p-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg hover:from-yellow-600 hover:to-orange-600 transition-all text-sm sm:text-base"
+              >
+                🏆 排行榜
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   )

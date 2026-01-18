@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react'
 import { Helmet } from 'react-helmet-async'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, Link, useLocation } from 'react-router-dom'
 import { buildSEO } from '../../lib/seo'
 import { PLANS, getPlanChars, getPlanLabel, getAllPlans, type PlanId } from '../../lib/usagePlans'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../hooks/useAuth'
 import { getCurrentUserId, isLoggedIn } from '../../lib/auth'
-import PromoCountdown from '../../components/PromoCountdown'
+import { trackEvent } from '@/utils/analytics'
 
 const seo = buildSEO({
   title: '使用額度方案',
@@ -18,12 +18,19 @@ const seo = buildSEO({
 // 綠界金流結帳函式（中英文共用同一套付款流程）
 // ⚠️ 重要：此函式同時支援中文版和英文版，都導向 /api/ecpay/create-credit-order
 async function startEcpayCheckout(
-  planId: PlanId, 
+  planId: PlanId | 'pack1', // 支援測試方案 pack1
   event?: React.MouseEvent<HTMLButtonElement>,
   lang: 'zh-tw' | 'en' = 'zh-tw', // 新增 lang 參數以正確顯示載入和錯誤訊息
-  userId?: string // 從 session 取得的使用者 ID
+  userId?: string, // 從 session 取得的使用者 ID
+  sourcePage?: string // 來源頁面（用於 GA4 追蹤）
 ) {
   try {
+    // 追蹤點擊定價事件
+    trackEvent('click_pricing', {
+      plan_id: planId,
+      source_page: sourcePage || 'pricing',
+    })
+    
     // console.log('🛒 開始綠界金流結帳流程：', planId, lang)
     
     // 檢查登入狀態（使用 localStorage 的 userId）
@@ -58,24 +65,63 @@ async function startEcpayCheckout(
     // 呼叫後端 API 創建綠界付款表單（一次性付款）
     // ✅ 中英文版本都使用同一支 API
     // 將 planId 轉換為 amount 和 points
+    let amount: number
+    let points: number
+    
+    if (planId === 'pack1') {
+      // 測試用方案：10 元 / 10 點
+      amount = 10
+      points = 10
+    } else if (planId === 'pack99') {
+      amount = 99
+      points = 100000
+    } else {
+      amount = 199
+      points = 300000
+    }
+    
     const response = await fetch('/api/ecpay', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          amount: planId === 'pack99' ? 99 : 199,
-          points: planId === 'pack99' ? 100000 : 300000,
+          amount,
+          points,
           userId,
         }),
       })
 
     if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.message || error.error || '建立訂單失敗')
+      // 嘗試解析錯誤響應，但如果失敗則使用狀態文本
+      let errorMessage = `HTTP ${response.status}: ${response.statusText}`
+      try {
+        const errorText = await response.text()
+        // 嘗試解析為 JSON
+        try {
+          const error = JSON.parse(errorText)
+          errorMessage = error.message || error.error || errorMessage
+        } catch {
+          // 如果不是 JSON，使用原始文本（截取前 200 字元避免過長）
+          errorMessage = errorText.length > 200 
+            ? errorText.substring(0, 200) + '...' 
+            : errorText || errorMessage
+        }
+      } catch {
+        // 如果連文本都讀取失敗，使用預設錯誤訊息
+        errorMessage = `建立訂單失敗 (HTTP ${response.status})`
+      }
+      throw new Error(errorMessage)
     }
 
-    const data = await response.json()
+    // 解析成功響應
+    let data
+    try {
+      const responseText = await response.text()
+      data = JSON.parse(responseText)
+    } catch (parseError: any) {
+      throw new Error(`無法解析伺服器響應：${parseError.message || '無效的 JSON 格式'}`)
+    }
     
     if (!data.success) {
       throw new Error('建立訂單失敗')
@@ -108,9 +154,13 @@ async function startEcpayCheckout(
       button.disabled = false
       // 恢復按鈕原始文字
       const originalText = button.getAttribute('data-original-text') || ''
-      button.textContent = originalText || (planId === 'pack99' 
-        ? (lang === 'en' ? 'Purchase NT$99 Plan' : '購買 99 方案')
-        : (lang === 'en' ? 'Purchase NT$199 Plan' : '購買 199 方案'))
+      button.textContent = originalText || (
+        planId === 'pack1' 
+          ? '測試用方案'
+          : planId === 'pack99' 
+            ? (lang === 'en' ? 'Purchase NT$99 Plan' : '購買 99 方案')
+            : (lang === 'en' ? 'Purchase NT$199 Plan' : '購買 199 方案')
+      )
     }
     
     // 顯示友善錯誤提示（多語言）
@@ -123,48 +173,84 @@ async function startEcpayCheckout(
 
 export default function PricingPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [lang, setLang] = useState<'zh-tw' | 'en'>('zh-tw')
   const { user } = useAuth()
   const [isInTrial, setIsInTrial] = useState<boolean | null>(null) // null = 載入中
+  const [userEmail, setUserEmail] = useState<string | null>(null) // 用戶 email，用於判斷是否顯示測試方案
+  const [isTestUser, setIsTestUser] = useState(false) // 是否為測試用戶
 
-  // 檢查使用者是否在試用期間
+  // 追蹤頁面瀏覽事件
   useEffect(() => {
-    const checkTrialStatus = async () => {
-      if (!user) {
+    trackEvent('view_pricing')
+  }, [])
+
+  // 檢查使用者是否在試用期間，並取得用戶 email
+  useEffect(() => {
+    const checkTrialStatusAndEmail = async () => {
+      // 取得當前登入的 userId
+      const userId = getCurrentUserId()
+      
+      if (!userId) {
         setIsInTrial(false)
+        setIsTestUser(false)
         return
       }
 
       try {
-        const { data, error } = await supabase.rpc('get_user_credits_info', {
-          p_user_id: user.id,
-        })
+        // 查詢用戶 email
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('email')
+          .eq('id', userId)
+          .maybeSingle()
 
-        if (error || !data) {
-          setIsInTrial(false)
-          return
+        if (!userError && userData?.email) {
+          const email = userData.email
+          setUserEmail(email)
+          // 檢查是否為測試用戶
+          setIsTestUser(email === 'ang2289@gmail.com')
+        } else {
+          setUserEmail(null)
+          setIsTestUser(false)
         }
 
-        // RPC 返回的是陣列，取第一筆
-        const creditsInfo = Array.isArray(data) ? data[0] : data
-        const trialExpiresAt = creditsInfo?.trial_expires_at
+        // 檢查試用狀態（使用 RPC，如果存在的話）
+        try {
+          const { data, error } = await supabase.rpc('get_user_credits_info', {
+            p_user_id: userId,
+          })
 
-        // 檢查 trial_expires_at 是否尚未到期
-        if (trialExpiresAt) {
-          const expiresAt = new Date(trialExpiresAt).getTime()
-          const now = new Date().getTime()
-          setIsInTrial(expiresAt > now)
-        } else {
+          if (error || !data) {
+            setIsInTrial(false)
+            return
+          }
+
+          // RPC 返回的是陣列，取第一筆
+          const creditsInfo = Array.isArray(data) ? data[0] : data
+          const trialExpiresAt = creditsInfo?.trial_expires_at
+
+          // 檢查 trial_expires_at 是否尚未到期
+          if (trialExpiresAt) {
+            const expiresAt = new Date(trialExpiresAt).getTime()
+            const now = new Date().getTime()
+            setIsInTrial(expiresAt > now)
+          } else {
+            setIsInTrial(false)
+          }
+        } catch (rpcError) {
+          // RPC 不存在時，僅設定為 false
           setIsInTrial(false)
         }
       } catch (err) {
-        console.error('❌ 檢查試用狀態失敗:', err)
+        console.error('❌ 檢查試用狀態或取得 email 失敗:', err)
         setIsInTrial(false)
+        setIsTestUser(false)
       }
     }
 
-    checkTrialStatus()
-  }, [user])
+    checkTrialStatusAndEmail()
+  }, [])
 
   return (
     <>
@@ -191,10 +277,6 @@ export default function PricingPage() {
 
       {/* ===== Container ===== */}
       <div className="max-w-6xl mx-auto px-4 py-8 bg-[#EFF5FF] min-h-screen">
-        {/* 限時活動倒數計時 */}
-        <PromoCountdown />
-        
-
         {/* 主要標題 */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -308,7 +390,7 @@ export default function PricingPage() {
             </div>
 
             <button
-              onClick={(e) => startEcpayCheckout('pack99', e, lang)}
+              onClick={(e) => startEcpayCheckout('pack99', e, lang, undefined, 'pricing')}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
             >
               {lang === 'zh-tw' ? '購買 99 方案' : 'Purchase NT$99 Plan'}
@@ -349,12 +431,57 @@ export default function PricingPage() {
             </div>
 
             <button
-              onClick={(e) => startEcpayCheckout('pack199', e, lang)}
+              onClick={(e) => startEcpayCheckout('pack199', e, lang, undefined, 'pricing')}
               className="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
             >
               {lang === 'zh-tw' ? '購買 199 方案' : 'Purchase NT$199 Plan'}
             </button>
           </div>
+
+          {/* 測試用點數方案（僅對 ang2289@gmail.com 顯示，使用透明/隱藏區塊） */}
+          {isTestUser && (
+            <div 
+              className="shadow-md border-2 border-gray-200 rounded-2xl p-6 bg-gray-50/10 hover:shadow-lg transition"
+              style={{ 
+                opacity: 0.05, // 幾乎完全透明，但保持可點擊
+                pointerEvents: 'auto' // 確保可以點擊
+              }}
+            >
+              <div className="text-center mb-4">
+                <span className="text-4xl mb-2 block">🧪</span>
+                <h2 className="text-xl font-bold text-gray-900 mb-2">
+                  測試用點數 1 元方案
+                </h2>
+                <p className="text-2xl font-bold text-gray-900">
+                  10 點
+                </p>
+                <p className="text-lg font-bold text-gray-700 mt-2">
+                  NT$10
+                </p>
+              </div>
+              
+              <div className="text-gray-700 space-y-3 text-sm mb-6">
+                <ul className="list-disc ml-5 space-y-2 text-left">
+                  <li>測試用方案</li>
+                  <li>僅供測試使用</li>
+                  <li>不建議正式使用</li>
+                </ul>
+              </div>
+
+              {/* 透明按鈕（測試用，幾乎不可見但可點擊） */}
+              <button
+                onClick={(e) => startEcpayCheckout('pack1', e, lang, undefined, 'pricing')}
+                className="w-full bg-gray-400 hover:bg-gray-500 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+                style={{ 
+                  opacity: 0.1, // 非常透明但可點擊
+                  cursor: 'pointer'
+                }}
+                title="測試用點數 1 元方案（NT$10 / 10 點）"
+              >
+                測試用方案
+              </button>
+            </div>
+          )}
         </div>
 
         {/* 促購提示區塊 */}

@@ -1087,3 +1087,21 @@ input[type="time"] {
   margin-left: 4px;
   font-size: 14px;
 }
+
+/* 登入按鈕強制白色文字 */
+.login-button-white {
+  color: #ffffff !important;
+}
+
+.login-button-white:hover {
+  color: #ffffff !important;
+}
+
+/* 摘要工具按鈕強制白色文字 */
+.summary-button-white {
+  color: #ffffff !important;
+}
+
+.summary-button-white:hover {
+  color: #ffffff !important;
+}

@@ -3,7 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Card } from './ui/card';
 
+// TODO: 為了上線摘要與作業功能，暫時隱藏 chant 模組
+// 日後可透過環境變數 VITE_ENABLE_CHANT=true 或 NEXT_PUBLIC_ENABLE_CHANT=true 再次開啟
+const isChantEnabled = import.meta.env.VITE_ENABLE_CHANT === 'true' || import.meta.env.NEXT_PUBLIC_ENABLE_CHANT === 'true';
+
 const WishMenu: React.FC = () => {
+  // TODO: 為了上線摘要與作業功能，暫時隱藏 chant 模組
+  if (!isChantEnabled) return null;
+
   const navigate = useNavigate();
   const { t } = useTranslation();
 

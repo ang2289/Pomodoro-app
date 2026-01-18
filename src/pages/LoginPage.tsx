@@ -4,6 +4,7 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import PrimaryButton from '@/components/ui/PrimaryButton'
+import { trackEvent } from '@/utils/analytics'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -40,6 +41,10 @@ export default function LoginPage() {
       if (data.success && data.userId) {
         // 成功時：儲存 userId 到 localStorage
         localStorage.setItem('userId', data.userId)
+        // 追蹤登入成功事件
+        trackEvent('login_success', {
+          source: 'login_page'
+        })
         // 導向 /summary
         navigate('/summary')
       } else {
@@ -98,6 +103,8 @@ export default function LoginPage() {
       if (data.userId) {
         // 成功時：儲存 userId 到 localStorage
         localStorage.setItem('userId', data.userId)
+        // 追蹤註冊成功事件
+        trackEvent('sign_up_success')
         // 導向 /summary
         navigate('/summary')
       } else {

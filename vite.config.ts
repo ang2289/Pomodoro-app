@@ -29,9 +29,10 @@ export default defineConfig({
     },
     proxy: {
       '/api': {
-        target: 'https://pomodoro-app.vercel.app',
+        target: process.env.VITE_VERCEL_URL || 'https://pomodoro-app-eight-rouge.vercel.app',
         changeOrigin: true,
-        secure: true
+        secure: true,
+        rewrite: (path) => path,
       }
     }
   }

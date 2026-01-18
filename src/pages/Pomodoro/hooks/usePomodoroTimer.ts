@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getNotificationSettings } from '../../../utils/notificationUtils';
+import { trackEvent } from '../../../utils/analytics';
 
 interface UsePomodoroTimerProps {
   workMinutes: number;
@@ -149,6 +150,13 @@ export const usePomodoroTimer = ({
     setIsRunning(true);
     // 啟用防止螢幕休眠
     await requestWakeLock();
+    // 追蹤番茄鐘使用事件（只在工作階段開始時追蹤，避免休息階段重複觸發）
+    if (!isBreak) {
+      trackEvent('use_pomodoro', {
+        work_minutes: workMinutes,
+        break_minutes: breakMinutes,
+      })
+    }
   };
 
   const pauseTimer = async () => {

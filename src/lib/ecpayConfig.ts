@@ -1,5 +1,5 @@
 export const getEcpayConfig = () => {
-  const isTestMode = true  // ✅ 測試模式開啟
+  const isTestMode = false  // ✅ 正式模式
 
   if (isTestMode) {
     return {

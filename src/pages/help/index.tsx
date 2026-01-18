@@ -104,103 +104,74 @@ export default function HelpPage() {
             </div>
           </div>
 
-          {/* 區塊 3：匯款與補點流程 */}
-          <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-              <span className="mr-2">💳</span>
-              匯款與補點流程
-            </h2>
-            <div className="space-y-4 text-gray-700">
+      {/* 區塊 3：付款與補點方式（新版） */}
+      <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+        <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+          <span className="mr-2">💳</span>
+          付款與補點方式
+        </h2>
+        <div className="space-y-6 text-gray-700">
+          <div>
+            <h3 className="font-semibold text-gray-900 mb-2">點數購買與補充流程</h3>
+            <p className="text-gray-600 mb-2">目前支援以下付款方式（透過綠界金流）：</p>
+            <ul className="list-disc ml-5 space-y-2">
+              <li><strong>信用卡付款</strong>（含 Apple Pay / Google Pay）</li>
+              <li><strong>ATM 虛擬帳號轉帳</strong>（付款後自動加點）</li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="font-semibold text-gray-900 mb-2">補點流程說明</h3>
+            <ul className="list-disc ml-5 space-y-2">
+              <li>選擇你想購買的點數方案</li>
+              <li>透過綠界付款（信用卡或 ATM 虛擬帳號）</li>
+              <li>付款成功後，系統會自動加點並 Email 通知</li>
+              <li>無需填寫表單，最快幾秒內自動完成</li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="font-semibold text-gray-900 mb-2">點數方案參考</h3>
+            <ul className="list-disc ml-5 space-y-2">
+              <li>NT$99 → 100,000 點（約 30～35 次摘要）</li>
+              <li>NT$199 → 300,000 點（約 90～100 次摘要）</li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="font-semibold text-gray-900 mb-2">常見問題 Q&amp;A</h3>
+            <div className="space-y-4">
               <div>
-                <h3 className="font-semibold text-gray-900 mb-2">方案選擇</h3>
-                <ul className="list-disc ml-5 space-y-2">
-                  <li><strong>NT$99 方案：</strong>100,000 點（約 30～35 次摘要）</li>
-                  <li><strong>NT$199 方案：</strong>300,000 點（約 90～100 次摘要）</li>
-                </ul>
+                <p className="font-semibold text-gray-900">Q: 付款後多久會補點？</p>
+                <p className="text-gray-600">A: 一般會在 5～10 秒內完成補點，並收到 Email 通知。</p>
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900 mb-2">匯款步驟</h3>
-                <ol className="list-decimal ml-5 space-y-2">
-                  <li>在<Link to="/pricing" className="text-blue-600 hover:underline">方案頁面</Link>選擇方案</li>
-                  <li>查看匯款資訊（銀行、帳號、戶名）</li>
-                  <li>完成匯款後，點擊「查看點數方案 / 立即補點」按鈕</li>
-                  <li>填寫匯款回報表單（Email、匯款金額、帳號後五碼）</li>
-                  <li>提交回報後，我們會在 <strong>24 小時內</strong>為您補點</li>
-                </ol>
+                <p className="font-semibold text-gray-900">Q: 點數有使用期限嗎？</p>
+                <p className="text-gray-600">A: 沒有。點數為一次性額度，不限時間，用完為止。</p>
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900 mb-2">匯款資訊</h3>
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                  <ul className="space-y-2 text-sm">
-                    <li><strong>銀行：</strong>玉山銀行</li>
-                    <li><strong>銀行代號：</strong>808</li>
-                    <li><strong>分行：</strong>基隆分行</li>
-                    <li><strong>帳號：</strong>0783979283619</li>
-                    <li><strong>戶名：</strong>林雨晴</li>
-                  </ul>
-                </div>
-                <p className="text-sm text-gray-600 mt-2">
-                  <strong>重要：</strong>請於匯款備註填寫「註冊 Email」，以便我們快速為您補點。
-                </p>
+                <p className="font-semibold text-gray-900">Q: 可以退款嗎？</p>
+                <p className="text-gray-600">A: 點數使用後即視為完成服務，恕不退款。未用完點數可永久保留。</p>
               </div>
-              <div className="bg-green-50 border-l-4 border-green-400 p-4 rounded">
-                <p className="text-sm text-green-800">
-                  <strong>✅ 補點完成後：</strong>您會收到 Email 通知，點數會自動加入您的帳戶。
-                </p>
+              <div>
+                <p className="font-semibold text-gray-900">Q: 點數可以轉讓嗎？</p>
+                <p className="text-gray-600">A: 不可。每筆點數與帳號綁定，不可轉讓或轉移。</p>
               </div>
             </div>
           </div>
 
-          {/* 區塊 4：常見問題與注意事項 */}
-          <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-              <span className="mr-2">❓</span>
-              常見問題與注意事項
-            </h2>
-            <div className="space-y-6 text-gray-700">
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Q: 試用期過後點數會消失嗎？</h3>
-                <p className="text-gray-600">
-                  A: 不會。試用期過後，剩餘的試用點數仍可使用，但無法再補充試用額度。如需更多點數，請購買付費方案。
-                </p>
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Q: 點數有使用期限嗎？</h3>
-                <p className="text-gray-600">
-                  A: 沒有。點數為一次性購買，不限使用期限，用完為止。
-                </p>
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Q: 匯款後多久會補點？</h3>
-                <p className="text-gray-600">
-                  A: 我們會在收到匯款後 <strong>24 小時內</strong>為您補點，通常會更快。補點完成後會發送 Email 通知。
-                </p>
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Q: 可以退款嗎？</h3>
-                <p className="text-gray-600">
-                  A: 點數一經使用即視為服務完成，恕不退款。未使用的點數可永久保留。
-                </p>
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Q: 點數可以轉讓給其他帳號嗎？</h3>
-                <p className="text-gray-600">
-                  A: 不可以。點數與帳號綁定，無法轉讓或轉移。
-                </p>
-              </div>
-              <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded">
-                <p className="text-sm text-red-800">
-                  <strong>⚠️ 重要注意事項：</strong>
-                </p>
-                <ul className="list-disc ml-5 mt-2 space-y-1 text-sm text-red-700">
-                  <li>點數使用後無法退款</li>
-                  <li>請確認匯款資訊正確，避免匯款錯誤</li>
-                  <li>匯款時請務必在備註填寫註冊 Email</li>
-                  <li>如有問題，請聯繫客服</li>
-                </ul>
-              </div>
-            </div>
+          <div className="bg-rose-50 border-l-4 border-rose-400 p-4 rounded">
+            <p className="text-sm text-rose-800">
+              <strong>⚠️ 提醒事項：</strong>
+            </p>
+            <ul className="list-disc ml-5 mt-2 space-y-1 text-sm text-rose-700">
+              <li>使用前請先登入帳號</li>
+              <li>點數為一次性使用，不限時間但無法退款</li>
+              <li>若需大量點數購買或企業合作，請來信聯絡</li>
+            </ul>
           </div>
+        </div>
+      </div>
 
           {/* 返回按鈕 */}
           <div className="text-center space-x-4">

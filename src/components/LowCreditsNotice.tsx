@@ -1,7 +1,8 @@
 // 低點數提醒元件
 // 當 remaining_credits < 5000 且 consume_credits 尚可成功時顯示
 
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
+import { trackEvent } from '@/utils/analytics'
 
 interface LowCreditsNoticeProps {
   /** 剩餘點數 */
@@ -17,9 +18,16 @@ export default function LowCreditsNotice({
   lang = 'zh-tw',
   className = '',
 }: LowCreditsNoticeProps) {
+  const location = useLocation()
+  
   // 只在 remaining_credits < 5000 且 > 0 時顯示（表示還可以用，但偏低）
   if (remainingCredits >= 5000 || remainingCredits <= 0) {
     return null
+  }
+
+  const handlePricingClick = () => {
+    const sourcePage = location.pathname || 'unknown'
+    trackEvent('click_pricing', { source_page: sourcePage })
   }
 
   return (
@@ -48,6 +56,7 @@ export default function LowCreditsNotice({
           </p>
           <Link
             to="/pricing"
+            onClick={handlePricingClick}
             className="inline-block mt-2 text-sm font-medium text-amber-700 hover:text-amber-900 underline"
           >
             {lang === 'zh-tw' ? '查看方案 →' : 'View Plans →'}

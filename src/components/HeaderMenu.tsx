@@ -2,13 +2,22 @@ import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
-const menuItems = [
+// TODO: 為了上線摘要與作業功能，暫時隱藏集氣願望模組
+// 日後可透過環境變數 VITE_ENABLE_CHANT=true 或 NEXT_PUBLIC_ENABLE_CHANT=true 再次開啟
+const isChantWishEnabled = import.meta.env.VITE_ENABLE_CHANT === 'true' || import.meta.env.NEXT_PUBLIC_ENABLE_CHANT === 'true';
+
+const baseMenuItems = [
   { path: '/summary', labelKey: 'AI 摘要工具' },
   { path: '/chant', labelKey: 'chant' },
   { path: '/todo', labelKey: 'todo' },
-  { path: 'pomodoro', labelKey: 'pomodoro' },
+  { path: 'pomodoro', labelKey: 'pomodoro' }
+];
+
+const chantWishMenuItems = isChantWishEnabled ? [
   { path: '/wish', labelKey: 'wish' }
-]
+] : [];
+
+const menuItems = [...baseMenuItems, ...chantWishMenuItems];
 
 export default function HeaderMenu() {
   const { t } = useTranslation()

@@ -11,6 +11,8 @@ const corsHeaders = {
 // console.log("✅ Edge Function 'homework-helper' is running...");
 
 serve(async (req: Request) => {
+  console.log('[HOMEWORK API] called')
+  
   // ✅ OPTIONS preflight 處理：必須在 handler 第一行，不能有任何 await 在它前面
   if (req.method === "OPTIONS") {
     return new Response("ok", {
@@ -35,8 +37,14 @@ serve(async (req: Request) => {
       );
     }
 
-    // ✅ 1. 解析請求 body，確保有解構 language
-    const { prompt, mode = 'answer', language = 'zh' } = await req.json();
+    // ✅ 1. 解析請求 body，從 body 直接取得 userId（與摘要一致）
+    const body = await req.json();
+    const { prompt, mode = 'answer', language = 'zh', userId } = body;
+
+    const isGuest = !userId;
+    console.log("[HOMEWORK] isGuest:", isGuest, "userId:", userId);
+    const authHeader = req.headers.get("authorization");
+    console.log('[HOMEWORK AUTH]', { hasAuthHeader: !!authHeader, userId, isGuest });
 
     if (!prompt || typeof prompt !== "string" || prompt.trim().length === 0) {
       return new Response(
@@ -55,35 +63,10 @@ serve(async (req: Request) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || Deno.env.get("VITE_SUPABASE_URL");
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     
-    let userId: string | null = null;
     let supabase: any = null;
     
     if (supabaseUrl && supabaseServiceKey) {
       supabase = createClient(supabaseUrl, supabaseServiceKey);
-      
-      // 嘗試從 authorization header 取得使用者 ID
-      const authHeader = req.headers.get("authorization");
-      if (authHeader) {
-        try {
-          const token = authHeader.replace("Bearer ", "");
-          // 使用 Supabase 驗證 token 並取得使用者 ID
-          const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-          if (!authError && user) {
-            userId = user.id;
-          }
-        } catch (e) {
-          // console.log("⚠️ 無法從 token 取得使用者 ID，將使用訪客模式");
-        }
-      }
-      
-      // 如果沒有登入使用者，使用 session_id 或 guest_${fingerprint} 作為訪客 ID
-      if (!userId) {
-        // 嘗試從請求中取得 session_id 或 fingerprint
-        const sessionId = req.headers.get("x-session-id") || 
-                         req.headers.get("x-fingerprint") ||
-                         "anonymous";
-        userId = sessionId.startsWith("guest_") ? sessionId : `guest_${sessionId}`;
-      }
       
       // 預先檢查點數是否足夠（預估輸出字數為輸入的 50%）
       if (userId && supabase) {
@@ -266,73 +249,64 @@ serve(async (req: Request) => {
     }
 
     const outputLength = text.trim().length;
-    const usedTokens = inputLength + outputLength;
+    const usedPoints = inputLength + outputLength;
 
-    // ✅ 正式扣點（訪客 or 登入都適用）
+    // ✅ 正式扣點（使用 consume_credits RPC，統一格式）
+    let remainingChars: number | undefined;
+    
     if (userId && supabase) {
       try {
-        // 先讀取目前點數
-        const { data: currentData, error: readError } = await supabase
-          .from('user_credits')
-          .select('remaining_chars, used')
-          .eq('user_id', userId)
-          .single();
+        console.log('[HOMEWORK][CREDITS] before rpc', {
+          userId,
+          inputChars: inputLength,
+          outputChars: outputLength,
+          usedPoints,
+        });
         
-        if (readError && readError.code !== 'PGRST116') {
-          // 讀取錯誤（非記錄不存在）
-          console.error("❌ 讀取點數失敗：", readError);
-        } else {
-          // 計算新點數
-          const currentRemaining = currentData?.remaining_chars || 0;
-          const currentUsed = currentData?.used || 0;
-          const newRemaining = Math.max(0, currentRemaining - usedTokens);
-          const newUsed = currentUsed + usedTokens;
-          
-          // 直接更新 credits 表
-          if (currentData) {
-            // 記錄存在，更新
-            const { error: updateError } = await supabase
-              .from('user_credits')
-              .update({
-                remaining_chars: newRemaining,
-                used: newUsed,
-              })
-              .eq('user_id', userId);
-            
-            if (updateError) {
-              console.error("❌ 扣點失敗：", updateError);
-            } else {
-              // console.log(`✅ 扣點成功：${usedTokens} 字（輸入 ${inputLength} + 輸出 ${outputLength}）`);
+        const { data: creditResult, error: creditError } = await supabase.rpc("consume_credits", {
+          p_user_id: userId,
+          p_chars: usedPoints,
+        });
+        
+        console.log('[HOMEWORK][CREDITS] after rpc', { data: creditResult, error: creditError });
+
+        if (creditError) {
+          console.error("[HOMEWORK] consume_credits error", creditError);
+          return new Response(
+            JSON.stringify({ result: "點數不足或扣點失敗" }),
+            {
+              status: 403,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
             }
-          } else {
-            // 記錄不存在，建立新記錄（預設 10000，扣除已使用）
-            const { error: insertError } = await supabase
-              .from('user_credits')
-              .insert({
-                user_id: userId,
-                remaining_chars: Math.max(0, 10000 - usedTokens),
-                used: usedTokens,
-              });
-            
-            if (insertError) {
-              console.error("❌ 建立點數記錄失敗：", insertError);
-            } else {
-              // console.log(`✅ 扣點成功（新記錄）：${usedTokens} 字（輸入 ${inputLength} + 輸出 ${outputLength}）`);
-            }
-          }
+          );
         }
+
+        remainingChars = creditResult?.[0]?.remaining_chars;
       } catch (deductError: any) {
-        // 扣點錯誤不阻擋回應，只記錄
-        console.error("❌ 扣點時發生錯誤（不阻擋回應）：", deductError);
+        console.error("❌ [HOMEWORK] 扣點時發生錯誤：", deductError);
+        return new Response(
+          JSON.stringify({ 
+            result: "點數不足或扣點失敗",
+            error: deductError.message || "扣點失敗"
+          }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
       }
-    } else {
-      // console.warn("⚠️ 無法扣點：缺少 Supabase 設定或使用者 ID");
     }
 
+    // ✅ 回傳結果，包含剩餘點數
+    const response: any = {
+      result: text.trim(),
+      used_points: usedPoints,
+      remaining_chars: remainingChars,
+      is_guest: isGuest,
+    };
+
     return new Response(
-      JSON.stringify({
-        result: text.trim(),
-      }),
+      JSON.stringify(response),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       }

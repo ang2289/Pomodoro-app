@@ -1,5 +1,7 @@
 import { Helmet } from 'react-helmet-async'
 import { Link, useNavigate } from 'react-router-dom'
+import React, { useEffect } from 'react'
+import { trackEvent } from '@/utils/analytics'
 
 import SectionHeader from '../../components/SectionHeader'
 import { PLANS } from '../../config'
@@ -140,6 +142,10 @@ interface SummaryLayoutProps {
   // 匿名使用者剩餘字數（用於顯示）
   anonRemainingChars: number | null
   
+  // 免費試用（未登入時顯示）
+  freeTrialUsedCount: number | null  // 已使用的免費試用次數（0-3）
+  freeTrialRemainingCount: number | null  // 剩餘的免費試用次數（3-0）
+  
   // 使用字數統計（從 usage_logs 累加）
   usedChars?: number
   // 方案限制（從 plans 表或預設 free plan）
@@ -172,6 +178,8 @@ export default function SummaryLayout(props: SummaryLayoutProps) {
     paidRemaining,
     totalRemaining,
     anonRemainingChars,
+    freeTrialUsedCount,
+    freeTrialRemainingCount,
     usedChars = 0,
     planLimit,
   } = props
@@ -179,6 +187,60 @@ export default function SummaryLayout(props: SummaryLayoutProps) {
   // UI 僅做狀態顯示，不碰資料來源
   const t = LANG_TEXT[lang]
   const navigate = useNavigate()
+
+  // 追蹤升級提示 UI 顯示（使用 ref 避免重複觸發）
+  const hasTrackedUpgradeModal = React.useRef(false)
+  const hasTrackedInsufficientPrompt = React.useRef(false)
+  const hasTrackedLowCreditsNotice = React.useRef(false)
+
+  useEffect(() => {
+    // 當 UpgradeModal 顯示時（只追蹤一次）
+    if (showInsufficientQuotaModal && !hasTrackedUpgradeModal.current) {
+      trackEvent('show_upgrade_prompt', {
+        prompt_type: 'upgrade_modal',
+      })
+      hasTrackedUpgradeModal.current = true
+    } else if (!showInsufficientQuotaModal) {
+      // 當 modal 關閉時重置，以便下次顯示時再次追蹤
+      hasTrackedUpgradeModal.current = false
+    }
+  }, [showInsufficientQuotaModal])
+
+  useEffect(() => {
+    // 當 InsufficientCreditsPrompt 顯示時（只追蹤一次）
+    if (showInsufficientCreditsPrompt && !hasTrackedInsufficientPrompt.current) {
+      trackEvent('show_upgrade_prompt', {
+        prompt_type: 'insufficient_credits_prompt',
+      })
+      hasTrackedInsufficientPrompt.current = true
+    } else if (!showInsufficientCreditsPrompt) {
+      hasTrackedInsufficientPrompt.current = false
+    }
+  }, [showInsufficientCreditsPrompt])
+
+  useEffect(() => {
+    // 當 LowCreditsNotice 應該顯示時（remainingChars < 5000 且 > 0，只追蹤一次）
+    if (remainingChars !== null && remainingChars > 0 && remainingChars < 5000 && !hasTrackedLowCreditsNotice.current) {
+      trackEvent('show_upgrade_prompt', {
+        prompt_type: 'low_credits_notice',
+      })
+      hasTrackedLowCreditsNotice.current = true
+    } else if (remainingChars === null || remainingChars >= 5000 || remainingChars <= 0) {
+      hasTrackedLowCreditsNotice.current = false
+    }
+  }, [remainingChars])
+
+  // 追蹤購買點數方案區塊顯示（該區塊始終顯示，但只在首次載入時追蹤一次）
+  const hasTrackedPricingBlock = React.useRef(false)
+  useEffect(() => {
+    if (!hasTrackedPricingBlock.current) {
+      // 購買點數方案區塊始終顯示，在首次載入時追蹤
+      trackEvent('show_upgrade_prompt', {
+        prompt_type: 'pricing_block',
+      })
+      hasTrackedPricingBlock.current = true
+    }
+  }, [])
 
   // 處理購買方案按鈕點擊（檢查登入狀態）
   const handlePurchaseClick = (e: React.MouseEvent) => {
@@ -262,6 +324,19 @@ export default function SummaryLayout(props: SummaryLayoutProps) {
         <title>{seo.title}</title>
       </Helmet>
       
+      {/* 頁面標題與首頁按鈕 */}
+      <div className="mb-6 flex items-center justify-between relative">
+        <div className="flex-1"></div>
+        <h1 className="text-3xl font-bold text-gray-900 flex-1 text-center absolute left-0 right-0">文章摘要工具</h1>
+        <Link
+          to="/"
+          className="inline-flex items-center justify-center px-3 py-1.5 bg-blue-600 hover:bg-blue-700 font-bold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 text-sm sm:text-base relative z-10"
+          style={{ color: '#ffffff' }}
+        >
+          <span style={{ color: '#ffffff' }}>首頁</span>
+        </Link>
+      </div>
+      
       {/* 🔒 字數不足升級彈窗 - 統一使用 UpgradeModal，僅在 remainingChars <= 0 時顯示 */}
       <UpgradeModal
         isOpen={showInsufficientQuotaModal}
@@ -305,14 +380,132 @@ export default function SummaryLayout(props: SummaryLayoutProps) {
               {loading ? '生成中…' : '產生摘要'}
             </button>
 
-            {/* 點數顯示 */}
-            <div className="mt-3 text-sm text-gray-500 space-y-1">
-              <div>已用點數：{(usedChars ?? 0).toLocaleString()}</div>
-              <div>剩餘點數：{remainingChars !== null ? remainingChars.toLocaleString() : '—'}</div>
-              <div>本方案上限：{planLimit ? planLimit.toLocaleString() : '10,000'} 點</div>
+            {/* 手機版優先顯示：摘要結果 */}
+            {/* ✅ STATE 變數：summary.content */}
+            <div className="lg:hidden mt-6">
+              <Card>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold">📌 摘要結果</h3>
+                    <button
+                      onClick={copySummary}
+                      className="px-3 py-1.5 rounded-md text-sm bg-indigo-500 text-white hover:bg-indigo-600 active:scale-95 transition"
+                    >
+                      複製摘要
+                    </button>
+                  </div>
+                  {/* ✅ 使用 state: summary.content */}
+                  {summary.content && summary.content.trim() !== '' ? (
+                    <>
+                      <p className="text-gray-800 leading-relaxed">{summary.content}</p>
+                      {lastUsedPoints && (
+                        <div className="mt-2 text-sm text-gray-500">
+                          共輸入 <strong>{lastUsedPoints.inputLength}</strong> 字，輸出 <strong>{lastUsedPoints.outputLength}</strong> 字，合計扣除 <strong>{lastUsedPoints.totalUsedPoints}</strong> 點。
+                        </div>
+                      )}
+                      {usageChars !== null && (
+                        <div className="text-sm text-gray-500">
+                          本次使用字數：{usageChars.toLocaleString()} 字
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="text-gray-400">尚未生成摘要</div>
+                  )}
+                </CardContent>
+              </Card>
             </div>
 
-            {/* 購買點數方案區塊（永久顯示） */}
+            {/* 手機版優先顯示：關鍵字建議 */}
+            {/* ✅ STATE 變數：keywords */}
+            <div className="lg:hidden mt-6">
+              <Card>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold">關鍵字建議</h3>
+                    <button 
+                      onClick={copyKeywords}
+                      className="btn-green"
+                    >
+                      複製關鍵字
+                    </button>
+                  </div>
+
+                  {/* ✅ 使用 state: keywords */}
+                  {keywords.length === 0 ? (
+                    <div className="text-sm text-gray-400">尚未產生關鍵字</div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {keywords.map((k, i) => (
+                        <span key={i} className="tag-blue">{k}</span>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* 手機版優先顯示：流量關鍵字 */}
+            {/* ✅ STATE 變數：trafficKeywords */}
+            <div className="lg:hidden mt-6">
+              <Card>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold">流量關鍵字</h3>
+                    <button 
+                      onClick={copyTrafficKeywords}
+                      className="btn-emerald"
+                    >
+                      複製流量關鍵字
+                    </button>
+                  </div>
+
+                  {/* ✅ 使用 state: trafficKeywords */}
+                  {trafficKeywords.length === 0 ? (
+                    <div className="text-sm text-gray-400">
+                      尚未產生流量關鍵字
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {trafficKeywords.map((k, i) => (
+                        <span key={i} className="tag-emerald">{k}</span>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* 點數顯示 */}
+            {isLoggedIn() ? (
+              // ✅ 已登入時：隱藏免費次數，改顯示目前剩餘點數
+              <div className="mt-3 text-sm text-gray-500 space-y-1">
+                <div>已用點數：{(usedChars ?? 0).toLocaleString()}</div>
+                <div>剩餘點數：{remainingChars !== null ? remainingChars.toLocaleString() : '—'}</div>
+              </div>
+            ) : (
+              // ✅ 未登入時：顯示「已使用 X / 3 次免費體驗」
+              <div className="mt-3 text-sm text-gray-500 space-y-1">
+                <div>
+                  已使用 {freeTrialUsedCount ?? 0} / 3 次免費體驗
+                </div>
+                {freeTrialRemainingCount !== null && freeTrialRemainingCount > 0 && (
+                  <div className="text-blue-600 font-medium">
+                    剩餘 {freeTrialRemainingCount} 次免費體驗
+                  </div>
+                )}
+                {/* ✅ 免費次數用完但未登入時：顯示登入提示 */}
+                {freeTrialRemainingCount !== null && freeTrialRemainingCount === 0 && (
+                  <div className="text-red-600 font-medium mt-2">
+                    {lang === 'zh-tw' ? '免費體驗已用完，請登入以繼續使用' : 'Free trial exhausted, please log in to continue'}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 購買點數方案區塊（手機版移到關鍵字建議之後） */}
+            {/* ✅ 免費次數用完但未登入時：不顯示購買點數 */}
+            {!(freeTrialRemainingCount !== null && freeTrialRemainingCount === 0 && !isLoggedIn()) && (
             <div className="mt-6 bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-xl p-6 shadow-md">
               <div className="text-center mb-6">
                 <h2 className="text-xl font-bold text-gray-900 mb-2">
@@ -338,7 +531,14 @@ export default function SummaryLayout(props: SummaryLayoutProps) {
                       {getPlanChars('pack99').toLocaleString()} {lang === 'zh-tw' ? '字' : 'chars'}
                     </p>
                   </div>
-                  <Link to="/pricing" onClick={handlePurchaseClick} className="block">
+                  <Link 
+                    to="/pricing" 
+                    onClick={(e) => {
+                      handlePurchaseClick(e)
+                      trackEvent('click_pricing', { source_page: 'summary' })
+                    }} 
+                    className="block"
+                  >
                     <PrimaryButton fullWidth className="mt-4">
                       {lang === 'zh-tw' ? '立即升級' : 'Upgrade Now'}
                     </PrimaryButton>
@@ -359,7 +559,14 @@ export default function SummaryLayout(props: SummaryLayoutProps) {
                       {getPlanChars('pack199').toLocaleString()} {lang === 'zh-tw' ? '字' : 'chars'}
                     </p>
                   </div>
-                  <Link to="/pricing" onClick={handlePurchaseClick} className="block">
+                  <Link 
+                    to="/pricing" 
+                    onClick={(e) => {
+                      handlePurchaseClick(e)
+                      trackEvent('click_pricing', { source_page: 'summary' })
+                    }} 
+                    className="block"
+                  >
                     <PrimaryButton fullWidth className="mt-4">
                       {lang === 'zh-tw' ? '立即升級' : 'Upgrade Now'}
                     </PrimaryButton>
@@ -367,6 +574,7 @@ export default function SummaryLayout(props: SummaryLayoutProps) {
                 </div>
               </div>
             </div>
+            )}
 
             {/* 低點數提醒：當 remainingChars < 5000 且 > 0 時顯示 */}
             {remainingChars !== null && remainingChars > 0 && remainingChars < 5000 && (
@@ -378,7 +586,7 @@ export default function SummaryLayout(props: SummaryLayoutProps) {
             {/* ⚠️ 已移除 CreditStatusBarDetailed，避免重複顯示點數 */}
             {/* 點數顯示統一在上方的「已用字數」、「剩餘字數」、「方案上限」區塊 */}
 
-            {/* 方案說明卡片 */}
+            {/* 方案說明卡片（手機版移到關鍵字建議之後） */}
             <PricingPlanCard />
 
             {/* 使用說明文字 */}
@@ -403,79 +611,86 @@ export default function SummaryLayout(props: SummaryLayoutProps) {
         }
         right={
           <div className="space-y-6">
-
-            {/* 摘要結果 */}
-            <Card>
-              <CardContent className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold">📌 摘要結果</h3>
-                  <button
-                    onClick={copySummary}
-                    className="px-3 py-1.5 rounded-md text-sm bg-indigo-500 text-white hover:bg-indigo-600 active:scale-95 transition"
-                  >
-                    複製摘要
-                  </button>
-                </div>
-                {summary.content && summary.content.trim() !== '' ? (
-                  <>
-                    <p className="text-gray-800 leading-relaxed">{summary.content}</p>
-                    {lastUsedPoints && (
-                      <div className="mt-2 text-sm text-gray-500">
-                        共輸入 <strong>{lastUsedPoints.inputLength}</strong> 字，輸出 <strong>{lastUsedPoints.outputLength}</strong> 字，合計扣除 <strong>{lastUsedPoints.totalUsedPoints}</strong> 點。
-                      </div>
-                    )}
-                    {usageChars !== null && (
-                      <div className="text-sm text-gray-500">
-                        本次使用字數：{usageChars.toLocaleString()} 字
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="text-gray-400">尚未生成摘要</div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* 關鍵字 */}
-            <Card>
-              <CardContent className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold">關鍵字建議</h3>
-                  <button 
-                    onClick={copyKeywords}
-                    className="btn-green"
-                  >
-                    複製關鍵字
-                  </button>
-                </div>
-
-                {keywords.length === 0 ? (
-                  <div className="text-sm text-gray-400">尚未產生關鍵字</div>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {keywords.map((k, i) => (
-                      <span key={i} className="tag-blue">{k}</span>
-                    ))}
+            {/* 桌面版顯示：摘要結果 */}
+            {/* ✅ STATE 變數：summary.content */}
+            <div className="hidden lg:block">
+              <Card>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold">📌 摘要結果</h3>
+                    <button
+                      onClick={copySummary}
+                      className="px-3 py-1.5 rounded-md text-sm bg-indigo-500 text-white hover:bg-indigo-600 active:scale-95 transition"
+                    >
+                      複製摘要
+                    </button>
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                  {/* ✅ 使用 state: summary.content */}
+                  {summary.content && summary.content.trim() !== '' ? (
+                    <>
+                      <p className="text-gray-800 leading-relaxed">{summary.content}</p>
+                      {lastUsedPoints && (
+                        <div className="mt-2 text-sm text-gray-500">
+                          共輸入 <strong>{lastUsedPoints.inputLength}</strong> 字，輸出 <strong>{lastUsedPoints.outputLength}</strong> 字，合計扣除 <strong>{lastUsedPoints.totalUsedPoints}</strong> 點。
+                        </div>
+                      )}
+                      {usageChars !== null && (
+                        <div className="text-sm text-gray-500">
+                          本次使用字數：{usageChars.toLocaleString()} 字
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="text-gray-400">尚未生成摘要</div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* 桌面版顯示：關鍵字 */}
+            {/* ✅ STATE 變數：keywords */}
+            <div className="hidden lg:block">
+              <Card>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold">關鍵字建議</h3>
+                    <button 
+                      onClick={copyKeywords}
+                      className="btn-green"
+                    >
+                      複製關鍵字
+                    </button>
+                  </div>
+
+                  {/* ✅ 使用 state: keywords */}
+                  {keywords.length === 0 ? (
+                    <div className="text-sm text-gray-400">尚未產生關鍵字</div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {keywords.map((k, i) => (
+                        <span key={i} className="tag-blue">{k}</span>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
 
             {/* 流量關鍵字（重點） */}
+            {/* ✅ STATE 變數：trafficKeywords */}
             <Card>
               <CardContent className="space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold">流量關鍵字</h3>
                   <button 
-                    onClick={() =>
-                      navigator.clipboard.writeText(trafficKeywords.join('\n'))
-                    }
+                    onClick={copyTrafficKeywords}
                     className="btn-emerald"
                   >
                     複製流量關鍵字
                   </button>
                 </div>
 
+                {/* ✅ 使用 state: trafficKeywords */}
                 {trafficKeywords.length === 0 ? (
                   <div className="text-sm text-gray-400">
                     尚未產生流量關鍵字

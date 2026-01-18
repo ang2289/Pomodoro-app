@@ -78,7 +78,33 @@ async function handleLogin(req: VercelRequest, res: VercelResponse, supabase: an
     return res.status(401).json({ success: false, error: 'Invalid email or password' })
   }
 
-  // 3. 成功回傳（規格：{ "success": true, "userId": "<users.id>" }）
+  // 3. 檢查並初始化點數（如果是首次登入）
+  const { data: existingCredits } = await supabase
+    .from('user_credits')
+    .select('balance')
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  // 如果沒有點數記錄，初始化為 10,000 點（首次登入贈送）
+  if (!existingCredits) {
+    const { error: creditsError } = await supabase
+      .from('user_credits')
+      .insert({
+        user_id: user.id,
+        balance: 10000,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+
+    if (creditsError) {
+      console.error('[auth/login] INIT CREDITS ERROR:', creditsError)
+      // 點數初始化失敗不影響登入，僅記錄錯誤
+    } else {
+      console.log('[auth/login] Initialized credits for user:', user.id)
+    }
+  }
+
+  // 4. 成功回傳（規格：{ "success": true, "userId": "<users.id>" }）
   console.log('[auth/login] SUCCESS userId:', user.id)
   console.log('[auth/login] response payload:', { success: true, userId: user.id })
   return res.status(200).json({ success: true, userId: user.id })

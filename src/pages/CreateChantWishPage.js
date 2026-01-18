@@ -6,7 +6,12 @@ import { supabase } from '../lib/supabase';
 import ImageUpload from '../components/ImageUpload.tsx';
 import { useNavigate } from 'react-router-dom';
 import { containsSensitiveWords } from '../utils/sensitiveWords';
+// TODO: 為了上線摘要與作業功能，暫時隱藏 chant 模組
+// 日後可透過環境變數 VITE_ENABLE_CHANT=true 或 NEXT_PUBLIC_ENABLE_CHANT=true 再次開啟
 export default function CreateChantWishPage() {
+    if (import.meta.env.VITE_ENABLE_CHANT !== 'true' && import.meta.env.NEXT_PUBLIC_ENABLE_CHANT !== 'true') {
+        return null;
+    }
     const { t } = useTranslation();
     const [title, setTitle] = useState('');
     const [chantText, setChantText] = useState('');

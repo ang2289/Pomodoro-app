@@ -1,25 +1,4 @@
 // deno-lint-ignore-file no-explicit-any
-// ============================================
-// Edge Function：auto-summary
-// ============================================
-// ⚠️ 重要：此 Edge Function 僅負責 AI 功能
-// 
-// 功能：
-//   - 接收文字內容
-//   - 呼叫 Gemini API 產生摘要、關鍵字、流量關鍵字
-//   - 回傳 AI 結果
-//
-// 禁止事項：
-//   ❌ 不得包含任何扣點邏輯
-//   ❌ 不得寫入 user_credits 表
-//   ❌ 不得更新使用量
-//   ❌ 不得呼叫 consume_credits 相關 RPC
-//
-// 扣點邏輯：
-//   ✅ 扣點應在前端完成（使用 consume_user_credits RPC）
-//   ✅ Edge Function 只負責 AI，不負責扣點
-// ============================================
-
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
 const corsHeaders = {
@@ -29,14 +8,11 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-// 沿用您要求的 2.5 預覽版模型名稱
+// ⚠️ 原樣保留（不換 preview）
 const GEMINI_MODEL = "gemini-2.5-flash-preview-09-2025";
 const GEMINI_API_URL =
   "https://generativelanguage.googleapis.com/v1beta/models";
 
-/**
- * ✅ System Prompt（僅保留 1.摘要 2.關鍵字 3.流量關鍵字）
- */
 const SYSTEM_PROMPT = `
 Analyze the provided article content.
 Ensure the output language matches the article language.
@@ -53,9 +29,6 @@ You must complete ALL tasks below:
 Respond ONLY in valid JSON. No explanation text.
 `;
 
-/**
- * ✅ Response Schema（移除 high_intent_content 相關定義）
- */
 const RESPONSE_SCHEMA = {
   type: "OBJECT",
   properties: {
@@ -69,13 +42,8 @@ const RESPONSE_SCHEMA = {
       items: { type: "STRING" },
     },
   },
-  // 必須確保這三個欄位都存在
   required: ["summary", "keywords", "traffic_keywords"],
-  propertyOrdering: [
-    "summary",
-    "keywords",
-    "traffic_keywords",
-  ],
+  propertyOrdering: ["summary", "keywords", "traffic_keywords"],
 };
 
 serve(async (req) => {
@@ -111,17 +79,13 @@ serve(async (req) => {
       contents: [
         {
           role: "user",
-          parts: [
-            {
-              text: `${SYSTEM_PROMPT}\n\nArticle Content:\n${content}`,
-            },
-          ],
+          parts: [{ text: `${SYSTEM_PROMPT}\n\nArticle Content:\n${content}` }],
         },
       ],
       generationConfig: {
         responseMimeType: "application/json",
         responseSchema: RESPONSE_SCHEMA,
-        temperature: 0.35, // 沿用您原始設定的隨機度
+        temperature: 0.35,
       },
     };
 
@@ -134,28 +98,67 @@ serve(async (req) => {
       }
     );
 
+    // 🔒 MINIMAL GUARD ①：避免 Gemini 回錯直接炸
+    if (!res.ok) {
+      const errText = await res.text();
+      return new Response(
+        JSON.stringify({
+          error: "Gemini API error",
+          detail: errText,
+        }),
+        { status: 502, headers: corsHeaders }
+      );
+    }
+
     const data = await res.json();
-    const rawText =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
-    if (!rawText) throw new Error("Empty Gemini response");
+    // 🔒 防止 Gemini 回傳空結構時直接丟 500
+    if (!rawText) {
+      return new Response(
+        JSON.stringify({
+          title,
+          summary: "",
+          result: "",
+          keywords: [],
+          traffic_keywords: [],
+          modelUsed: GEMINI_MODEL,
+          status: "empty"
+        }),
+        {
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json"
+          }
+        }
+      );
+    }
 
-    const ai = JSON.parse(rawText);
+    // 🔒 MINIMAL GUARD ②：JSON parse 防護
+    let ai: any;
+    try {
+      ai = JSON.parse(rawText);
+    } catch {
+      return new Response(
+        JSON.stringify({
+          error: "Invalid AI JSON response",
+          raw: rawText,
+        }),
+        { status: 502, headers: corsHeaders }
+      );
+    }
 
-    // 統一欄位名稱：同時包含 summary 和 result 以確保前端相容性
     const summaryText = ai.summary ?? "";
 
     return new Response(
       JSON.stringify({
         title,
-        summary: summaryText, // 對應摘要結果
-        result: summaryText, // 與前端 result 顯示需求對齊
-        keywords: Array.isArray(ai.keywords)
-          ? ai.keywords.slice(0, 5)
-          : [],
+        summary: summaryText,
+        result: summaryText,
+        keywords: Array.isArray(ai.keywords) ? ai.keywords.slice(0, 5) : [],
         traffic_keywords: Array.isArray(ai.traffic_keywords)
           ? ai.traffic_keywords.slice(0, 5)
-          : [], // 對應流量關鍵字
+          : [],
         modelUsed: GEMINI_MODEL,
         status: "success",
       }),
@@ -167,19 +170,10 @@ serve(async (req) => {
       }
     );
   } catch (err: any) {
-    console.error('SUMMARY API ERROR', err);
+    // 🔒 MINIMAL GUARD ③：確保不再 FUNCTION_INVOCATION_FAILED
     return new Response(
-      JSON.stringify({ 
-        error: 'SUMMARY_FAILED',
-        message: err?.message || 'Unknown error'
-      }),
-      {
-        status: 500,
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "application/json",
-        },
-      }
+      JSON.stringify({ error: err?.message || "Internal error" }),
+      { status: 500, headers: corsHeaders }
     );
   }
 });

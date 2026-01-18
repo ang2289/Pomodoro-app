@@ -80,6 +80,166 @@ export default function AidsPage() {
               {isEnglish ? "Read More →" : "閱讀詳情 →"}
             </Link>
           </article>
+
+          <article className="p-5 rounded-xl border bg-white shadow-sm">
+            <h2 className="text-xl font-bold mb-2">
+              {isEnglish
+                ? "🧑‍💼 Youth Employment / Career Transition Subsidy Guide (2026)"
+                : "🧑‍💼 青年就業／轉職補助懶人包（2026）"}
+            </h2>
+            <p className="text-gray-600 mb-3">
+              {isEnglish
+                ? "A guide to common 2025–2026 youth employment and career transition subsidy programs, including application eligibility, subsidy amounts, and process explanations to help quickly determine if you meet the application requirements."
+                : "整理 2025–2026 年青年就業與轉職常見補助方案，包含申請資格、補助金額與流程說明，協助快速了解是否符合申請條件。"}
+            </p>
+            <Link 
+              to="/aids/youth-employment-2026" 
+              className="inline-block bg-blue-500 !text-white font-bold px-4 py-2 rounded-md text-sm hover:bg-blue-600 transition-colors duration-200"
+              style={{ color: '#ffffff', fontWeight: '700' }}
+            >
+              {isEnglish ? "Read More →" : "閱讀詳情 →"}
+            </Link>
+          </article>
+
+          <article className="p-5 rounded-xl border bg-white shadow-sm">
+            <h2 className="text-xl font-bold mb-2">
+              {isEnglish
+                ? "👶 Childcare / Daycare Subsidy Guide (2026)"
+                : "👶 育兒／托育補助懶人包（2026）"}
+            </h2>
+            <p className="text-gray-600 mb-3">
+              {isEnglish
+                ? "A guide to common 2025–2026 childcare and daycare subsidies, helping you quickly understand application eligibility, subsidy methods, and important notes."
+                : "整理 2025–2026 年育兒與托育常見補助，快速了解申請資格、補助方式與注意事項。"}
+            </p>
+            <Link 
+              to="/aids/childcare-subsidy-2026" 
+              className="inline-block bg-blue-500 !text-white font-bold px-4 py-2 rounded-md text-sm hover:bg-blue-600 transition-colors duration-200"
+              style={{ color: '#ffffff', fontWeight: '700' }}
+            >
+              {isEnglish ? "Read More →" : "閱讀詳情 →"}
+            </Link>
+          </article>
+
+          <article className="p-5 rounded-xl border bg-white shadow-sm">
+            <h2 className="text-xl font-bold mb-2">
+              {isEnglish
+                ? "💰 Low-Income / Middle-Low-Income Household Subsidy Guide (2026)"
+                : "💰 低收入戶／中低收入戶補助懶人包（2026）"}
+            </h2>
+            <p className="text-gray-600 mb-3">
+              {isEnglish
+                ? "A guide to common 2025–2026 low-income and middle-low-income household subsidy items and application highlights, helping you quickly understand basic eligibility requirements."
+                : "整理 2025–2026 年低收入戶與中低收入戶常見補助項目與申請重點，協助快速了解基本資格。"}
+            </p>
+            <Link 
+              to="/aids/low-income-subsidy-2026" 
+              className="inline-block bg-blue-500 !text-white font-bold px-4 py-2 rounded-md text-sm hover:bg-blue-600 transition-colors duration-200"
+              style={{ color: '#ffffff', fontWeight: '700' }}
+            >
+              {isEnglish ? "Read More →" : "閱讀詳情 →"}
+            </Link>
+          </article>
+
+          <article className="p-5 rounded-xl border bg-white shadow-sm">
+            <h2 className="text-xl font-bold mb-2">
+              {isEnglish
+                ? "🧓 Long-Term Care / Medical Subsidy Guide (2026)"
+                : "🧓 長照／醫療補助懶人包（2026）"}
+            </h2>
+            <p className="text-gray-600 mb-3">
+              {isEnglish
+                ? "A guide to common 2025–2026 long-term care and medical subsidy items, helping you quickly understand application eligibility and basic procedures."
+                : "整理 2025–2026 年長照與醫療常見補助項目，協助快速了解申請資格與基本流程。"}
+            </p>
+            <Link 
+              to="/aids/ltc-medical-subsidy-2026" 
+              className="inline-block bg-blue-500 !text-white font-bold px-4 py-2 rounded-md text-sm hover:bg-blue-600 transition-colors duration-200"
+              style={{ color: '#ffffff', fontWeight: '700' }}
+            >
+              {isEnglish ? "Read More →" : "閱讀詳情 →"}
+            </Link>
+          </article>
+
+          <article className="p-5 rounded-xl border bg-white shadow-sm">
+            <h2 className="text-xl font-bold mb-2">
+              {isEnglish
+                ? "❓ Can Subsidies Be Received Simultaneously?"
+                : "❓ 補助可以同時領嗎？"}
+            </h2>
+            <p className="text-gray-600 mb-3">
+              {isEnglish
+                ? "A guide to common rules and practical scenarios for whether government subsidies can be applied for simultaneously, helping you quickly determine the possibility of concurrent receipt."
+                : "整理政府補助是否可同時申請的常見規則與實務情境，協助快速判斷併領可能性。"}
+            </p>
+            <Link 
+              to="/aids/subsidy-concurrent-qa-2026" 
+              className="inline-block bg-blue-500 !text-white font-bold px-4 py-2 rounded-md text-sm hover:bg-blue-600 transition-colors duration-200"
+              style={{ color: '#ffffff', fontWeight: '700' }}
+            >
+              {isEnglish ? "Read More →" : "閱讀詳情 →"}
+            </Link>
+          </article>
+
+          <article className="p-5 rounded-xl border bg-white shadow-sm">
+            <h2 className="text-xl font-bold mb-2">
+              {isEnglish
+                ? "📋 Government Subsidy Quick Guide (2026)"
+                : "📋 政府補助快速導覽（2026）"}
+            </h2>
+            <p className="text-gray-600 mb-3">
+              {isEnglish
+                ? "A quick guide to common 2026 government subsidy types to help you find suitable subsidy directions."
+                : "快速整理 2026 年常見政府補助類型，協助找到適合的補助方向。"}
+            </p>
+            <Link 
+              to="/aids/subsidy-overview-2026" 
+              className="inline-block bg-blue-500 !text-white font-bold px-4 py-2 rounded-md text-sm hover:bg-blue-600 transition-colors duration-200"
+              style={{ color: '#ffffff', fontWeight: '700' }}
+            >
+              {isEnglish ? "Read More →" : "閱讀詳情 →"}
+            </Link>
+          </article>
+
+          <article className="p-5 rounded-xl border bg-white shadow-sm">
+            <h2 className="text-xl font-bold mb-2">
+              {isEnglish
+                ? "🧭 Subsidy Self-Check"
+                : "🧭 補助自我檢查"}
+            </h2>
+            <p className="text-gray-600 mb-3">
+              {isEnglish
+                ? "Quickly determine which government subsidies you may be eligible for through simple questions."
+                : "透過簡單問題快速判斷，了解自己可能符合哪些政府補助。"}
+            </p>
+            <Link 
+              to="/aids/subsidy-self-check-2026" 
+              className="inline-block bg-blue-500 !text-white font-bold px-4 py-2 rounded-md text-sm hover:bg-blue-600 transition-colors duration-200"
+              style={{ color: '#ffffff', fontWeight: '700' }}
+            >
+              {isEnglish ? "Read More →" : "閱讀詳情 →"}
+            </Link>
+          </article>
+
+          <article className="p-5 rounded-xl border bg-white shadow-sm">
+            <h2 className="text-xl font-bold mb-2">
+              {isEnglish
+                ? "🤖 How to Determine Subsidy Eligibility?"
+                : "🤖 補助怎麼判斷？"}
+            </h2>
+            <p className="text-gray-600 mb-3">
+              {isEnglish
+                ? "Explains common government subsidy eligibility criteria to help understand application logic."
+                : "說明政府補助常見判斷條件，協助理解申請邏輯。"}
+            </p>
+            <Link 
+              to="/aids/subsidy-selection-guide-2026" 
+              className="inline-block bg-blue-500 !text-white font-bold px-4 py-2 rounded-md text-sm hover:bg-blue-600 transition-colors duration-200"
+              style={{ color: '#ffffff', fontWeight: '700' }}
+            >
+              {isEnglish ? "Read More →" : "閱讀詳情 →"}
+            </Link>
+          </article>
         </section>
 
       </div>

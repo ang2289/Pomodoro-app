@@ -54,6 +54,8 @@ import DeprecatedPage from './pages/DeprecatedPage'
 import AdminPaymentsPage from './pages/admin/payments'
 import HelpPage from './pages/help/index'
 import AdminDashboardPage from './pages/admin/dashboard'
+import AdminImagesPage from './pages/admin/images'
+import AdminImagesListPage from './pages/admin/images-list'
 // ⚠️ 已移除 UpgradeSuccessToast 和 useAuthCredits
 import ArticleTemplate from './pages/blog/ArticleTemplate'
 import ChantFocusArticle from './pages/blog/ChantFocusArticle'
@@ -88,6 +90,32 @@ import ThreeMinuteMeditation from './pages/blog/ThreeMinuteMeditation'
 import AboutSpiritualGrowth from './pages/blog/AboutSpiritualGrowth'
 import BlogHome from './pages/blog/BlogHome'
 import BlogPage from './pages/blog/index'
+import CarImportTariffExplainedPage from './pages/blog/car-import-tariff-explained'
+import PolicyExplainedPage from './pages/blog/policy-explained'
+import HouseTaxExplainedPage from './pages/blog/house-tax-explained'
+import SubsidyEligibilityExplainedPage from './pages/blog/subsidy-eligibility-explained'
+import Clause232ExplainedPage from './pages/blog/232-clause-explained'
+import TariffAdjustmentImpactPage from './pages/blog/tariff-adjustment-impact'
+import TaiwanUSTariffExplainedPage from './pages/blog/taiwan-us-tariff-explained'
+import ChengLiChunPolicyRoleExplainedPage from './pages/blog/cheng-li-chun-policy-role-explained'
+import IncomeTaxBracketsExplainedPage from './pages/blog/income-tax-brackets-explained'
+import MinimumWageExplainedPage from './pages/blog/minimum-wage-explained'
+import LaborInsuranceExplainedPage from './pages/blog/labor-insurance-explained'
+import LaborInsurancePensionExplainedPage from './pages/blog/labor-insurance-pension-explained'
+import LongTermCareSubsidyExplainedPage from './pages/blog/long-term-care-subsidy-explained'
+import CollegeEntranceExamExplainedPage from './pages/blog/college-entrance-exam-explained'
+import HSRBookingSystemExplainedPage from './pages/blog/hsr-booking-system-explained'
+import MinimumWageImpactExplainedPage from './pages/blog/minimum-wage-impact-explained'
+import NHIPremiumExplainedPage from './pages/blog/nhi-premium-explained'
+import UnemploymentBenefitExplainedPage from './pages/blog/unemployment-benefit-explained'
+import LaborPensionNewSystemExplainedPage from './pages/blog/labor-pension-new-system-explained'
+import HouseholdRegistrationExplainedPage from './pages/blog/household-registration-explained'
+import GovernmentAnnouncementImpactExplainedPage from './pages/blog/government-announcement-impact-explained'
+import IncomeTaxExemptionExplainedPage from './pages/blog/income-tax-exemption-explained'
+import SubsidyVisibilityExplainedPage from './pages/blog/subsidy-visibility-explained'
+import OvertimePayExplainedPage from './pages/blog/overtime-pay-explained'
+import DependentDeductionExplainedPage from './pages/blog/dependent-deduction-explained'
+import PolicyDesignRealityExplainedPage from './pages/blog/policy-design-reality-explained'
 import LanguageGuide from './pages/language-guide'
 import LazyHome from './pages/blog/LazyHome'
 import HomePage from './pages/index'
@@ -100,6 +128,7 @@ import SummaryLanding from './pages/summary-landing'
 import PricingPageNew from './pages/pricing/index'
 import PaymentSuccessPage from './pages/pricing/success'
 import PaymentCancelPage from './pages/pricing/cancel'
+import PurchaseFailPage from './pages/pricing/fail'
 import SearchPage from './pages/SearchPage'
 import ShoppingSearchPage from './pages/shopping/search'
 import ShoppingResultsPage from './pages/shopping/results'
@@ -109,6 +138,7 @@ import AISummaryGuide from './pages/tools/ai-summary'
 import ShopeeSingleVideoPage from './pages/tools/ShopeeSingleVideoPage'
 import ShopeeVideoPage from './pages/tools/shopee-video/index.tsx'
 import HomeworkHelper from './pages/tools/homework-helper'
+import ImagesPage from './pages/images'
 import RxVAutoShortsPage from './pages/RxVAutoShortsPage'
 import RedirectShorts from './pages/rxv-auto-shorts'
 import NotFoundPage from './pages/NotFound'
@@ -116,10 +146,23 @@ import VideoPreviewPage from './pages/VideoPreviewPage'
 import RetirementPage from './pages/retirement/index'
 import RentalSubsidy2025 from './pages/aids/rental-subsidy-2025'
 import LTC2025Update from './pages/aids/ltc-2025-update'
+import YouthEmployment2026 from './pages/aids/youth-employment-2026'
+import ChildcareSubsidy2026 from './pages/aids/childcare-subsidy-2026'
+import LowIncomeSubsidy2026 from './pages/aids/low-income-subsidy-2026'
+import LTCMedicalSubsidy2026 from './pages/aids/ltc-medical-subsidy-2026'
+import SubsidyConcurrentQA2026 from './pages/aids/subsidy-concurrent-qa-2026'
+import SubsidyOverview2026 from './pages/aids/subsidy-overview-2026'
+import SubsidySelfCheck2026 from './pages/aids/subsidy-self-check-2026'
+import SubsidySelectionGuide2026 from './pages/aids/subsidy-selection-guide-2026'
 import SeniorTransportAid2025 from './pages/aids/senior-transport-2025'
 import HealthBalance2025 from './pages/finance/health-balance-2025'
 import RetirePlan2025 from './pages/finance/retire-plan-2025'
 import AntiFraud2025 from './pages/finance/anti-fraud-2025'
+import DebtReliefGuide2026 from './pages/finance/debt-relief-guide-2026'
+import DebtSelfAssessment2026 from './pages/finance/debt-self-assessment-2026'
+import DebtSystemsComparison2026 from './pages/finance/debt-systems-comparison-2026'
+import DebtRecoveryGuide2026 from './pages/finance/debt-recovery-guide-2026'
+import FinanceGuide2026 from './pages/finance/finance-guide-2026'
 import HealthPage from './pages/health/index'
 import SleepBalance2025 from './pages/health/sleep-balance-2025'
 import DietMind2025 from './pages/health/diet-mind-2025'
@@ -137,6 +180,10 @@ import { Toaster } from 'react-hot-toast'
 import { useGATracker } from './hooks/useGATracker'
 import { KeepAlivePing } from './components/KeepAlivePing'
 import ScrollToTop from './components/ScrollToTop'
+
+// TODO: 為了上線摘要與作業功能，暫時隱藏 chant 模組
+// 日後可透過環境變數 VITE_ENABLE_CHANT=true 或 NEXT_PUBLIC_ENABLE_CHANT=true 再次開啟
+const isChantEnabled = import.meta.env.VITE_ENABLE_CHANT === 'true' || import.meta.env.NEXT_PUBLIC_ENABLE_CHANT === 'true';
 
 function App() {
   const { t } = useTranslation()
@@ -240,7 +287,9 @@ function App() {
             <Route path="chant" element={<ChantCounter />} />
             <Route path="todo" element={<TodoPage />} />
             <Route path="pomodoro" element={<PomodoroPage />} />
-            <Route path="wish" element={<WishWallPage />} />
+            {/* TODO: 為了上線摘要與作業功能，暫時隱藏集氣願望模組 */}
+            {/* 日後可透過環境變數 VITE_ENABLE_CHANT=true 或 NEXT_PUBLIC_ENABLE_CHANT=true 再次開啟 */}
+            {isChantEnabled && <Route path="wish" element={<WishWallPage />} />}
             
             {/*
              =====================================================
@@ -251,6 +300,7 @@ function App() {
             <Route path="pricing" element={<PricingPageNew />} />
             <Route path="pricing/success" element={<PaymentSuccessPage />} />
             <Route path="pricing/cancel" element={<PaymentCancelPage />} />
+            <Route path="pricing/fail" element={<PurchaseFailPage />} />
             {/* ⚠️ DEPRECATED: 舊版方案頁，已改為顯示棄用提示 */}
             <Route path="pricing-old" element={<DeprecatedPage oldPath="/pricing-old" newPath="/pricing" message="此頁面已棄用，請前往新版方案頁" />} />
             {/* 作業解題功能 */}
@@ -271,10 +321,23 @@ function App() {
             <Route path="aids/rental-subsidy-2025" element={<RentalSubsidy2025 />} />
             <Route path="aids/ltc-2025-update" element={<LTC2025Update />} />
             <Route path="aids/senior-transport-2025" element={<SeniorTransportAid2025 />} />
+            <Route path="aids/youth-employment-2026" element={<YouthEmployment2026 />} />
+            <Route path="aids/childcare-subsidy-2026" element={<ChildcareSubsidy2026 />} />
+            <Route path="aids/low-income-subsidy-2026" element={<LowIncomeSubsidy2026 />} />
+            <Route path="aids/ltc-medical-subsidy-2026" element={<LTCMedicalSubsidy2026 />} />
+            <Route path="aids/subsidy-concurrent-qa-2026" element={<SubsidyConcurrentQA2026 />} />
+            <Route path="aids/subsidy-overview-2026" element={<SubsidyOverview2026 />} />
+            <Route path="aids/subsidy-self-check-2026" element={<SubsidySelfCheck2026 />} />
+            <Route path="aids/subsidy-selection-guide-2026" element={<SubsidySelectionGuide2026 />} />
             <Route path="finance" element={<FinancePage />} />
+            <Route path="finance/guide-2026" element={<FinanceGuide2026 />} />
             <Route path="finance/health-balance-2025" element={<HealthBalance2025 />} />
             <Route path="finance/retire-plan-2025" element={<RetirePlan2025 />} />
             <Route path="finance/anti-fraud-2025" element={<AntiFraud2025 />} />
+            <Route path="finance/debt-relief-guide-2026" element={<DebtReliefGuide2026 />} />
+            <Route path="finance/debt-self-assessment-2026" element={<DebtSelfAssessment2026 />} />
+            <Route path="finance/debt-systems-comparison-2026" element={<DebtSystemsComparison2026 />} />
+            <Route path="finance/debt-recovery-guide-2026" element={<DebtRecoveryGuide2026 />} />
             <Route path="health" element={<HealthPage />} />
             <Route path="health/sleep-balance-2025" element={<SleepBalance2025 />} />
             <Route path="health/diet-mind-2025" element={<DietMind2025 />} />
@@ -292,11 +355,39 @@ function App() {
             <Route path="tools/shopee-video" element={<NotFoundPage />} />
             {/* 作業解題功能 */}
             <Route path="tools/homework-helper" element={<HomeworkHelper />} />
+            {/* 圖片素材 */}
+            <Route path="images" element={<ImagesPage />} />
             <Route path="automation" element={<AIHome />} />
             <Route path="rxv-auto-shorts" element={<RedirectShorts />} />
             <Route path="video-preview" element={<VideoPreviewPage />} />
             <Route path="language-guide" element={<LanguageGuide />} />
             <Route path="blog" element={<BlogPage />} />
+            <Route path="blog/policy-explained" element={<PolicyExplainedPage />} />
+            <Route path="blog/car-import-tariff-explained" element={<CarImportTariffExplainedPage />} />
+            <Route path="blog/house-tax-explained" element={<HouseTaxExplainedPage />} />
+            <Route path="blog/subsidy-eligibility-explained" element={<SubsidyEligibilityExplainedPage />} />
+            <Route path="blog/232-clause-explained" element={<Clause232ExplainedPage />} />
+            <Route path="blog/tariff-adjustment-impact" element={<TariffAdjustmentImpactPage />} />
+            <Route path="blog/taiwan-us-tariff-explained" element={<TaiwanUSTariffExplainedPage />} />
+            <Route path="blog/cheng-li-chun-policy-role-explained" element={<ChengLiChunPolicyRoleExplainedPage />} />
+            <Route path="blog/income-tax-brackets-explained" element={<IncomeTaxBracketsExplainedPage />} />
+            <Route path="blog/minimum-wage-explained" element={<MinimumWageExplainedPage />} />
+            <Route path="blog/labor-insurance-explained" element={<LaborInsuranceExplainedPage />} />
+            <Route path="blog/labor-insurance-pension-explained" element={<LaborInsurancePensionExplainedPage />} />
+            <Route path="blog/long-term-care-subsidy-explained" element={<LongTermCareSubsidyExplainedPage />} />
+            <Route path="blog/college-entrance-exam-explained" element={<CollegeEntranceExamExplainedPage />} />
+            <Route path="blog/hsr-booking-system-explained" element={<HSRBookingSystemExplainedPage />} />
+            <Route path="blog/minimum-wage-impact-explained" element={<MinimumWageImpactExplainedPage />} />
+            <Route path="blog/nhi-premium-explained" element={<NHIPremiumExplainedPage />} />
+            <Route path="blog/unemployment-benefit-explained" element={<UnemploymentBenefitExplainedPage />} />
+            <Route path="blog/labor-pension-new-system-explained" element={<LaborPensionNewSystemExplainedPage />} />
+            <Route path="blog/household-registration-explained" element={<HouseholdRegistrationExplainedPage />} />
+            <Route path="blog/government-announcement-impact-explained" element={<GovernmentAnnouncementImpactExplainedPage />} />
+            <Route path="blog/income-tax-exemption-explained" element={<IncomeTaxExemptionExplainedPage />} />
+            <Route path="blog/subsidy-visibility-explained" element={<SubsidyVisibilityExplainedPage />} />
+            <Route path="blog/overtime-pay-explained" element={<OvertimePayExplainedPage />} />
+            <Route path="blog/dependent-deduction-explained" element={<DependentDeductionExplainedPage />} />
+            <Route path="blog/policy-design-reality-explained" element={<PolicyDesignRealityExplainedPage />} />
           </Route>
           
           {/* 其他獨立頁面 */}
@@ -318,16 +409,18 @@ function App() {
           <Route path="/time-test" element={<TimeTestPage />} />
           <Route path="/time-test2" element={<TimeTestPage2 />} />
           <Route path="/share/:id" element={<ShareWishPage />} />
-          <Route path="/chant-wish-create" element={<CreateChantWishPage />} />
-          <Route path="/chant-wish-wall" element={<ChantWishWallPage />} />
-          <Route path="/chant-wish-detail/:wishNo" element={<ChantWishDetailPage />} />
+          {/* TODO: 為了上線摘要與作業功能，暫時隱藏 chant 模組 */}
+          {/* 日後可透過環境變數 VITE_ENABLE_CHANT=true 或 NEXT_PUBLIC_ENABLE_CHANT=true 再次開啟 */}
+          {isChantEnabled && <Route path="/chant-wish-create" element={<CreateChantWishPage />} />}
+          {isChantEnabled && <Route path="/chant-wish-wall" element={<ChantWishWallPage />} />}
+          {isChantEnabled && <Route path="/chant-wish-detail/:wishNo" element={<ChantWishDetailPage />} />}
           {/* 添加對 /chant-wish/:id 格式的支持，以兼容現有連結 */}
-          <Route path="/chant-wish/:id" element={<ChantWishDetailPage />} />
-          <Route path="/chant-stats" element={<ChantStatsPage />} />
-          <Route path="/chant-ranking" element={<ChantRankingPage />} />
-          <Route path="/chant-support-ranking" element={<ChantSupportRankingPage />} />
-          <Route path="/support-ranking" element={<SupportRankingPage />} />
-          <Route path="/chant-support-leaderboard" element={<SupportRankingPage />} />
+          {isChantEnabled && <Route path="/chant-wish/:id" element={<ChantWishDetailPage />} />}
+          {isChantEnabled && <Route path="/chant-stats" element={<ChantStatsPage />} />}
+          {isChantEnabled && <Route path="/chant-ranking" element={<ChantRankingPage />} />}
+          {isChantEnabled && <Route path="/chant-support-ranking" element={<ChantSupportRankingPage />} />}
+          {isChantEnabled && <Route path="/support-ranking" element={<SupportRankingPage />} />}
+          {isChantEnabled && <Route path="/chant-support-leaderboard" element={<SupportRankingPage />} />}
           
           {/* 網站基本頁面 */}
           <Route path="/login" element={<LoginPage />} />
@@ -351,6 +444,8 @@ function App() {
           {/* 管理者頁面 */}
           <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
           <Route path="/admin/payments" element={<AdminPaymentsPage />} />
+          <Route path="/admin/images" element={<AdminImagesPage />} />
+          <Route path="/admin/images/list" element={<AdminImagesListPage />} />
           
           {/* 付款相關頁面 */}
           <Route path="/payment/bank-transfer" element={<BankTransferPage />} />

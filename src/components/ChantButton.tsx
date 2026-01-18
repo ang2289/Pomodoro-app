@@ -52,17 +52,17 @@ export default function ChantButton({ onSoundPlay, onCount, customWoodfishImage,
         <button
           type="button"
           onClick={handleClick}
-          className={`group w-40 h-40 sm:w-48 sm:h-48 rounded-full bg-amber-500 hover:bg-amber-600 
-            flex items-center justify-center transition-all duration-150
-            active:scale-95 active:brightness-90
-            !border-0 !outline-none !ring-0 !shadow-none`}
+          className={`group flex items-center justify-center transition-all duration-150
+            active:scale-95
+            !border-0 !outline-none !ring-0 !shadow-none bg-transparent`}
           style={{ 
             border: 'none',
             outline: 'none',
             boxShadow: 'none',
             borderWidth: '0',
             borderStyle: 'none',
-            borderColor: 'transparent'
+            borderColor: 'transparent',
+            background: 'transparent'
           }}
           aria-label="敲木魚"
         >

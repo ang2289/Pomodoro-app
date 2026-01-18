@@ -37,7 +37,13 @@ function compareBy(sortBy: 'start_desc' | 'start_asc' | 'created_desc' | 'create
   }
 }
 
+// TODO: 為了上線摘要與作業功能，暫時隱藏 chant 模組
+// 日後可透過環境變數 VITE_ENABLE_CHANT=true 或 NEXT_PUBLIC_ENABLE_CHANT=true 再次開啟
 export default function ChantWishWallPage() {
+  if (import.meta.env.VITE_ENABLE_CHANT !== 'true' && import.meta.env.NEXT_PUBLIC_ENABLE_CHANT !== 'true') {
+    return null;
+  }
+
   const { t } = useTranslation()
   const [wishes, setWishes] = useState<ChantWish[]>([])
   const [filtered, setFiltered] = useState<ChantWish[]>([])
@@ -60,10 +66,10 @@ export default function ChantWishWallPage() {
         setLoading(true)
         setError(null)
 
-        // 載入所有資料，不使用分頁限制
-        const { data, error, count } = await supabase
+        // 獲取所有集氣活動（與 ChantRankingPage 使用相同的查詢方式）
+        const { data, error } = await supabase
           .from('chant_wishes')
-          .select('*', { count: 'exact' })
+          .select('*')
           .order('created_at', { ascending: false })
 
         if (error) {
@@ -74,17 +80,18 @@ export default function ChantWishWallPage() {
 
         setWishes(data || [])
         setFiltered(data || [])
-        ;(window as any).__chant_wish_total__ = count || 0
-      } catch (err) {
+        // 使用資料長度作為總數（避免額外的 count 查詢可能導致的 schema cache 問題）
+        ;(window as any).__chant_wish_total__ = data?.length || 0
+      } catch (err: any) {
         console.error('讀取失敗:', err)
-        setError(t('failed_to_load_chant_wishes') + '，請重試')
+        setError(t('failed_to_load_chant_wishes') + ': ' + (err.message || '請重試'))
       } finally {
         setLoading(false)
       }
     }
 
     fetchWishes()
-  }, [])
+  }, [t])
 
   if (loading) {
     return (

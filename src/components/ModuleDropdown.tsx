@@ -2,7 +2,11 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useLocation } from 'react-router-dom'
 
-const moduleOptions = [
+// TODO: 為了上線摘要與作業功能，暫時隱藏集氣願望模組
+// 日後可透過環境變數 VITE_ENABLE_CHANT=true 或 NEXT_PUBLIC_ENABLE_CHANT=true 再次開啟
+const isChantWishEnabled = import.meta.env.VITE_ENABLE_CHANT === 'true' || import.meta.env.NEXT_PUBLIC_ENABLE_CHANT === 'true';
+
+const baseModuleOptions = [
   { value: '/', labelKey: 'homepage' },
   { value: '/summary', labelKey: 'ai_summary' },
   { value: '/tools/homework-helper', labelKey: 'homework_helper' },
@@ -13,13 +17,18 @@ const moduleOptions = [
   { value: '/chant', labelKey: 'chant' },
   { value: '/todo', labelKey: 'todo' },
   { value: '/pomodoro', labelKey: 'pomodoro' },
+  { value: '/features', labelKey: 'features' },
+  { value: '/settings', labelKey: 'settings' }
+];
+
+const chantWishModuleOptions = isChantWishEnabled ? [
   { value: '/chant-wish-create', labelKey: 'wish' },
   { value: '/chant-wish-wall', labelKey: 'wish_wall' },
   { value: '/chant-stats', labelKey: 'statistics' },
-  { value: '/chant-ranking', labelKey: 'ranking' },
-  { value: '/features', labelKey: 'features' },
-  { value: '/settings', labelKey: 'settings' }
-]
+  { value: '/chant-ranking', labelKey: 'ranking' }
+] : [];
+
+const moduleOptions = [...baseModuleOptions, ...chantWishModuleOptions];
 
 export default function ModuleDropdown() {
   const { t } = useTranslation()

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { featureFlags } from '@/config/featureFlags';
 import { isLoggedIn, logout } from '@/lib/auth';
+import { trackEvent } from '@/utils/analytics';
 
 interface ToolCard {
   id: string;
@@ -54,6 +55,15 @@ const HomePage: React.FC = () => {
     navigate('/');
   };
 
+  // TODO: 為了上線摘要與作業功能，暫時隱藏集氣願望模組
+  // 日後可透過環境變數 VITE_ENABLE_CHANT=true 或 NEXT_PUBLIC_ENABLE_CHANT=true 再次開啟
+  const isChantWishEnabled = import.meta.env.VITE_ENABLE_CHANT === 'true' || import.meta.env.NEXT_PUBLIC_ENABLE_CHANT === 'true';
+
+  // 判斷是否為 localhost 環境（僅在本地端顯示管理工具）
+  const isLocalhost =
+    typeof window !== "undefined" &&
+    ['localhost', '127.0.0.1'].includes(window.location.hostname);
+
   // 工具卡資料陣列
   const toolCards: ToolCard[] = [
     {
@@ -66,6 +76,17 @@ const HomePage: React.FC = () => {
       ringColor: "ring-sky-100",
       hoverColor: "hover:bg-sky-50",
       badgeColor: "text-sky-600"
+    },
+    {
+      id: "images",
+      title: "圖片素材",
+      description: "免費圖片＋會員解鎖素材，可直接下載使用",
+      icon: "🖼️",
+      href: "/images",
+      category: "設計工具",
+      ringColor: "ring-teal-100",
+      hoverColor: "hover:bg-teal-50",
+      badgeColor: "text-teal-700"
     },
     {
       id: "homework-helper",
@@ -136,7 +157,9 @@ const HomePage: React.FC = () => {
       hoverColor: "hover:bg-indigo-50",
       badgeColor: "text-indigo-700"
     },
-    {
+    // TODO: 為了上線摘要與作業功能，暫時隱藏集氣願望模組
+    // 日後可透過環境變數 VITE_ENABLE_CHANT=true 或 NEXT_PUBLIC_ENABLE_CHANT=true 再次開啟
+    ...(isChantWishEnabled ? [{
       id: "chant-wish-wall",
       title: "集氣願望牆 & 排行榜",
       description: "發起集氣活動、許願、查看排行榜與統計，讓祈願不再只是自己一個人默默努力。",
@@ -177,15 +200,33 @@ const HomePage: React.FC = () => {
           </div>
         </div>
       )
-    }
+    }] : []),
+    // 圖片管理工具（僅在本地端顯示）
+    ...(isLocalhost ? [
+      {
+        id: "admin-images-upload",
+        title: "圖片上傳後台",
+        description: "上傳圖片到 Supabase Storage 並寫入資料表",
+        icon: "📤",
+        href: "/admin/images",
+        category: "管理工具",
+        ringColor: "ring-red-100",
+        hoverColor: "hover:bg-red-50",
+        badgeColor: "text-red-700"
+      },
+      {
+        id: "admin-images-list",
+        title: "圖片清單管理",
+        description: "查看所有已上傳的圖片清單",
+        icon: "📋",
+        href: "/admin/images/list",
+        category: "管理工具",
+        ringColor: "ring-red-100",
+        hoverColor: "hover:bg-red-50",
+        badgeColor: "text-red-700"
+      }
+    ] : [])
   ];
-
-  // 判斷是否為 localhost 環境
-  const isLocalhost =
-    typeof window !== "undefined" &&
-    (window.location.hostname === "localhost" ||
-     window.location.hostname === "127.0.0.1" ||
-     window.location.hostname === "::1");
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-50 via-white to-indigo-50">
@@ -201,7 +242,8 @@ const HomePage: React.FC = () => {
         ) : (
           <Link
             to="/login"
-            className="inline-block px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors text-sm"
+            className="login-button-white inline-block px-4 py-2 bg-blue-600 hover:bg-blue-700 font-bold rounded-lg transition-colors text-sm"
+            style={{ color: '#ffffff !important', fontWeight: 'bold' }}
           >
             登入
           </Link>
@@ -229,11 +271,25 @@ const HomePage: React.FC = () => {
               </p>
 
               <div className="flex flex-wrap gap-3 pt-1">
+                {/* 主 CTA：開始解題 */}
+                <Link
+                  to="/tools/homework-helper"
+                  onClick={() => {
+                    trackEvent('click_homework_entry', {
+                      source_page: 'home'
+                    });
+                  }}
+                  className="inline-flex items-center rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3 text-base font-bold text-white shadow-lg hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transform hover:scale-105 transition-all duration-200"
+                  style={{ color: '#ffffff !important', fontWeight: 'bold' }}
+                >
+                  📘 開始解題
+                </Link>
+                {/* 次要 CTA：AI 摘要工具 */}
                 <Link
                   to="/summary"
-                  className="inline-flex items-center rounded-full bg-sky-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-1"
+                  className="summary-button-white inline-flex items-center rounded-full bg-sky-100 px-4 py-2 text-sm font-medium text-sky-700 shadow-sm hover:bg-sky-200 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-1"
                 >
-                  🚀 直接試用 AI 摘要工具
+                  🤖 AI 摘要工具
                 </Link>
                 <a
                   href="https://ko-fi.com/s/b5b4180ff1"
@@ -281,32 +337,38 @@ const HomePage: React.FC = () => {
             <div className="flex-1">
               <div className="grid gap-3 sm:grid-cols-2">
                 <Link
-                  to="/summary"
-                  className="flex flex-col justify-between rounded-2xl bg-gradient-to-br from-sky-500 to-indigo-500 p-4 text-white shadow-md hover:shadow-lg"
+                  to="/tools/homework-helper"
+                  onClick={() => {
+                    trackEvent('click_homework_entry', {
+                      source_page: 'home',
+                      position: 'hero_card'
+                    });
+                  }}
+                  className="flex flex-col justify-between rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 p-4 text-white shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-lg">🤖 AI 摘要工具</span>
+                    <span className="text-lg">📘 作業解題</span>
                     <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs">
-                      Free
+                      Hot
                     </span>
                   </div>
-                  <p className="mt-2 text-xs text-sky-50">
-                    一鍵整理長文、文章或 YouTube 字幕，支援中英文摘要＋關鍵字。
+                  <p className="mt-2 text-xs text-blue-50">
+                    遇到不會的題目？貼上題目，快速取得解題說明與步驟。
                   </p>
                 </Link>
 
                 <Link
-                  to="/pomodoro"
+                  to="/summary"
                   className="flex flex-col justify-between rounded-2xl bg-white p-4 text-slate-900 shadow-md ring-1 ring-sky-100 hover:shadow-lg"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-lg">🍅 番茄鐘 + 待辦</span>
+                    <span className="text-lg">🤖 AI 摘要工具</span>
                     <span className="rounded-full bg-sky-50 px-2 py-0.5 text-xs text-sky-700">
-                      專注模式
+                      Free
                     </span>
                   </div>
                   <p className="mt-2 text-xs text-slate-600">
-                    自訂工作 / 休息長度、任務分類與統計，幫你建立穩定節奏。
+                    一鍵整理長文、文章或 YouTube 字幕，支援中英文摘要＋關鍵字。
                   </p>
                 </Link>
               </div>
@@ -320,19 +382,91 @@ const HomePage: React.FC = () => {
             <span className="mr-2">🚀</span>
             快速工具入口
           </h3>
+          
+          {/* 你現在卡在哪？情境選擇 */}
+          <div className="mb-6 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200">
+            <h4 className="text-lg font-bold text-gray-900 mb-4">
+              💡 你現在卡在哪？
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Link
+                to="/tools/homework-helper"
+                onClick={() => {
+                  trackEvent('click_homework_entry', {
+                    source_page: 'home',
+                    scenario: 'math_problem'
+                  });
+                }}
+                className="block p-4 bg-white rounded-lg border-2 border-blue-200 hover:border-blue-400 hover:shadow-md transition-all duration-200 cursor-pointer group"
+              >
+                <div className="text-2xl mb-2">📐</div>
+                <h5 className="font-semibold text-gray-900 group-hover:text-blue-700 transition-colors mb-1">
+                  數學題不會算
+                </h5>
+                <p className="text-xs text-gray-600">
+                  貼上題目，取得解題步驟
+                </p>
+              </Link>
+              
+              <Link
+                to="/tools/homework-helper"
+                onClick={() => {
+                  trackEvent('click_homework_entry', {
+                    source_page: 'home',
+                    scenario: 'homework_stuck'
+                  });
+                }}
+                className="block p-4 bg-white rounded-lg border-2 border-blue-200 hover:border-blue-400 hover:shadow-md transition-all duration-200 cursor-pointer group"
+              >
+                <div className="text-2xl mb-2">📚</div>
+                <h5 className="font-semibold text-gray-900 group-hover:text-blue-700 transition-colors mb-1">
+                  作業卡關了
+                </h5>
+                <p className="text-xs text-gray-600">
+                  需要解題思路與說明
+                </p>
+              </Link>
+              
+              <Link
+                to="/tools/homework-helper"
+                onClick={() => {
+                  trackEvent('click_homework_entry', {
+                    source_page: 'home',
+                    scenario: 'need_explanation'
+                  });
+                }}
+                className="block p-4 bg-white rounded-lg border-2 border-blue-200 hover:border-blue-400 hover:shadow-md transition-all duration-200 cursor-pointer group"
+              >
+                <div className="text-2xl mb-2">💭</div>
+                <h5 className="font-semibold text-gray-900 group-hover:text-blue-700 transition-colors mb-1">
+                  需要解題說明
+                </h5>
+                <p className="text-xs text-gray-600">
+                  了解解題過程與概念
+                </p>
+              </Link>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* 作業解題神器 */}
             <Link
               to="/tools/homework-helper"
-              className="block p-4 bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all duration-200 group"
+              onClick={() => {
+                trackEvent('click_homework_entry', {
+                  source_page: 'home',
+                  position: 'quick_tools'
+                });
+              }}
+              className="block p-5 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200 hover:border-blue-400 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 cursor-pointer group"
             >
-              <h4 className="font-semibold text-gray-800 group-hover:text-blue-600 transition-colors mb-2">
+              <h4 className="font-bold text-gray-900 group-hover:text-blue-700 transition-colors mb-2 text-lg">
                 作業解題神器
               </h4>
-              <p className="text-sm text-gray-600 mb-3">
+              <p className="text-sm text-gray-700 mb-4 leading-relaxed">
                 貼上題目，快速產生解題結果與扣點資訊。
               </p>
-              <div className="text-blue-600 font-medium text-sm group-hover:underline">
+              <div className="inline-flex items-center px-4 py-2 bg-blue-600 group-hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md group-hover:shadow-lg transition-all duration-200 text-sm">
                 前往 →
               </div>
             </Link>
@@ -340,19 +474,47 @@ const HomePage: React.FC = () => {
             {/* 文章摘要工具 */}
             <Link
               to="/summary"
-              className="block p-4 bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all duration-200 group"
+              className="block p-5 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border-2 border-purple-200 hover:border-purple-400 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 cursor-pointer group"
             >
-              <h4 className="font-semibold text-gray-800 group-hover:text-blue-600 transition-colors mb-2">
+              <h4 className="font-bold text-gray-900 group-hover:text-purple-700 transition-colors mb-2 text-lg">
                 文章摘要工具
               </h4>
-              <p className="text-sm text-gray-600 mb-3">
+              <p className="text-sm text-gray-700 mb-4 leading-relaxed">
                 貼上文章，一鍵摘要並顯示本次使用字數。
               </p>
-              <div className="text-blue-600 font-medium text-sm group-hover:underline">
+              <div className="inline-flex items-center px-4 py-2 bg-purple-600 group-hover:bg-purple-700 text-white font-semibold rounded-lg shadow-md group-hover:shadow-lg transition-all duration-200 text-sm">
                 前往 →
               </div>
             </Link>
           </div>
+        </section>
+
+        {/* 📋 政策白話解釋（突出顯示） */}
+        <section className="mb-10">
+          <Link
+            to="/blog/policy-explained"
+            className="block p-6 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl border-2 border-purple-200 hover:border-purple-400 hover:shadow-lg hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 cursor-pointer group"
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <span className="text-3xl">📋</span>
+              <div>
+                <h3 className="text-xl font-bold text-gray-900 group-hover:text-purple-700 transition-colors">
+                  政策白話解釋
+                </h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  看不懂政策新聞沒關係，幫你整理「跟你有沒有關係」
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-gray-700 leading-relaxed">
+                用簡單易懂的方式解釋複雜的政策，快速了解哪些政策跟你有關
+              </p>
+              <div className="inline-flex items-center px-4 py-2 bg-purple-600 group-hover:bg-purple-700 text-white font-semibold rounded-lg shadow-md group-hover:shadow-lg transition-all duration-200 text-sm ml-4">
+                查看 →
+              </div>
+            </div>
+          </Link>
         </section>
 
         {/* 區塊 2：AI / 生產力 / 靜心工具卡片 */}
