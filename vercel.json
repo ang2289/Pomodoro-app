@@ -3,12 +3,14 @@
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/(.*)", "destination": "/" }
   ],
-  "ignoreCommand": "echo .vercelignore used",
   "cleanUrls": true,
   "crons": [
     {
-      "path": "/api/ping-supabase",
+      "path": "/api/main?action=ping",
       "schedule": "0 22 * * 0"
     }
   ]
 }
+
+
+
