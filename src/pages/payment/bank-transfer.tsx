@@ -19,38 +19,6 @@ export default function BankTransferPage() {
   const planParam = searchParams.get('plan')
   const [showReminder, setShowReminder] = useState(false)
 
-  if (productParam) {
-    return <DigitalProductBankTransfer productCode={productParam} />
-  }
-
-  let planName = ''
-  let planPrice = 0
-  let planChars = 0
-  let planValue = ''
-
-  if (planParam === '99') {
-    planName = '標準方案'
-    planPrice = PLANS.plan99.price
-    planChars = getPlanChars('pack99')
-    planValue = '99'
-  } else if (planParam === '199') {
-    planName = '進階方案'
-    planPrice = PLANS.plan199.price
-    planChars = getPlanChars('pack199')
-    planValue = '199'
-  } else {
-    return (
-      <div className="min-h-screen bg-gray-50 py-12 px-4">
-        <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg p-8 text-center">
-          <p className="text-gray-700 mb-4">無效的方案參數</p>
-          <Link to="/pricing">
-            <PrimaryButton>返回方案選擇</PrimaryButton>
-          </Link>
-        </div>
-      </div>
-    )
-  }
-
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text)
@@ -92,6 +60,38 @@ export default function BankTransferPage() {
       localStorage.setItem(visitKey, Date.now().toString())
     }
   }, [planParam])
+
+  if (productParam) {
+    return <DigitalProductBankTransfer productCode={productParam} />
+  }
+
+  let planName = ''
+  let planPrice = 0
+  let planChars = 0
+  let planValue = ''
+
+  if (planParam === '99') {
+    planName = '標準方案'
+    planPrice = PLANS.plan99.price
+    planChars = getPlanChars('pack99')
+    planValue = '99'
+  } else if (planParam === '199') {
+    planName = '進階方案'
+    planPrice = PLANS.plan199.price
+    planChars = getPlanChars('pack199')
+    planValue = '199'
+  } else {
+    return (
+      <div className="min-h-screen bg-gray-50 py-12 px-4">
+        <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg p-8 text-center">
+          <p className="text-gray-700 mb-4">無效的方案參數</p>
+          <Link to="/pricing">
+            <PrimaryButton>返回方案選擇</PrimaryButton>
+          </Link>
+        </div>
+      </div>
+    )
+  }
 
   const bankRows = [
     ['銀行名稱', BANK_ACCOUNT.bankName],
