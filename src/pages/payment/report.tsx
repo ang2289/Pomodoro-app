@@ -1,18 +1,15 @@
-// 匯款回報表單頁面
-// 使用者填寫 Email、匯款金額、帳號後五碼、備註，提交後寫入 payment_reports 表
-// 不需登入也可填寫（僅回報）
-
 import { useState } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import PrimaryButton from '@/components/ui/PrimaryButton'
 import { PLANS } from '../../config'
 import { getPlanChars } from '../../lib/usagePlans'
+import DigitalProductReport from './DigitalProductReport'
 
 export default function PaymentReportPage() {
   const [searchParams] = useSearchParams()
+  const productParam = searchParams.get('product')
   const planParam = searchParams.get('plan')
-
   const [email, setEmail] = useState('')
   const [amountNtd, setAmountNtd] = useState<string>('')
   const [accountLastFive, setAccountLastFive] = useState<string>('')
@@ -21,7 +18,10 @@ export default function PaymentReportPage() {
   const [error, setError] = useState<string>('')
   const [success, setSuccess] = useState(false)
 
-  // 根據 URL 參數決定方案資訊
+  if (productParam) {
+    return <DigitalProductReport productCode={productParam} />
+  }
+
   let planName = ''
   let planPrice = 0
   let planChars = 0
@@ -38,7 +38,6 @@ export default function PaymentReportPage() {
     planChars = getPlanChars('pack199')
     planId = '199'
   } else {
-    // 如果沒有有效的 plan 參數，顯示錯誤
     return (
       <div className="min-h-screen bg-gray-50 py-12 px-4">
         <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg p-8 text-center">
@@ -56,20 +55,17 @@ export default function PaymentReportPage() {
     setError('')
     setSuccess(false)
 
-    // 驗證 Email
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setError('請輸入有效的 Email')
       return
     }
 
-    // 驗證匯款金額
     const ntd = parseInt(amountNtd, 10)
     if (!ntd || ntd <= 0) {
       setError('請輸入有效的匯款金額')
       return
     }
 
-    // 驗證帳號後五碼
     if (!accountLastFive || accountLastFive.length !== 5 || !/^\d{5}$/.test(accountLastFive)) {
       setError('請輸入正確的帳號後五碼（5 位數字）')
       return
@@ -78,8 +74,6 @@ export default function PaymentReportPage() {
     setLoading(true)
 
     try {
-      // 插入 payment_reports 記錄
-      // processed 預設為 false，不進行任何補點行為
       const { error: insertError } = await supabase
         .from('payment_reports')
         .insert({
@@ -88,32 +82,27 @@ export default function PaymentReportPage() {
           account_last_five: accountLastFive,
           plan_id: planId,
           status: 'pending',
-          processed: false, // 預設為 false
-          note: note.trim() || null, // 選填欄位，空字串轉為 null
+          processed: false,
+          note: note.trim() || null,
         })
 
       if (insertError) {
-        console.error('❌ 提交匯款回報失敗：', insertError)
+        console.error('提交匯款回報失敗：', insertError)
         setError(insertError.message || '提交失敗，請稍後再試')
-        setLoading(false)
         return
       }
 
-      // 成功
       setSuccess(true)
       setEmail('')
       setAmountNtd('')
       setAccountLastFive('')
       setNote('')
-
-      // 清除提醒狀態（表示使用者已成功送出回報）
       localStorage.removeItem('payment_reminder_shown')
-      // 清除訪問記錄（表示已完成流程）
       if (planId === '99' || planId === '199') {
         localStorage.removeItem(`payment_visit_${planId}`)
       }
     } catch (err: any) {
-      console.error('❌ 提交匯款回報失敗：', err)
+      console.error('提交匯款回報失敗：', err)
       setError(err.message || '提交失敗，請稍後再試')
     } finally {
       setLoading(false)
@@ -123,11 +112,8 @@ export default function PaymentReportPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4">
       <div className="max-w-md mx-auto">
-        {/* 方案資訊 */}
         <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2 text-center">
-            匯款回報
-          </h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2 text-center">匯款回報</h1>
           <p className="text-center text-gray-600">
             {planName} NT${planPrice} / {planChars.toLocaleString()} 字
           </p>
@@ -136,21 +122,14 @@ export default function PaymentReportPage() {
         {success ? (
           <div className="bg-white rounded-xl shadow-lg p-8 text-center">
             <div className="text-green-600 text-5xl mb-4">✓</div>
-            <h2 className="text-xl font-bold text-gray-900 mb-3">
-              已收到你的匯款回報
-            </h2>
-            <p className="text-gray-700 mb-6 leading-relaxed">
-              我們會在確認後為你補充點數
-            </p>
+            <h2 className="text-xl font-bold text-gray-900 mb-3">已收到你的匯款回報</h2>
+            <p className="text-gray-700 mb-6 leading-relaxed">我們會在確認後為你補充點數</p>
             <Link to="/">
-              <PrimaryButton fullWidth>
-                返回首頁
-              </PrimaryButton>
+              <PrimaryButton fullWidth>返回首頁</PrimaryButton>
             </Link>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg p-6 space-y-4">
-            {/* Email */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                 Email <span className="text-red-500">*</span>
@@ -167,7 +146,6 @@ export default function PaymentReportPage() {
               />
             </div>
 
-            {/* 匯款金額 */}
             <div>
               <label htmlFor="amountNtd" className="block text-sm font-medium text-gray-700 mb-1">
                 匯款金額 <span className="text-red-500">*</span>
@@ -180,12 +158,11 @@ export default function PaymentReportPage() {
                 disabled={loading}
                 required
                 min="1"
-                placeholder="99"
+                placeholder={String(planPrice)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
               />
             </div>
 
-            {/* 匯款帳號後五碼 */}
             <div>
               <label htmlFor="accountLastFive" className="block text-sm font-medium text-gray-700 mb-1">
                 匯款帳號後五碼 <span className="text-red-500">*</span>
@@ -194,10 +171,7 @@ export default function PaymentReportPage() {
                 id="accountLastFive"
                 type="text"
                 value={accountLastFive}
-                onChange={(e) => {
-                  const value = e.target.value.replace(/\D/g, '').slice(0, 5)
-                  setAccountLastFive(value)
-                }}
+                onChange={(e) => setAccountLastFive(e.target.value.replace(/\D/g, '').slice(0, 5))}
                 disabled={loading}
                 required
                 placeholder="12345"
@@ -206,11 +180,8 @@ export default function PaymentReportPage() {
               />
             </div>
 
-            {/* 購買方案（唯讀） */}
             <div>
-              <label htmlFor="plan" className="block text-sm font-medium text-gray-700 mb-1">
-                購買方案
-              </label>
+              <label htmlFor="plan" className="block text-sm font-medium text-gray-700 mb-1">購買方案</label>
               <input
                 id="plan"
                 type="text"
@@ -221,11 +192,8 @@ export default function PaymentReportPage() {
               />
             </div>
 
-            {/* 備註（選填） */}
             <div>
-              <label htmlFor="note" className="block text-sm font-medium text-gray-700 mb-1">
-                備註（選填）
-              </label>
+              <label htmlFor="note" className="block text-sm font-medium text-gray-700 mb-1">備註（選填）</label>
               <textarea
                 id="note"
                 value={note}
@@ -258,4 +226,3 @@ export default function PaymentReportPage() {
     </div>
   )
 }
-
