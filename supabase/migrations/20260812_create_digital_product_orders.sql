@@ -40,6 +40,11 @@ CREATE TABLE IF NOT EXISTS public.digital_product_bundles (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- 私人 bucket：ZIP 不公開，只有後端 Service Role 產生短效 signed URL。
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('digital-products', 'digital-products', false)
+ON CONFLICT (id) DO UPDATE SET public = false;
+
 INSERT INTO public.digital_product_bundles (product_code, storage_bucket, storage_path)
 VALUES ('image-bundle-full', 'digital-products', 'image-bundles/latest.zip')
 ON CONFLICT (product_code) DO NOTHING;
