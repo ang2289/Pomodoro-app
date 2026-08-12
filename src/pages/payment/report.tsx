@@ -10,11 +10,6 @@ export default function PaymentReportPage() {
   const [searchParams] = useSearchParams()
   const productParam = searchParams.get('product')
   const planParam = searchParams.get('plan')
-
-  if (productParam) {
-    return <DigitalProductReport productCode={productParam} />
-  }
-
   const [email, setEmail] = useState('')
   const [amountNtd, setAmountNtd] = useState<string>('')
   const [accountLastFive, setAccountLastFive] = useState<string>('')
@@ -22,6 +17,10 @@ export default function PaymentReportPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string>('')
   const [success, setSuccess] = useState(false)
+
+  if (productParam) {
+    return <DigitalProductReport productCode={productParam} />
+  }
 
   let planName = ''
   let planPrice = 0
