@@ -128,7 +128,7 @@ export default function ImagesPage() {
     const accessInfo = getAccessInfo(image.accessLevel)
     
     try {
-      const response = await fetch(resolveRxvUrl('/api/download-image'), {
+      const response = await fetch(resolveRxvUrl('/api/main?action=download-image'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ imageId: image.id }),
