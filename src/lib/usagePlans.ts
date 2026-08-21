@@ -58,13 +58,15 @@ export function getPlanChars(planId: PlanId): number {
  * @returns 使用方案顯示名稱（例如：NT$99 方案）
  */
 export function getPlanLabel(planId: PlanId): string {
-  const plan = PLANS[planId];
-  
   if (planId === 'free') {
-    return plan.name;
+    return PLANS.free.name;
   }
-  
-  return `${plan.name} NT$${plan.price}`;
+
+  if (planId === 'pack99') {
+    return `${PLANS.pack99.name} NT$${PLANS.pack99.price}`;
+  }
+
+  return `${PLANS.pack199.name} NT$${PLANS.pack199.price}`;
 }
 
 /**
@@ -93,13 +95,14 @@ export function getPlanLimit(planId: PlanId): number {
  * 格式化使用方案顯示名稱（從 config.ts 讀取）
  */
 export function formatPlanLabel(planId: PlanId, lang: 'zh-tw' | 'en' = 'zh-tw'): string {
-  const plan = PLANS[planId];
-  
   if (lang === 'en') {
     if (planId === 'free') {
-      return plan.nameEn;
+      return PLANS.free.nameEn;
     }
-    return `${plan.nameEn} - NT$${plan.price}`;
+    if (planId === 'pack99') {
+      return `${PLANS.pack99.nameEn} - NT$${PLANS.pack99.price}`;
+    }
+    return `${PLANS.pack199.nameEn} - NT$${PLANS.pack199.price}`;
   }
   
   return getPlanLabel(planId);

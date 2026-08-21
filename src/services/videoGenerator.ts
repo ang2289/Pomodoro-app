@@ -106,7 +106,10 @@ export async function generateShopeeVideo(
     console.log("開始讀取生成的影片檔案...");
     const data = await ffmpeg.readFile("output.mp4");
     console.log("影片檔案讀取成功，大小:", data.length, "bytes");
-    const blob = new Blob([data], { type: "video/mp4" });
+    if (typeof data === "string") {
+      throw new Error("輸出影片格式不正確");
+    }
+    const blob = new Blob([new Uint8Array(data)], { type: "video/mp4" });
     const url = URL.createObjectURL(blob);
     console.log("影片 URL 創建成功:", url);
     return url;

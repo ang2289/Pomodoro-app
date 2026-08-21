@@ -6,6 +6,9 @@ interface ImportMetaEnv {
   readonly VITE_SUPABASE_URL: string
   readonly VITE_SUPABASE_ANON_KEY: string
   readonly VITE_SUPABASE_SERVICE_KEY?: string
+  readonly VITE_IMAGE_CATALOG_URL?: string
+  readonly IMAGE_CATALOG_URL?: string
+  readonly VITE_RXV_WEB_BASE_URL?: string
   // Fallback for Next.js style env vars (for compatibility)
   readonly NEXT_PUBLIC_SUPABASE_URL?: string
   readonly NEXT_PUBLIC_SUPABASE_ANON_KEY?: string

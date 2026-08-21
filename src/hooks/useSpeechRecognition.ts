@@ -1,6 +1,41 @@
 // src/hooks/useSpeechRecognition.ts
 import { useState, useRef, useEffect } from "react";
 
+interface SpeechRecognitionAlternativeLike {
+  transcript: string;
+}
+
+interface SpeechRecognitionResultLike {
+  isFinal: boolean;
+  [index: number]: SpeechRecognitionAlternativeLike;
+}
+
+interface SpeechRecognitionEventLike extends Event {
+  resultIndex: number;
+  results: ArrayLike<SpeechRecognitionResultLike>;
+}
+
+interface SpeechRecognitionErrorEventLike extends Event {
+  error: string;
+}
+
+interface SpeechRecognitionInstance {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEventLike) => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+}
+
+type SpeechRecognitionConstructor = new () => SpeechRecognitionInstance;
+type SpeechRecognitionWindow = Window & typeof globalThis & {
+  SpeechRecognition?: SpeechRecognitionConstructor;
+  webkitSpeechRecognition?: SpeechRecognitionConstructor;
+};
+
 export interface UseSpeechRecognitionOptions {
   lang?: string;          // 語言代碼，預設 'zh-TW'
   continuous?: boolean;   // 是否連續辨識，預設 false
@@ -19,13 +54,13 @@ export interface UseSpeechRecognitionResult {
 }
 
 // 取得 SpeechRecognition 類別（支援標準與 webkit 前綴）
-function getSpeechRecognition(): typeof SpeechRecognition | null {
+function getSpeechRecognition(): SpeechRecognitionConstructor | null {
   if (typeof window === "undefined") {
     return null;
   }
 
-  const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-  return SpeechRecognition || null;
+  const { SpeechRecognition, webkitSpeechRecognition } = window as SpeechRecognitionWindow;
+  return SpeechRecognition || webkitSpeechRecognition || null;
 }
 
 export function useSpeechRecognition(options?: UseSpeechRecognitionOptions): UseSpeechRecognitionResult {
@@ -34,7 +69,7 @@ export function useSpeechRecognition(options?: UseSpeechRecognitionOptions): Use
   const [transcript, setTranscript] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const isListeningRef = useRef(false);
   const onFinalResultRef = useRef(options?.onFinalResult);
   const optionsRef = useRef(options);
@@ -59,7 +94,7 @@ export function useSpeechRecognition(options?: UseSpeechRecognitionOptions): Use
     recognitionRef.current = recognition;
 
     // 處理辨識結果
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
+    recognition.onresult = (event: SpeechRecognitionEventLike) => {
       let finalText = "";
       let interimText = "";
 
@@ -89,7 +124,7 @@ export function useSpeechRecognition(options?: UseSpeechRecognitionOptions): Use
     };
 
     // 處理錯誤
-    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+    recognition.onerror = (event: SpeechRecognitionErrorEventLike) => {
       const errorMessage = event.error || "語音辨識發生錯誤";
       setError(errorMessage);
       setListening(false);
@@ -131,8 +166,8 @@ export function useSpeechRecognition(options?: UseSpeechRecognitionOptions): Use
       setListening(true);
       setError(null);
       isListeningRef.current = true;
-    } catch (err: any) {
-      setError(err.message || "無法啟動語音辨識");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "無法啟動語音辨識");
       setListening(false);
       isListeningRef.current = false;
     }

@@ -8,9 +8,9 @@ export async function parseShopeeProduct(url: string) {
 
   const doc = new DOMParser().parseFromString(html, "text/html");
 
-  const title = doc.querySelector('meta[property="og:title"]')?.content ?? "";
-  const price = doc.querySelector('meta[property="product:price:amount"]')?.content ?? "";
-  const image = doc.querySelector('meta[property="og:image"]')?.content ?? "";
+  const title = doc.querySelector<HTMLMetaElement>('meta[property="og:title"]')?.content ?? "";
+  const price = doc.querySelector<HTMLMetaElement>('meta[property="product:price:amount"]')?.content ?? "";
+  const image = doc.querySelector<HTMLMetaElement>('meta[property="og:image"]')?.content ?? "";
 
   return { title, price, image };
 }

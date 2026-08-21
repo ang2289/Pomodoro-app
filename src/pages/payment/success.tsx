@@ -5,13 +5,14 @@ import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { supabase } from '@/lib/supabase'
-// ⚠️ 已移除 useAuth 和 useAuthCredits
+import { useAuth } from '@/hooks/useAuth'
+import { useAuthCredits } from '@/hooks/useAuthCredits'
 import PrimaryButton from '@/components/ui/PrimaryButton'
 
 export default function PaymentSuccessPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { remainingChars, refreshCredits } = useAuthCredits()
+  const { remainingChars, refresh: refreshCredits } = useAuthCredits()
   const [hasRecentPayment, setHasRecentPayment] = useState<boolean | null>(null)
   const [loading, setLoading] = useState(true)
 

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
-import { supabase } from '@/lib/supabase'
-import { isLoggedIn, getCurrentUserId } from '@/lib/auth'
+import { loadPublicImageCatalog, type PublicCatalogImage } from '@/lib/imageCatalog'
+import { resolveRxvUrl } from '@/lib/rxvUrl'
 
 // 圖片素材資料型別
 interface ImageAsset {
@@ -21,108 +21,47 @@ interface ImageCategory {
 }
 
 export default function ImagesPage() {
-  const navigate = useNavigate()
+  const [allImages, setAllImages] = useState<ImageAsset[]>([])
   const [images, setImages] = useState<ImageAsset[]>([])
   const [categories, setCategories] = useState<ImageCategory[]>([])
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null) // null 代表全部
   const [loading, setLoading] = useState(true)
-  const [loadingCategories, setLoadingCategories] = useState(false)
   
   // TODO: 未來從後端或 localStorage 取得使用者方案狀態
   // 目前先手動指定為 "free" 作測試
   // 可改為 "basic" 或 "pro" 來測試不同方案狀態
-  const userPlan: 'free' | 'basic' | 'pro' = 'free'
 
-  // 載入分類
+  // Public R2 catalog is fetched once and all category/search filtering stays local.
   useEffect(() => {
-    const loadCategories = async () => {
-      setLoadingCategories(true)
-      try {
-        const { data, error } = await supabase
-          .from('image_categories')
-          .select('id, name, slug')
-          .eq('is_active', true)
-          .order('sort_order', { ascending: true })
-
-        if (error) {
-          console.error('載入分類失敗:', error)
-        } else {
-          setCategories(data || [])
-        }
-      } catch (err) {
-        console.error('載入分類時發生錯誤:', err)
-      } finally {
-        setLoadingCategories(false)
-      }
-    }
-
-    loadCategories()
-  }, [])
-
-  // 載入圖片（根據選中的分類）
-  useEffect(() => {
-    const loadImages = async () => {
+    const loadCatalog = async () => {
       setLoading(true)
       try {
-        let query = supabase
-          .from('images')
-          .select(`
-            id,
-            title,
-            public_url,
-            image_url,
-            access_level,
-            category_id,
-            image_categories!left(id, name, slug)
-          `)
-          .order('created_at', { ascending: false })
-
-        // 如果有選中分類，加入篩選條件
-        if (selectedCategoryId) {
-          query = query.eq('category_id', selectedCategoryId)
-        }
-        // 如果 selectedCategoryId 為 null，不加入篩選條件，顯示全部
-
-        const { data, error } = await query
-
-        if (error) {
-          console.error('載入圖片失敗:', error)
-          setImages([])
-        } else {
-          // 轉換資料格式
-          const formattedImages: ImageAsset[] = (data || [])
-            .map((img: any) => ({
-              id: img.id,
-              title: img.title || '未命名圖片',
-              previewUrl: img.public_url || img.image_url || '',
-              accessLevel: (img.access_level === 'free' ? 'free' : 
-                           img.access_level === 'member' ? 'member' : 'all') as 'free' | 'member' | 'all',
-              category_id: img.category_id
-            }))
-          setImages(formattedImages)
-        }
+        const catalog = await loadPublicImageCatalog()
+        const formatted: ImageAsset[] = catalog.map((img: PublicCatalogImage) => ({
+          id: img.id, title: img.title, previewUrl: img.previewUrl,
+          accessLevel: 'free',
+          category_id: img.categoryId,
+        }))
+        setAllImages(formatted)
+        setImages(formatted)
+        setCategories([...new Map(catalog.map((img) => [img.categoryId, { id: img.categoryId, name: img.categoryName, slug: img.categoryId }])).values()])
       } catch (err) {
-        console.error('載入圖片時發生錯誤:', err)
+        console.error('載入 R2 圖片 catalog 時發生錯誤:', err)
+        setAllImages([])
         setImages([])
       } finally {
         setLoading(false)
       }
     }
+    loadCatalog()
+  }, [])
 
-    loadImages()
-  }, [selectedCategoryId])
+  useEffect(() => {
+    setImages(selectedCategoryId ? allImages.filter((image) => image.category_id === selectedCategoryId) : allImages)
+  }, [allImages, selectedCategoryId])
 
   // 判斷圖片是否已解鎖
-  const isUnlocked = (accessLevel: ImageAsset['accessLevel']): boolean => {
-    switch (accessLevel) {
-      case 'free':
-        return true // 免費圖片永遠可下載
-      case 'member':
-        return userPlan === 'basic' || userPlan === 'pro' // 需 basic 或 pro
-      case 'all':
-        return userPlan === 'pro' // 需 pro
-    }
-  }
+  const isUnlocked = (_accessLevel: ImageAsset['accessLevel']): boolean => true
 
   // 根據權限等級和使用者方案取得標籤和按鈕資訊
   const getAccessInfo = (accessLevel: ImageAsset['accessLevel']) => {
@@ -188,73 +127,25 @@ export default function ImagesPage() {
   const handleDownload = async (image: ImageAsset) => {
     const accessInfo = getAccessInfo(image.accessLevel)
     
-    // 檢查是否已登入
-    if (!isLoggedIn()) {
-      alert('請先登入後再下載圖片')
-      navigate('/login')
-      return
-    }
-
-    // 如果未解鎖，導向方案升級頁（保留原有的 UI 邏輯）
-    if (!accessInfo.unlocked) {
-      if (image.accessLevel === 'member') {
-        navigate('/pricing')
-      } else if (image.accessLevel === 'all') {
-        navigate('/pricing')
-      }
-      return
-    }
-
     try {
-      // 呼叫後端 API 下載圖片
-      const userId = getCurrentUserId()
-      const response = await fetch('/api/download-image', {
+      const response = await fetch(resolveRxvUrl('/api/download-image'), {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          imageId: image.id,
-          userId: userId,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageId: image.id }),
       })
-
-      const data = await response.json()
-
-      if (!response.ok || !data.success) {
-        // 處理錯誤
-        if (data.requiresLogin) {
-          alert('請先登入後再下載圖片')
-          navigate('/login')
-          return
-        }
-        
-        if (data.error) {
-          alert(data.error)
-          
-          // 如果是方案不足，導向方案頁
-          if (data.requiredPlan && data.requiredPlan !== 'free') {
-            navigate('/pricing')
-          }
-          return
-        }
-        
-        alert('下載失敗，請稍後再試')
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok || !data?.success || !data?.downloadUrl) {
+        alert(data?.error || '下載失敗，請稍後再試')
         return
       }
-
-      // 下載成功，觸發瀏覽器下載
-      if (data.downloadUrl) {
-        // 創建一個臨時的 a 標籤來觸發下載
+      {
         const link = document.createElement('a')
         link.href = data.downloadUrl
-        link.download = data.imageTitle || 'image' // 嘗試設定檔名
+        link.download = image.title || 'image'
         link.target = '_blank'
         document.body.appendChild(link)
         link.click()
         document.body.removeChild(link)
-      } else {
-        alert('下載連結無效')
       }
 
     } catch (error: any) {
@@ -287,7 +178,7 @@ export default function ImagesPage() {
         </div>
 
         {/* 分類篩選 */}
-        {!loadingCategories && categories.length > 0 && (
+        {categories.length > 0 && (
           <div className="mb-6 bg-white rounded-xl shadow-md p-4">
             <label className="block text-sm font-medium text-gray-700 mb-3">
               分類篩選
@@ -352,7 +243,7 @@ export default function ImagesPage() {
                     <img
                       src={image.previewUrl}
                       alt={image.title}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain"
                       onError={(e) => {
                         // 如果圖片載入失敗，顯示 placeholder
                         const target = e.target as HTMLImageElement

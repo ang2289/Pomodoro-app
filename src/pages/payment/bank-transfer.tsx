@@ -95,7 +95,7 @@ export default function BankTransferPage() {
     }
 
     checkReminder()
-  }, [planParam, user])
+  }, [planParam])
 
   // 記錄使用者訪問此頁面（選擇方案）
   useEffect(() => {
