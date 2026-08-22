@@ -1,6 +1,28 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { supabase } from '@/lib/supabase'
+
+const IMAGE_ADMIN_KEY_STORAGE = 'rxv_image_admin_key'
+
+function getImageAdminKey() {
+  let key = sessionStorage.getItem(IMAGE_ADMIN_KEY_STORAGE) || ''
+  if (!key) {
+    key = window.prompt('請輸入圖片後台管理金鑰')?.trim() || ''
+    if (key) sessionStorage.setItem(IMAGE_ADMIN_KEY_STORAGE, key)
+  }
+  return key
+}
+
+async function imageAdminFetch(url: string, init: RequestInit = {}) {
+  const key = getImageAdminKey()
+  if (!key) throw new Error('請輸入圖片後台管理金鑰')
+  const headers = new Headers(init.headers || {})
+  headers.set('X-RXV-Image-Admin-Key', key)
+  const response = await fetch(url, { ...init, headers })
+  if (response.status === 401 || response.status === 403) {
+    sessionStorage.removeItem(IMAGE_ADMIN_KEY_STORAGE)
+  }
+  return response
+}
 
 interface ImageCategory {
   id: string
@@ -16,41 +38,45 @@ export default function AdminImagesPage() {
   const [previewUrls, setPreviewUrls] = useState<{ file: File; url: string }[]>([])
   const [categories, setCategories] = useState<ImageCategory[]>([])
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('')
-  const [selectedPriceType, setSelectedPriceType] = useState<string>('')
+  const [selectedPriceType, setSelectedPriceType] = useState<string>('bundle')
   const [loadingCategories, setLoadingCategories] = useState(false)
   const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // 載入圖片分類
-  useEffect(() => {
-    const loadCategories = async () => {
-      setLoadingCategories(true)
-      try {
-        const { data, error } = await supabase
-          .from('image_categories')
-          .select('id, name, sort_order, is_active')
-          .eq('is_active', true)
-          .order('sort_order', { ascending: true })
-
-        if (error) {
-          console.error('載入分類失敗:', error)
-          setUploadStatus('載入分類失敗：' + error.message)
-        } else {
-          setCategories(data || [])
-          // 如果有分類，預設選擇第一個
-          if (data && data.length > 0) {
-            setSelectedCategoryId(data[0].id)
-          }
-        }
-      } catch (err: any) {
-        console.error('載入分類時發生錯誤:', err)
-        setUploadStatus('載入分類時發生錯誤：' + err.message)
-      } finally {
-        setLoadingCategories(false)
+  const refreshCatalog = async () => {
+    const response = await imageAdminFetch('/api/image-admin?action=admin-list-images')
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok || !data?.ok) throw new Error(data?.error || `HTTP ${response.status}`)
+    const uniqueCategories = new Map<string, ImageCategory>()
+    for (const image of Array.isArray(data?.images) ? data.images : []) {
+      const id = String(image?.category_id || '').trim()
+      const name = String(image?.category_name || '').trim()
+      if (id && name && !uniqueCategories.has(id)) {
+        uniqueCategories.set(id, { id, name, sort_order: uniqueCategories.size, is_active: true })
       }
     }
+    const rows = [...uniqueCategories.values()]
+    setCategories(rows)
+    setSelectedCategoryId((current) => current || rows[0]?.id || '')
+    return Number(data?.total || 0)
+  }
 
-    loadCategories()
+  // 分類由同一次 R2 catalog 圖片清單去重取得，避免額外讀取 manifest。
+  const fetchCategories = async () => {
+    setLoadingCategories(true)
+    try {
+      await refreshCatalog()
+    } catch (err: any) {
+      console.error('載入分類時發生錯誤:', err)
+      setUploadStatus('載入分類時發生錯誤：' + err.message)
+    } finally {
+      setLoadingCategories(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchCategories()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // 清理預覽 URL，避免記憶體洩漏
@@ -138,7 +164,7 @@ export default function AdminImagesPage() {
       const fileDataBase64 = await fileToBase64(file)
 
       // 呼叫後端 API 上傳圖片
-      const response = await fetch('/api/upload-image', {
+      const response = await imageAdminFetch('/api/image-admin?action=uploadImage', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -146,11 +172,21 @@ export default function AdminImagesPage() {
         body: JSON.stringify({
           base64: fileDataBase64,
           category_id: selectedCategoryId,
-          price_type: selectedPriceType,
+          category_name: categories.find((category) => category.id === selectedCategoryId)?.name || selectedCategoryId,
+          price_type: 'bundle',
+          file_name: file.name,
+          mime_type: file.type,
+          file_size: file.size,
         }),
       })
 
-      const data = await response.json()
+      const rawText = await response.text()
+      let data: any = {}
+      try {
+        data = rawText ? JSON.parse(rawText) : {}
+      } catch {
+        data = { success: false, error: rawText || `HTTP ${response.status}` }
+      }
 
       if (!response.ok || !data.success) {
         const errorMessage = data.error || '上傳失敗'
@@ -159,7 +195,7 @@ export default function AdminImagesPage() {
       }
 
       console.log(`[${index + 1}/${total}] 圖片已成功上傳並登錄:`, data)
-      return { success: true, fileName: file.name }
+      return { success: true, fileName: file.name, manifestCount: Number(data.manifest_count || 0) || undefined }
     } catch (err: any) {
       console.error(`[${index + 1}/${total}] 處理失敗:`, err)
       return { success: false, fileName: file.name, error: err.message }
@@ -179,7 +215,7 @@ export default function AdminImagesPage() {
     }
 
     if (!selectedPriceType) {
-      setUploadStatus('請先選擇圖片方案')
+      setUploadStatus('請先選擇圖片下載權限')
       return
     }
 
@@ -187,7 +223,7 @@ export default function AdminImagesPage() {
     setUploadStatus('')
     setUploadProgress({ current: 0, total: selectedFiles.length })
 
-    const results: { success: boolean; fileName: string; error?: string }[] = []
+    const results: { success: boolean; fileName: string; manifestCount?: number; error?: string }[] = []
     const errors: string[] = []
 
     try {
@@ -206,8 +242,9 @@ export default function AdminImagesPage() {
       const successCount = results.filter(r => r.success).length
       const failCount = results.filter(r => !r.success).length
 
+      const manifestCount = results.reduce<number | undefined>((latest, result) => result.manifestCount ?? latest, undefined)
       if (failCount === 0) {
-        setUploadStatus(`✅ 成功上傳 ${successCount} 張圖片`)
+        setUploadStatus(`✅ 成功上傳 ${successCount} 張圖片${manifestCount ? `\n最新 manifest_count：${manifestCount}` : ''}`)
       } else if (successCount === 0) {
         setUploadStatus(`❌ 全部上傳失敗\n${errors.join('\n')}`)
       } else {
@@ -218,11 +255,12 @@ export default function AdminImagesPage() {
       previewUrls.forEach((preview) => {
         URL.revokeObjectURL(preview.url)
       })
+
       if (fileInputRef.current) fileInputRef.current.value = ''
       setSelectedFiles([])
       setPreviewUrls([])
-      setSelectedCategoryId('')
-      setSelectedPriceType('')
+      await refreshCatalog()
+      setSelectedPriceType('bundle')
       setUploadProgress(null)
 
     } catch (err: any) {
@@ -253,15 +291,18 @@ export default function AdminImagesPage() {
             <h1 className="text-3xl font-bold text-gray-900">
               🖼️ 圖片上傳管理
             </h1>
-            <Link
-              to="/admin/images/list"
-              className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
-            >
-              查看清單 →
-            </Link>
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={() => { sessionStorage.removeItem(IMAGE_ADMIN_KEY_STORAGE); window.location.reload() }} className="px-3 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200">
+                重設管理金鑰
+              </button>
+              <Link to="/admin/images/list" className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors duration-200 ease-out hover:-translate-y-0.5 hover:shadow-xl hover:brightness-110 active:scale-[0.98]">
+                查看清單 →
+              </Link>
+            </div>
           </div>
+
           <p className="text-gray-600">
-            上傳圖片到 Supabase Storage（images bucket）
+            原圖寫入 Private R2、縮圖寫入 Public R2，並同步更新公開圖片 catalog
           </p>
         </div>
 
@@ -335,26 +376,17 @@ export default function AdminImagesPage() {
           {/* 圖片方案選擇 */}
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              圖片方案 <span className="text-red-500">*</span>
+              圖片下載權限 <span className="text-red-500">*</span>
             </label>
             <select
-              value={selectedPriceType}
-              onChange={(e) => {
-                setSelectedPriceType(e.target.value)
-                setUploadStatus('') // 清除之前的錯誤訊息
-              }}
-              className={`block w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                !selectedPriceType ? 'border-red-300 bg-red-50' : 'border-gray-300'
-              }`}
-              disabled={uploading}
+              value="bundle"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-gray-50 text-gray-700"
+              disabled
             >
-              <option value="">請選擇方案</option>
-              <option value="free">免費</option>
-              <option value="price_99">99 元</option>
-              <option value="price_199">199 元</option>
+              <option value="bundle">完整素材庫（NT$399 素材包）－本階段固定</option>
             </select>
-            {!selectedPriceType && uploadStatus === '請先選擇圖片方案' && (
-              <p className="text-sm text-red-600 mt-1">請先選擇圖片方案</p>
+            {!selectedPriceType && uploadStatus === '請先選擇圖片下載權限' && (
+              <p className="text-sm text-red-600 mt-1">請先選擇圖片下載權限</p>
             )}
           </div>
 
@@ -400,7 +432,7 @@ export default function AdminImagesPage() {
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div
-                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                  className="bg-blue-600 h-2 rounded-full transition-all duration-300 duration-200 ease-out hover:-translate-y-0.5 hover:shadow-xl hover:brightness-110 active:scale-[0.98]"
                   style={{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }}
                 />
               </div>
@@ -445,10 +477,11 @@ export default function AdminImagesPage() {
             💡 使用說明
           </h3>
           <ul className="space-y-2 text-sm text-blue-800">
-            <li>• 上傳的圖片會儲存到 Supabase Storage 的 <code className="bg-blue-100 px-1 rounded">images</code> bucket</li>
-            <li>• 檔名格式：<code className="bg-blue-100 px-1 rounded">images/時間戳記.副檔名</code>（例如：images/1234567890.jpg）</li>
-            <li>• 上傳成功後會自動將圖片資訊寫入 images 資料表</li>
-            <li>• 上傳成功後可在 console 查看回傳結果</li>
+            <li>• 原始大圖只寫入 rxv-healing-images-staging</li>
+            <li>• 縮圖只寫入 rxv-healing-images-public</li>
+            <li>• 上傳成功後自動更新 catalog/images-public.json</li>
+            <li>• 本階段新圖固定為「完整素材庫」，不公開原圖下載網址</li>
+            <li>• 支援 JPG、PNG、WEBP</li>
           </ul>
         </div>
       </div>
