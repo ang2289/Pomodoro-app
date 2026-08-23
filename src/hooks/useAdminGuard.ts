@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 
-const ADMIN_EMAIL = 'ang2289@gmail.com'
+const ADMIN_EMAILS = new Set(['ang2289@gmail.com', 'ang2289@yahoo.com.tw'])
 
 interface UseAdminGuardResult {
   user: any | null
@@ -56,7 +56,7 @@ export function useAdminGuard(): UseAdminGuardResult {
   }, [])
 
   const isAuthenticated = user !== null
-  const isAdmin = user?.email === ADMIN_EMAIL
+  const isAdmin = ADMIN_EMAILS.has(String(user?.email || '').trim().toLowerCase())
 
   return {
     user,

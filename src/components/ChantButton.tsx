@@ -64,12 +64,12 @@ export default function ChantButton({ onSoundPlay, onCount, customWoodfishImage,
             borderColor: 'transparent',
             background: 'transparent'
           }}
-          aria-label="敲木魚"
+          aria-label={t('chant_woodfish_aria')}
         >
           <img
             src={customWoodfishImage || "/assets/woodfish.png"}
             className={`w-32 h-32 sm:w-40 sm:h-40 select-none pointer-events-none border-0 outline-none`}
-            alt="敲木魚"
+            alt={t('chant_woodfish_alt')}
             style={{ WebkitTapHighlightColor: 'transparent', border: 'none', outline: 'none' }}
           />
         </button>

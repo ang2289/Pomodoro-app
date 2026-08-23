@@ -42,7 +42,7 @@ export default function HealthPage() {
         <div className="text-right mb-4">
           <Link
             to="/"
-            className="bg-blue-500 !text-white px-4 py-2 rounded-md text-sm hover:bg-blue-600"
+            className="bg-blue-600 !text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition"
           >
             {t("homepage")}
           </Link>
@@ -65,7 +65,7 @@ export default function HealthPage() {
               <p className="text-gray-500 text-xs mb-3">{article.date}</p>
               <Link 
                 to={article.link} 
-                className="inline-block bg-blue-500 !text-white font-bold px-4 py-2 rounded-md text-sm hover:bg-blue-600 transition-colors duration-200"
+                className="inline-block bg-blue-600 !text-white font-bold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200"
                 style={{ color: '#ffffff', fontWeight: '700' }}
               >
                 {isEnglish ? "Read More →" : "閱讀詳情 →"}

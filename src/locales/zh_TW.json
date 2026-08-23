@@ -1,5 +1,5 @@
 {
-  "app_title": "番茄鐘・待辦・唸經集氣神器",
+  "app_title": "RxV AI 工具與生活服務中心",
   "pomodoro": "番茄鐘",
   "todo": "待辦清單",
   "chant": "唸經集氣",
@@ -97,5 +97,6 @@
   "features_todo": "任務待辦清單",
   "features_stats": "統計與排行榜",
   "features_system": "系統與進階功能",
-  "features_legal": "法律與安全合規"
+  "features_legal": "法律與安全合規",
+"policy_explained": "政策白話解釋"
 }

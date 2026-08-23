@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function ChantEnergyBreath() {
   return (
@@ -21,6 +22,9 @@ export default function ChantEnergyBreath() {
           當你吸入希望、吐出祝福，願望就不再只是文字，
           而是一道可感知的光，隨氣流擴散。
         </p>
+
+        <ArticleCTA placement="start" focus="tools" />
+
 
         <h2 className="text-2xl font-semibold mt-8 mb-3">💫 三步驟集氣呼吸法</h2>
         <ol className="list-decimal ml-6 space-y-3 mb-4">
@@ -56,12 +60,16 @@ export default function ChantEnergyBreath() {
           也更容易付諸行動與持續信念。
         </p>
 
+        <ArticleCTA placement="middle" focus="tools" />
+
         <h2 className="text-2xl font-semibold mt-8 mb-3">💖 結語：願氣成光，光即祝福</h2>
         <p className="mb-4">
           當你下次在集氣牆上留言時，
           別忘了先深吸一口氣。
           因為那一口氣，也許就是你的願望，正在成真。
         </p>
+
+        <ArticleCTA placement="bottom" focus="tools" />
 
         <hr className="my-8 border-gray-300" />
 
@@ -107,6 +115,8 @@ export default function ChantEnergyBreath() {
           take one deep breath first—
           that breath might be the moment your wish begins to come true.
         </p>
+
+        <ArticleCTA placement="afterFaq" focus="tools" />
 
         <p className="mt-8 text-gray-500 text-center text-sm">
           所有文章由 RxV 夢想創作工作室撰寫 · 保留所有權利

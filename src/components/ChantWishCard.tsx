@@ -240,8 +240,7 @@ export default function ChantWishCard({ wish }: ChantWishCardProps) {
         <div className="pt-3 pb-2">
           <button
             onClick={goDetail}
-            className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 !text-white font-bold py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg text-base"
-            style={{ color: '#ffffff' }}
+            className="w-full bg-blue-600 hover:bg-blue-700 !text-white font-bold py-3 px-4 rounded-lg transition transform hover:scale-105 shadow-lg text-base"
           >
             🔎 {t('view_details')}
           </button>
@@ -302,8 +301,7 @@ export default function ChantWishCard({ wish }: ChantWishCardProps) {
         {/* 參加集氣按鈕 - 手機版單獨一行 */}
         <button
           onClick={handleJoinChant}
-          className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 !text-white font-bold py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg text-base"
-          style={{ color: '#ffffff' }}
+          className="w-full bg-blue-600 hover:bg-blue-700 !text-white font-bold py-3 px-4 rounded-lg transition transform hover:scale-105 shadow-lg text-base"
         >
           🙏 {t('join_chant')}
         </button>

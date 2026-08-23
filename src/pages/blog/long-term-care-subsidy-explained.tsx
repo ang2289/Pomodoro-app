@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import SEO from "../../components/SEO";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function LongTermCareSubsidyExplainedPage() {
   // 獲取今天的日期（格式：YYYY-MM-DD）
@@ -43,6 +44,9 @@ export default function LongTermCareSubsidyExplainedPage() {
               長照補助是政府提供給需要長期照顧的家庭的協助，包括照顧服務、喘息服務、輔具補助等。但很多家庭一開始都不知道可以申請，或是不清楚政府到底能幫到什麼程度。
             </p>
 
+            <ArticleCTA placement="start" focus="summary" />
+
+
             <h2 className="text-2xl font-semibold mt-8 mb-4">長照補助在補什麼？</h2>
             <p className="mb-4">
               長照補助主要包含以下幾種：
@@ -57,6 +61,8 @@ export default function LongTermCareSubsidyExplainedPage() {
             <p className="mb-4">
               這些補助的額度會根據家庭收入、失能程度等因素有所不同，不是所有人都能獲得全額補助。
             </p>
+
+            <ArticleCTA placement="middle" focus="summary" />
 
             <h2 className="text-2xl font-semibold mt-8 mb-4">哪些人比較容易符合？</h2>
             <p className="mb-4">
@@ -123,6 +129,8 @@ export default function LongTermCareSubsidyExplainedPage() {
             </div>
           </div>
 
+          <ArticleCTA placement="afterFaq" focus="summary" />
+
           {/* 相關文章區塊 */}
           <div className="mt-12 pt-8 border-t border-gray-200">
             <h3 className="text-2xl font-bold text-gray-900 mb-2">
@@ -158,8 +166,6 @@ export default function LongTermCareSubsidyExplainedPage() {
               </Link>
             </div>
           </div>
-
-          {/* 導流區塊：摘要模組 */}
           <div className="mt-12 pt-8 border-t border-gray-200">
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 text-center">
               <h3 className="text-xl font-bold text-gray-900 mb-2">
@@ -170,7 +176,7 @@ export default function LongTermCareSubsidyExplainedPage() {
               </p>
               <Link
                 to="/summary"
-                className="inline-block px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg drop-shadow-md"
+                className="inline-block bg-blue-600 text-white px-5 py-3 rounded-lg text-base font-medium hover:bg-blue-700 transition"
                 style={{ textShadow: '0 1px 2px rgba(0,0,0,0.1)' }}
               >
                 貼上文章，幫我整理
@@ -250,6 +256,7 @@ export default function LongTermCareSubsidyExplainedPage() {
               </li>
             </ul>
           </div>
+          <ArticleCTA placement="bottom" focus="summary" />
 
           <div className="mt-8 pt-6 border-t border-gray-200">
             <Link

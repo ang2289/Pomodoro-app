@@ -72,7 +72,7 @@ export default function ChantSoundSelector() {
       </select>
       <button
         onClick={togglePlay}
-        className="w-full bg-gradient-to-r from-orange-400 to-pink-500 text-white font-bold py-2 px-4 rounded"
+        className="w-full bg-blue-600 text-white hover:bg-blue-700 font-bold py-2 px-4 rounded-lg transition"
       >
         {isPlaying ? '⏸️ 暫停音效' : '▶️ 播放音效'}
       </button>

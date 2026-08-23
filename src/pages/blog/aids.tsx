@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import SEO from "../../components/SEO";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function AidsPage() {
   const { t, i18n } = useTranslation();
@@ -19,7 +20,7 @@ export default function AidsPage() {
         <div className="text-right mb-4">
           <Link
             to="/"
-            className="bg-blue-500 !text-white px-4 py-2 rounded-md text-sm hover:bg-blue-600"
+            className="bg-blue-600 !text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition"
           >
             {t("homepage")}
           </Link>
@@ -54,7 +55,7 @@ export default function AidsPage() {
             </p>
             <Link 
               to="/aids/rental-subsidy-2025" 
-              className="inline-block bg-blue-500 !text-white font-bold px-4 py-2 rounded-md text-sm hover:bg-blue-600 transition-colors duration-200"
+              className="inline-block bg-blue-600 !text-white font-bold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200"
               style={{ color: '#ffffff', fontWeight: '700' }}
             >
               {isEnglish ? "Read More →" : "閱讀詳情 →"}
@@ -74,7 +75,7 @@ export default function AidsPage() {
             </p>
             <Link 
               to="/aids/ltc-2025-update" 
-              className="inline-block bg-blue-500 !text-white font-bold px-4 py-2 rounded-md text-sm hover:bg-blue-600 transition-colors duration-200"
+              className="inline-block bg-blue-600 !text-white font-bold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200"
               style={{ color: '#ffffff', fontWeight: '700' }}
             >
               {isEnglish ? "Read More →" : "閱讀詳情 →"}
@@ -94,7 +95,7 @@ export default function AidsPage() {
             </p>
             <Link 
               to="/aids/youth-employment-2026" 
-              className="inline-block bg-blue-500 !text-white font-bold px-4 py-2 rounded-md text-sm hover:bg-blue-600 transition-colors duration-200"
+              className="inline-block bg-blue-600 !text-white font-bold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200"
               style={{ color: '#ffffff', fontWeight: '700' }}
             >
               {isEnglish ? "Read More →" : "閱讀詳情 →"}
@@ -114,7 +115,7 @@ export default function AidsPage() {
             </p>
             <Link 
               to="/aids/childcare-subsidy-2026" 
-              className="inline-block bg-blue-500 !text-white font-bold px-4 py-2 rounded-md text-sm hover:bg-blue-600 transition-colors duration-200"
+              className="inline-block bg-blue-600 !text-white font-bold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200"
               style={{ color: '#ffffff', fontWeight: '700' }}
             >
               {isEnglish ? "Read More →" : "閱讀詳情 →"}
@@ -134,7 +135,7 @@ export default function AidsPage() {
             </p>
             <Link 
               to="/aids/low-income-subsidy-2026" 
-              className="inline-block bg-blue-500 !text-white font-bold px-4 py-2 rounded-md text-sm hover:bg-blue-600 transition-colors duration-200"
+              className="inline-block bg-blue-600 !text-white font-bold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200"
               style={{ color: '#ffffff', fontWeight: '700' }}
             >
               {isEnglish ? "Read More →" : "閱讀詳情 →"}
@@ -154,7 +155,7 @@ export default function AidsPage() {
             </p>
             <Link 
               to="/aids/ltc-medical-subsidy-2026" 
-              className="inline-block bg-blue-500 !text-white font-bold px-4 py-2 rounded-md text-sm hover:bg-blue-600 transition-colors duration-200"
+              className="inline-block bg-blue-600 !text-white font-bold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200"
               style={{ color: '#ffffff', fontWeight: '700' }}
             >
               {isEnglish ? "Read More →" : "閱讀詳情 →"}
@@ -174,7 +175,7 @@ export default function AidsPage() {
             </p>
             <Link 
               to="/aids/subsidy-concurrent-qa-2026" 
-              className="inline-block bg-blue-500 !text-white font-bold px-4 py-2 rounded-md text-sm hover:bg-blue-600 transition-colors duration-200"
+              className="inline-block bg-blue-600 !text-white font-bold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200"
               style={{ color: '#ffffff', fontWeight: '700' }}
             >
               {isEnglish ? "Read More →" : "閱讀詳情 →"}
@@ -194,7 +195,7 @@ export default function AidsPage() {
             </p>
             <Link 
               to="/aids/subsidy-overview-2026" 
-              className="inline-block bg-blue-500 !text-white font-bold px-4 py-2 rounded-md text-sm hover:bg-blue-600 transition-colors duration-200"
+              className="inline-block bg-blue-600 !text-white font-bold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200"
               style={{ color: '#ffffff', fontWeight: '700' }}
             >
               {isEnglish ? "Read More →" : "閱讀詳情 →"}
@@ -214,7 +215,7 @@ export default function AidsPage() {
             </p>
             <Link 
               to="/aids/subsidy-self-check-2026" 
-              className="inline-block bg-blue-500 !text-white font-bold px-4 py-2 rounded-md text-sm hover:bg-blue-600 transition-colors duration-200"
+              className="inline-block bg-blue-600 !text-white font-bold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200"
               style={{ color: '#ffffff', fontWeight: '700' }}
             >
               {isEnglish ? "Read More →" : "閱讀詳情 →"}
@@ -234,12 +235,18 @@ export default function AidsPage() {
             </p>
             <Link 
               to="/aids/subsidy-selection-guide-2026" 
-              className="inline-block bg-blue-500 !text-white font-bold px-4 py-2 rounded-md text-sm hover:bg-blue-600 transition-colors duration-200"
+              className="inline-block bg-blue-600 !text-white font-bold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200"
               style={{ color: '#ffffff', fontWeight: '700' }}
             >
               {isEnglish ? "Read More →" : "閱讀詳情 →"}
             </Link>
-          </article>
+          
+        <ArticleCTA placement="start" focus="tools" />
+        <ArticleCTA placement="middle" focus="tools" />
+        <ArticleCTA placement="afterFaq" focus="tools" />
+        <ArticleCTA placement="bottom" focus="tools" />
+
+      </article>
         </section>
 
       </div>

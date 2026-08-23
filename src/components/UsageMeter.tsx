@@ -142,13 +142,13 @@ export default function UsageMeter({
             <div className="flex gap-3 justify-end">
               <button
                 onClick={handleCloseModal}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                className="px-4 py-2 border border-blue-200 rounded-lg text-blue-600 hover:bg-blue-50 transition"
               >
                 {lang === 'zh-tw' ? '取消' : 'Cancel'}
               </button>
               <button
                 onClick={handlePurchase}
-                className="px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-medium rounded-lg hover:from-blue-600 hover:to-cyan-600 transition-all duration-200 shadow-md hover:shadow-lg"
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition shadow-md font-medium"
               >
                 {lang === 'zh-tw' ? '前往購買字數' : 'Purchase Points'}
               </button>

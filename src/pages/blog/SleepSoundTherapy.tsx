@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function SleepSoundTherapy() {
   return (
@@ -21,6 +22,9 @@ export default function SleepSoundTherapy() {
           當你的注意力專注於柔和、重複的聲音時，思緒會逐漸平靜，
           身體的壓力反應也會降低，最終自然進入深層睡眠。
         </p>
+
+        <ArticleCTA placement="start" focus="tools" />
+
 
         <h2 className="text-2xl font-semibold mt-8 mb-3">🎧 適合睡眠的聲音類型</h2>
         <ul className="list-disc ml-6 space-y-2 mb-4">
@@ -70,12 +74,16 @@ export default function SleepSoundTherapy() {
           此外，均勻的聲音模式能幫助大腦產生 alpha 和 theta 波，這些腦波與深度放鬆和睡眠準備狀態相關。
         </p>
 
+        <ArticleCTA placement="middle" focus="tools" />
+
         <h2 className="text-2xl font-semibold mt-8 mb-3">💤 結語：讓聲音成為你的睡眠夥伴</h2>
         <p className="mb-4">
           每個人的睡眠需求不同，找到適合自己的聲音是關鍵。
           不妨多嘗試幾種不同的聲音類型，觀察哪些能讓你更快進入放鬆狀態。
           記住，聲音療法不是萬能藥，但它能成為你建立良好睡眠習慣的重要工具。
         </p>
+
+        <ArticleCTA placement="bottom" focus="tools" />
 
         <hr className="my-8 border-gray-300" />
 
@@ -141,6 +149,8 @@ export default function SleepSoundTherapy() {
           Try different sound types and observe which ones help you relax faster.
           Remember, sound therapy isn't a cure-all, but it can be an important tool in building good sleep habits.
         </p>
+
+        <ArticleCTA placement="afterFaq" focus="tools" />
 
         <p className="mt-8 text-gray-500 text-center text-sm">
           所有文章由 RxV 夢想創作工作室撰寫 · 保留所有權利

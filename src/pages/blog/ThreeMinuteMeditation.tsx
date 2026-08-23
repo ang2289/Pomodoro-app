@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function ThreeMinuteMeditation() {
   return (
@@ -21,6 +22,9 @@ export default function ThreeMinuteMeditation() {
           三分鐘足夠讓你的心跳放慢、思緒平靜、壓力降低。
           更重要的是，它短到你可以隨時隨地進行，不會因為「沒時間」而放棄。
         </p>
+
+        <ArticleCTA placement="start" focus="tools" />
+
 
         <h2 className="text-2xl font-semibold mt-8 mb-3">🧘 三分鐘冥想的三個步驟</h2>
         <ol className="list-decimal ml-6 space-y-3 mb-4">
@@ -71,6 +75,8 @@ export default function ThreeMinuteMeditation() {
           當你習慣了三分鐘，你可能會發現自己想要更長的時間。
         </p>
 
+        <ArticleCTA placement="middle" focus="tools" />
+
         <h2 className="text-2xl font-semibold mt-8 mb-3">💫 結語：小步驟，大改變</h2>
         <p className="mb-4">
           不需要等待完美的時機或長長的時間。
@@ -78,6 +84,8 @@ export default function ThreeMinuteMeditation() {
           你會發現，這些小小的片刻，
           能為你的生活帶來大大的平靜與力量。
         </p>
+
+        <ArticleCTA placement="bottom" focus="tools" />
 
         <hr className="my-8 border-gray-300" />
 
@@ -145,6 +153,8 @@ export default function ThreeMinuteMeditation() {
           You'll discover that these small moments
           can bring great peace and strength to your life.
         </p>
+
+        <ArticleCTA placement="afterFaq" focus="tools" />
 
         <p className="mt-8 text-gray-500 text-center text-sm">
           所有文章由 RxV 夢想創作工作室撰寫 · 保留所有權利

@@ -1,8 +1,47 @@
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import SEO from "../../components/SEO";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function TaiwanUSTariffExplainedPage() {
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: "Q1：台美關稅調整，是不是代表所有進口商品都會漲價？",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "A：不一定。關稅調整通常針對特定商品或產業，不是所有進口商品都會受到影響。即使有影響，價格變化也需要時間才會反映在市場上，而且可能只影響部分商品。",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Q2：我應該現在就開始囤貨或改變消費習慣嗎？",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "A：通常不需要。關稅調整的影響是漸進的，不會突然大幅改變。除非你剛好要進行大額消費（如買車、大型家電），否則不需要特別改變日常消費習慣。",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Q3：這是不是代表台灣經濟會受到很大衝擊？",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "A：不一定。關稅議題是持續協商的過程，通常會有各種配套措施和緩衝期。而且台灣經濟結構多元，單一關稅調整的影響通常是局部的，不會全面衝擊整體經濟。",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Q4：我需要特別關注這個議題嗎？",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "A：取決於你的情況。如果你在相關產業工作、近期有大額消費計畫，或對貿易政策有興趣，可以適度關注。但對大多數人來說，不需要過度焦慮，保持平常心即可。",
+        },
+      },
+    ],
+  };
   return (
     <>
       <SEO
@@ -39,6 +78,9 @@ export default function TaiwanUSTariffExplainedPage() {
             <p className="mb-4">
               最近新聞經常提到「台美關稅」，很多人可能會好奇：為什麼突然這麼多討論？這跟我有什麼關係嗎？
             </p>
+
+            <ArticleCTA placement="start" focus="summary" />
+
 
             <p className="mb-4">
               其實，台美關稅議題之所以頻繁出現，背後有幾個重要原因，而這些原因對不同層面的人，影響程度也不同。
@@ -97,6 +139,8 @@ export default function TaiwanUSTariffExplainedPage() {
                   關稅調整會影響哪些東西？
                 </Link>
               </div>
+            <ArticleCTA placement="middle" focus="summary" />
+
             </div>
 
             <h3 className="text-xl font-semibold mt-6 mb-3">產業層面</h3>
@@ -187,6 +231,8 @@ export default function TaiwanUSTariffExplainedPage() {
             </div>
           </div>
 
+          <ArticleCTA placement="afterFaq" focus="summary" />
+
           {/* 相關文章區塊 */}
           <div className="mt-12 pt-8 border-t border-gray-200">
             <h3 className="text-2xl font-bold text-gray-900 mb-2">
@@ -222,8 +268,6 @@ export default function TaiwanUSTariffExplainedPage() {
               </Link>
             </div>
           </div>
-
-          {/* 導流區塊：摘要模組 */}
           <div className="mt-12 pt-8 border-t border-gray-200">
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 text-center">
               <h3 className="text-xl font-bold text-gray-900 mb-2">
@@ -234,7 +278,7 @@ export default function TaiwanUSTariffExplainedPage() {
               </p>
               <Link
                 to="/summary"
-                className="inline-block px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg drop-shadow-md"
+                className="inline-block bg-blue-600 text-white px-5 py-3 rounded-lg text-base font-medium hover:bg-blue-700 transition"
               >
                 貼上文章，幫我整理
               </Link>
@@ -329,6 +373,7 @@ export default function TaiwanUSTariffExplainedPage() {
               </li>
             </ul>
           </div>
+          <ArticleCTA placement="bottom" focus="summary" />
 
           <div className="mt-8 pt-6 border-t border-gray-200">
             <Link
@@ -364,6 +409,9 @@ export default function TaiwanUSTariffExplainedPage() {
               "@id": "https://pomodoro-app-eight-rouge.vercel.app/blog/taiwan-us-tariff-explained"
             }
           })}
+        </script>
+        <script type="application/ld+json">
+          {JSON.stringify(faqJsonLd)}
         </script>
       </Helmet>
     </>

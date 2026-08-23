@@ -19,13 +19,12 @@ export interface UseSpeechRecognitionResult {
 }
 
 // 取得 SpeechRecognition 類別（支援標準與 webkit 前綴）
-function getSpeechRecognition(): typeof SpeechRecognition | null {
+function getSpeechRecognition(): (new () => SpeechRecognition) | null {
   if (typeof window === "undefined") {
     return null;
   }
-
-  const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-  return SpeechRecognition || null;
+  const Ctor = window.SpeechRecognition || window.webkitSpeechRecognition;
+  return Ctor || null;
 }
 
 export function useSpeechRecognition(options?: UseSpeechRecognitionOptions): UseSpeechRecognitionResult {

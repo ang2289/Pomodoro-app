@@ -43,7 +43,7 @@ export default function Home() {
           </p>
           <Link
             to="/finance/anti-fraud-2025"
-            className="inline-block px-5 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition"
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-bold"
             style={{ color: '#ffffff', fontWeight: '700' }}
           >
             閱讀更多 →

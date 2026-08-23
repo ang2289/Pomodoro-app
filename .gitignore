@@ -7,15 +7,27 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies and build output
 node_modules/
 dist/
-dist-ssr
+dist-ssr/
+build/
+.vite/
+coverage/
+.cache/
+.eslintcache
+.stylelintcache
+
+# Local environment files
+.env
+.env.*
+.env*.local
 *.local
 
-# Editor directories and files
+# Editor / OS files
 .vscode/*
 !.vscode/extensions.json
-.idea
+.idea/
 .DS_Store
 *.suo
 *.ntvs*
@@ -23,27 +35,52 @@ dist-ssr
 *.sln
 *.sw?
 
-# Vite cache
-.vite/
-
-# Env files
-.env
-.env.*
-
-# Coverage & caches
-coverage/
-.cache/
-.eslintcache
-.stylelintcache
-
-# Capacitor
+# Capacitor generated platforms
 android/
 ios/
 
-.vercel
+# Vercel local project metadata
+.vercel/
 
-# SSL certificates (local development only)
+# Local SSL certificates
 localhost.key
 localhost.crt
-.vercel
+
+# Playwright / Chromium local browser profile and cache
+playwright_shopee_profile/
+playwright-report/
+test-results/
+blob-report/
+
+# Local temporary images and Shopee automation output
+tmp_images/
+tmp_shopee_*/
+tmp/
+temp/
+
+# Generated batch-processing output files
+*_output_*.csv
+*_output_*.xlsx
+*_output_*.xls
+*_output_*.json
+*_output_*.zip
+
+# Optional local export folders
+exports/
+export/
+outputs/
+downloads/
+output/social-affiliate-automation/
+
+# Local exports containing group-buy customer/order data
+backups/group-buy/
+
+# Local database backups may contain production data and must never be committed.
+.local-backups/
+.local-preview-deploy/
+
+# Private R2 image catalogue. It contains original object keys and must not be served as static content.
+private-data/
+.local-tools/
+
 .env*.local

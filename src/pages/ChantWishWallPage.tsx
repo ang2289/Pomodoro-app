@@ -137,7 +137,7 @@ export default function ChantWishWallPage() {
       <div className="max-w-screen-md mx-auto px-4 w-full">
       <button
         onClick={() => navigate(-1)}
-        className="mb-4 bg-blue-500 text-white font-semibold py-2 px-4 rounded w-full sm:w-auto hover:bg-blue-600"
+        className="mb-4 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg w-full sm:w-auto hover:bg-blue-700 transition"
       >
         ← {t('back')}
       </button>
@@ -148,7 +148,7 @@ export default function ChantWishWallPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         <Link
           to="/chant-ranking"
-          className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 !text-white font-bold py-3 sm:py-4 px-4 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-md text-sm sm:text-base overflow-wrap break-word text-center inline-block"
+          className="w-full bg-blue-600 hover:bg-blue-700 !text-white font-bold py-3 sm:py-4 px-4 rounded-xl transition transform hover:scale-105 shadow-md text-sm sm:text-base overflow-wrap break-word text-center inline-block"
         >
           📊 {t('go_to_ranking')}
         </Link>
@@ -199,7 +199,7 @@ export default function ChantWishWallPage() {
             <p className="text-sm sm:text-base text-gray-600 mb-4">{t('no_chant_wishes_create_one')}</p>
             <button
               onClick={() => navigate('/chant-wish-create')}
-              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg text-sm sm:text-base"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition transform hover:scale-105 shadow-lg text-sm sm:text-base"
             >
               🔔 {t('create_chant_activity')}
             </button>

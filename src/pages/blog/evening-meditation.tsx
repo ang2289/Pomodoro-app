@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function EveningMeditation() {
   return (
@@ -22,6 +23,9 @@ export default function EveningMeditation() {
           讓身體回到當下，逐漸進入深層放鬆與睡眠狀態。
         </p>
 
+        <ArticleCTA placement="start" focus="tools" />
+
+
         <h2 className="text-2xl font-semibold mt-8 mb-3">🪷 冥想練習步驟</h2>
         <ol className="list-decimal ml-6 space-y-2 mb-4">
           <li>
@@ -36,11 +40,15 @@ export default function EveningMeditation() {
           </li>
         </ol>
 
+        <ArticleCTA placement="middle" focus="tools" />
+
         <h2 className="text-2xl font-semibold mt-8 mb-3">🌸 每晚 10 分鐘的小禮物</h2>
         <p className="mb-4">
           晚安冥想是一份送給自己的心靈禮物。
           每天僅需十分鐘，就能提升睡眠品質與情緒穩定度。
         </p>
+
+        <ArticleCTA placement="bottom" focus="tools" />
 
         <hr className="my-8 border-gray-300" />
 
@@ -70,6 +78,8 @@ export default function EveningMeditation() {
         <p className="mb-4">
           This practice is a gift to yourself. Just ten minutes a night can improve your sleep and emotional balance.
         </p>
+
+        <ArticleCTA placement="afterFaq" focus="tools" />
 
         <p className="mt-8 text-gray-500 text-center text-sm">
           文章由 RxV 夢想創作工作室撰寫 · 保留所有權利

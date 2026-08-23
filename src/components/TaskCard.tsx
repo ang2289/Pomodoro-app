@@ -76,7 +76,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
         </div>
       )}
       
-      {/* 任務資訊 Grid 響應式佈局 */}
+      {/* 任務資訊 Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4 flex-wrap">
         {/* 分類 */}
         <div className="flex items-center gap-2">

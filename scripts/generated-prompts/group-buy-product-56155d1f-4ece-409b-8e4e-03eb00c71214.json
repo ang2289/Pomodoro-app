@@ -1,0 +1,124 @@
+{
+  "productId": "56155d1f-4ece-409b-8e4e-03eb00c71214",
+  "productTitle": "原味生乳捲",
+  "verifiedProductFacts": {
+    "spongeColor": "淡金黃色",
+    "fillingColor": "純白色",
+    "fillingIngredients": [
+      "北海道奶霜"
+    ],
+    "dimensions": "18×8.5×6.5 公分",
+    "weight": "324g"
+  },
+  "images": [
+    {
+      "productId": "56155d1f-4ece-409b-8e4e-03eb00c71214",
+      "productTitle": "原味生乳捲",
+      "imageType": "hero",
+      "verifiedProductFacts": {
+        "spongeColor": "淡金黃色",
+        "fillingColor": "純白色",
+        "fillingIngredients": [
+          "北海道奶霜"
+        ],
+        "dimensions": "18×8.5×6.5 公分",
+        "weight": "324g"
+      },
+      "prompt": "商品為「原味生乳捲」。淡金黃色泡芙蛋糕體，包覆大量純白色北海道奶霜，自然向內捲曲；不增加未確認的布丁、果肉、巧克力或裝飾。 商品比例依 18×8.5×6.5 公分，重量 324g。高級寫實商業食品攝影，全新構圖，4:3 單一場景。 奶油白攝影棚背景，一條完整商品搭配 1～2 片自然切片，商品占畫面 60%～75%，清楚呈現蛋糕體與內餡，不放人物或文字。",
+      "negativePrompt": "no logo, no brand text, no watermark, no copied packaging, no collage, no triptych, no multi-panel layout, no official website layout, no cropped head, no cropped forehead, no cropped chin, no partial face, no duplicated person, no malformed hands, no extra fingers, no floating fork, no distorted cake, no wrong filling, no fake measurement text, no extra cake variety",
+      "aspectRatio": "4:3",
+      "reviewStatus": "draft"
+    },
+    {
+      "productId": "56155d1f-4ece-409b-8e4e-03eb00c71214",
+      "productTitle": "原味生乳捲",
+      "imageType": "cutaway",
+      "verifiedProductFacts": {
+        "spongeColor": "淡金黃色",
+        "fillingColor": "純白色",
+        "fillingIngredients": [
+          "北海道奶霜"
+        ],
+        "dimensions": "18×8.5×6.5 公分",
+        "weight": "324g"
+      },
+      "prompt": "商品為「原味生乳捲」。淡金黃色泡芙蛋糕體，包覆大量純白色北海道奶霜，自然向內捲曲；不增加未確認的布丁、果肉、巧克力或裝飾。 商品比例依 18×8.5×6.5 公分，重量 324g。高級寫實商業食品攝影，全新構圖，4:3 單一場景。 近距離切面攝影，呈現真實蛋糕孔洞、奶霜質地與自然切片厚度，不可呈現塑膠、蠟或卡通質感，不放人物或文字。",
+      "negativePrompt": "no logo, no brand text, no watermark, no copied packaging, no collage, no triptych, no multi-panel layout, no official website layout, no cropped head, no cropped forehead, no cropped chin, no partial face, no duplicated person, no malformed hands, no extra fingers, no floating fork, no distorted cake, no wrong filling, no fake measurement text, no extra cake variety",
+      "aspectRatio": "4:3",
+      "reviewStatus": "draft"
+    },
+    {
+      "productId": "56155d1f-4ece-409b-8e4e-03eb00c71214",
+      "productTitle": "原味生乳捲",
+      "imageType": "size_diagram",
+      "verifiedProductFacts": {
+        "spongeColor": "淡金黃色",
+        "fillingColor": "純白色",
+        "fillingIngredients": [
+          "北海道奶霜"
+        ],
+        "dimensions": "18×8.5×6.5 公分",
+        "weight": "324g"
+      },
+      "prompt": "商品為「原味生乳捲」。淡金黃色泡芙蛋糕體，包覆大量純白色北海道奶霜，自然向內捲曲；不增加未確認的布丁、果肉、巧克力或裝飾。 商品比例依 18×8.5×6.5 公分，重量 324g。高級寫實商業食品攝影，全新構圖，4:3 單一場景。 一條完整商品以清楚三分之四角度置中，純淨淺色背景並保留四周空白供網站疊加尺寸線；圖片本體不得產生文字、數字、箭頭或量測標記。",
+      "negativePrompt": "no logo, no brand text, no watermark, no copied packaging, no collage, no triptych, no multi-panel layout, no official website layout, no cropped head, no cropped forehead, no cropped chin, no partial face, no duplicated person, no malformed hands, no extra fingers, no floating fork, no distorted cake, no wrong filling, no fake measurement text, no extra cake variety",
+      "aspectRatio": "4:3",
+      "reviewStatus": "draft"
+    },
+    {
+      "productId": "56155d1f-4ece-409b-8e4e-03eb00c71214",
+      "productTitle": "原味生乳捲",
+      "imageType": "afternoon_tea",
+      "verifiedProductFacts": {
+        "spongeColor": "淡金黃色",
+        "fillingColor": "純白色",
+        "fillingIngredients": [
+          "北海道奶霜"
+        ],
+        "dimensions": "18×8.5×6.5 公分",
+        "weight": "324g"
+      },
+      "prompt": "商品為「原味生乳捲」。淡金黃色泡芙蛋糕體，包覆大量純白色北海道奶霜，自然向內捲曲；不增加未確認的布丁、果肉、巧克力或裝飾。 商品比例依 18×8.5×6.5 公分，重量 324g。高級寫實商業食品攝影，全新構圖，4:3 單一場景。 一位成年女性在明亮窗邊享用商品，商品與切片位於前景且仍為主角，桌上僅有茶或咖啡、花朵與簡潔餐具。使用寬鬆中景構圖，所有人物頭部、頭髮、耳朵、額頭、下巴與臉部輪廓完整入鏡，最高頭頂距離上緣保留 8%～12%，左右保留安全空間；手指、餐具與動作自然。",
+      "negativePrompt": "no logo, no brand text, no watermark, no copied packaging, no collage, no triptych, no multi-panel layout, no official website layout, no cropped head, no cropped forehead, no cropped chin, no partial face, no duplicated person, no malformed hands, no extra fingers, no floating fork, no distorted cake, no wrong filling, no fake measurement text, no extra cake variety",
+      "aspectRatio": "4:3",
+      "reviewStatus": "draft"
+    },
+    {
+      "productId": "56155d1f-4ece-409b-8e4e-03eb00c71214",
+      "productTitle": "原味生乳捲",
+      "imageType": "family_lakeside",
+      "verifiedProductFacts": {
+        "spongeColor": "淡金黃色",
+        "fillingColor": "純白色",
+        "fillingIngredients": [
+          "北海道奶霜"
+        ],
+        "dimensions": "18×8.5×6.5 公分",
+        "weight": "324g"
+      },
+      "prompt": "商品為「原味生乳捲」。淡金黃色泡芙蛋糕體，包覆大量純白色北海道奶霜，自然向內捲曲；不增加未確認的布丁、果肉、巧克力或裝飾。 商品比例依 18×8.5×6.5 公分，重量 324g。高級寫實商業食品攝影，全新構圖，4:3 單一場景。 父母與兩位孩子共四人在湖泊、樹木、草地的郊外桌邊分享商品，完整商品與一致切片清楚位於前景，食物不可遮住主商品。使用寬鬆中景構圖，所有人物頭部、頭髮、耳朵、額頭、下巴與臉部輪廓完整入鏡，最高頭頂距離上緣保留 8%～12%，左右保留安全空間；手指、餐具與動作自然。",
+      "negativePrompt": "no logo, no brand text, no watermark, no copied packaging, no collage, no triptych, no multi-panel layout, no official website layout, no cropped head, no cropped forehead, no cropped chin, no partial face, no duplicated person, no malformed hands, no extra fingers, no floating fork, no distorted cake, no wrong filling, no fake measurement text, no extra cake variety",
+      "aspectRatio": "4:3",
+      "reviewStatus": "draft"
+    },
+    {
+      "productId": "56155d1f-4ece-409b-8e4e-03eb00c71214",
+      "productTitle": "原味生乳捲",
+      "imageType": "office_sharing",
+      "verifiedProductFacts": {
+        "spongeColor": "淡金黃色",
+        "fillingColor": "純白色",
+        "fillingIngredients": [
+          "北海道奶霜"
+        ],
+        "dimensions": "18×8.5×6.5 公分",
+        "weight": "324g"
+      },
+      "prompt": "商品為「原味生乳捲」。淡金黃色泡芙蛋糕體，包覆大量純白色北海道奶霜，自然向內捲曲；不增加未確認的布丁、果肉、巧克力或裝飾。 商品比例依 18×8.5×6.5 公分，重量 324g。高級寫實商業食品攝影，全新構圖，4:3 單一場景。 3～5 位成年上班族在明亮辦公室分享商品，桌面前景有一條完整商品與一致切片，僅搭配咖啡、茶與簡潔餐具，文件不可遮住商品。使用寬鬆中景構圖，所有人物頭部、頭髮、耳朵、額頭、下巴與臉部輪廓完整入鏡，最高頭頂距離上緣保留 8%～12%，左右保留安全空間；手指、餐具與動作自然。",
+      "negativePrompt": "no logo, no brand text, no watermark, no copied packaging, no collage, no triptych, no multi-panel layout, no official website layout, no cropped head, no cropped forehead, no cropped chin, no partial face, no duplicated person, no malformed hands, no extra fingers, no floating fork, no distorted cake, no wrong filling, no fake measurement text, no extra cake variety",
+      "aspectRatio": "4:3",
+      "reviewStatus": "draft"
+    }
+  ],
+  "reviewStatus": "draft"
+}

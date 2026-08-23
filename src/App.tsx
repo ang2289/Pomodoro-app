@@ -1,4 +1,4 @@
-import { Routes, Route, Link, useNavigate } from 'react-router-dom'
+import { Routes, Route, Link, useLocation, useNavigate, Navigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useEffect, useState } from 'react'
 import { supabase } from './lib/supabase'
@@ -10,7 +10,7 @@ import ChantCounter from './pages/ChantCounter'
 import TodoPage from './pages/TodoPage'
 import PomodoroPage from './pages/PomodoroPage'
 import WishWallPage from './pages/WishWallPage'
-import SettingsPage from './pages/SettingsPage'
+import SettingsPage from './pages/SettingsPage.tsx'
 import GroupCreatePage from './pages/GroupCreatePage'
 import GroupHomePage from './pages/GroupHomePage'
 import CreatePurchasePage from './pages/CreatePurchasePage'
@@ -56,6 +56,7 @@ import HelpPage from './pages/help/index'
 import AdminDashboardPage from './pages/admin/dashboard'
 import AdminImagesPage from './pages/admin/images'
 import AdminImagesListPage from './pages/admin/images-list'
+import AdminDealsPage from './pages/admin/deals'
 // ⚠️ 已移除 UpgradeSuccessToast 和 useAuthCredits
 import ArticleTemplate from './pages/blog/ArticleTemplate'
 import ChantFocusArticle from './pages/blog/ChantFocusArticle'
@@ -89,9 +90,16 @@ import PowerOfSilence from './pages/blog/PowerOfSilence'
 import ThreeMinuteMeditation from './pages/blog/ThreeMinuteMeditation'
 import AboutSpiritualGrowth from './pages/blog/AboutSpiritualGrowth'
 import BlogHome from './pages/blog/BlogHome'
-import BlogPage from './pages/blog/index'
+import QrCodeSeoPage from './pages/blog/qr-code'
+import QrArticlePage from './pages/blog/[slug]'
+import FreeAiToolsPage from './pages/blog/free-ai-tools'
+import AiSummaryGuidePage from './pages/blog/ai-summary-guide'
+import HomeworkHelperGuidePage from './pages/blog/homework-helper-guide'
+import QrCodeGeneratorGuidePage from './pages/blog/qr-code-generator'
+import BlogFinancePage from './pages/blog/finance'
+import BlogRetirementPage from './pages/blog/retirement'
 import CarImportTariffExplainedPage from './pages/blog/car-import-tariff-explained'
-import PolicyExplainedPage from './pages/blog/policy-explained'
+import PolicyExplainedPage from './pages/policy-explained'
 import HouseTaxExplainedPage from './pages/blog/house-tax-explained'
 import SubsidyEligibilityExplainedPage from './pages/blog/subsidy-eligibility-explained'
 import Clause232ExplainedPage from './pages/blog/232-clause-explained'
@@ -116,9 +124,16 @@ import SubsidyVisibilityExplainedPage from './pages/blog/subsidy-visibility-expl
 import OvertimePayExplainedPage from './pages/blog/overtime-pay-explained'
 import DependentDeductionExplainedPage from './pages/blog/dependent-deduction-explained'
 import PolicyDesignRealityExplainedPage from './pages/blog/policy-design-reality-explained'
+import AIFreeTools2026Page from './pages/blog/ai-free-tools-2026'
+import LineDeletePhotosVideosSafePage from './pages/blog/line-delete-photos-videos-safe'
+import LineStickerOutsourcingGuidePage from './pages/blog/line-sticker-outsourcing-guide'
+import ShopeeTrashBagRecommendation2026Page from './pages/blog/shopee-trash-bag-recommendation-2026'
 import LanguageGuide from './pages/language-guide'
 import LazyHome from './pages/blog/LazyHome'
 import HomePage from './pages/index'
+import FreeResourcesPage from './pages/free'
+import GuideIndexPage from './pages/guide/index'
+import GuideArticlePage from './pages/guide/[slug]'
 import AidsPage from './pages/blog/aids'
 import FinancePage from './pages/finance/index'
 import SummaryPage from './pages/summary/index'
@@ -130,14 +145,65 @@ import PaymentSuccessPage from './pages/pricing/success'
 import PaymentCancelPage from './pages/pricing/cancel'
 import PurchaseFailPage from './pages/pricing/fail'
 import SearchPage from './pages/SearchPage'
+import SearchSeoSlugPage from './pages/SearchSeoSlugPage'
 import ShoppingSearchPage from './pages/shopping/search'
 import ShoppingResultsPage from './pages/shopping/results'
 import AirfryerPage from './pages/goods/airfryer-keshaui'
+import GoodsSharePage from './pages/goods/share'
 import AIHome from './pages/AIHome'
+import ToolsPage from './pages/tools'
 import AISummaryGuide from './pages/tools/ai-summary'
 import ShopeeSingleVideoPage from './pages/tools/ShopeeSingleVideoPage'
 import ShopeeVideoPage from './pages/tools/shopee-video/index.tsx'
+import ImageToVideo from "./pages/tools/ImageToVideo";
+import ShopeeCsvPage from './pages/tools/shopee-csv'
+import ShopeeDealsPage from './pages/tools/shopee-deals'
+import ImageResizePage from './pages/tools/ImageResize'
+import ImageCompressPage from './pages/tools/ImageCompress'
+import ImageConvertPage from './pages/tools/ImageConvert'
+import ImageCropPage from './tools/image-crop/ImageCropPage'
+import LineStickerTool from './pages/tools/LineStickerTool'
+import LineStickerGuide from './pages/tools/LineStickerGuide'
+import StickerPromptGenerator from './pages/tools/StickerPromptGenerator'
+import EmotionalValueStickerPrompt from './pages/tools/EmotionalValueStickerPrompt'
+import StickerShowcaseGallery from './pages/tools/StickerShowcaseGallery'
+import AnimatedStickerPromptGenerator from './pages/tools/AnimatedStickerPromptGenerator'
+import AnimatedLineStickerTool from './pages/tools/AnimatedLineStickerTool'
+import ImagePromptGenerator from './pages/tools/ImagePromptGenerator'
+import PetPromptPage from './pages/tools/PetPromptPage'
+import StickerImageSplitter from './pages/tools/StickerImageSplitter'
+import ScamCheckPage from './pages/tools/ScamCheckPage'
+import QrCodeTool from './pages/tools/QrCodeTool'
+import EatNoFatGame from './pages/tools/EatNoFatGame'
+import TrafficAccidentSelfProtectionPage from './pages/tools/TrafficAccidentSelfProtectionPage'
+import ProductImageUpgradeService from './pages/services/ProductImageUpgradeService'
+import DesignCommissionPage from './pages/services/DesignCommissionPage'
+import ProductImageGeneratorPage from './pages/tools/ProductImageGeneratorPage'
+import ProductShowcaseLandingPage from './pages/tools/ProductShowcaseLandingPage'
+import BusinessCardPage from './pages/tools/BusinessCardPage'
+import ManualBusinessCardOrderPage from './pages/tools/ManualBusinessCardOrderPage'
+import MyBusinessCardOrdersPage from './pages/business-card/MyBusinessCardOrdersPage'
+import BusinessCardPaymentPage from './pages/business-card/BusinessCardPaymentPage'
+import PublicDigitalBusinessCardPage from './pages/business-card/PublicDigitalBusinessCardPage'
+import AdminBusinessCardOrdersPage from './pages/admin/business-card-orders'
+import StorefrontSettingsPage from './pages/storefront/StorefrontSettingsPage'
+import PublicStorefrontPage from './pages/storefront/PublicStorefrontPage'
+import GroupBuyPublicPage from './pages/group-buy/GroupBuyPublicPage'
+import GroupBuyOrderPage from './pages/group-buy/GroupBuyOrderPage'
+import MyGroupBuyOrdersPage from './pages/group-buy/MyGroupBuyOrdersPage'
+import GroupBuyProductDetailPage from './pages/group-buy/GroupBuyProductDetailPage'
+import AdminGroupBuyPage from './pages/admin/group-buy'
+import ProductImageHistoryPage from './pages/product-image-history/ProductImageHistoryPage'
+import MyServicesPage from './pages/my-services/MyServicesPage'
+import AdminProductImageHistoryPage from './pages/admin/product-image-history'
+import StoreBrandingPortfolio from './pages/portfolio/StoreBrandingPortfolio'
+import AdminPortfolioUpload from './pages/portfolio/AdminPortfolioUpload'
+import QRPage from './pages/qr/[id]'
+import ShortCodeRedirectPage from './pages/s/[code]'
+import QrTopPage from './pages/qr-top'
 import HomeworkHelper from './pages/tools/homework-helper'
+import ToolCategoryPage from './pages/tools/ToolCategoryPage'
+import ToolLandingPage from './pages/tools/ToolLandingPage'
 import ImagesPage from './pages/images'
 import RxVAutoShortsPage from './pages/RxVAutoShortsPage'
 import RedirectShorts from './pages/rxv-auto-shorts'
@@ -171,6 +237,7 @@ import InsuranceOldage2025 from './pages/pension/insurance-oldage-2025'
 import SelfContribution2025 from './pages/pension/self-contribution-2025'
 import Announcements from './pages/Announcements'
 import LoginPage from './pages/LoginPage'
+import RegisterPage from './pages/RegisterPage'
 import ResetPasswordPage from './pages/reset'
 import ResetPasswordPageNew from './pages/ResetPasswordPage'
 import Footer from './components/Footer'
@@ -180,24 +247,200 @@ import { Toaster } from 'react-hot-toast'
 import { useGATracker } from './hooks/useGATracker'
 import { KeepAlivePing } from './components/KeepAlivePing'
 import ScrollToTop from './components/ScrollToTop'
+import ShopeeCopyPage from './pages/tools/shopee-copy'
+import RelationshipAiPage from './pages/relationship-ai'
+import ImageBundleDownloadPage from './pages/download/image-bundle'
 
 // TODO: 為了上線摘要與作業功能，暫時隱藏 chant 模組
 // 日後可透過環境變數 VITE_ENABLE_CHANT=true 或 NEXT_PUBLIC_ENABLE_CHANT=true 再次開啟
 const isChantEnabled = import.meta.env.VITE_ENABLE_CHANT === 'true' || import.meta.env.NEXT_PUBLIC_ENABLE_CHANT === 'true';
 
+function PausedAiToolPage() {
+  return (
+    <div className="mx-auto max-w-3xl px-4 py-16">
+      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 shadow-sm">
+        <p className="text-sm font-bold text-amber-700">AI 功能暫停開放</p>
+        <h1 className="mt-2 text-2xl font-bold text-slate-900">此功能目前先暫停，避免免費試用產生過高 API 費用</h1>
+        <p className="mt-3 text-slate-700 leading-relaxed">
+          目前網站先主推 LINE 貼圖工具、圖片工具與商品圖整理服務。摘要與作業解題之後可再重新開放。
+        </p>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Link to="/tools/line-sticker" className="rounded-lg bg-cyan-600 px-4 py-2 text-sm font-bold text-white hover:bg-cyan-700">前往 LINE 貼圖工具</Link>
+          <Link to="/tools" className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">查看免費工具</Link>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
+
+const ANIMATED_LINE_STICKER_ALLOWED_EMAILS = ['ang2289@yahoo.com.tw', 'ang2289@gmail.com']
+
+function normalizeEmail(value: string | null | undefined) {
+  return (value || '').trim().toLowerCase()
+}
+
+function findCurrentUserEmailFromStorage() {
+  if (typeof window === 'undefined') return ''
+
+  const directKeys = [
+    'email',
+    'userEmail',
+    'currentUserEmail',
+    'loginEmail',
+    'rxv_user_email',
+    'rxv_login_email',
+    'rxv_current_user_email',
+    'loggedInUserEmail',
+  ]
+
+  for (const key of directKeys) {
+    const email = normalizeEmail(localStorage.getItem(key))
+    if (email.includes('@')) return email
+  }
+
+  const objectKeys = [
+    'user',
+    'authUser',
+    'currentUser',
+    'rxv_user',
+    'rxv_auth_user',
+    'rxv_current_user',
+  ]
+
+  for (const key of objectKeys) {
+    const raw = localStorage.getItem(key)
+    if (!raw) continue
+    try {
+      const parsed = JSON.parse(raw)
+      const email = normalizeEmail(parsed?.email || parsed?.user?.email || parsed?.profile?.email)
+      if (email.includes('@')) return email
+    } catch {
+      const emailMatch = raw.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)
+      if (emailMatch?.[0]) return normalizeEmail(emailMatch[0])
+    }
+  }
+
+  // 兼容 Supabase / 自訂登入資料存放於不同 localStorage key 的情況
+  for (let i = 0; i < localStorage.length; i += 1) {
+    const key = localStorage.key(i)
+    if (!key) continue
+    const raw = localStorage.getItem(key) || ''
+    const emailMatch = raw.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)
+    if (emailMatch?.[0]) return normalizeEmail(emailMatch[0])
+  }
+
+  return ''
+}
+
+function AdminOnlyAnimatedLineStickerRoute() {
+  // 動態 LINE 貼圖 APNG 打包工具已先免費開放給客戶使用。
+  // 保留此元件名稱只是為了相容舊路由或舊引用，不再做白名單檢查。
+  return <AnimatedLineStickerTool />
+}
+
+// 客戶公開商品頁不使用 MainLayout，避免帶入 RxV 工具站的頁首、導覽、長頁尾與行動版底部工具列。
+// 最下方僅保留輕量來源標示與支援入口，不搶客戶店家／商品內容的主視覺。
+function PublicStorefrontStandalonePage() {
+  return (
+    <div className="min-h-screen bg-slate-50">
+      <PublicStorefrontPage />
+      <footer className="border-t border-slate-200 bg-white px-4 py-5 text-center text-xs leading-relaxed text-slate-500">
+        <span>由 </span>
+        <Link to="/" className="font-bold text-emerald-700 hover:text-emerald-800 hover:underline">
+          RxV 商品展示頁
+        </Link>
+        <span> 提供｜</span>
+        <Link to="/contact" className="font-bold text-emerald-700 hover:text-emerald-800 hover:underline">
+          聯絡支援
+        </Link>
+      </footer>
+    </div>
+  )
+}
+
+// 團購功能暫停：改回 true 即可重新開放相關前台／會員／後台路由。
+const GROUP_BUY_ENABLED = false
+
 function App() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const location = useLocation()
+  const isBusinessCardPage = location.pathname.startsWith('/tools/business-card') || location.pathname.startsWith('/tools/product-showcase-page') || location.pathname.startsWith('/business-card/payment') || location.pathname.startsWith('/my-business-card-orders') || location.pathname.startsWith('/my-product-images') || location.pathname.startsWith('/my-services') || location.pathname.startsWith('/card/') || location.pathname.startsWith('/admin/business-card-orders') || location.pathname.startsWith('/admin/product-image-history')
+  const isStorefrontPage = location.pathname.startsWith('/settings/storefront') || location.pathname.startsWith('/shop/')
+  const isGroupBuyPage = GROUP_BUY_ENABLED && (location.pathname.startsWith('/group-buy/') || location.pathname.startsWith('/admin/group-buy') || location.pathname.startsWith('/my/group-buy-orders'))
   useGATracker()
   const [showAd, setShowAd] = useState(false)
   const [isSubscribed, setIsSubscribed] = useState(false)
+
+  // Affiliates.One：預設禁止自動呼叫（避免 api.pub.affiliates.one 404/429 影響主流程）
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const anyWin = window as any
+    if (anyWin.__rxv_affiliates_one_fetch_patched) return
+    anyWin.__rxv_affiliates_one_fetch_patched = true
+
+    const originalFetch: typeof window.fetch = window.fetch.bind(window)
+    let lastCallAt = 0
+    let lastToastAt = 0
+
+    const toastOnce = async (msg: string) => {
+      const now = Date.now()
+      if (now - lastToastAt < 15000) return
+      lastToastAt = now
+      try {
+        const mod = await import('react-hot-toast')
+        mod.toast.error(msg, { id: 'affiliates-one-api' })
+      } catch {
+        // ignore
+      }
+    }
+
+    const isAffiliatesGenerateUrl = (u: string) => {
+      return /api\.pub\.affiliates\.one\/api\/v2\/affiliates\/links\/generate/i.test(u)
+    }
+
+    window.fetch = (async (input: any, init?: any) => {
+      const url = typeof input === 'string' ? input : (input?.url as string) || ''
+      if (!url || !isAffiliatesGenerateUrl(url)) {
+        return originalFetch(input, init)
+      }
+
+      const enabled = localStorage.getItem('rxv_affiliates_one_enabled') === '1'
+      if (!enabled) {
+        toastOnce('聯盟服務已暫停自動呼叫（不影響主要功能）')
+        return new Response(JSON.stringify({ ok: false, error: 'AFFILIATES_ONE_DISABLED' }), {
+          status: 403,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      }
+
+      const now = Date.now()
+      if (now - lastCallAt < 1200) {
+        return new Response(JSON.stringify({ ok: false, error: 'AFFILIATES_ONE_THROTTLED' }), {
+          status: 429,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      }
+      lastCallAt = now
+
+      try {
+        const res = await originalFetch(input, init)
+        if (res.status === 404) toastOnce('聯盟服務 API 404（不影響主要功能）')
+        if (res.status === 429) toastOnce('聯盟服務請求過於頻繁（429），已暫停連打')
+        return res
+      } catch (e: any) {
+        toastOnce('聯盟服務暫時無法連線（不影響主要功能）')
+        return new Response(JSON.stringify({ ok: false, error: 'AFFILIATES_ONE_NETWORK_ERROR', message: e?.message || 'NETWORK_ERROR' }), {
+          status: 503,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      }
+    }) as any
+  }, [])
   
   // ⚠️ 已移除所有 Auth 相關邏輯
-  // 自動偵測目前執行模式（App/PWA 或 Web）
-  const isApp =
-    (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
-    /Capacitor|Android|iPhone|iPad/i.test(navigator.userAgent)
-
   // ⚠️ 已移除匿名使用者初始化邏輯
   
   // 初始化主題設定
@@ -274,7 +517,7 @@ function App() {
   }, [t])
 
   return (
-    <div className="w-full min-h-screen max-w-screen-md mx-auto">
+    <div className={isBusinessCardPage || isStorefrontPage || isGroupBuyPage ? "w-full min-h-screen" : "w-full min-h-screen max-w-screen-md mx-auto"}>
       {/* ⚠️ 已移除升級成功提示 */}
       
       {/* Auth buttons removed for testing */}
@@ -282,8 +525,9 @@ function App() {
       <Routes>
           {/* 主要巢狀路由 - 使用 MainLayout */}
           <Route path="/" element={<MainLayout />}>
-            {/* 首頁根據執行模式顯示不同頁面：App → 番茄鐘；Web → 功能入口首頁 */}
-            <Route index element={isApp ? <PomodoroPage /> : <HomePage />} />
+            {/* 首頁：App／手機／Web 皆與網站相同（功能入口）；番茄鐘仍為 /pomodoro */}
+            <Route index element={<HomePage />} />
+            <Route path="free" element={<FreeResourcesPage />} />
             <Route path="chant" element={<ChantCounter />} />
             <Route path="todo" element={<TodoPage />} />
             <Route path="pomodoro" element={<PomodoroPage />} />
@@ -298,23 +542,58 @@ function App() {
             */}
             <Route path="summary" element={<SummaryPage />} />
             <Route path="pricing" element={<PricingPageNew />} />
+
+            <Route path="services/product-image-upgrade" element={<ProductImageUpgradeService />} />
+            <Route path="services/design-commission" element={<DesignCommissionPage />} />
+            <Route path="tools/commercial-image" element={<Navigate to="/tools/product-image-generator" replace />} />
+            <Route path="tools/product-image-generator" element={<ProductImageGeneratorPage />} />
+            <Route path="tools/product-showcase-page" element={<ProductShowcaseLandingPage />} />
+            <Route path="tools/business-card" element={<BusinessCardPage />} />
+            <Route path="tools/business-card-order" element={<ManualBusinessCardOrderPage />} />
+            <Route path="business-card/payment" element={<BusinessCardPaymentPage />} />
+            <Route path="my-business-card-orders" element={<MyBusinessCardOrdersPage />} />
+            <Route path="my-product-images" element={<ProductImageHistoryPage />} />
+            <Route path="my-services" element={<MyServicesPage />} />
+            <Route path="card/:slug" element={<PublicDigitalBusinessCardPage />} />
+            <Route path="admin/business-card-orders" element={<AdminBusinessCardOrdersPage />} />
+            <Route path="admin/product-image-history" element={<AdminProductImageHistoryPage />} />
+            <Route path="settings/storefront" element={<StorefrontSettingsPage />} />
+            {GROUP_BUY_ENABLED && <Route path="group-buy/:slug" element={<GroupBuyPublicPage />} />}
+            {GROUP_BUY_ENABLED && <Route path="group-buy/:campaignSlug/product/:productId" element={<GroupBuyProductDetailPage />} />}
+            {GROUP_BUY_ENABLED && <Route path="group-buy/order/:orderCode" element={<GroupBuyOrderPage />} />}
+            {GROUP_BUY_ENABLED && <Route path="group-buy/order-lookup" element={<Navigate to="/my/group-buy-orders" replace />} />}
+            {GROUP_BUY_ENABLED && <Route path="group-buy/recover" element={<Navigate to="/my/group-buy-orders" replace />} />}
+            {GROUP_BUY_ENABLED && <Route path="my/group-buy-orders" element={<MyGroupBuyOrdersPage />} />}
+            {GROUP_BUY_ENABLED && <Route path="admin/group-buy" element={<AdminGroupBuyPage />} />}
+            <Route path="portfolio/store-branding" element={<StoreBrandingPortfolio />} />
+            <Route path="admin/portfolio-upload" element={<AdminPortfolioUpload />} />
+            <Route path="tools/shopee-copy" element={<ShopeeCopyPage />} />
+
             <Route path="pricing/success" element={<PaymentSuccessPage />} />
             <Route path="pricing/cancel" element={<PaymentCancelPage />} />
             <Route path="pricing/fail" element={<PurchaseFailPage />} />
+
+            {/* 客戶付款流程：納入 MainLayout，統一顯示網站頁首與頁尾 */}
+            <Route path="payment/bank-transfer" element={<BankTransferPage />} />
+            <Route path="payment/report" element={<PaymentReportPage />} />
+            <Route path="payment/success" element={<PaymentSuccessRedirectPage />} />
+
             {/* ⚠️ DEPRECATED: 舊版方案頁，已改為顯示棄用提示 */}
-            <Route path="pricing-old" element={<DeprecatedPage oldPath="/pricing-old" newPath="/pricing" message="此頁面已棄用，請前往新版方案頁" />} />
-            {/* 作業解題功能 */}
-            <Route path="homework-helper" element={<HomeworkHelper />} />
+            <Route path="pricing-old" element={<DeprecatedPage oldPath="/pricing-old" newPath="/pricing" messageKey="deprecated_pricing_message" />} />
+            {/* 作業解題功能暫停開放 */}
+            <Route path="homework-helper" element={<PausedAiToolPage />} />
             <Route path="shopping/search" element={<NotFoundPage />} />
             <Route path="shopee-video" element={<NotFoundPage />} />
             {/* 若你其他工具也要暫時封鎖可以繼續加 */}
             
             <Route path="summary-landing" element={<SummaryLanding />} />
+            <Route path="search/:slug" element={<SearchSeoSlugPage />} />
             <Route path="search" element={<SearchPage />} />
             <Route path="shopping/results" element={<ShoppingResultsPage />} />
             
             {/* 商品頁面 */}
             <Route path="goods/airfryer-keshaui" element={<AirfryerPage />} />
+            <Route path="goods/share" element={<GoodsSharePage />} />
             
             {/* 退休理財懶人包頁面 */}
             <Route path="aids" element={<AidsPage />} />
@@ -348,21 +627,57 @@ function App() {
             <Route path="announcements" element={<Announcements />} />
             <Route path="ai-home" element={<AIHome />} />
             {/* 預留功能路由 */}
-            <Route path="tools" element={<AIHome />} />
-            <Route path="tools/ai-summary" element={<AISummaryGuide />} />
+            <Route path="tools" element={<ToolsPage />} />
+            <Route path="tools/eat-no-fat-game" element={<EatNoFatGame />} />
+            <Route path="tools/traffic-accident" element={<TrafficAccidentSelfProtectionPage />} />
+            <Route path="tools/ai-summary" element={<PausedAiToolPage />} />
+            <Route path="tools/summary" element={<PausedAiToolPage />} />
             <Route path="tools/shopee-single-video" element={<ShopeeSingleVideoPage />} />
-            {/* 工具路由封鎖 */}
-            <Route path="tools/shopee-video" element={<NotFoundPage />} />
-            {/* 作業解題功能 */}
-            <Route path="tools/homework-helper" element={<HomeworkHelper />} />
+            {/* Shopee 自動短影音工具（已啟用入口） */}
+            <Route path="tools/shopee-video" element={<ShopeeVideoPage />} />
+            <Route path="tools/shopee-csv" element={<ShopeeCsvPage />} />
+            <Route path="tools/shopee-deals" element={<ShopeeDealsPage />} />
+            <Route path="tools/image-resize" element={<ImageResizePage />} />
+            <Route path="tools/image-compress" element={<ImageCompressPage />} />
+            <Route path="tools/image-convert" element={<ImageConvertPage />} />
+            <Route path="tools/image-crop" element={<ImageCropPage />} />
+            <Route path="tools/line-sticker" element={<LineStickerTool />} />
+            <Route path="tools/line-sticker-guide" element={<LineStickerGuide />} />
+            <Route path="tools/sticker-prompt" element={<StickerPromptGenerator />} />
+            <Route path="tools/emotional-value-sticker-prompt" element={<EmotionalValueStickerPrompt />} />
+            <Route path="tools/sticker-showcase" element={<StickerShowcaseGallery />} />
+            <Route path="tools/animated-sticker-prompt" element={<AnimatedStickerPromptGenerator />} />
+            <Route path="tools/animated-line-sticker" element={<AdminOnlyAnimatedLineStickerRoute />} />
+            <Route path="tools/image-prompt" element={<ImagePromptGenerator />} />
+            <Route path="tools/pet-prompt" element={<PetPromptPage />} />
+            <Route path="tools/sticker-splitter" element={<StickerImageSplitter />} />
+            <Route path="tools/scam-check" element={<ScamCheckPage />} />
+            <Route path="tools/qr-code" element={<QrCodeTool />} />
+            <Route path="tools/qr" element={<QrCodeTool />} />
+            <Route path="tools/ai" element={<ToolCategoryPage categoryKey="ai" />} />
+            <Route path="tools/image" element={<ToolCategoryPage categoryKey="image" />} />
+            <Route path="tools/productivity" element={<ToolCategoryPage categoryKey="productivity" />} />
+            <Route path="tools/life" element={<ToolCategoryPage categoryKey="life" />} />
+            <Route path="compare/:compareSlug" element={<ToolLandingPage />} />
+            <Route path="tools/:toolSlug/:landingSlug" element={<ToolLandingPage />} />
+            {/* 作業解題功能暫停開放 */}
+            <Route path="tools/homework-helper" element={<PausedAiToolPage />} />
             {/* 圖片素材 */}
             <Route path="images" element={<ImagesPage />} />
             <Route path="automation" element={<AIHome />} />
             <Route path="rxv-auto-shorts" element={<RedirectShorts />} />
             <Route path="video-preview" element={<VideoPreviewPage />} />
             <Route path="language-guide" element={<LanguageGuide />} />
-            <Route path="blog" element={<BlogPage />} />
-            <Route path="blog/policy-explained" element={<PolicyExplainedPage />} />
+            <Route path="blog" element={<BlogHome />} />
+            <Route path="blog/qr-code" element={<QrCodeSeoPage />} />
+            <Route path="blog/ai-tools" element={<AIFreeTools2026Page />} />
+            <Route path="blog/free-ai-tools" element={<FreeAiToolsPage />} />
+            <Route path="blog/ai-summary-guide" element={<AiSummaryGuidePage />} />
+            <Route path="blog/homework-helper-guide" element={<HomeworkHelperGuidePage />} />
+            <Route path="blog/qr-code-generator" element={<QrCodeGeneratorGuidePage />} />
+            <Route path="blog/finance" element={<BlogFinancePage />} />
+            <Route path="blog/retirement" element={<BlogRetirementPage />} />
+            <Route path="policy-explained" element={<PolicyExplainedPage />} />
             <Route path="blog/car-import-tariff-explained" element={<CarImportTariffExplainedPage />} />
             <Route path="blog/house-tax-explained" element={<HouseTaxExplainedPage />} />
             <Route path="blog/subsidy-eligibility-explained" element={<SubsidyEligibilityExplainedPage />} />
@@ -388,13 +703,28 @@ function App() {
             <Route path="blog/overtime-pay-explained" element={<OvertimePayExplainedPage />} />
             <Route path="blog/dependent-deduction-explained" element={<DependentDeductionExplainedPage />} />
             <Route path="blog/policy-design-reality-explained" element={<PolicyDesignRealityExplainedPage />} />
+            <Route path="blog/ai-free-tools-2026" element={<AIFreeTools2026Page />} />
+            <Route path="blog/line-delete-photos-videos-safe" element={<LineDeletePhotosVideosSafePage />} />
+            <Route path="blog/line-sticker-outsourcing-guide" element={<LineStickerOutsourcingGuidePage />} />
+            <Route path="blog/shopee-trash-bag-recommendation-2026" element={<ShopeeTrashBagRecommendation2026Page />} />
+            <Route path="blog/:slug" element={<QrArticlePage />} />
+            <Route path="guide" element={<GuideIndexPage />} />
+            <Route path="guide/:slug" element={<GuideArticlePage />} />
           </Route>
           
+          {/* 客戶公開商品頁：獨立於 MainLayout，避免顯示 RxV 工具站的頁首與長頁尾 */}
+          <Route path="/shop/:slug" element={<PublicStorefrontStandalonePage />} />
+
           {/* 其他獨立頁面 */}
+          <Route path="/relationship-ai" element={<RelationshipAiPage />} />
+          <Route path="/download/image-bundle" element={<ImageBundleDownloadPage />} />
           <Route path="/projects" element={<FocusProjectsPage />} />
           <Route path="/category-manager" element={<CategoryManagerPage />} />
           <Route path="/backup" element={<BackupPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/qr/:id" element={<QRPage />} />
+          <Route path="/qr-top" element={<QrTopPage />} />
+          <Route path="/s/:code" element={<ShortCodeRedirectPage />} />
           <Route path="/group/create" element={<GroupCreatePage />} />
           <Route path="/group/:id" element={<GroupHomePage />} />
           <Route path="/group/:id/purchase/create" element={<CreatePurchasePage />} />
@@ -424,6 +754,7 @@ function App() {
           
           {/* 網站基本頁面 */}
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
           <Route path="/reset" element={<ResetPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPageNew />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
@@ -438,21 +769,16 @@ function App() {
           <Route path="/points" element={<PointsPage />} />
           
           {/* ⚠️ DEPRECATED: 舊版加點相關頁面，已改為顯示棄用提示 */}
-          <Route path="/topup/report" element={<DeprecatedPage oldPath="/topup/report" newPath="/payment/report" message="此頁面已棄用，請前往新版匯款回報頁" />} />
-          <Route path="/topup/admin" element={<DeprecatedPage oldPath="/topup/admin" newPath="/admin/payments" message="此頁面已棄用，請前往新版後台管理頁" />} />
+          <Route path="/topup/report" element={<DeprecatedPage oldPath="/topup/report" newPath="/payment/report" messageKey="deprecated_topup_report_message" />} />
+          <Route path="/topup/admin" element={<DeprecatedPage oldPath="/topup/admin" newPath="/admin/payments" messageKey="deprecated_topup_admin_message" />} />
           
           {/* 管理者頁面 */}
           <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
           <Route path="/admin/payments" element={<AdminPaymentsPage />} />
           <Route path="/admin/images" element={<AdminImagesPage />} />
           <Route path="/admin/images/list" element={<AdminImagesListPage />} />
-          
-          {/* 付款相關頁面 */}
-          <Route path="/payment/bank-transfer" element={<BankTransferPage />} />
-          <Route path="/payment/report" element={<PaymentReportPage />} />
-          <Route path="/payment/success" element={<PaymentSuccessRedirectPage />} />
-          
-          {/* 使用說明 */}
+          <Route path="/admin/deals" element={<AdminDealsPage />} />
+{/* 使用說明 */}
           <Route path="/help" element={<HelpPage />} />
           
           {/* Blog 教學文章 */}
@@ -488,6 +814,8 @@ function App() {
           <Route path="/blog/power-of-silence" element={<PowerOfSilence />} />
           <Route path="/blog/three-minute-meditation" element={<ThreeMinuteMeditation />} />
           <Route path="/blog/about-spiritual-growth" element={<AboutSpiritualGrowth />} />
+          {/*自動短影音 */}
+          <Route path="/tools/image-to-video" element={<ImageToVideo />} />
           
           {/* 404 - 必須放在最後 */}
           <Route path="*" element={<NotFoundPage />} />

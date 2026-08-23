@@ -1,12 +1,10 @@
 import React from "react";
-import ModuleDropdown from '../components/ModuleDropdown';
 
 export default function AboutPage() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-10">
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6">
         <h1 className="text-2xl font-bold">關於我們</h1>
-        <ModuleDropdown />
       </div>
 
       <p className="text-gray-700 leading-relaxed mb-4">

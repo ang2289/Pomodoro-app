@@ -1,10 +1,49 @@
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import SEO from "../../components/SEO";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function IncomeTaxBracketsExplainedPage() {
   // 獲取今天的日期（格式：YYYY-MM-DD）
   const today = new Date().toISOString().split('T')[0];
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: "Q1：加班費會影響稅率嗎？",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "A：加班費會併入你的年收入計算，但同樣適用累進稅率。而且如果加班費在合理範圍內，通常不會讓你的稅率大幅跳升。",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Q2：年終獎金怎麼算稅？",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "A：年終獎金會併入你的年收入，但如果金額在 86,000 元以下，通常可以免稅。超過的部分才會併入總收入計算。",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Q3：兼職收入會讓稅變很多嗎？",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "A：兼職收入會併入總收入計算，但同樣適用累進稅率。除非你的總收入已經很高，否則兼職收入通常不會讓稅率大幅跳升。",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Q4：為什麼加薪後感覺繳的稅變多了？",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "A：這是因為加薪後，你的總收入可能超過了原本的級距，超過的部分會用更高的稅率計算。但這不代表你的全部收入都用更高稅率，只是「超過的部分」而已。",
+        },
+      },
+    ],
+  };
 
   return (
     <>
@@ -43,6 +82,9 @@ export default function IncomeTaxBracketsExplainedPage() {
               很多人聽到「加薪反而繳更多稅」會覺得很奇怪，其實這跟所得稅級距有關。所得稅級距就像是「分段計費」的概念，不是你的全部收入都用同一個稅率計算。
             </p>
 
+            <ArticleCTA placement="start" focus="summary" />
+
+
             <h2 className="text-2xl font-semibold mt-8 mb-4">什麼是所得稅級距？</h2>
             <p className="mb-4">
               所得稅級距就是把你的年收入分成好幾段，每一段用不同的稅率來計算。就像階梯一樣，收入越高，超過的部分才會用更高的稅率。
@@ -50,6 +92,9 @@ export default function IncomeTaxBracketsExplainedPage() {
             <p className="mb-4">
               例如，如果你的年收入是 100 萬，並不是全部 100 萬都用同一個稅率。而是：
             </p>
+
+            <ArticleCTA placement="middle" focus="summary" />
+
             <ul className="list-disc pl-6 space-y-2 mb-6">
               <li>前 56 萬用 5% 的稅率</li>
               <li>56 萬到 126 萬的部分用 12% 的稅率</li>
@@ -120,6 +165,8 @@ export default function IncomeTaxBracketsExplainedPage() {
             </div>
           </div>
 
+          <ArticleCTA placement="afterFaq" focus="summary" />
+
           {/* 相關文章區塊 */}
           <div className="mt-12 pt-8 border-t border-gray-200">
             <h3 className="text-2xl font-bold text-gray-900 mb-2">
@@ -155,8 +202,6 @@ export default function IncomeTaxBracketsExplainedPage() {
               </Link>
             </div>
           </div>
-
-          {/* 導流區塊：摘要模組 */}
           <div className="mt-12 pt-8 border-t border-gray-200">
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 text-center">
               <h3 className="text-xl font-bold text-gray-900 mb-2">
@@ -167,7 +212,7 @@ export default function IncomeTaxBracketsExplainedPage() {
               </p>
               <Link
                 to="/summary"
-                className="inline-block px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg drop-shadow-md"
+                className="inline-block bg-blue-600 text-white px-5 py-3 rounded-lg text-base font-medium hover:bg-blue-700 transition"
                 style={{ textShadow: '0 1px 2px rgba(0,0,0,0.1)' }}
               >
                 貼上文章，幫我整理
@@ -311,6 +356,7 @@ export default function IncomeTaxBracketsExplainedPage() {
               </li>
             </ul>
           </div>
+          <ArticleCTA placement="bottom" focus="summary" />
 
           <div className="mt-8 pt-6 border-t border-gray-200">
             <Link
@@ -346,6 +392,9 @@ export default function IncomeTaxBracketsExplainedPage() {
               "@id": "https://pomodoro-app-eight-rouge.vercel.app/blog/income-tax-brackets-explained"
             }
           })}
+        </script>
+        <script type="application/ld+json">
+          {JSON.stringify(faqJsonLd)}
         </script>
       </Helmet>
     </>

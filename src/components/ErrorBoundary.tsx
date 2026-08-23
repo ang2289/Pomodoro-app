@@ -30,7 +30,7 @@ export default class ErrorBoundary extends React.Component<React.PropsWithChildr
             <p className="text-gray-600 mb-2">{this.state.errorMessage}</p>
             <button
               onClick={() => window.location.reload()}
-              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
             >
               重新整理頁面
             </button>

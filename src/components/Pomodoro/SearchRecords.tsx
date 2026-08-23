@@ -306,7 +306,7 @@ const SearchRecords: React.FC<SearchRecordsProps> = ({
               <button
                 onClick={onSearch}
                 disabled={isSearching}
-                className="w-full !bg-blue-600 hover:!bg-blue-700 !text-white font-semibold py-2 px-4 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full !bg-blue-600 hover:!bg-blue-700 !text-white font-semibold py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 🔍 {isSearching ? t('searching') : t('search')}
               </button>

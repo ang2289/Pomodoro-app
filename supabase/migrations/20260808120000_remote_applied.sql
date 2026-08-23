@@ -1,0 +1,2 @@
+-- This migration already exists and has been applied remotely.
+-- This local file is a no-op placeholder used only to synchronize migration history.

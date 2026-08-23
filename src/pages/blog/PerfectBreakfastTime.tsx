@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from "react-router-dom";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function PerfectBreakfastTime() {
   return (
@@ -21,6 +22,9 @@ export default function PerfectBreakfastTime() {
           這段時間，我們稱之為「天元時間」——是身心最敏銳、最渴望被滋養的片刻。
         </p>
 
+        <ArticleCTA placement="start" focus="tools" />
+
+
         <h2 className="text-2xl font-semibold mt-8 mb-3">🥛 最佳早餐選擇</h2>
         <p className="mb-4">
           在這段時間進食早餐，不僅能提供能量，還能調節腸胃與內分泌系統。
@@ -28,10 +32,14 @@ export default function PerfectBreakfastTime() {
           避開冰冷或油炸食物，以免讓腸胃在甦醒過程中受到刺激。
         </p>
 
+        <ArticleCTA placement="middle" focus="tools" />
+
         <h2 className="text-2xl font-semibold mt-8 mb-3">💫 讓早餐成為調頻鑰匙</h2>
         <p className="mb-4">
           別再錯過這個讓自己與一天對話的時間，讓早餐成為你調頻生活的鑰匙。
         </p>
+
+        <ArticleCTA placement="bottom" focus="tools" />
 
         <hr className="my-8 border-gray-300" />
 
@@ -53,6 +61,8 @@ export default function PerfectBreakfastTime() {
         <p className="mb-4">
           Don't miss this chance to reconnect with yourself. Let your breakfast be the key to tuning your daily rhythm.
         </p>
+
+        <ArticleCTA placement="afterFaq" focus="tools" />
 
         <p className="mt-8 text-gray-500 text-center text-sm">
           文章由 RxV 夢想創作工作室撰寫 · 保留所有權利

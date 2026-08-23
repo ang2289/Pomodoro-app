@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import SEO from "../../components/SEO";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function LaborInsuranceExplainedPage() {
   // 獲取今天的日期（格式：YYYY-MM-DD）
@@ -43,6 +44,9 @@ export default function LaborInsuranceExplainedPage() {
               勞保（勞工保險）是政府強制雇主幫員工投保的社會保險，每個月從你的薪水裡扣一部分錢，雇主也要出一部分。這筆錢主要保障你在工作期間可能遇到的各種風險，包括生病、受傷、失能、死亡、生育，還有最重要的退休。
             </p>
 
+            <ArticleCTA placement="start" focus="summary" />
+
+
             <h2 className="text-2xl font-semibold mt-8 mb-4">勞保在保什麼？</h2>
             <p className="mb-4">
               勞保主要保障以下幾種情況：
@@ -65,6 +69,9 @@ export default function LaborInsuranceExplainedPage() {
             <p className="mb-4">
               如果是因為工作受傷或職業病，可以請領「職業災害傷病給付」，保障更完整，給付比例也更高。
             </p>
+
+            <ArticleCTA placement="middle" focus="summary" />
+
 
             <h3 className="text-xl font-semibold mt-6 mb-3">失能時：</h3>
             <p className="mb-4">
@@ -137,6 +144,8 @@ export default function LaborInsuranceExplainedPage() {
             </div>
           </div>
 
+          <ArticleCTA placement="afterFaq" focus="summary" />
+
           {/* 相關文章區塊 */}
           <div className="mt-12 pt-8 border-t border-gray-200">
             <h3 className="text-2xl font-bold text-gray-900 mb-2">
@@ -172,8 +181,6 @@ export default function LaborInsuranceExplainedPage() {
               </Link>
             </div>
           </div>
-
-          {/* 導流區塊：摘要模組 */}
           <div className="mt-12 pt-8 border-t border-gray-200">
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 text-center">
               <h3 className="text-xl font-bold text-gray-900 mb-2">
@@ -184,7 +191,7 @@ export default function LaborInsuranceExplainedPage() {
               </p>
               <Link
                 to="/summary"
-                className="inline-block px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg drop-shadow-md"
+                className="inline-block bg-blue-600 text-white px-5 py-3 rounded-lg text-base font-medium hover:bg-blue-700 transition"
                 style={{ textShadow: '0 1px 2px rgba(0,0,0,0.1)' }}
               >
                 貼上文章，幫我整理
@@ -328,6 +335,7 @@ export default function LaborInsuranceExplainedPage() {
               </li>
             </ul>
           </div>
+          <ArticleCTA placement="bottom" focus="summary" />
 
           <div className="mt-8 pt-6 border-t border-gray-200">
             <Link

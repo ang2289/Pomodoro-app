@@ -8,355 +8,235 @@
 - 後台管理：/admin/payments
 */
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { Link } from 'react-router-dom'
+import { Trans, useTranslation } from 'react-i18next'
 import { buildSEO } from '../lib/seo'
 import SectionHeader from '../components/SectionHeader'
 import { PLANS } from '../config'
 import PrimaryButton from '@/components/ui/PrimaryButton'
 
-const seo = buildSEO({
-  title: '方案與價格',
-  description: '選擇適合你的方案，依字數額度制計算，不限使用次數、不限單次長度。',
-  url: 'https://pomodoro-app-eight-rouge.vercel.app/pricing',
-  image: '/seo/pricing.png',
-})
-
-// 方案常數定義已移至 src/config.ts（單一來源）
-// 使用 PLANS.free.monthlyQuota, PLANS.plan99.monthlyQuota, PLANS.plan199.monthlyQuota
-
 export default function PricingPage() {
-  const [lang, setLang] = useState<'zh-tw' | 'en'>('zh-tw')
+  const { t, i18n } = useTranslation()
   const [showNotAvailableModal, setShowNotAvailableModal] = useState(false)
+
+  const seo = useMemo(
+    () =>
+      buildSEO({
+        title: t('pricingLegacy.seo.title'),
+        description: t('pricingLegacy.seo.description'),
+        url: 'https://pomodoro-app-eight-rouge.vercel.app/pricing',
+        image: '/seo/pricing.png',
+        titleSuffix: t('seoTitleSuffix'),
+      }),
+    [t, i18n.language]
+  )
 
   return (
     <>
       <Helmet>
         <title>{seo.title}</title>
+        <meta name="description" content={t('pricingLegacy.seo.description')} />
       </Helmet>
-      
-      {/* 語系選擇 */}
-      <div className="flex justify-end mb-4 p-4">
-        <div className="flex flex-col items-end">
-          <label className="text-sm text-gray-600 mb-1">
-            🌐 選擇語言 / Choose Language
-          </label>
-          <select
-            value={lang}
-            onChange={(e) => setLang(e.target.value as any)}
-            className="w-[150px] p-2 border rounded-lg bg-white shadow-sm"
-          >
-            <option value="zh-tw">繁體中文</option>
-            <option value="en">English</option>
-          </select>
-        </div>
-      </div>
 
-      {/* ===== Container ===== */}
       <div className="max-w-4xl mx-auto px-4 py-8 bg-[#EFF5FF] min-h-screen">
-        
-        {/* 主要標題 */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {lang === 'zh-tw' ? '使用方案（一次購買，用完為止）' : 'Usage Plans (One-time Purchase, Use Until Exhausted)'}
-          </h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('pricingLegacy.hero.title')}</h1>
         </div>
 
-        {/* 試用階段說明 */}
         <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <p className="text-sm text-yellow-800 whitespace-pre-line">
-            {lang === 'zh-tw' 
-              ? '⚠️ 目前為試用階段\n本服務僅開放免費試用，所有付費方案尚未開放購買與收費。\n顯示價格僅供正式上線前參考。'
-              : '⚠️ Currently in Trial Phase\nThis service only offers free trial. All paid plans are not yet available for purchase.\nPrices shown are for reference only before official launch.'}
-          </p>
+          <p className="text-sm text-yellow-800 whitespace-pre-line">{t('pricingLegacy.trial.notice')}</p>
         </div>
 
-        {lang === 'zh-tw' ? (
-          <div className="space-y-6">
-            {/* 免費方案 */}
-            <div className="shadow-md border rounded-2xl p-6 bg-white">
-              <div className="flex items-center mb-4">
-                <span className="text-2xl mr-2">🆓</span>
-                <h2 className="text-xl font-bold text-gray-900">免費體驗</h2>
-              </div>
-              
-              <div className="text-gray-700 space-y-3">
-                <p className="text-2xl font-bold text-gray-900 mb-3">
-                  可處理約 {PLANS.free.monthlyQuota.toLocaleString()} 字
-                </p>
-                <ul className="list-disc ml-5 space-y-2 text-sm">
-                  <li>不需信用卡</li>
-                  <li>不限使用期限</li>
-                  <li>摘要與作業解題共用</li>
-                </ul>
-              </div>
+        <div className="space-y-6">
+          <div className="shadow-md border rounded-2xl p-6 bg-white">
+            <div className="flex items-center mb-4">
+              <span className="text-2xl mr-2">🆓</span>
+              <h2 className="text-xl font-bold text-gray-900">{t('pricingLegacy.plan.free_title')}</h2>
             </div>
 
-            {/* NT$99 方案 */}
-            <div className="shadow-md border-2 border-blue-300 rounded-2xl p-6 bg-blue-50">
-              <div className="flex items-center mb-4">
-                <span className="text-2xl mr-2">💎</span>
-                <h2 className="text-xl font-bold text-blue-900">NT${PLANS.plan99.price} 方案</h2>
-              </div>
-              
-              <div className="text-blue-800 space-y-3">
-                <p className="text-2xl font-bold text-blue-900 mb-3">
-                  可處理 {PLANS.plan99.monthlyQuota.toLocaleString()} 字
-                </p>
-                
-                <ul className="list-disc ml-5 space-y-2 text-sm">
-                  <li>一次購買</li>
-                  <li><strong>不自動續費</strong></li>
-                  <li><strong>不限使用期限</strong></li>
-                </ul>
-                
-                <p className="text-xs text-blue-600 mt-3 pt-3 border-t border-blue-200">
-                  數位服務使用授權，非儲值、非點數
-                </p>
-
-                {/* 購買按鈕 */}
-                <button
-                  onClick={() => setShowNotAvailableModal(true)}
-                  className="w-full mt-4 px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-medium rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
-                >
-                  購買方案
-                </button>
-              </div>
-            </div>
-
-            {/* NT$199 方案 */}
-            <div className="shadow-md border-2 border-purple-300 rounded-2xl p-6 bg-purple-50">
-              <div className="flex items-center mb-4">
-                <span className="text-2xl mr-2">💎</span>
-                <h2 className="text-xl font-bold text-purple-900">NT${PLANS.plan199.price} 方案</h2>
-              </div>
-              
-              <div className="text-purple-800 space-y-3">
-                <p className="text-2xl font-bold text-purple-900 mb-3">
-                  可處理 {PLANS.plan199.monthlyQuota.toLocaleString()} 字
-                </p>
-                
-                <ul className="list-disc ml-5 space-y-2 text-sm">
-                  <li>一次購買</li>
-                  <li><strong>不自動續費</strong></li>
-                  <li><strong>不限使用期限</strong></li>
-                </ul>
-                
-                <p className="text-xs text-purple-600 mt-3 pt-3 border-t border-purple-200">
-                  數位服務使用授權，非儲值、非點數
-                </p>
-
-                {/* 購買按鈕 */}
-                <button
-                  onClick={() => setShowNotAvailableModal(true)}
-                  className="w-full mt-4 px-6 py-3 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white font-medium rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
-                >
-                  購買方案
-                </button>
-              </div>
-            </div>
-
-            {/* 使用說明 */}
-            <div className="shadow-md border rounded-2xl p-6 bg-white">
-              <SectionHeader title="使用說明" />
-              
-              <div className="text-gray-700 space-y-4 text-sm">
-                <div>
-                  <p className="font-medium text-gray-800 mb-2">🎁 新用戶免費體驗額度</p>
-                  <p className="text-gray-700 leading-relaxed">
-                    首次使用即可獲得可處理約 {PLANS.free.monthlyQuota.toLocaleString()} 字的免費體驗額度，
-                    體驗額度僅供功能試用，需於 7 日內使用完畢。
-                  </p>
-                </div>
-                <div>
-                  <p className="font-medium text-gray-800 mb-2">💳 付費使用方案</p>
-                  <p className="text-gray-700 leading-relaxed">
-                    <strong>NT$99 方案：</strong>可處理 {PLANS.plan99.monthlyQuota.toLocaleString()} 字<br />
-                    <strong>NT$199 方案：</strong>可處理 {PLANS.plan199.monthlyQuota.toLocaleString()} 字<br />
-                    付費購買之使用方案為永久有效，不限使用期限、不會過期，可長期累積使用。
-                  </p>
-                </div>
-                <div>
-                  <p className="font-medium text-gray-800 mb-2">📌 使用額度計算說明</p>
-                  <p className="text-gray-700 leading-relaxed">
-                    使用額度僅在實際使用 AI 服務時才會計算，
-                    未使用不會產生任何費用。
-                  </p>
-                </div>
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <p className="text-xs text-gray-600 leading-relaxed">
-                    <strong>重要說明：</strong>本服務為數位服務使用授權，非儲值、非點數。
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* 字數如何計算 */}
-            <div className="shadow-md border rounded-2xl p-6 bg-white">
-              <SectionHeader title="📊 字數如何計算？" />
-              
-              <div className="text-gray-700 space-y-2 text-sm">
-                <ul className="list-disc ml-5 space-y-2">
-                  <li>系統會依照你實際送出與產生的文字數量累計</li>
-                  <li>使用中可即時查看「已使用」與「剩餘可用」</li>
-                  <li>使用額度用完後，服務將暫停，需再次購買使用方案才能繼續使用</li>
-                </ul>
-              </div>
-            </div>
-
-            {/* 字數計算方式說明 */}
-            <div className="shadow-md border rounded-2xl p-6 bg-blue-50">
-              <SectionHeader title="📌 字數計算方式說明" />
-              
-              <div className="text-blue-800 space-y-3 text-sm">
-                <p>
-                  每次使用時，系統會依「實際輸入的文字字數」計算使用額度。
-                </p>
-                
-                <div className="bg-white rounded-lg p-4 border border-blue-200">
-                  <p className="font-medium mb-2 text-blue-900">範例說明：</p>
-                  <ul className="list-disc ml-5 space-y-1 text-blue-700">
-                    <li>輸入 2,500 字文章摘要 → 使用 2,500 字</li>
-                    <li>解題輸入 300 字題目 → 使用 300 字</li>
-                  </ul>
-                </div>
-                
-                <p className="font-medium text-blue-900">
-                  可處理字數為一次性使用額度，不限使用期限，用完為止。
-                </p>
-              </div>
-            </div>
-
-            {/* 使用與公平性說明 */}
-            <div className="shadow-md border rounded-2xl p-6 bg-gray-50">
-              <SectionHeader title="🔒 使用與公平性說明" />
-              
-              <div className="text-gray-700 space-y-2 text-sm">
-                <ul className="list-disc ml-5 space-y-2">
-                  <li>為維持服務品質，系統會進行合理的資源控管</li>
-                  <li>異常或非一般使用行為，可能會受到限制</li>
-                  <li>所有方案之實際使用狀況，以系統顯示為準</li>
-                </ul>
-              </div>
+            <div className="text-gray-700 space-y-3">
+              <p className="text-2xl font-bold text-gray-900 mb-3">
+                {t('pricingLegacy.plan.free_chars', { count: PLANS.free.monthlyQuota })}
+              </p>
+              <ul className="list-disc ml-5 space-y-2 text-sm">
+                <li>{t('pricingLegacy.plan.free_li1')}</li>
+                <li>{t('pricingLegacy.plan.free_li2')}</li>
+                <li>{t('pricingLegacy.plan.free_li3')}</li>
+              </ul>
             </div>
           </div>
-        ) : (
-          /* 英文版本（簡化） */
-          <div className="space-y-6">
-            <div className="shadow-md border rounded-2xl p-6 bg-white">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">🆓 Free Trial</h2>
-              <ul className="list-disc ml-5 space-y-2 text-sm text-gray-700">
-                <li>Processable about {PLANS.free.monthlyQuota.toLocaleString()} characters</li>
-                <li>No expiration date</li>
-                <li>Shared usage limit for summary and homework</li>
-              </ul>
+
+          <div className="shadow-md border-2 border-blue-300 rounded-2xl p-6 bg-blue-50">
+            <div className="flex items-center mb-4">
+              <span className="text-2xl mr-2">💎</span>
+              <h2 className="text-xl font-bold text-blue-900">
+                {t('pricingLegacy.plan.plan99_title')} (NT${PLANS.plan99.price})
+              </h2>
             </div>
 
-            <div className="shadow-md border rounded-2xl p-6 bg-blue-50">
-              <h2 className="text-xl font-bold text-blue-900 mb-4">
-                💎 Usage Plan - NT${PLANS.plan99.price}
-              </h2>
-              <ul className="list-disc ml-5 space-y-2 text-sm text-blue-800">
-                <li>Processable {PLANS.plan99.monthlyQuota.toLocaleString()} characters</li>
-                <li><strong>No expiration date</strong></li>
-                <li><strong>No auto-renewal</strong></li>
-                <li>Purchase again when used up</li>
-              </ul>
-              <p className="text-xs text-blue-600 mt-3 pt-3 border-t border-blue-200">
-                Digital service usage license, not stored value, not points
+            <div className="text-blue-800 space-y-3">
+              <p className="text-2xl font-bold text-blue-900 mb-3">
+                {t('pricingLegacy.plan.paid_chars', { count: PLANS.plan99.monthlyQuota })}
               </p>
-              {/* 購買按鈕 */}
-              <button
-                onClick={() => setShowNotAvailableModal(true)}
-                className="w-full mt-4 px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-medium rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
-              >
-                Purchase Plan
-              </button>
-            </div>
 
-            <div className="shadow-md border rounded-2xl p-6 bg-purple-50">
-              <h2 className="text-xl font-bold text-purple-900 mb-4">
-                💎 Usage Plan - NT${PLANS.plan199.price}
-              </h2>
-              <ul className="list-disc ml-5 space-y-2 text-sm text-purple-800">
-                <li>Processable {PLANS.plan199.monthlyQuota.toLocaleString()} characters</li>
-                <li><strong>No expiration date</strong></li>
-                <li><strong>No auto-renewal</strong></li>
-                <li>Purchase again when used up</li>
+              <ul className="list-disc ml-5 space-y-2 text-sm">
+                <li>{t('pricingLegacy.plan.paid_li1')}</li>
+                <li>
+                  <Trans i18nKey="pricingLegacy.plan.paid_li2" components={{ strong: <strong /> }} />
+                </li>
+                <li>
+                  <Trans i18nKey="pricingLegacy.plan.paid_li3" components={{ strong: <strong /> }} />
+                </li>
               </ul>
-              <p className="text-xs text-purple-600 mt-3 pt-3 border-t border-purple-200">
-                Digital service usage license, not stored value, not points
-              </p>
-              {/* 購買按鈕 */}
+
+              <p className="text-xs text-blue-600 mt-3 pt-3 border-t border-blue-200">{t('pricingLegacy.plan.license_note')}</p>
+
               <button
+                type="button"
                 onClick={() => setShowNotAvailableModal(true)}
-                className="w-full mt-4 px-6 py-3 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white font-medium rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+                className="w-full mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
               >
-                Purchase Plan
+                {t('pricingLegacy.plan.buy_btn')}
               </button>
             </div>
           </div>
-        )}
 
-        {/* 字數計算方式說明（頁面底部） */}
-        {lang === 'zh-tw' && (
-          <div className="mt-8 shadow-md border rounded-2xl p-6 bg-blue-50">
-            <h2 className="text-xl font-bold text-blue-900 mb-4">
-              📌 字數計算方式說明
-            </h2>
-            
+          <div className="shadow-md border-2 border-purple-300 rounded-2xl p-6 bg-purple-50">
+            <div className="flex items-center mb-4">
+              <span className="text-2xl mr-2">💎</span>
+              <h2 className="text-xl font-bold text-purple-900">
+                {t('pricingLegacy.plan.plan199_title')} (NT${PLANS.plan199.price})
+              </h2>
+            </div>
+
+            <div className="text-purple-800 space-y-3">
+              <p className="text-2xl font-bold text-purple-900 mb-3">
+                {t('pricingLegacy.plan.paid_chars', { count: PLANS.plan199.monthlyQuota })}
+              </p>
+
+              <ul className="list-disc ml-5 space-y-2 text-sm">
+                <li>{t('pricingLegacy.plan.paid_li1')}</li>
+                <li>
+                  <Trans i18nKey="pricingLegacy.plan.paid_li2" components={{ strong: <strong /> }} />
+                </li>
+                <li>
+                  <Trans i18nKey="pricingLegacy.plan.paid_li3" components={{ strong: <strong /> }} />
+                </li>
+              </ul>
+
+              <p className="text-xs text-purple-600 mt-3 pt-3 border-t border-purple-200">{t('pricingLegacy.plan.license_note')}</p>
+
+              <button
+                type="button"
+                onClick={() => setShowNotAvailableModal(true)}
+                className="w-full mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+              >
+                {t('pricingLegacy.plan.buy_btn')}
+              </button>
+            </div>
+          </div>
+
+          <div className="shadow-md border rounded-2xl p-6 bg-white">
+            <SectionHeader title={t('pricingLegacy.usage.section_title')} />
+
+            <div className="text-gray-700 space-y-4 text-sm">
+              <div>
+                <p className="font-medium text-gray-800 mb-2">{t('pricingLegacy.usage.new_user_title')}</p>
+                <p className="text-gray-700 leading-relaxed">
+                  {t('pricingLegacy.usage.new_user_body', { count: PLANS.free.monthlyQuota })}
+                </p>
+              </div>
+              <div>
+                <p className="font-medium text-gray-800 mb-2">{t('pricingLegacy.usage.paid_title')}</p>
+                <p
+                  className="text-gray-700 leading-relaxed"
+                  dangerouslySetInnerHTML={{
+                    __html: t('pricingLegacy.usage.paid_body', {
+                      c99: PLANS.plan99.monthlyQuota.toLocaleString(),
+                      c199: PLANS.plan199.monthlyQuota.toLocaleString(),
+                    }),
+                  }}
+                />
+              </div>
+              <div>
+                <p className="font-medium text-gray-800 mb-2">{t('pricingLegacy.usage.calc_title')}</p>
+                <p className="text-gray-700 leading-relaxed">{t('pricingLegacy.usage.calc_body')}</p>
+              </div>
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <p
+                  className="text-xs text-gray-600 leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: t('pricingLegacy.usage.important') }}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="shadow-md border rounded-2xl p-6 bg-white">
+            <SectionHeader title={t('pricingLegacy.charCount.header')} />
+
+            <div className="text-gray-700 space-y-2 text-sm">
+              <ul className="list-disc ml-5 space-y-2">
+                <li>{t('pricingLegacy.charCount.li1')}</li>
+                <li>{t('pricingLegacy.charCount.li2')}</li>
+                <li>{t('pricingLegacy.charCount.li3')}</li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="shadow-md border rounded-2xl p-6 bg-blue-50">
+            <SectionHeader title={t('pricingLegacy.charExplain.header')} />
+
             <div className="text-blue-800 space-y-3 text-sm">
-              <p>
-                每次使用時，系統會依「實際輸入的文字字數」計算使用額度。
-              </p>
-              
+              <p>{t('pricingLegacy.charExplain.p1')}</p>
+
               <div className="bg-white rounded-lg p-4 border border-blue-200">
-                <p className="font-medium mb-2 text-blue-900">範例說明：</p>
+                <p className="font-medium mb-2 text-blue-900">{t('pricingLegacy.charExplain.example_title')}</p>
                 <ul className="list-disc ml-5 space-y-1 text-blue-700">
-                  <li>輸入 2,500 字文章摘要 → 使用 2,500 字</li>
-                  <li>解題輸入 300 字題目 → 使用 300 字</li>
+                  <li>{t('pricingLegacy.charExplain.ex1')}</li>
+                  <li>{t('pricingLegacy.charExplain.ex2')}</li>
                 </ul>
               </div>
-              
-              <p className="font-medium text-blue-900">
-                可處理字數為一次性使用額度，不限使用期限，用完為止。
-              </p>
+
+              <p className="font-medium text-blue-900">{t('pricingLegacy.charExplain.p2')}</p>
             </div>
           </div>
-        )}
 
-        {/* 返回摘要頁面 */}
+          <div className="shadow-md border rounded-2xl p-6 bg-gray-50">
+            <SectionHeader title={t('pricingLegacy.fairness.header')} />
+
+            <div className="text-gray-700 space-y-2 text-sm">
+              <ul className="list-disc ml-5 space-y-2">
+                <li>{t('pricingLegacy.fairness.li1')}</li>
+                <li>{t('pricingLegacy.fairness.li2')}</li>
+                <li>{t('pricingLegacy.fairness.li3')}</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
         <div className="mt-8 text-center">
           <Link to="/summary" className="block">
-            <PrimaryButton
-              fullWidth={false}
-              className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
-            >
-              {lang === 'zh-tw' ? '返回摘要工具' : 'Back to Summary Tool'}
-            </PrimaryButton>
+            <PrimaryButton fullWidth={false}>{t('pricingLegacy.back_summary')}</PrimaryButton>
           </Link>
         </div>
       </div>
 
-      {/* 購買功能尚未開放 Modal */}
       {showNotAvailableModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-xl">
-            <h3 className="text-xl font-bold mb-4 text-gray-900">
-              {lang === 'zh-tw' ? '購買功能尚未開放' : 'Purchase Not Available'}
-            </h3>
+            <h3 className="text-xl font-bold mb-4 text-gray-900">{t('pricingLegacy.modal.title')}</h3>
             <p className="text-gray-700 mb-6 whitespace-pre-line">
-              {lang === 'zh-tw' 
-                ? `目前僅開放免費試用可處理約 ${PLANS.free.monthlyQuota.toLocaleString()} 字，\n付費方案（NT$99 / NT$199）尚未開放購買。\n顯示價格僅供正式上線前參考。`
-                : `Currently only free trial of ${PLANS.free.monthlyQuota.toLocaleString()} processable characters is available.\nPaid plans (NT$99 / NT$199) are not yet available for purchase.\nPrices shown are for reference only before official launch.`}
+              {t('pricingLegacy.modal.body', { count: PLANS.free.monthlyQuota })}
             </p>
             <div className="flex justify-end">
               <button
+                type="button"
                 onClick={() => setShowNotAvailableModal(false)}
-                className="px-6 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-medium rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
               >
-                {lang === 'zh-tw' ? '我知道了' : 'Got it'}
+                {t('pricingLegacy.modal.ok')}
               </button>
             </div>
           </div>
@@ -365,4 +245,3 @@ export default function PricingPage() {
     </>
   )
 }
-

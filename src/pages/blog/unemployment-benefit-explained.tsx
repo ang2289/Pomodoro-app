@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import SEO from "../../components/SEO";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function UnemploymentBenefitExplainedPage() {
   // 獲取今天的日期（格式：YYYY-MM-DD）
@@ -43,6 +44,9 @@ export default function UnemploymentBenefitExplainedPage() {
               失業給付是政府提供給失業勞工的暫時性補助，但很多人以為只要失業就能領，其實不是。失業給付有很嚴格的條件，其中最重要的就是「非自願離職」。
             </p>
 
+            <ArticleCTA placement="start" focus="summary" />
+
+
             <h2 className="text-2xl font-semibold mt-8 mb-4">什麼是失業給付？</h2>
             <p className="mb-4">
               失業給付是勞保的一種給付，當你因為「非自願離職」而失業時，可以申請暫時性的補助。給付金額通常是離職前 6 個月平均投保薪資的 60%，最多可以領 6 個月。
@@ -50,6 +54,9 @@ export default function UnemploymentBenefitExplainedPage() {
             <p className="mb-4">
               例如，如果你離職前 6 個月的平均投保薪資是 3 萬元，那失業給付就是 18,000 元（30,000 × 60%），每個月可以領一次，最多領 6 個月。
             </p>
+
+            <ArticleCTA placement="middle" focus="summary" />
+
 
             <h2 className="text-2xl font-semibold mt-8 mb-4">一定要「非自願離職」的原因</h2>
             <p className="mb-4">
@@ -133,6 +140,8 @@ export default function UnemploymentBenefitExplainedPage() {
             </div>
           </div>
 
+          <ArticleCTA placement="afterFaq" focus="summary" />
+
           {/* 相關文章區塊 */}
           <div className="mt-12 pt-8 border-t border-gray-200">
             <h3 className="text-2xl font-bold text-gray-900 mb-2">
@@ -168,8 +177,6 @@ export default function UnemploymentBenefitExplainedPage() {
               </Link>
             </div>
           </div>
-
-          {/* 導流區塊：摘要模組 */}
           <div className="mt-12 pt-8 border-t border-gray-200">
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 text-center">
               <h3 className="text-xl font-bold text-gray-900 mb-2">
@@ -180,7 +187,7 @@ export default function UnemploymentBenefitExplainedPage() {
               </p>
               <Link
                 to="/summary"
-                className="inline-block px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg drop-shadow-md"
+                className="inline-block bg-blue-600 text-white px-5 py-3 rounded-lg text-base font-medium hover:bg-blue-700 transition"
                 style={{ textShadow: '0 1px 2px rgba(0,0,0,0.1)' }}
               >
                 貼上文章，幫我整理
@@ -244,6 +251,7 @@ export default function UnemploymentBenefitExplainedPage() {
               </li>
             </ul>
           </div>
+          <ArticleCTA placement="bottom" focus="summary" />
 
           <div className="mt-8 pt-6 border-t border-gray-200">
             <Link

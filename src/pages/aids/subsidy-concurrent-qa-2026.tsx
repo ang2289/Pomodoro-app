@@ -6,6 +6,63 @@ import ShareButtons from '@/components/ShareButtons';
 export default function SubsidyConcurrentQA2026() {
   const { t, i18n } = useTranslation();
   const isEnglish = !i18n.language.startsWith("zh");
+  const faqItems = isEnglish
+    ? [
+        {
+          q: "Q1: Can Government Subsidies Be Received Simultaneously?",
+          a: "Generally speaking, if the subsidies are of different nature and there is no explicit regulation prohibiting concurrent receipt, they can generally be applied for simultaneously. However, if the subsidy purposes, subsidy items, or subsidy periods overlap, they usually cannot be received concurrently.",
+        },
+        {
+          q: "Q2: Which Situations Usually 'Can' Be Received Simultaneously?",
+          a: "Subsidies for different aspects of life (e.g., housing subsidy + childcare subsidy). Different subsidy items from central and local governments (if not mutually exclusive). One-time subsidies and regular subsidies (if not restricted).",
+        },
+        {
+          q: "Q3: Which Situations Usually 'Cannot' Be Received Simultaneously?",
+          a: "Subsidies of the same nature (e.g., two living subsidies for the same purpose). Applying for subsidies with the same purpose during the same period. Subsidy regulations explicitly prohibit concurrent receipt.",
+        },
+        {
+          q: "Q4: Common Subsidy Concurrent Receipt Scenarios Explained",
+          a: "Housing Subsidy + Childcare Subsidy: Can generally be applied for simultaneously in most cases. Employment Subsidy + Vocational Training Subsidy: Depends on whether they belong to the same program or same period. Low-Income Household Subsidy + Medical Subsidy: Generally can be received concurrently, but must pass eligibility review. Long-Term Care Subsidy + Medical Subsidy: Can be used concurrently, but subsidy items cannot overlap.",
+        },
+        {
+          q: "Q5: How to Confirm Whether You Can Receive Subsidies Concurrently?",
+          a: "Check whether the subsidy regulations state 'cannot be received concurrently'. Compare whether the subsidy purposes are the same. Confirm with the responsible agency or local government. Keep application and approval documents for audit purposes.",
+        },
+      ]
+    : [
+        {
+          q: "Q1：政府補助可以同時領嗎？",
+          a: "一般而言，若補助性質不同，且未明文規定不得重複請領，原則上可以同時申請。但若補助目的、補助項目或補助期間重疊，通常不得重複領取。",
+        },
+        {
+          q: "Q2：哪些情況通常「可以」同時領？",
+          a: "不同生活面向之補助（例如：居住補助＋育兒補助）。中央與地方政府不同補助項目（未規定互斥者）。一次性補助與定期補助（未限制者）。",
+        },
+        {
+          q: "Q3：哪些情況通常「不能」同時領？",
+          a: "性質相同之補助（例如兩項相同用途的生活補助）。同一期間重複申請相同目的補助。補助辦法明確規定不得併領者。",
+        },
+        {
+          q: "Q4：常見補助併領情境說明",
+          a: "租屋補助＋育兒補助：多數情況可同時申請。就業補助＋職訓補助：需視是否屬同一計畫或同期間。低收入戶補助＋醫療補助：通常可併領，但須通過資格審核。長照補助＋醫療補助：可併用，但補助項目不可重複。",
+        },
+        {
+          q: "Q5：如何確認自己是否可以併領？",
+          a: "查看補助辦法是否載明「不得重複請領」。比對補助目的是否相同。向主責機關或地方政府確認。保留申請與核定文件以備查核。",
+        },
+      ];
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqItems.map((item) => ({
+      "@type": "Question",
+      name: item.q,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: item.a,
+      },
+    })),
+  };
 
   return (
     <>
@@ -15,6 +72,7 @@ export default function SubsidyConcurrentQA2026() {
             ? "❓ Can Subsidies Be Received Simultaneously? Common Government Subsidy Concurrent Receipt Rules Q&A | RxV"
             : "❓ 補助可以同時領嗎？常見政府補助併領規則一次看懂｜RxV"}
         </title>
+        <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>
       </Helmet>
       <main className="max-w-4xl mx-auto px-4 py-10 leading-relaxed text-lg">
         <section>
@@ -182,7 +240,7 @@ export default function SubsidyConcurrentQA2026() {
         <div className="text-center mt-8">
           <Link
             to="/aids"
-            className="bg-blue-600 hover:bg-blue-700 !text-white font-semibold py-2 px-6 rounded-full inline-block"
+            className="bg-blue-600 hover:bg-blue-700 !text-white font-semibold py-2 px-6 rounded-full inline-block transition"
           >
             {isEnglish ? "← Back to Subsidy Package" : "← 回到補助懶人包"}
           </Link>

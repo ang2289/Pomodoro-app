@@ -3,8 +3,6 @@ import { Helmet } from 'react-helmet-async'
 import { useNavigate, Link, useLocation } from 'react-router-dom'
 import { buildSEO } from '../../lib/seo'
 import { PLANS, getPlanChars, getPlanLabel, getAllPlans, type PlanId } from '../../lib/usagePlans'
-import { supabase } from '../../lib/supabase'
-import { useAuth } from '../../hooks/useAuth'
 import { getCurrentUserId, isLoggedIn } from '../../lib/auth'
 import { trackEvent } from '@/utils/analytics'
 
@@ -14,6 +12,21 @@ const seo = buildSEO({
   url: 'https://pomodoro-app-eight-rouge.vercel.app/pricing',
   image: '/seo/pricing.png',
 })
+
+// 僅此清單內的管理員帳號可看到 NT$10 測試方案。
+// 不因 localhost 自動顯示，避免客戶在本機測試時看見。
+const TEST_PAYMENT_ADMIN_EMAILS = new Set([
+  'ang2289@gmail.com',
+])
+
+function canSeeTestPayment(email?: string | null) {
+  return TEST_PAYMENT_ADMIN_EMAILS.has(String(email || '').trim().toLowerCase())
+}
+
+function getAuthToken() {
+  if (typeof window === 'undefined') return ''
+  return String(window.localStorage.getItem('auth_token') || window.localStorage.getItem('token') || '').trim()
+}
 
 // 綠界金流結帳函式（中英文共用同一套付款流程）
 // ⚠️ 重要：此函式同時支援中文版和英文版，都導向 /api/ecpay/create-credit-order
@@ -64,31 +77,17 @@ async function startEcpayCheckout(
     
     // 呼叫後端 API 創建綠界付款表單（一次性付款）
     // ✅ 中英文版本都使用同一支 API
-    // 將 planId 轉換為 amount 和 points
-    let amount: number
-    let points: number
-    
-    if (planId === 'pack1') {
-      // 測試用方案：10 元 / 10 點
-      amount = 10
-      points = 10
-    } else if (planId === 'pack99') {
-      amount = 99
-      points = 100000
-    } else {
-      amount = 199
-      points = 300000
-    }
-    
+    const authToken = getAuthToken()
+    if (!authToken) throw new Error(lang === 'en' ? 'Please log in first' : '請先登入')
+
     const response = await fetch('/api/ecpay', {
         method: 'POST',
         headers: {
+          Authorization: `Bearer ${authToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          amount,
-          points,
-          userId,
+          planId,
         }),
       })
 
@@ -175,10 +174,9 @@ export default function PricingPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const [lang, setLang] = useState<'zh-tw' | 'en'>('zh-tw')
-  const { user } = useAuth()
-  const [isInTrial, setIsInTrial] = useState<boolean | null>(null) // null = 載入中
+  const target = new URLSearchParams(location.search).get('target') // plan99 | plan199，來自圖片頁被鎖導向
   const [userEmail, setUserEmail] = useState<string | null>(null) // 用戶 email，用於判斷是否顯示測試方案
-  const [isTestUser, setIsTestUser] = useState(false) // 是否為測試用戶
+  const [isTestUser, setIsTestUser] = useState(false) // 僅管理員帳號可看到 NT$10 測試方案
 
   // 追蹤頁面瀏覽事件
   useEffect(() => {
@@ -190,61 +188,34 @@ export default function PricingPage() {
     const checkTrialStatusAndEmail = async () => {
       // 取得當前登入的 userId
       const userId = getCurrentUserId()
+      const authToken = getAuthToken()
       
-      if (!userId) {
-        setIsInTrial(false)
+      if (!userId || !authToken) {
         setIsTestUser(false)
         return
       }
 
       try {
         // 查詢用戶 email
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('email')
-          .eq('id', userId)
-          .maybeSingle()
+        const profileResponse = await fetch('/api/main?action=get-current-user-profile', {
+          method: 'GET',
+          headers: { Authorization: `Bearer ${authToken}` },
+        })
+        const profileData = await profileResponse.json().catch(() => ({}))
+        const verifiedUserId = String(profileData?.user?.id || '').trim()
+        const email = String(profileData?.user?.email || '').trim().toLowerCase()
 
-        if (!userError && userData?.email) {
-          const email = userData.email
+        if (profileResponse.ok && verifiedUserId && email) {
           setUserEmail(email)
-          // 檢查是否為測試用戶
-          setIsTestUser(email === 'ang2289@gmail.com')
+          setIsTestUser(canSeeTestPayment(email))
+          // 僅白名單管理員可看到測試方案；localhost 不再自動顯示。
         } else {
           setUserEmail(null)
           setIsTestUser(false)
-        }
-
-        // 檢查試用狀態（使用 RPC，如果存在的話）
-        try {
-          const { data, error } = await supabase.rpc('get_user_credits_info', {
-            p_user_id: userId,
-          })
-
-          if (error || !data) {
-            setIsInTrial(false)
-            return
-          }
-
-          // RPC 返回的是陣列，取第一筆
-          const creditsInfo = Array.isArray(data) ? data[0] : data
-          const trialExpiresAt = creditsInfo?.trial_expires_at
-
-          // 檢查 trial_expires_at 是否尚未到期
-          if (trialExpiresAt) {
-            const expiresAt = new Date(trialExpiresAt).getTime()
-            const now = new Date().getTime()
-            setIsInTrial(expiresAt > now)
-          } else {
-            setIsInTrial(false)
-          }
-        } catch (rpcError) {
-          // RPC 不存在時，僅設定為 false
-          setIsInTrial(false)
+          return
         }
       } catch (err) {
         console.error('❌ 檢查試用狀態或取得 email 失敗:', err)
-        setIsInTrial(false)
         setIsTestUser(false)
       }
     }
@@ -280,8 +251,19 @@ export default function PricingPage() {
         {/* 主要標題 */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {lang === 'zh-tw' ? '使用額度方案（一次購買，用完為止）' : 'Usage Quota Plans (One-time Purchase, Use Until Exhausted)'}
+            {lang === 'zh-tw' ? '點數方案（一次購買，用完為止）' : 'Point Plans (One-time Purchase, Use Until Exhausted)'}
           </h1>
+          {/* 指令 4：依 target 顯示提示（從圖片頁被鎖導向時） */}
+          {target === 'plan99' && (
+            <p className="text-base text-blue-700 font-medium mt-2">
+              {lang === 'zh-tw' ? '此為會員圖片（NT$99 以上可下載），升級即可下載' : 'Member images (NT$99+); upgrade to download.'}
+            </p>
+          )}
+          {target === 'plan199' && (
+            <p className="text-base text-purple-700 font-medium mt-2">
+              {lang === 'zh-tw' ? '此為高級圖片（NT$199 專屬），升級即可下載' : 'Premium images (NT$199 only); upgrade to download.'}
+            </p>
+          )}
         </div>
 
         {/* 綠界合規說明 */}
@@ -292,72 +274,78 @@ export default function PricingPage() {
           <ul className="list-disc ml-6 space-y-2 text-red-800 text-sm leading-relaxed">
             <li>
               {lang === 'zh-tw' 
-                ? '本站提供 AI 數位服務，採使用額度制'
+                ? '本站提供 AI 數位服務，採點數制'
                 : 'This site provides AI digital services using a usage quota system'}
             </li>
             <li>
               {lang === 'zh-tw' 
-                ? '使用額度僅限本站使用，無使用期限'
-                : 'Usage quota is only valid on this site and has no expiration date'}
+                ? '點數僅限本站使用，無使用期限'
+                : 'Points are only valid on this site and have no expiration date'}
             </li>
             <li>
               {lang === 'zh-tw' 
-                ? '每次使用依輸入與輸出字數計算使用額度'
-                : 'Each use calculates usage quota based on input and output character count'}
+                ? '文字工具依輸入與輸出字數扣點，圖片工具依生成類型固定扣點'
+                : 'Text tools deduct by character count, and image tools deduct fixed points by generation type'}
             </li>
             <li className="font-semibold">
               {lang === 'zh-tw' 
-                ? '使用額度一經使用即視為服務完成，恕不退款'
-                : 'Once usage quota is used, the service is considered completed and no refunds will be provided'}
+                ? '點數一經使用即視為服務完成，恕不退款'
+                : 'Once points are used, the service is considered completed and no refunds will be provided'}
             </li>
           </ul>
         </div>
 
-        {/* 方案卡片區塊 */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          
-          {/* 免費方案卡 */}
-          <div className="shadow-md border rounded-2xl p-6 bg-white hover:shadow-lg transition">
-            <div className="text-center mb-4">
-              <span className="text-4xl mb-2 block">🆓</span>
-              <h2 className="text-xl font-bold text-gray-900 mb-2">
-                {lang === 'zh-tw' ? '免費體驗' : 'Free Trial'}
+        {/* 點數包加贈商品展示頁：付款前顯示附加價值。 */}
+        {lang === 'zh-tw' && (
+          <section className="mb-8 w-full rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-sky-50 p-5 shadow-sm sm:p-6">
+            <div className="w-full min-w-0">
+              <span className="inline-flex items-center rounded-full bg-emerald-600 px-3 py-1 text-xs font-black text-white shadow-sm">
+                🎁 指定點數包加贈
+              </span>
+
+              <h2 className="mt-3 break-words text-2xl font-black leading-snug text-slate-950">
+                購買商品圖點數包，加贈店家商品展示頁
               </h2>
-              <p className="text-2xl font-bold text-gray-900">
-                {getPlanChars('free').toLocaleString()} {lang === 'zh-tw' ? '字' : 'chars'}
-              </p>
-            </div>
-            
-            <div className="text-gray-700 space-y-3 text-sm mb-6">
-              <ul className="list-disc ml-5 space-y-2 text-left">
-                <li>{lang === 'zh-tw' ? '不需信用卡' : 'No credit card required'}</li>
-                <li>{lang === 'zh-tw' ? '不限使用期限' : 'No expiration date'}</li>
-                <li>{lang === 'zh-tw' ? '摘要與作業解題共用' : 'Shared for summary and homework'}</li>
-              </ul>
-              <p className="text-xs text-gray-500 mt-3 pt-3 border-t border-gray-200">
-                {lang === 'zh-tw' 
-                  ? '字數用完即停，不會超額扣款'
-                  : 'Usage stops when credits are exhausted, no overcharge'}
-              </p>
-            </div>
 
-            <button
-              onClick={() => navigate('/summary')}
-              className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
-            >
-              {lang === 'zh-tw' ? '立即使用' : 'Start Using'}
-            </button>
-            
-            {/* 未登入使用者提示 */}
-            {!user && (
-              <p className="mt-3 text-xs text-center text-gray-600">
-                {lang === 'zh-tw' ? '登入後即可啟用 10,000 字免費試用' : 'Log in to activate 10,000 characters free trial'}
+              <p className="mt-3 w-full break-words text-sm leading-7 text-slate-700 sm:text-base">
+                NT$99／NT$199 指定商品圖點數方案，加贈專屬商品展示頁、公開網址與 QR Code。
+                可放商品介紹、LINE、電話、Email、Facebook、蝦皮或下單連結，方便用在名片、小卡、菜單、桌牌與社群貼文。
               </p>
-            )}
-          </div>
 
-          {/* NT$99 方案卡 */}
-          <div className="shadow-md border-2 border-blue-300 rounded-2xl p-6 bg-blue-50 hover:shadow-lg transition">
+              <div className="mt-5 grid w-full gap-3 sm:grid-cols-3">
+                <span className="flex min-h-[58px] items-center justify-center rounded-xl bg-white px-4 py-3 text-base font-black text-emerald-700 shadow-sm sm:text-lg">
+                  專屬商品頁
+                </span>
+                <span className="flex min-h-[58px] items-center justify-center rounded-xl bg-white px-4 py-3 text-base font-black text-sky-700 shadow-sm sm:text-lg">
+                  公開網址
+                </span>
+                <span className="flex min-h-[58px] items-center justify-center rounded-xl bg-white px-4 py-3 text-base font-black text-violet-700 shadow-sm sm:text-lg">
+                  QR Code 下載
+                </span>
+              </div>
+
+              <div className="mt-5">
+                <Link
+                  to="/shop/rxv"
+                  className="inline-flex min-h-[54px] w-full items-center justify-center rounded-xl border border-emerald-700 bg-emerald-600 px-6 py-3 text-base font-black !text-white shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-700 hover:shadow-lg sm:w-auto"
+                  style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}
+                >
+                  <span className="!text-white" style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}>
+                    看看商品頁示範
+                  </span>
+                </Link>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* 方案卡片區塊 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          
+          {/* 免費方案卡已隱藏：生圖與 AI 工具皆有成本，價格頁不再顯示免費體驗方案。 */}
+
+          {/* NT$99 方案卡（target=plan99 時高亮） */}
+          <div className={`min-w-0 shadow-md border-2 rounded-2xl p-6 bg-blue-50 hover:shadow-lg transition ${target === 'plan99' ? 'border-blue-500 ring-2 ring-blue-400 ring-offset-2' : 'border-blue-300'}`}>
             <div className="text-center mb-4">
               <span className="text-4xl mb-2 block">💎</span>
               <h2 className="text-xl font-bold text-blue-900 mb-2">
@@ -366,7 +354,7 @@ export default function PricingPage() {
               </h2>
               <p className="text-2xl font-bold text-blue-900">
                 {/* ✅ 字數固定，僅單位文字會切換 */}
-                {getPlanChars('pack99').toLocaleString()} {lang === 'zh-tw' ? '字' : 'chars'}
+                {getPlanChars('pack99').toLocaleString()} {lang === 'zh-tw' ? '點' : 'points'}
               </p>
               {/* 付款說明（英文版） */}
               {lang === 'en' && (
@@ -387,18 +375,41 @@ export default function PricingPage() {
                   ? '字數用完即停，不會超額扣款'
                   : 'Usage stops when credits are exhausted, no overcharge'}
               </p>
+              {lang === 'zh-tw' && (
+                <div className="rounded-xl border border-emerald-200 bg-white/90 p-3 text-left shadow-sm">
+                  <p className="font-black text-emerald-700">🎁 加贈店家商品展示頁</p>
+                  <p className="mt-1 text-xs leading-relaxed text-slate-600">
+                    可建立公開商品頁、加入聯絡方式並下載 QR Code，讓客人掃碼直接查看。
+                  </p>
+                </div>
+              )}
             </div>
 
             <button
               onClick={(e) => startEcpayCheckout('pack99', e, lang, undefined, 'pricing')}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+              className="w-full rounded-lg bg-blue-600 px-4 py-3 font-black text-white shadow-md transition hover:bg-blue-700 hover:shadow-lg"
+              style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}
             >
-              {lang === 'zh-tw' ? '購買 99 方案' : 'Purchase NT$99 Plan'}
+              {lang === 'zh-tw' ? '刷卡／Apple Pay 購買 99 方案' : 'Purchase NT$99 Plan'}
             </button>
+            {lang === 'zh-tw' && (
+              <div className="mt-3">
+                <button
+                  type="button"
+                  onClick={() => navigate('/payment/bank-transfer?plan=99')}
+                  className="w-full rounded-lg border-2 border-blue-600 bg-white px-4 py-3 font-black text-blue-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-blue-50 hover:shadow-md"
+                >
+                  銀行轉帳（人工核對）
+                </button>
+                <p className="mt-2 text-center text-xs leading-relaxed text-slate-600">
+                  完成匯款並回報後，站方核對入帳，再加點並開通商品展示頁。
+                </p>
+              </div>
+            )}
           </div>
 
-          {/* NT$199 方案卡 */}
-          <div className="shadow-md border-2 border-purple-300 rounded-2xl p-6 bg-purple-50 hover:shadow-lg transition">
+          {/* NT$199 方案卡（target=plan199 時高亮） */}
+          <div className={`min-w-0 shadow-md border-2 rounded-2xl p-6 bg-purple-50 hover:shadow-lg transition ${target === 'plan199' ? 'border-purple-500 ring-2 ring-purple-400 ring-offset-2' : 'border-purple-300'}`}>
             <div className="text-center mb-4">
               <span className="text-4xl mb-2 block">💎</span>
               <h2 className="text-xl font-bold text-purple-900 mb-2">
@@ -407,7 +418,7 @@ export default function PricingPage() {
               </h2>
               <p className="text-2xl font-bold text-purple-900">
                 {/* ✅ 字數固定，僅單位文字會切換 */}
-                {getPlanChars('pack199').toLocaleString()} {lang === 'zh-tw' ? '字' : 'chars'}
+                {getPlanChars('pack199').toLocaleString()} {lang === 'zh-tw' ? '點' : 'points'}
               </p>
               {/* 付款說明（英文版） */}
               {lang === 'en' && (
@@ -428,66 +439,74 @@ export default function PricingPage() {
                   ? '字數用完即停，不會超額扣款'
                   : 'Usage stops when credits are exhausted, no overcharge'}
               </p>
+              {lang === 'zh-tw' && (
+                <div className="rounded-xl border border-emerald-200 bg-white/90 p-3 text-left shadow-sm">
+                  <p className="font-black text-emerald-700">🎁 加贈店家商品展示頁</p>
+                  <p className="mt-1 text-xs leading-relaxed text-slate-600">
+                    可建立公開商品頁、加入聯絡方式並下載 QR Code，讓客人掃碼直接查看。
+                  </p>
+                </div>
+              )}
             </div>
 
             <button
               onClick={(e) => startEcpayCheckout('pack199', e, lang, undefined, 'pricing')}
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+              className="w-full rounded-lg bg-purple-600 px-4 py-3 font-black text-white shadow-md transition hover:bg-purple-700 hover:shadow-lg"
+              style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}
             >
-              {lang === 'zh-tw' ? '購買 199 方案' : 'Purchase NT$199 Plan'}
+              {lang === 'zh-tw' ? '刷卡／Apple Pay 購買 199 方案' : 'Purchase NT$199 Plan'}
             </button>
+            {lang === 'zh-tw' && (
+              <div className="mt-3">
+                <button
+                  type="button"
+                  onClick={() => navigate('/payment/bank-transfer?plan=199')}
+                  className="w-full rounded-lg border-2 border-purple-600 bg-white px-4 py-3 font-black text-purple-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-purple-50 hover:shadow-md"
+                >
+                  銀行轉帳（人工核對）
+                </button>
+                <p className="mt-2 text-center text-xs leading-relaxed text-slate-600">
+                  完成匯款並回報後，站方核對入帳，再加點並開通商品展示頁。
+                </p>
+              </div>
+            )}
           </div>
-
-          {/* 測試用點數方案（僅對 ang2289@gmail.com 顯示，使用透明/隱藏區塊） */}
+          {/* NT$10 測試刷卡方案：只在管理員帳號或 localhost 顯示，正式使用者看不到 */}
           {isTestUser && (
-            <div 
-              className="shadow-md border-2 border-gray-200 rounded-2xl p-6 bg-gray-50/10 hover:shadow-lg transition"
-              style={{ 
-                opacity: 0.05, // 幾乎完全透明，但保持可點擊
-                pointerEvents: 'auto' // 確保可以點擊
-              }}
-            >
-              <div className="text-center mb-4">
-                <span className="text-4xl mb-2 block">🧪</span>
-                <h2 className="text-xl font-bold text-gray-900 mb-2">
-                  測試用點數 1 元方案
-                </h2>
-                <p className="text-2xl font-bold text-gray-900">
-                  10 點
-                </p>
-                <p className="text-lg font-bold text-gray-700 mt-2">
-                  NT$10
-                </p>
-              </div>
-              
-              <div className="text-gray-700 space-y-3 text-sm mb-6">
-                <ul className="list-disc ml-5 space-y-2 text-left">
-                  <li>測試用方案</li>
-                  <li>僅供測試使用</li>
-                  <li>不建議正式使用</li>
-                </ul>
-              </div>
+            <div className="md:col-span-2 shadow-md border-2 border-slate-300 rounded-2xl p-6 bg-white hover:shadow-lg transition">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                  <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600 mb-3">
+                    管理員測試
+                  </span>
+                  <h2 className="text-xl font-bold text-slate-900 mb-2">
+                    NT$10 測試方案
+                  </h2>
+                  <p className="text-2xl font-bold text-slate-900">
+                    10 點
+                  </p>
+                  <p className="text-sm text-slate-600 mt-2">
+                    僅供付款流程測試使用，不對一般使用者顯示。
+                  </p>
+                </div>
 
-              {/* 透明按鈕（測試用，幾乎不可見但可點擊） */}
-              <button
-                onClick={(e) => startEcpayCheckout('pack1', e, lang, undefined, 'pricing')}
-                className="w-full bg-gray-400 hover:bg-gray-500 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
-                style={{ 
-                  opacity: 0.1, // 非常透明但可點擊
-                  cursor: 'pointer'
-                }}
-                title="測試用點數 1 元方案（NT$10 / 10 點）"
-              >
-                測試用方案
-              </button>
+                <button
+                  onClick={(e) => startEcpayCheckout('pack1', e, lang, undefined, 'pricing-test')}
+                  className="w-full md:w-[220px] bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 px-4 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+                  style={{ color: '#ffffff' }}
+                  title="NT$10 測試方案（10 點）"
+                >
+                  刷卡測試 NT$10
+                </button>
+              </div>
             </div>
           )}
-        </div>
+</div>
 
         {/* 促購提示區塊 */}
         {lang === 'zh-tw' && (
           <div className="mt-6 bg-yellow-50 border border-yellow-200 p-4 rounded-lg text-sm text-yellow-800 text-center">
-            💡 最多人選擇的方案！每 <strong>萬字</strong> 不到 <strong>NT$1</strong>，幫你節省大量時間。
+            💡 最多人選擇的方案！每 <strong>萬點</strong> 不到 <strong>NT$10</strong>，幫你節省大量時間。
             <br />
             ✅ 系統自動加值點數，付款成功後即可立即使用。
           </div>
@@ -498,24 +517,24 @@ export default function PricingPage() {
           {lang === 'zh-tw' ? (
             <>
               <h2 className="text-xl font-bold text-blue-900 mb-4">
-                📌 字數計算方式說明
+                📌 點數扣除方式說明
               </h2>
               
               <div className="text-blue-800 space-y-3 text-sm">
                 <p>
-                  每次使用時，系統會依「實際輸入的文字字數」計算使用額度。
+                  文字工具會依「實際輸入＋輸出文字字數」扣點；圖片生成工具則依選擇風格固定扣點。
                 </p>
                 
                 <div className="bg-white rounded-lg p-4 border border-blue-200">
                   <p className="font-medium mb-2 text-blue-900">範例說明：</p>
                   <ul className="list-disc ml-5 space-y-1 text-blue-700">
-                    <li>輸入 2,500 字文章摘要 → 扣 2,500 字</li>
-                    <li>解題輸入 300 字題目 → 扣 300 字</li>
+                    <li>輸入與輸出合計 2,500 字文章摘要 → 扣 2,500 點</li>
+                    <li>圖片生成白底商品圖 → 扣 20,000 點</li>
                   </ul>
                 </div>
                 
                 <p className="font-medium text-blue-900">
-                  字數為一次性使用額度，不限使用期限，用完為止。
+                  點數為一次性使用額度，不限使用期限，用完為止。
                 </p>
               </div>
             </>
@@ -533,13 +552,13 @@ export default function PricingPage() {
                 <div className="bg-white rounded-lg p-4 border border-blue-200">
                   <p className="font-medium mb-2 text-blue-900">Character Usage:</p>
                   <ul className="list-disc ml-5 space-y-1 text-blue-700">
-                    <li>Characters are deducted based on actual input text length</li>
-                    <li>Example: Summarizing a 2,500-character article → Deducts 2,500 characters</li>
+                    <li>Text tools deduct points by character count; image tools deduct fixed points by style</li>
+                    <li>Example: Product white-background image generation → Deducts 20,000 points</li>
                   </ul>
                 </div>
                 
                 <p className="font-medium text-blue-900">
-                  Credits are one-time purchases with no expiration date. Usage stops when credits are exhausted.
+                  Points are one-time purchases with no expiration date. Usage stops when points are exhausted.
                 </p>
               </div>
             </>
@@ -551,17 +570,20 @@ export default function PricingPage() {
           <div>
             <Link
               to="/help"
-              className="inline-block px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition"
+              className="inline-flex min-h-[52px] items-center justify-center rounded-lg bg-blue-600 px-5 py-3 text-base font-black !text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-md"
+              style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}
             >
-              {lang === 'zh-tw' ? '📖 使用說明' : '📖 Help'}
+              <span className="!text-white" style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}>
+                {lang === 'zh-tw' ? '📖 使用說明' : '📖 Help'}
+              </span>
             </Link>
           </div>
           <div>
             <button
-              onClick={() => navigate('/summary')}
+              onClick={() => navigate('/tools/product-image-generator')}
               className="inline-block px-6 py-3 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition"
             >
-              {lang === 'zh-tw' ? '返回摘要工具' : 'Back to Summary Tool'}
+              {lang === 'zh-tw' ? '返回商品圖工具' : 'Back to Product Image Tool'}
             </button>
           </div>
         </div>
@@ -569,4 +591,3 @@ export default function PricingPage() {
     </>
   )
 }
-

@@ -7,7 +7,6 @@ function getImageAdminKey() {
   if (!key) { key = window.prompt('請輸入圖片後台管理金鑰')?.trim() || ''; if (key) sessionStorage.setItem(IMAGE_ADMIN_KEY_STORAGE, key) }
   return key
 }
-
 interface ImageItem { id: string; title: string; public_url: string; thumbnail_url?: string; created_at?: string; price_type?: string; plan_type?: string; category_id?: string; category_name?: string }
 export default function AdminImagesListPage() {
   const [allImages, setAllImages] = useState<ImageItem[]>([])

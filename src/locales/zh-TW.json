@@ -1,5 +1,6 @@
 {
-  "app_title": "番茄鐘・待辦・唸經集氣神器",
+  "policy_explained": "政策白話",
+  "app_title": "RxV AI 工具與生活服務中心",
   "pomodoro": "番茄鐘",
   "todo": "待辦清單",
   "chant": "唸經集氣",
@@ -11,10 +12,132 @@
   "focus_start": "開始專注",
   "focus_stop": "結束專注",
   "task_completed": "已完成任務",
-  "chant_count": "唸經次數",
+  "chant_count": "念誦次數",
   "wish_wall": "集氣活動牆",
   "export_csv": "匯出 CSV",
   "language_switch": "語言切換",
+  "animated_line_sticker.seo_title": "動態 LINE 貼圖 APNG 打包工具｜多張禎圖合成與規格檢查",
+  "animated_line_sticker.seo_description": "上傳多張 PNG 禎圖，預覽動畫效果，檢查 LINE 動態貼圖規格，匯出 APNG 或逐禎 ZIP。",
+  "animated_line_sticker.seo_keywords": "LINE 動態貼圖, APNG 打包工具, 動態貼圖製作, LINE 貼圖工具, PNG 禎圖",
+  "animated_line_sticker.eyebrow": "LINE 動態貼圖工具",
+  "animated_line_sticker.title": "動態 LINE 貼圖 APNG 打包工具",
+  "animated_line_sticker.intro_line_1": "上傳第 1 禎到第 N 禎圖片，工具會自動預覽動畫、檢查 LINE 動態貼圖常見規格，並提供 APNG 或逐禎 ZIP 下載。",
+  "animated_line_sticker.intro_line_2": "建議使用透明 PNG，角色位置與大小保持一致，做出來的動態效果會比較穩。",
+  "animated_line_sticker.recommended_timing_label": "建議秒數：",
+  "animated_line_sticker.recommended_timing_before": "自動產生的 8 張禎圖預設使用",
+  "animated_line_sticker.recommended_timing_value": " 2 秒 × 2 次 = 4 秒",
+  "animated_line_sticker.recommended_timing_after": "，節奏較清楚，也符合 LINE「播放總長不超過 4 秒」的規則。",
+  "animated_line_sticker.upload_frames_button": "上傳 PNG 禎圖",
+  "animated_line_sticker.prompt_storyboard_button": "先產生動態貼圖分鏡",
+  "animated_line_sticker.auto_badge": "新增・自動動畫",
+  "animated_line_sticker.auto_timing_badge": "8 禎・2 秒",
+  "animated_line_sticker.auto_title": "上傳一張靜態貼圖，自動產生動態影格",
+  "animated_line_sticker.auto_description": "工具會自動裁切透明留白、嘗試分離上方文字／角色／裝飾，套用不同動作後產生 8 張透明 PNG 禎圖，並直接放入下方預覽與 APNG 匯出流程。",
+  "animated_line_sticker.auto_transparency_hint": "建議使用已去背的透明 PNG；文字與角色之間保留一點空隙，分層動畫效果會更好。",
+  "animated_line_sticker.auto_current_source": "目前自動動畫來源：{{name}}",
+  "animated_line_sticker.auto_motion_label": "自動動作模板",
+  "animated_line_sticker.auto_motion_auto": "綜合動作（文字彈跳＋角色回彈＋閃光）",
+  "animated_line_sticker.auto_motion_salute": "敬禮／收到強調",
+  "animated_line_sticker.auto_motion_bounce": "角色彈跳回彈",
+  "animated_line_sticker.auto_motion_shake": "左右搖擺／震動",
+  "animated_line_sticker.auto_motion_nod": "點頭回覆",
+  "animated_line_sticker.auto_motion_text_pop": "文字泡泡彈跳",
+  "animated_line_sticker.auto_motion_sparkle": "星光閃爍強調",
+  "animated_line_sticker.auto_upload_button": "選擇一張靜態 PNG 並產生 8 禎",
+  "animated_line_sticker.auto_generating_button": "正在自動產生 8 禎...",
+  "animated_line_sticker.auto_replace_notice": "產生後會取代下方目前的禎圖；原始檔不會被修改。",
+  "animated_line_sticker.auto_status_generating": "正在分析文字、角色與裝飾，並產生 8 張動態禎圖...",
+  "animated_line_sticker.auto_success": "已自動產生 8 張禎圖，播放設定已套用為 2 秒 × 2 次。請先預覽，滿意後即可匯出 APNG。",
+  "animated_line_sticker.auto_error_image_only": "請選擇 PNG 或其他圖片檔。",
+  "animated_line_sticker.auto_error_failed": "自動動畫產生失敗，請改用透明 PNG 或重新整理後再試。",
+  "animated_line_sticker.frame_order_title": "禎圖排序",
+  "animated_line_sticker.frame_order_desc": "目前最多保留 20 張，順序就是動畫播放順序。",
+  "animated_line_sticker.clear_button": "清空",
+  "animated_line_sticker.dropzone_title": "點這裡上傳，或把 PNG 禎圖拖進來",
+  "animated_line_sticker.dropzone_desc": "建議 5～20 張，尺寸不超過 320×270px。",
+  "animated_line_sticker.frame_number": "第 {{number}} 禎",
+  "animated_line_sticker.move_up_button": "上移",
+  "animated_line_sticker.move_down_button": "下移",
+  "animated_line_sticker.frame_transparent_warn": "可能不是透明背景",
+  "animated_line_sticker.frame_transparent_ok": "透明背景檢查通過或未異常",
+  "animated_line_sticker.delete_frame_button": "刪除此禎",
+  "animated_line_sticker.preview_title": "動畫預覽",
+  "animated_line_sticker.preview_alt": "動畫預覽",
+  "animated_line_sticker.preview_empty": "上傳禎圖後會在這裡播放預覽",
+  "animated_line_sticker.timing_principle": "設定原則：單次播放秒數 × 循環次數必須小於或等於 4 秒。LINE 只能使用整數秒 1、2、3、4 秒。本站自動動畫預設為 8 禎、2 秒 × 2 次，節奏較清楚。",
+  "animated_line_sticker.duration_label": "單次播放秒數",
+  "animated_line_sticker.duration_option_1": "1 秒（較快）",
+  "animated_line_sticker.duration_option_2": "2 秒（建議）",
+  "animated_line_sticker.duration_option_3": "3 秒",
+  "animated_line_sticker.duration_option_4": "4 秒",
+  "animated_line_sticker.loop_label": "循環次數",
+  "animated_line_sticker.loop_option_1": "1 次",
+  "animated_line_sticker.loop_option_2": "2 次",
+  "animated_line_sticker.loop_option_3": "3 次",
+  "animated_line_sticker.loop_option_4": "4 次",
+  "animated_line_sticker.spec_check_title": "LINE 規格檢查",
+  "animated_line_sticker.export_title": "匯出下載",
+  "animated_line_sticker.processing": "處理中...",
+  "animated_line_sticker.download_apng_button": "下載 APNG（LINE 上架用）",
+  "animated_line_sticker.download_gif_button": "下載 GIF（預覽用）",
+  "animated_line_sticker.download_mp4_button": "下載 MP4（展示用）",
+  "animated_line_sticker.download_zip_button": "下載逐禎 ZIP",
+  "animated_line_sticker.apng_label": "APNG：",
+  "animated_line_sticker.apng_desc": "LINE 動態貼圖上架用，副檔名會是 .png。",
+  "animated_line_sticker.gif_label": "GIF：",
+  "animated_line_sticker.gif_desc": "客戶預覽、聊天展示、社群留言示範用，不適合 LINE 上架。",
+  "animated_line_sticker.mp4_label": "MP4：",
+  "animated_line_sticker.mp4_desc": "FB、IG、Threads、Reels、作品集展示用；部分瀏覽器若不支援 MP4 編碼，會自動改存 WebM 預覽檔。",
+  "animated_line_sticker.check_frame_count_label": "禎數 5～20 張",
+  "animated_line_sticker.check_frame_count_current": "目前 {{count}} 張",
+  "animated_line_sticker.check_frame_count_empty": "尚未上傳",
+  "animated_line_sticker.check_png_label": "PNG 格式",
+  "animated_line_sticker.check_png_ok": "皆為 PNG 或副檔名 PNG",
+  "animated_line_sticker.check_png_warn": "建議全部改成透明 PNG",
+  "animated_line_sticker.check_size_label": "尺寸小於 320×270",
+  "animated_line_sticker.check_size_ok": "符合 LINE 動態貼圖尺寸",
+  "animated_line_sticker.check_size_warn": "匯出 APNG 時會自動置中縮放到 320×270",
+  "animated_line_sticker.check_same_size_label": "每禎尺寸一致",
+  "animated_line_sticker.check_same_size_ok": "尺寸一致",
+  "animated_line_sticker.check_same_size_warn": "可匯出，但建議先統一尺寸，動畫較穩",
+  "animated_line_sticker.check_transparent_label": "透明背景",
+  "animated_line_sticker.check_transparent_ok": "未偵測到不透明背景問題",
+  "animated_line_sticker.check_transparent_warn": "有圖片可能不是透明背景",
+  "animated_line_sticker.check_duration_label": "播放總長 ≤ 4 秒",
+  "animated_line_sticker.check_duration_message": "{{duration}} 秒 × {{loops}} 次 = {{total}} 秒",
+  "animated_line_sticker.check_zip_label": "ZIP 小於 60MB",
+  "animated_line_sticker.check_zip_message": "目前約 {{size}}MB",
+  "animated_line_sticker.status_zip": "正在產生逐禎 ZIP，請稍候...",
+  "animated_line_sticker.status_apng": "正在合成 APNG，圖片會先縮放到 320×270，請稍候...",
+  "animated_line_sticker.status_gif": "正在產生 GIF 預覽檔，請稍候...",
+  "animated_line_sticker.status_video": "正在產生 MP4 / 影片預覽檔，請勿切換分頁...",
+  "animated_line_sticker.message_zip_success": "已產出逐禎 ZIP，可交給設計流程或保留備份。 ",
+  "animated_line_sticker.message_apng_success": "已產出 APNG。若沒有看到下載檔，請檢查瀏覽器下載列或是否被封鎖。上架前仍請用 LINE 官方上傳頁再做一次規格確認。 ",
+  "animated_line_sticker.message_gif_success": "已產出 GIF 預覽檔。提醒：GIF 適合客戶預覽與社群展示，不是 LINE 動態貼圖上架格式。",
+  "animated_line_sticker.message_mp4_success": "已產出 MP4 預覽影片。提醒：MP4 適合 FB、IG、Threads、Reels、作品集展示，不是 LINE 上架格式。",
+  "animated_line_sticker.message_webm_success": "瀏覽器目前不支援 MP4 編碼，已改產出 WebM 預覽影片。若一定要 MP4，可用 Chrome/Edge 新版或再用影片工具轉檔。",
+  "animated_line_sticker.error_read_image": "無法讀取圖片：{{name}}",
+  "animated_line_sticker.error_load_image": "無法載入圖片：{{name}}",
+  "animated_line_sticker.error_read_images_failed": "讀取圖片失敗",
+  "animated_line_sticker.error_apng_compression_unsupported": "目前瀏覽器不支援前端 APNG 壓縮，請先使用逐禎 ZIP 打包。建議使用最新版 Chrome 或 Edge。",
+  "animated_line_sticker.error_canvas_create": "無法建立 Canvas，請更換瀏覽器再試。",
+  "animated_line_sticker.error_min_frames_apng": "LINE 動態貼圖至少建議 5 張禎圖。 ",
+  "animated_line_sticker.error_min_frames_gif": "至少需要 2 張圖片才能產生 GIF 預覽檔。",
+  "animated_line_sticker.error_video_record_unsupported": "目前瀏覽器不支援錄製影片，建議使用最新版 Chrome 或 Edge。",
+  "animated_line_sticker.error_canvas_video_unsupported": "目前瀏覽器不支援 Canvas 影片輸出。",
+  "animated_line_sticker.error_video_record_failed": "影片錄製失敗，請更換瀏覽器再試。",
+  "animated_line_sticker.error_zip_failed": "ZIP 產生失敗",
+  "animated_line_sticker.error_apng_failed": "APNG 產生失敗，請先下載逐禎 ZIP。 ",
+  "animated_line_sticker.error_gif_failed": "GIF 產生失敗。",
+  "animated_line_sticker.error_video_failed": "影片產生失敗。",
+  "animated_line_sticker.checklist_title": "LINE 動態貼圖逐禎打包檢查表",
+  "animated_line_sticker.checklist_output_size": "輸出建議尺寸：{{width}} x {{height}}px 以內",
+  "animated_line_sticker.checklist_frame_count": "禎數：{{count}} 張",
+  "animated_line_sticker.checklist_duration": "單次播放秒數：{{seconds}} 秒",
+  "animated_line_sticker.checklist_loop_count": "循環次數：{{count}} 次",
+  "animated_line_sticker.checklist_total_duration": "播放秒數 x 循環次數：{{seconds}} 秒",
+  "animated_line_sticker.checklist_recommendation": "建議：所有禎圖角色位置、比例、色彩、透明背景保持一致。",
+  "animated_line_sticker.checklist_publish_reminder": "上架提醒：LINE 動態貼圖最後仍需匯出 APNG（副檔名 .png）並依官方規格檢查。",
   "subscription": "去廣告訂閱",
   "about": "關於我們",
   "privacy": "隱私權政策",
@@ -94,7 +217,7 @@
   "copyright": "© 2025 RxV 夢想創作工作室｜健康理財與生活專注力平台",
   "focus_items": "專注項目",
   "manage_categories": "管理分類",
-  "app_name": "番茄鐘應用程式",
+  "app_name": "RxV AI 工具與生活服務中心",
   "focus_item_management": "專注項目管理",
   "add_focus_item": "新增專注項目",
   "new_focus_item": "新增項目",
@@ -121,10 +244,10 @@
   "yellow": "黃色",
   "search_function": "搜尋功能",
   "date_range": "日期範圍",
-  "start_date": "開始日期",
-  "end_date": "結束日期",
+  "start_date": "起始日",
+  "end_date": "截止日",
   "searching": "搜尋中...",
-  "search": "搜尋",
+  "search": "查詢",
   "clear": "清除",
   "completed_records": "完成紀錄",
   "no_completed_records": "尚無完成紀錄",
@@ -136,13 +259,11 @@
   "total": "共",
   "if_too_much_data_suggest_search_or_pagination": "若資料過多，建議使用搜尋功能或設定分頁顯示。",
   "default_five_records_more_available_with_search": "預設五筆，更多資料可用搜尋功能",
-  "chant_count": "念經計數",
   "image_upload": "圖片上傳",
   "select_image": "選擇圖片",
   "restore_default_image": "還原預設圖片",
   "background_music_animated": "背景音樂（動畫版）",
   "select_scripture": "選擇經文",
-  "statistics": "統計",
   "today_date": "今日日期",
   "total_count": "總次數",
   "scripture_management": "經文管理",
@@ -153,7 +274,6 @@
   "enter_new_name": "輸入新名稱…",
   "rename": "重新命名",
   "delete_current_scripture": "刪除當前經文",
-  "delete": "刪除",
   "sound_effect": "選擇音效",
   "sound_on": "音效開啟",
   "sound_off": "音效關閉",
@@ -359,13 +479,10 @@
   "activity_title": "活動標題",
   "activity_title_placeholder": "為媽媽祈願身體健康",
   "chant_content": "念誦內容",
-  "chant_count": "念誦次數",
   "chant_unit": "遍",
   "dedication_recipient": "迴向對象",
   "dedication_recipient_optional": "迴向對象（可選填）",
   "dedication_recipient_placeholder": "媽媽、小明、親人名字...",
-  "start_date": "起始日",
-  "end_date": "截止日",
   "wish_content": "願望內容",
   "wish_content_optional": "願望內容（可選填）",
   "creator_name": "發起人暱稱",
@@ -392,7 +509,6 @@
   "chant_wish_submit_failed_timeout": "發起失敗：請求超時，請稍後再試",
   "upload_image_label": "上傳圖片（JPG/PNG，最大 1MB，長邊 800px）",
   "uploading": "上傳中...",
-  "select_image": "選擇圖片",
   "no_file_chosen": "(尚未選擇檔案)",
   "select_image_file": "選擇圖片檔案",
   "please_select_image": "請選擇圖片",
@@ -444,8 +560,6 @@
   "sort_start_asc": "開始日（舊→新）",
   "sort_created_desc": "建立時間（新→舊）",
   "sort_created_asc": "建立時間（舊→新）",
-  "search": "查詢",
-  "reset": "重設",
   "end_date_label": "截止日期",
   "chant_wish_wall_subtitle": "大家一起為願望集氣助念",
   "wish_number": "願望編號",
@@ -589,7 +703,1873 @@
   "about_page_features": " 獨立開發與維護，功能不含 AI 運算，資料皆存於本地或授權雲端。",
   "about_page_not_affiliated": "本 App 與任何宗教、政治或商業團體無任何關聯，所有集氣與唸經功能皆屬中立自用性質。",
   "about_page_contact": "聯絡信箱：",
-  "about_page_update": "最後更新日期"
+  "about_page_update": "最後更新日期",
+  "image_library": "圖片素材",
+  "policy_plain": "政策白話",
+  "login": "登入",
+  "logout": "登出",
+  "back_to_home": "回首頁",
+  "lang_zh_tw": "中文",
+  "lang_en": "English",
+  "line_sticker_tool": "LINE 貼圖工具",
+  "image_resize_tool": "圖片尺寸工具",
+  "resize_back_home": "← 返回首頁",
+  "resize_page_title": "IG／蝦皮／Shorts 圖片尺寸一鍵轉換",
+  "resize_page_description": "這是一款免費的圖片尺寸一鍵轉換工具，適合需要快速調整 IG 圖片尺寸、蝦皮商品主圖或 Shorts／Reels 圖片比例的使用者。支援 1:1、4:5、9:16 等常見平台尺寸，並提供「不變形補白」與「裁切滿版」兩種模式，避免圖片被拉伸或裁切錯誤。所有圖片僅在瀏覽器本機處理，不會上傳、不會儲存，可安心使用。",
+  "resize_seo_meta_description": "免費圖片尺寸轉換工具，支援 IG 貼文、限動、Reels 與蝦皮商品主圖。一鍵調整 1:1、4:5、9:16 比例，圖片不變形，可補白或裁切。圖片僅在本機處理，不上傳不儲存。",
+  "resize_validation_format": "僅支援 JPG、JPEG、PNG、WebP 格式",
+  "resize_validation_size": "檔案大小不可超過 10MB",
+  "resize_validation_type": "不支援此檔案類型",
+  "resize_error_load": "無法載入圖片，請確認檔案格式正確",
+  "resize_drop_here": "拖曳圖片到這裡，或",
+  "resize_click_upload": "點選上傳",
+  "resize_processing": "處理中…",
+  "resize_click_or_drag": "點擊或拖曳可更換圖片",
+  "resize_section_platform": "平台尺寸",
+  "resize_section_resolution": "輸出解析度（長邊）",
+  "resize_section_mode": "轉換模式",
+  "resize_mode_pad": "不變形（補白，完整顯示）",
+  "resize_mode_crop": "裁切滿版（可能裁掉邊緣）",
+  "resize_section_download": "下載",
+  "resize_download_png": "下載 PNG",
+  "resize_download_jpg": "下載 JPG",
+  "resize_downloaded": "已下載 ✓",
+  "resize_download_start": "已開始下載：{{filename}}",
+  "resize_download_failed": "下載失敗，請稍後再試",
+  "resize_zip_title": "多平台整包輸出（ZIP）",
+  "resize_zip_upload_first": "請先上傳圖片",
+  "resize_zip_select_one": "請至少勾選一個平台尺寸",
+  "resize_zip_progress": "正在打包 {{current}}/{{total}}…",
+  "resize_zip_generating": "正在產生 ZIP…",
+  "resize_zip_download_btn": "下載 ZIP 整包",
+  "resize_zip_start": "已開始下載 ZIP",
+  "resize_preset_ig_post": "IG 貼文 1:1",
+  "resize_preset_ig_portrait": "IG 直式 4:5",
+  "resize_preset_ig_story": "IG 限動 / Reels / Shorts 9:16",
+  "resize_preset_shopee_main": "蝦皮商品主圖 1:1",
+  "resize_preview_pad": "{{label}} 圖片補白不裁切預覽",
+  "resize_preview_crop": "{{label}} 圖片裁切滿版預覽",
+  "resize_preview_output": "輸出尺寸：{{width}} × {{height}}",
+  "resize_section_preview": "即時預覽",
+  "resize_table_title": "圖片尺寸對照（IG / 蝦皮 / Shorts）",
+  "resize_table_intro": "不知道要選哪個尺寸？IG 貼文常用 1:1（1080×1080），直式貼文常用 4:5（1080×1350），限動與 Reels 常用 9:16（1080×1920）。蝦皮主圖建議 1:1，避免裁切。",
+  "resize_card_ig_post_title": "IG 貼文 1:1",
+  "resize_card_ig_post_ratio": "比例：1:1",
+  "resize_card_ig_post_size": "建議尺寸：1080 × 1080",
+  "resize_card_ig_post_desc": "說明：正方形貼文，最常見尺寸，顯示穩定不裁切。",
+  "resize_card_ig_portrait_title": "IG 直式貼文 4:5",
+  "resize_card_ig_portrait_ratio": "比例：4:5",
+  "resize_card_ig_portrait_size": "建議尺寸：1080 × 1350",
+  "resize_card_ig_portrait_desc": "說明：佔螢幕比例較大，互動率通常較佳。",
+  "resize_card_ig_story_title": "IG 限動 / Reels / Shorts",
+  "resize_card_ig_story_ratio": "比例：9:16",
+  "resize_card_ig_story_size": "建議尺寸：1080 × 1920",
+  "resize_card_ig_story_desc": "說明：全螢幕顯示，避免上下被裁切。",
+  "resize_card_shopee_title": "蝦皮商品主圖",
+  "resize_card_shopee_ratio": "比例：1:1",
+  "resize_card_shopee_size": "建議尺寸：1080 × 1080",
+  "resize_card_shopee_desc": "說明：商品置中，避免重要資訊貼近邊緣。",
+  "resize_seo_inner": "也在整理貼文或商品介紹嗎？可搭配",
+  "resize_seo_link": "AI 摘要工具",
+  "resize_seo_inner_suffix": "快速整理重點與關鍵字。",
+  "resize_quick_title": "常用圖片尺寸快速對照",
+  "resize_quick_intro": "需要把圖片快速調到各平台不裁切嗎？以下是最常用的 IG／蝦皮／Shorts 尺寸建議。",
+  "resize_quick_ig_post": "IG 貼文：1:1（1080×1080）",
+  "resize_quick_ig_portrait": "IG 直式貼文：4:5（1080×1350）",
+  "resize_quick_reels": "限動／Reels／Shorts：9:16（1080×1920）",
+  "resize_quick_shopee": "蝦皮商品主圖也建議 1:1（1080×1080），商品置中並保留安全邊界。",
+  "resize_faq_title": "常見問題",
+  "resize_faq_1_q": "支援哪些圖片格式？",
+  "resize_faq_1_a": "支援 JPG、JPEG、PNG、WebP。單檔上限 10MB。",
+  "resize_faq_2_q": "「不變形（補白）」與「裁切滿版」差在哪？",
+  "resize_faq_2_a": "不變形會將整張圖片完整放入目標尺寸，多餘的空間以白底補滿。裁切滿版會等比例放大填滿目標尺寸，超出部分會裁掉。",
+  "resize_faq_3_q": "輸出解析度怎麼選？",
+  "resize_faq_3_a": "長邊像素值，1080 適合一般社群貼文；1350、1920 適合需要較高畫質的場合。預設 1080 已足夠多數平台需求。",
+  "resize_faq_4_q": "圖片會上傳到哪裡？",
+  "resize_faq_4_a": "不會上傳。所有處理都在你的瀏覽器內完成，不會傳送到任何伺服器。",
+  "resize_faq_5_q": "蝦皮商品主圖建議尺寸？",
+  "resize_faq_5_a": "蝦皮商品主圖為 1:1 正方形，選擇「蝦皮商品主圖 1:1」即可自動轉換為 1080×1080（或自訂解析度）。",
+  "resize_faq_6_q": "IG 圖片尺寸要用多少才不會被裁切？",
+  "resize_faq_6_a": "IG 貼文建議 1:1（1080×1080）、直式貼文建議 4:5（1080×1350）、限動／Reels 建議 9:16（1080×1920），即可避免常見裁切問題。若原圖比例不同，建議用「不變形補白」保留完整畫面；想滿版再用「裁切滿版」。",
+  "resize_faq_7_q": "蝦皮商品主圖建議尺寸是多少？",
+  "resize_faq_7_a": "蝦皮商品主圖建議 1:1 正方形（例如 1080×1080），可避免在列表或不同裝置上被裁切。商品主體置中、重要文字不要貼邊，留安全邊界更穩。",
+  "resize_faq_jpg_png_q": "輸出 JPG 與 PNG 我該選哪個？",
+  "resize_faq_jpg_png_a": "JPG 檔案通常較小，適合商品圖與社群上傳；PNG 適合需要保留較乾淨邊緣或文字細節的圖片，但檔案通常較大。",
+  "resize_faq_zip_q": "一次多平台輸出 ZIP 會不會讓圖片變形？",
+  "resize_faq_zip_a": "不會。工具會依你選擇的模式（不變形補白或裁切滿版）輸出不同平台尺寸，並維持目標比例，不會把圖片硬拉伸變形。",
+  "resize_privacy_title": "隱私說明",
+  "resize_privacy_desc": "圖片僅在本機瀏覽器內處理，不會上傳到任何伺服器，亦不會儲存。關閉頁面後即無任何紀錄。",
+  "resize_promo_title": "✅ 圖片已開始下載",
+  "resize_promo_desc": "接下來要整理貼文文案或商品說明嗎？試試 AI 摘要工具：快速整理重點、產生關鍵字。",
+  "resize_promo_btn": "去整理文案（AI 摘要）",
+  "resize_promo_close": "關閉",
+  "deprecated_page_title": "頁面已棄用",
+  "deprecated_default_message": "此頁面已棄用，請前往新版流程",
+  "deprecated_old_path": "舊版路徑",
+  "go_to_new_flow": "前往新版流程",
+  "deprecated_new_flow_label": "新版流程",
+  "footer_site_intro": "本網站為工具與學習輔助平台，提供使用者進行專注、整理、理解與效率提升之用途。",
+  "footer_focus_tools": "專注輔助工具",
+  "footer_focus_tools_intro": "部分使用者在長時間專注、學習或靜心時，會搭配使用簡單的輔助工具，以降低環境干擾。以下為常見的專注輔助用品，僅供資訊參考。",
+  "footer_view_tool_info": "查看工具資訊",
+  "footer_help": "使用說明",
+  "footer_usage_info": "使用資訊",
+  "footer_policy_info": "政策說明",
+  "footer_service_desc": "服務說明",
+  "footer_extended_resources": "延伸資源",
+  "footer_extended_intro": "本區提供與專注、學習、效率提升相關的外部資源連結，僅作為資訊補充與參考，與本站使用額度、功能與服務無直接關聯。",
+  "footer_extended_tools": "延伸工具與資源",
+  "footer_extended_tools_intro": "以下為部分使用者在專注、學習或內容整理過程中，常搭配使用的外部工具與資源，僅作為使用情境參考。",
+  "footer_tool_example_docs": "工具範例說明",
+  "footer_developer_resources": "開發者資源",
+  "footer_contact": "聯絡",
+  "footer_disclaimer": "本站內容僅供學習與工具使用參考，不構成任何商業或投資建議。",
+  "footer_notion_desc": "筆記與工作區整理工具",
+  "footer_forest_desc": "專注計時工具，具視覺化進度追蹤",
+  "footer_obsidian_desc": "知識庫工具，支援筆記連結",
+  "logged_out": "已登出",
+  "home_tool_ai_summary_desc": "貼上文章 / 網站 / 字幕內容，一鍵產出摘要與關鍵字，可搭配 Ko-fi 模板做成自己的 API。",
+  "home_tool_images_desc": "免費圖片、會員圖片（NT$99 以上可下載）、高級圖片（NT$199 專屬）",
+  "home_tool_image_resize_desc": "IG／蝦皮／Shorts 一鍵轉換尺寸，支援 1:1、4:5、9:16。瀏覽器內處理，圖片不上傳。",
+  "home_tool_line_sticker_desc": "自動規格、命名、打包 ZIP。上傳圖片後一鍵產生 LINE Creators Market 規格檔。",
+  "home_tool_scam_check_desc": "貼上訊息，秒判斷風險。LINE/簡訊/Email 本機分析，免註冊、零成本。",
+  "home_category_ai": "AI 工具",
+  "home_category_design": "設計工具",
+  "home_category_life": "生活工具",
+  "deprecated_pricing_message": "此頁面已棄用，請前往新版方案頁",
+  "deprecated_topup_report_message": "此頁面已棄用，請前往新版匯款回報頁",
+  "deprecated_topup_admin_message": "此頁面已棄用，請前往新版後台管理頁",
+  "scam_check_title": "詐騙風險判斷",
+  "scam_page_title": "詐騙風險判斷工具",
+  "scam_seo_title": "詐騙風險判斷工具｜貼上訊息秒判斷（免註冊、零成本）",
+  "scam_seo_description": "貼上 LINE、簡訊、Email 內容，本機秒判斷詐騙風險等級。完全免費、不需註冊、不呼叫外部 API，提醒撥打 165。",
+  "scam_back_home": "← 返回首頁",
+  "scam_heading": "詐騙風險判斷工具",
+  "scam_intro": "貼上 LINE / 簡訊 / Email 內容，立即本機判斷風險等級（不呼叫 AI、不外傳資料）",
+  "scam_label_paste": "貼上訊息內容",
+  "scam_placeholder": "請貼上您收到的 LINE、簡訊或 Email 內容…",
+  "scam_sample_label": "快速填入範例：",
+  "scam_sample_invest": "投資高報酬",
+  "scam_sample_unlock": "解除分期",
+  "scam_sample_parcel": "包裹未領",
+  "scam_btn_analyze": "分析風險",
+  "scam_btn_clear": "清除",
+  "scam_level_low": "低風險",
+  "scam_level_medium": "中風險",
+  "scam_level_high": "高風險",
+  "scam_score": "分數 {{score}} / 100",
+  "scam_btn_copy": "一鍵複製分析結果",
+  "scam_copied": "已複製！",
+  "scam_reasons_title": "命中原因",
+  "scam_tips_title": "建議下一步",
+  "scam_copy_result_title": "詐騙風險分析結果：{{level}}（{{score}} 分）",
+  "scam_copy_reasons": "命中原因：",
+  "scam_copy_tips": "建議下一步：",
+  "scam_disclaimer_title": "⚠️ 免責聲明",
+  "scam_disclaimer_p1": "本工具僅供風險分析參考，不構成警方或法律判定。如有疑慮，請撥打 165 反詐騙專線查證。",
+  "scam_disclaimer_p2": "請勿點擊不明連結、勿提供 OTP / 驗證碼 / 個人資料。",
+  "home_tool_homework_desc": "遇到不會的功課題目，可以直接輸入題目取得解題說明。",
+  "home_category_learn": "學習工具",
+  "home_tool_video_title": "AI 短影音工具",
+  "home_tool_video_desc": "輸入蝦皮商品網址，瀏覽器內直接合成 6 秒直式短影片。",
+  "home_tool_video_ps": "PS. 此功能目前仍在開發中，敬請期待。",
+  "home_tool_image_to_video_title": "圖片轉短影音工具",
+  "home_tool_image_to_video_desc": "上傳單張圖片，由伺服器自動產生直式或橫式短影音 mp4（支援 6/10/15 秒）。",
+  "home_tool_pomodoro_title": "番茄鐘專注計時",
+  "home_tool_pomodoro_desc": "固定節奏工作＋休息，搭配提醒音效與統計表，幫你慢慢找回節奏。",
+  "home_category_productivity": "生產力",
+  "home_tool_todo_desc": "依照狀態分類（未開始 / 進行中 / 已完成），可搭配番茄鐘使用。",
+  "tool_ai_summary": "AI 摘要工具",
+  "tool_todo": "待辦清單",
+  "tool_free_images": "免費圖片",
+  "tool_homework_helper": "作業解題",
+  "tool_focus_tutorial": "專注力教學",
+  "home_category_task": "任務管理",
+  "home_tool_chant_title": "唸經 / 念佛計數器",
+  "home_tool_chant_desc": "支援多種經文或祈禱內容，可記錄次數、時間與備註，適合每日練習。",
+  "home_category_mindful": "靜心工具",
+  "home_tool_chant_wish_title": "集氣願望牆 & 排行榜",
+  "home_tool_chant_wish_desc": "發起集氣活動、許願、查看排行榜與統計，讓祈願不再只是自己一個人默默努力。",
+  "home_category_chant": "社群集氣",
+  "home_create_chant_link": "➕ 發起新的集氣活動",
+  "home_chant_stats_link": "📊 看集氣統計",
+  "home_chant_ranking_link": "🏅 祈願排行",
+  "home_tool_admin_images_title": "圖片上傳後台",
+  "home_tool_admin_images_desc": "上傳圖片到 Supabase Storage 並寫入資料表",
+  "home_category_admin": "管理工具",
+  "tool_qr_code_title": "QR Code 產生器",
+  "tool_qr_code_desc": "輸入網址或文字，立即產生並下載 QR 圖片。",
+  "home_tool_image_resize_title": "圖片尺寸轉換",
+  "home_tool_image_convert_title": "圖片格式轉換",
+  "home_tool_image_convert_desc": "支援 PNG、JPG、WebP 常見組合互轉；解碼與輸出在您的瀏覽器完成。轉成 JPG 時透明區域會以白底填滿。",
+  "home_tool_image_crop_title": "線上圖片裁切",
+  "home_tool_image_crop_desc": "快速裁切照片、套用 1:1、16:9、4:5 等比例，瀏覽器處理並下載 PNG 或 JPG。",
+  "home_tool_line_sticker_title": "LINE 貼圖整理",
+  "home_tool_price_title": "商品搜尋與比價工具",
+  "home_tool_price_desc": "輸入想找的商品，未來可整合蝦皮 / 比價結果，幫你找出划算選項。",
+  "coming_soon": "即將開放",
+  "home_tool_admin_images_list_title": "圖片清單管理",
+  "home_tool_admin_images_list_desc": "查看所有已上傳的圖片清單",
+  "seo_title_home": "RxV AI 工具與生活服務中心｜AI工具與效率工具",
+  "seo_desc_home": "整合 AI 工具、效率工具與生活服務，包含 AI 摘要、作業解題、QR Code 產生、圖片壓縮與尺寸調整等免費工具。",
+  "home_hero_badge": "RxV AI 工具與生活服務中心",
+  "home_hero_title": "RxV AI 工具中心",
+  "home_hero_desc": "一站整合 AI 工具 × 專注效率 × 願望實現",
+  "home_pomodoro_free_title": "免費蕃茄鐘",
+  "home_pomodoro_free_subtitle": "開始專注 25 分鐘",
+  "home_pomodoro_free_hint": "不用登入・不扣點・立即開始",
+  "home_mobile_pomodoro_btn": "開始番茄鐘",
+  "home_cta_start_solve": "開始解題",
+  "home_cta_kofi": "給開發者用的 Supabase 模板",
+  "home_card_homework_desc": "遇到不會的題目？貼上題目，快速取得解題說明與步驟。",
+  "home_card_ai_summary_desc": "一鍵整理長文、文章或 YouTube 字幕，支援中英文摘要＋關鍵字。",
+  "home_video_tool_title": "RxV AI 自動短影音工具（MVP）",
+  "home_video_tool_badge": "瀏覽器內直接合成 mp4",
+  "home_video_tool_desc": "貼上蝦皮商品網址，上傳圖片後即可在瀏覽器內直接產生 6 秒直式短影片。",
+  "home_hero_features": "✅ 支援中英文內容 · ✅ 穩定 JSON Schema · ✅ 適合部落客 / 開發者 / 內容創作者",
+  "home_quick_tools_title": "快速工具入口",
+  "home_quick_tools_question": "你現在卡在哪？",
+  "home_scenario_math": "數學題不會算",
+  "home_scenario_math_desc": "貼上題目，取得解題步驟",
+  "home_scenario_homework": "作業卡關了",
+  "home_scenario_homework_desc": "需要解題思路與說明",
+  "home_scenario_explain": "需要解題說明",
+  "home_scenario_explain_desc": "了解解題過程與概念",
+  "home_quick_homework_title": "作業解題神器",
+  "home_quick_homework_desc": "貼上題目，快速產生解題結果與扣點資訊。",
+  "home_quick_summary_title": "文章摘要工具",
+  "home_quick_summary_desc": "貼上文章，一鍵摘要並顯示本次使用字數。",
+  "home_go_btn": "前往 →",
+  "home_policy_title": "政策白話解釋",
+  "home_policy_subtitle": "看不懂政策新聞沒關係，幫你整理「跟你有沒有關係」",
+  "home_policy_desc": "用簡單易懂的方式解釋複雜的政策，快速了解哪些政策跟你有關",
+  "policy_back_home": "← 返回首頁",
+  "policy_page_title": "政策白話解釋",
+  "policy_subtitle": "看不懂政策新聞？幫你整理「跟你有沒有關係」",
+  "policy_intro": "政策新聞、稅制、補助常常寫得很複雜，其實多數人只想知道一件事：\n這跟我有沒有關係？\n本區將常見政策與制度整理成白話版本，協助快速理解生活影響。",
+  "policy_tag": "政策白話解釋",
+  "policy_read_more": "閱讀更多 →",
+  "policy_no_articles": "目前尚無文章",
+  "policy_faq_title": "常見問題｜政策白話解釋",
+  "policy_faq_q1": "Q1：什麼是政策白話解釋？",
+  "policy_faq_a1": "政策白話解釋是將政策、稅制、補助等原本較為複雜的官方資訊，用一般人能理解的方式重新整理，協助快速判斷是否與自己有關。",
+  "policy_faq_q2": "Q2：這裡的內容適合哪些人？",
+  "policy_faq_a2": "適合看到政策新聞卻看不懂、需要快速了解生活影響的一般民眾，包含上班族、家庭、學生與長者。",
+  "policy_faq_q3": "Q3：文章內容是否具有法律效力？",
+  "policy_faq_a3": "本區內容為資訊整理與白話說明，非法律意見或官方解釋，實際適用仍需以政府公告與主管機關說明為準。",
+  "policy_faq_q4": "Q4：如果我還是不確定自己符不符合怎麼辦？",
+  "policy_faq_a4": "你可以將政策公告或新聞內容貼上來，系統會協助整理重點，幫你判斷是否可能與你有關。",
+  "policy_seo_title": "政策白話解釋｜看不懂政策新聞？幫你整理「跟你有沒有關係」",
+  "policy_seo_description": "政策新聞、稅制、補助常常寫得很複雜，其實多數人只想知道一件事：這跟我有沒有關係？本區將常見政策與制度整理成白話版本，協助快速理解生活影響。",
+  "policy_seo_keywords": "政策解釋, 政策白話, 政策新聞, 政策分析, 稅制解釋, 補助說明",
+  "policy_article_income_tax_exemption_title": "為什麼有些人不用繳所得稅？免稅門檻到底怎麼算？",
+  "policy_article_income_tax_exemption_desc": "所得稅免稅門檻完整解析：用生活情境說明為什麼有些人不用繳所得稅，免稅額、扣除額在實際生活中的意思，以及一般家庭最容易誤會的地方。",
+  "policy_article_subsidy_visibility_title": "政府補助為什麼常常看不到？不是沒有，是你不在適用對象",
+  "policy_article_subsidy_visibility_desc": "政府補助可見性完整解析：用白話方式說明補助為什麼不是「全民型」，常見被排除的幾種身分情境，以及一般人該如何正確理解補助存在的方式。",
+  "policy_article_overtime_pay_title": "加班費一定要給嗎？為什麼很多人其實拿不到？",
+  "policy_article_overtime_pay_desc": "加班費制度完整解析：用白話方式說明加班費制度存在的原意，為什麼實務上常常拿不到，以及上班族最容易誤解的地方。",
+  "policy_article_dependent_deduction_title": "扶養父母真的可以少繳稅嗎？很多人其實報錯了",
+  "policy_article_dependent_deduction_desc": "扶養扣除額完整解析：用生活案例說明扶養在制度上的真正意思，為什麼不是有給錢就算，以及一般家庭該有的正確認知。",
+  "policy_article_policy_design_reality_title": "為什麼政策看起來對你好，實際卻無感？制度設計的現實原因",
+  "policy_article_policy_design_reality_desc": "政策設計現實解析：用白話方式說明政策設計的取捨邏輯，為什麼不可能人人都直接受惠，以及一般民眾該怎麼看政策比較不焦慮。",
+  "policy_article_nhi_premium_title": "健保費是怎麼算的？為什麼每個人繳的不一樣？",
+  "policy_article_nhi_premium_desc": "健保費完整解析：用白話方式說明健保費的計算基礎，薪資、眷屬與補充保費的差別，以及一般人最常誤會的地方。",
+  "policy_article_unemployment_benefit_title": "失業給付是什麼？非自願離職一定領得到嗎？",
+  "policy_article_unemployment_benefit_desc": "失業給付完整解析：用實際情境說明什麼是失業給付，為什麼一定要非自願離職，以及為什麼很多人以為能領卻領不到。",
+  "policy_article_labor_pension_new_system_title": "勞退新制是什麼？雇主提撥的錢真的都給你嗎？",
+  "policy_article_labor_pension_new_system_desc": "勞退新制完整解析：用一般上班族能看懂的語氣說明勞退新制與舊制的核心差異，6% 提撥實際怎麼運作，以及一般人最容易誤解的地方。",
+  "policy_article_household_registration_title": "戶籍遷出遷入有差嗎？為什麼這麼多補助都看戶籍？",
+  "policy_article_household_registration_desc": "戶籍制度完整解析：用白話方式說明戶籍在政策中的實際用途，為什麼補助常以戶籍為判斷，以及租屋族最常踩到的誤區。",
+  "policy_article_government_announcement_impact_title": "政府公告一定會影響你嗎？哪些政策其實跟多數人無關？",
+  "policy_article_government_announcement_impact_desc": "政府公告影響解析：用白話方式說明為什麼政府公告這麼多，哪些是「資訊型」不是「影響型」，以及一般民眾該怎麼判斷要不要關心。",
+  "policy_article_labor_insurance_pension_title": "勞保年金是什麼？什麼情況下領得到？一般人最容易搞錯的重點",
+  "policy_article_labor_insurance_pension_desc": "勞保年金完整解析：用白話方式說明勞保年金與一次領的差別，什麼情況才能請領，以及一般人最容易搞錯的重點，包括年資、年齡、金額等常見誤解。",
+  "policy_article_long_term_care_subsidy_title": "長照補助是什麼？家裡有人需要時，政府實際能幫到哪裡？",
+  "policy_article_long_term_care_subsidy_desc": "長照補助完整解析：用一般家庭能理解的方式說明長照補助在補什麼，哪些人比較容易符合，以及為什麼很多家庭一開始都不知道能申請。",
+  "policy_article_college_entrance_exam_title": "大學學測在考什麼？制度怎麼設計？跟以前聯考差在哪？",
+  "policy_article_college_entrance_exam_desc": "大學學測完整解析：用一般家庭能理解的方式說明為什麼會有學測，學測成績怎麼被使用，以及家長與學生最容易誤會的地方。",
+  "policy_article_hsr_booking_system_title": "高鐵訂票為什麼這麼難？售票制度是怎麼設計的？",
+  "policy_article_hsr_booking_system_desc": "高鐵訂票制度完整解析：用白話方式說明為什麼一開賣就容易滿，系統怎麼分配座位，以及為什麼不是先來先得這麼簡單。",
+  "policy_article_minimum_wage_impact_title": "基本工資是什麼？為什麼調整後有人加薪、有人卻更辛苦？",
+  "policy_article_minimum_wage_impact_desc": "基本工資調整影響完整解析：用白話方式說明基本工資的設計目的，調整後對不同身分的實際影響，以及為什麼不是所有人都直接受惠。",
+  "policy_article_income_tax_brackets_title": "所得稅級距是什麼？為什麼加薪反而繳更多稅？一次白話說清楚",
+  "policy_article_income_tax_brackets_desc": "所得稅級距完整解析：用白話方式解釋什麼是所得稅級距，為什麼不是全部收入都用最高稅率，以及一般上班族最常誤解的地方。",
+  "policy_article_minimum_wage_title": "什麼是基本工資？調整後老闆與員工各自會遇到什麼影響？",
+  "policy_article_minimum_wage_desc": "基本工資完整解析：了解基本工資的定義、為什麼每年會調整，以及對月薪制、時薪制的實際差異，用一般上班族看得懂的方式說明。",
+  "policy_article_labor_insurance_title": "勞保是什麼？你每個月繳的錢到底保障了哪些事情？",
+  "policy_article_labor_insurance_desc": "勞保完整解析：了解勞保在保什麼，包括生病、失能、退休各怎麼用，以及為什麼很多人快退休才發現不夠，用白話方式一次澄清常見迷思。",
+  "policy_article_cheng_li_chun_policy_role_title": "為什麼新聞一直提到鄭麗君？她在政策裡扮演什麼角色？跟一般人有關嗎？",
+  "policy_article_cheng_li_chun_policy_role_desc": "鄭麗君政策角色完整解析：了解鄭麗君在政策制定與執行中的角色定位，以及這些政策對一般民眾的實際影響。",
+  "policy_article_taiwan_us_tariff_title": "為什麼最近一直在談台美關稅？跟你我有什麼關係？",
+  "policy_article_taiwan_us_tariff_desc": "台美關稅完整解析：整理近期新聞常出現「台美關稅」的原因，說明政府、產業與一般民眾的關聯差異，並加入常見誤解 Q&A，幫助讀者快速判斷這是不是需要關注的議題。",
+  "policy_article_tariff_adjustment_impact_title": "關稅調整會影響哪些東西？一般人會被影響嗎？",
+  "policy_article_tariff_adjustment_impact_desc": "關稅調整完整解析：了解關稅調整可能影響的項目，包含進口商品價格、汽車、家電、日用品等，用一般人能懂的方式說明對生活的實際影響。",
+  "policy_article_232_clause_title": "232 條款是什麼？為什麼台灣一直被提到？一次白話解釋",
+  "policy_article_232_clause_desc": "232 條款完整解析：了解什麼是 232 條款，為何與國家安全、進口關稅有關，以及為什麼台灣會被頻繁提及。用一般人能懂的方式說明對生活的影響。",
+  "policy_article_subsidy_eligibility_title": "政府補助怎麼判斷？為什麼別人領得到，你卻不行？一次搞懂常見關鍵條件",
+  "policy_article_subsidy_eligibility_desc": "政府補助完整解析：了解補助申請的關鍵判斷條件，包括身分、收入、居住地、用途等條件，快速判斷自己是否符合補助資格。",
+  "policy_article_house_tax_title": "房屋稅是什麼？自住、出租、空屋差在哪？一般人一定要懂的重點整理",
+  "policy_article_house_tax_desc": "房屋稅完整解析：了解自住、出租、空屋在房屋稅認定與稅率上的差異，以及一般房屋持有者需要知道的重點。",
+  "policy_article_car_import_tariff_title": "汽車關稅是什麼？會影響車價嗎？一般人一定要懂的重點整理（2026 最新）",
+  "policy_article_car_import_tariff_desc": "汽車關稅完整解析：了解進口車關稅如何計算、對車價的影響，以及一般消費者需要知道的重點。",
+  "policy_back_to_list": "← 返回政策白話解釋",
+  "policy_related_articles": "相關政策白話解釋文章",
+  "policy_related_intro": "如果你正在了解政策或制度，以下文章也可能與你有關。",
+  "policy_back_to_list_bottom": "← 返回政策白話解釋列表",
+  "policy_cta_title": "看不懂稅務公告或新聞？",
+  "policy_cta_desc": "把公告或新聞貼上來，幫你整理成「跟你有沒有關係」的重點",
+  "policy_cta_btn": "貼上文章，幫我整理",
+  "policy_extended_reading": "延伸閱讀",
+  "policy_seo_site_name": "AI 工具與生活服務中心",
+  "home_view_btn": "查看 →",
+  "home_tools_overview_title": "工具總覽",
+  "home_tools_overview_desc": "把你常用的功能集中在一起：AI、番茄鐘、待辦、唸經、集氣牆與比價工具。",
+  "tools_hero_title": "RxV 企業級 AI 應用中心",
+  "tools_hero_desc": "提供 AI 摘要、補助懶人包、金融知識、AI 工具管理與自動化服務，協助個人與企業快速提升效率、降低成本、打造 AI 工作流程。",
+  "tools_section_free_title": "免費熱門工具",
+  "tools_section_ai_title": "AI 進階工具",
+  "tools_section_coming_title": "即將推出",
+  "tools_section_life_title": "生活效率工具",
+  "tools_seo_title": "免費AI工具與創作者工具｜LINE貼圖、圖片尺寸、AI摘要",
+  "tools_seo_desc": "提供免費創作者工具：LINE貼圖整理、圖片尺寸轉換、AI摘要、作業解題、番茄鐘與更多實用工具。",
+  "tools_search_placeholder": "搜尋工具（例如：LINE、摘要、番茄鐘）",
+  "tools_empty_search": "找不到符合的工具，請試試其他關鍵字。",
+  "tools_badge_free": "免費",
+  "tools_badge_ai": "AI",
+  "tools_badge_hot": "熱門",
+  "tools_badge_life": "生活",
+  "tools_card_free_images_title": "免費圖片分享",
+  "tools_card_free_images_desc": "免費下載圖片素材，可用於社群貼文、貼圖測試與創作靈感",
+  "tools_card_free_resources_title": "免費資源中心",
+  "tools_card_free_resources_desc": "下載 LINE 貼圖咒語 Excel、AI 生圖提示詞、文案模板與免費圖片資源",
+  "tools_card_sticker_prompt_title": "LINE 貼圖提示詞產生器",
+  "tools_card_sticker_prompt_desc": "選擇情侶、品牌、遊戲、寵物等分類，一鍵產生貼圖生圖提示詞",
+  "tools_card_emotional_sticker_prompt_title": "情緒價值系 LINE 貼圖提示詞",
+  "tools_card_emotional_sticker_prompt_desc": "療癒陪伴、男友感心動、哄人安慰、晚安陪聊、霸道總裁、上班回訊息等主題，一鍵整理成 4x4 貼圖提示詞",
+  "tools_card_animated_sticker_prompt_title": "LINE 動態貼圖提示詞產生器",
+  "tools_card_animated_sticker_prompt_desc": "產生 8／16／24 張動態 LINE 貼圖企劃、動畫分鏡、幀數秒數建議與提示詞",
+  "tools_card_animated_line_sticker_title": "動態 LINE 貼圖 APNG 打包工具",
+  "tools_card_animated_line_sticker_desc": "上傳多張 PNG 禎圖，自動檢查 LINE 動態貼圖規格，預覽動畫並匯出 APNG 或逐禎 ZIP",
+  "tools_card_image_prompt_title": "AI 生圖提示詞產生器",
+  "tools_card_image_prompt_desc": "選擇用途、主題、風格與氛圍，一鍵產生一般圖片 Prompt",
+  "tools_card_pet_prompt_title": "寵物 AI 提示詞產生器",
+  "tools_card_pet_prompt_desc": "毛孩 LINE 貼圖、寵物寫實美圖、寵物店宣傳圖，一鍵產生寵物專用 Prompt",
+  "tools_card_product_image_upgrade_title": "商品圖升級服務",
+  "tools_card_product_image_upgrade_desc": "把隨手拍商品照升級成高質感商品圖，適合小店、網拍、社群宣傳與多平台尺寸輸出",
+  "tools_card_eat_no_fat_game_title": "吃不胖星球",
+  "tools_card_eat_no_fat_game_desc": "點美食、餵角色、累積快樂值，解鎖可愛食物圖鑑的療癒小遊戲",
+  "tools_card_line_sticker_title": "LINE 貼圖分割打包工具",
+  "tools_card_line_sticker_desc": "上傳 LINE 貼圖大圖，可進行 4x4／5x4 分割、整理與 ZIP 打包，方便後續上架使用",
+  "tools_card_image_compress_title": "圖片壓縮工具",
+  "tools_card_image_compress_desc": "快速壓縮 JPG、PNG、WebP，縮小檔案大小",
+  "tools_card_image_to_video_title": "圖片轉短影音工具",
+  "tools_card_image_to_video_desc": "圖片轉影片、影片後製、口白字幕與背景音樂整理，適合短影音素材製作。",
+  "tools_card_shopee_video_title": "蝦皮短影音工具",
+  "tools_card_shopee_video_desc": "商品圖片、口白、字幕與導購短影音素材整理，適合蝦皮與社群短影音製作。",
+  "tools_card_traffic_accident_title": "車禍現場與筆錄前自保清單",
+  "tools_card_traffic_accident_desc": "路口車禍、機車擦撞、追撞時可用，整理現場 SOP、拍照蒐證、筆錄前重點與後續待辦。",
+  "tools_quick_entry_title": "所有工具快速入口",
+  "tools_quick_entry_desc": "常用工具集中在上方，依用途分類排列，直接點選即可開始使用。",
+  "tools_group_sticker_title": "LINE 貼圖工具",
+  "tools_group_sticker_hint": "貼圖提示詞、情緒價值、動態貼圖與分割打包。",
+  "tools_group_image_title": "圖片與生圖工具",
+  "tools_group_image_hint": "圖片提示詞、尺寸、壓縮、轉檔、裁切與素材下載。",
+  "tools_group_video_title": "短影音工具",
+  "tools_group_video_hint": "圖片轉影片、商品短影音、口白字幕與影片素材整理。",
+  "tools_group_life_title": "生活／遊戲／效率",
+  "tools_group_life_hint": "番茄鐘、待辦、唸經集氣、QR Code、詐騙檢查與生活工具。",
+  "tools_group_resource_title": "免費資源與服務",
+  "tools_group_resource_hint": "免費資源、作品集服務與可延伸成商品的素材入口。",
+  "tools_group_other_title": "其他實用工具",
+  "tools_group_other_hint": "更多可直接使用的線上工具。",
+  "tools_usage_suggestion_title": "工具使用建議",
+  "tools_usage_suggestion_desc": "可先從 LINE 貼圖提示詞、貼圖分割打包、圖片尺寸處理與免費圖片素材開始使用；需要商品圖或短影音素材時，再搭配生圖提示詞與影片工具製作。",
+  "tools_intro_title": "熱門工具介紹",
+  "tools_intro_line_sticker": "LINE貼圖整理工具可一鍵將圖片調整為 LINE Creators Market 規格（370×320），自動產出 main.png、tab.png 並打包 ZIP，適合想上架貼圖的創作者使用。",
+  "tools_intro_image_resize": "圖片尺寸轉換工具支援 IG、蝦皮、Shorts 等常用比例，在瀏覽器內完成裁切與轉換，圖片不需上傳至伺服器，兼顧效率與隱私。",
+  "tools_intro_ai_summary": "AI 摘要工具可貼上文章、網址或 YouTube 字幕，自動產出重點與關鍵字，幫助快速掌握長文內容，節省閱讀與整理時間。",
+  "tools_intro_pomodoro": "番茄鐘以 25 分鐘工作、5 分鐘休息的節奏協助專注，搭配提醒音效與統計紀錄，適合讀書、工作與需要時間管理的使用者。",
+  "tools_faq_title": "常見問題",
+  "tools_faq_q1": "這些工具可以免費使用嗎？",
+  "tools_faq_a1": "本頁多數工具皆可免費使用，部分進階功能可能需登入或使用點數。各工具頁面會標示是否需要註冊或付費。",
+  "tools_faq_q2": "工具需要登入嗎？",
+  "tools_faq_a2": "多數創作者工具（如 LINE 貼圖整理、圖片尺寸轉換、詐騙檢測）無須登入即可使用。AI 摘要、作業解題等可能需登入以使用完整額度。",
+  "tools_faq_q3": "適合創作者使用嗎？",
+  "tools_faq_a3": "是。LINE 貼圖整理、圖片尺寸轉換專為創作者設計，可快速產出符合平台規格的檔案。AI 摘要與番茄鐘也適合內容產製與時間管理。",
+  "tools_faq_q4": "後續會增加更多工具嗎？",
+  "tools_faq_a4": "會。我們會持續新增實用工具，歡迎常回來看看。若有想望的功能也可透過站內聯絡方式告訴我們。",
+  "tools_coming_ai_toolbox_title": "AI 工具箱",
+  "tools_coming_ai_toolbox_desc": "常用 AI 模組、文件轉換、批次工具、開發者 API。",
+  "tools_coming_automation_title": "自動化工作中心",
+  "tools_coming_automation_desc": "自動摘要、自動發布、自動匯整，打造完整 AI 工作流。",
+  "tools_video_badge_dev": "開發中",
+  "tools_video_toast_dev": "此工具仍在開發中，敬請期待",
+  "home_blog_intro": "不只是工具，你也可以閱讀關於專注力、健康、理財、補助與退休金的長期整理文章。",
+  "home_blog_view_all": "查看全部文章 →",
+  "home_blog_focus_title": "專注力與番茄鐘系列",
+  "home_blog_focus_desc": "從呼吸、冥想到番茄工作法，如何在混亂的日常中慢慢找回「可以專心一下」的空間。",
+  "home_blog_finance_title": "健康理財與反詐騙",
+  "home_blog_finance_desc": "不追爆賺，只談「活得久、活得穩」的理財與風險防護，搭配政府資源整理。",
+  "home_blog_subsidy_title": "補助懶人包與退休金",
+  "home_blog_subsidy_desc": "租屋、長照、交通補助與退休金制度懶人整理，讓你少跑一點冤枉路。",
+  "home_blog_ai_title": "AI 工具與模型",
+  "home_blog_ai_desc": "整理最新可免費使用的 AI 工具、模型與即將收費提醒，幫助一般使用者快速上手 AI。",
+  "home_goods_title": "好物推薦",
+  "home_goods_subtitle": "嚴選超值商品推薦，每篇皆附影片＋文字分析",
+  "home_goods_airfryer_name": "科帥氣炸鍋 AF606",
+  "home_goods_airfryer_desc": "5.5L 大容量＋液晶觸控，附 12 件烘焙組",
+  "home_goods_view_all": "查看全部好物推薦",
+  "home_about_1": "本站由「RxV 番茄鐘任務管理」延伸發展，目標是整合 AI 工具、效率工具與生活資訊，讓你在同一個網站就能處理工作、學習、身心與金錢相關的事情。",
+  "home_about_2": "未來會持續更新：更多 AI 工具、JSON API 模板、以及補助與理財文章。",
+  "alt_airfryer": "氣炸鍋推薦",
+  "airfryer_seo_title": "氣炸控必看🔥 科帥 AF606 液晶氣炸鍋｜限時贈品＋超值12件組",
+  "airfryer_seo_description": "超高 CP 值氣炸鍋推薦，5.5L 超大容量＋液晶觸控＋360°熱風循環。送烘焙12件組＋清潔泡泡，數量有限送完為止！",
+  "airfryer_seo_keywords": "氣炸鍋, 科帥, AF606, 氣炸鍋推薦, 5.5L, 液晶觸控, 烘焙組",
+  "airfryer_h1": "🔥 氣炸控必看！科帥 AF606 氣炸鍋限時大促＋送 12 件超值烘焙組",
+  "airfryer_alt_cover": "氣炸鍋封面圖",
+  "airfryer_video_title": "氣炸鍋推薦影片",
+  "airfryer_video_unsupported": "您的瀏覽器不支援播放影片",
+  "airfryer_intro_prefix": "如果你正在找一台「大容量、操作簡單、清洗方便」的氣炸鍋，這台",
+  "airfryer_intro_product": "科帥 AF606 液晶氣炸鍋",
+  "airfryer_intro_suffix": "真的可以列入考慮！容量 5.5L、觸控操作、七種內建菜單，加上 360°熱風循環功能，炸雞、薯條、牛排、烤魚都難不倒它！",
+  "airfryer_h2_baking": "✅ 超值 12 件烘焙組＋清潔泡泡",
+  "airfryer_alt_baking": "附贈烘焙配件",
+  "airfryer_li_baking_1": "8 吋披薩盤、雙層烤架、矽膠刷、夾子、蛋糕模、油紙、隔熱手套…",
+  "airfryer_li_baking_2": "再加送氣炸鍋專用清潔泡泡，懶人清洗好幫手",
+  "airfryer_li_baking_3": "數量有限，贈品以賣場實際為準，送完為止！",
+  "airfryer_h2_why": "🎯 為什麼推薦這台？",
+  "airfryer_alt_feature": "氣炸鍋推薦功能",
+  "airfryer_li_why_1": "液晶觸控介面＋七大預設模式（薯條、蝦子、雞翅、牛排…）",
+  "airfryer_li_why_2": "一鍵啟動，懶人也能快速上手",
+  "airfryer_li_why_3": "內膽不沾塗層，烹調不沾黏、清洗超省事",
+  "airfryer_li_why_4": "大容量 5.5L，整隻雞、披薩、雞翅同時放得下",
+  "airfryer_li_why_5": "360° 高速熱風循環，炸物無油更健康",
+  "airfryer_h2_buy": "🔗 立即搶購",
+  "airfryer_btn_buy": "👉 前往蝦皮搶購（限時送贈品）",
+  "airfryer_h2_specs": "📌 商品資訊",
+  "airfryer_li_spec_1": "品牌／型號：科帥 AF606",
+  "airfryer_li_spec_2": "容量：5.5L（內鍋 3.6L）",
+  "airfryer_li_spec_3": "操作介面：液晶觸控螢幕／攝氏溫度顯示",
+  "airfryer_li_spec_4": "溫度範圍：80°C ~ 200°C",
+  "airfryer_li_spec_5": "功率：1400W｜電壓：110V",
+  "airfryer_li_spec_6": "保固一年（超過鑑賞期，買家需負擔運費）",
+  "airfryer_disclaimer": "※ 本文為個人使用經驗與公開資料整理，非官方開箱，僅作為導購參考。圖片來源：蝦皮賣場。如有侵權請來信告知，我們會立即下架。",
+  "nav_home": "首頁",
+  "nav_tools": "工具專區",
+  "nav_ai_tools": "AI 工具",
+  "nav_ai_summary": "AI摘要",
+  "nav_pomodoro": "番茄鐘",
+  "nav_chant": "唸經集氣",
+  "nav_free_images": "免費圖片",
+  "nav_more": "更多",
+  "nav_todo": "待辦清單",
+  "nav_line_sticker": "LINE貼圖工具",
+  "nav_image_resize": "圖片尺寸工具",
+  "nav_homework": "作業解題",
+  "nav_subsidy": "補助懶人包",
+  "nav_finance": "健康理財",
+  "nav_retirement": "退休試算",
+  "nav_blog": "文章專區",
+  "nav_tools_short": "工具",
+  "nav_ai_short": "AI",
+  "nav_blog_short": "文章",
+  "hw_title": "作業解題（教學版）",
+  "hw_home": "首頁",
+  "hw_btn_answer": "只秀答案",
+  "hw_btn_easy": "簡單解釋",
+  "hw_btn_pro": "詳細說明",
+  "hw_btn_example": "舉例模式",
+  "hw_lang_zh": "中文",
+  "hw_lang_ja": "日本語",
+  "hw_placeholder": "例如：請用換分法，將 3/8 和 4/16 通分，並一步一步說明。",
+  "hw_analyzing": "分析中...",
+  "hw_start_solve": "開始解題",
+  "hw_mode_prefix": "模式：",
+  "hw_view_instructions": "查看完整使用說明 →",
+  "hw_ai_answer": "AI 回答",
+  "hw_copy_title": "複製答案",
+  "hw_copied": "已複製",
+  "hw_current_mode": "目前解題模式：",
+  "hw_not_started": "尚未開始解題，請輸入題目…",
+  "hw_this_use": "本次使用：",
+  "hw_chars": "字",
+  "hw_input_output": "（輸入 {{input}} 字 + 回答 {{output}} 字）",
+  "hw_used_points": "已用點數：",
+  "hw_remaining_points": "剩餘點數：",
+  "hw_free_used": "已使用 {{used}} / 3 次免費體驗",
+  "hw_free_remaining": "剩餘 {{count}} 次免費體驗",
+  "hw_disclaimer_ai": "本系統回覆內容為 AI 推論結果，僅供參考，無法保證正確性與完整性，請自行判斷與核實資訊。",
+  "hw_examples_title": "數學題輸入範例",
+  "hw_example_1_title": "【範例一｜分數題】",
+  "hw_example_1_desc": "請用換分法，將 3/8 和 4/16 通分，並說明每個步驟。",
+  "hw_example_2_title": "【範例二｜應用題】",
+  "hw_example_2_desc": "小明有 12 顆糖，平均分給 3 個人，每個人可以分到幾顆？請寫出計算過程。",
+  "hw_example_3_title": "【範例三｜比較大小】",
+  "hw_example_3_desc": "5/6 和 7/8 哪一個比較大？請說明你的判斷理由。",
+  "hw_no_photo": "不需要拍照，只要用文字打出題目意思即可。",
+  "hw_purchase_title": "購買點數方案",
+  "hw_purchase_desc": "購買點數後，可用於 AI 解題、摘要與圖片下載，使用時依實際內容扣點",
+  "hw_plan_standard": "標準方案",
+  "hw_plan_advanced": "進階方案",
+  "hw_points_unit": "點",
+  "hw_plan_standard_desc": "適合一般作業解題與日常使用（依實際使用扣點）",
+  "hw_plan_advanced_desc": "適合高用量解題與進階使用（依實際使用扣點）",
+  "hw_buy_points": "立即購買點數",
+  "hw_please_login": "請先註冊或登入，才能使用本功能",
+  "hw_teaching_title": "作業解題教學模式說明",
+  "hw_teaching_intro": "本功能為教學與學習輔助用途，依不同模式提供參考回答與說明。",
+  "hw_mode_answer_teaching": "只秀答案（教學）",
+  "hw_mode_answer_desc": "快速提供參考回答結果，適合先了解答案方向。",
+  "hw_mode_easy_teaching": "簡單解釋（教學）",
+  "hw_mode_easy_desc": "在提供參考回答的同時，搭配簡要說明，幫助理解題目重點。",
+  "hw_mode_pro_teaching": "詳細說明（教學）",
+  "hw_mode_pro_desc": "提供較完整的解題說明與思路，適合深入學習與理解。",
+  "hw_mode_example_teaching": "舉例模式（教學）",
+  "hw_mode_example_desc": "透過實際例子輔助說明概念，幫助將題目與情境連結理解。",
+  "hw_supported_lang": "目前支援語言：中文（繁體）、English、日本語",
+  "hw_summary_promo": "需要把資料整理成好讀的重點嗎？可先用",
+  "hw_summary_link": "AI 摘要工具",
+  "hw_summary_promo_suffix": "整理文章或筆記。",
+  "hw_modal_close": "關閉",
+  "hw_extended_desc": "部分使用者在進行此類任務時，也會搭配其他輔助工具以提升專注與效率。",
+  "hw_extended_link": "查看延伸資源 →",
+  "hw_disclaimer_title": "免責聲明",
+  "hw_disclaimer_1": "本工具之答案由 AI 生成，僅供學習參考，不保證 100% 正確。",
+  "hw_disclaimer_2": "請使用者自行判斷與驗算，本工具不提供代寫作業服務。",
+  "hw_insufficient_credits": "使用額度不足，請先查看使用方案說明",
+  "hw_error_retry": "AI 服務暫時異常，請稍後再試",
+  "hw_preview_hint": "字數僅供顯示，不會實際扣除",
+  "points_plan_title": "使用方案說明",
+  "points_free_trial": "免費體驗",
+  "points_free_trial_desc": "提供固定字數體驗額度（10,000 點），僅限短期試用與功能體驗。",
+  "points_plan_99": "進階方案 NT$99",
+  "points_plan_99_desc": "提供 100,000 點，適合一般文章整理與日常使用。",
+  "points_plan_199": "高用量方案 NT$199",
+  "points_plan_199_desc": "提供 300,000 點，適合大量產出與長文內容整理。",
+  "points_deduction_note": "點數會依 AI 實際輸入與輸出字數扣除。",
+  "nav_chant_short": "唸經",
+  "nav_todo_short": "待辦",
+  "nav_focus": "專注",
+  "nav_wish": "許願",
+  "summary_article_tool": "文章摘要工具",
+  "summary_input_title": "文字輸入",
+  "summary_placeholder": "請貼上要摘要的文章...",
+  "summary_result_title": "摘要結果",
+  "summary_copy_summary": "複製摘要",
+  "summary_keywords_title": "關鍵字建議",
+  "summary_copy_keywords": "複製關鍵字",
+  "summary_traffic_keywords": "流量關鍵字",
+  "summary_copy_traffic_keywords": "複製流量關鍵字",
+  "summary_no_summary_yet": "尚未生成摘要",
+  "summary_no_keywords_yet": "尚未產生關鍵字",
+  "summary_keyword_1": "重點摘要",
+  "summary_keyword_2": "關鍵事件",
+  "summary_keyword_3": "核心人物",
+  "summary_keyword_4": "時間脈絡",
+  "summary_keyword_5": "後續影響",
+  "summary_no_traffic_keywords_yet": "尚未產生流量關鍵字",
+  "summary_btn_generate": "產生摘要",
+  "summary_loading": "生成中…",
+  "summary_please_login": "請先註冊或登入，才能使用本功能",
+  "summary_copied": "已複製！",
+  "summary_traffic_copied": "流量關鍵字已複製",
+  "summary_copy_failed": "複製失敗，請手動選取複製",
+  "summary_conversion_copied": "高轉換關鍵字已複製",
+  "summary_free_trial_exhausted": "免費體驗已用完，請登入以繼續使用",
+  "summary_purchase_credits": "購買點數方案",
+  "summary_purchase_credits_desc": "購買點數後，可用於摘要、作業解析與圖片下載，使用時依實際內容扣點",
+  "summary_standard_plan": "標準方案",
+  "summary_credits_unit": "點",
+  "summary_standard_plan_desc": "適合一般摘要、作業解析與一般圖片下載（依實際使用扣點）",
+  "summary_buy_credits": "立即購買點數",
+  "summary_advanced_plan": "進階方案",
+  "summary_advanced_plan_desc": "適合高用量使用者與高級圖片下載（依實際使用扣點）",
+  "summary_credits_usage_note": "點數可用於 AI 摘要、作業解析與圖片下載，系統僅在實際使用時扣點",
+  "summary_free_images": "免費圖片（0 點）",
+  "summary_standard_images": "一般圖片（1,000 點 / 張）",
+  "summary_premium_images": "高級圖片（3,000 點 / 張）",
+  "summary_homework_promo_title": "如果是題目或作業，也可以更快",
+  "summary_homework_promo_desc": "把題目貼上或輸入關鍵條件，我們會協助拆解步驟與重點。（先試用也可以）",
+  "summary_go_homework": "前往作業解題",
+  "summary_usage_note": "本功能依實際輸入與 AI 輸出內容計算使用量，僅供學習、作業理解與內容整理輔助用途。",
+  "summary_view_full_usage": "查看完整使用說明",
+  "summary_seo_homework_link": "作業解題工具",
+  "summary_seo_homework_intro": "若是題目、作業或報告需求，也可以使用",
+  "summary_seo_homework_outro": "協助拆解步驟與重點。",
+  "summary_used_chars": "已用點數",
+  "summary_remaining_chars": "剩餘點數",
+  "summary_free_trial_used": "已使用 {{count}} / 3 次免費體驗",
+  "summary_free_trial_remaining": "剩餘 {{count}} 次免費體驗",
+  "summary_usage_this_time": "本次使用字數：{{count}} 字",
+  "summary_last_use_detail": "共輸入 {{input}} 字，輸出 {{output}} 字，合計扣除 {{points}} 點",
+  "pomodoro_seo_title": "免費番茄鐘線上工具｜專注計時 Pomodoro Timer",
+  "pomodoro_seo_desc": "免費番茄鐘線上工具，免註冊即可使用，適合讀書、工作與專注管理，幫助你提升效率與完成度。",
+  "images_free_download": "免費下載",
+  "images_download_1000": "下載需 1,000 點",
+  "images_download_3000": "高級｜下載需 3,000 點",
+  "images_btn_download": "下載圖片",
+  "images_btn_login_to_download": "登入後下載",
+  "images_btn_downloaded": "已下載｜再次下載",
+  "images_btn_insufficient": "點數不足｜去購買",
+  "images_btn_use_credits": "使用點數下載",
+  "images_alert_login": "請先登入後再下載圖片",
+  "images_alert_insufficient": "點數不足，請先購買點數",
+  "images_alert_download_failed": "下載失敗，請稍後再試",
+  "images_alert_success": "圖片已成功下載 🎉\n\n你也可以試試：\n• 📄 AI 文章摘要（省時間）\n• 📚 作業解題輔助\n• ⏱️ 蕃茄鐘專注工具",
+  "images_no_images": "目前尚無圖片",
+  "images_no_images_in_category": "此分類尚無圖片",
+  "images_unnamed": "未命名圖片",
+  "images_multi_usage": "多用途素材",
+  "images_back_home": "← 返回首頁",
+  "images_promo_banner": "限時活動：全站圖片 100% 免費下載",
+  "images_countdown": "倒數結束：{{days}} 天 {{hours}} 小時 {{minutes}} 分 {{seconds}} 秒",
+  "images_why_free": "為什麼現在免費？",
+  "images_why_free_desc": "平台測試期間開放所有圖片免費體驗，活動結束後將恢復點數制度。",
+  "images_promo_ended": "限時免費活動已結束",
+  "images_promo_ended_desc": "已恢復點數制度，請登入或購買點數",
+  "images_subtitle": "免費圖片、一般付費（1,000 點/張）、高級付費（3,000 點/張），下載時扣點",
+  "images_filter_label": "分類篩選",
+  "images_filter_all": "全部",
+  "images_use_images_title": "用圖片，順便把事情做完",
+  "images_tool_summary_title": "AI 摘要",
+  "images_tool_summary_desc": "商品說明、貼文、企劃內容，一鍵整理，直接可用。",
+  "images_tool_summary_btn": "前往 AI 摘要 →",
+  "images_tool_homework_title": "AI 作業／任務助手",
+  "images_tool_homework_desc": "作業、企劃、任務拆解，學生與創作者都在用。",
+  "images_tool_homework_btn": "前往作業助手 →",
+  "images_tool_pomodoro_title": "蕃茄鐘",
+  "images_tool_pomodoro_desc": "下載圖片後，用專注模式把產出效率拉滿。",
+  "images_tool_pomodoro_btn": "免費使用蕃茄鐘 →",
+  "images_loading": "載入中…",
+  "images_placeholder_alt": "圖片預覽",
+  "images_download_usage_title": "下載與點數說明",
+  "images_usage_free": "免費圖片：可直接下載使用。",
+  "images_usage_standard": "一般付費圖片：1,000 點／張。",
+  "images_usage_premium": "高級付費圖片：3,000 點／張。",
+  "images_usage_repeat": "下載圖片為永久使用，可再次下載（不重複扣點）。",
+  "images_usage_example": "點數換算範例：",
+  "images_usage_example_standard": "一般圖片：約可下載 100 張（100,000 ÷ 1,000）≈ NT$1／張",
+  "images_usage_example_premium": "高級圖片：約可下載 33 張（100,000 ÷ 3,000，取整數）≈ NT$3／張",
+  "images_usage_market": "市場對比：一般商用素材圖庫單張授權約 NT$30～150，本方案以點數計價。",
+  "images_usage_restriction": "使用限制：不可轉售、不可轉贈、不可建立二次素材庫分發。",
+  "images_usage_custom": "客製圖片：可提供圖片客製服務，另行報價。聯絡信箱：",
+  "images_usage_ai_note": "部分圖片為數位生成素材（含 AI 輔助製作），可依上述規則安心用於商業用途。",
+  "images_success_title": "🎉 圖片下載成功",
+  "images_success_try": "也可以免費試試以下 AI 工具：",
+  "images_success_btn_summary": "📄 AI 摘要工具",
+  "images_success_btn_homework": "✍️ 作業助手",
+  "images_success_btn_pomodoro": "🍅 專注蕃茄鐘",
+  "images_modal_close": "關閉",
+  "images_category_minimal": "極簡背景",
+  "images_category_coloring": "著色頁",
+  "images_category_food": "食物素材",
+  "images_category_product": "產品展示",
+  "images_category_social": "社群貼文背景",
+  "images_category_desktop": "桌面工作場景",
+  "images_category_holiday": "節慶主題",
+  "images_category_business": "商業圖",
+  "images_category_floral": "花卉素材",
+  "shopee_csv_no_data": "沒有解析出任何有效資料（可能缺少商品名稱或推廣連結）。",
+  "shopee_csv_parsed": "解析完成，有效筆數：{{count}}",
+  "shopee_csv_parse_failed": "解析檔案失敗，請確認檔案為正確的蝦皮 CSV/Excel 格式。",
+  "shopee_csv_parse_error": "解析檔案失敗",
+  "shopee_csv_no_export": "目前沒有可匯出的資料，請先上傳並解析檔案。",
+  "shopee_csv_downloaded": "已下載 scripts.json",
+  "shopee_csv_title": "📊 Shopee CSV 轉 scripts.json",
+  "shopee_csv_desc": "上傳蝦皮下載的 CSV / Excel（含推廣連結），系統會自動解析並產生 scripts.json，可搭配本機 rxv-video-batch 工具批次產片。",
+  "shopee_csv_upload_label": "上傳蝦皮 CSV / Excel（必須包含「推廣連結」欄位）",
+  "shopee_csv_file_selected": "已選擇檔案：{{fileName}}",
+  "shopee_csv_upload_hint": "僅接受含「推廣連結 / 推薦連結 / 推廣網址 / promo_url / promotion_url」欄位的資料，避免貼錯連結沒分潤。",
+  "shopee_csv_valid_count": "有效筆數：{{count}}",
+  "shopee_csv_btn_download": "下載 scripts.json",
+  "shopee_csv_preview_title": "預覽前 20 筆（商品名稱 / 價格 / 推廣連結）",
+  "shopee_csv_th_product_name": "商品名稱",
+  "shopee_csv_th_price": "價格",
+  "shopee_csv_th_promo": "推廣連結",
+  "shopee_csv_empty": "尚無資料，請先上傳 CSV / Excel。",
+  "shopee_csv_no_promo": "無推廣連結",
+  "shopee_video_enter_url": "請輸入至少 1 個商品網址",
+  "shopee_video_enter_name": "請填商品名稱",
+  "shopee_video_enter_highlights": "請至少填 1 個賣點",
+  "shopee_video_script_failed": "腳本生成失敗：{{error}}",
+  "shopee_video_script_unknown": "未知錯誤",
+  "shopee_video_placeholder_title": "例如：超值保養品組合",
+  "shopee_video_placeholder_price": "例如：299",
+  "shopee_video_placeholder_url": "例如：https://shope.ee/xxxx（蝦皮推廣連結）",
+  "shopee_video_task_title": "任務 #{{index}}",
+  "shopee_video_import_section": "匯入",
+  "shopee_video_auto_fill_section": "自動補圖",
+  "shopee_video_preview_section": "預覽（共 {{count}} 筆）",
+  "shopee_video_no_image": "抓不到圖（需手動補）",
+  "shopee_video_toggle_debug": "收合 debug",
+  "shopee_video_show_debug": "查看 debug",
+  "shopee_video_download_section": "下載",
+  "shopee_video_file_format_error": "檔案格式錯誤：請上傳 .csv 或 .xlsx 檔案",
+  "shopee_video_upload_csv": "請上傳 .csv 或 .xlsx 檔案",
+  "shopee_video_no_promo_link": "找不到「推廣連結」欄位，請確認你下載的是「分潤/推廣」報表，不是一般商品連結。",
+  "shopee_video_imported": "已匯入 {{count}} 筆有效資料",
+  "shopee_video_parse_failed": "解析檔案失敗，請確認檔案為正確的蝦皮分潤報表格式（必須包含「推廣連結」欄位）。",
+  "shopee_video_no_export": "目前沒有可匯出的資料（需有推廣連結）",
+  "shopee_video_downloaded_json": "已下載 scripts.json",
+  "shopee_video_page_title": "蝦皮分潤短影音批次腳本產生器",
+  "shopee_video_page_subtitle": "上傳蝦皮分潤 Excel/CSV → 自動整理推廣連結 → 下載 scripts.json",
+  "shopee_video_import_desc": "請上傳蝦皮分潤報表（需包含「推廣連結」欄位）。系統會自動整理出可用清單。",
+  "shopee_video_select_file": "選擇檔案（Excel/CSV）",
+  "shopee_video_no_file_chosen": "未選擇任何檔案",
+  "shopee_video_parsing": "⏳ 正在解析檔案…",
+  "shopee_video_auto_fill_progress": "已補圖 {{done}} / {{total}}",
+  "shopee_video_fetching": "自動抓圖中...",
+  "shopee_video_filled": "已自動抓圖",
+  "shopee_video_api_not_ready": "API 未啟動（本機需啟動後端或設定 proxy）",
+  "shopee_video_btn_download": "下載 scripts.json",
+  "shopee_video_label_product_name": "商品名稱 *",
+  "shopee_video_label_price_optional": "商品價格（選填）",
+  "shopee_video_label_promo_required": "推廣連結（必填，請使用蝦皮推廣網址）",
+  "shopee_video_label_highlights": "商品賣點 *（可填 1～3 點）",
+  "shopee_video_label_images": "圖片 URL *（至少 1 張）",
+  "shopee_video_open_promo_link": "開啟推廣連結",
+  "shopee_video_use_promo_for_commission": "請使用推廣連結，才有分潤。",
+  "shopee_video_fill_status": "補圖狀態",
+  "line_sticker_faq_1_q": "如何快速製作 LINE 貼圖並符合官方規格？",
+  "line_sticker_faq_1_a": "使用本工具上傳圖片後，系統會自動將尺寸調整為 370×320 像素，並自動產出 main.png 與 tab.png，完全符合 LINE Creators Market 上架規範。",
+  "line_sticker_faq_2_q": "貼圖張數限制是多少？",
+  "line_sticker_faq_2_a": "8–40 張。",
+  "line_sticker_faq_3_q": "自選主圖的功能怎麼用？",
+  "line_sticker_faq_3_a": "在預覽區中，每張圖片右上角都有「設為主圖 ★」按鈕。點擊後，該圖片就會被選定為商店封面圖與縮圖。",
+  "line_sticker_error_load": "無法載入圖片",
+  "line_sticker_error_blob": "無法產生 Blob",
+  "line_sticker_set_main": "設為主圖",
+  "line_sticker_main_label": "主圖 ★",
+  "line_sticker_pack_failed": "打包失敗，請重試",
+  "line_sticker_ready": "READY TO PACK",
+  "line_sticker_need_more": "還差 {{count}} 張",
+  "line_sticker_pack_download": "立即打包下載 (一組 {{count}} 張)",
+  "line_sticker_need_more_to_pack": "還差 {{count}} 張圖片即可打包",
+  "line_sticker_processing": "處理中...",
+  "line_sticker_seo_desc": "最強台灣創作者專用 LINE 貼圖規格整理工具。支援 8-40 張貼圖一鍵自動調整尺寸 (370x320)，自選商店主圖，並提供文字保護模式避免裁切。免下載安裝，上架必備！",
+  "line_sticker_seo_title": "LINE 貼圖製作工具：自動裁切規格、打包 ZIP | LINE Sticker Toolkit - RxV",
+  "line_sticker_back_home": "← 回首頁",
+  "line_sticker_subtitle": "LINE Sticker Toolkit",
+  "line_sticker_hero_desc": "一鍵處理規格、自動命名打包，支援 8/16/24/32/40 張組。",
+  "line_sticker_progress_label": "當前進度",
+  "line_sticker_progress_count": "已選擇 {{current}} 張圖片 / 目標 {{target}} 張",
+  "line_sticker_clear_all": "全部清除",
+  "line_sticker_upload_click": "點擊或拖曳圖片上傳",
+  "line_sticker_upload_hint": "支援 PNG, JPG, WebP (建議使用透明背景)",
+  "line_sticker_step_count": "01. 貼圖張數",
+  "line_sticker_step_crop": "02. 裁切邏輯",
+  "line_sticker_crop_safe": "文字保護",
+  "line_sticker_crop_full": "滿版裁切",
+  "line_sticker_preview_title": "03. 預覽與自選主圖",
+  "line_sticker_faq_title": "製作說明 FAQ",
+  "line_sticker_status_label": "Status",
+  "line_sticker_recommend_title": "貼圖創作者推薦工具",
+  "line_sticker_chatart_title": "ChatArt AI 貼圖靈感助手",
+  "line_sticker_chatart_desc": "不知道貼圖要畫什麼？讓 AI 幫您生成創意文字與角色設定，一鍵突破創作瓶頸。",
+  "line_sticker_seedance_title": "Seedance AI 動態生成",
+  "line_sticker_seedance_desc": "想製作會動的 LINE 貼圖？將靜態圖轉為生動動畫，讓您的作品在商店中更吸睛！",
+  "blog_filter_current": "目前篩選：{{name}}",
+  "blog_read_more": "閱讀更多",
+  "blog_category_label": "分類",
+  "blog_date_label": "日期",
+  "blog_back_to_home": "返回首頁",
+  "blog_section_title": "文章專區（Blog）",
+  "blog_section_subtitle": "每週更新 AI 工具、健康、補助與生活文章。提升 SEO，自然流量成長。",
+  "blog_all": "全部",
+  "credits_usage_status": "使用額度狀況",
+  "credits_loading": "載入中…",
+  "credits_disabled": "此功能已停用",
+  "credits_low_remaining": "剩餘點數偏低（{{count}} 字），建議升級方案以確保服務不中斷。",
+  "credits_view_plans": "查看方案",
+  "credits_insufficient": "你的點數已不足完成本次操作",
+  "credits_insufficient_hint": "如果你會持續使用，建議直接選擇 30 萬字方案，中途不會再被中斷",
+  "credits_status_done": "已完成",
+  "credits_status_processing": "處理中",
+  "credits_status_failed": "失敗",
+  "promo_ended": "活動已結束",
+  "promo_remaining": "剩下 {{days}} 天 {{hours}} 小時 {{minutes}} 分鐘",
+  "promo_remaining_hms": "剩下 {{hours}} 小時 {{minutes}} 分鐘 {{seconds}} 秒",
+  "promo_remaining_ms": "剩下 {{minutes}} 分鐘 {{seconds}} 秒",
+  "promo_remaining_s": "剩下 {{seconds}} 秒",
+  "upgrade_trial_exhausted": "免費試用額度已用完",
+  "upgrade_quota_low": "目前使用額度不足，請先查看使用方案說明。",
+  "upgrade_close": "關閉",
+  "upgrade_learn_plan": "了解使用方案",
+  "read_btn_stop": "停止朗讀",
+  "read_btn_play": "語音朗讀",
+  "chant_woodfish_aria": "敲木魚",
+  "chant_woodfish_alt": "敲木魚",
+  "wish_placeholder": "在這裡寫下你的願望...",
+  "wish_btn": "許願 ✨",
+  "wish_alert_enter": "請輸入願望內容",
+  "wish_alert_max_length": "願望內容不能超過 200 字",
+  "wish_alert_failed": "許願失敗：{{error}}",
+  "wish_alert_success": "許願成功！✨",
+  "wish_alert_retry": "許願失敗，請重試",
+  "wish_anon": "匿名",
+  "comment_placeholder_name": "你的名字（可空白）",
+  "comment_placeholder_msg": "留言...",
+  "comment_alert_name_bad": "名字包含不當詞彙（如色情、暴力），請重新編輯。",
+  "comment_alert_content_bad": "留言內容包含不當詞彙（如色情、暴力），請重新編輯。",
+  "chant_log_alert_count": "請輸入有效的念誦次數",
+  "chant_log_alert_name": "請輸入你的名字",
+  "chant_log_placeholder_name": "輸入你的名字",
+  "chant_log_alert_record_failed": "記錄失敗：{{error}}",
+  "chant_log_alert_retry": "記錄失敗，請重試",
+  "chant_log_default_name": "我",
+  "light_thank": "感謝您的祈福，功德無量",
+  "light_click": "點擊蓮燈為此願望祈福",
+  "light_placeholder_name": "匿名善信",
+  "light_placeholder_msg": "願一切眾生平安喜樂",
+  "light_btn": "點燈祈福",
+  "light_processing": "處理中...",
+  "light_alert_already": "您已經為這個願望點過燈了",
+  "light_alert_failed": "點燈失敗：{{error}}",
+  "light_alert_retry": "點燈失敗，請稍後再試",
+  "light_aria": "點燈",
+  "light_alt": "蓮花點燈圖",
+  "light_placeholder_name_short": "請輸入您的名字（可留空）",
+  "light_show_detail": "查看明細",
+  "light_hide_detail": "隱藏明細",
+  "light_default_msg": "點了一盞燈",
+  "light_just_now": "剛剛",
+  "wish_detail_cannot_load": "無法讀取願望內容",
+  "wish_detail_not_found": "找不到此願望",
+  "wish_detail_error": "讀取願望時發生錯誤",
+  "wish_detail_cannot_display": "無法顯示願望",
+  "wish_detail_from": "來自：",
+  "wish_detail_share_copied": "分享連結已複製到剪貼簿",
+  "wish_wall_title": "願望牆",
+  "wish_wall_count": "共 {{count}} 個願望",
+  "chant_stats_load_failed": "讀取統計失敗",
+  "chant_stats_retry": "讀取統計失敗，請重試",
+  "chant_ranking_load_failed": "讀取排行榜失敗",
+  "chant_ranking_retry": "讀取排行榜失敗，請重試",
+  "light_records_load_failed": "讀取點燈紀錄失敗",
+  "light_records_error": "讀取點燈紀錄時發生錯誤",
+  "light_anon_devotee": "匿名善信",
+  "image_upload_error_process": "處理圖片時發生錯誤，請重試",
+  "image_upload_error_size": "圖片太大且無法壓縮，請選擇較小的圖片",
+  "imageCrop": {
+    "breadcrumb": "圖片裁切",
+    "h1": "線上圖片裁切",
+    "intro": "上傳 PNG／JPG／WebP，拖曳調整裁切框與縮放，可選 1:1、4:5、16:9、9:16 或自由裁切；預覽後以 PNG 或 JPG 下載。處理在您的瀏覽器完成。",
+    "upload_label": "選擇圖片",
+    "upload_hint": "支援 PNG、JPG、WebP。",
+    "presets_title": "裁切比例",
+    "preset_free": "自由",
+    "zoom": "縮放：{{v}}",
+    "output_format": "輸出格式",
+    "jpg_quality": "JPG 品質：{{v}}",
+    "quality": "品質：{{v}}",
+    "fmt_png": "PNG",
+    "fmt_jpg": "JPG",
+    "fmt_webp": "WebP",
+    "output_size": "輸出尺寸",
+    "current_format": "目前輸出格式",
+    "suggested_filename": "建議檔名",
+    "extra_export_title": "額外匯出格式（打包 ZIP）",
+    "zip_download": "下載已勾選格式 ZIP",
+    "zip_packaging": "打包中…",
+    "zip_none_selected": "尚未選擇匯出格式",
+    "err_zip": "ZIP 打包失敗，請重試。",
+    "preview_title": "裁切預覽",
+    "preview_updating": "預覽更新中…",
+    "download": "下載裁切結果",
+    "downloading": "處理中…",
+    "faq_title": "常見問題",
+    "err_type": "請選擇 PNG、JPG 或 WebP 圖片。",
+    "err_preview": "無法產生預覽，請重試或換一張圖。",
+    "err_no_crop": "請先完成裁切區域。",
+    "err_download": "下載失敗，請重試。",
+    "err_image_load": "圖片尚未正確載入，請重新選擇檔案或稍後再試。",
+    "err_image_decode": "圖片解碼失敗，請換一張圖或改存成 PNG／JPG 再試。",
+    "err_crop_invalid": "裁切區域無效，請拖曳裁切框或縮放後再試。",
+    "err_canvas": "無法輸出圖檔（繪圖或編碼失敗），請換一張圖或改選另一種輸出格式。",
+    "err_unknown": "處理圖片時發生錯誤，請重試。",
+    "seo": {
+      "title": "線上裁切圖片免費｜圖片裁切工具",
+      "description": "線上立即裁切圖片，可調整照片比例如 1:1、16:9、4:5，並下載裁切後的圖檔。"
+    },
+    "faq": {
+      "q1": "圖片會上傳到伺服器嗎？",
+      "a1": "裁切在瀏覽器內完成，檔案不會因本工具而刻意上傳至伺服器。",
+      "q2": "JPG 與 PNG 差別？",
+      "a2": "PNG 可保留透明；JPG 檔案通常較小但不支援透明，透明處會以白底填滿。",
+      "q3": "可以商用嗎？",
+      "a3": "工具僅協助裁切，素材版權與使用授權仍依您的原始檔為準。"
+    }
+  },
+  "seoPages": {
+    "slugs": {
+      "rxv-seo-ir-001": {
+        "title": "Instagram 貼文｜流程與檢核｜線上尺寸調整",
+        "desc": "此頁整理「Instagram 貼文」在「流程與檢核」階段的實務重點：正方形與直式 4:5，注意安全區與字級。 接下來請在 RxV 內設定目標寬高或比例，並以「Instagram 貼文」實機預覽一次再匯出。"
+      },
+      "rxv-seo-ir-002": {
+        "title": "Instagram 限時動態｜流程與檢核｜線上尺寸調整",
+        "desc": "此頁整理「Instagram 限時動態」在「流程與檢核」階段的實務重點：9:16 直式，預留上下 UI 遮擋區。 接下來請在 RxV 內設定目標寬高或比例，並以「Instagram 限時動態」實機預覽一次再匯出。"
+      },
+      "rxv-seo-ir-003": {
+        "title": "Facebook 貼文與連結預覽｜流程與檢核｜線上尺寸調整",
+        "desc": "此頁整理「Facebook 貼文與連結預覽」在「流程與檢核」階段的實務重點：橫式與方形並存，連結縮圖需預留邊距。 接下來請在 RxV 內設定目標寬高或比例，並以「Facebook 貼文與連結預覽」實機預覽一次再匯出。"
+      },
+      "rxv-seo-ir-004": {
+        "title": "YouTube 縮圖｜流程與檢核｜線上尺寸調整",
+        "desc": "此頁整理「YouTube 縮圖」在「流程與檢核」階段的實務重點：16:9 橫式，字級與對比影響點閱。 接下來請在 RxV 內設定目標寬高或比例，並以「YouTube 縮圖」實機預覽一次再匯出。"
+      },
+      "rxv-seo-ir-005": {
+        "title": "LINE 貼文與大圖｜流程與檢核｜線上尺寸調整",
+        "desc": "此頁整理「LINE 貼文與大圖」在「流程與檢核」階段的實務重點：聊天室預覽與官方帳號版位略有差異。 接下來請在 RxV 內設定目標寬高或比例，並以「LINE 貼文與大圖」實機預覽一次再匯出。"
+      },
+      "rxv-seo-ir-006": {
+        "title": "LinkedIn 動態與文章封面｜流程與檢核｜線上尺寸調整",
+        "desc": "此頁整理「LinkedIn 動態與文章封面」在「流程與檢核」階段的實務重點：偏商務橫式，文件感較重。 接下來請在 RxV 內設定目標寬高或比例，並以「LinkedIn 動態與文章封面」實機預覽一次再匯出。"
+      },
+      "rxv-seo-ir-007": {
+        "title": "Shopee／電商主圖｜流程與檢核｜線上尺寸調整",
+        "desc": "此頁整理「Shopee／電商主圖」在「流程與檢核」階段的實務重點：白底與長邊規範，避免邊緣裁切。 接下來請在 RxV 內設定目標寬高或比例，並以「Shopee／電商主圖」實機預覽一次再匯出。"
+      },
+      "rxv-seo-ir-008": {
+        "title": "部落格與 CMS 內文圖｜流程與檢核｜線上尺寸調整",
+        "desc": "此頁整理「部落格與 CMS 內文圖」在「流程與檢核」階段的實務重點：配合佈景 max-width，避免被 CSS 硬拉。 接下來請在 RxV 內設定目標寬高或比例，並以「部落格與 CMS 內文圖」實機預覽一次再匯出。"
+      },
+      "rxv-seo-ir-009": {
+        "title": "Email 電子報插圖｜流程與檢核｜線上尺寸調整",
+        "desc": "此頁整理「Email 電子報插圖」在「流程與檢核」階段的實務重點：寬度常見 600px 級，檔案不宜過大。 接下來請在 RxV 內設定目標寬高或比例，並以「Email 電子報插圖」實機預覽一次再匯出。"
+      },
+      "rxv-seo-ir-010": {
+        "title": "簡報與 PDF 嵌入圖｜流程與檢核｜線上尺寸調整",
+        "desc": "此頁整理「簡報與 PDF 嵌入圖」在「流程與檢核」階段的實務重點：投影解析度與列印解析度目標不同。 接下來請在 RxV 內設定目標寬高或比例，並以「簡報與 PDF 嵌入圖」實機預覽一次再匯出。"
+      },
+      "rxv-seo-ir-011": {
+        "title": "DM 傳單與少量印刷｜流程與檢核｜線上尺寸調整",
+        "desc": "此頁整理「DM 傳單與少量印刷」在「流程與檢核」階段的實務重點：出血與裁切線，螢幕與紙本色域差異。 接下來請在 RxV 內設定目標寬高或比例，並以「DM 傳單與少量印刷」實機預覽一次再匯出。"
+      },
+      "rxv-seo-ir-012": {
+        "title": "Instagram 貼文｜常見尺寸與比例｜線上尺寸調整",
+        "desc": "此頁整理「Instagram 貼文」在「常見尺寸與比例」階段的實務重點：正方形與直式 4:5，注意安全區與字級。 若你不確定像素，可先查該版位建議值，再一次性輸出，避免來回放大造成模糊。"
+      },
+      "rxv-seo-ir-013": {
+        "title": "Instagram 限時動態｜常見尺寸與比例｜線上尺寸調整",
+        "desc": "此頁整理「Instagram 限時動態」在「常見尺寸與比例」階段的實務重點：9:16 直式，預留上下 UI 遮擋區。 若你不確定像素，可先查該版位建議值，再一次性輸出，避免來回放大造成模糊。"
+      },
+      "rxv-seo-ir-014": {
+        "title": "Facebook 貼文與連結預覽｜常見尺寸與比例｜線上尺寸調整",
+        "desc": "此頁整理「Facebook 貼文與連結預覽」在「常見尺寸與比例」階段的實務重點：橫式與方形並存，連結縮圖需預留邊距。 若你不確定像素，可先查該版位建議值，再一次性輸出，避免來回放大造成模糊。"
+      },
+      "rxv-seo-ir-015": {
+        "title": "YouTube 縮圖｜常見尺寸與比例｜線上尺寸調整",
+        "desc": "此頁整理「YouTube 縮圖」在「常見尺寸與比例」階段的實務重點：16:9 橫式，字級與對比影響點閱。 若你不確定像素，可先查該版位建議值，再一次性輸出，避免來回放大造成模糊。"
+      },
+      "rxv-seo-ir-016": {
+        "title": "LINE 貼文與大圖｜常見尺寸與比例｜線上尺寸調整",
+        "desc": "此頁整理「LINE 貼文與大圖」在「常見尺寸與比例」階段的實務重點：聊天室預覽與官方帳號版位略有差異。 若你不確定像素，可先查該版位建議值，再一次性輸出，避免來回放大造成模糊。"
+      },
+      "rxv-seo-ir-017": {
+        "title": "LinkedIn 動態與文章封面｜常見尺寸與比例｜線上尺寸調整",
+        "desc": "此頁整理「LinkedIn 動態與文章封面」在「常見尺寸與比例」階段的實務重點：偏商務橫式，文件感較重。 若你不確定像素，可先查該版位建議值，再一次性輸出，避免來回放大造成模糊。"
+      },
+      "rxv-seo-ir-018": {
+        "title": "Shopee／電商主圖｜常見尺寸與比例｜線上尺寸調整",
+        "desc": "此頁整理「Shopee／電商主圖」在「常見尺寸與比例」階段的實務重點：白底與長邊規範，避免邊緣裁切。 若你不確定像素，可先查該版位建議值，再一次性輸出，避免來回放大造成模糊。"
+      },
+      "rxv-seo-ir-019": {
+        "title": "部落格與 CMS 內文圖｜常見尺寸與比例｜線上尺寸調整",
+        "desc": "此頁整理「部落格與 CMS 內文圖」在「常見尺寸與比例」階段的實務重點：配合佈景 max-width，避免被 CSS 硬拉。 若你不確定像素，可先查該版位建議值，再一次性輸出，避免來回放大造成模糊。"
+      },
+      "rxv-seo-ir-020": {
+        "title": "Email 電子報插圖｜常見尺寸與比例｜線上尺寸調整",
+        "desc": "此頁整理「Email 電子報插圖」在「常見尺寸與比例」階段的實務重點：寬度常見 600px 級，檔案不宜過大。 若你不確定像素，可先查該版位建議值，再一次性輸出，避免來回放大造成模糊。"
+      },
+      "rxv-seo-ir-021": {
+        "title": "簡報與 PDF 嵌入圖｜常見尺寸與比例｜線上尺寸調整",
+        "desc": "此頁整理「簡報與 PDF 嵌入圖」在「常見尺寸與比例」階段的實務重點：投影解析度與列印解析度目標不同。 若你不確定像素，可先查該版位建議值，再一次性輸出，避免來回放大造成模糊。"
+      },
+      "rxv-seo-ir-022": {
+        "title": "DM 傳單與少量印刷｜常見尺寸與比例｜線上尺寸調整",
+        "desc": "此頁整理「DM 傳單與少量印刷」在「常見尺寸與比例」階段的實務重點：出血與裁切線，螢幕與紙本色域差異。 若你不確定像素，可先查該版位建議值，再一次性輸出，避免來回放大造成模糊。"
+      },
+      "rxv-seo-ir-023": {
+        "title": "Instagram 貼文｜跨裝置預覽要點｜線上尺寸調整",
+        "desc": "此頁整理「Instagram 貼文」在「跨裝置預覽要點」階段的實務重點：正方形與直式 4:5，注意安全區與字級。 建議用手機與桌機各預覽一次「Instagram 貼文」縮放效果，確認字級與邊緣是否被裁切。"
+      },
+      "rxv-seo-ir-024": {
+        "title": "Instagram 限時動態｜跨裝置預覽要點｜線上尺寸調整",
+        "desc": "此頁整理「Instagram 限時動態」在「跨裝置預覽要點」階段的實務重點：9:16 直式，預留上下 UI 遮擋區。 建議用手機與桌機各預覽一次「Instagram 限時動態」縮放效果，確認字級與邊緣是否被裁切。"
+      },
+      "rxv-seo-ir-025": {
+        "title": "Facebook 貼文與連結預覽｜跨裝置預覽要點｜線上尺寸調整",
+        "desc": "此頁整理「Facebook 貼文與連結預覽」在「跨裝置預覽要點」階段的實務重點：橫式與方形並存，連結縮圖需預留邊距。 建議用手機與桌機各預覽一次「Facebook 貼文與連結預覽」縮放效果，確認字級與邊緣是否被裁切。"
+      },
+      "rxv-seo-ir-026": {
+        "title": "YouTube 縮圖｜跨裝置預覽要點｜線上尺寸調整",
+        "desc": "此頁整理「YouTube 縮圖」在「跨裝置預覽要點」階段的實務重點：16:9 橫式，字級與對比影響點閱。 建議用手機與桌機各預覽一次「YouTube 縮圖」縮放效果，確認字級與邊緣是否被裁切。"
+      },
+      "rxv-seo-ir-027": {
+        "title": "LINE 貼文與大圖｜跨裝置預覽要點｜線上尺寸調整",
+        "desc": "此頁整理「LINE 貼文與大圖」在「跨裝置預覽要點」階段的實務重點：聊天室預覽與官方帳號版位略有差異。 建議用手機與桌機各預覽一次「LINE 貼文與大圖」縮放效果，確認字級與邊緣是否被裁切。"
+      },
+      "rxv-seo-ir-028": {
+        "title": "LinkedIn 動態與文章封面｜跨裝置預覽要點｜線上尺寸調整",
+        "desc": "此頁整理「LinkedIn 動態與文章封面」在「跨裝置預覽要點」階段的實務重點：偏商務橫式，文件感較重。 建議用手機與桌機各預覽一次「LinkedIn 動態與文章封面」縮放效果，確認字級與邊緣是否被裁切。"
+      },
+      "rxv-seo-ir-029": {
+        "title": "Shopee／電商主圖｜跨裝置預覽要點｜線上尺寸調整",
+        "desc": "此頁整理「Shopee／電商主圖」在「跨裝置預覽要點」階段的實務重點：白底與長邊規範，避免邊緣裁切。 建議用手機與桌機各預覽一次「Shopee／電商主圖」縮放效果，確認字級與邊緣是否被裁切。"
+      },
+      "rxv-seo-ir-030": {
+        "title": "部落格與 CMS 內文圖｜跨裝置預覽要點｜線上尺寸調整",
+        "desc": "此頁整理「部落格與 CMS 內文圖」在「跨裝置預覽要點」階段的實務重點：配合佈景 max-width，避免被 CSS 硬拉。 建議用手機與桌機各預覽一次「部落格與 CMS 內文圖」縮放效果，確認字級與邊緣是否被裁切。"
+      },
+      "rxv-seo-ir-031": {
+        "title": "Email 電子報插圖｜跨裝置預覽要點｜線上尺寸調整",
+        "desc": "此頁整理「Email 電子報插圖」在「跨裝置預覽要點」階段的實務重點：寬度常見 600px 級，檔案不宜過大。 建議用手機與桌機各預覽一次「Email 電子報插圖」縮放效果，確認字級與邊緣是否被裁切。"
+      },
+      "rxv-seo-ir-032": {
+        "title": "簡報與 PDF 嵌入圖｜跨裝置預覽要點｜線上尺寸調整",
+        "desc": "此頁整理「簡報與 PDF 嵌入圖」在「跨裝置預覽要點」階段的實務重點：投影解析度與列印解析度目標不同。 建議用手機與桌機各預覽一次「簡報與 PDF 嵌入圖」縮放效果，確認字級與邊緣是否被裁切。"
+      },
+      "rxv-seo-ir-033": {
+        "title": "DM 傳單與少量印刷｜跨裝置預覽要點｜線上尺寸調整",
+        "desc": "此頁整理「DM 傳單與少量印刷」在「跨裝置預覽要點」階段的實務重點：出血與裁切線，螢幕與紙本色域差異。 建議用手機與桌機各預覽一次「DM 傳單與少量印刷」縮放效果，確認字級與邊緣是否被裁切。"
+      },
+      "rxv-seo-ir-034": {
+        "title": "Instagram 貼文｜上稿前最後檢查｜線上尺寸調整",
+        "desc": "此頁整理「Instagram 貼文」在「上稿前最後檢查」階段的實務重點：正方形與直式 4:5，注意安全區與字級。 上稿前請核對檔名、比例標註與素材版本；「Instagram 貼文」活動檔常因混檔而誤用舊圖。"
+      },
+      "rxv-seo-ir-035": {
+        "title": "Instagram 限時動態｜上稿前最後檢查｜線上尺寸調整",
+        "desc": "此頁整理「Instagram 限時動態」在「上稿前最後檢查」階段的實務重點：9:16 直式，預留上下 UI 遮擋區。 上稿前請核對檔名、比例標註與素材版本；「Instagram 限時動態」活動檔常因混檔而誤用舊圖。"
+      },
+      "rxv-seo-ir-036": {
+        "title": "Facebook 貼文與連結預覽｜上稿前最後檢查｜線上尺寸調整",
+        "desc": "此頁整理「Facebook 貼文與連結預覽」在「上稿前最後檢查」階段的實務重點：橫式與方形並存，連結縮圖需預留邊距。 上稿前請核對檔名、比例標註與素材版本；「Facebook 貼文與連結預覽」活動檔常因混檔而誤用舊圖。"
+      },
+      "rxv-seo-ir-037": {
+        "title": "YouTube 縮圖｜上稿前最後檢查｜線上尺寸調整",
+        "desc": "此頁整理「YouTube 縮圖」在「上稿前最後檢查」階段的實務重點：16:9 橫式，字級與對比影響點閱。 上稿前請核對檔名、比例標註與素材版本；「YouTube 縮圖」活動檔常因混檔而誤用舊圖。"
+      },
+      "rxv-seo-ir-038": {
+        "title": "LINE 貼文與大圖｜上稿前最後檢查｜線上尺寸調整",
+        "desc": "此頁整理「LINE 貼文與大圖」在「上稿前最後檢查」階段的實務重點：聊天室預覽與官方帳號版位略有差異。 上稿前請核對檔名、比例標註與素材版本；「LINE 貼文與大圖」活動檔常因混檔而誤用舊圖。"
+      },
+      "rxv-seo-ir-039": {
+        "title": "LinkedIn 動態與文章封面｜上稿前最後檢查｜線上尺寸調整",
+        "desc": "此頁整理「LinkedIn 動態與文章封面」在「上稿前最後檢查」階段的實務重點：偏商務橫式，文件感較重。 上稿前請核對檔名、比例標註與素材版本；「LinkedIn 動態與文章封面」活動檔常因混檔而誤用舊圖。"
+      },
+      "rxv-seo-ir-040": {
+        "title": "Shopee／電商主圖｜上稿前最後檢查｜線上尺寸調整",
+        "desc": "此頁整理「Shopee／電商主圖」在「上稿前最後檢查」階段的實務重點：白底與長邊規範，避免邊緣裁切。 上稿前請核對檔名、比例標註與素材版本；「Shopee／電商主圖」活動檔常因混檔而誤用舊圖。"
+      },
+      "rxv-seo-ir-041": {
+        "title": "部落格與 CMS 內文圖｜上稿前最後檢查｜線上尺寸調整",
+        "desc": "此頁整理「部落格與 CMS 內文圖」在「上稿前最後檢查」階段的實務重點：配合佈景 max-width，避免被 CSS 硬拉。 上稿前請核對檔名、比例標註與素材版本；「部落格與 CMS 內文圖」活動檔常因混檔而誤用舊圖。"
+      },
+      "rxv-seo-ir-042": {
+        "title": "Email 電子報插圖｜上稿前最後檢查｜線上尺寸調整",
+        "desc": "此頁整理「Email 電子報插圖」在「上稿前最後檢查」階段的實務重點：寬度常見 600px 級，檔案不宜過大。 上稿前請核對檔名、比例標註與素材版本；「Email 電子報插圖」活動檔常因混檔而誤用舊圖。"
+      },
+      "rxv-seo-ir-043": {
+        "title": "簡報與 PDF 嵌入圖｜上稿前最後檢查｜線上尺寸調整",
+        "desc": "此頁整理「簡報與 PDF 嵌入圖」在「上稿前最後檢查」階段的實務重點：投影解析度與列印解析度目標不同。 上稿前請核對檔名、比例標註與素材版本；「簡報與 PDF 嵌入圖」活動檔常因混檔而誤用舊圖。"
+      },
+      "rxv-seo-ir-044": {
+        "title": "DM 傳單與少量印刷｜上稿前最後檢查｜線上尺寸調整",
+        "desc": "此頁整理「DM 傳單與少量印刷」在「上稿前最後檢查」階段的實務重點：出血與裁切線，螢幕與紙本色域差異。 上稿前請核對檔名、比例標註與素材版本；「DM 傳單與少量印刷」活動檔常因混檔而誤用舊圖。"
+      },
+      "rxv-seo-ic-001": {
+        "title": "圖片壓縮｜網站配額與 CDN 流量（體積優先）",
+        "desc": "針對「網站配額與 CDN 流量」：首屏與列表縮圖過大會拖慢 LCP。 本頁從「體積優先」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。在「體積優先」下，建議先決定可接受的最小可讀細節，再調整壓縮比；與「網站配額與 CDN 流量」相關的檔案常需兼顧體積與開啟速度。"
+      },
+      "rxv-seo-ic-002": {
+        "title": "圖片壓縮｜Email 附件上限（體積優先）",
+        "desc": "針對「Email 附件上限」：常見 10～25MB 信箱限制，夾帶多圖時易爆。 本頁從「體積優先」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。在「體積優先」下，建議先決定可接受的最小可讀細節，再調整壓縮比；與「Email 附件上限」相關的檔案常需兼顧體積與開啟速度。"
+      },
+      "rxv-seo-ic-003": {
+        "title": "圖片壓縮｜表單與報名系統上傳（體積優先）",
+        "desc": "針對「表單與報名系統上傳」：單檔 2～5MB 限制常導致使用者卡關。 本頁從「體積優先」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。在「體積優先」下，建議先決定可接受的最小可讀細節，再調整壓縮比；與「表單與報名系統上傳」相關的檔案常需兼顧體積與開啟速度。"
+      },
+      "rxv-seo-ic-004": {
+        "title": "圖片壓縮｜相簿與雲端備份（體積優先）",
+        "desc": "針對「相簿與雲端備份」：大量原圖占用空間，可接受微損壓縮換容量。 本頁從「體積優先」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。在「體積優先」下，建議先決定可接受的最小可讀細節，再調整壓縮比；與「相簿與雲端備份」相關的檔案常需兼顧體積與開啟速度。"
+      },
+      "rxv-seo-ic-005": {
+        "title": "圖片壓縮｜PNG 透明去背素材（體積優先）",
+        "desc": "針對「PNG 透明去背素材」：色階與去背邊緣對壓縮演算法敏感。 本頁從「體積優先」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。在「體積優先」下，建議先決定可接受的最小可讀細節，再調整壓縮比；與「PNG 透明去背素材」相關的檔案常需兼顧體積與開啟速度。"
+      },
+      "rxv-seo-ic-006": {
+        "title": "圖片壓縮｜活動現場速傳照片（體積優先）",
+        "desc": "針對「活動現場速傳照片」：通訊軟體傳檔偏好較小 JPG。 本頁從「體積優先」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。在「體積優先」下，建議先決定可接受的最小可讀細節，再調整壓縮比；與「活動現場速傳照片」相關的檔案常需兼顧體積與開啟速度。"
+      },
+      "rxv-seo-ic-007": {
+        "title": "圖片壓縮｜社群貼文配圖（體積優先）",
+        "desc": "針對「社群貼文配圖」：平台會二次壓縮，原檔太大不一定更清。 本頁從「體積優先」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。在「體積優先」下，建議先決定可接受的最小可讀細節，再調整壓縮比；與「社群貼文配圖」相關的檔案常需兼顧體積與開啟速度。"
+      },
+      "rxv-seo-ic-008": {
+        "title": "圖片壓縮｜Retina 與 2x 網頁圖（體積優先）",
+        "desc": "針對「Retina 與 2x 網頁圖」：顯示尺寸與實際像素不同，需平衡銳利度與體積。 本頁從「體積優先」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。在「體積優先」下，建議先決定可接受的最小可讀細節，再調整壓縮比；與「Retina 與 2x 網頁圖」相關的檔案常需兼顧體積與開啟速度。"
+      },
+      "rxv-seo-ic-009": {
+        "title": "圖片壓縮｜簡報投影與螢幕分享（體積優先）",
+        "desc": "針對「簡報投影與螢幕分享」：檔案過大易造成開啟卡頓或上傳失敗。 本頁從「體積優先」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。在「體積優先」下，建議先決定可接受的最小可讀細節，再調整壓縮比；與「簡報投影與螢幕分享」相關的檔案常需兼顧體積與開啟速度。"
+      },
+      "rxv-seo-ic-010": {
+        "title": "圖片壓縮｜客服截圖與說明圖（體積優先）",
+        "desc": "針對「客服截圖與說明圖」：長截圖高度高，檔案容易膨脹。 本頁從「體積優先」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。在「體積優先」下，建議先決定可接受的最小可讀細節，再調整壓縮比；與「客服截圖與說明圖」相關的檔案常需兼顧體積與開啟速度。"
+      },
+      "rxv-seo-ic-011": {
+        "title": "圖片壓縮｜電子書與長圖文 PDF 內嵌（體積優先）",
+        "desc": "針對「電子書與長圖文 PDF 內嵌」：頁數多時，圖檔體積直接影響總檔。 本頁從「體積優先」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。在「體積優先」下，建議先決定可接受的最小可讀細節，再調整壓縮比；與「電子書與長圖文 PDF 內嵌」相關的檔案常需兼顧體積與開啟速度。"
+      },
+      "rxv-seo-ic-012": {
+        "title": "圖片壓縮｜網站配額與 CDN 流量（畫質優先）",
+        "desc": "針對「網站配額與 CDN 流量」：首屏與列表縮圖過大會拖慢 LCP。 本頁從「畫質優先」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。若目標是「網站配額與 CDN 流量」的傳輸效率，可先評估是否需先縮像素再壓縮；「畫質優先」策略能避免一次壓過頭。"
+      },
+      "rxv-seo-ic-013": {
+        "title": "圖片壓縮｜Email 附件上限（畫質優先）",
+        "desc": "針對「Email 附件上限」：常見 10～25MB 信箱限制，夾帶多圖時易爆。 本頁從「畫質優先」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。若目標是「Email 附件上限」的傳輸效率，可先評估是否需先縮像素再壓縮；「畫質優先」策略能避免一次壓過頭。"
+      },
+      "rxv-seo-ic-014": {
+        "title": "圖片壓縮｜表單與報名系統上傳（畫質優先）",
+        "desc": "針對「表單與報名系統上傳」：單檔 2～5MB 限制常導致使用者卡關。 本頁從「畫質優先」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。若目標是「表單與報名系統上傳」的傳輸效率，可先評估是否需先縮像素再壓縮；「畫質優先」策略能避免一次壓過頭。"
+      },
+      "rxv-seo-ic-015": {
+        "title": "圖片壓縮｜相簿與雲端備份（畫質優先）",
+        "desc": "針對「相簿與雲端備份」：大量原圖占用空間，可接受微損壓縮換容量。 本頁從「畫質優先」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。若目標是「相簿與雲端備份」的傳輸效率，可先評估是否需先縮像素再壓縮；「畫質優先」策略能避免一次壓過頭。"
+      },
+      "rxv-seo-ic-016": {
+        "title": "圖片壓縮｜PNG 透明去背素材（畫質優先）",
+        "desc": "針對「PNG 透明去背素材」：色階與去背邊緣對壓縮演算法敏感。 本頁從「畫質優先」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。若目標是「PNG 透明去背素材」的傳輸效率，可先評估是否需先縮像素再壓縮；「畫質優先」策略能避免一次壓過頭。"
+      },
+      "rxv-seo-ic-017": {
+        "title": "圖片壓縮｜活動現場速傳照片（畫質優先）",
+        "desc": "針對「活動現場速傳照片」：通訊軟體傳檔偏好較小 JPG。 本頁從「畫質優先」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。若目標是「活動現場速傳照片」的傳輸效率，可先評估是否需先縮像素再壓縮；「畫質優先」策略能避免一次壓過頭。"
+      },
+      "rxv-seo-ic-018": {
+        "title": "圖片壓縮｜社群貼文配圖（畫質優先）",
+        "desc": "針對「社群貼文配圖」：平台會二次壓縮，原檔太大不一定更清。 本頁從「畫質優先」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。若目標是「社群貼文配圖」的傳輸效率，可先評估是否需先縮像素再壓縮；「畫質優先」策略能避免一次壓過頭。"
+      },
+      "rxv-seo-ic-019": {
+        "title": "圖片壓縮｜Retina 與 2x 網頁圖（畫質優先）",
+        "desc": "針對「Retina 與 2x 網頁圖」：顯示尺寸與實際像素不同，需平衡銳利度與體積。 本頁從「畫質優先」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。若目標是「Retina 與 2x 網頁圖」的傳輸效率，可先評估是否需先縮像素再壓縮；「畫質優先」策略能避免一次壓過頭。"
+      },
+      "rxv-seo-ic-020": {
+        "title": "圖片壓縮｜簡報投影與螢幕分享（畫質優先）",
+        "desc": "針對「簡報投影與螢幕分享」：檔案過大易造成開啟卡頓或上傳失敗。 本頁從「畫質優先」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。若目標是「簡報投影與螢幕分享」的傳輸效率，可先評估是否需先縮像素再壓縮；「畫質優先」策略能避免一次壓過頭。"
+      },
+      "rxv-seo-ic-021": {
+        "title": "圖片壓縮｜客服截圖與說明圖（畫質優先）",
+        "desc": "針對「客服截圖與說明圖」：長截圖高度高，檔案容易膨脹。 本頁從「畫質優先」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。若目標是「客服截圖與說明圖」的傳輸效率，可先評估是否需先縮像素再壓縮；「畫質優先」策略能避免一次壓過頭。"
+      },
+      "rxv-seo-ic-022": {
+        "title": "圖片壓縮｜電子書與長圖文 PDF 內嵌（畫質優先）",
+        "desc": "針對「電子書與長圖文 PDF 內嵌」：頁數多時，圖檔體積直接影響總檔。 本頁從「畫質優先」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。若目標是「電子書與長圖文 PDF 內嵌」的傳輸效率，可先評估是否需先縮像素再壓縮；「畫質優先」策略能避免一次壓過頭。"
+      },
+      "rxv-seo-ic-023": {
+        "title": "圖片壓縮｜網站配額與 CDN 流量（批次處理）",
+        "desc": "針對「網站配額與 CDN 流量」：首屏與列表縮圖過大會拖慢 LCP。 本頁從「批次處理」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。針對「網站配額與 CDN 流量」：首屏與列表縮圖過大會拖慢 LCP。 以「批次處理」流程在 RxV 內完成，較容易建立可重複的降檔規則。"
+      },
+      "rxv-seo-ic-024": {
+        "title": "圖片壓縮｜Email 附件上限（批次處理）",
+        "desc": "針對「Email 附件上限」：常見 10～25MB 信箱限制，夾帶多圖時易爆。 本頁從「批次處理」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。針對「Email 附件上限」：常見 10～25MB 信箱限制，夾帶多圖時易爆。 以「批次處理」流程在 RxV 內完成，較容易建立可重複的降檔規則。"
+      },
+      "rxv-seo-ic-025": {
+        "title": "圖片壓縮｜表單與報名系統上傳（批次處理）",
+        "desc": "針對「表單與報名系統上傳」：單檔 2～5MB 限制常導致使用者卡關。 本頁從「批次處理」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。針對「表單與報名系統上傳」：單檔 2～5MB 限制常導致使用者卡關。 以「批次處理」流程在 RxV 內完成，較容易建立可重複的降檔規則。"
+      },
+      "rxv-seo-ic-026": {
+        "title": "圖片壓縮｜相簿與雲端備份（批次處理）",
+        "desc": "針對「相簿與雲端備份」：大量原圖占用空間，可接受微損壓縮換容量。 本頁從「批次處理」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。針對「相簿與雲端備份」：大量原圖占用空間，可接受微損壓縮換容量。 以「批次處理」流程在 RxV 內完成，較容易建立可重複的降檔規則。"
+      },
+      "rxv-seo-ic-027": {
+        "title": "圖片壓縮｜PNG 透明去背素材（批次處理）",
+        "desc": "針對「PNG 透明去背素材」：色階與去背邊緣對壓縮演算法敏感。 本頁從「批次處理」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。針對「PNG 透明去背素材」：色階與去背邊緣對壓縮演算法敏感。 以「批次處理」流程在 RxV 內完成，較容易建立可重複的降檔規則。"
+      },
+      "rxv-seo-ic-028": {
+        "title": "圖片壓縮｜活動現場速傳照片（批次處理）",
+        "desc": "針對「活動現場速傳照片」：通訊軟體傳檔偏好較小 JPG。 本頁從「批次處理」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。針對「活動現場速傳照片」：通訊軟體傳檔偏好較小 JPG。 以「批次處理」流程在 RxV 內完成，較容易建立可重複的降檔規則。"
+      },
+      "rxv-seo-ic-029": {
+        "title": "圖片壓縮｜社群貼文配圖（批次處理）",
+        "desc": "針對「社群貼文配圖」：平台會二次壓縮，原檔太大不一定更清。 本頁從「批次處理」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。針對「社群貼文配圖」：平台會二次壓縮，原檔太大不一定更清。 以「批次處理」流程在 RxV 內完成，較容易建立可重複的降檔規則。"
+      },
+      "rxv-seo-ic-030": {
+        "title": "圖片壓縮｜Retina 與 2x 網頁圖（批次處理）",
+        "desc": "針對「Retina 與 2x 網頁圖」：顯示尺寸與實際像素不同，需平衡銳利度與體積。 本頁從「批次處理」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。針對「Retina 與 2x 網頁圖」：顯示尺寸與實際像素不同，需平衡銳利度與體積。 以「批次處理」流程在 RxV 內完成，較容易建立可重複的降檔規則。"
+      },
+      "rxv-seo-ic-031": {
+        "title": "圖片壓縮｜簡報投影與螢幕分享（批次處理）",
+        "desc": "針對「簡報投影與螢幕分享」：檔案過大易造成開啟卡頓或上傳失敗。 本頁從「批次處理」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。針對「簡報投影與螢幕分享」：檔案過大易造成開啟卡頓或上傳失敗。 以「批次處理」流程在 RxV 內完成，較容易建立可重複的降檔規則。"
+      },
+      "rxv-seo-ic-032": {
+        "title": "圖片壓縮｜客服截圖與說明圖（批次處理）",
+        "desc": "針對「客服截圖與說明圖」：長截圖高度高，檔案容易膨脹。 本頁從「批次處理」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。針對「客服截圖與說明圖」：長截圖高度高，檔案容易膨脹。 以「批次處理」流程在 RxV 內完成，較容易建立可重複的降檔規則。"
+      },
+      "rxv-seo-ic-033": {
+        "title": "圖片壓縮｜電子書與長圖文 PDF 內嵌（批次處理）",
+        "desc": "針對「電子書與長圖文 PDF 內嵌」：頁數多時，圖檔體積直接影響總檔。 本頁從「批次處理」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。針對「電子書與長圖文 PDF 內嵌」：頁數多時，圖檔體積直接影響總檔。 以「批次處理」流程在 RxV 內完成，較容易建立可重複的降檔規則。"
+      },
+      "rxv-seo-ic-034": {
+        "title": "圖片壓縮｜網站配額與 CDN 流量（單張精修）",
+        "desc": "針對「網站配額與 CDN 流量」：首屏與列表縮圖過大會拖慢 LCP。 本頁從「單張精修」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。完成後請抽樣檢查邊緣與文字；「網站配額與 CDN 流量」若含文字截圖，建議在「單張精修」下用較保守參數。"
+      },
+      "rxv-seo-ic-035": {
+        "title": "圖片壓縮｜Email 附件上限（單張精修）",
+        "desc": "針對「Email 附件上限」：常見 10～25MB 信箱限制，夾帶多圖時易爆。 本頁從「單張精修」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。完成後請抽樣檢查邊緣與文字；「Email 附件上限」若含文字截圖，建議在「單張精修」下用較保守參數。"
+      },
+      "rxv-seo-ic-036": {
+        "title": "圖片壓縮｜表單與報名系統上傳（單張精修）",
+        "desc": "針對「表單與報名系統上傳」：單檔 2～5MB 限制常導致使用者卡關。 本頁從「單張精修」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。完成後請抽樣檢查邊緣與文字；「表單與報名系統上傳」若含文字截圖，建議在「單張精修」下用較保守參數。"
+      },
+      "rxv-seo-ic-037": {
+        "title": "圖片壓縮｜相簿與雲端備份（單張精修）",
+        "desc": "針對「相簿與雲端備份」：大量原圖占用空間，可接受微損壓縮換容量。 本頁從「單張精修」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。完成後請抽樣檢查邊緣與文字；「相簿與雲端備份」若含文字截圖，建議在「單張精修」下用較保守參數。"
+      },
+      "rxv-seo-ic-038": {
+        "title": "圖片壓縮｜PNG 透明去背素材（單張精修）",
+        "desc": "針對「PNG 透明去背素材」：色階與去背邊緣對壓縮演算法敏感。 本頁從「單張精修」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。完成後請抽樣檢查邊緣與文字；「PNG 透明去背素材」若含文字截圖，建議在「單張精修」下用較保守參數。"
+      },
+      "rxv-seo-ic-039": {
+        "title": "圖片壓縮｜活動現場速傳照片（單張精修）",
+        "desc": "針對「活動現場速傳照片」：通訊軟體傳檔偏好較小 JPG。 本頁從「單張精修」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。完成後請抽樣檢查邊緣與文字；「活動現場速傳照片」若含文字截圖，建議在「單張精修」下用較保守參數。"
+      },
+      "rxv-seo-ic-040": {
+        "title": "圖片壓縮｜社群貼文配圖（單張精修）",
+        "desc": "針對「社群貼文配圖」：平台會二次壓縮，原檔太大不一定更清。 本頁從「單張精修」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。完成後請抽樣檢查邊緣與文字；「社群貼文配圖」若含文字截圖，建議在「單張精修」下用較保守參數。"
+      },
+      "rxv-seo-ic-041": {
+        "title": "圖片壓縮｜Retina 與 2x 網頁圖（單張精修）",
+        "desc": "針對「Retina 與 2x 網頁圖」：顯示尺寸與實際像素不同，需平衡銳利度與體積。 本頁從「單張精修」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。完成後請抽樣檢查邊緣與文字；「Retina 與 2x 網頁圖」若含文字截圖，建議在「單張精修」下用較保守參數。"
+      },
+      "rxv-seo-ic-042": {
+        "title": "圖片壓縮｜簡報投影與螢幕分享（單張精修）",
+        "desc": "針對「簡報投影與螢幕分享」：檔案過大易造成開啟卡頓或上傳失敗。 本頁從「單張精修」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。完成後請抽樣檢查邊緣與文字；「簡報投影與螢幕分享」若含文字截圖，建議在「單張精修」下用較保守參數。"
+      },
+      "rxv-seo-ic-043": {
+        "title": "圖片壓縮｜客服截圖與說明圖（單張精修）",
+        "desc": "針對「客服截圖與說明圖」：長截圖高度高，檔案容易膨脹。 本頁從「單張精修」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。完成後請抽樣檢查邊緣與文字；「客服截圖與說明圖」若含文字截圖，建議在「單張精修」下用較保守參數。"
+      },
+      "rxv-seo-ic-044": {
+        "title": "圖片壓縮｜電子書與長圖文 PDF 內嵌（單張精修）",
+        "desc": "針對「電子書與長圖文 PDF 內嵌」：頁數多時，圖檔體積直接影響總檔。 本頁從「單張精修」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。完成後請抽樣檢查邊緣與文字；「電子書與長圖文 PDF 內嵌」若含文字截圖，建議在「單張精修」下用較保守參數。"
+      },
+      "rxv-seo-qr-001": {
+        "title": "QR Code｜社群導流：Instagram／Threads 個人首頁連結（列印尺寸與掃描距離）",
+        "desc": "此頁聚焦「社群導流」的「Instagram／Threads 個人首頁連結」。適合放追蹤連結或限動精選導向。 並從「列印尺寸與掃描距離」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。在「列印尺寸與掃描距離」上，請先決定掃描距離與物料尺寸，再回推 QR 模組大小；「Instagram／Threads 個人首頁連結」常見錯誤是模組過小。"
+      },
+      "rxv-seo-qr-002": {
+        "title": "QR Code｜社群導流：LINE 官方帳號加好友（列印尺寸與掃描距離）",
+        "desc": "此頁聚焦「社群導流」的「LINE 官方帳號加好友」。店內桌貼與包裝小卡常用。 並從「列印尺寸與掃描距離」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。在「列印尺寸與掃描距離」上，請先決定掃描距離與物料尺寸，再回推 QR 模組大小；「LINE 官方帳號加好友」常見錯誤是模組過小。"
+      },
+      "rxv-seo-qr-003": {
+        "title": "QR Code｜商務應用：電子名片與聯絡資訊（列印尺寸與掃描距離）",
+        "desc": "此頁聚焦「商務應用」的「電子名片與聯絡資訊」。一碼整合電話、官網、表單。 並從「列印尺寸與掃描距離」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。在「列印尺寸與掃描距離」上，請先決定掃描距離與物料尺寸，再回推 QR 模組大小；「電子名片與聯絡資訊」常見錯誤是模組過小。"
+      },
+      "rxv-seo-qr-004": {
+        "title": "QR Code｜商務應用：收款與發票載具（列印尺寸與掃描距離）",
+        "desc": "此頁聚焦「商務應用」的「收款與發票載具」。需注意防偽與更新失效連結。 並從「列印尺寸與掃描距離」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。在「列印尺寸與掃描距離」上，請先決定掃描距離與物料尺寸，再回推 QR 模組大小；「收款與發票載具」常見錯誤是模組過小。"
+      },
+      "rxv-seo-qr-005": {
+        "title": "QR Code｜餐飲場景：內用／外帶菜單與點餐（列印尺寸與掃描距離）",
+        "desc": "此頁聚焦「餐飲場景」的「內用／外帶菜單與點餐」。紙本防水與掃描距離要一併考量。 並從「列印尺寸與掃描距離」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。在「列印尺寸與掃描距離」上，請先決定掃描距離與物料尺寸，再回推 QR 模組大小；「內用／外帶菜單與點餐」常見錯誤是模組過小。"
+      },
+      "rxv-seo-qr-006": {
+        "title": "QR Code｜餐飲場景：訂位與候位通知（列印尺寸與掃描距離）",
+        "desc": "此頁聚焦「餐飲場景」的「訂位與候位通知」。連到表單或通訊平台，減少電話占線。 並從「列印尺寸與掃描距離」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。在「列印尺寸與掃描距離」上，請先決定掃描距離與物料尺寸，再回推 QR 模組大小；「訂位與候位通知」常見錯誤是模組過小。"
+      },
+      "rxv-seo-qr-007": {
+        "title": "QR Code｜活動行銷：報名與問卷填寫（列印尺寸與掃描距離）",
+        "desc": "此頁聚焦「活動行銷」的「報名與問卷填寫」。線下海報導到線上表單，追蹤檔期轉換。 並從「列印尺寸與掃描距離」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。在「列印尺寸與掃描距離」上，請先決定掃描距離與物料尺寸，再回推 QR 模組大小；「報名與問卷填寫」常見錯誤是模組過小。"
+      },
+      "rxv-seo-qr-008": {
+        "title": "QR Code｜活動行銷：展場攤位與集點（列印尺寸與掃描距離）",
+        "desc": "此頁聚焦「活動行銷」的「展場攤位與集點」。可搭配短期活動頁，結束後替換連結。 並從「列印尺寸與掃描距離」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。在「列印尺寸與掃描距離」上，請先決定掃描距離與物料尺寸，再回推 QR 模組大小；「展場攤位與集點」常見錯誤是模組過小。"
+      },
+      "rxv-seo-qr-009": {
+        "title": "QR Code｜商務應用：門市 Wi‑Fi 登入說明（列印尺寸與掃描距離）",
+        "desc": "此頁聚焦「商務應用」的「門市 Wi‑Fi 登入說明」。密碼與 SSID 更新時需重印或換動態頁。 並從「列印尺寸與掃描距離」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。在「列印尺寸與掃描距離」上，請先決定掃描距離與物料尺寸，再回推 QR 模組大小；「門市 Wi‑Fi 登入說明」常見錯誤是模組過小。"
+      },
+      "rxv-seo-qr-010": {
+        "title": "QR Code｜社群導流：社群抽獎與留言活動頁（列印尺寸與掃描距離）",
+        "desc": "此頁聚焦「社群導流」的「社群抽獎與留言活動頁」。活動結束後應替換落地內容避免失效。 並從「列印尺寸與掃描距離」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。在「列印尺寸與掃描距離」上，請先決定掃描距離與物料尺寸，再回推 QR 模組大小；「社群抽獎與留言活動頁」常見錯誤是模組過小。"
+      },
+      "rxv-seo-qr-011": {
+        "title": "QR Code｜餐飲場景：外送平台與評價聚合（列印尺寸與掃描距離）",
+        "desc": "此頁聚焦「餐飲場景」的「外送平台與評價聚合」。一碼導向指定平台或 Google 評論。 並從「列印尺寸與掃描距離」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。在「列印尺寸與掃描距離」上，請先決定掃描距離與物料尺寸，再回推 QR 模組大小；「外送平台與評價聚合」常見錯誤是模組過小。"
+      },
+      "rxv-seo-qr-012": {
+        "title": "QR Code｜社群導流：Instagram／Threads 個人首頁連結（連結更新與備援短網址）",
+        "desc": "此頁聚焦「社群導流」的「Instagram／Threads 個人首頁連結」。適合放追蹤連結或限動精選導向。 並從「連結更新與備援短網址」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。若你關注「連結更新與備援短網址」，建議把落地頁與短網址策略一次想清楚，避免「Instagram／Threads 個人首頁連結」上線後才頻繁重印。"
+      },
+      "rxv-seo-qr-013": {
+        "title": "QR Code｜社群導流：LINE 官方帳號加好友（連結更新與備援短網址）",
+        "desc": "此頁聚焦「社群導流」的「LINE 官方帳號加好友」。店內桌貼與包裝小卡常用。 並從「連結更新與備援短網址」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。若你關注「連結更新與備援短網址」，建議把落地頁與短網址策略一次想清楚，避免「LINE 官方帳號加好友」上線後才頻繁重印。"
+      },
+      "rxv-seo-qr-014": {
+        "title": "QR Code｜商務應用：電子名片與聯絡資訊（連結更新與備援短網址）",
+        "desc": "此頁聚焦「商務應用」的「電子名片與聯絡資訊」。一碼整合電話、官網、表單。 並從「連結更新與備援短網址」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。若你關注「連結更新與備援短網址」，建議把落地頁與短網址策略一次想清楚，避免「電子名片與聯絡資訊」上線後才頻繁重印。"
+      },
+      "rxv-seo-qr-015": {
+        "title": "QR Code｜商務應用：收款與發票載具（連結更新與備援短網址）",
+        "desc": "此頁聚焦「商務應用」的「收款與發票載具」。需注意防偽與更新失效連結。 並從「連結更新與備援短網址」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。若你關注「連結更新與備援短網址」，建議把落地頁與短網址策略一次想清楚，避免「收款與發票載具」上線後才頻繁重印。"
+      },
+      "rxv-seo-qr-016": {
+        "title": "QR Code｜餐飲場景：內用／外帶菜單與點餐（連結更新與備援短網址）",
+        "desc": "此頁聚焦「餐飲場景」的「內用／外帶菜單與點餐」。紙本防水與掃描距離要一併考量。 並從「連結更新與備援短網址」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。若你關注「連結更新與備援短網址」，建議把落地頁與短網址策略一次想清楚，避免「內用／外帶菜單與點餐」上線後才頻繁重印。"
+      },
+      "rxv-seo-qr-017": {
+        "title": "QR Code｜餐飲場景：訂位與候位通知（連結更新與備援短網址）",
+        "desc": "此頁聚焦「餐飲場景」的「訂位與候位通知」。連到表單或通訊平台，減少電話占線。 並從「連結更新與備援短網址」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。若你關注「連結更新與備援短網址」，建議把落地頁與短網址策略一次想清楚，避免「訂位與候位通知」上線後才頻繁重印。"
+      },
+      "rxv-seo-qr-018": {
+        "title": "QR Code｜活動行銷：報名與問卷填寫（連結更新與備援短網址）",
+        "desc": "此頁聚焦「活動行銷」的「報名與問卷填寫」。線下海報導到線上表單，追蹤檔期轉換。 並從「連結更新與備援短網址」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。若你關注「連結更新與備援短網址」，建議把落地頁與短網址策略一次想清楚，避免「報名與問卷填寫」上線後才頻繁重印。"
+      },
+      "rxv-seo-qr-019": {
+        "title": "QR Code｜活動行銷：展場攤位與集點（連結更新與備援短網址）",
+        "desc": "此頁聚焦「活動行銷」的「展場攤位與集點」。可搭配短期活動頁，結束後替換連結。 並從「連結更新與備援短網址」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。若你關注「連結更新與備援短網址」，建議把落地頁與短網址策略一次想清楚，避免「展場攤位與集點」上線後才頻繁重印。"
+      },
+      "rxv-seo-qr-020": {
+        "title": "QR Code｜商務應用：門市 Wi‑Fi 登入說明（連結更新與備援短網址）",
+        "desc": "此頁聚焦「商務應用」的「門市 Wi‑Fi 登入說明」。密碼與 SSID 更新時需重印或換動態頁。 並從「連結更新與備援短網址」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。若你關注「連結更新與備援短網址」，建議把落地頁與短網址策略一次想清楚，避免「門市 Wi‑Fi 登入說明」上線後才頻繁重印。"
+      },
+      "rxv-seo-qr-021": {
+        "title": "QR Code｜社群導流：社群抽獎與留言活動頁（連結更新與備援短網址）",
+        "desc": "此頁聚焦「社群導流」的「社群抽獎與留言活動頁」。活動結束後應替換落地內容避免失效。 並從「連結更新與備援短網址」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。若你關注「連結更新與備援短網址」，建議把落地頁與短網址策略一次想清楚，避免「社群抽獎與留言活動頁」上線後才頻繁重印。"
+      },
+      "rxv-seo-qr-022": {
+        "title": "QR Code｜餐飲場景：外送平台與評價聚合（連結更新與備援短網址）",
+        "desc": "此頁聚焦「餐飲場景」的「外送平台與評價聚合」。一碼導向指定平台或 Google 評論。 並從「連結更新與備援短網址」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。若你關注「連結更新與備援短網址」，建議把落地頁與短網址策略一次想清楚，避免「外送平台與評價聚合」上線後才頻繁重印。"
+      },
+      "rxv-seo-qr-023": {
+        "title": "QR Code｜社群導流：Instagram／Threads 個人首頁連結（品牌視覺與對比）",
+        "desc": "此頁聚焦「社群導流」的「Instagram／Threads 個人首頁連結」。適合放追蹤連結或限動精選導向。 並從「品牌視覺與對比」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。從「品牌視覺與對比」檢視：對比不足會比「Instagram／Threads 個人首頁連結」文案缺失更致命，尤其在光線不均的店面。"
+      },
+      "rxv-seo-qr-024": {
+        "title": "QR Code｜社群導流：LINE 官方帳號加好友（品牌視覺與對比）",
+        "desc": "此頁聚焦「社群導流」的「LINE 官方帳號加好友」。店內桌貼與包裝小卡常用。 並從「品牌視覺與對比」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。從「品牌視覺與對比」檢視：對比不足會比「LINE 官方帳號加好友」文案缺失更致命，尤其在光線不均的店面。"
+      },
+      "rxv-seo-qr-025": {
+        "title": "QR Code｜商務應用：電子名片與聯絡資訊（品牌視覺與對比）",
+        "desc": "此頁聚焦「商務應用」的「電子名片與聯絡資訊」。一碼整合電話、官網、表單。 並從「品牌視覺與對比」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。從「品牌視覺與對比」檢視：對比不足會比「電子名片與聯絡資訊」文案缺失更致命，尤其在光線不均的店面。"
+      },
+      "rxv-seo-qr-026": {
+        "title": "QR Code｜商務應用：收款與發票載具（品牌視覺與對比）",
+        "desc": "此頁聚焦「商務應用」的「收款與發票載具」。需注意防偽與更新失效連結。 並從「品牌視覺與對比」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。從「品牌視覺與對比」檢視：對比不足會比「收款與發票載具」文案缺失更致命，尤其在光線不均的店面。"
+      },
+      "rxv-seo-qr-027": {
+        "title": "QR Code｜餐飲場景：內用／外帶菜單與點餐（品牌視覺與對比）",
+        "desc": "此頁聚焦「餐飲場景」的「內用／外帶菜單與點餐」。紙本防水與掃描距離要一併考量。 並從「品牌視覺與對比」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。從「品牌視覺與對比」檢視：對比不足會比「內用／外帶菜單與點餐」文案缺失更致命，尤其在光線不均的店面。"
+      },
+      "rxv-seo-qr-028": {
+        "title": "QR Code｜餐飲場景：訂位與候位通知（品牌視覺與對比）",
+        "desc": "此頁聚焦「餐飲場景」的「訂位與候位通知」。連到表單或通訊平台，減少電話占線。 並從「品牌視覺與對比」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。從「品牌視覺與對比」檢視：對比不足會比「訂位與候位通知」文案缺失更致命，尤其在光線不均的店面。"
+      },
+      "rxv-seo-qr-029": {
+        "title": "QR Code｜活動行銷：報名與問卷填寫（品牌視覺與對比）",
+        "desc": "此頁聚焦「活動行銷」的「報名與問卷填寫」。線下海報導到線上表單，追蹤檔期轉換。 並從「品牌視覺與對比」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。從「品牌視覺與對比」檢視：對比不足會比「報名與問卷填寫」文案缺失更致命，尤其在光線不均的店面。"
+      },
+      "rxv-seo-qr-030": {
+        "title": "QR Code｜活動行銷：展場攤位與集點（品牌視覺與對比）",
+        "desc": "此頁聚焦「活動行銷」的「展場攤位與集點」。可搭配短期活動頁，結束後替換連結。 並從「品牌視覺與對比」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。從「品牌視覺與對比」檢視：對比不足會比「展場攤位與集點」文案缺失更致命，尤其在光線不均的店面。"
+      },
+      "rxv-seo-qr-031": {
+        "title": "QR Code｜商務應用：門市 Wi‑Fi 登入說明（品牌視覺與對比）",
+        "desc": "此頁聚焦「商務應用」的「門市 Wi‑Fi 登入說明」。密碼與 SSID 更新時需重印或換動態頁。 並從「品牌視覺與對比」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。從「品牌視覺與對比」檢視：對比不足會比「門市 Wi‑Fi 登入說明」文案缺失更致命，尤其在光線不均的店面。"
+      },
+      "rxv-seo-qr-032": {
+        "title": "QR Code｜社群導流：社群抽獎與留言活動頁（品牌視覺與對比）",
+        "desc": "此頁聚焦「社群導流」的「社群抽獎與留言活動頁」。活動結束後應替換落地內容避免失效。 並從「品牌視覺與對比」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。從「品牌視覺與對比」檢視：對比不足會比「社群抽獎與留言活動頁」文案缺失更致命，尤其在光線不均的店面。"
+      },
+      "rxv-seo-qr-033": {
+        "title": "QR Code｜餐飲場景：外送平台與評價聚合（品牌視覺與對比）",
+        "desc": "此頁聚焦「餐飲場景」的「外送平台與評價聚合」。一碼導向指定平台或 Google 評論。 並從「品牌視覺與對比」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。從「品牌視覺與對比」檢視：對比不足會比「外送平台與評價聚合」文案缺失更致命，尤其在光線不均的店面。"
+      },
+      "rxv-seo-qr-034": {
+        "title": "QR Code｜社群導流：Instagram／Threads 個人首頁連結（追蹤與成效檢視）",
+        "desc": "此頁聚焦「社群導流」的「Instagram／Threads 個人首頁連結」。適合放追蹤連結或限動精選導向。 並從「追蹤與成效檢視」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。「追蹤與成效檢視」需要固定追蹤方式時，請把 UTM 或活動代碼寫進中繼頁規則，別只改 QR 圖檔。"
+      },
+      "rxv-seo-qr-035": {
+        "title": "QR Code｜社群導流：LINE 官方帳號加好友（追蹤與成效檢視）",
+        "desc": "此頁聚焦「社群導流」的「LINE 官方帳號加好友」。店內桌貼與包裝小卡常用。 並從「追蹤與成效檢視」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。「追蹤與成效檢視」需要固定追蹤方式時，請把 UTM 或活動代碼寫進中繼頁規則，別只改 QR 圖檔。"
+      },
+      "rxv-seo-qr-036": {
+        "title": "QR Code｜商務應用：電子名片與聯絡資訊（追蹤與成效檢視）",
+        "desc": "此頁聚焦「商務應用」的「電子名片與聯絡資訊」。一碼整合電話、官網、表單。 並從「追蹤與成效檢視」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。「追蹤與成效檢視」需要固定追蹤方式時，請把 UTM 或活動代碼寫進中繼頁規則，別只改 QR 圖檔。"
+      },
+      "rxv-seo-qr-037": {
+        "title": "QR Code｜商務應用：收款與發票載具（追蹤與成效檢視）",
+        "desc": "此頁聚焦「商務應用」的「收款與發票載具」。需注意防偽與更新失效連結。 並從「追蹤與成效檢視」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。「追蹤與成效檢視」需要固定追蹤方式時，請把 UTM 或活動代碼寫進中繼頁規則，別只改 QR 圖檔。"
+      },
+      "rxv-seo-qr-038": {
+        "title": "QR Code｜餐飲場景：內用／外帶菜單與點餐（追蹤與成效檢視）",
+        "desc": "此頁聚焦「餐飲場景」的「內用／外帶菜單與點餐」。紙本防水與掃描距離要一併考量。 並從「追蹤與成效檢視」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。「追蹤與成效檢視」需要固定追蹤方式時，請把 UTM 或活動代碼寫進中繼頁規則，別只改 QR 圖檔。"
+      },
+      "rxv-seo-qr-039": {
+        "title": "QR Code｜餐飲場景：訂位與候位通知（追蹤與成效檢視）",
+        "desc": "此頁聚焦「餐飲場景」的「訂位與候位通知」。連到表單或通訊平台，減少電話占線。 並從「追蹤與成效檢視」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。「追蹤與成效檢視」需要固定追蹤方式時，請把 UTM 或活動代碼寫進中繼頁規則，別只改 QR 圖檔。"
+      },
+      "rxv-seo-qr-040": {
+        "title": "QR Code｜活動行銷：報名與問卷填寫（追蹤與成效檢視）",
+        "desc": "此頁聚焦「活動行銷」的「報名與問卷填寫」。線下海報導到線上表單，追蹤檔期轉換。 並從「追蹤與成效檢視」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。「追蹤與成效檢視」需要固定追蹤方式時，請把 UTM 或活動代碼寫進中繼頁規則，別只改 QR 圖檔。"
+      },
+      "rxv-seo-qr-041": {
+        "title": "QR Code｜活動行銷：展場攤位與集點（追蹤與成效檢視）",
+        "desc": "此頁聚焦「活動行銷」的「展場攤位與集點」。可搭配短期活動頁，結束後替換連結。 並從「追蹤與成效檢視」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。「追蹤與成效檢視」需要固定追蹤方式時，請把 UTM 或活動代碼寫進中繼頁規則，別只改 QR 圖檔。"
+      },
+      "rxv-seo-qr-042": {
+        "title": "QR Code｜商務應用：門市 Wi‑Fi 登入說明（追蹤與成效檢視）",
+        "desc": "此頁聚焦「商務應用」的「門市 Wi‑Fi 登入說明」。密碼與 SSID 更新時需重印或換動態頁。 並從「追蹤與成效檢視」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。「追蹤與成效檢視」需要固定追蹤方式時，請把 UTM 或活動代碼寫進中繼頁規則，別只改 QR 圖檔。"
+      },
+      "rxv-seo-qr-043": {
+        "title": "QR Code｜社群導流：社群抽獎與留言活動頁（追蹤與成效檢視）",
+        "desc": "此頁聚焦「社群導流」的「社群抽獎與留言活動頁」。活動結束後應替換落地內容避免失效。 並從「追蹤與成效檢視」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。「追蹤與成效檢視」需要固定追蹤方式時，請把 UTM 或活動代碼寫進中繼頁規則，別只改 QR 圖檔。"
+      },
+      "rxv-seo-qr-044": {
+        "title": "QR Code｜餐飲場景：外送平台與評價聚合（追蹤與成效檢視）",
+        "desc": "此頁聚焦「餐飲場景」的「外送平台與評價聚合」。一碼導向指定平台或 Google 評論。 並從「追蹤與成效檢視」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。「追蹤與成效檢視」需要固定追蹤方式時，請把 UTM 或活動代碼寫進中繼頁規則，別只改 QR 圖檔。"
+      },
+      "rxv-seo-ai-001": {
+        "title": "AI 摘要｜網路長文與專欄（速讀重點）",
+        "desc": "針對「網路長文與專欄」：段落多、小標碎，需抓論點與證據。 本頁說明如何以「速讀重點」使用 RxV AI 摘要，將長內容收斂成可複製的重點。以「速讀重點」輸出時，建議把「網路長文與專欄」的章節或段落先切開，再逐段摘要，較能保留因果關係。"
+      },
+      "rxv-seo-ai-002": {
+        "title": "AI 摘要｜PDF 論文與報告（速讀重點）",
+        "desc": "針對「PDF 論文與報告」：結構固定，需注意引用與圖表說明是否被誤讀。 本頁說明如何以「速讀重點」使用 RxV AI 摘要，將長內容收斂成可複製的重點。以「速讀重點」輸出時，建議把「PDF 論文與報告」的章節或段落先切開，再逐段摘要，較能保留因果關係。"
+      },
+      "rxv-seo-ai-003": {
+        "title": "AI 摘要｜企業內部報告（速讀重點）",
+        "desc": "針對「企業內部報告」：背景與建議段落常為閱讀重點。 本頁說明如何以「速讀重點」使用 RxV AI 摘要，將長內容收斂成可複製的重點。以「速讀重點」輸出時，建議把「企業內部報告」的章節或段落先切開，再逐段摘要，較能保留因果關係。"
+      },
+      "rxv-seo-ai-004": {
+        "title": "AI 摘要｜會議逐字稿與備忘（速讀重點）",
+        "desc": "針對「會議逐字稿與備忘」：口語冗餘多，需整理決議與待辦。 本頁說明如何以「速讀重點」使用 RxV AI 摘要，將長內容收斂成可複製的重點。以「速讀重點」輸出時，建議把「會議逐字稿與備忘」的章節或段落先切開，再逐段摘要，較能保留因果關係。"
+      },
+      "rxv-seo-ai-005": {
+        "title": "AI 摘要｜教材與講義長文（速讀重點）",
+        "desc": "針對「教材與講義長文」：定義與例題往往可獨立摘要。 本頁說明如何以「速讀重點」使用 RxV AI 摘要，將長內容收斂成可複製的重點。以「速讀重點」輸出時，建議把「教材與講義長文」的章節或段落先切開，再逐段摘要，較能保留因果關係。"
+      },
+      "rxv-seo-ai-006": {
+        "title": "AI 摘要｜新聞稿與公告（速讀重點）",
+        "desc": "針對「新聞稿與公告」：時間線與引用來源要保留。 本頁說明如何以「速讀重點」使用 RxV AI 摘要，將長內容收斂成可複製的重點。以「速讀重點」輸出時，建議把「新聞稿與公告」的章節或段落先切開，再逐段摘要，較能保留因果關係。"
+      },
+      "rxv-seo-ai-007": {
+        "title": "AI 摘要｜技術文件與規格書（速讀重點）",
+        "desc": "針對「技術文件與規格書」：名詞與版本條件不可省略。 本頁說明如何以「速讀重點」使用 RxV AI 摘要，將長內容收斂成可複製的重點。以「速讀重點」輸出時，建議把「技術文件與規格書」的章節或段落先切開，再逐段摘要，較能保留因果關係。"
+      },
+      "rxv-seo-ai-008": {
+        "title": "AI 摘要｜訪談與紀錄稿（速讀重點）",
+        "desc": "針對「訪談與紀錄稿」：需區分受訪者觀點與編輯旁白。 本頁說明如何以「速讀重點」使用 RxV AI 摘要，將長內容收斂成可複製的重點。以「速讀重點」輸出時，建議把「訪談與紀錄稿」的章節或段落先切開，再逐段摘要，較能保留因果關係。"
+      },
+      "rxv-seo-ai-009": {
+        "title": "AI 摘要｜合約與條款初稿（速讀重點）",
+        "desc": "針對「合約與條款初稿」：僅作閱讀輔助，實務仍須人工與專業審閱。 本頁說明如何以「速讀重點」使用 RxV AI 摘要，將長內容收斂成可複製的重點。以「速讀重點」輸出時，建議把「合約與條款初稿」的章節或段落先切開，再逐段摘要，較能保留因果關係。"
+      },
+      "rxv-seo-ai-010": {
+        "title": "AI 摘要｜多語混合素材（速讀重點）",
+        "desc": "針對「多語混合素材」：摘要前可先標示語言段落。 本頁說明如何以「速讀重點」使用 RxV AI 摘要，將長內容收斂成可複製的重點。以「速讀重點」輸出時，建議把「多語混合素材」的章節或段落先切開，再逐段摘要，較能保留因果關係。"
+      },
+      "rxv-seo-ai-011": {
+        "title": "AI 摘要｜部落格合集匯出（速讀重點）",
+        "desc": "針對「部落格合集匯出」：多篇合併時需避免標題層級混淆。 本頁說明如何以「速讀重點」使用 RxV AI 摘要，將長內容收斂成可複製的重點。以「速讀重點」輸出時，建議把「部落格合集匯出」的章節或段落先切開，再逐段摘要，較能保留因果關係。"
+      },
+      "rxv-seo-ai-012": {
+        "title": "AI 摘要｜網路長文與專欄（條列式決議）",
+        "desc": "針對「網路長文與專欄」：段落多、小標碎，需抓論點與證據。 本頁說明如何以「條列式決議」使用 RxV AI 摘要，將長內容收斂成可複製的重點。若你選擇「條列式決議」，可把「網路長文與專欄」的重點映射到待辦或決議，但仍保留出處段落方便回溯。"
+      },
+      "rxv-seo-ai-013": {
+        "title": "AI 摘要｜PDF 論文與報告（條列式決議）",
+        "desc": "針對「PDF 論文與報告」：結構固定，需注意引用與圖表說明是否被誤讀。 本頁說明如何以「條列式決議」使用 RxV AI 摘要，將長內容收斂成可複製的重點。若你選擇「條列式決議」，可把「PDF 論文與報告」的重點映射到待辦或決議，但仍保留出處段落方便回溯。"
+      },
+      "rxv-seo-ai-014": {
+        "title": "AI 摘要｜企業內部報告（條列式決議）",
+        "desc": "針對「企業內部報告」：背景與建議段落常為閱讀重點。 本頁說明如何以「條列式決議」使用 RxV AI 摘要，將長內容收斂成可複製的重點。若你選擇「條列式決議」，可把「企業內部報告」的重點映射到待辦或決議，但仍保留出處段落方便回溯。"
+      },
+      "rxv-seo-ai-015": {
+        "title": "AI 摘要｜會議逐字稿與備忘（條列式決議）",
+        "desc": "針對「會議逐字稿與備忘」：口語冗餘多，需整理決議與待辦。 本頁說明如何以「條列式決議」使用 RxV AI 摘要，將長內容收斂成可複製的重點。若你選擇「條列式決議」，可把「會議逐字稿與備忘」的重點映射到待辦或決議，但仍保留出處段落方便回溯。"
+      },
+      "rxv-seo-ai-016": {
+        "title": "AI 摘要｜教材與講義長文（條列式決議）",
+        "desc": "針對「教材與講義長文」：定義與例題往往可獨立摘要。 本頁說明如何以「條列式決議」使用 RxV AI 摘要，將長內容收斂成可複製的重點。若你選擇「條列式決議」，可把「教材與講義長文」的重點映射到待辦或決議，但仍保留出處段落方便回溯。"
+      },
+      "rxv-seo-ai-017": {
+        "title": "AI 摘要｜新聞稿與公告（條列式決議）",
+        "desc": "針對「新聞稿與公告」：時間線與引用來源要保留。 本頁說明如何以「條列式決議」使用 RxV AI 摘要，將長內容收斂成可複製的重點。若你選擇「條列式決議」，可把「新聞稿與公告」的重點映射到待辦或決議，但仍保留出處段落方便回溯。"
+      },
+      "rxv-seo-ai-018": {
+        "title": "AI 摘要｜技術文件與規格書（條列式決議）",
+        "desc": "針對「技術文件與規格書」：名詞與版本條件不可省略。 本頁說明如何以「條列式決議」使用 RxV AI 摘要，將長內容收斂成可複製的重點。若你選擇「條列式決議」，可把「技術文件與規格書」的重點映射到待辦或決議，但仍保留出處段落方便回溯。"
+      },
+      "rxv-seo-ai-019": {
+        "title": "AI 摘要｜訪談與紀錄稿（條列式決議）",
+        "desc": "針對「訪談與紀錄稿」：需區分受訪者觀點與編輯旁白。 本頁說明如何以「條列式決議」使用 RxV AI 摘要，將長內容收斂成可複製的重點。若你選擇「條列式決議」，可把「訪談與紀錄稿」的重點映射到待辦或決議，但仍保留出處段落方便回溯。"
+      },
+      "rxv-seo-ai-020": {
+        "title": "AI 摘要｜合約與條款初稿（條列式決議）",
+        "desc": "針對「合約與條款初稿」：僅作閱讀輔助，實務仍須人工與專業審閱。 本頁說明如何以「條列式決議」使用 RxV AI 摘要，將長內容收斂成可複製的重點。若你選擇「條列式決議」，可把「合約與條款初稿」的重點映射到待辦或決議，但仍保留出處段落方便回溯。"
+      },
+      "rxv-seo-ai-021": {
+        "title": "AI 摘要｜多語混合素材（條列式決議）",
+        "desc": "針對「多語混合素材」：摘要前可先標示語言段落。 本頁說明如何以「條列式決議」使用 RxV AI 摘要，將長內容收斂成可複製的重點。若你選擇「條列式決議」，可把「多語混合素材」的重點映射到待辦或決議，但仍保留出處段落方便回溯。"
+      },
+      "rxv-seo-ai-022": {
+        "title": "AI 摘要｜部落格合集匯出（條列式決議）",
+        "desc": "針對「部落格合集匯出」：多篇合併時需避免標題層級混淆。 本頁說明如何以「條列式決議」使用 RxV AI 摘要，將長內容收斂成可複製的重點。若你選擇「條列式決議」，可把「部落格合集匯出」的重點映射到待辦或決議，但仍保留出處段落方便回溯。"
+      },
+      "rxv-seo-ai-023": {
+        "title": "AI 摘要｜網路長文與專欄（章節大綱）",
+        "desc": "針對「網路長文與專欄」：段落多、小標碎，需抓論點與證據。 本頁說明如何以「章節大綱」使用 RxV AI 摘要，將長內容收斂成可複製的重點。「章節大綱」適合快速建立閱讀地圖；針對「網路長文與專欄」，仍建議標註不確定句並人工複核。"
+      },
+      "rxv-seo-ai-024": {
+        "title": "AI 摘要｜PDF 論文與報告（章節大綱）",
+        "desc": "針對「PDF 論文與報告」：結構固定，需注意引用與圖表說明是否被誤讀。 本頁說明如何以「章節大綱」使用 RxV AI 摘要，將長內容收斂成可複製的重點。「章節大綱」適合快速建立閱讀地圖；針對「PDF 論文與報告」，仍建議標註不確定句並人工複核。"
+      },
+      "rxv-seo-ai-025": {
+        "title": "AI 摘要｜企業內部報告（章節大綱）",
+        "desc": "針對「企業內部報告」：背景與建議段落常為閱讀重點。 本頁說明如何以「章節大綱」使用 RxV AI 摘要，將長內容收斂成可複製的重點。「章節大綱」適合快速建立閱讀地圖；針對「企業內部報告」，仍建議標註不確定句並人工複核。"
+      },
+      "rxv-seo-ai-026": {
+        "title": "AI 摘要｜會議逐字稿與備忘（章節大綱）",
+        "desc": "針對「會議逐字稿與備忘」：口語冗餘多，需整理決議與待辦。 本頁說明如何以「章節大綱」使用 RxV AI 摘要，將長內容收斂成可複製的重點。「章節大綱」適合快速建立閱讀地圖；針對「會議逐字稿與備忘」，仍建議標註不確定句並人工複核。"
+      },
+      "rxv-seo-ai-027": {
+        "title": "AI 摘要｜教材與講義長文（章節大綱）",
+        "desc": "針對「教材與講義長文」：定義與例題往往可獨立摘要。 本頁說明如何以「章節大綱」使用 RxV AI 摘要，將長內容收斂成可複製的重點。「章節大綱」適合快速建立閱讀地圖；針對「教材與講義長文」，仍建議標註不確定句並人工複核。"
+      },
+      "rxv-seo-ai-028": {
+        "title": "AI 摘要｜新聞稿與公告（章節大綱）",
+        "desc": "針對「新聞稿與公告」：時間線與引用來源要保留。 本頁說明如何以「章節大綱」使用 RxV AI 摘要，將長內容收斂成可複製的重點。「章節大綱」適合快速建立閱讀地圖；針對「新聞稿與公告」，仍建議標註不確定句並人工複核。"
+      },
+      "rxv-seo-ai-029": {
+        "title": "AI 摘要｜技術文件與規格書（章節大綱）",
+        "desc": "針對「技術文件與規格書」：名詞與版本條件不可省略。 本頁說明如何以「章節大綱」使用 RxV AI 摘要，將長內容收斂成可複製的重點。「章節大綱」適合快速建立閱讀地圖；針對「技術文件與規格書」，仍建議標註不確定句並人工複核。"
+      },
+      "rxv-seo-ai-030": {
+        "title": "AI 摘要｜訪談與紀錄稿（章節大綱）",
+        "desc": "針對「訪談與紀錄稿」：需區分受訪者觀點與編輯旁白。 本頁說明如何以「章節大綱」使用 RxV AI 摘要，將長內容收斂成可複製的重點。「章節大綱」適合快速建立閱讀地圖；針對「訪談與紀錄稿」，仍建議標註不確定句並人工複核。"
+      },
+      "rxv-seo-ai-031": {
+        "title": "AI 摘要｜合約與條款初稿（章節大綱）",
+        "desc": "針對「合約與條款初稿」：僅作閱讀輔助，實務仍須人工與專業審閱。 本頁說明如何以「章節大綱」使用 RxV AI 摘要，將長內容收斂成可複製的重點。「章節大綱」適合快速建立閱讀地圖；針對「合約與條款初稿」，仍建議標註不確定句並人工複核。"
+      },
+      "rxv-seo-ai-032": {
+        "title": "AI 摘要｜多語混合素材（章節大綱）",
+        "desc": "針對「多語混合素材」：摘要前可先標示語言段落。 本頁說明如何以「章節大綱」使用 RxV AI 摘要，將長內容收斂成可複製的重點。「章節大綱」適合快速建立閱讀地圖；針對「多語混合素材」，仍建議標註不確定句並人工複核。"
+      },
+      "rxv-seo-ai-033": {
+        "title": "AI 摘要｜部落格合集匯出（章節大綱）",
+        "desc": "針對「部落格合集匯出」：多篇合併時需避免標題層級混淆。 本頁說明如何以「章節大綱」使用 RxV AI 摘要，將長內容收斂成可複製的重點。「章節大綱」適合快速建立閱讀地圖；針對「部落格合集匯出」，仍建議標註不確定句並人工複核。"
+      },
+      "rxv-seo-ai-034": {
+        "title": "AI 摘要｜網路長文與專欄（關鍵問答萃取）",
+        "desc": "針對「網路長文與專欄」：段落多、小標碎，需抓論點與證據。 本頁說明如何以「關鍵問答萃取」使用 RxV AI 摘要，將長內容收斂成可複製的重點。完成「關鍵問答萃取」後，請用「網路長文與專欄」的原句核對數字、名詞與否定句，避免誤讀。"
+      },
+      "rxv-seo-ai-035": {
+        "title": "AI 摘要｜PDF 論文與報告（關鍵問答萃取）",
+        "desc": "針對「PDF 論文與報告」：結構固定，需注意引用與圖表說明是否被誤讀。 本頁說明如何以「關鍵問答萃取」使用 RxV AI 摘要，將長內容收斂成可複製的重點。完成「關鍵問答萃取」後，請用「PDF 論文與報告」的原句核對數字、名詞與否定句，避免誤讀。"
+      },
+      "rxv-seo-ai-036": {
+        "title": "AI 摘要｜企業內部報告（關鍵問答萃取）",
+        "desc": "針對「企業內部報告」：背景與建議段落常為閱讀重點。 本頁說明如何以「關鍵問答萃取」使用 RxV AI 摘要，將長內容收斂成可複製的重點。完成「關鍵問答萃取」後，請用「企業內部報告」的原句核對數字、名詞與否定句，避免誤讀。"
+      },
+      "rxv-seo-ai-037": {
+        "title": "AI 摘要｜會議逐字稿與備忘（關鍵問答萃取）",
+        "desc": "針對「會議逐字稿與備忘」：口語冗餘多，需整理決議與待辦。 本頁說明如何以「關鍵問答萃取」使用 RxV AI 摘要，將長內容收斂成可複製的重點。完成「關鍵問答萃取」後，請用「會議逐字稿與備忘」的原句核對數字、名詞與否定句，避免誤讀。"
+      },
+      "rxv-seo-ai-038": {
+        "title": "AI 摘要｜教材與講義長文（關鍵問答萃取）",
+        "desc": "針對「教材與講義長文」：定義與例題往往可獨立摘要。 本頁說明如何以「關鍵問答萃取」使用 RxV AI 摘要，將長內容收斂成可複製的重點。完成「關鍵問答萃取」後，請用「教材與講義長文」的原句核對數字、名詞與否定句，避免誤讀。"
+      },
+      "rxv-seo-ai-039": {
+        "title": "AI 摘要｜新聞稿與公告（關鍵問答萃取）",
+        "desc": "針對「新聞稿與公告」：時間線與引用來源要保留。 本頁說明如何以「關鍵問答萃取」使用 RxV AI 摘要，將長內容收斂成可複製的重點。完成「關鍵問答萃取」後，請用「新聞稿與公告」的原句核對數字、名詞與否定句，避免誤讀。"
+      },
+      "rxv-seo-ai-040": {
+        "title": "AI 摘要｜技術文件與規格書（關鍵問答萃取）",
+        "desc": "針對「技術文件與規格書」：名詞與版本條件不可省略。 本頁說明如何以「關鍵問答萃取」使用 RxV AI 摘要，將長內容收斂成可複製的重點。完成「關鍵問答萃取」後，請用「技術文件與規格書」的原句核對數字、名詞與否定句，避免誤讀。"
+      },
+      "rxv-seo-ai-041": {
+        "title": "AI 摘要｜訪談與紀錄稿（關鍵問答萃取）",
+        "desc": "針對「訪談與紀錄稿」：需區分受訪者觀點與編輯旁白。 本頁說明如何以「關鍵問答萃取」使用 RxV AI 摘要，將長內容收斂成可複製的重點。完成「關鍵問答萃取」後，請用「訪談與紀錄稿」的原句核對數字、名詞與否定句，避免誤讀。"
+      },
+      "rxv-seo-ai-042": {
+        "title": "AI 摘要｜合約與條款初稿（關鍵問答萃取）",
+        "desc": "針對「合約與條款初稿」：僅作閱讀輔助，實務仍須人工與專業審閱。 本頁說明如何以「關鍵問答萃取」使用 RxV AI 摘要，將長內容收斂成可複製的重點。完成「關鍵問答萃取」後，請用「合約與條款初稿」的原句核對數字、名詞與否定句，避免誤讀。"
+      },
+      "rxv-seo-ai-043": {
+        "title": "AI 摘要｜多語混合素材（關鍵問答萃取）",
+        "desc": "針對「多語混合素材」：摘要前可先標示語言段落。 本頁說明如何以「關鍵問答萃取」使用 RxV AI 摘要，將長內容收斂成可複製的重點。完成「關鍵問答萃取」後，請用「多語混合素材」的原句核對數字、名詞與否定句，避免誤讀。"
+      },
+      "rxv-seo-ai-044": {
+        "title": "AI 摘要｜部落格合集匯出（關鍵問答萃取）",
+        "desc": "針對「部落格合集匯出」：多篇合併時需避免標題層級混淆。 本頁說明如何以「關鍵問答萃取」使用 RxV AI 摘要，將長內容收斂成可複製的重點。完成「關鍵問答萃取」後，請用「部落格合集匯出」的原句核對數字、名詞與否定句，避免誤讀。"
+      },
+      "rxv-seo-pm-001": {
+        "title": "番茄鐘｜學生備考與寫作（25／5 經典節奏）",
+        "desc": "此頁從「學生備考與寫作」出發：科目輪替與考古題段落，適合短衝刺。 說明如何搭配「25／5 經典節奏」安排專注與休息。接著可用「25／5 經典節奏」把「學生備考與寫作」的一天切成可執行段落，並在 RxV 線上番茄鐘直接開始計時。"
+      },
+      "rxv-seo-pm-002": {
+        "title": "番茄鐘｜上班族專案與會議空檔（25／5 經典節奏）",
+        "desc": "此頁從「上班族專案與會議空檔」出發：會議前後的碎片專注，需防打斷。 說明如何搭配「25／5 經典節奏」安排專注與休息。接著可用「25／5 經典節奏」把「上班族專案與會議空檔」的一天切成可執行段落，並在 RxV 線上番茄鐘直接開始計時。"
+      },
+      "rxv-seo-pm-003": {
+        "title": "番茄鐘｜深度工作與創作（25／5 經典節奏）",
+        "desc": "此頁從「深度工作與創作」出發：長時段心流，休息間隔可略拉長。 說明如何搭配「25／5 經典節奏」安排專注與休息。接著可用「25／5 經典節奏」把「深度工作與創作」的一天切成可執行段落，並在 RxV 線上番茄鐘直接開始計時。"
+      },
+      "rxv-seo-pm-004": {
+        "title": "番茄鐘｜遠距與家務間切換（25／5 經典節奏）",
+        "desc": "此頁從「遠距與家務間切換」出發：專注區與家務區界線清楚時較易維持節奏。 說明如何搭配「25／5 經典節奏」安排專注與休息。接著可用「25／5 經典節奏」把「遠距與家務間切換」的一天切成可執行段落，並在 RxV 線上番茄鐘直接開始計時。"
+      },
+      "rxv-seo-pm-005": {
+        "title": "番茄鐘｜自由工作者接案（25／5 經典節奏）",
+        "desc": "此頁從「自由工作者接案」出發：計費與交付節點要搭配計時紀律。 說明如何搭配「25／5 經典節奏」安排專注與休息。接著可用「25／5 經典節奏」把「自由工作者接案」的一天切成可執行段落，並在 RxV 線上番茄鐘直接開始計時。"
+      },
+      "rxv-seo-pm-006": {
+        "title": "番茄鐘｜程式與寫作長任務（25／5 經典節奏）",
+        "desc": "此頁從「程式與寫作長任務」出發：避免長時間低頭，休息可做伸展。 說明如何搭配「25／5 經典節奏」安排專注與休息。接著可用「25／5 經典節奏」把「程式與寫作長任務」的一天切成可執行段落，並在 RxV 線上番茄鐘直接開始計時。"
+      },
+      "rxv-seo-pm-007": {
+        "title": "番茄鐘｜親子與照護者偷時間（25／5 經典節奏）",
+        "desc": "此頁從「親子與照護者偷時間」出發：短番茄串聯，目標要切更小。 說明如何搭配「25／5 經典節奏」安排專注與休息。接著可用「25／5 經典節奏」把「親子與照護者偷時間」的一天切成可執行段落，並在 RxV 線上番茄鐘直接開始計時。"
+      },
+      "rxv-seo-pm-008": {
+        "title": "番茄鐘｜通勤與行動學習（25／5 經典節奏）",
+        "desc": "此頁從「通勤與行動學習」出發：音訊與閱讀交替，番茄長度可縮短。 說明如何搭配「25／5 經典節奏」安排專注與休息。接著可用「25／5 經典節奏」把「通勤與行動學習」的一天切成可執行段落，並在 RxV 線上番茄鐘直接開始計時。"
+      },
+      "rxv-seo-pm-009": {
+        "title": "番茄鐘｜團隊協作衝刺（25／5 經典節奏）",
+        "desc": "此頁從「團隊協作衝刺」出發：對齊衝刺長度，方便 stand-up 對照。 說明如何搭配「25／5 經典節奏」安排專注與休息。接著可用「25／5 經典節奏」把「團隊協作衝刺」的一天切成可執行段落，並在 RxV 線上番茄鐘直接開始計時。"
+      },
+      "rxv-seo-pm-010": {
+        "title": "番茄鐘｜運動與復健計畫並行（25／5 經典節奏）",
+        "desc": "此頁從「運動與復健計畫並行」出發：體力與專注並非無限，休息要真的離開螢幕。 說明如何搭配「25／5 經典節奏」安排專注與休息。接著可用「25／5 經典節奏」把「運動與復健計畫並行」的一天切成可執行段落，並在 RxV 線上番茄鐘直接開始計時。"
+      },
+      "rxv-seo-pm-011": {
+        "title": "番茄鐘｜新手建立專注習慣（25／5 經典節奏）",
+        "desc": "此頁從「新手建立專注習慣」出發：從較短番茄開始，逐步延長。 說明如何搭配「25／5 經典節奏」安排專注與休息。接著可用「25／5 經典節奏」把「新手建立專注習慣」的一天切成可執行段落，並在 RxV 線上番茄鐘直接開始計時。"
+      },
+      "rxv-seo-pm-012": {
+        "title": "番茄鐘｜學生備考與寫作（52／17 長衝刺）",
+        "desc": "此頁從「學生備考與寫作」出發：科目輪替與考古題段落，適合短衝刺。 說明如何搭配「52／17 長衝刺」安排專注與休息。若你屬於「學生備考與寫作」，可把「52／17 長衝刺」當成對外承諾的節拍，降低拖延與過度疲勞。"
+      },
+      "rxv-seo-pm-013": {
+        "title": "番茄鐘｜上班族專案與會議空檔（52／17 長衝刺）",
+        "desc": "此頁從「上班族專案與會議空檔」出發：會議前後的碎片專注，需防打斷。 說明如何搭配「52／17 長衝刺」安排專注與休息。若你屬於「上班族專案與會議空檔」，可把「52／17 長衝刺」當成對外承諾的節拍，降低拖延與過度疲勞。"
+      },
+      "rxv-seo-pm-014": {
+        "title": "番茄鐘｜深度工作與創作（52／17 長衝刺）",
+        "desc": "此頁從「深度工作與創作」出發：長時段心流，休息間隔可略拉長。 說明如何搭配「52／17 長衝刺」安排專注與休息。若你屬於「深度工作與創作」，可把「52／17 長衝刺」當成對外承諾的節拍，降低拖延與過度疲勞。"
+      },
+      "rxv-seo-pm-015": {
+        "title": "番茄鐘｜遠距與家務間切換（52／17 長衝刺）",
+        "desc": "此頁從「遠距與家務間切換」出發：專注區與家務區界線清楚時較易維持節奏。 說明如何搭配「52／17 長衝刺」安排專注與休息。若你屬於「遠距與家務間切換」，可把「52／17 長衝刺」當成對外承諾的節拍，降低拖延與過度疲勞。"
+      },
+      "rxv-seo-pm-016": {
+        "title": "番茄鐘｜自由工作者接案（52／17 長衝刺）",
+        "desc": "此頁從「自由工作者接案」出發：計費與交付節點要搭配計時紀律。 說明如何搭配「52／17 長衝刺」安排專注與休息。若你屬於「自由工作者接案」，可把「52／17 長衝刺」當成對外承諾的節拍，降低拖延與過度疲勞。"
+      },
+      "rxv-seo-pm-017": {
+        "title": "番茄鐘｜程式與寫作長任務（52／17 長衝刺）",
+        "desc": "此頁從「程式與寫作長任務」出發：避免長時間低頭，休息可做伸展。 說明如何搭配「52／17 長衝刺」安排專注與休息。若你屬於「程式與寫作長任務」，可把「52／17 長衝刺」當成對外承諾的節拍，降低拖延與過度疲勞。"
+      },
+      "rxv-seo-pm-018": {
+        "title": "番茄鐘｜親子與照護者偷時間（52／17 長衝刺）",
+        "desc": "此頁從「親子與照護者偷時間」出發：短番茄串聯，目標要切更小。 說明如何搭配「52／17 長衝刺」安排專注與休息。若你屬於「親子與照護者偷時間」，可把「52／17 長衝刺」當成對外承諾的節拍，降低拖延與過度疲勞。"
+      },
+      "rxv-seo-pm-019": {
+        "title": "番茄鐘｜通勤與行動學習（52／17 長衝刺）",
+        "desc": "此頁從「通勤與行動學習」出發：音訊與閱讀交替，番茄長度可縮短。 說明如何搭配「52／17 長衝刺」安排專注與休息。若你屬於「通勤與行動學習」，可把「52／17 長衝刺」當成對外承諾的節拍，降低拖延與過度疲勞。"
+      },
+      "rxv-seo-pm-020": {
+        "title": "番茄鐘｜團隊協作衝刺（52／17 長衝刺）",
+        "desc": "此頁從「團隊協作衝刺」出發：對齊衝刺長度，方便 stand-up 對照。 說明如何搭配「52／17 長衝刺」安排專注與休息。若你屬於「團隊協作衝刺」，可把「52／17 長衝刺」當成對外承諾的節拍，降低拖延與過度疲勞。"
+      },
+      "rxv-seo-pm-021": {
+        "title": "番茄鐘｜運動與復健計畫並行（52／17 長衝刺）",
+        "desc": "此頁從「運動與復健計畫並行」出發：體力與專注並非無限，休息要真的離開螢幕。 說明如何搭配「52／17 長衝刺」安排專注與休息。若你屬於「運動與復健計畫並行」，可把「52／17 長衝刺」當成對外承諾的節拍，降低拖延與過度疲勞。"
+      },
+      "rxv-seo-pm-022": {
+        "title": "番茄鐘｜新手建立專注習慣（52／17 長衝刺）",
+        "desc": "此頁從「新手建立專注習慣」出發：從較短番茄開始，逐步延長。 說明如何搭配「52／17 長衝刺」安排專注與休息。若你屬於「新手建立專注習慣」，可把「52／17 長衝刺」當成對外承諾的節拍，降低拖延與過度疲勞。"
+      },
+      "rxv-seo-pm-023": {
+        "title": "番茄鐘｜學生備考與寫作（15／5 微番茄）",
+        "desc": "此頁從「學生備考與寫作」出發：科目輪替與考古題段落，適合短衝刺。 說明如何搭配「15／5 微番茄」安排專注與休息。完成「15／5 微番茄」設定後，請把休息也寫進行事曆；對「學生備考與寫作」而言，休息品質常決定下一顆番茄效率。"
+      },
+      "rxv-seo-pm-024": {
+        "title": "番茄鐘｜上班族專案與會議空檔（15／5 微番茄）",
+        "desc": "此頁從「上班族專案與會議空檔」出發：會議前後的碎片專注，需防打斷。 說明如何搭配「15／5 微番茄」安排專注與休息。完成「15／5 微番茄」設定後，請把休息也寫進行事曆；對「上班族專案與會議空檔」而言，休息品質常決定下一顆番茄效率。"
+      },
+      "rxv-seo-pm-025": {
+        "title": "番茄鐘｜深度工作與創作（15／5 微番茄）",
+        "desc": "此頁從「深度工作與創作」出發：長時段心流，休息間隔可略拉長。 說明如何搭配「15／5 微番茄」安排專注與休息。完成「15／5 微番茄」設定後，請把休息也寫進行事曆；對「深度工作與創作」而言，休息品質常決定下一顆番茄效率。"
+      },
+      "rxv-seo-pm-026": {
+        "title": "番茄鐘｜遠距與家務間切換（15／5 微番茄）",
+        "desc": "此頁從「遠距與家務間切換」出發：專注區與家務區界線清楚時較易維持節奏。 說明如何搭配「15／5 微番茄」安排專注與休息。完成「15／5 微番茄」設定後，請把休息也寫進行事曆；對「遠距與家務間切換」而言，休息品質常決定下一顆番茄效率。"
+      },
+      "rxv-seo-pm-027": {
+        "title": "番茄鐘｜自由工作者接案（15／5 微番茄）",
+        "desc": "此頁從「自由工作者接案」出發：計費與交付節點要搭配計時紀律。 說明如何搭配「15／5 微番茄」安排專注與休息。完成「15／5 微番茄」設定後，請把休息也寫進行事曆；對「自由工作者接案」而言，休息品質常決定下一顆番茄效率。"
+      },
+      "rxv-seo-pm-028": {
+        "title": "番茄鐘｜程式與寫作長任務（15／5 微番茄）",
+        "desc": "此頁從「程式與寫作長任務」出發：避免長時間低頭，休息可做伸展。 說明如何搭配「15／5 微番茄」安排專注與休息。完成「15／5 微番茄」設定後，請把休息也寫進行事曆；對「程式與寫作長任務」而言，休息品質常決定下一顆番茄效率。"
+      },
+      "rxv-seo-pm-029": {
+        "title": "番茄鐘｜親子與照護者偷時間（15／5 微番茄）",
+        "desc": "此頁從「親子與照護者偷時間」出發：短番茄串聯，目標要切更小。 說明如何搭配「15／5 微番茄」安排專注與休息。完成「15／5 微番茄」設定後，請把休息也寫進行事曆；對「親子與照護者偷時間」而言，休息品質常決定下一顆番茄效率。"
+      },
+      "rxv-seo-pm-030": {
+        "title": "番茄鐘｜通勤與行動學習（15／5 微番茄）",
+        "desc": "此頁從「通勤與行動學習」出發：音訊與閱讀交替，番茄長度可縮短。 說明如何搭配「15／5 微番茄」安排專注與休息。完成「15／5 微番茄」設定後，請把休息也寫進行事曆；對「通勤與行動學習」而言，休息品質常決定下一顆番茄效率。"
+      },
+      "rxv-seo-pm-031": {
+        "title": "番茄鐘｜團隊協作衝刺（15／5 微番茄）",
+        "desc": "此頁從「團隊協作衝刺」出發：對齊衝刺長度，方便 stand-up 對照。 說明如何搭配「15／5 微番茄」安排專注與休息。完成「15／5 微番茄」設定後，請把休息也寫進行事曆；對「團隊協作衝刺」而言，休息品質常決定下一顆番茄效率。"
+      },
+      "rxv-seo-pm-032": {
+        "title": "番茄鐘｜運動與復健計畫並行（15／5 微番茄）",
+        "desc": "此頁從「運動與復健計畫並行」出發：體力與專注並非無限，休息要真的離開螢幕。 說明如何搭配「15／5 微番茄」安排專注與休息。完成「15／5 微番茄」設定後，請把休息也寫進行事曆；對「運動與復健計畫並行」而言，休息品質常決定下一顆番茄效率。"
+      },
+      "rxv-seo-pm-033": {
+        "title": "番茄鐘｜新手建立專注習慣（15／5 微番茄）",
+        "desc": "此頁從「新手建立專注習慣」出發：從較短番茄開始，逐步延長。 說明如何搭配「15／5 微番茄」安排專注與休息。完成「15／5 微番茄」設定後，請把休息也寫進行事曆；對「新手建立專注習慣」而言，休息品質常決定下一顆番茄效率。"
+      },
+      "rxv-seo-pm-034": {
+        "title": "番茄鐘｜學生備考與寫作（自訂分段與檢核點）",
+        "desc": "此頁從「學生備考與寫作」出發：科目輪替與考古題段落，適合短衝刺。 說明如何搭配「自訂分段與檢核點」安排專注與休息。此頁也提醒：科目輪替與考古題段落，適合短衝刺。 搭配「自訂分段與檢核點」時，請依體力調整長度，不必硬套公式。"
+      },
+      "rxv-seo-pm-035": {
+        "title": "番茄鐘｜上班族專案與會議空檔（自訂分段與檢核點）",
+        "desc": "此頁從「上班族專案與會議空檔」出發：會議前後的碎片專注，需防打斷。 說明如何搭配「自訂分段與檢核點」安排專注與休息。此頁也提醒：會議前後的碎片專注，需防打斷。 搭配「自訂分段與檢核點」時，請依體力調整長度，不必硬套公式。"
+      },
+      "rxv-seo-pm-036": {
+        "title": "番茄鐘｜深度工作與創作（自訂分段與檢核點）",
+        "desc": "此頁從「深度工作與創作」出發：長時段心流，休息間隔可略拉長。 說明如何搭配「自訂分段與檢核點」安排專注與休息。此頁也提醒：長時段心流，休息間隔可略拉長。 搭配「自訂分段與檢核點」時，請依體力調整長度，不必硬套公式。"
+      },
+      "rxv-seo-pm-037": {
+        "title": "番茄鐘｜遠距與家務間切換（自訂分段與檢核點）",
+        "desc": "此頁從「遠距與家務間切換」出發：專注區與家務區界線清楚時較易維持節奏。 說明如何搭配「自訂分段與檢核點」安排專注與休息。此頁也提醒：專注區與家務區界線清楚時較易維持節奏。 搭配「自訂分段與檢核點」時，請依體力調整長度，不必硬套公式。"
+      },
+      "rxv-seo-pm-038": {
+        "title": "番茄鐘｜自由工作者接案（自訂分段與檢核點）",
+        "desc": "此頁從「自由工作者接案」出發：計費與交付節點要搭配計時紀律。 說明如何搭配「自訂分段與檢核點」安排專注與休息。此頁也提醒：計費與交付節點要搭配計時紀律。 搭配「自訂分段與檢核點」時，請依體力調整長度，不必硬套公式。"
+      },
+      "rxv-seo-pm-039": {
+        "title": "番茄鐘｜程式與寫作長任務（自訂分段與檢核點）",
+        "desc": "此頁從「程式與寫作長任務」出發：避免長時間低頭，休息可做伸展。 說明如何搭配「自訂分段與檢核點」安排專注與休息。此頁也提醒：避免長時間低頭，休息可做伸展。 搭配「自訂分段與檢核點」時，請依體力調整長度，不必硬套公式。"
+      },
+      "rxv-seo-pm-040": {
+        "title": "番茄鐘｜親子與照護者偷時間（自訂分段與檢核點）",
+        "desc": "此頁從「親子與照護者偷時間」出發：短番茄串聯，目標要切更小。 說明如何搭配「自訂分段與檢核點」安排專注與休息。此頁也提醒：短番茄串聯，目標要切更小。 搭配「自訂分段與檢核點」時，請依體力調整長度，不必硬套公式。"
+      },
+      "rxv-seo-pm-041": {
+        "title": "番茄鐘｜通勤與行動學習（自訂分段與檢核點）",
+        "desc": "此頁從「通勤與行動學習」出發：音訊與閱讀交替，番茄長度可縮短。 說明如何搭配「自訂分段與檢核點」安排專注與休息。此頁也提醒：音訊與閱讀交替，番茄長度可縮短。 搭配「自訂分段與檢核點」時，請依體力調整長度，不必硬套公式。"
+      },
+      "rxv-seo-pm-042": {
+        "title": "番茄鐘｜團隊協作衝刺（自訂分段與檢核點）",
+        "desc": "此頁從「團隊協作衝刺」出發：對齊衝刺長度，方便 stand-up 對照。 說明如何搭配「自訂分段與檢核點」安排專注與休息。此頁也提醒：對齊衝刺長度，方便 stand-up 對照。 搭配「自訂分段與檢核點」時，請依體力調整長度，不必硬套公式。"
+      },
+      "rxv-seo-pm-043": {
+        "title": "番茄鐘｜運動與復健計畫並行（自訂分段與檢核點）",
+        "desc": "此頁從「運動與復健計畫並行」出發：體力與專注並非無限，休息要真的離開螢幕。 說明如何搭配「自訂分段與檢核點」安排專注與休息。此頁也提醒：體力與專注並非無限，休息要真的離開螢幕。 搭配「自訂分段與檢核點」時，請依體力調整長度，不必硬套公式。"
+      },
+      "rxv-seo-pm-044": {
+        "title": "番茄鐘｜新手建立專注習慣（自訂分段與檢核點）",
+        "desc": "此頁從「新手建立專注習慣」出發：從較短番茄開始，逐步延長。 說明如何搭配「自訂分段與檢核點」安排專注與休息。此頁也提醒：從較短番茄開始，逐步延長。 搭配「自訂分段與檢核點」時，請依體力調整長度，不必硬套公式。"
+      },
+      "convert-png-to-jpg": {
+        "title": "PNG 轉 JPG 線上工具｜透明背景轉白底",
+        "desc": "將 PNG 轉成 JPG 以符合僅收 JPEG 的上傳或信箱限制。RxV 在瀏覽器以 canvas 輸出，透明區域會以白底填滿；若需保留透明請維持 PNG 或改 WebP。"
+      },
+      "convert-jpg-to-png": {
+        "title": "JPG 轉 PNG 線上｜去背前備援格式",
+        "desc": "需要無損編輯或後續去背時，可先將 JPG 轉為 PNG 再進後製。本工具在瀏覽器內解碼與輸出，不經伺服器；檔案可能變大，建議完成後再視需求壓縮。"
+      },
+      "convert-png-to-webp": {
+        "title": "PNG 轉 WebP｜網站圖檔縮體積",
+        "desc": "WebP 常能在保留可接受畫質下縮小體積。若 PNG 含透明，轉 WebP 可保留 Alpha；完成後可再接圖片壓縮或尺寸調整以符合版位。"
+      },
+      "convert-webp-to-png": {
+        "title": "WebP 轉 PNG｜相容性與編輯需求",
+        "desc": "部分軟體或表單仍偏好 PNG。將 WebP 轉成 PNG 可在瀏覽器完成，適合需要貼到只支援 PNG 的流程；若原檔有透明，輸出會盡量保留。"
+      },
+      "convert-jpg-to-webp": {
+        "title": "JPG 轉 WebP｜加速網頁載入",
+        "desc": "部落格與官網常希望圖檔更小。將 JPG 轉 WebP 可再降低體積；請在轉檔後於實機檢查畫質，並確認目標瀏覽器支援 WebP。"
+      },
+      "convert-webp-to-jpg": {
+        "title": "WebP 轉 JPG｜通用分享與上傳",
+        "desc": "需要寄 Email、上傳僅收 JPG 的表單時，可把 WebP 轉成 JPG。透明區域會以白底處理；若需保留透明請改輸出 PNG。"
+      },
+      "png-to-jpg-online": {
+        "title": "PNG 轉 JPG 線上｜免安裝",
+        "desc": "免下載軟體即可在瀏覽器將 PNG 轉 JPG。適合臨時交件、公共電腦或不想安裝編輯器的情境；處理完請直接下載並關閉分頁以釋放記憶體。"
+      },
+      "jpg-to-png-online": {
+        "title": "JPG 轉 PNG 線上｜快速產出可編輯圖檔",
+        "desc": "線上將 JPG 轉 PNG，方便後續合成或去背流程。注意 PNG 通常比同尺寸的 JPG 大，建議只在真的需要無損或透明時轉檔。"
+      },
+      "png-to-webp-online": {
+        "title": "PNG 轉 WebP 線上｜網站與部落格",
+        "desc": "把大型 PNG 轉成 WebP 可改善載入速度。若素材含細線文字，轉檔後請放大檢查邊緣；重要版面可再手動調品質參數。"
+      },
+      "webp-to-png-online": {
+        "title": "WebP 轉 PNG 線上｜簡報與文書嵌入",
+        "desc": "簡報或文書軟體若不吃 WebP，可先轉 PNG 再插入。轉檔在裝置本機瀏覽器完成，檔案不離開你的裝置（依瀏覽器行為為準）。"
+      },
+      "convert-image-to-webp": {
+        "title": "圖片轉 WebP｜多格式輸入",
+        "desc": "從 PNG、JPG 等常見格式轉成 WebP，方便統一網站素材。建議建立命名規則（例如同一主視覺多格式）避免混用舊檔。"
+      },
+      "convert-image-to-png": {
+        "title": "圖片轉 PNG｜保留細節與透明",
+        "desc": "需要 PNG 作為中間格式時，可在瀏覽器將 JPG／WebP 等轉出。PNG 不適合追求極小體積，若目標是檔案大小請優先評估 WebP 或 JPG。"
+      },
+      "convert-image-to-jpg": {
+        "title": "圖片轉 JPG｜相容與檔案大小",
+        "desc": "JPG 適合相片與不需要透明的素材。將其他格式轉 JPG 時請留意透明區域會變白底；若需保留透明請勿選 JPG。"
+      },
+      "webp-to-jpg-online": {
+        "title": "WebP 轉 JPG 線上｜社群與舊系統",
+        "desc": "部分社群舊版或內部系統仍只收 JPG。線上把 WebP 轉 JPG 可快速交件；若出現色偏，請確認螢幕與色彩描述（多為 sRGB）。"
+      },
+      "jpg-to-webp-online": {
+        "title": "JPG 轉 WebP 線上｜縮短載入時間",
+        "desc": "在相同觀感下，WebP 常比 JPG 更小。轉檔後請在實際頁面環境檢視，並保留原 JPG 備份以便回溯。"
+      },
+      "png-to-jpg-without-quality-loss": {
+        "title": "PNG 轉 JPG 與「畫質」說明",
+        "desc": "JPG 為有損壓縮，嚴格上無法與 PNG 無損完全等價。實務上可透過較高品質係數減少視覺差異；若不能有任何損失請勿轉 JPG。"
+      },
+      "convert-photo-to-webp": {
+        "title": "相片轉 WebP｜相簿與網站展示",
+        "desc": "手機相片多為 JPG／HEIC，若網站要統一成 WebP，可在瀏覽器轉出。注意高解析度相片轉檔較耗記憶體，建議分批處理。"
+      },
+      "convert-webp-for-website": {
+        "title": "網站用 WebP 轉檔｜與備援圖搭配",
+        "desc": "前端常需 WebP 搭配 JPG/PNG 備援。此頁說明格式轉換在素材準備的角色；實際 HTML picture 語法請依專案架構設定。"
+      },
+      "convert-image-format-online": {
+        "title": "線上圖片格式轉換｜PNG／JPG／WebP",
+        "desc": "在瀏覽器完成常見點陣格式互轉，無需安裝軟體。建議先確認目標平台接受的格式與單檔上限，再選擇輸出與後續壓縮流程。"
+      },
+      "image-format-converter": {
+        "title": "圖片格式轉換器｜瀏覽器即轉即下載",
+        "desc": "使用 canvas 將像素資料寫成指定 MIME 類型並下載。適合一次性轉檔與小批量；大量檔案建議分批避免分頁卡頓。"
+      },
+      "crop-image-online": {
+        "title": "線上裁切圖片｜比例預覽與下載",
+        "desc": "上傳圖片後以裁切框調整構圖，支援 1:1、4:5、16:9、9:16 與自由比例，瀏覽器完成裁切並下載 PNG 或 JPG。"
+      },
+      "crop-photo-online": {
+        "title": "線上裁切照片｜人像與構圖",
+        "desc": "快速裁切照片至社群與平台常用比例，預覽後下載；適合大頭照、商品圖與旅遊照重新構圖。"
+      }
+    }
+  }
 }
-
-

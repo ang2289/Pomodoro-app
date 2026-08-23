@@ -2,6 +2,7 @@
 // 當 remaining_credits < 5000 且 consume_credits 尚可成功時顯示
 
 import { Link, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { trackEvent } from '@/utils/analytics'
 
 interface LowCreditsNoticeProps {
@@ -18,6 +19,7 @@ export default function LowCreditsNotice({
   lang = 'zh-tw',
   className = '',
 }: LowCreditsNoticeProps) {
+  const { t } = useTranslation()
   const location = useLocation()
   
   // 只在 remaining_credits < 5000 且 > 0 時顯示（表示還可以用，但偏低）
@@ -50,16 +52,14 @@ export default function LowCreditsNotice({
         </div>
         <div className="flex-1">
           <p className="text-sm text-amber-800">
-            {lang === 'zh-tw' 
-              ? `剩餘點數偏低（${remainingCredits.toLocaleString()} 字），建議升級方案以確保服務不中斷。`
-              : `Low credits remaining (${remainingCredits.toLocaleString()} chars). Consider upgrading your plan to ensure uninterrupted service.`}
+            {t('credits_low_remaining', { count: remainingCredits })}
           </p>
           <Link
             to="/pricing"
             onClick={handlePricingClick}
             className="inline-block mt-2 text-sm font-medium text-amber-700 hover:text-amber-900 underline"
           >
-            {lang === 'zh-tw' ? '查看方案 →' : 'View Plans →'}
+            {t('credits_view_plans')} →
           </Link>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import SEO from "../../components/SEO";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function TariffAdjustmentImpactPage() {
   return (
@@ -40,6 +41,9 @@ export default function TariffAdjustmentImpactPage() {
               每當新聞提到「關稅調整」，很多人會想：這跟我有關係嗎？我會感覺到什麼變化嗎？
             </p>
 
+            <ArticleCTA placement="start" focus="tools" />
+
+
             <p className="mb-4">
               其實，關稅調整確實可能影響一般人的生活，但影響的程度和方式，取決於你平常買什麼、用什麼。
             </p>
@@ -67,6 +71,8 @@ export default function TariffAdjustmentImpactPage() {
                   為什麼最近一直在談台美關稅？
                 </Link>
               </div>
+            <ArticleCTA placement="middle" focus="tools" />
+
             </div>
 
             <h3 className="text-xl font-semibold mt-6 mb-3">進口商品價格上漲</h3>
@@ -163,6 +169,8 @@ export default function TariffAdjustmentImpactPage() {
             </div>
           </div>
 
+          <ArticleCTA placement="afterFaq" focus="tools" />
+
           {/* 相關文章區塊 */}
           <div className="mt-12 pt-8 border-t border-gray-200">
             <h3 className="text-2xl font-bold text-gray-900 mb-2">
@@ -198,8 +206,6 @@ export default function TariffAdjustmentImpactPage() {
               </Link>
             </div>
           </div>
-
-          {/* 導流區塊：摘要模組 */}
           <div className="mt-12 pt-8 border-t border-gray-200">
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 text-center">
               <h3 className="text-xl font-bold text-gray-900 mb-2">
@@ -210,7 +216,7 @@ export default function TariffAdjustmentImpactPage() {
               </p>
               <Link
                 to="/summary"
-                className="inline-block px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg drop-shadow-md"
+                className="inline-block bg-blue-600 text-white px-5 py-3 rounded-lg text-base font-medium hover:bg-blue-700 transition"
               >
                 貼上文章，幫我整理
               </Link>
@@ -305,6 +311,7 @@ export default function TariffAdjustmentImpactPage() {
               </li>
             </ul>
           </div>
+          <ArticleCTA placement="bottom" focus="tools" />
 
           <div className="mt-8 pt-6 border-t border-gray-200">
             <Link

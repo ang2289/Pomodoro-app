@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>RXV NT$399 圖片素材庫訂單</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,"Segoe UI","Noto Sans TC",sans-serif;background:#f8fafc;color:#0f172a}.wrap{max-width:1080px;margin:auto;padding:24px}.card{background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:20px;box-shadow:0 8px 28px rgba(15,23,42,.06);margin-bottom:18px}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.grow{flex:1;min-width:220px}input,button,textarea{font:inherit}input,textarea{width:100%;border:1px solid #cbd5e1;border-radius:12px;padding:11px 13px;background:#fff}button{border:0;border-radius:12px;padding:11px 16px;font-weight:800;cursor:pointer}.primary{background:#0f766e;color:#fff}.dark{background:#0f172a;color:#fff}.danger{background:#fff1f2;color:#be123c;border:1px solid #fecdd3}.amber{background:#f59e0b;color:#fff}.badge{display:inline-flex;border-radius:999px;padding:6px 10px;font-size:13px;font-weight:800;background:#dcfce7;color:#166534}.pending{background:#fef3c7;color:#92400e}.approved{background:#dcfce7;color:#166534}.rejected{background:#ffe4e6;color:#9f1239}.muted{color:#64748b;font-size:14px}.error{background:#fff1f2;color:#9f1239;border:1px solid #fecdd3;border-radius:12px;padding:12px;margin-top:12px}.ok{background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;border-radius:12px;padding:12px;margin-top:12px}.order{border:1px solid #fde68a;border-radius:16px;padding:16px;margin-top:12px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 20px}@media(max-width:700px){.grid{grid-template-columns:1fr}}code{background:#f1f5f9;padding:2px 5px;border-radius:6px}.top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}.count{font-size:30px;font-weight:900;color:#b45309}.small{font-size:12px;color:#64748b}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card top">
+    <div><span class="badge">R2 獨立收款</span><h1>NT$399 圖片素材庫訂單</h1><p class="muted">不使用 Supabase 訂單資料。客戶匯款回報直接存 Private R2。</p></div>
+    <div><div class="small">待核款</div><div id="pendingCount" class="count">-</div></div>
+  </div>
+
+  <div class="card">
+    <h2>管理金鑰</h2>
+    <div class="row"><input id="key" class="grow" type="password" placeholder="RXV_IMAGE_ADMIN_KEY" /><button class="primary" onclick="saveKeyAndLoad()">儲存並載入</button><button class="danger" onclick="clearKey()">清除</button></div>
+    <div id="msg"></div>
+  </div>
+
+  <div class="card">
+    <div class="top"><div><h2>素材包 ZIP</h2><p id="bundleInfo" class="muted">尚未讀取</p></div><button class="dark" onclick="loadAll()">重新整理</button></div>
+    <div class="row"><input id="bundleFile" class="grow" type="file" accept="application/zip,.zip" /><button class="primary" onclick="uploadBundle()">上傳／更新 ZIP</button></div>
+  </div>
+
+  <div class="card">
+    <h2>訂單</h2>
+    <div id="orders"><p class="muted">請先輸入管理金鑰。</p></div>
+  </div>
+</div>
+<script>
+const KEY_STORE='rxv_image_admin_key';
+const $=id=>document.getElementById(id);
+$('key').value=sessionStorage.getItem(KEY_STORE)||'';
+function show(text,type=''){ $('msg').className=type; $('msg').textContent=text||''; }
+function key(){ return ($('key').value||sessionStorage.getItem(KEY_STORE)||'').trim(); }
+async function api(action,method='GET',body){
+  const k=key(); if(!k) throw new Error('請先輸入圖片後台管理金鑰。');
+  const r=await fetch('/api/image-bundle-orders?action='+encodeURIComponent(action),{method,headers:{'x-rxv-image-admin-key':k,...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})});
+  const d=await r.json().catch(()=>({})); if(!r.ok) throw new Error(d.error||('HTTP '+r.status)); return d;
+}
+function saveKeyAndLoad(){ if(!key()) return show('請輸入管理金鑰。','error'); sessionStorage.setItem(KEY_STORE,key()); loadAll(); }
+function clearKey(){ sessionStorage.removeItem(KEY_STORE); $('key').value=''; $('orders').innerHTML='<p class="muted">管理金鑰已清除。</p>'; $('pendingCount').textContent='-'; show(''); }
+function fmt(v){ if(!v)return '—'; const d=new Date(v); return isNaN(d)?v:d.toLocaleString('zh-TW'); }
+function esc(v){ return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+async function loadAll(){
+  show('正在讀取 R2 訂單…');
+  try{
+    const [a,b]=await Promise.all([api('list'),api('summary')]);
+    const orders=Array.isArray(a.orders)?a.orders:[]; $('pendingCount').textContent=orders.filter(o=>o.status==='pending').length;
+    $('bundleInfo').textContent=b.bundleFile?`可交付｜${b.bundleFile.fileName}｜${fmt(b.bundleFile.uploadedAt)}`:'尚未上傳 ZIP；可先收款，之後再上傳交付檔。';
+    renderOrders(orders,b.bundleFile); show(`已載入 ${orders.length} 筆訂單。`,'ok');
+  }catch(e){ show(e.message||String(e),'error'); }
+}
+function renderOrders(orders,bundle){
+  if(!orders.length){ $('orders').innerHTML='<p class="muted">目前沒有 NT$399 圖片素材庫訂單。</p>'; return; }
+  $('orders').innerHTML=orders.map(o=>`<div class="order"><div class="top"><div><strong>${esc(o.order_no)}</strong><div>${esc(o.email)}</div></div><span class="badge ${esc(o.status)}">${o.status==='approved'?'已確認收款':o.status==='rejected'?'已拒絕':'待核對'}</span></div><div class="grid"><div>金額：NT$${esc(o.amount_ntd)}</div><div>末五碼：<code>${esc(o.account_last_five)}</code></div><div>匯款日期：${esc(o.transfer_date)}</div><div>送出：${esc(fmt(o.created_at))}</div></div>${o.note?`<p>備註：${esc(o.note)}</p>`:''}<div class="row" style="margin-top:12px">${o.status==='pending'?`<button class="primary" onclick="approve('${esc(o.id)}')">確認已收款</button><button class="danger" onclick="rejectOrder('${esc(o.id)}')">拒絕</button>`:''}${o.status==='approved'?`<button class="dark" ${bundle?'':'disabled'} onclick="copyLink('${esc(o.id)}')">複製 7 天下載連結</button>`:''}</div></div>`).join('');
+}
+async function approve(id){ if(!confirm('請先確認銀行實際入帳 NT$399。確定核准？'))return; try{await api('approve','POST',{orderId:id}); show('已確認收款。','ok'); loadAll();}catch(e){show(e.message,'error')} }
+async function rejectOrder(id){ const reviewNote=prompt('拒絕原因（可留白）：')??''; if(!confirm('確定拒絕？'))return; try{await api('reject','POST',{orderId:id,reviewNote}); show('已拒絕。','ok'); loadAll();}catch(e){show(e.message,'error')} }
+async function copyLink(id){ try{const d=await api('download-link','POST',{orderId:id}); await navigator.clipboard.writeText(d.downloadUrl); show('7 天 R2 下載連結已複製。','ok');}catch(e){show(e.message,'error')} }
+async function uploadBundle(){
+  const f=$('bundleFile').files[0]; if(!f)return show('請先選擇 ZIP。','error');
+  if(!f.name.toLowerCase().endsWith('.zip'))return show('只接受 ZIP。','error');
+  try{show('準備上傳…'); const p=await api('prepare-bundle-upload','POST',{fileName:f.name}); const r=await fetch(p.uploadUrl,{method:'PUT',headers:{'Content-Type':'application/zip'},body:f}); if(!r.ok)throw new Error('R2 ZIP 上傳失敗 HTTP '+r.status); await api('complete-bundle-upload','POST',{objectKey:p.objectKey,fileName:p.fileName}); show('ZIP 已更新。','ok'); $('bundleFile').value=''; loadAll();}catch(e){show(e.message,'error')}
+}
+if(key()) loadAll();
+</script>
+</body>
+</html>

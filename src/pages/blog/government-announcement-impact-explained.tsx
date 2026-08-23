@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import SEO from "../../components/SEO";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function GovernmentAnnouncementImpactExplainedPage() {
   // 獲取今天的日期（格式：YYYY-MM-DD）
@@ -43,6 +44,9 @@ export default function GovernmentAnnouncementImpactExplainedPage() {
               每天都有很多政府公告，但並不是每個公告都會影響你。有些公告是「資訊型」的，只是告訴你發生了什麼事；有些公告是「影響型」的，會直接影響你的生活。很多人會被新聞標題嚇到，以為每個公告都很重要，其實不是。
             </p>
 
+            <ArticleCTA placement="start" focus="summary" />
+
+
             <h2 className="text-2xl font-semibold mt-8 mb-4">為什麼政府公告這麼多？</h2>
             <p className="mb-4">
               政府公告這麼多的原因主要有幾個：
@@ -83,13 +87,13 @@ export default function GovernmentAnnouncementImpactExplainedPage() {
               對一般民眾來說，判斷要不要關心政府公告可以看幾個重點：
             </p>
             <ul className="list-disc pl-6 space-y-2 mb-6">
-              <li><strong>看標題和關鍵字</strong>：如果標題提到「稅」、「補助」、「申請」、「調整」等關鍵字，通常比較重要</li>
+              <li><strong>看標題與重點字</strong>：如果標題提到「稅」、「補助」、「申請」、「調整」等字詞，通常比較重要</li>
               <li><strong>看適用對象</strong>：如果公告提到「一般民眾」、「所有國民」等，通常比較重要；如果只提到「特定行業」、「特定地區」等，可能跟你無關</li>
               <li><strong>看生效時間</strong>：如果公告提到「即日起」、「下個月開始」等，通常比較重要；如果只是「資訊公告」，可能不需要特別關心</li>
               <li><strong>看是否需要行動</strong>：如果公告提到「需要申請」、「需要登記」等，通常比較重要；如果只是「資訊提供」，可能不需要特別關心</li>
             </ul>
             <p className="mb-4">
-              建議先看標題和關鍵字，如果覺得可能跟你有關，再仔細看內容；如果覺得跟你無關，就可以跳過。
+              建議先看標題與重點字，如果覺得可能跟你有關，再仔細看內容；如果覺得跟你無關，就可以跳過。
             </p>
 
             <h2 className="text-2xl font-semibold mt-8 mb-4">為什麼很多人會被新聞標題嚇到？</h2>
@@ -139,12 +143,16 @@ export default function GovernmentAnnouncementImpactExplainedPage() {
               所以不是每個政策都很重要，要學會判斷「哪些政策跟你有關、哪些可以跳過」。
             </p>
 
+            <ArticleCTA placement="middle" focus="summary" />
+
             <div className="bg-yellow-50 border-l-4 border-yellow-400 p-6 rounded-r-lg my-8">
               <p className="text-gray-700 leading-relaxed">
-                <strong>提醒：</strong>政府公告的內容和影響會隨著時間而改變，實際影響請以政府的最新公告為準。建議先看標題和關鍵字，如果覺得可能跟你有關，再仔細看內容；如果覺得跟你無關，就可以跳過。
+                <strong>提醒：</strong>政府公告的內容和影響會隨著時間而改變，實際影響請以政府的最新公告為準。建議先看標題與重點字，如果覺得可能跟你有關，再仔細看內容；如果覺得跟你無關，就可以跳過。
               </p>
             </div>
           </div>
+
+          <ArticleCTA placement="afterFaq" focus="summary" />
 
           {/* 相關文章區塊 */}
           <div className="mt-12 pt-8 border-t border-gray-200">
@@ -181,8 +189,6 @@ export default function GovernmentAnnouncementImpactExplainedPage() {
               </Link>
             </div>
           </div>
-
-          {/* 導流區塊：摘要模組 */}
           <div className="mt-12 pt-8 border-t border-gray-200">
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 text-center">
               <h3 className="text-xl font-bold text-gray-900 mb-2">
@@ -193,7 +199,7 @@ export default function GovernmentAnnouncementImpactExplainedPage() {
               </p>
               <Link
                 to="/summary"
-                className="inline-block px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg drop-shadow-md"
+                className="inline-block bg-blue-600 text-white px-5 py-3 rounded-lg text-base font-medium hover:bg-blue-700 transition"
                 style={{ textShadow: '0 1px 2px rgba(0,0,0,0.1)' }}
               >
                 貼上文章，幫我整理
@@ -257,6 +263,7 @@ export default function GovernmentAnnouncementImpactExplainedPage() {
               </li>
             </ul>
           </div>
+          <ArticleCTA placement="bottom" focus="summary" />
 
           <div className="mt-8 pt-6 border-t border-gray-200">
             <Link

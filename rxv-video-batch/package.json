@@ -11,7 +11,8 @@
   "license": "ISC",
   "dependencies": {
     "node-fetch": "^2.7.0",
-    "archiver": "^7.0.1"
+    "archiver": "^7.0.1",
+    "papaparse": "^5.4.1"
   }
 }
 

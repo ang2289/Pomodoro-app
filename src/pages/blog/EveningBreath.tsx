@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function EveningBreath() {
   return (
@@ -21,6 +22,9 @@ export default function EveningBreath() {
           睡前進行深層呼吸，能啟動副交感神經，幫助身體進入放鬆模式，
           為明天儲備新的能量。
         </p>
+
+        <ArticleCTA placement="start" focus="tools" />
+
 
         <h2 className="text-2xl font-semibold mt-8 mb-3">🌬️ 三步驟夜間放鬆呼吸法</h2>
         <ol className="list-decimal ml-6 space-y-3 mb-4">
@@ -54,12 +58,16 @@ export default function EveningBreath() {
           幫助大腦更快切換到休息狀態。
         </p>
 
+        <ArticleCTA placement="middle" focus="tools" />
+
         <h2 className="text-2xl font-semibold mt-8 mb-3">💤 結語：一口氣，卸下整天的世界</h2>
         <p className="mb-4">
           呼吸是最溫柔的療癒方式。
           不需要任何儀式，只要一口氣，就能讓身心回到平靜。
           今晚，讓呼吸成為你最安全的避風港。
         </p>
+
+        <ArticleCTA placement="bottom" focus="tools" />
 
         <hr className="my-8 border-gray-300" />
 
@@ -95,6 +103,8 @@ export default function EveningBreath() {
           One breath at a time, you return to peace.
           Tonight, let your breath be your safe harbor.
         </p>
+
+        <ArticleCTA placement="afterFaq" focus="tools" />
 
         <p className="mt-8 text-gray-500 text-center text-sm">
           文章由 RxV 夢想創作工作室撰寫 · 保留所有權利

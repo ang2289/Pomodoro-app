@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { googleSpeak, stopSpeak } from "@/services/voiceService";
 import { IoVolumeHighOutline, IoStopOutline } from "react-icons/io5";
 
@@ -8,6 +9,7 @@ interface ReadButtonProps {
 }
 
 export default function ReadButton({ text, lang }: ReadButtonProps) {
+  const { t } = useTranslation();
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
 
@@ -38,7 +40,7 @@ export default function ReadButton({ text, lang }: ReadButtonProps) {
       <button
         onClick={handleSpeak}
         className="p-2 rounded-full shadow-md bg-white hover:scale-110 transition text-gray-700"
-        title={isPlaying ? "停止朗讀" : "語音朗讀"}
+        title={isPlaying ? t('read_btn_stop') : t('read_btn_play')}
       >
         {isPlaying ? (
           <IoStopOutline className="text-2xl text-red-500" />

@@ -1,5 +1,5 @@
 {
-  "app_title": "Pomodoro • Todo • Chant & Mind Energy",
+  "app_title": "RxV AI Tools & Life Services Center",
   "pomodoro": "Pomodoro Focus Timer",
   "todo": "Todo List",
   "chant": "Chant & Mind Energy",
@@ -15,6 +15,128 @@
   "wish_wall": "Chant Wish Wall",
   "export_csv": "Export CSV",
   "language_switch": "Language",
+  "animated_line_sticker.seo_title": "Animated LINE Sticker APNG Packager | Frame Composer and Spec Checker",
+  "animated_line_sticker.seo_description": "Upload multiple PNG frames, preview the animation, check LINE animated sticker specs, and export an APNG or frame-by-frame ZIP.",
+  "animated_line_sticker.seo_keywords": "LINE animated sticker, APNG packager, animated sticker maker, LINE sticker tool, PNG frames",
+  "animated_line_sticker.eyebrow": "LINE Animated Sticker Tool",
+  "animated_line_sticker.title": "Animated LINE Sticker APNG Packager",
+  "animated_line_sticker.intro_line_1": "Upload images from frame 1 to frame N. The tool previews the animation, checks common LINE animated sticker requirements, and lets you download an APNG or frame-by-frame ZIP.",
+  "animated_line_sticker.intro_line_2": "Transparent PNGs work best. Keep the character position and size consistent so the animation feels stable.",
+  "animated_line_sticker.recommended_timing_label": "Suggested timing: ",
+  "animated_line_sticker.recommended_timing_before": "The automatic 8-frame animation defaults to",
+  "animated_line_sticker.recommended_timing_value": " 2 seconds x 2 loops = 4 seconds",
+  "animated_line_sticker.recommended_timing_after": ", which is easier to read and fits LINE's maximum total playback time of 4 seconds.",
+  "animated_line_sticker.upload_frames_button": "Upload PNG Frames",
+  "animated_line_sticker.prompt_storyboard_button": "Create Sticker Storyboard First",
+  "animated_line_sticker.auto_badge": "New · Auto Animation",
+  "animated_line_sticker.auto_timing_badge": "8 frames · 2 seconds",
+  "animated_line_sticker.auto_title": "Upload one static sticker and generate animation frames",
+  "animated_line_sticker.auto_description": "The tool trims transparent margins, attempts to separate top text, character, and accents, applies a motion preset, and creates 8 transparent PNG frames for the preview and APNG export workflow below.",
+  "animated_line_sticker.auto_transparency_hint": "Use a transparent PNG for best results. Leave a small gap between the text and character so automatic layer detection works better.",
+  "animated_line_sticker.auto_current_source": "Current auto-animation source: {{name}}",
+  "animated_line_sticker.auto_motion_label": "Automatic motion preset",
+  "animated_line_sticker.auto_motion_auto": "Combined motion (text pop + character bounce + sparkle)",
+  "animated_line_sticker.auto_motion_salute": "Salute / received emphasis",
+  "animated_line_sticker.auto_motion_bounce": "Character bounce",
+  "animated_line_sticker.auto_motion_shake": "Side-to-side shake",
+  "animated_line_sticker.auto_motion_nod": "Nodding reply",
+  "animated_line_sticker.auto_motion_text_pop": "Bubble text pop",
+  "animated_line_sticker.auto_motion_sparkle": "Sparkle emphasis",
+  "animated_line_sticker.auto_upload_button": "Choose one static PNG and generate 8 frames",
+  "animated_line_sticker.auto_generating_button": "Generating 8 frames...",
+  "animated_line_sticker.auto_replace_notice": "Generated frames replace the current frame list. The original file is not modified.",
+  "animated_line_sticker.auto_status_generating": "Analyzing text, character, and accents, then generating 8 animation frames...",
+  "animated_line_sticker.auto_success": "8 frames were generated and playback was set to 2 seconds x 2 loops. Preview the result, then export the APNG when ready.",
+  "animated_line_sticker.auto_error_image_only": "Please choose a PNG or another image file.",
+  "animated_line_sticker.auto_error_failed": "Automatic animation failed. Try a transparent PNG or refresh the page and try again.",
+  "animated_line_sticker.frame_order_title": "Frame Order",
+  "animated_line_sticker.frame_order_desc": "Up to 20 frames are kept. The order here is the animation playback order.",
+  "animated_line_sticker.clear_button": "Clear",
+  "animated_line_sticker.dropzone_title": "Click to upload, or drag PNG frames here",
+  "animated_line_sticker.dropzone_desc": "Recommended: 5-20 frames, no larger than 320x270px.",
+  "animated_line_sticker.frame_number": "Frame {{number}}",
+  "animated_line_sticker.move_up_button": "Move Up",
+  "animated_line_sticker.move_down_button": "Move Down",
+  "animated_line_sticker.frame_transparent_warn": "May not have a transparent background",
+  "animated_line_sticker.frame_transparent_ok": "Transparency check passed or found no issue",
+  "animated_line_sticker.delete_frame_button": "Delete Frame",
+  "animated_line_sticker.preview_title": "Animation Preview",
+  "animated_line_sticker.preview_alt": "Animation preview",
+  "animated_line_sticker.preview_empty": "Upload frames and the preview will play here",
+  "animated_line_sticker.timing_principle": "Timing rule: duration per playback x loop count must be 4 seconds or less. LINE accepts whole-second values of 1, 2, 3, or 4 seconds. Automatic animation defaults to 8 frames at 2 seconds x 2 loops for clearer motion.",
+  "animated_line_sticker.duration_label": "Duration per playback",
+  "animated_line_sticker.duration_option_1": "1 second (fast)",
+  "animated_line_sticker.duration_option_2": "2 seconds (recommended)",
+  "animated_line_sticker.duration_option_3": "3 seconds",
+  "animated_line_sticker.duration_option_4": "4 seconds",
+  "animated_line_sticker.loop_label": "Loop count",
+  "animated_line_sticker.loop_option_1": "1 loop",
+  "animated_line_sticker.loop_option_2": "2 loops",
+  "animated_line_sticker.loop_option_3": "3 loops",
+  "animated_line_sticker.loop_option_4": "4 loops",
+  "animated_line_sticker.spec_check_title": "LINE Spec Check",
+  "animated_line_sticker.export_title": "Export Downloads",
+  "animated_line_sticker.processing": "Processing...",
+  "animated_line_sticker.download_apng_button": "Download APNG (for LINE)",
+  "animated_line_sticker.download_gif_button": "Download GIF (preview)",
+  "animated_line_sticker.download_mp4_button": "Download MP4 (showcase)",
+  "animated_line_sticker.download_zip_button": "Download Frame ZIP",
+  "animated_line_sticker.apng_label": "APNG: ",
+  "animated_line_sticker.apng_desc": "Use this for LINE animated sticker submission. The file extension will be .png.",
+  "animated_line_sticker.gif_label": "GIF: ",
+  "animated_line_sticker.gif_desc": "Use this for client previews, chat demos, and social comment examples. It is not suitable for LINE submission.",
+  "animated_line_sticker.mp4_label": "MP4: ",
+  "animated_line_sticker.mp4_desc": "Use this for FB, IG, Threads, Reels, and portfolio showcases. If the browser does not support MP4 encoding, the tool will save a WebM preview instead.",
+  "animated_line_sticker.check_frame_count_label": "5-20 frames",
+  "animated_line_sticker.check_frame_count_current": "{{count}} frames uploaded",
+  "animated_line_sticker.check_frame_count_empty": "No frames uploaded yet",
+  "animated_line_sticker.check_png_label": "PNG format",
+  "animated_line_sticker.check_png_ok": "All files are PNGs or have a .png extension",
+  "animated_line_sticker.check_png_warn": "Recommended: convert all frames to transparent PNG",
+  "animated_line_sticker.check_size_label": "Size under 320x270",
+  "animated_line_sticker.check_size_ok": "Matches LINE animated sticker dimensions",
+  "animated_line_sticker.check_size_warn": "APNG export will center and scale frames to 320x270",
+  "animated_line_sticker.check_same_size_label": "Consistent frame size",
+  "animated_line_sticker.check_same_size_ok": "Frame sizes match",
+  "animated_line_sticker.check_same_size_warn": "Export is still possible, but matching sizes first will make the animation steadier",
+  "animated_line_sticker.check_transparent_label": "Transparent background",
+  "animated_line_sticker.check_transparent_ok": "No opaque background issue detected",
+  "animated_line_sticker.check_transparent_warn": "Some images may not have a transparent background",
+  "animated_line_sticker.check_duration_label": "Total playback <= 4 seconds",
+  "animated_line_sticker.check_duration_message": "{{duration}} seconds x {{loops}} loops = {{total}} seconds",
+  "animated_line_sticker.check_zip_label": "ZIP under 60MB",
+  "animated_line_sticker.check_zip_message": "Current total is about {{size}}MB",
+  "animated_line_sticker.status_zip": "Creating frame-by-frame ZIP. Please wait...",
+  "animated_line_sticker.status_apng": "Compositing APNG. Images will be scaled to 320x270 first. Please wait...",
+  "animated_line_sticker.status_gif": "Creating GIF preview. Please wait...",
+  "animated_line_sticker.status_video": "Creating MP4 / video preview. Please keep this tab open...",
+  "animated_line_sticker.message_zip_success": "Frame-by-frame ZIP is ready. You can send it into the design workflow or keep it as a backup.",
+  "animated_line_sticker.message_apng_success": "APNG is ready. If you do not see the downloaded file, check your browser downloads or popup/download blocking. Before submission, still run one more spec check on LINE's official upload page.",
+  "animated_line_sticker.message_gif_success": "GIF preview is ready. Reminder: GIF is useful for client previews and social showcases, but it is not the LINE animated sticker submission format.",
+  "animated_line_sticker.message_mp4_success": "MP4 preview video is ready. Reminder: MP4 is useful for FB, IG, Threads, Reels, and portfolio showcases, but it is not the LINE submission format.",
+  "animated_line_sticker.message_webm_success": "This browser does not currently support MP4 encoding, so a WebM preview was created instead. If you specifically need MP4, use a newer Chrome/Edge version or convert it with a video tool.",
+  "animated_line_sticker.error_read_image": "Could not read image: {{name}}",
+  "animated_line_sticker.error_load_image": "Could not load image: {{name}}",
+  "animated_line_sticker.error_read_images_failed": "Failed to read images",
+  "animated_line_sticker.error_apng_compression_unsupported": "This browser does not support front-end APNG compression. Use the frame-by-frame ZIP first. The latest Chrome or Edge is recommended.",
+  "animated_line_sticker.error_canvas_create": "Could not create a canvas. Please try another browser.",
+  "animated_line_sticker.error_min_frames_apng": "LINE animated stickers should use at least 5 frame images.",
+  "animated_line_sticker.error_min_frames_gif": "At least 2 images are required to create a GIF preview.",
+  "animated_line_sticker.error_video_record_unsupported": "This browser does not support video recording. The latest Chrome or Edge is recommended.",
+  "animated_line_sticker.error_canvas_video_unsupported": "This browser does not support Canvas video output.",
+  "animated_line_sticker.error_video_record_failed": "Video recording failed. Please try another browser.",
+  "animated_line_sticker.error_zip_failed": "Failed to create ZIP",
+  "animated_line_sticker.error_apng_failed": "Failed to create APNG. Please download the frame-by-frame ZIP first.",
+  "animated_line_sticker.error_gif_failed": "Failed to create GIF.",
+  "animated_line_sticker.error_video_failed": "Failed to create video.",
+  "animated_line_sticker.checklist_title": "LINE Animated Sticker Frame-by-Frame Packaging Checklist",
+  "animated_line_sticker.checklist_output_size": "Recommended output size: within {{width}} x {{height}}px",
+  "animated_line_sticker.checklist_frame_count": "Frame count: {{count}} frames",
+  "animated_line_sticker.checklist_duration": "Duration per playback: {{seconds}} seconds",
+  "animated_line_sticker.checklist_loop_count": "Loop count: {{count}} loops",
+  "animated_line_sticker.checklist_total_duration": "Duration x loop count: {{seconds}} seconds",
+  "animated_line_sticker.checklist_recommendation": "Recommendation: keep character position, scale, colors, and transparent backgrounds consistent across all frames.",
+  "animated_line_sticker.checklist_publish_reminder": "Submission reminder: LINE animated stickers still need to be exported as APNG files with a .png extension and checked against the official specs.",
   "subscription": "Go Ad-Free (Pro Plan)",
   "about": "About Us",
   "privacy": "Privacy Policy",
@@ -96,7 +218,7 @@
   "集氣活動牆": "Chant & Mind Energy Wall",
   "focus_items": "Focus Items",
   "manage_categories": "Manage Categories",
-  "app_name": "Pomodoro Application",
+  "app_name": "RxV AI Tools & Life Services Center",
   "focus_item_management": "Focus Item Management",
   "add_focus_item": "Add Focus Item",
   "new_focus_item": "Add Item",
@@ -138,13 +260,11 @@
   "total": "total",
   "if_too_much_data_suggest_search_or_pagination": "If there is too much data, it is recommended to use search function or set pagination.",
   "default_five_records_more_available_with_search": "Default five records, more data available with search",
-  "chant_count": "Chanting Count",
   "image_upload": "Image Upload",
   "select_image": "Select Image",
   "restore_default_image": "Restore Default Image",
   "background_music_animated": "Background Music (Animated)",
   "select_scripture": "Select Scripture",
-  "statistics": "Statistics",
   "today_date": "Today's Date",
   "total_count": "Total Count",
   "scripture_management": "Scripture Management",
@@ -155,7 +275,6 @@
   "enter_new_name": "Enter new name…",
   "rename": "Rename",
   "delete_current_scripture": "Delete Current Scripture",
-  "delete": "Delete",
   "sound_effect": "Select Sound Effect",
   "sound_on": "Sound On",
   "sound_off": "Sound Off",
@@ -361,13 +480,10 @@
   "activity_title": "Activity Title",
   "activity_title_placeholder": "Pray for mother's health",
   "chant_content": "Chant Content",
-  "chant_count": "Chant Count",
   "chant_unit": "times",
   "dedication_recipient": "Dedication Recipient",
   "dedication_recipient_optional": "Dedication Recipient (Optional)",
   "dedication_recipient_placeholder": "Mom, Xiao Ming, relative's name...",
-  "start_date": "Start Date",
-  "end_date": "End Date",
   "wish_content": "Wish Content",
   "wish_content_optional": "Wish Content (Optional)",
   "creator_name": "Creator Name",
@@ -394,7 +510,6 @@
   "chant_wish_submit_failed_timeout": "Submit failed: Request timeout, please try again later",
   "upload_image_label": "Upload Image (JPG/PNG, max 1MB, long side 800px)",
   "uploading": "Uploading...",
-  "select_image": "Select Image",
   "no_file_chosen": "(No file chosen)",
   "select_image_file": "Select Image File",
   "please_select_image": "Please select image",
@@ -446,8 +561,6 @@
   "sort_start_asc": "Start Date (Old→New)",
   "sort_created_desc": "Created Time (New→Old)",
   "sort_created_asc": "Created Time (Old→New)",
-  "search": "Search",
-  "reset": "Reset",
   "end_date_label": "End Date",
   "chant_wish_wall_subtitle": "Let's gather energy for wishes together",
   "wish_number": "Wish Number",
@@ -493,7 +606,6 @@
   "activity_not_found": "Activity not found",
   "chant_stats_report": "Chant Stats Report",
   "chant_stats_subtitle": "View everyone's collective chanting records",
-  "total_chant_count": "Total Chant Count",
   "number_of_records": "Number of Records",
   "number_of_participants": "Number of Participants",
   "detailed_records": "Detailed Records",
@@ -592,7 +704,1872 @@
   "about_page_features": ", with no AI processing or tracking. All data is stored locally or via authorized cloud.",
   "about_page_not_affiliated": "This app is not affiliated with any religion, political group, or organization. Chanting and wish modules are neutral and personal-use only.",
   "about_page_contact": "Contact Email:",
-  "about_page_update": "Last Updated"
+  "about_page_update": "Last Updated",
+  "login": "Login",
+  "logout": "Logout",
+  "back_to_home": "Back to Home",
+  "lang_zh_tw": "中文",
+  "lang_en": "English",
+  "line_sticker_tool": "LINE Sticker Tool",
+  "image_resize_tool": "Image Resize Tool",
+  "resize_back_home": "← Back to Home",
+  "resize_page_title": "IG / Shopee / Shorts Image Size Converter",
+  "resize_page_description": "Free one-click image resizer for IG, Shopee product images, and Shorts/Reels. Supports 1:1, 4:5, 9:16 and two modes: pad (no distortion) or crop to fill. All processing is done in your browser; no uploads, no storage.",
+  "resize_seo_meta_description": "Free image size converter for IG posts, Stories, Reels, and Shopee product images. One-click 1:1, 4:5, 9:16. Pad or crop. Processed locally only.",
+  "resize_validation_format": "Only JPG, JPEG, PNG, and WebP are supported",
+  "resize_validation_size": "File size must not exceed 10MB",
+  "resize_validation_type": "This file type is not supported",
+  "resize_error_load": "Could not load image. Please check the file format.",
+  "resize_drop_here": "Drop image here, or",
+  "resize_click_upload": "click to upload",
+  "resize_processing": "Processing…",
+  "resize_click_or_drag": "Click or drag to replace image",
+  "resize_section_platform": "Platform size",
+  "resize_section_resolution": "Output resolution (long edge)",
+  "resize_section_mode": "Mode",
+  "resize_mode_pad": "Pad (no distortion, full image)",
+  "resize_mode_crop": "Crop to fill (edges may be cut)",
+  "resize_section_download": "Download",
+  "resize_download_png": "Download PNG",
+  "resize_download_jpg": "Download JPG",
+  "resize_downloaded": "Downloaded ✓",
+  "resize_download_start": "Download started: {{filename}}",
+  "resize_download_failed": "Download failed. Please try again.",
+  "resize_zip_title": "Multi-platform ZIP",
+  "resize_zip_upload_first": "Please upload an image first",
+  "resize_zip_select_one": "Please select at least one platform size",
+  "resize_zip_progress": "Packing {{current}}/{{total}}…",
+  "resize_zip_generating": "Generating ZIP…",
+  "resize_zip_download_btn": "Download ZIP",
+  "resize_zip_start": "ZIP download started",
+  "resize_preset_ig_post": "IG post 1:1",
+  "resize_preset_ig_portrait": "IG portrait 4:5",
+  "resize_preset_ig_story": "IG Story / Reels / Shorts 9:16",
+  "resize_preset_shopee_main": "Shopee product 1:1",
+  "resize_preview_pad": "{{label}} — padded preview",
+  "resize_preview_crop": "{{label}} — cropped preview",
+  "resize_preview_output": "Output size: {{width}} × {{height}}",
+  "resize_section_preview": "Preview",
+  "resize_table_title": "Image size reference (IG / Shopee / Shorts)",
+  "resize_table_intro": "Not sure which size? IG posts: 1:1 (1080×1080). Portrait: 4:5 (1080×1350). Stories/Reels: 9:16 (1080×1920). Shopee: 1:1 recommended.",
+  "resize_card_ig_post_title": "IG post 1:1",
+  "resize_card_ig_post_ratio": "Ratio: 1:1",
+  "resize_card_ig_post_size": "Suggested: 1080 × 1080",
+  "resize_card_ig_post_desc": "Square posts; most common, stable display.",
+  "resize_card_ig_portrait_title": "IG portrait 4:5",
+  "resize_card_ig_portrait_ratio": "Ratio: 4:5",
+  "resize_card_ig_portrait_size": "Suggested: 1080 × 1350",
+  "resize_card_ig_portrait_desc": "Larger on screen; often better engagement.",
+  "resize_card_ig_story_title": "IG Story / Reels / Shorts",
+  "resize_card_ig_story_ratio": "Ratio: 9:16",
+  "resize_card_ig_story_size": "Suggested: 1080 × 1920",
+  "resize_card_ig_story_desc": "Full-screen; avoids top/bottom crop.",
+  "resize_card_shopee_title": "Shopee product image",
+  "resize_card_shopee_ratio": "Ratio: 1:1",
+  "resize_card_shopee_size": "Suggested: 1080 × 1080",
+  "resize_card_shopee_desc": "Center product; keep text away from edges.",
+  "resize_seo_inner": "Need to tidy captions or product copy? Try our",
+  "resize_seo_link": "AI Summary tool",
+  "resize_seo_inner_suffix": "to extract key points and keywords.",
+  "resize_quick_title": "Common image sizes",
+  "resize_quick_intro": "Quick reference for IG, Shopee, and Shorts.",
+  "resize_quick_ig_post": "IG post: 1:1 (1080×1080)",
+  "resize_quick_ig_portrait": "IG portrait: 4:5 (1080×1350)",
+  "resize_quick_reels": "Stories/Reels/Shorts: 9:16 (1080×1920)",
+  "resize_quick_shopee": "Shopee product: 1:1 (1080×1080), center product and keep safe margins.",
+  "resize_faq_title": "FAQ",
+  "resize_faq_1_q": "Which image formats are supported?",
+  "resize_faq_1_a": "JPG, JPEG, PNG, WebP. Max 10MB per file.",
+  "resize_faq_2_q": "What’s the difference between pad and crop?",
+  "resize_faq_2_a": "Pad keeps the full image and fills extra space (e.g. white). Crop scales to fill and trims overflow.",
+  "resize_faq_3_q": "How do I choose output resolution?",
+  "resize_faq_3_a": "Long-edge pixels. 1080 is fine for most posts; 1350 or 1920 for higher quality. Default 1080 is usually enough.",
+  "resize_faq_4_q": "Where are images uploaded?",
+  "resize_faq_4_a": "Nowhere. All processing happens in your browser; nothing is sent to any server.",
+  "resize_faq_5_q": "Recommended Shopee product image size?",
+  "resize_faq_5_a": "Shopee product images are 1:1. Use “Shopee product 1:1” to get 1080×1080 (or your chosen resolution).",
+  "resize_faq_6_q": "What IG image sizes avoid cropping?",
+  "resize_faq_6_a": "Post: 1:1 (1080×1080). Portrait: 4:5 (1080×1350). Stories/Reels: 9:16 (1080×1920). Use pad to keep full image or crop for fill.",
+  "resize_faq_7_q": "What size for Shopee product images?",
+  "resize_faq_7_a": "1:1 (e.g. 1080×1080). Center the product and keep important text away from edges for safe display.",
+  "resize_faq_jpg_png_q": "Should I use JPG or PNG?",
+  "resize_faq_jpg_png_a": "JPG is usually smaller, good for product and social images. PNG keeps sharper edges and text; files are often larger.",
+  "resize_faq_zip_q": "Will multi-platform ZIP output distort images?",
+  "resize_faq_zip_a": "No. The tool outputs each platform size using your chosen mode (pad or crop) and keeps the target ratio without stretching.",
+  "resize_privacy_title": "Privacy",
+  "resize_privacy_desc": "Images are processed only in your browser. Nothing is uploaded or stored. No data is kept after you leave.",
+  "resize_promo_title": "✅ Download started",
+  "resize_promo_desc": "Next, tidy your captions or product copy with our AI Summary tool.",
+  "resize_promo_btn": "Go to AI Summary",
+  "resize_promo_close": "Close",
+  "deprecated_page_title": "Page Deprecated",
+  "deprecated_default_message": "This page has been deprecated. Please go to the new flow.",
+  "deprecated_old_path": "Old path",
+  "go_to_new_flow": "Go to New Flow",
+  "deprecated_new_flow_label": "New flow",
+  "footer_site_intro": "This website is a tool and learning assistance platform, providing users with resources for focus, organization, understanding, and efficiency improvement.",
+  "footer_focus_tools": "Focus Assistance Tools",
+  "footer_focus_tools_intro": "Some users use simple auxiliary tools during extended focus, learning, or meditation sessions to reduce environmental distractions. The following are common focus assistance items, provided for informational reference only.",
+  "footer_view_tool_info": "View Tool Information",
+  "footer_help": "Help",
+  "footer_usage_info": "Usage Information",
+  "footer_policy_info": "Policy Information",
+  "footer_service_desc": "Service Description",
+  "footer_extended_resources": "Extended Resources",
+  "footer_extended_intro": "This section provides external resource links related to focus, learning, and efficiency improvement, for informational and reference purposes only, with no direct connection to this site's usage quota, features, or services.",
+  "footer_extended_tools": "Extended Tools & Resources",
+  "footer_extended_tools_intro": "The following are external tools and resources that some users commonly use alongside focus, learning, or content organization processes, provided as usage scenario references only.",
+  "footer_tool_example_docs": "Tool Example Documentation",
+  "footer_developer_resources": "Developer Resources",
+  "footer_contact": "Contact",
+  "footer_disclaimer": "The content of this site is for learning and tool usage reference only, and does not constitute any commercial or investment advice.",
+  "footer_notion_desc": "Note-taking and workspace organization tool",
+  "footer_forest_desc": "Focus timer with visual progress tracking",
+  "footer_obsidian_desc": "Knowledge base with linked notes",
+  "logged_out": "You have been logged out.",
+  "home_tool_ai_summary_desc": "Paste article / URL / subtitle content and get summary and keywords in one click. Works with Ko-fi template for your own API.",
+  "home_tool_images_desc": "Free images, member images (NT$99+ to download), premium images (NT$199 exclusive).",
+  "home_tool_image_resize_desc": "IG / Shopee / Shorts one-click resize. Supports 1:1, 4:5, 9:16. Processed in browser, no upload.",
+  "home_tool_line_sticker_desc": "Auto specs, naming, ZIP pack. One-click LINE Creators Market format after upload.",
+  "home_tool_scam_check_desc": "Paste message for instant risk check. LINE / SMS / Email analyzed locally, no signup, zero cost.",
+  "home_category_ai": "AI Tools",
+  "home_category_design": "Design Tools",
+  "home_category_life": "Life Tools",
+  "deprecated_pricing_message": "This page has been deprecated. Please go to the new pricing page.",
+  "deprecated_topup_report_message": "This page has been deprecated. Please go to the new bank transfer report page.",
+  "deprecated_topup_admin_message": "This page has been deprecated. Please go to the new admin page.",
+  "scam_check_title": "Scam Risk Check",
+  "scam_page_title": "Scam Risk Check Tool",
+  "scam_seo_title": "Scam Risk Check Tool | Paste Message for Instant Check (No Signup)",
+  "scam_seo_description": "Paste LINE, SMS, or email content for instant scam risk level. Free, no signup, no external API. Call 165 for verification.",
+  "scam_back_home": "← Back to Home",
+  "scam_heading": "Scam Risk Check Tool",
+  "scam_intro": "Paste LINE / SMS / Email content for instant local risk check (no AI, no data sent out)",
+  "scam_label_paste": "Paste message content",
+  "scam_placeholder": "Paste the LINE, SMS, or email content you received…",
+  "scam_sample_label": "Quick fill examples:",
+  "scam_sample_invest": "Investment high return",
+  "scam_sample_unlock": "Cancel installment",
+  "scam_sample_parcel": "Parcel not claimed",
+  "scam_btn_analyze": "Analyze risk",
+  "scam_btn_clear": "Clear",
+  "scam_level_low": "Low risk",
+  "scam_level_medium": "Medium risk",
+  "scam_level_high": "High risk",
+  "scam_score": "Score {{score}} / 100",
+  "scam_btn_copy": "Copy analysis result",
+  "scam_copied": "Copied!",
+  "scam_reasons_title": "Matched reasons",
+  "scam_tips_title": "Suggested next steps",
+  "scam_copy_result_title": "Scam risk result: {{level}} ({{score}} pts)",
+  "scam_copy_reasons": "Matched reasons:",
+  "scam_copy_tips": "Suggested next steps:",
+  "scam_disclaimer_title": "⚠️ Disclaimer",
+  "scam_disclaimer_p1": "This tool is for risk reference only, not police or legal judgment. If in doubt, call 165 anti-fraud hotline.",
+  "scam_disclaimer_p2": "Do not click unknown links or provide OTP, verification codes, or personal information.",
+  "home_tool_homework_desc": "Stuck on a problem? Enter the question to get step-by-step help.",
+  "home_category_learn": "Learning",
+  "home_tool_video_title": "AI Short Video Tool",
+  "home_tool_video_desc": "Paste a Shopee product URL to generate a 6-second vertical short video in the browser.",
+  "home_tool_video_ps": "PS. This feature is still in development. Stay tuned.",
+  "home_tool_image_to_video_title": "Image to Short Video",
+  "home_tool_image_to_video_desc": "Upload a single image and generate a short mp4 video for Shorts or YouTube (6/10/15 seconds).",
+  "home_tool_pomodoro_title": "Pomodoro Focus Timer",
+  "home_tool_pomodoro_desc": "Work and break in fixed intervals with sound reminders and stats.",
+  "home_category_productivity": "Productivity",
+  "home_tool_todo_desc": "Organize by status (not started / in progress / completed). Use with Pomodoro.",
+  "tool_ai_summary": "AI Summary Tool",
+  "tool_todo": "Todo List",
+  "tool_free_images": "Free Images",
+  "tool_homework_helper": "Homework Helper",
+  "tool_focus_tutorial": "Focus Tutorial",
+  "home_category_task": "Task Management",
+  "home_tool_chant_title": "Chant / Buddha Counter",
+  "home_tool_chant_desc": "Multiple scriptures or prayers, count and notes. For daily practice.",
+  "home_category_mindful": "Mindfulness",
+  "home_tool_chant_wish_title": "Chant Wish Wall & Ranking",
+  "home_tool_chant_wish_desc": "Create chant activities, make wishes, view rankings and stats.",
+  "home_category_chant": "Community",
+  "home_create_chant_link": "➕ Create new chant activity",
+  "home_chant_stats_link": "📊 Chant stats",
+  "home_chant_ranking_link": "🏅 Wish ranking",
+  "home_tool_admin_images_title": "Image Upload Admin",
+  "home_tool_admin_images_desc": "Upload images to Supabase Storage and write to database.",
+  "home_category_admin": "Admin",
+  "tool_qr_code_title": "QR Code Generator",
+  "tool_qr_code_desc": "Enter a URL or text to generate and download a QR image.",
+  "home_tool_image_resize_title": "Image Resize",
+  "home_tool_image_convert_title": "Image format conversion",
+  "home_tool_image_convert_desc": "Convert PNG, JPG, and WebP in your browser. Transparent areas become white when exporting to JPG.",
+  "home_tool_image_crop_title": "Image Crop Tool",
+  "home_tool_image_crop_desc": "Crop images online quickly. Adjust aspect ratio like 1:1, 16:9, or free crop.",
+  "home_tool_line_sticker_title": "LINE Sticker Pack",
+  "home_tool_price_title": "Product Search & Compare",
+  "home_tool_price_desc": "Search for products. Future: Shopee / price comparison.",
+  "coming_soon": "Coming soon",
+  "home_tool_admin_images_list_title": "Image List Admin",
+  "home_tool_admin_images_list_desc": "View all uploaded images.",
+  "seo_title_home": "RxV AI Tools & Life Services Center | AI and Productivity Tools",
+  "seo_desc_home": "All-in-one AI tools, productivity tools, and life services, including AI summary, homework helper, QR code generator, image compression, and image resize.",
+  "home_hero_badge": "RxV AI Tools & Life Service Center",
+  "home_hero_title": "One-stop AI tools, focus & collective wishes for work, life and balance",
+  "home_hero_desc": "Your personal productivity hub: AI summary for research, Pomodoro + Todo for work, chanting & wish wall for calm.",
+  "home_pomodoro_free_title": "Free Pomodoro",
+  "home_pomodoro_free_subtitle": "Start focusing for 25 minutes",
+  "home_pomodoro_free_hint": "No login, no credits, start now",
+  "home_mobile_pomodoro_btn": "Start Pomodoro",
+  "home_cta_start_solve": "Start solving",
+  "home_cta_kofi": "Supabase template for developers",
+  "home_card_homework_desc": "Stuck on a problem? Paste the question for step-by-step help.",
+  "home_card_ai_summary_desc": "One-click summarize long text, articles or YouTube captions, with keywords.",
+  "home_video_tool_title": "RxV AI Auto Short Video Tool (MVP)",
+  "home_video_tool_badge": "Synthesize mp4 in browser",
+  "home_video_tool_desc": "Paste Shopee product URL, upload images, then generate 6s vertical short video in browser.",
+  "home_hero_features": "✅ Chinese & English · ✅ Stable JSON Schema · ✅ For bloggers / developers / creators",
+  "home_quick_tools_title": "Quick Tool Entry",
+  "home_quick_tools_question": "Where are you stuck?",
+  "home_scenario_math": "Can't solve math problems",
+  "home_scenario_math_desc": "Paste the problem, get solution steps",
+  "home_scenario_homework": "Stuck on homework",
+  "home_scenario_homework_desc": "Need solution ideas and explanation",
+  "home_scenario_explain": "Need solution explanation",
+  "home_scenario_explain_desc": "Understand the process and concepts",
+  "home_quick_homework_title": "Homework Helper",
+  "home_quick_homework_desc": "Paste the problem, get solution and point info.",
+  "home_quick_summary_title": "Article Summary Tool",
+  "home_quick_summary_desc": "Paste article, one-click summary and word count.",
+  "home_go_btn": "Go →",
+  "home_policy_title": "Policy Plain Language",
+  "home_policy_subtitle": "Don't worry if policy news is confusing—we help you see what's relevant to you.",
+  "home_policy_desc": "Explain complex policies in simple terms; see which ones affect you.",
+  "policy_back_home": "← Back to Home",
+  "policy_page_title": "Policy Plain Explanation",
+  "policy_subtitle": "Can't understand policy news? We'll help you see what's relevant to you.",
+  "policy_intro": "Policy news, tax rules, and subsidies are often written in complex language. Most people just want to know one thing:\nDoes this affect me?\nThis section turns common policies and systems into plain language so you can quickly see how they affect your life.",
+  "policy_tag": "Policy Explained",
+  "policy_read_more": "Read more →",
+  "policy_no_articles": "No articles yet.",
+  "policy_faq_title": "FAQ | Policy Explained",
+  "policy_faq_q1": "Q1: What is Policy Plain Explanation?",
+  "policy_faq_a1": "Policy Plain Explanation takes policies, tax rules, subsidies, and other complex official information and reorganizes it in plain language so you can quickly tell whether it applies to you.",
+  "policy_faq_q2": "Q2: Who is this content for?",
+  "policy_faq_a2": "Anyone who sees policy news but finds it hard to understand and wants a quick sense of how it affects daily life—including workers, families, students, and seniors.",
+  "policy_faq_q3": "Q3: Is this content legally binding?",
+  "policy_faq_a3": "This section is for information and plain-language explanation only, not legal advice or official interpretation. For actual applicability, please refer to government announcements and competent authorities.",
+  "policy_faq_q4": "Q4: What if I'm still not sure whether I qualify?",
+  "policy_faq_a4": "You can paste the policy notice or news here; the system will help summarize key points and suggest whether it may be relevant to you.",
+  "policy_seo_title": "Policy Plain Explanation | Can't understand policy news? We'll help you see what's relevant.",
+  "policy_seo_description": "Policy news, tax rules, and subsidies are often complex. Most people just want to know: Does this affect me? This section turns common policies into plain language so you can quickly understand their impact.",
+  "policy_seo_keywords": "policy explanation, policy plain language, policy news, policy analysis, tax explanation, subsidy guide",
+  "policy_article_income_tax_exemption_title": "Why do some people not pay income tax? How is the exemption threshold calculated?",
+  "policy_article_income_tax_exemption_desc": "Plain-language guide to income tax exemption: why some don't pay, what exemptions and deductions mean in practice, and common misunderstandings for families.",
+  "policy_article_subsidy_visibility_title": "Why do government subsidies often seem invisible? It's not that they don't exist—you may not be in the target group.",
+  "policy_article_subsidy_visibility_desc": "Why subsidies aren't \"universal\": who is often excluded, and how to correctly understand how subsidies work.",
+  "policy_article_overtime_pay_title": "Must overtime pay be given? Why do many people actually not receive it?",
+  "policy_article_overtime_pay_desc": "Plain-language guide to overtime pay: what the rules intend, why it's often not paid in practice, and common misunderstandings among workers.",
+  "policy_article_dependent_deduction_title": "Can supporting parents really reduce your tax? Many people file incorrectly.",
+  "policy_article_dependent_deduction_desc": "Dependency deduction explained: what \"dependent\" really means, why giving money isn't enough, and what families should know.",
+  "policy_article_policy_design_reality_title": "Why do policies seem good for you but feel irrelevant? The reality of how policies are designed.",
+  "policy_article_policy_design_reality_desc": "Trade-offs in policy design: why not everyone can benefit directly, and how to view policies with less anxiety.",
+  "policy_article_nhi_premium_title": "How is NHI premium calculated? Why does everyone pay differently?",
+  "policy_article_nhi_premium_desc": "NHI premium in plain language: how it's calculated, salary vs. dependents vs. supplementary premium, and common misunderstandings.",
+  "policy_article_unemployment_benefit_title": "What are unemployment benefits? Is it guaranteed if you're involuntarily unemployed?",
+  "policy_article_unemployment_benefit_desc": "Unemployment benefits explained: what they are, why involuntary separation matters, and why many who think they qualify don't receive them.",
+  "policy_article_labor_pension_new_system_title": "What is the new labor pension system? Does the employer's contribution really all go to you?",
+  "policy_article_labor_pension_new_system_desc": "New vs. old labor pension: how the 6% contribution works and common misconceptions.",
+  "policy_article_household_registration_title": "Does moving your household registration matter? Why do so many subsidies depend on it?",
+  "policy_article_household_registration_desc": "Household registration in policy: how it's used, why subsidies often depend on it, and common pitfalls for renters.",
+  "policy_article_government_announcement_impact_title": "Will government announcements always affect you? Which policies are irrelevant to most people?",
+  "policy_article_government_announcement_impact_desc": "Why there are so many announcements, which are \"informational\" vs. \"impact\" type, and how to decide whether to care.",
+  "policy_article_labor_insurance_pension_title": "What is Labor Insurance annuity? When can you claim? Common mistakes.",
+  "policy_article_labor_insurance_pension_desc": "Labor Insurance annuity vs. lump sum: when you can claim, and common confusions about seniority, age, and amount.",
+  "policy_article_long_term_care_subsidy_title": "What are long-term care subsidies? When someone at home needs care, what can the government actually help with?",
+  "policy_article_long_term_care_subsidy_desc": "What LTC subsidies cover, who is more likely to qualify, and why many families don't know they can apply.",
+  "policy_article_college_entrance_exam_title": "What does the college entrance exam test? How is it designed? How does it differ from the old joint exam?",
+  "policy_article_college_entrance_exam_desc": "Why the exam exists, how scores are used, and common misunderstandings for parents and students.",
+  "policy_article_hsr_booking_system_title": "Why is HSR booking so hard? How is the ticketing system designed?",
+  "policy_article_hsr_booking_system_desc": "Why tickets sell out quickly, how seats are allocated, and why it's not simply first-come first-served.",
+  "policy_article_minimum_wage_impact_title": "What is the minimum wage? Why do some get a raise and others work harder after an adjustment?",
+  "policy_article_minimum_wage_impact_desc": "Purpose of the minimum wage, impact on different groups after adjustment, and why not everyone benefits directly.",
+  "policy_article_income_tax_brackets_title": "What are income tax brackets? Why does a raise sometimes mean more tax?",
+  "policy_article_income_tax_brackets_desc": "Tax brackets in plain language: why not all income is taxed at the top rate, and common misconceptions.",
+  "policy_article_minimum_wage_title": "What is the minimum wage? What happens to employers and employees after an adjustment?",
+  "policy_article_minimum_wage_desc": "Definition of minimum wage, why it's adjusted yearly, and how it differs for monthly vs. hourly workers.",
+  "policy_article_labor_insurance_title": "What is Labor Insurance? What does the money you pay each month actually cover?",
+  "policy_article_labor_insurance_desc": "What Labor Insurance covers: illness, disability, retirement—and why many find it's not enough near retirement.",
+  "policy_article_cheng_li_chun_policy_role_title": "Why is Cheng Li-chun always in the news? What role does she play in policy? Does it affect ordinary people?",
+  "policy_article_cheng_li_chun_policy_role_desc": "Cheng Li-chun's role in policy-making and execution, and how these policies affect the public.",
+  "policy_article_taiwan_us_tariff_title": "Why is Taiwan–US tariff in the news? What does it have to do with you?",
+  "policy_article_taiwan_us_tariff_desc": "Why \"Taiwan–US tariff\" appears in the news; how it relates to government, industry, and the public; plus common misconceptions.",
+  "policy_article_tariff_adjustment_impact_title": "What does tariff adjustment affect? Will ordinary people be affected?",
+  "policy_article_tariff_adjustment_impact_desc": "What tariff changes may affect: import prices, cars, appliances, daily goods—explained in plain language.",
+  "policy_article_232_clause_title": "What is Section 232? Why is Taiwan often mentioned? Plain-language explanation.",
+  "policy_article_232_clause_desc": "What Section 232 is, its link to national security and import tariffs, why Taiwan is mentioned, and impact on daily life.",
+  "policy_article_subsidy_eligibility_title": "How is subsidy eligibility decided? Why do others get it but you don't? Key conditions explained.",
+  "policy_article_subsidy_eligibility_desc": "Key conditions for subsidies: identity, income, residence, use—how to quickly see if you qualify.",
+  "policy_article_house_tax_title": "What is house tax? How do owner-occupied, rental, and vacant differ? What you need to know.",
+  "policy_article_house_tax_desc": "How owner-occupied, rental, and vacant are treated for tax; what homeowners should know.",
+  "policy_article_car_import_tariff_title": "What is auto import tariff? Does it affect car prices? (2026 update)",
+  "policy_article_car_import_tariff_desc": "How import car tariffs are calculated, their effect on prices, and what consumers should know.",
+  "policy_back_to_list": "← Back to Policy Explained",
+  "policy_related_articles": "Related policy articles",
+  "policy_related_intro": "If you're learning about policies or systems, these articles may also be relevant.",
+  "policy_back_to_list_bottom": "← Back to Policy Explained list",
+  "policy_cta_title": "Can't understand tax or policy news?",
+  "policy_cta_desc": "Paste the notice or news and we'll summarize what's relevant to you.",
+  "policy_cta_btn": "Paste article, summarize for me",
+  "policy_extended_reading": "Related reading",
+  "policy_seo_site_name": "AI Tools & Life Services",
+  "home_view_btn": "View →",
+  "home_tools_overview_title": "Tool Overview",
+  "home_tools_overview_desc": "All in one place: AI, Pomodoro, Todo, Chant, Wish Wall, and price comparison.",
+  "tools_hero_title": "RxV Enterprise AI Hub",
+  "tools_hero_desc": "AI summaries, subsidy guides, finance knowledge, and automation—helping individuals and teams work smarter.",
+  "tools_section_free_title": "Free Popular Tools",
+  "tools_section_ai_title": "AI Advanced Tools",
+  "tools_section_coming_title": "Coming Soon",
+  "tools_section_life_title": "Life & Productivity Tools",
+  "tools_seo_title": "Free AI & Creator Tools | LINE Stickers, Image Resize, AI Summary",
+  "tools_seo_desc": "Free creator tools: LINE sticker pack, image resize, AI summary, homework helper, Pomodoro and more.",
+  "tools_search_placeholder": "Search tools (e.g. LINE, summary, Pomodoro)",
+  "tools_empty_search": "No matching tools. Try different keywords.",
+  "tools_badge_free": "Free",
+  "tools_badge_ai": "AI",
+  "tools_badge_hot": "Hot",
+  "tools_badge_life": "Life",
+  "tools_card_free_images_title": "Free Image Library",
+  "tools_card_free_images_desc": "Download free image assets for social posts, sticker tests, and creative inspiration.",
+  "tools_card_free_resources_title": "Free Resource Center",
+  "tools_card_free_resources_desc": "Download LINE sticker prompt Excel files, AI image prompts, copy templates, and free image resources.",
+  "tools_card_sticker_prompt_title": "LINE Sticker Prompt Generator",
+  "tools_card_sticker_prompt_desc": "Choose categories such as couples, brands, games, and pets to generate sticker image prompts in one click.",
+  "tools_card_emotional_sticker_prompt_title": "Emotional Value LINE Sticker Prompts",
+  "tools_card_emotional_sticker_prompt_desc": "Create 4x4 sticker prompt sets for healing companionship, boyfriend-style warmth, comforting replies, goodnight chats, dominant CEO themes, and workday responses.",
+  "tools_card_animated_sticker_prompt_title": "Animated LINE Sticker Prompt Generator",
+  "tools_card_animated_sticker_prompt_desc": "Generate plans, animation storyboards, frame timing suggestions, and prompts for 8, 16, or 24 animated LINE stickers.",
+  "tools_card_animated_line_sticker_title": "Animated LINE Sticker APNG Packager",
+  "tools_card_animated_line_sticker_desc": "Upload multiple PNG frames, check LINE animated sticker specs, preview the animation, and export an APNG or frame ZIP.",
+  "tools_card_image_prompt_title": "AI Image Prompt Generator",
+  "tools_card_image_prompt_desc": "Choose a use case, topic, style, and mood to generate a general image prompt in one click.",
+  "tools_card_pet_prompt_title": "Pet AI Prompt Generator",
+  "tools_card_pet_prompt_desc": "Generate pet-specific prompts for LINE stickers, realistic pet portraits, and pet shop promotional images.",
+  "tools_card_product_image_upgrade_title": "Product Image Upgrade Service",
+  "tools_card_product_image_upgrade_desc": "Turn casual product photos into polished product images for small shops, e-commerce, social promotion, and multi-platform outputs.",
+  "tools_card_eat_no_fat_game_title": "No-Fat Planet",
+  "tools_card_eat_no_fat_game_desc": "Tap food, feed characters, build happiness, and unlock a cute food collection in a relaxing mini game.",
+  "tools_card_line_sticker_title": "LINE Sticker Split & Pack Tool",
+  "tools_card_line_sticker_desc": "Upload a LINE sticker sheet, split it into 4x4 or 5x4 tiles, organize files, and pack a ZIP for later submission.",
+  "tools_card_image_compress_title": "Image Compression Tool",
+  "tools_card_image_compress_desc": "Quickly compress JPG, PNG, and WebP files to reduce file size.",
+  "tools_card_image_to_video_title": "Image to Short Video Tool",
+  "tools_card_image_to_video_desc": "Organize image-to-video, post-production, voiceover captions, and background music for short video assets.",
+  "tools_card_shopee_video_title": "Shopee Short Video Tool",
+  "tools_card_shopee_video_desc": "Organize product images, voiceover, captions, and shopping short-video materials for Shopee and social platforms.",
+  "tools_card_traffic_accident_title": "Traffic Accident Self-Protection Checklist",
+  "tools_card_traffic_accident_desc": "Use this after intersection accidents, scooter collisions, or rear-end crashes to organize scene SOPs, photo evidence, statement notes, and follow-up tasks.",
+  "tools_quick_entry_title": "Quick Access to All Tools",
+  "tools_quick_entry_desc": "Frequently used tools are grouped by purpose near the top. Click any tool to start using it.",
+  "tools_group_sticker_title": "LINE Sticker Tools",
+  "tools_group_sticker_hint": "Sticker prompts, emotional-value prompts, animated stickers, splitting, and packaging.",
+  "tools_group_image_title": "Image & AI Generation Tools",
+  "tools_group_image_hint": "Image prompts, resizing, compression, conversion, cropping, and asset downloads.",
+  "tools_group_video_title": "Short Video Tools",
+  "tools_group_video_hint": "Image-to-video, product short videos, voiceover captions, and video asset organization.",
+  "tools_group_life_title": "Life / Games / Productivity",
+  "tools_group_life_hint": "Pomodoro, todo, chanting, QR Code, scam checks, and life tools.",
+  "tools_group_resource_title": "Free Resources & Services",
+  "tools_group_resource_hint": "Free resources, portfolio services, and material entry points that can become products.",
+  "tools_group_other_title": "Other Useful Tools",
+  "tools_group_other_hint": "More online tools you can use right away.",
+  "tools_usage_suggestion_title": "Tool Usage Suggestions",
+  "tools_usage_suggestion_desc": "Start with LINE sticker prompts, sticker split packaging, image resizing, and free image assets. When you need product images or short-video materials, pair them with image prompts and video tools.",
+  "tools_intro_title": "Popular Tools Overview",
+  "tools_intro_line_sticker": "LINE sticker tool resizes images to LINE Creators Market spec (370×320), outputs main.png and tab.png, and packs a ZIP for creators.",
+  "tools_intro_image_resize": "Image resize supports IG, Shopee, Shorts ratios; processing runs in the browser so images stay private.",
+  "tools_intro_ai_summary": "AI summary turns articles, URLs or YouTube captions into key points and keywords to save reading time.",
+  "tools_intro_pomodoro": "Pomodoro uses 25-min work and 5-min break cycles with sound and stats for focus and time management.",
+  "tools_faq_title": "FAQ",
+  "tools_faq_q1": "Are these tools free?",
+  "tools_faq_a1": "Most tools on this page are free; some advanced features may require login or credits. Each tool page states if signup or payment is needed.",
+  "tools_faq_q2": "Do I need to log in?",
+  "tools_faq_a2": "Most creator tools (LINE stickers, image resize, scam check) work without login. AI summary and homework helper may need login for full usage.",
+  "tools_faq_q3": "Are they good for creators?",
+  "tools_faq_a3": "Yes. LINE sticker and image resize are built for creators. AI summary and Pomodoro also support content work and time management.",
+  "tools_faq_q4": "Will you add more tools?",
+  "tools_faq_a4": "Yes. We will keep adding tools. Feel free to suggest features via the contact link.",
+  "tools_coming_ai_toolbox_title": "AI Toolbox",
+  "tools_coming_ai_toolbox_desc": "AI modules, document conversion, batch tools, developer API.",
+  "tools_coming_automation_title": "Automation Center",
+  "tools_coming_automation_desc": "Auto-summary, auto-publish, auto-aggregate—build your AI workflow.",
+  "tools_video_badge_dev": "In development",
+  "tools_video_toast_dev": "This tool is still in development. Stay tuned.",
+  "home_blog_intro": "Not just tools—read long-form articles on focus, health, finance, subsidies, and retirement.",
+  "home_blog_view_all": "View all articles →",
+  "home_blog_focus_title": "Focus & Pomodoro Series",
+  "home_blog_focus_desc": "From breathing and meditation to Pomodoro—how to find space to focus.",
+  "home_blog_finance_title": "Health Finance & Anti-Fraud",
+  "home_blog_finance_desc": "No get-rich-quick—steady finance, risk protection, and government resources.",
+  "home_blog_subsidy_title": "Subsidies & Retirement",
+  "home_blog_subsidy_desc": "Housing, long-term care, transport subsidies and retirement—guides to save you time.",
+  "home_blog_ai_title": "AI Tools & Models",
+  "home_blog_ai_desc": "Latest free AI tools and models, plus paid-upgrade reminders—get started with AI.",
+  "home_goods_title": "Good Product Picks",
+  "home_goods_subtitle": "Curated value picks; each with video + text.",
+  "home_goods_airfryer_name": "Keshaui Air Fryer AF606",
+  "home_goods_airfryer_desc": "5.5L capacity, LCD touch, 12-piece baking set",
+  "home_goods_view_all": "View all good product picks",
+  "home_about_1": "This site grew from RxV Pomodoro Task Management. We integrate AI tools, productivity tools, and life info so you can handle work, study, wellness, and money in one place.",
+  "home_about_2": "More to come: more AI tools, JSON API templates, and subsidy & finance articles.",
+  "image_library": "Image Assets",
+  "alt_airfryer": "Air fryer recommendation",
+  "airfryer_seo_title": "Keshaui AF606 LCD Air Fryer 🔥 Limited Offer + 12-Piece Baking Set",
+  "airfryer_seo_description": "High-value air fryer: 5.5L capacity, LCD touch, 360° hot air. Includes 12-piece baking set + cleaning foam. While supplies last!",
+  "airfryer_seo_keywords": "air fryer, Keshaui, AF606, 5.5L, LCD touch, baking set",
+  "airfryer_h1": "🔥 Keshaui AF606 Air Fryer Limited Offer + 12-Piece Baking Set",
+  "airfryer_alt_cover": "Air fryer cover image",
+  "airfryer_video_title": "Air fryer demo video",
+  "airfryer_video_unsupported": "Your browser does not support video playback",
+  "airfryer_intro_prefix": "Looking for a large-capacity, easy-to-use air fryer? The ",
+  "airfryer_intro_product": "Keshaui AF606 LCD Air Fryer",
+  "airfryer_intro_suffix": " is worth considering! 5.5L capacity, touch control, 7 presets, 360° hot air—great for fries, wings, steak, and fish.",
+  "airfryer_h2_baking": "✅ 12-Piece Baking Set + Cleaning Foam",
+  "airfryer_alt_baking": "Baking accessories",
+  "airfryer_li_baking_1": "8\" pizza pan, dual-layer rack, silicone brush, tongs, cake mold, parchment, oven mitt…",
+  "airfryer_li_baking_2": "Plus air-fryer cleaning foam for easy cleanup",
+  "airfryer_li_baking_3": "Limited quantity; gifts subject to seller. While supplies last!",
+  "airfryer_h2_why": "🎯 Why we recommend it",
+  "airfryer_alt_feature": "Air fryer features",
+  "airfryer_li_why_1": "LCD touch + 7 presets (fries, shrimp, wings, steak…)",
+  "airfryer_li_why_2": "One-touch start, easy for beginners",
+  "airfryer_li_why_3": "Non-stick basket, easy to clean",
+  "airfryer_li_why_4": "5.5L capacity—whole chicken, pizza, or wings at once",
+  "airfryer_li_why_5": "360° hot air circulation, crispy with less oil",
+  "airfryer_h2_buy": "🔗 Buy now",
+  "airfryer_btn_buy": "👉 Shop on Shopee (limited-time gifts)",
+  "airfryer_h2_specs": "📌 Product info",
+  "airfryer_li_spec_1": "Brand / Model: Keshaui AF606",
+  "airfryer_li_spec_2": "Capacity: 5.5L (basket 3.6L)",
+  "airfryer_li_spec_3": "Interface: LCD touch / °C display",
+  "airfryer_li_spec_4": "Temperature: 80°C–200°C",
+  "airfryer_li_spec_5": "Power: 1400W | Voltage: 110V",
+  "airfryer_li_spec_6": "1-year warranty (buyer pays return shipping after trial period)",
+  "airfryer_disclaimer": "This is a personal review and public-info summary, not an official unboxing. For reference only. Images: Shopee. Contact us for removal if needed.",
+  "nav_home": "Home",
+  "nav_tools": "Tools",
+  "nav_ai_tools": "AI Tools",
+  "nav_ai_summary": "AI Summary",
+  "nav_pomodoro": "Pomodoro",
+  "nav_chant": "Chant",
+  "nav_free_images": "Free Images",
+  "nav_more": "More",
+  "nav_todo": "Todo List",
+  "nav_line_sticker": "LINE Sticker Tool",
+  "nav_image_resize": "Image Resize Tool",
+  "nav_homework": "Homework Helper",
+  "nav_subsidy": "Subsidy Guide",
+  "nav_finance": "Finance",
+  "nav_retirement": "Retirement",
+  "nav_blog": "Blog",
+  "nav_tools_short": "Tools",
+  "nav_ai_short": "AI",
+  "nav_blog_short": "Blog",
+  "hw_title": "Homework Helper (Teaching)",
+  "hw_home": "Home",
+  "hw_btn_answer": "Show Answer Only",
+  "hw_btn_easy": "Simple Explanation",
+  "hw_btn_pro": "Detailed Explanation",
+  "hw_btn_example": "Example Mode",
+  "hw_lang_zh": "Chinese",
+  "hw_lang_ja": "Japanese",
+  "hw_placeholder": "e.g. Use common denominator for 3/8 and 4/16, and explain step by step.",
+  "hw_analyzing": "Analyzing...",
+  "hw_start_solve": "Start Solving",
+  "hw_mode_prefix": "Mode: ",
+  "hw_view_instructions": "View full instructions →",
+  "hw_ai_answer": "AI Answer",
+  "hw_copy_title": "Copy answer",
+  "hw_copied": "Copied",
+  "hw_current_mode": "Current mode: ",
+  "hw_not_started": "Not started yet. Please enter your question…",
+  "hw_this_use": "This use: ",
+  "hw_chars": " chars",
+  "hw_input_output": "(input {{input}} + answer {{output}} chars)",
+  "hw_used_points": "Used: ",
+  "hw_remaining_points": "Remaining: ",
+  "hw_free_used": "Used {{used}} / 3 free trials",
+  "hw_free_remaining": "{{count}} free trials left",
+  "hw_disclaimer_ai": "Responses are AI-generated for reference only; accuracy and completeness are not guaranteed. Please verify on your own.",
+  "hw_examples_title": "Math Problem Examples",
+  "hw_example_1_title": "[Example 1 | Fractions]",
+  "hw_example_1_desc": "Use common denominator for 3/8 and 4/16, and explain each step.",
+  "hw_example_2_title": "[Example 2 | Word problem]",
+  "hw_example_2_desc": "Xiao Ming has 12 candies to share equally among 3 people. How many does each get? Show your work.",
+  "hw_example_3_title": "[Example 3 | Compare]",
+  "hw_example_3_desc": "Which is larger, 5/6 or 7/8? Explain your reasoning.",
+  "hw_no_photo": "No need to take a photo—just type the problem in text.",
+  "hw_purchase_title": "Purchase Points",
+  "hw_purchase_desc": "Points can be used for AI solving, summary, and image download; deducted by actual usage.",
+  "hw_plan_standard": "Standard Plan",
+  "hw_plan_advanced": "Advanced Plan",
+  "hw_points_unit": " pts",
+  "hw_plan_standard_desc": "For general homework and daily use (points deducted by usage).",
+  "hw_plan_advanced_desc": "For heavy usage and advanced use (points deducted by usage).",
+  "hw_buy_points": "Buy points",
+  "hw_please_login": "Please sign up or log in to use this feature.",
+  "hw_teaching_title": "Homework Helper Teaching Modes",
+  "hw_teaching_intro": "This feature is for teaching and learning support; each mode provides reference answers and explanations.",
+  "hw_mode_answer_teaching": "Show Answer Only (Teaching)",
+  "hw_mode_answer_desc": "Quick reference answer; good for checking the direction first.",
+  "hw_mode_easy_teaching": "Simple Explanation (Teaching)",
+  "hw_mode_easy_desc": "Reference answer with a brief explanation to help grasp key points.",
+  "hw_mode_pro_teaching": "Detailed Explanation (Teaching)",
+  "hw_mode_pro_desc": "More complete solution and reasoning; good for deeper learning.",
+  "hw_mode_example_teaching": "Example Mode (Teaching)",
+  "hw_mode_example_desc": "Uses examples to explain concepts and connect to real situations.",
+  "hw_supported_lang": "Supported: Chinese (Traditional), English, Japanese",
+  "hw_summary_promo": "Need to turn notes into key points? Try the ",
+  "hw_summary_link": "AI Summary Tool",
+  "hw_summary_promo_suffix": " to organize articles or notes.",
+  "hw_modal_close": "Close",
+  "hw_extended_desc": "Some users also use other tools for focus and efficiency.",
+  "hw_extended_link": "View extended resources →",
+  "hw_disclaimer_title": "Disclaimer",
+  "hw_disclaimer_1": "Answers are AI-generated for learning reference only; not guaranteed 100% correct.",
+  "hw_disclaimer_2": "Please verify on your own. This tool does not provide homework writing service.",
+  "hw_insufficient_credits": "Insufficient credits. Please check the usage plan.",
+  "hw_error_retry": "AI service temporarily unavailable. Please try again later.",
+  "hw_preview_hint": "Character count is for display only; no deduction.",
+  "points_plan_title": "Usage plan",
+  "points_free_trial": "Free trial",
+  "points_free_trial_desc": "Fixed trial quota (10,000 pts) for short-term trial and feature tryout.",
+  "points_plan_99": "Standard plan NT$99",
+  "points_plan_99_desc": "100,000 pts for general article summarization and daily use.",
+  "points_plan_199": "High-volume plan NT$199",
+  "points_plan_199_desc": "300,000 pts for heavy output and long-form content.",
+  "points_deduction_note": "Points are deducted by actual AI input and output character count.",
+  "nav_chant_short": "Chant",
+  "nav_todo_short": "Todo",
+  "nav_focus": "Focus",
+  "nav_wish": "Wish",
+  "summary_article_tool": "Article Summary Tool",
+  "summary_input_title": "Text Input",
+  "summary_placeholder": "Paste the article to summarize…",
+  "summary_result_title": "Summary Result",
+  "summary_copy_summary": "Copy Summary",
+  "summary_keywords_title": "Keyword Suggestions",
+  "summary_copy_keywords": "Copy Keywords",
+  "summary_traffic_keywords": "Traffic Keywords",
+  "summary_copy_traffic_keywords": "Copy Traffic Keywords",
+  "summary_no_summary_yet": "No summary yet",
+  "summary_no_keywords_yet": "No keywords yet",
+  "summary_keyword_1": "Key points",
+  "summary_keyword_2": "Key events",
+  "summary_keyword_3": "Key people",
+  "summary_keyword_4": "Timeline",
+  "summary_keyword_5": "Impact / Next steps",
+  "summary_no_traffic_keywords_yet": "No traffic keywords yet",
+  "summary_btn_generate": "Generate Summary",
+  "summary_loading": "Generating…",
+  "summary_please_login": "Please sign up or log in to use this feature",
+  "summary_copied": "Copied!",
+  "summary_traffic_copied": "Traffic keywords copied",
+  "summary_copy_failed": "Copy failed, please select and copy manually",
+  "summary_conversion_copied": "Conversion keyword copied",
+  "summary_free_trial_exhausted": "Free trial exhausted, please log in to continue",
+  "summary_purchase_credits": "Purchase Credits",
+  "summary_purchase_credits_desc": "Credits can be used for summaries, homework analysis, and image downloads. Points are deducted based on usage.",
+  "summary_standard_plan": "Standard Plan",
+  "summary_credits_unit": "credits",
+  "summary_standard_plan_desc": "For regular summaries, homework analysis, and standard image downloads",
+  "summary_buy_credits": "Buy Credits",
+  "summary_advanced_plan": "Advanced Plan",
+  "summary_advanced_plan_desc": "For high-volume usage and premium image downloads",
+  "summary_credits_usage_note": "Credits are only deducted when features are actually used.",
+  "summary_free_images": "Free images (0 credits)",
+  "summary_standard_images": "Standard images (1,000 credits each)",
+  "summary_premium_images": "Premium images (3,000 credits each)",
+  "summary_homework_promo_title": "For homework or assignments, get help faster",
+  "summary_homework_promo_desc": "Paste the question or enter key conditions; we'll help break down steps and key points. (Free trial available.)",
+  "summary_go_homework": "Go to Homework Helper",
+  "summary_usage_note": "Usage is calculated by actual input and AI output. For learning, homework, and content organization only.",
+  "summary_view_full_usage": "View full usage guide",
+  "summary_seo_homework_link": "Homework Helper",
+  "summary_seo_homework_intro": "For assignments or reports, you can also use",
+  "summary_seo_homework_outro": "to break down steps and key points.",
+  "summary_used_chars": "Used credits",
+  "summary_remaining_chars": "Remaining credits",
+  "summary_free_trial_used": "Used {{count}} / 3 free trials",
+  "summary_free_trial_remaining": "{{count}} free trials left",
+  "summary_usage_this_time": "Usage this time: {{count}} chars",
+  "summary_last_use_detail": "Input {{input}} chars, output {{output}} chars, {{points}} credits deducted",
+  "pomodoro_seo_title": "Free Pomodoro Timer Online | Focus Timer",
+  "pomodoro_seo_desc": "Free Pomodoro timer online. No signup required. For study, work, and focus management.",
+  "images_free_download": "Free download",
+  "images_download_1000": "1,000 credits to download",
+  "images_download_3000": "Premium | 3,000 credits to download",
+  "images_btn_download": "Download image",
+  "images_btn_login_to_download": "Log in to download",
+  "images_btn_downloaded": "Downloaded | Download again",
+  "images_btn_insufficient": "Insufficient credits | Buy",
+  "images_btn_use_credits": "Use credits to download",
+  "images_alert_login": "Please log in to download images",
+  "images_alert_insufficient": "Insufficient credits. Please purchase credits first.",
+  "images_alert_download_failed": "Download failed. Please try again later.",
+  "images_alert_success": "Image downloaded successfully 🎉\n\nYou can also try:\n• 📄 AI article summary\n• 📚 Homework helper\n• ⏱️ Pomodoro focus timer",
+  "images_no_images": "No images yet",
+  "images_no_images_in_category": "No images in this category",
+  "images_unnamed": "Untitled image",
+  "images_multi_usage": "Multi-purpose",
+  "images_back_home": "← Back to Home",
+  "images_promo_banner": "Limited time: All images 100% free to download",
+  "images_countdown": "Ends in: {{days}}d {{hours}}h {{minutes}}m {{seconds}}s",
+  "images_why_free": "Why free now?",
+  "images_why_free_desc": "During the platform trial, all images are free. After the event ends, the credit system will apply.",
+  "images_promo_ended": "Free promotion has ended",
+  "images_promo_ended_desc": "Credits restored. Please log in or purchase credits.",
+  "images_subtitle": "Free images, standard (1,000 pts each), premium (3,000 pts each); credits deducted on download.",
+  "images_filter_label": "Category",
+  "images_filter_all": "All",
+  "images_use_images_title": "Get things done with images",
+  "images_tool_summary_title": "AI Summary",
+  "images_tool_summary_desc": "Product copy, posts, plans—one-click organization, ready to use.",
+  "images_tool_summary_btn": "Go to AI Summary →",
+  "images_tool_homework_title": "AI Homework / Task Helper",
+  "images_tool_homework_desc": "Homework, planning, task breakdown—for students and creators.",
+  "images_tool_homework_btn": "Go to Homework Helper →",
+  "images_tool_pomodoro_title": "Pomodoro",
+  "images_tool_pomodoro_desc": "After downloading, use focus mode to boost productivity.",
+  "images_tool_pomodoro_btn": "Use Pomodoro free →",
+  "images_loading": "Loading…",
+  "images_placeholder_alt": "Image preview",
+  "images_download_usage_title": "Download & credits",
+  "images_usage_free": "Free images: download and use directly.",
+  "images_usage_standard": "Standard: 1,000 credits per image.",
+  "images_usage_premium": "Premium: 3,000 credits per image.",
+  "images_usage_repeat": "Downloads are permanent; you can download again (no extra charge).",
+  "images_usage_example": "Credit examples:",
+  "images_usage_example_standard": "Standard: ~100 images (100,000 ÷ 1,000) ≈ NT$1 each",
+  "images_usage_example_premium": "Premium: ~33 images (100,000 ÷ 3,000) ≈ NT$3 each",
+  "images_usage_market": "Market comparison: typical stock photo licensing NT$30–150 per image; this plan uses credits.",
+  "images_usage_restriction": "Usage: No resale, no transfer, no redistribution as a secondary asset library.",
+  "images_usage_custom": "Custom images: available on request. Contact: ",
+  "images_usage_ai_note": "Some images are digitally generated (including AI-assisted). Use per the rules above for commercial use.",
+  "images_success_title": "🎉 Download successful",
+  "images_success_try": "Try these free AI tools:",
+  "images_success_btn_summary": "📄 AI Summary",
+  "images_success_btn_homework": "✍️ Homework Helper",
+  "images_success_btn_pomodoro": "🍅 Pomodoro focus",
+  "images_modal_close": "Close",
+  "images_category_minimal": "Minimalist Backgrounds",
+  "images_category_coloring": "Coloring Pages",
+  "images_category_food": "Food Materials",
+  "images_category_product": "Product Display",
+  "images_category_social": "Social Post Backgrounds",
+  "images_category_desktop": "Desktop Workspace Scenes",
+  "images_category_holiday": "Holiday Themes",
+  "images_category_business": "Business Images",
+  "images_category_floral": "Floral Materials",
+  "shopee_csv_no_data": "No valid data parsed (missing product name or promo link).",
+  "shopee_csv_parsed": "Parsed successfully. Valid rows: {{count}}",
+  "shopee_csv_parse_failed": "Parse failed. Please ensure the file is a valid Shopee CSV/Excel.",
+  "shopee_csv_parse_error": "Parse failed",
+  "shopee_csv_no_export": "No data to export. Please upload and parse a file first.",
+  "shopee_csv_downloaded": "scripts.json downloaded",
+  "shopee_csv_title": "📊 Shopee CSV to scripts.json",
+  "shopee_csv_desc": "Upload Shopee CSV / Excel (with promo link). We parse and generate scripts.json for rxv-video-batch.",
+  "shopee_csv_upload_label": "Upload Shopee CSV / Excel (must include \"promo link\" column)",
+  "shopee_csv_file_selected": "Selected: {{fileName}}",
+  "shopee_csv_upload_hint": "Only files with promo / referral link columns are accepted.",
+  "shopee_csv_valid_count": "Valid rows: {{count}}",
+  "shopee_csv_btn_download": "Download scripts.json",
+  "shopee_csv_preview_title": "Preview (first 20: product name / price / promo link)",
+  "shopee_csv_th_product_name": "Product name",
+  "shopee_csv_th_price": "Price",
+  "shopee_csv_th_promo": "Promo link",
+  "shopee_csv_empty": "No data yet. Please upload CSV / Excel.",
+  "shopee_csv_no_promo": "No promo link",
+  "shopee_video_enter_url": "Please enter at least 1 product URL",
+  "shopee_video_enter_name": "Please enter product name",
+  "shopee_video_enter_highlights": "Please enter at least 1 highlight",
+  "shopee_video_script_failed": "Script generation failed: {{error}}",
+  "shopee_video_script_unknown": "Unknown error",
+  "shopee_video_placeholder_title": "e.g. Value skincare set",
+  "shopee_video_placeholder_price": "e.g. 299",
+  "shopee_video_placeholder_url": "e.g. https://shope.ee/xxxx (Shopee promo link)",
+  "shopee_video_task_title": "Task #{{index}}",
+  "shopee_video_import_section": "Import",
+  "shopee_video_auto_fill_section": "Auto fill images",
+  "shopee_video_preview_section": "Preview ({{count}} items)",
+  "shopee_video_no_image": "No image (add manually)",
+  "shopee_video_toggle_debug": "Collapse debug",
+  "shopee_video_show_debug": "Show debug",
+  "shopee_video_download_section": "Download",
+  "shopee_video_file_format_error": "Invalid format. Please upload .csv or .xlsx",
+  "shopee_video_upload_csv": "Please upload .csv or .xlsx file",
+  "shopee_video_no_promo_link": "No \"promo link\" column found. Ensure you are using the affiliate/referral report.",
+  "shopee_video_imported": "Imported {{count}} valid rows",
+  "shopee_video_parse_failed": "Parse failed. Ensure the file is a Shopee affiliate report with promo link column.",
+  "shopee_video_no_export": "No data to export (promo link required)",
+  "shopee_video_downloaded_json": "scripts.json downloaded",
+  "shopee_video_page_title": "Shopee Affiliate Short Video Script Generator",
+  "shopee_video_page_subtitle": "Upload Shopee affiliate Excel/CSV → auto promo links → download scripts.json",
+  "shopee_video_import_desc": "Upload Shopee affiliate report (must include \"promo link\" column). We will build the list automatically.",
+  "shopee_video_select_file": "Select file (Excel/CSV)",
+  "shopee_video_no_file_chosen": "No file chosen",
+  "shopee_video_parsing": "⏳ Parsing file…",
+  "shopee_video_auto_fill_progress": "Filled {{done}} / {{total}}",
+  "shopee_video_fetching": "Fetching images…",
+  "shopee_video_filled": "Filled",
+  "shopee_video_api_not_ready": "API not running (start backend or set proxy)",
+  "shopee_video_btn_download": "Download scripts.json",
+  "shopee_video_label_product_name": "Product name *",
+  "shopee_video_label_price_optional": "Price (optional)",
+  "shopee_video_label_promo_required": "Promo link (required, use Shopee promo URL)",
+  "shopee_video_label_highlights": "Highlights * (1–3 points)",
+  "shopee_video_label_images": "Image URLs * (at least 1)",
+  "shopee_video_open_promo_link": "Open promo link",
+  "shopee_video_use_promo_for_commission": "Use promo link for commission.",
+  "shopee_video_fill_status": "Fill status",
+  "line_sticker_faq_1_q": "How to make LINE stickers that meet official specs?",
+  "line_sticker_faq_1_a": "Upload images; the tool auto-resizes to 370×320px and outputs main.png and tab.png for LINE Creators Market.",
+  "line_sticker_faq_2_q": "How many stickers are allowed?",
+  "line_sticker_faq_2_a": "8–40.",
+  "line_sticker_faq_3_q": "How to set the main image?",
+  "line_sticker_faq_3_a": "In the preview, each image has a \"Set as main ★\" button. Click to set as store cover and thumbnail.",
+  "line_sticker_error_load": "Failed to load image",
+  "line_sticker_error_blob": "Failed to create Blob",
+  "line_sticker_set_main": "Set as main",
+  "line_sticker_main_label": "Main ★",
+  "line_sticker_pack_failed": "Pack failed. Please retry.",
+  "line_sticker_ready": "READY TO PACK",
+  "line_sticker_need_more": "{{count}} more needed",
+  "line_sticker_pack_download": "Pack & download ({{count}} stickers)",
+  "line_sticker_need_more_to_pack": "{{count}} more images to pack",
+  "line_sticker_processing": "Processing...",
+  "line_sticker_seo_desc": "LINE sticker spec tool for Taiwan creators. 8–40 stickers, auto 370×320, choose main image, text-safe. No install, upload-ready.",
+  "line_sticker_seo_title": "LINE Sticker Tool: Auto Crop, ZIP Pack | LINE Sticker Toolkit - RxV",
+  "line_sticker_back_home": "← Back to home",
+  "line_sticker_subtitle": "LINE Sticker Toolkit",
+  "line_sticker_hero_desc": "One-click specs, auto naming & ZIP. Supports 8/16/24/32/40 stickers.",
+  "line_sticker_progress_label": "Progress",
+  "line_sticker_progress_count": "{{current}} selected / {{target}} target",
+  "line_sticker_clear_all": "Clear all",
+  "line_sticker_upload_click": "Click or drag to upload images",
+  "line_sticker_upload_hint": "PNG, JPG, WebP (transparent background recommended)",
+  "line_sticker_step_count": "01. Sticker count",
+  "line_sticker_step_crop": "02. Crop mode",
+  "line_sticker_crop_safe": "Text-safe",
+  "line_sticker_crop_full": "Full crop",
+  "line_sticker_preview_title": "03. Preview & set main",
+  "line_sticker_faq_title": "FAQ",
+  "line_sticker_status_label": "Status",
+  "line_sticker_recommend_title": "Recommended for creators",
+  "line_sticker_chatart_title": "ChatArt AI Sticker Assistant",
+  "line_sticker_chatart_desc": "Need sticker ideas? Let AI generate captions and character concepts in one click.",
+  "line_sticker_seedance_title": "Seedance AI Animation",
+  "line_sticker_seedance_desc": "Turn static images into animated LINE stickers and stand out in the store.",
+  "blog_filter_current": "Filter: {{name}}",
+  "blog_read_more": "Read more",
+  "blog_category_label": "Category",
+  "blog_date_label": "Date",
+  "blog_back_to_home": "Back to home",
+  "blog_section_title": "Blog",
+  "blog_section_subtitle": "Weekly updates on AI tools, health, subsidies, and life. Better SEO, organic growth.",
+  "blog_all": "All",
+  "credits_usage_status": "Usage quota status",
+  "credits_loading": "Loading…",
+  "credits_disabled": "This feature is disabled",
+  "credits_low_remaining": "Low remaining credits ({{count}}). Consider upgrading to avoid interruption.",
+  "credits_view_plans": "View plans",
+  "credits_insufficient": "Insufficient credits to complete this operation",
+  "credits_insufficient_hint": "For continued use, the 300K plan avoids mid-use interruption.",
+  "credits_status_done": "Done",
+  "credits_status_processing": "Processing",
+  "credits_status_failed": "Failed",
+  "promo_ended": "Promotion ended",
+  "promo_remaining": "{{days}}d {{hours}}h {{minutes}}m left",
+  "promo_remaining_hms": "{{hours}}h {{minutes}}m {{seconds}}s left",
+  "promo_remaining_ms": "{{minutes}}m {{seconds}}s left",
+  "promo_remaining_s": "{{seconds}}s left",
+  "upgrade_trial_exhausted": "Free trial quota exhausted",
+  "upgrade_quota_low": "Insufficient quota. Please check the usage plan.",
+  "upgrade_close": "Close",
+  "upgrade_learn_plan": "Learn about usage plan",
+  "read_btn_stop": "Stop reading",
+  "read_btn_play": "Read aloud",
+  "chant_woodfish_aria": "Strike woodfish",
+  "chant_woodfish_alt": "Woodfish",
+  "wish_placeholder": "Write your wish here...",
+  "wish_btn": "Make a wish ✨",
+  "wish_alert_enter": "Please enter wish content",
+  "wish_alert_max_length": "Wish content cannot exceed 200 characters",
+  "wish_alert_failed": "Wish failed: {{error}}",
+  "wish_alert_success": "Wish submitted! ✨",
+  "wish_alert_retry": "Wish failed. Please retry.",
+  "wish_anon": "Anonymous",
+  "comment_placeholder_name": "Your name (optional)",
+  "comment_placeholder_msg": "Comment...",
+  "comment_alert_name_bad": "Name contains inappropriate content. Please edit.",
+  "comment_alert_content_bad": "Comment contains inappropriate content. Please edit.",
+  "chant_log_alert_count": "Please enter a valid chant count",
+  "chant_log_alert_name": "Please enter your name",
+  "chant_log_placeholder_name": "Enter your name",
+  "chant_log_alert_record_failed": "Record failed: {{error}}",
+  "chant_log_alert_retry": "Record failed. Please retry.",
+  "chant_log_default_name": "Me",
+  "light_thank": "Thank you for your blessing",
+  "light_click": "Click the lamp to bless this wish",
+  "light_placeholder_name": "Anonymous",
+  "light_placeholder_msg": "May all beings be well",
+  "light_btn": "Light a lamp",
+  "light_processing": "Processing...",
+  "light_alert_already": "You have already lit a lamp for this wish",
+  "light_alert_failed": "Light failed: {{error}}",
+  "light_alert_retry": "Light failed. Please try again later.",
+  "light_aria": "Light lamp",
+  "light_alt": "Lotus lamp",
+  "light_placeholder_name_short": "Your name (optional)",
+  "light_show_detail": "Show details",
+  "light_hide_detail": "Hide details",
+  "light_default_msg": "Lit a lamp",
+  "light_just_now": "Just now",
+  "wish_detail_cannot_load": "Cannot load wish content",
+  "wish_detail_not_found": "Wish not found",
+  "wish_detail_error": "Error loading wish",
+  "wish_detail_cannot_display": "Cannot display wish",
+  "wish_detail_from": "From: ",
+  "wish_detail_share_copied": "Share link copied to clipboard",
+  "wish_wall_title": "Wish wall",
+  "wish_wall_count": "{{count}} wishes",
+  "chant_stats_load_failed": "Failed to load statistics",
+  "chant_stats_retry": "Failed to load statistics. Please retry.",
+  "chant_ranking_load_failed": "Failed to load ranking",
+  "chant_ranking_retry": "Failed to load ranking. Please retry.",
+  "light_records_load_failed": "Failed to load lamp records",
+  "light_records_error": "Error loading lamp records",
+  "light_anon_devotee": "Anonymous",
+  "image_upload_error_process": "Error processing image. Please retry.",
+  "image_upload_error_size": "Image too large and could not be compressed. Please choose a smaller image.",
+  "imageCrop": {
+    "breadcrumb": "Image crop",
+    "h1": "Image Crop Tool",
+    "intro": "Upload PNG, JPG, or WebP. Drag to reposition the crop, zoom as needed, and pick presets: 1:1, 4:5, 16:9, 9:16, or freeform. Preview and download as PNG or JPG. Processing stays in your browser.",
+    "upload_label": "Choose image",
+    "upload_hint": "Supports PNG, JPG, and WebP.",
+    "presets_title": "Aspect ratio",
+    "preset_free": "Free",
+    "zoom": "Zoom: {{v}}",
+    "output_format": "Output format",
+    "jpg_quality": "JPEG quality: {{v}}",
+    "quality": "Quality: {{v}}",
+    "fmt_png": "PNG",
+    "fmt_jpg": "JPG",
+    "fmt_webp": "WebP",
+    "output_size": "Output size",
+    "current_format": "Current format",
+    "suggested_filename": "Suggested filename",
+    "extra_export_title": "Extra formats (ZIP bundle)",
+    "zip_download": "Download selected formats as ZIP",
+    "zip_packaging": "Packaging…",
+    "zip_none_selected": "Select at least one format",
+    "err_zip": "Could not create ZIP. Please try again.",
+    "preview_title": "Cropped preview",
+    "preview_updating": "Updating preview…",
+    "download": "Download crop",
+    "downloading": "Working…",
+    "faq_title": "FAQ",
+    "err_type": "Please choose a PNG, JPG, or WebP image.",
+    "err_preview": "Could not build the preview. Try again or use another image.",
+    "err_no_crop": "Adjust the crop area first.",
+    "err_download": "Download failed. Please try again.",
+    "err_image_load": "The image did not load. Re-select the file or try again.",
+    "err_image_decode": "Could not decode the image. Try another file or export as PNG/JPG first.",
+    "err_crop_invalid": "Invalid crop region. Move the crop box or zoom and try again.",
+    "err_canvas": "Could not encode the image (draw or export failed). Try another image or output format.",
+    "err_unknown": "Something went wrong while processing the image. Please try again.",
+    "seo": {
+      "title": "Crop Image Online Free | Image Crop Tool",
+      "description": "Crop images online instantly. Adjust photo aspect ratio such as 1:1, 16:9, 4:5 and download the cropped image."
+    },
+    "faq": {
+      "q1": "Are images uploaded to a server?",
+      "a1": "Cropping runs in your browser; files are not intentionally uploaded by this tool.",
+      "q2": "PNG vs JPG?",
+      "a2": "PNG supports transparency; JPG is usually smaller but flattens transparency onto a white background.",
+      "q3": "Can I use the output commercially?",
+      "a3": "The tool only crops pixels; rights to the source asset still follow your licenses and use case."
+    }
+  },
+  "seoPages": {
+    "slugs": {
+      "rxv-seo-ir-001": {
+        "title": "Instagram 貼文｜流程與檢核｜線上尺寸調整",
+        "desc": "此頁整理「Instagram 貼文」在「流程與檢核」階段的實務重點：正方形與直式 4:5，注意安全區與字級。 接下來請在 RxV 內設定目標寬高或比例，並以「Instagram 貼文」實機預覽一次再匯出。"
+      },
+      "rxv-seo-ir-002": {
+        "title": "Instagram 限時動態｜流程與檢核｜線上尺寸調整",
+        "desc": "此頁整理「Instagram 限時動態」在「流程與檢核」階段的實務重點：9:16 直式，預留上下 UI 遮擋區。 接下來請在 RxV 內設定目標寬高或比例，並以「Instagram 限時動態」實機預覽一次再匯出。"
+      },
+      "rxv-seo-ir-003": {
+        "title": "Facebook 貼文與連結預覽｜流程與檢核｜線上尺寸調整",
+        "desc": "此頁整理「Facebook 貼文與連結預覽」在「流程與檢核」階段的實務重點：橫式與方形並存，連結縮圖需預留邊距。 接下來請在 RxV 內設定目標寬高或比例，並以「Facebook 貼文與連結預覽」實機預覽一次再匯出。"
+      },
+      "rxv-seo-ir-004": {
+        "title": "YouTube 縮圖｜流程與檢核｜線上尺寸調整",
+        "desc": "此頁整理「YouTube 縮圖」在「流程與檢核」階段的實務重點：16:9 橫式，字級與對比影響點閱。 接下來請在 RxV 內設定目標寬高或比例，並以「YouTube 縮圖」實機預覽一次再匯出。"
+      },
+      "rxv-seo-ir-005": {
+        "title": "LINE 貼文與大圖｜流程與檢核｜線上尺寸調整",
+        "desc": "此頁整理「LINE 貼文與大圖」在「流程與檢核」階段的實務重點：聊天室預覽與官方帳號版位略有差異。 接下來請在 RxV 內設定目標寬高或比例，並以「LINE 貼文與大圖」實機預覽一次再匯出。"
+      },
+      "rxv-seo-ir-006": {
+        "title": "LinkedIn 動態與文章封面｜流程與檢核｜線上尺寸調整",
+        "desc": "此頁整理「LinkedIn 動態與文章封面」在「流程與檢核」階段的實務重點：偏商務橫式，文件感較重。 接下來請在 RxV 內設定目標寬高或比例，並以「LinkedIn 動態與文章封面」實機預覽一次再匯出。"
+      },
+      "rxv-seo-ir-007": {
+        "title": "Shopee／電商主圖｜流程與檢核｜線上尺寸調整",
+        "desc": "此頁整理「Shopee／電商主圖」在「流程與檢核」階段的實務重點：白底與長邊規範，避免邊緣裁切。 接下來請在 RxV 內設定目標寬高或比例，並以「Shopee／電商主圖」實機預覽一次再匯出。"
+      },
+      "rxv-seo-ir-008": {
+        "title": "部落格與 CMS 內文圖｜流程與檢核｜線上尺寸調整",
+        "desc": "此頁整理「部落格與 CMS 內文圖」在「流程與檢核」階段的實務重點：配合佈景 max-width，避免被 CSS 硬拉。 接下來請在 RxV 內設定目標寬高或比例，並以「部落格與 CMS 內文圖」實機預覽一次再匯出。"
+      },
+      "rxv-seo-ir-009": {
+        "title": "Email 電子報插圖｜流程與檢核｜線上尺寸調整",
+        "desc": "此頁整理「Email 電子報插圖」在「流程與檢核」階段的實務重點：寬度常見 600px 級，檔案不宜過大。 接下來請在 RxV 內設定目標寬高或比例，並以「Email 電子報插圖」實機預覽一次再匯出。"
+      },
+      "rxv-seo-ir-010": {
+        "title": "簡報與 PDF 嵌入圖｜流程與檢核｜線上尺寸調整",
+        "desc": "此頁整理「簡報與 PDF 嵌入圖」在「流程與檢核」階段的實務重點：投影解析度與列印解析度目標不同。 接下來請在 RxV 內設定目標寬高或比例，並以「簡報與 PDF 嵌入圖」實機預覽一次再匯出。"
+      },
+      "rxv-seo-ir-011": {
+        "title": "DM 傳單與少量印刷｜流程與檢核｜線上尺寸調整",
+        "desc": "此頁整理「DM 傳單與少量印刷」在「流程與檢核」階段的實務重點：出血與裁切線，螢幕與紙本色域差異。 接下來請在 RxV 內設定目標寬高或比例，並以「DM 傳單與少量印刷」實機預覽一次再匯出。"
+      },
+      "rxv-seo-ir-012": {
+        "title": "Instagram 貼文｜常見尺寸與比例｜線上尺寸調整",
+        "desc": "此頁整理「Instagram 貼文」在「常見尺寸與比例」階段的實務重點：正方形與直式 4:5，注意安全區與字級。 若你不確定像素，可先查該版位建議值，再一次性輸出，避免來回放大造成模糊。"
+      },
+      "rxv-seo-ir-013": {
+        "title": "Instagram 限時動態｜常見尺寸與比例｜線上尺寸調整",
+        "desc": "此頁整理「Instagram 限時動態」在「常見尺寸與比例」階段的實務重點：9:16 直式，預留上下 UI 遮擋區。 若你不確定像素，可先查該版位建議值，再一次性輸出，避免來回放大造成模糊。"
+      },
+      "rxv-seo-ir-014": {
+        "title": "Facebook 貼文與連結預覽｜常見尺寸與比例｜線上尺寸調整",
+        "desc": "此頁整理「Facebook 貼文與連結預覽」在「常見尺寸與比例」階段的實務重點：橫式與方形並存，連結縮圖需預留邊距。 若你不確定像素，可先查該版位建議值，再一次性輸出，避免來回放大造成模糊。"
+      },
+      "rxv-seo-ir-015": {
+        "title": "YouTube 縮圖｜常見尺寸與比例｜線上尺寸調整",
+        "desc": "此頁整理「YouTube 縮圖」在「常見尺寸與比例」階段的實務重點：16:9 橫式，字級與對比影響點閱。 若你不確定像素，可先查該版位建議值，再一次性輸出，避免來回放大造成模糊。"
+      },
+      "rxv-seo-ir-016": {
+        "title": "LINE 貼文與大圖｜常見尺寸與比例｜線上尺寸調整",
+        "desc": "此頁整理「LINE 貼文與大圖」在「常見尺寸與比例」階段的實務重點：聊天室預覽與官方帳號版位略有差異。 若你不確定像素，可先查該版位建議值，再一次性輸出，避免來回放大造成模糊。"
+      },
+      "rxv-seo-ir-017": {
+        "title": "LinkedIn 動態與文章封面｜常見尺寸與比例｜線上尺寸調整",
+        "desc": "此頁整理「LinkedIn 動態與文章封面」在「常見尺寸與比例」階段的實務重點：偏商務橫式，文件感較重。 若你不確定像素，可先查該版位建議值，再一次性輸出，避免來回放大造成模糊。"
+      },
+      "rxv-seo-ir-018": {
+        "title": "Shopee／電商主圖｜常見尺寸與比例｜線上尺寸調整",
+        "desc": "此頁整理「Shopee／電商主圖」在「常見尺寸與比例」階段的實務重點：白底與長邊規範，避免邊緣裁切。 若你不確定像素，可先查該版位建議值，再一次性輸出，避免來回放大造成模糊。"
+      },
+      "rxv-seo-ir-019": {
+        "title": "部落格與 CMS 內文圖｜常見尺寸與比例｜線上尺寸調整",
+        "desc": "此頁整理「部落格與 CMS 內文圖」在「常見尺寸與比例」階段的實務重點：配合佈景 max-width，避免被 CSS 硬拉。 若你不確定像素，可先查該版位建議值，再一次性輸出，避免來回放大造成模糊。"
+      },
+      "rxv-seo-ir-020": {
+        "title": "Email 電子報插圖｜常見尺寸與比例｜線上尺寸調整",
+        "desc": "此頁整理「Email 電子報插圖」在「常見尺寸與比例」階段的實務重點：寬度常見 600px 級，檔案不宜過大。 若你不確定像素，可先查該版位建議值，再一次性輸出，避免來回放大造成模糊。"
+      },
+      "rxv-seo-ir-021": {
+        "title": "簡報與 PDF 嵌入圖｜常見尺寸與比例｜線上尺寸調整",
+        "desc": "此頁整理「簡報與 PDF 嵌入圖」在「常見尺寸與比例」階段的實務重點：投影解析度與列印解析度目標不同。 若你不確定像素，可先查該版位建議值，再一次性輸出，避免來回放大造成模糊。"
+      },
+      "rxv-seo-ir-022": {
+        "title": "DM 傳單與少量印刷｜常見尺寸與比例｜線上尺寸調整",
+        "desc": "此頁整理「DM 傳單與少量印刷」在「常見尺寸與比例」階段的實務重點：出血與裁切線，螢幕與紙本色域差異。 若你不確定像素，可先查該版位建議值，再一次性輸出，避免來回放大造成模糊。"
+      },
+      "rxv-seo-ir-023": {
+        "title": "Instagram 貼文｜跨裝置預覽要點｜線上尺寸調整",
+        "desc": "此頁整理「Instagram 貼文」在「跨裝置預覽要點」階段的實務重點：正方形與直式 4:5，注意安全區與字級。 建議用手機與桌機各預覽一次「Instagram 貼文」縮放效果，確認字級與邊緣是否被裁切。"
+      },
+      "rxv-seo-ir-024": {
+        "title": "Instagram 限時動態｜跨裝置預覽要點｜線上尺寸調整",
+        "desc": "此頁整理「Instagram 限時動態」在「跨裝置預覽要點」階段的實務重點：9:16 直式，預留上下 UI 遮擋區。 建議用手機與桌機各預覽一次「Instagram 限時動態」縮放效果，確認字級與邊緣是否被裁切。"
+      },
+      "rxv-seo-ir-025": {
+        "title": "Facebook 貼文與連結預覽｜跨裝置預覽要點｜線上尺寸調整",
+        "desc": "此頁整理「Facebook 貼文與連結預覽」在「跨裝置預覽要點」階段的實務重點：橫式與方形並存，連結縮圖需預留邊距。 建議用手機與桌機各預覽一次「Facebook 貼文與連結預覽」縮放效果，確認字級與邊緣是否被裁切。"
+      },
+      "rxv-seo-ir-026": {
+        "title": "YouTube 縮圖｜跨裝置預覽要點｜線上尺寸調整",
+        "desc": "此頁整理「YouTube 縮圖」在「跨裝置預覽要點」階段的實務重點：16:9 橫式，字級與對比影響點閱。 建議用手機與桌機各預覽一次「YouTube 縮圖」縮放效果，確認字級與邊緣是否被裁切。"
+      },
+      "rxv-seo-ir-027": {
+        "title": "LINE 貼文與大圖｜跨裝置預覽要點｜線上尺寸調整",
+        "desc": "此頁整理「LINE 貼文與大圖」在「跨裝置預覽要點」階段的實務重點：聊天室預覽與官方帳號版位略有差異。 建議用手機與桌機各預覽一次「LINE 貼文與大圖」縮放效果，確認字級與邊緣是否被裁切。"
+      },
+      "rxv-seo-ir-028": {
+        "title": "LinkedIn 動態與文章封面｜跨裝置預覽要點｜線上尺寸調整",
+        "desc": "此頁整理「LinkedIn 動態與文章封面」在「跨裝置預覽要點」階段的實務重點：偏商務橫式，文件感較重。 建議用手機與桌機各預覽一次「LinkedIn 動態與文章封面」縮放效果，確認字級與邊緣是否被裁切。"
+      },
+      "rxv-seo-ir-029": {
+        "title": "Shopee／電商主圖｜跨裝置預覽要點｜線上尺寸調整",
+        "desc": "此頁整理「Shopee／電商主圖」在「跨裝置預覽要點」階段的實務重點：白底與長邊規範，避免邊緣裁切。 建議用手機與桌機各預覽一次「Shopee／電商主圖」縮放效果，確認字級與邊緣是否被裁切。"
+      },
+      "rxv-seo-ir-030": {
+        "title": "部落格與 CMS 內文圖｜跨裝置預覽要點｜線上尺寸調整",
+        "desc": "此頁整理「部落格與 CMS 內文圖」在「跨裝置預覽要點」階段的實務重點：配合佈景 max-width，避免被 CSS 硬拉。 建議用手機與桌機各預覽一次「部落格與 CMS 內文圖」縮放效果，確認字級與邊緣是否被裁切。"
+      },
+      "rxv-seo-ir-031": {
+        "title": "Email 電子報插圖｜跨裝置預覽要點｜線上尺寸調整",
+        "desc": "此頁整理「Email 電子報插圖」在「跨裝置預覽要點」階段的實務重點：寬度常見 600px 級，檔案不宜過大。 建議用手機與桌機各預覽一次「Email 電子報插圖」縮放效果，確認字級與邊緣是否被裁切。"
+      },
+      "rxv-seo-ir-032": {
+        "title": "簡報與 PDF 嵌入圖｜跨裝置預覽要點｜線上尺寸調整",
+        "desc": "此頁整理「簡報與 PDF 嵌入圖」在「跨裝置預覽要點」階段的實務重點：投影解析度與列印解析度目標不同。 建議用手機與桌機各預覽一次「簡報與 PDF 嵌入圖」縮放效果，確認字級與邊緣是否被裁切。"
+      },
+      "rxv-seo-ir-033": {
+        "title": "DM 傳單與少量印刷｜跨裝置預覽要點｜線上尺寸調整",
+        "desc": "此頁整理「DM 傳單與少量印刷」在「跨裝置預覽要點」階段的實務重點：出血與裁切線，螢幕與紙本色域差異。 建議用手機與桌機各預覽一次「DM 傳單與少量印刷」縮放效果，確認字級與邊緣是否被裁切。"
+      },
+      "rxv-seo-ir-034": {
+        "title": "Instagram 貼文｜上稿前最後檢查｜線上尺寸調整",
+        "desc": "此頁整理「Instagram 貼文」在「上稿前最後檢查」階段的實務重點：正方形與直式 4:5，注意安全區與字級。 上稿前請核對檔名、比例標註與素材版本；「Instagram 貼文」活動檔常因混檔而誤用舊圖。"
+      },
+      "rxv-seo-ir-035": {
+        "title": "Instagram 限時動態｜上稿前最後檢查｜線上尺寸調整",
+        "desc": "此頁整理「Instagram 限時動態」在「上稿前最後檢查」階段的實務重點：9:16 直式，預留上下 UI 遮擋區。 上稿前請核對檔名、比例標註與素材版本；「Instagram 限時動態」活動檔常因混檔而誤用舊圖。"
+      },
+      "rxv-seo-ir-036": {
+        "title": "Facebook 貼文與連結預覽｜上稿前最後檢查｜線上尺寸調整",
+        "desc": "此頁整理「Facebook 貼文與連結預覽」在「上稿前最後檢查」階段的實務重點：橫式與方形並存，連結縮圖需預留邊距。 上稿前請核對檔名、比例標註與素材版本；「Facebook 貼文與連結預覽」活動檔常因混檔而誤用舊圖。"
+      },
+      "rxv-seo-ir-037": {
+        "title": "YouTube 縮圖｜上稿前最後檢查｜線上尺寸調整",
+        "desc": "此頁整理「YouTube 縮圖」在「上稿前最後檢查」階段的實務重點：16:9 橫式，字級與對比影響點閱。 上稿前請核對檔名、比例標註與素材版本；「YouTube 縮圖」活動檔常因混檔而誤用舊圖。"
+      },
+      "rxv-seo-ir-038": {
+        "title": "LINE 貼文與大圖｜上稿前最後檢查｜線上尺寸調整",
+        "desc": "此頁整理「LINE 貼文與大圖」在「上稿前最後檢查」階段的實務重點：聊天室預覽與官方帳號版位略有差異。 上稿前請核對檔名、比例標註與素材版本；「LINE 貼文與大圖」活動檔常因混檔而誤用舊圖。"
+      },
+      "rxv-seo-ir-039": {
+        "title": "LinkedIn 動態與文章封面｜上稿前最後檢查｜線上尺寸調整",
+        "desc": "此頁整理「LinkedIn 動態與文章封面」在「上稿前最後檢查」階段的實務重點：偏商務橫式，文件感較重。 上稿前請核對檔名、比例標註與素材版本；「LinkedIn 動態與文章封面」活動檔常因混檔而誤用舊圖。"
+      },
+      "rxv-seo-ir-040": {
+        "title": "Shopee／電商主圖｜上稿前最後檢查｜線上尺寸調整",
+        "desc": "此頁整理「Shopee／電商主圖」在「上稿前最後檢查」階段的實務重點：白底與長邊規範，避免邊緣裁切。 上稿前請核對檔名、比例標註與素材版本；「Shopee／電商主圖」活動檔常因混檔而誤用舊圖。"
+      },
+      "rxv-seo-ir-041": {
+        "title": "部落格與 CMS 內文圖｜上稿前最後檢查｜線上尺寸調整",
+        "desc": "此頁整理「部落格與 CMS 內文圖」在「上稿前最後檢查」階段的實務重點：配合佈景 max-width，避免被 CSS 硬拉。 上稿前請核對檔名、比例標註與素材版本；「部落格與 CMS 內文圖」活動檔常因混檔而誤用舊圖。"
+      },
+      "rxv-seo-ir-042": {
+        "title": "Email 電子報插圖｜上稿前最後檢查｜線上尺寸調整",
+        "desc": "此頁整理「Email 電子報插圖」在「上稿前最後檢查」階段的實務重點：寬度常見 600px 級，檔案不宜過大。 上稿前請核對檔名、比例標註與素材版本；「Email 電子報插圖」活動檔常因混檔而誤用舊圖。"
+      },
+      "rxv-seo-ir-043": {
+        "title": "簡報與 PDF 嵌入圖｜上稿前最後檢查｜線上尺寸調整",
+        "desc": "此頁整理「簡報與 PDF 嵌入圖」在「上稿前最後檢查」階段的實務重點：投影解析度與列印解析度目標不同。 上稿前請核對檔名、比例標註與素材版本；「簡報與 PDF 嵌入圖」活動檔常因混檔而誤用舊圖。"
+      },
+      "rxv-seo-ir-044": {
+        "title": "DM 傳單與少量印刷｜上稿前最後檢查｜線上尺寸調整",
+        "desc": "此頁整理「DM 傳單與少量印刷」在「上稿前最後檢查」階段的實務重點：出血與裁切線，螢幕與紙本色域差異。 上稿前請核對檔名、比例標註與素材版本；「DM 傳單與少量印刷」活動檔常因混檔而誤用舊圖。"
+      },
+      "rxv-seo-ic-001": {
+        "title": "圖片壓縮｜網站配額與 CDN 流量（體積優先）",
+        "desc": "針對「網站配額與 CDN 流量」：首屏與列表縮圖過大會拖慢 LCP。 本頁從「體積優先」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。在「體積優先」下，建議先決定可接受的最小可讀細節，再調整壓縮比；與「網站配額與 CDN 流量」相關的檔案常需兼顧體積與開啟速度。"
+      },
+      "rxv-seo-ic-002": {
+        "title": "圖片壓縮｜Email 附件上限（體積優先）",
+        "desc": "針對「Email 附件上限」：常見 10～25MB 信箱限制，夾帶多圖時易爆。 本頁從「體積優先」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。在「體積優先」下，建議先決定可接受的最小可讀細節，再調整壓縮比；與「Email 附件上限」相關的檔案常需兼顧體積與開啟速度。"
+      },
+      "rxv-seo-ic-003": {
+        "title": "圖片壓縮｜表單與報名系統上傳（體積優先）",
+        "desc": "針對「表單與報名系統上傳」：單檔 2～5MB 限制常導致使用者卡關。 本頁從「體積優先」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。在「體積優先」下，建議先決定可接受的最小可讀細節，再調整壓縮比；與「表單與報名系統上傳」相關的檔案常需兼顧體積與開啟速度。"
+      },
+      "rxv-seo-ic-004": {
+        "title": "圖片壓縮｜相簿與雲端備份（體積優先）",
+        "desc": "針對「相簿與雲端備份」：大量原圖占用空間，可接受微損壓縮換容量。 本頁從「體積優先」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。在「體積優先」下，建議先決定可接受的最小可讀細節，再調整壓縮比；與「相簿與雲端備份」相關的檔案常需兼顧體積與開啟速度。"
+      },
+      "rxv-seo-ic-005": {
+        "title": "圖片壓縮｜PNG 透明去背素材（體積優先）",
+        "desc": "針對「PNG 透明去背素材」：色階與去背邊緣對壓縮演算法敏感。 本頁從「體積優先」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。在「體積優先」下，建議先決定可接受的最小可讀細節，再調整壓縮比；與「PNG 透明去背素材」相關的檔案常需兼顧體積與開啟速度。"
+      },
+      "rxv-seo-ic-006": {
+        "title": "圖片壓縮｜活動現場速傳照片（體積優先）",
+        "desc": "針對「活動現場速傳照片」：通訊軟體傳檔偏好較小 JPG。 本頁從「體積優先」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。在「體積優先」下，建議先決定可接受的最小可讀細節，再調整壓縮比；與「活動現場速傳照片」相關的檔案常需兼顧體積與開啟速度。"
+      },
+      "rxv-seo-ic-007": {
+        "title": "圖片壓縮｜社群貼文配圖（體積優先）",
+        "desc": "針對「社群貼文配圖」：平台會二次壓縮，原檔太大不一定更清。 本頁從「體積優先」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。在「體積優先」下，建議先決定可接受的最小可讀細節，再調整壓縮比；與「社群貼文配圖」相關的檔案常需兼顧體積與開啟速度。"
+      },
+      "rxv-seo-ic-008": {
+        "title": "圖片壓縮｜Retina 與 2x 網頁圖（體積優先）",
+        "desc": "針對「Retina 與 2x 網頁圖」：顯示尺寸與實際像素不同，需平衡銳利度與體積。 本頁從「體積優先」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。在「體積優先」下，建議先決定可接受的最小可讀細節，再調整壓縮比；與「Retina 與 2x 網頁圖」相關的檔案常需兼顧體積與開啟速度。"
+      },
+      "rxv-seo-ic-009": {
+        "title": "圖片壓縮｜簡報投影與螢幕分享（體積優先）",
+        "desc": "針對「簡報投影與螢幕分享」：檔案過大易造成開啟卡頓或上傳失敗。 本頁從「體積優先」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。在「體積優先」下，建議先決定可接受的最小可讀細節，再調整壓縮比；與「簡報投影與螢幕分享」相關的檔案常需兼顧體積與開啟速度。"
+      },
+      "rxv-seo-ic-010": {
+        "title": "圖片壓縮｜客服截圖與說明圖（體積優先）",
+        "desc": "針對「客服截圖與說明圖」：長截圖高度高，檔案容易膨脹。 本頁從「體積優先」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。在「體積優先」下，建議先決定可接受的最小可讀細節，再調整壓縮比；與「客服截圖與說明圖」相關的檔案常需兼顧體積與開啟速度。"
+      },
+      "rxv-seo-ic-011": {
+        "title": "圖片壓縮｜電子書與長圖文 PDF 內嵌（體積優先）",
+        "desc": "針對「電子書與長圖文 PDF 內嵌」：頁數多時，圖檔體積直接影響總檔。 本頁從「體積優先」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。在「體積優先」下，建議先決定可接受的最小可讀細節，再調整壓縮比；與「電子書與長圖文 PDF 內嵌」相關的檔案常需兼顧體積與開啟速度。"
+      },
+      "rxv-seo-ic-012": {
+        "title": "圖片壓縮｜網站配額與 CDN 流量（畫質優先）",
+        "desc": "針對「網站配額與 CDN 流量」：首屏與列表縮圖過大會拖慢 LCP。 本頁從「畫質優先」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。若目標是「網站配額與 CDN 流量」的傳輸效率，可先評估是否需先縮像素再壓縮；「畫質優先」策略能避免一次壓過頭。"
+      },
+      "rxv-seo-ic-013": {
+        "title": "圖片壓縮｜Email 附件上限（畫質優先）",
+        "desc": "針對「Email 附件上限」：常見 10～25MB 信箱限制，夾帶多圖時易爆。 本頁從「畫質優先」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。若目標是「Email 附件上限」的傳輸效率，可先評估是否需先縮像素再壓縮；「畫質優先」策略能避免一次壓過頭。"
+      },
+      "rxv-seo-ic-014": {
+        "title": "圖片壓縮｜表單與報名系統上傳（畫質優先）",
+        "desc": "針對「表單與報名系統上傳」：單檔 2～5MB 限制常導致使用者卡關。 本頁從「畫質優先」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。若目標是「表單與報名系統上傳」的傳輸效率，可先評估是否需先縮像素再壓縮；「畫質優先」策略能避免一次壓過頭。"
+      },
+      "rxv-seo-ic-015": {
+        "title": "圖片壓縮｜相簿與雲端備份（畫質優先）",
+        "desc": "針對「相簿與雲端備份」：大量原圖占用空間，可接受微損壓縮換容量。 本頁從「畫質優先」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。若目標是「相簿與雲端備份」的傳輸效率，可先評估是否需先縮像素再壓縮；「畫質優先」策略能避免一次壓過頭。"
+      },
+      "rxv-seo-ic-016": {
+        "title": "圖片壓縮｜PNG 透明去背素材（畫質優先）",
+        "desc": "針對「PNG 透明去背素材」：色階與去背邊緣對壓縮演算法敏感。 本頁從「畫質優先」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。若目標是「PNG 透明去背素材」的傳輸效率，可先評估是否需先縮像素再壓縮；「畫質優先」策略能避免一次壓過頭。"
+      },
+      "rxv-seo-ic-017": {
+        "title": "圖片壓縮｜活動現場速傳照片（畫質優先）",
+        "desc": "針對「活動現場速傳照片」：通訊軟體傳檔偏好較小 JPG。 本頁從「畫質優先」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。若目標是「活動現場速傳照片」的傳輸效率，可先評估是否需先縮像素再壓縮；「畫質優先」策略能避免一次壓過頭。"
+      },
+      "rxv-seo-ic-018": {
+        "title": "圖片壓縮｜社群貼文配圖（畫質優先）",
+        "desc": "針對「社群貼文配圖」：平台會二次壓縮，原檔太大不一定更清。 本頁從「畫質優先」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。若目標是「社群貼文配圖」的傳輸效率，可先評估是否需先縮像素再壓縮；「畫質優先」策略能避免一次壓過頭。"
+      },
+      "rxv-seo-ic-019": {
+        "title": "圖片壓縮｜Retina 與 2x 網頁圖（畫質優先）",
+        "desc": "針對「Retina 與 2x 網頁圖」：顯示尺寸與實際像素不同，需平衡銳利度與體積。 本頁從「畫質優先」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。若目標是「Retina 與 2x 網頁圖」的傳輸效率，可先評估是否需先縮像素再壓縮；「畫質優先」策略能避免一次壓過頭。"
+      },
+      "rxv-seo-ic-020": {
+        "title": "圖片壓縮｜簡報投影與螢幕分享（畫質優先）",
+        "desc": "針對「簡報投影與螢幕分享」：檔案過大易造成開啟卡頓或上傳失敗。 本頁從「畫質優先」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。若目標是「簡報投影與螢幕分享」的傳輸效率，可先評估是否需先縮像素再壓縮；「畫質優先」策略能避免一次壓過頭。"
+      },
+      "rxv-seo-ic-021": {
+        "title": "圖片壓縮｜客服截圖與說明圖（畫質優先）",
+        "desc": "針對「客服截圖與說明圖」：長截圖高度高，檔案容易膨脹。 本頁從「畫質優先」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。若目標是「客服截圖與說明圖」的傳輸效率，可先評估是否需先縮像素再壓縮；「畫質優先」策略能避免一次壓過頭。"
+      },
+      "rxv-seo-ic-022": {
+        "title": "圖片壓縮｜電子書與長圖文 PDF 內嵌（畫質優先）",
+        "desc": "針對「電子書與長圖文 PDF 內嵌」：頁數多時，圖檔體積直接影響總檔。 本頁從「畫質優先」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。若目標是「電子書與長圖文 PDF 內嵌」的傳輸效率，可先評估是否需先縮像素再壓縮；「畫質優先」策略能避免一次壓過頭。"
+      },
+      "rxv-seo-ic-023": {
+        "title": "圖片壓縮｜網站配額與 CDN 流量（批次處理）",
+        "desc": "針對「網站配額與 CDN 流量」：首屏與列表縮圖過大會拖慢 LCP。 本頁從「批次處理」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。針對「網站配額與 CDN 流量」：首屏與列表縮圖過大會拖慢 LCP。 以「批次處理」流程在 RxV 內完成，較容易建立可重複的降檔規則。"
+      },
+      "rxv-seo-ic-024": {
+        "title": "圖片壓縮｜Email 附件上限（批次處理）",
+        "desc": "針對「Email 附件上限」：常見 10～25MB 信箱限制，夾帶多圖時易爆。 本頁從「批次處理」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。針對「Email 附件上限」：常見 10～25MB 信箱限制，夾帶多圖時易爆。 以「批次處理」流程在 RxV 內完成，較容易建立可重複的降檔規則。"
+      },
+      "rxv-seo-ic-025": {
+        "title": "圖片壓縮｜表單與報名系統上傳（批次處理）",
+        "desc": "針對「表單與報名系統上傳」：單檔 2～5MB 限制常導致使用者卡關。 本頁從「批次處理」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。針對「表單與報名系統上傳」：單檔 2～5MB 限制常導致使用者卡關。 以「批次處理」流程在 RxV 內完成，較容易建立可重複的降檔規則。"
+      },
+      "rxv-seo-ic-026": {
+        "title": "圖片壓縮｜相簿與雲端備份（批次處理）",
+        "desc": "針對「相簿與雲端備份」：大量原圖占用空間，可接受微損壓縮換容量。 本頁從「批次處理」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。針對「相簿與雲端備份」：大量原圖占用空間，可接受微損壓縮換容量。 以「批次處理」流程在 RxV 內完成，較容易建立可重複的降檔規則。"
+      },
+      "rxv-seo-ic-027": {
+        "title": "圖片壓縮｜PNG 透明去背素材（批次處理）",
+        "desc": "針對「PNG 透明去背素材」：色階與去背邊緣對壓縮演算法敏感。 本頁從「批次處理」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。針對「PNG 透明去背素材」：色階與去背邊緣對壓縮演算法敏感。 以「批次處理」流程在 RxV 內完成，較容易建立可重複的降檔規則。"
+      },
+      "rxv-seo-ic-028": {
+        "title": "圖片壓縮｜活動現場速傳照片（批次處理）",
+        "desc": "針對「活動現場速傳照片」：通訊軟體傳檔偏好較小 JPG。 本頁從「批次處理」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。針對「活動現場速傳照片」：通訊軟體傳檔偏好較小 JPG。 以「批次處理」流程在 RxV 內完成，較容易建立可重複的降檔規則。"
+      },
+      "rxv-seo-ic-029": {
+        "title": "圖片壓縮｜社群貼文配圖（批次處理）",
+        "desc": "針對「社群貼文配圖」：平台會二次壓縮，原檔太大不一定更清。 本頁從「批次處理」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。針對「社群貼文配圖」：平台會二次壓縮，原檔太大不一定更清。 以「批次處理」流程在 RxV 內完成，較容易建立可重複的降檔規則。"
+      },
+      "rxv-seo-ic-030": {
+        "title": "圖片壓縮｜Retina 與 2x 網頁圖（批次處理）",
+        "desc": "針對「Retina 與 2x 網頁圖」：顯示尺寸與實際像素不同，需平衡銳利度與體積。 本頁從「批次處理」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。針對「Retina 與 2x 網頁圖」：顯示尺寸與實際像素不同，需平衡銳利度與體積。 以「批次處理」流程在 RxV 內完成，較容易建立可重複的降檔規則。"
+      },
+      "rxv-seo-ic-031": {
+        "title": "圖片壓縮｜簡報投影與螢幕分享（批次處理）",
+        "desc": "針對「簡報投影與螢幕分享」：檔案過大易造成開啟卡頓或上傳失敗。 本頁從「批次處理」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。針對「簡報投影與螢幕分享」：檔案過大易造成開啟卡頓或上傳失敗。 以「批次處理」流程在 RxV 內完成，較容易建立可重複的降檔規則。"
+      },
+      "rxv-seo-ic-032": {
+        "title": "圖片壓縮｜客服截圖與說明圖（批次處理）",
+        "desc": "針對「客服截圖與說明圖」：長截圖高度高，檔案容易膨脹。 本頁從「批次處理」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。針對「客服截圖與說明圖」：長截圖高度高，檔案容易膨脹。 以「批次處理」流程在 RxV 內完成，較容易建立可重複的降檔規則。"
+      },
+      "rxv-seo-ic-033": {
+        "title": "圖片壓縮｜電子書與長圖文 PDF 內嵌（批次處理）",
+        "desc": "針對「電子書與長圖文 PDF 內嵌」：頁數多時，圖檔體積直接影響總檔。 本頁從「批次處理」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。針對「電子書與長圖文 PDF 內嵌」：頁數多時，圖檔體積直接影響總檔。 以「批次處理」流程在 RxV 內完成，較容易建立可重複的降檔規則。"
+      },
+      "rxv-seo-ic-034": {
+        "title": "圖片壓縮｜網站配額與 CDN 流量（單張精修）",
+        "desc": "針對「網站配額與 CDN 流量」：首屏與列表縮圖過大會拖慢 LCP。 本頁從「單張精修」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。完成後請抽樣檢查邊緣與文字；「網站配額與 CDN 流量」若含文字截圖，建議在「單張精修」下用較保守參數。"
+      },
+      "rxv-seo-ic-035": {
+        "title": "圖片壓縮｜Email 附件上限（單張精修）",
+        "desc": "針對「Email 附件上限」：常見 10～25MB 信箱限制，夾帶多圖時易爆。 本頁從「單張精修」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。完成後請抽樣檢查邊緣與文字；「Email 附件上限」若含文字截圖，建議在「單張精修」下用較保守參數。"
+      },
+      "rxv-seo-ic-036": {
+        "title": "圖片壓縮｜表單與報名系統上傳（單張精修）",
+        "desc": "針對「表單與報名系統上傳」：單檔 2～5MB 限制常導致使用者卡關。 本頁從「單張精修」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。完成後請抽樣檢查邊緣與文字；「表單與報名系統上傳」若含文字截圖，建議在「單張精修」下用較保守參數。"
+      },
+      "rxv-seo-ic-037": {
+        "title": "圖片壓縮｜相簿與雲端備份（單張精修）",
+        "desc": "針對「相簿與雲端備份」：大量原圖占用空間，可接受微損壓縮換容量。 本頁從「單張精修」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。完成後請抽樣檢查邊緣與文字；「相簿與雲端備份」若含文字截圖，建議在「單張精修」下用較保守參數。"
+      },
+      "rxv-seo-ic-038": {
+        "title": "圖片壓縮｜PNG 透明去背素材（單張精修）",
+        "desc": "針對「PNG 透明去背素材」：色階與去背邊緣對壓縮演算法敏感。 本頁從「單張精修」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。完成後請抽樣檢查邊緣與文字；「PNG 透明去背素材」若含文字截圖，建議在「單張精修」下用較保守參數。"
+      },
+      "rxv-seo-ic-039": {
+        "title": "圖片壓縮｜活動現場速傳照片（單張精修）",
+        "desc": "針對「活動現場速傳照片」：通訊軟體傳檔偏好較小 JPG。 本頁從「單張精修」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。完成後請抽樣檢查邊緣與文字；「活動現場速傳照片」若含文字截圖，建議在「單張精修」下用較保守參數。"
+      },
+      "rxv-seo-ic-040": {
+        "title": "圖片壓縮｜社群貼文配圖（單張精修）",
+        "desc": "針對「社群貼文配圖」：平台會二次壓縮，原檔太大不一定更清。 本頁從「單張精修」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。完成後請抽樣檢查邊緣與文字；「社群貼文配圖」若含文字截圖，建議在「單張精修」下用較保守參數。"
+      },
+      "rxv-seo-ic-041": {
+        "title": "圖片壓縮｜Retina 與 2x 網頁圖（單張精修）",
+        "desc": "針對「Retina 與 2x 網頁圖」：顯示尺寸與實際像素不同，需平衡銳利度與體積。 本頁從「單張精修」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。完成後請抽樣檢查邊緣與文字；「Retina 與 2x 網頁圖」若含文字截圖，建議在「單張精修」下用較保守參數。"
+      },
+      "rxv-seo-ic-042": {
+        "title": "圖片壓縮｜簡報投影與螢幕分享（單張精修）",
+        "desc": "針對「簡報投影與螢幕分享」：檔案過大易造成開啟卡頓或上傳失敗。 本頁從「單張精修」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。完成後請抽樣檢查邊緣與文字；「簡報投影與螢幕分享」若含文字截圖，建議在「單張精修」下用較保守參數。"
+      },
+      "rxv-seo-ic-043": {
+        "title": "圖片壓縮｜客服截圖與說明圖（單張精修）",
+        "desc": "針對「客服截圖與說明圖」：長截圖高度高，檔案容易膨脹。 本頁從「單張精修」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。完成後請抽樣檢查邊緣與文字；「客服截圖與說明圖」若含文字截圖，建議在「單張精修」下用較保守參數。"
+      },
+      "rxv-seo-ic-044": {
+        "title": "圖片壓縮｜電子書與長圖文 PDF 內嵌（單張精修）",
+        "desc": "針對「電子書與長圖文 PDF 內嵌」：頁數多時，圖檔體積直接影響總檔。 本頁從「單張精修」說明壓縮策略與畫質折衷，並整理何時應先改尺寸再壓縮。完成後請抽樣檢查邊緣與文字；「電子書與長圖文 PDF 內嵌」若含文字截圖，建議在「單張精修」下用較保守參數。"
+      },
+      "rxv-seo-qr-001": {
+        "title": "QR Code｜社群導流：Instagram／Threads 個人首頁連結（列印尺寸與掃描距離）",
+        "desc": "此頁聚焦「社群導流」的「Instagram／Threads 個人首頁連結」。適合放追蹤連結或限動精選導向。 並從「列印尺寸與掃描距離」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。在「列印尺寸與掃描距離」上，請先決定掃描距離與物料尺寸，再回推 QR 模組大小；「Instagram／Threads 個人首頁連結」常見錯誤是模組過小。"
+      },
+      "rxv-seo-qr-002": {
+        "title": "QR Code｜社群導流：LINE 官方帳號加好友（列印尺寸與掃描距離）",
+        "desc": "此頁聚焦「社群導流」的「LINE 官方帳號加好友」。店內桌貼與包裝小卡常用。 並從「列印尺寸與掃描距離」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。在「列印尺寸與掃描距離」上，請先決定掃描距離與物料尺寸，再回推 QR 模組大小；「LINE 官方帳號加好友」常見錯誤是模組過小。"
+      },
+      "rxv-seo-qr-003": {
+        "title": "QR Code｜商務應用：電子名片與聯絡資訊（列印尺寸與掃描距離）",
+        "desc": "此頁聚焦「商務應用」的「電子名片與聯絡資訊」。一碼整合電話、官網、表單。 並從「列印尺寸與掃描距離」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。在「列印尺寸與掃描距離」上，請先決定掃描距離與物料尺寸，再回推 QR 模組大小；「電子名片與聯絡資訊」常見錯誤是模組過小。"
+      },
+      "rxv-seo-qr-004": {
+        "title": "QR Code｜商務應用：收款與發票載具（列印尺寸與掃描距離）",
+        "desc": "此頁聚焦「商務應用」的「收款與發票載具」。需注意防偽與更新失效連結。 並從「列印尺寸與掃描距離」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。在「列印尺寸與掃描距離」上，請先決定掃描距離與物料尺寸，再回推 QR 模組大小；「收款與發票載具」常見錯誤是模組過小。"
+      },
+      "rxv-seo-qr-005": {
+        "title": "QR Code｜餐飲場景：內用／外帶菜單與點餐（列印尺寸與掃描距離）",
+        "desc": "此頁聚焦「餐飲場景」的「內用／外帶菜單與點餐」。紙本防水與掃描距離要一併考量。 並從「列印尺寸與掃描距離」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。在「列印尺寸與掃描距離」上，請先決定掃描距離與物料尺寸，再回推 QR 模組大小；「內用／外帶菜單與點餐」常見錯誤是模組過小。"
+      },
+      "rxv-seo-qr-006": {
+        "title": "QR Code｜餐飲場景：訂位與候位通知（列印尺寸與掃描距離）",
+        "desc": "此頁聚焦「餐飲場景」的「訂位與候位通知」。連到表單或通訊平台，減少電話占線。 並從「列印尺寸與掃描距離」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。在「列印尺寸與掃描距離」上，請先決定掃描距離與物料尺寸，再回推 QR 模組大小；「訂位與候位通知」常見錯誤是模組過小。"
+      },
+      "rxv-seo-qr-007": {
+        "title": "QR Code｜活動行銷：報名與問卷填寫（列印尺寸與掃描距離）",
+        "desc": "此頁聚焦「活動行銷」的「報名與問卷填寫」。線下海報導到線上表單，追蹤檔期轉換。 並從「列印尺寸與掃描距離」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。在「列印尺寸與掃描距離」上，請先決定掃描距離與物料尺寸，再回推 QR 模組大小；「報名與問卷填寫」常見錯誤是模組過小。"
+      },
+      "rxv-seo-qr-008": {
+        "title": "QR Code｜活動行銷：展場攤位與集點（列印尺寸與掃描距離）",
+        "desc": "此頁聚焦「活動行銷」的「展場攤位與集點」。可搭配短期活動頁，結束後替換連結。 並從「列印尺寸與掃描距離」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。在「列印尺寸與掃描距離」上，請先決定掃描距離與物料尺寸，再回推 QR 模組大小；「展場攤位與集點」常見錯誤是模組過小。"
+      },
+      "rxv-seo-qr-009": {
+        "title": "QR Code｜商務應用：門市 Wi‑Fi 登入說明（列印尺寸與掃描距離）",
+        "desc": "此頁聚焦「商務應用」的「門市 Wi‑Fi 登入說明」。密碼與 SSID 更新時需重印或換動態頁。 並從「列印尺寸與掃描距離」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。在「列印尺寸與掃描距離」上，請先決定掃描距離與物料尺寸，再回推 QR 模組大小；「門市 Wi‑Fi 登入說明」常見錯誤是模組過小。"
+      },
+      "rxv-seo-qr-010": {
+        "title": "QR Code｜社群導流：社群抽獎與留言活動頁（列印尺寸與掃描距離）",
+        "desc": "此頁聚焦「社群導流」的「社群抽獎與留言活動頁」。活動結束後應替換落地內容避免失效。 並從「列印尺寸與掃描距離」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。在「列印尺寸與掃描距離」上，請先決定掃描距離與物料尺寸，再回推 QR 模組大小；「社群抽獎與留言活動頁」常見錯誤是模組過小。"
+      },
+      "rxv-seo-qr-011": {
+        "title": "QR Code｜餐飲場景：外送平台與評價聚合（列印尺寸與掃描距離）",
+        "desc": "此頁聚焦「餐飲場景」的「外送平台與評價聚合」。一碼導向指定平台或 Google 評論。 並從「列印尺寸與掃描距離」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。在「列印尺寸與掃描距離」上，請先決定掃描距離與物料尺寸，再回推 QR 模組大小；「外送平台與評價聚合」常見錯誤是模組過小。"
+      },
+      "rxv-seo-qr-012": {
+        "title": "QR Code｜社群導流：Instagram／Threads 個人首頁連結（連結更新與備援短網址）",
+        "desc": "此頁聚焦「社群導流」的「Instagram／Threads 個人首頁連結」。適合放追蹤連結或限動精選導向。 並從「連結更新與備援短網址」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。若你關注「連結更新與備援短網址」，建議把落地頁與短網址策略一次想清楚，避免「Instagram／Threads 個人首頁連結」上線後才頻繁重印。"
+      },
+      "rxv-seo-qr-013": {
+        "title": "QR Code｜社群導流：LINE 官方帳號加好友（連結更新與備援短網址）",
+        "desc": "此頁聚焦「社群導流」的「LINE 官方帳號加好友」。店內桌貼與包裝小卡常用。 並從「連結更新與備援短網址」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。若你關注「連結更新與備援短網址」，建議把落地頁與短網址策略一次想清楚，避免「LINE 官方帳號加好友」上線後才頻繁重印。"
+      },
+      "rxv-seo-qr-014": {
+        "title": "QR Code｜商務應用：電子名片與聯絡資訊（連結更新與備援短網址）",
+        "desc": "此頁聚焦「商務應用」的「電子名片與聯絡資訊」。一碼整合電話、官網、表單。 並從「連結更新與備援短網址」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。若你關注「連結更新與備援短網址」，建議把落地頁與短網址策略一次想清楚，避免「電子名片與聯絡資訊」上線後才頻繁重印。"
+      },
+      "rxv-seo-qr-015": {
+        "title": "QR Code｜商務應用：收款與發票載具（連結更新與備援短網址）",
+        "desc": "此頁聚焦「商務應用」的「收款與發票載具」。需注意防偽與更新失效連結。 並從「連結更新與備援短網址」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。若你關注「連結更新與備援短網址」，建議把落地頁與短網址策略一次想清楚，避免「收款與發票載具」上線後才頻繁重印。"
+      },
+      "rxv-seo-qr-016": {
+        "title": "QR Code｜餐飲場景：內用／外帶菜單與點餐（連結更新與備援短網址）",
+        "desc": "此頁聚焦「餐飲場景」的「內用／外帶菜單與點餐」。紙本防水與掃描距離要一併考量。 並從「連結更新與備援短網址」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。若你關注「連結更新與備援短網址」，建議把落地頁與短網址策略一次想清楚，避免「內用／外帶菜單與點餐」上線後才頻繁重印。"
+      },
+      "rxv-seo-qr-017": {
+        "title": "QR Code｜餐飲場景：訂位與候位通知（連結更新與備援短網址）",
+        "desc": "此頁聚焦「餐飲場景」的「訂位與候位通知」。連到表單或通訊平台，減少電話占線。 並從「連結更新與備援短網址」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。若你關注「連結更新與備援短網址」，建議把落地頁與短網址策略一次想清楚，避免「訂位與候位通知」上線後才頻繁重印。"
+      },
+      "rxv-seo-qr-018": {
+        "title": "QR Code｜活動行銷：報名與問卷填寫（連結更新與備援短網址）",
+        "desc": "此頁聚焦「活動行銷」的「報名與問卷填寫」。線下海報導到線上表單，追蹤檔期轉換。 並從「連結更新與備援短網址」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。若你關注「連結更新與備援短網址」，建議把落地頁與短網址策略一次想清楚，避免「報名與問卷填寫」上線後才頻繁重印。"
+      },
+      "rxv-seo-qr-019": {
+        "title": "QR Code｜活動行銷：展場攤位與集點（連結更新與備援短網址）",
+        "desc": "此頁聚焦「活動行銷」的「展場攤位與集點」。可搭配短期活動頁，結束後替換連結。 並從「連結更新與備援短網址」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。若你關注「連結更新與備援短網址」，建議把落地頁與短網址策略一次想清楚，避免「展場攤位與集點」上線後才頻繁重印。"
+      },
+      "rxv-seo-qr-020": {
+        "title": "QR Code｜商務應用：門市 Wi‑Fi 登入說明（連結更新與備援短網址）",
+        "desc": "此頁聚焦「商務應用」的「門市 Wi‑Fi 登入說明」。密碼與 SSID 更新時需重印或換動態頁。 並從「連結更新與備援短網址」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。若你關注「連結更新與備援短網址」，建議把落地頁與短網址策略一次想清楚，避免「門市 Wi‑Fi 登入說明」上線後才頻繁重印。"
+      },
+      "rxv-seo-qr-021": {
+        "title": "QR Code｜社群導流：社群抽獎與留言活動頁（連結更新與備援短網址）",
+        "desc": "此頁聚焦「社群導流」的「社群抽獎與留言活動頁」。活動結束後應替換落地內容避免失效。 並從「連結更新與備援短網址」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。若你關注「連結更新與備援短網址」，建議把落地頁與短網址策略一次想清楚，避免「社群抽獎與留言活動頁」上線後才頻繁重印。"
+      },
+      "rxv-seo-qr-022": {
+        "title": "QR Code｜餐飲場景：外送平台與評價聚合（連結更新與備援短網址）",
+        "desc": "此頁聚焦「餐飲場景」的「外送平台與評價聚合」。一碼導向指定平台或 Google 評論。 並從「連結更新與備援短網址」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。若你關注「連結更新與備援短網址」，建議把落地頁與短網址策略一次想清楚，避免「外送平台與評價聚合」上線後才頻繁重印。"
+      },
+      "rxv-seo-qr-023": {
+        "title": "QR Code｜社群導流：Instagram／Threads 個人首頁連結（品牌視覺與對比）",
+        "desc": "此頁聚焦「社群導流」的「Instagram／Threads 個人首頁連結」。適合放追蹤連結或限動精選導向。 並從「品牌視覺與對比」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。從「品牌視覺與對比」檢視：對比不足會比「Instagram／Threads 個人首頁連結」文案缺失更致命，尤其在光線不均的店面。"
+      },
+      "rxv-seo-qr-024": {
+        "title": "QR Code｜社群導流：LINE 官方帳號加好友（品牌視覺與對比）",
+        "desc": "此頁聚焦「社群導流」的「LINE 官方帳號加好友」。店內桌貼與包裝小卡常用。 並從「品牌視覺與對比」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。從「品牌視覺與對比」檢視：對比不足會比「LINE 官方帳號加好友」文案缺失更致命，尤其在光線不均的店面。"
+      },
+      "rxv-seo-qr-025": {
+        "title": "QR Code｜商務應用：電子名片與聯絡資訊（品牌視覺與對比）",
+        "desc": "此頁聚焦「商務應用」的「電子名片與聯絡資訊」。一碼整合電話、官網、表單。 並從「品牌視覺與對比」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。從「品牌視覺與對比」檢視：對比不足會比「電子名片與聯絡資訊」文案缺失更致命，尤其在光線不均的店面。"
+      },
+      "rxv-seo-qr-026": {
+        "title": "QR Code｜商務應用：收款與發票載具（品牌視覺與對比）",
+        "desc": "此頁聚焦「商務應用」的「收款與發票載具」。需注意防偽與更新失效連結。 並從「品牌視覺與對比」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。從「品牌視覺與對比」檢視：對比不足會比「收款與發票載具」文案缺失更致命，尤其在光線不均的店面。"
+      },
+      "rxv-seo-qr-027": {
+        "title": "QR Code｜餐飲場景：內用／外帶菜單與點餐（品牌視覺與對比）",
+        "desc": "此頁聚焦「餐飲場景」的「內用／外帶菜單與點餐」。紙本防水與掃描距離要一併考量。 並從「品牌視覺與對比」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。從「品牌視覺與對比」檢視：對比不足會比「內用／外帶菜單與點餐」文案缺失更致命，尤其在光線不均的店面。"
+      },
+      "rxv-seo-qr-028": {
+        "title": "QR Code｜餐飲場景：訂位與候位通知（品牌視覺與對比）",
+        "desc": "此頁聚焦「餐飲場景」的「訂位與候位通知」。連到表單或通訊平台，減少電話占線。 並從「品牌視覺與對比」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。從「品牌視覺與對比」檢視：對比不足會比「訂位與候位通知」文案缺失更致命，尤其在光線不均的店面。"
+      },
+      "rxv-seo-qr-029": {
+        "title": "QR Code｜活動行銷：報名與問卷填寫（品牌視覺與對比）",
+        "desc": "此頁聚焦「活動行銷」的「報名與問卷填寫」。線下海報導到線上表單，追蹤檔期轉換。 並從「品牌視覺與對比」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。從「品牌視覺與對比」檢視：對比不足會比「報名與問卷填寫」文案缺失更致命，尤其在光線不均的店面。"
+      },
+      "rxv-seo-qr-030": {
+        "title": "QR Code｜活動行銷：展場攤位與集點（品牌視覺與對比）",
+        "desc": "此頁聚焦「活動行銷」的「展場攤位與集點」。可搭配短期活動頁，結束後替換連結。 並從「品牌視覺與對比」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。從「品牌視覺與對比」檢視：對比不足會比「展場攤位與集點」文案缺失更致命，尤其在光線不均的店面。"
+      },
+      "rxv-seo-qr-031": {
+        "title": "QR Code｜商務應用：門市 Wi‑Fi 登入說明（品牌視覺與對比）",
+        "desc": "此頁聚焦「商務應用」的「門市 Wi‑Fi 登入說明」。密碼與 SSID 更新時需重印或換動態頁。 並從「品牌視覺與對比」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。從「品牌視覺與對比」檢視：對比不足會比「門市 Wi‑Fi 登入說明」文案缺失更致命，尤其在光線不均的店面。"
+      },
+      "rxv-seo-qr-032": {
+        "title": "QR Code｜社群導流：社群抽獎與留言活動頁（品牌視覺與對比）",
+        "desc": "此頁聚焦「社群導流」的「社群抽獎與留言活動頁」。活動結束後應替換落地內容避免失效。 並從「品牌視覺與對比」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。從「品牌視覺與對比」檢視：對比不足會比「社群抽獎與留言活動頁」文案缺失更致命，尤其在光線不均的店面。"
+      },
+      "rxv-seo-qr-033": {
+        "title": "QR Code｜餐飲場景：外送平台與評價聚合（品牌視覺與對比）",
+        "desc": "此頁聚焦「餐飲場景」的「外送平台與評價聚合」。一碼導向指定平台或 Google 評論。 並從「品牌視覺與對比」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。從「品牌視覺與對比」檢視：對比不足會比「外送平台與評價聚合」文案缺失更致命，尤其在光線不均的店面。"
+      },
+      "rxv-seo-qr-034": {
+        "title": "QR Code｜社群導流：Instagram／Threads 個人首頁連結（追蹤與成效檢視）",
+        "desc": "此頁聚焦「社群導流」的「Instagram／Threads 個人首頁連結」。適合放追蹤連結或限動精選導向。 並從「追蹤與成效檢視」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。「追蹤與成效檢視」需要固定追蹤方式時，請把 UTM 或活動代碼寫進中繼頁規則，別只改 QR 圖檔。"
+      },
+      "rxv-seo-qr-035": {
+        "title": "QR Code｜社群導流：LINE 官方帳號加好友（追蹤與成效檢視）",
+        "desc": "此頁聚焦「社群導流」的「LINE 官方帳號加好友」。店內桌貼與包裝小卡常用。 並從「追蹤與成效檢視」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。「追蹤與成效檢視」需要固定追蹤方式時，請把 UTM 或活動代碼寫進中繼頁規則，別只改 QR 圖檔。"
+      },
+      "rxv-seo-qr-036": {
+        "title": "QR Code｜商務應用：電子名片與聯絡資訊（追蹤與成效檢視）",
+        "desc": "此頁聚焦「商務應用」的「電子名片與聯絡資訊」。一碼整合電話、官網、表單。 並從「追蹤與成效檢視」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。「追蹤與成效檢視」需要固定追蹤方式時，請把 UTM 或活動代碼寫進中繼頁規則，別只改 QR 圖檔。"
+      },
+      "rxv-seo-qr-037": {
+        "title": "QR Code｜商務應用：收款與發票載具（追蹤與成效檢視）",
+        "desc": "此頁聚焦「商務應用」的「收款與發票載具」。需注意防偽與更新失效連結。 並從「追蹤與成效檢視」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。「追蹤與成效檢視」需要固定追蹤方式時，請把 UTM 或活動代碼寫進中繼頁規則，別只改 QR 圖檔。"
+      },
+      "rxv-seo-qr-038": {
+        "title": "QR Code｜餐飲場景：內用／外帶菜單與點餐（追蹤與成效檢視）",
+        "desc": "此頁聚焦「餐飲場景」的「內用／外帶菜單與點餐」。紙本防水與掃描距離要一併考量。 並從「追蹤與成效檢視」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。「追蹤與成效檢視」需要固定追蹤方式時，請把 UTM 或活動代碼寫進中繼頁規則，別只改 QR 圖檔。"
+      },
+      "rxv-seo-qr-039": {
+        "title": "QR Code｜餐飲場景：訂位與候位通知（追蹤與成效檢視）",
+        "desc": "此頁聚焦「餐飲場景」的「訂位與候位通知」。連到表單或通訊平台，減少電話占線。 並從「追蹤與成效檢視」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。「追蹤與成效檢視」需要固定追蹤方式時，請把 UTM 或活動代碼寫進中繼頁規則，別只改 QR 圖檔。"
+      },
+      "rxv-seo-qr-040": {
+        "title": "QR Code｜活動行銷：報名與問卷填寫（追蹤與成效檢視）",
+        "desc": "此頁聚焦「活動行銷」的「報名與問卷填寫」。線下海報導到線上表單，追蹤檔期轉換。 並從「追蹤與成效檢視」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。「追蹤與成效檢視」需要固定追蹤方式時，請把 UTM 或活動代碼寫進中繼頁規則，別只改 QR 圖檔。"
+      },
+      "rxv-seo-qr-041": {
+        "title": "QR Code｜活動行銷：展場攤位與集點（追蹤與成效檢視）",
+        "desc": "此頁聚焦「活動行銷」的「展場攤位與集點」。可搭配短期活動頁，結束後替換連結。 並從「追蹤與成效檢視」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。「追蹤與成效檢視」需要固定追蹤方式時，請把 UTM 或活動代碼寫進中繼頁規則，別只改 QR 圖檔。"
+      },
+      "rxv-seo-qr-042": {
+        "title": "QR Code｜商務應用：門市 Wi‑Fi 登入說明（追蹤與成效檢視）",
+        "desc": "此頁聚焦「商務應用」的「門市 Wi‑Fi 登入說明」。密碼與 SSID 更新時需重印或換動態頁。 並從「追蹤與成效檢視」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。「追蹤與成效檢視」需要固定追蹤方式時，請把 UTM 或活動代碼寫進中繼頁規則，別只改 QR 圖檔。"
+      },
+      "rxv-seo-qr-043": {
+        "title": "QR Code｜社群導流：社群抽獎與留言活動頁（追蹤與成效檢視）",
+        "desc": "此頁聚焦「社群導流」的「社群抽獎與留言活動頁」。活動結束後應替換落地內容避免失效。 並從「追蹤與成效檢視」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。「追蹤與成效檢視」需要固定追蹤方式時，請把 UTM 或活動代碼寫進中繼頁規則，別只改 QR 圖檔。"
+      },
+      "rxv-seo-qr-044": {
+        "title": "QR Code｜餐飲場景：外送平台與評價聚合（追蹤與成效檢視）",
+        "desc": "此頁聚焦「餐飲場景」的「外送平台與評價聚合」。一碼導向指定平台或 Google 評論。 並從「追蹤與成效檢視」整理注意事項，說明如何用 RxV 產生可掃描、可更新的 QR。「追蹤與成效檢視」需要固定追蹤方式時，請把 UTM 或活動代碼寫進中繼頁規則，別只改 QR 圖檔。"
+      },
+      "rxv-seo-ai-001": {
+        "title": "AI 摘要｜網路長文與專欄（速讀重點）",
+        "desc": "針對「網路長文與專欄」：段落多、小標碎，需抓論點與證據。 本頁說明如何以「速讀重點」使用 RxV AI 摘要，將長內容收斂成可複製的重點。以「速讀重點」輸出時，建議把「網路長文與專欄」的章節或段落先切開，再逐段摘要，較能保留因果關係。"
+      },
+      "rxv-seo-ai-002": {
+        "title": "AI 摘要｜PDF 論文與報告（速讀重點）",
+        "desc": "針對「PDF 論文與報告」：結構固定，需注意引用與圖表說明是否被誤讀。 本頁說明如何以「速讀重點」使用 RxV AI 摘要，將長內容收斂成可複製的重點。以「速讀重點」輸出時，建議把「PDF 論文與報告」的章節或段落先切開，再逐段摘要，較能保留因果關係。"
+      },
+      "rxv-seo-ai-003": {
+        "title": "AI 摘要｜企業內部報告（速讀重點）",
+        "desc": "針對「企業內部報告」：背景與建議段落常為閱讀重點。 本頁說明如何以「速讀重點」使用 RxV AI 摘要，將長內容收斂成可複製的重點。以「速讀重點」輸出時，建議把「企業內部報告」的章節或段落先切開，再逐段摘要，較能保留因果關係。"
+      },
+      "rxv-seo-ai-004": {
+        "title": "AI 摘要｜會議逐字稿與備忘（速讀重點）",
+        "desc": "針對「會議逐字稿與備忘」：口語冗餘多，需整理決議與待辦。 本頁說明如何以「速讀重點」使用 RxV AI 摘要，將長內容收斂成可複製的重點。以「速讀重點」輸出時，建議把「會議逐字稿與備忘」的章節或段落先切開，再逐段摘要，較能保留因果關係。"
+      },
+      "rxv-seo-ai-005": {
+        "title": "AI 摘要｜教材與講義長文（速讀重點）",
+        "desc": "針對「教材與講義長文」：定義與例題往往可獨立摘要。 本頁說明如何以「速讀重點」使用 RxV AI 摘要，將長內容收斂成可複製的重點。以「速讀重點」輸出時，建議把「教材與講義長文」的章節或段落先切開，再逐段摘要，較能保留因果關係。"
+      },
+      "rxv-seo-ai-006": {
+        "title": "AI 摘要｜新聞稿與公告（速讀重點）",
+        "desc": "針對「新聞稿與公告」：時間線與引用來源要保留。 本頁說明如何以「速讀重點」使用 RxV AI 摘要，將長內容收斂成可複製的重點。以「速讀重點」輸出時，建議把「新聞稿與公告」的章節或段落先切開，再逐段摘要，較能保留因果關係。"
+      },
+      "rxv-seo-ai-007": {
+        "title": "AI 摘要｜技術文件與規格書（速讀重點）",
+        "desc": "針對「技術文件與規格書」：名詞與版本條件不可省略。 本頁說明如何以「速讀重點」使用 RxV AI 摘要，將長內容收斂成可複製的重點。以「速讀重點」輸出時，建議把「技術文件與規格書」的章節或段落先切開，再逐段摘要，較能保留因果關係。"
+      },
+      "rxv-seo-ai-008": {
+        "title": "AI 摘要｜訪談與紀錄稿（速讀重點）",
+        "desc": "針對「訪談與紀錄稿」：需區分受訪者觀點與編輯旁白。 本頁說明如何以「速讀重點」使用 RxV AI 摘要，將長內容收斂成可複製的重點。以「速讀重點」輸出時，建議把「訪談與紀錄稿」的章節或段落先切開，再逐段摘要，較能保留因果關係。"
+      },
+      "rxv-seo-ai-009": {
+        "title": "AI 摘要｜合約與條款初稿（速讀重點）",
+        "desc": "針對「合約與條款初稿」：僅作閱讀輔助，實務仍須人工與專業審閱。 本頁說明如何以「速讀重點」使用 RxV AI 摘要，將長內容收斂成可複製的重點。以「速讀重點」輸出時，建議把「合約與條款初稿」的章節或段落先切開，再逐段摘要，較能保留因果關係。"
+      },
+      "rxv-seo-ai-010": {
+        "title": "AI 摘要｜多語混合素材（速讀重點）",
+        "desc": "針對「多語混合素材」：摘要前可先標示語言段落。 本頁說明如何以「速讀重點」使用 RxV AI 摘要，將長內容收斂成可複製的重點。以「速讀重點」輸出時，建議把「多語混合素材」的章節或段落先切開，再逐段摘要，較能保留因果關係。"
+      },
+      "rxv-seo-ai-011": {
+        "title": "AI 摘要｜部落格合集匯出（速讀重點）",
+        "desc": "針對「部落格合集匯出」：多篇合併時需避免標題層級混淆。 本頁說明如何以「速讀重點」使用 RxV AI 摘要，將長內容收斂成可複製的重點。以「速讀重點」輸出時，建議把「部落格合集匯出」的章節或段落先切開，再逐段摘要，較能保留因果關係。"
+      },
+      "rxv-seo-ai-012": {
+        "title": "AI 摘要｜網路長文與專欄（條列式決議）",
+        "desc": "針對「網路長文與專欄」：段落多、小標碎，需抓論點與證據。 本頁說明如何以「條列式決議」使用 RxV AI 摘要，將長內容收斂成可複製的重點。若你選擇「條列式決議」，可把「網路長文與專欄」的重點映射到待辦或決議，但仍保留出處段落方便回溯。"
+      },
+      "rxv-seo-ai-013": {
+        "title": "AI 摘要｜PDF 論文與報告（條列式決議）",
+        "desc": "針對「PDF 論文與報告」：結構固定，需注意引用與圖表說明是否被誤讀。 本頁說明如何以「條列式決議」使用 RxV AI 摘要，將長內容收斂成可複製的重點。若你選擇「條列式決議」，可把「PDF 論文與報告」的重點映射到待辦或決議，但仍保留出處段落方便回溯。"
+      },
+      "rxv-seo-ai-014": {
+        "title": "AI 摘要｜企業內部報告（條列式決議）",
+        "desc": "針對「企業內部報告」：背景與建議段落常為閱讀重點。 本頁說明如何以「條列式決議」使用 RxV AI 摘要，將長內容收斂成可複製的重點。若你選擇「條列式決議」，可把「企業內部報告」的重點映射到待辦或決議，但仍保留出處段落方便回溯。"
+      },
+      "rxv-seo-ai-015": {
+        "title": "AI 摘要｜會議逐字稿與備忘（條列式決議）",
+        "desc": "針對「會議逐字稿與備忘」：口語冗餘多，需整理決議與待辦。 本頁說明如何以「條列式決議」使用 RxV AI 摘要，將長內容收斂成可複製的重點。若你選擇「條列式決議」，可把「會議逐字稿與備忘」的重點映射到待辦或決議，但仍保留出處段落方便回溯。"
+      },
+      "rxv-seo-ai-016": {
+        "title": "AI 摘要｜教材與講義長文（條列式決議）",
+        "desc": "針對「教材與講義長文」：定義與例題往往可獨立摘要。 本頁說明如何以「條列式決議」使用 RxV AI 摘要，將長內容收斂成可複製的重點。若你選擇「條列式決議」，可把「教材與講義長文」的重點映射到待辦或決議，但仍保留出處段落方便回溯。"
+      },
+      "rxv-seo-ai-017": {
+        "title": "AI 摘要｜新聞稿與公告（條列式決議）",
+        "desc": "針對「新聞稿與公告」：時間線與引用來源要保留。 本頁說明如何以「條列式決議」使用 RxV AI 摘要，將長內容收斂成可複製的重點。若你選擇「條列式決議」，可把「新聞稿與公告」的重點映射到待辦或決議，但仍保留出處段落方便回溯。"
+      },
+      "rxv-seo-ai-018": {
+        "title": "AI 摘要｜技術文件與規格書（條列式決議）",
+        "desc": "針對「技術文件與規格書」：名詞與版本條件不可省略。 本頁說明如何以「條列式決議」使用 RxV AI 摘要，將長內容收斂成可複製的重點。若你選擇「條列式決議」，可把「技術文件與規格書」的重點映射到待辦或決議，但仍保留出處段落方便回溯。"
+      },
+      "rxv-seo-ai-019": {
+        "title": "AI 摘要｜訪談與紀錄稿（條列式決議）",
+        "desc": "針對「訪談與紀錄稿」：需區分受訪者觀點與編輯旁白。 本頁說明如何以「條列式決議」使用 RxV AI 摘要，將長內容收斂成可複製的重點。若你選擇「條列式決議」，可把「訪談與紀錄稿」的重點映射到待辦或決議，但仍保留出處段落方便回溯。"
+      },
+      "rxv-seo-ai-020": {
+        "title": "AI 摘要｜合約與條款初稿（條列式決議）",
+        "desc": "針對「合約與條款初稿」：僅作閱讀輔助，實務仍須人工與專業審閱。 本頁說明如何以「條列式決議」使用 RxV AI 摘要，將長內容收斂成可複製的重點。若你選擇「條列式決議」，可把「合約與條款初稿」的重點映射到待辦或決議，但仍保留出處段落方便回溯。"
+      },
+      "rxv-seo-ai-021": {
+        "title": "AI 摘要｜多語混合素材（條列式決議）",
+        "desc": "針對「多語混合素材」：摘要前可先標示語言段落。 本頁說明如何以「條列式決議」使用 RxV AI 摘要，將長內容收斂成可複製的重點。若你選擇「條列式決議」，可把「多語混合素材」的重點映射到待辦或決議，但仍保留出處段落方便回溯。"
+      },
+      "rxv-seo-ai-022": {
+        "title": "AI 摘要｜部落格合集匯出（條列式決議）",
+        "desc": "針對「部落格合集匯出」：多篇合併時需避免標題層級混淆。 本頁說明如何以「條列式決議」使用 RxV AI 摘要，將長內容收斂成可複製的重點。若你選擇「條列式決議」，可把「部落格合集匯出」的重點映射到待辦或決議，但仍保留出處段落方便回溯。"
+      },
+      "rxv-seo-ai-023": {
+        "title": "AI 摘要｜網路長文與專欄（章節大綱）",
+        "desc": "針對「網路長文與專欄」：段落多、小標碎，需抓論點與證據。 本頁說明如何以「章節大綱」使用 RxV AI 摘要，將長內容收斂成可複製的重點。「章節大綱」適合快速建立閱讀地圖；針對「網路長文與專欄」，仍建議標註不確定句並人工複核。"
+      },
+      "rxv-seo-ai-024": {
+        "title": "AI 摘要｜PDF 論文與報告（章節大綱）",
+        "desc": "針對「PDF 論文與報告」：結構固定，需注意引用與圖表說明是否被誤讀。 本頁說明如何以「章節大綱」使用 RxV AI 摘要，將長內容收斂成可複製的重點。「章節大綱」適合快速建立閱讀地圖；針對「PDF 論文與報告」，仍建議標註不確定句並人工複核。"
+      },
+      "rxv-seo-ai-025": {
+        "title": "AI 摘要｜企業內部報告（章節大綱）",
+        "desc": "針對「企業內部報告」：背景與建議段落常為閱讀重點。 本頁說明如何以「章節大綱」使用 RxV AI 摘要，將長內容收斂成可複製的重點。「章節大綱」適合快速建立閱讀地圖；針對「企業內部報告」，仍建議標註不確定句並人工複核。"
+      },
+      "rxv-seo-ai-026": {
+        "title": "AI 摘要｜會議逐字稿與備忘（章節大綱）",
+        "desc": "針對「會議逐字稿與備忘」：口語冗餘多，需整理決議與待辦。 本頁說明如何以「章節大綱」使用 RxV AI 摘要，將長內容收斂成可複製的重點。「章節大綱」適合快速建立閱讀地圖；針對「會議逐字稿與備忘」，仍建議標註不確定句並人工複核。"
+      },
+      "rxv-seo-ai-027": {
+        "title": "AI 摘要｜教材與講義長文（章節大綱）",
+        "desc": "針對「教材與講義長文」：定義與例題往往可獨立摘要。 本頁說明如何以「章節大綱」使用 RxV AI 摘要，將長內容收斂成可複製的重點。「章節大綱」適合快速建立閱讀地圖；針對「教材與講義長文」，仍建議標註不確定句並人工複核。"
+      },
+      "rxv-seo-ai-028": {
+        "title": "AI 摘要｜新聞稿與公告（章節大綱）",
+        "desc": "針對「新聞稿與公告」：時間線與引用來源要保留。 本頁說明如何以「章節大綱」使用 RxV AI 摘要，將長內容收斂成可複製的重點。「章節大綱」適合快速建立閱讀地圖；針對「新聞稿與公告」，仍建議標註不確定句並人工複核。"
+      },
+      "rxv-seo-ai-029": {
+        "title": "AI 摘要｜技術文件與規格書（章節大綱）",
+        "desc": "針對「技術文件與規格書」：名詞與版本條件不可省略。 本頁說明如何以「章節大綱」使用 RxV AI 摘要，將長內容收斂成可複製的重點。「章節大綱」適合快速建立閱讀地圖；針對「技術文件與規格書」，仍建議標註不確定句並人工複核。"
+      },
+      "rxv-seo-ai-030": {
+        "title": "AI 摘要｜訪談與紀錄稿（章節大綱）",
+        "desc": "針對「訪談與紀錄稿」：需區分受訪者觀點與編輯旁白。 本頁說明如何以「章節大綱」使用 RxV AI 摘要，將長內容收斂成可複製的重點。「章節大綱」適合快速建立閱讀地圖；針對「訪談與紀錄稿」，仍建議標註不確定句並人工複核。"
+      },
+      "rxv-seo-ai-031": {
+        "title": "AI 摘要｜合約與條款初稿（章節大綱）",
+        "desc": "針對「合約與條款初稿」：僅作閱讀輔助，實務仍須人工與專業審閱。 本頁說明如何以「章節大綱」使用 RxV AI 摘要，將長內容收斂成可複製的重點。「章節大綱」適合快速建立閱讀地圖；針對「合約與條款初稿」，仍建議標註不確定句並人工複核。"
+      },
+      "rxv-seo-ai-032": {
+        "title": "AI 摘要｜多語混合素材（章節大綱）",
+        "desc": "針對「多語混合素材」：摘要前可先標示語言段落。 本頁說明如何以「章節大綱」使用 RxV AI 摘要，將長內容收斂成可複製的重點。「章節大綱」適合快速建立閱讀地圖；針對「多語混合素材」，仍建議標註不確定句並人工複核。"
+      },
+      "rxv-seo-ai-033": {
+        "title": "AI 摘要｜部落格合集匯出（章節大綱）",
+        "desc": "針對「部落格合集匯出」：多篇合併時需避免標題層級混淆。 本頁說明如何以「章節大綱」使用 RxV AI 摘要，將長內容收斂成可複製的重點。「章節大綱」適合快速建立閱讀地圖；針對「部落格合集匯出」，仍建議標註不確定句並人工複核。"
+      },
+      "rxv-seo-ai-034": {
+        "title": "AI 摘要｜網路長文與專欄（關鍵問答萃取）",
+        "desc": "針對「網路長文與專欄」：段落多、小標碎，需抓論點與證據。 本頁說明如何以「關鍵問答萃取」使用 RxV AI 摘要，將長內容收斂成可複製的重點。完成「關鍵問答萃取」後，請用「網路長文與專欄」的原句核對數字、名詞與否定句，避免誤讀。"
+      },
+      "rxv-seo-ai-035": {
+        "title": "AI 摘要｜PDF 論文與報告（關鍵問答萃取）",
+        "desc": "針對「PDF 論文與報告」：結構固定，需注意引用與圖表說明是否被誤讀。 本頁說明如何以「關鍵問答萃取」使用 RxV AI 摘要，將長內容收斂成可複製的重點。完成「關鍵問答萃取」後，請用「PDF 論文與報告」的原句核對數字、名詞與否定句，避免誤讀。"
+      },
+      "rxv-seo-ai-036": {
+        "title": "AI 摘要｜企業內部報告（關鍵問答萃取）",
+        "desc": "針對「企業內部報告」：背景與建議段落常為閱讀重點。 本頁說明如何以「關鍵問答萃取」使用 RxV AI 摘要，將長內容收斂成可複製的重點。完成「關鍵問答萃取」後，請用「企業內部報告」的原句核對數字、名詞與否定句，避免誤讀。"
+      },
+      "rxv-seo-ai-037": {
+        "title": "AI 摘要｜會議逐字稿與備忘（關鍵問答萃取）",
+        "desc": "針對「會議逐字稿與備忘」：口語冗餘多，需整理決議與待辦。 本頁說明如何以「關鍵問答萃取」使用 RxV AI 摘要，將長內容收斂成可複製的重點。完成「關鍵問答萃取」後，請用「會議逐字稿與備忘」的原句核對數字、名詞與否定句，避免誤讀。"
+      },
+      "rxv-seo-ai-038": {
+        "title": "AI 摘要｜教材與講義長文（關鍵問答萃取）",
+        "desc": "針對「教材與講義長文」：定義與例題往往可獨立摘要。 本頁說明如何以「關鍵問答萃取」使用 RxV AI 摘要，將長內容收斂成可複製的重點。完成「關鍵問答萃取」後，請用「教材與講義長文」的原句核對數字、名詞與否定句，避免誤讀。"
+      },
+      "rxv-seo-ai-039": {
+        "title": "AI 摘要｜新聞稿與公告（關鍵問答萃取）",
+        "desc": "針對「新聞稿與公告」：時間線與引用來源要保留。 本頁說明如何以「關鍵問答萃取」使用 RxV AI 摘要，將長內容收斂成可複製的重點。完成「關鍵問答萃取」後，請用「新聞稿與公告」的原句核對數字、名詞與否定句，避免誤讀。"
+      },
+      "rxv-seo-ai-040": {
+        "title": "AI 摘要｜技術文件與規格書（關鍵問答萃取）",
+        "desc": "針對「技術文件與規格書」：名詞與版本條件不可省略。 本頁說明如何以「關鍵問答萃取」使用 RxV AI 摘要，將長內容收斂成可複製的重點。完成「關鍵問答萃取」後，請用「技術文件與規格書」的原句核對數字、名詞與否定句，避免誤讀。"
+      },
+      "rxv-seo-ai-041": {
+        "title": "AI 摘要｜訪談與紀錄稿（關鍵問答萃取）",
+        "desc": "針對「訪談與紀錄稿」：需區分受訪者觀點與編輯旁白。 本頁說明如何以「關鍵問答萃取」使用 RxV AI 摘要，將長內容收斂成可複製的重點。完成「關鍵問答萃取」後，請用「訪談與紀錄稿」的原句核對數字、名詞與否定句，避免誤讀。"
+      },
+      "rxv-seo-ai-042": {
+        "title": "AI 摘要｜合約與條款初稿（關鍵問答萃取）",
+        "desc": "針對「合約與條款初稿」：僅作閱讀輔助，實務仍須人工與專業審閱。 本頁說明如何以「關鍵問答萃取」使用 RxV AI 摘要，將長內容收斂成可複製的重點。完成「關鍵問答萃取」後，請用「合約與條款初稿」的原句核對數字、名詞與否定句，避免誤讀。"
+      },
+      "rxv-seo-ai-043": {
+        "title": "AI 摘要｜多語混合素材（關鍵問答萃取）",
+        "desc": "針對「多語混合素材」：摘要前可先標示語言段落。 本頁說明如何以「關鍵問答萃取」使用 RxV AI 摘要，將長內容收斂成可複製的重點。完成「關鍵問答萃取」後，請用「多語混合素材」的原句核對數字、名詞與否定句，避免誤讀。"
+      },
+      "rxv-seo-ai-044": {
+        "title": "AI 摘要｜部落格合集匯出（關鍵問答萃取）",
+        "desc": "針對「部落格合集匯出」：多篇合併時需避免標題層級混淆。 本頁說明如何以「關鍵問答萃取」使用 RxV AI 摘要，將長內容收斂成可複製的重點。完成「關鍵問答萃取」後，請用「部落格合集匯出」的原句核對數字、名詞與否定句，避免誤讀。"
+      },
+      "rxv-seo-pm-001": {
+        "title": "番茄鐘｜學生備考與寫作（25／5 經典節奏）",
+        "desc": "此頁從「學生備考與寫作」出發：科目輪替與考古題段落，適合短衝刺。 說明如何搭配「25／5 經典節奏」安排專注與休息。接著可用「25／5 經典節奏」把「學生備考與寫作」的一天切成可執行段落，並在 RxV 線上番茄鐘直接開始計時。"
+      },
+      "rxv-seo-pm-002": {
+        "title": "番茄鐘｜上班族專案與會議空檔（25／5 經典節奏）",
+        "desc": "此頁從「上班族專案與會議空檔」出發：會議前後的碎片專注，需防打斷。 說明如何搭配「25／5 經典節奏」安排專注與休息。接著可用「25／5 經典節奏」把「上班族專案與會議空檔」的一天切成可執行段落，並在 RxV 線上番茄鐘直接開始計時。"
+      },
+      "rxv-seo-pm-003": {
+        "title": "番茄鐘｜深度工作與創作（25／5 經典節奏）",
+        "desc": "此頁從「深度工作與創作」出發：長時段心流，休息間隔可略拉長。 說明如何搭配「25／5 經典節奏」安排專注與休息。接著可用「25／5 經典節奏」把「深度工作與創作」的一天切成可執行段落，並在 RxV 線上番茄鐘直接開始計時。"
+      },
+      "rxv-seo-pm-004": {
+        "title": "番茄鐘｜遠距與家務間切換（25／5 經典節奏）",
+        "desc": "此頁從「遠距與家務間切換」出發：專注區與家務區界線清楚時較易維持節奏。 說明如何搭配「25／5 經典節奏」安排專注與休息。接著可用「25／5 經典節奏」把「遠距與家務間切換」的一天切成可執行段落，並在 RxV 線上番茄鐘直接開始計時。"
+      },
+      "rxv-seo-pm-005": {
+        "title": "番茄鐘｜自由工作者接案（25／5 經典節奏）",
+        "desc": "此頁從「自由工作者接案」出發：計費與交付節點要搭配計時紀律。 說明如何搭配「25／5 經典節奏」安排專注與休息。接著可用「25／5 經典節奏」把「自由工作者接案」的一天切成可執行段落，並在 RxV 線上番茄鐘直接開始計時。"
+      },
+      "rxv-seo-pm-006": {
+        "title": "番茄鐘｜程式與寫作長任務（25／5 經典節奏）",
+        "desc": "此頁從「程式與寫作長任務」出發：避免長時間低頭，休息可做伸展。 說明如何搭配「25／5 經典節奏」安排專注與休息。接著可用「25／5 經典節奏」把「程式與寫作長任務」的一天切成可執行段落，並在 RxV 線上番茄鐘直接開始計時。"
+      },
+      "rxv-seo-pm-007": {
+        "title": "番茄鐘｜親子與照護者偷時間（25／5 經典節奏）",
+        "desc": "此頁從「親子與照護者偷時間」出發：短番茄串聯，目標要切更小。 說明如何搭配「25／5 經典節奏」安排專注與休息。接著可用「25／5 經典節奏」把「親子與照護者偷時間」的一天切成可執行段落，並在 RxV 線上番茄鐘直接開始計時。"
+      },
+      "rxv-seo-pm-008": {
+        "title": "番茄鐘｜通勤與行動學習（25／5 經典節奏）",
+        "desc": "此頁從「通勤與行動學習」出發：音訊與閱讀交替，番茄長度可縮短。 說明如何搭配「25／5 經典節奏」安排專注與休息。接著可用「25／5 經典節奏」把「通勤與行動學習」的一天切成可執行段落，並在 RxV 線上番茄鐘直接開始計時。"
+      },
+      "rxv-seo-pm-009": {
+        "title": "番茄鐘｜團隊協作衝刺（25／5 經典節奏）",
+        "desc": "此頁從「團隊協作衝刺」出發：對齊衝刺長度，方便 stand-up 對照。 說明如何搭配「25／5 經典節奏」安排專注與休息。接著可用「25／5 經典節奏」把「團隊協作衝刺」的一天切成可執行段落，並在 RxV 線上番茄鐘直接開始計時。"
+      },
+      "rxv-seo-pm-010": {
+        "title": "番茄鐘｜運動與復健計畫並行（25／5 經典節奏）",
+        "desc": "此頁從「運動與復健計畫並行」出發：體力與專注並非無限，休息要真的離開螢幕。 說明如何搭配「25／5 經典節奏」安排專注與休息。接著可用「25／5 經典節奏」把「運動與復健計畫並行」的一天切成可執行段落，並在 RxV 線上番茄鐘直接開始計時。"
+      },
+      "rxv-seo-pm-011": {
+        "title": "番茄鐘｜新手建立專注習慣（25／5 經典節奏）",
+        "desc": "此頁從「新手建立專注習慣」出發：從較短番茄開始，逐步延長。 說明如何搭配「25／5 經典節奏」安排專注與休息。接著可用「25／5 經典節奏」把「新手建立專注習慣」的一天切成可執行段落，並在 RxV 線上番茄鐘直接開始計時。"
+      },
+      "rxv-seo-pm-012": {
+        "title": "番茄鐘｜學生備考與寫作（52／17 長衝刺）",
+        "desc": "此頁從「學生備考與寫作」出發：科目輪替與考古題段落，適合短衝刺。 說明如何搭配「52／17 長衝刺」安排專注與休息。若你屬於「學生備考與寫作」，可把「52／17 長衝刺」當成對外承諾的節拍，降低拖延與過度疲勞。"
+      },
+      "rxv-seo-pm-013": {
+        "title": "番茄鐘｜上班族專案與會議空檔（52／17 長衝刺）",
+        "desc": "此頁從「上班族專案與會議空檔」出發：會議前後的碎片專注，需防打斷。 說明如何搭配「52／17 長衝刺」安排專注與休息。若你屬於「上班族專案與會議空檔」，可把「52／17 長衝刺」當成對外承諾的節拍，降低拖延與過度疲勞。"
+      },
+      "rxv-seo-pm-014": {
+        "title": "番茄鐘｜深度工作與創作（52／17 長衝刺）",
+        "desc": "此頁從「深度工作與創作」出發：長時段心流，休息間隔可略拉長。 說明如何搭配「52／17 長衝刺」安排專注與休息。若你屬於「深度工作與創作」，可把「52／17 長衝刺」當成對外承諾的節拍，降低拖延與過度疲勞。"
+      },
+      "rxv-seo-pm-015": {
+        "title": "番茄鐘｜遠距與家務間切換（52／17 長衝刺）",
+        "desc": "此頁從「遠距與家務間切換」出發：專注區與家務區界線清楚時較易維持節奏。 說明如何搭配「52／17 長衝刺」安排專注與休息。若你屬於「遠距與家務間切換」，可把「52／17 長衝刺」當成對外承諾的節拍，降低拖延與過度疲勞。"
+      },
+      "rxv-seo-pm-016": {
+        "title": "番茄鐘｜自由工作者接案（52／17 長衝刺）",
+        "desc": "此頁從「自由工作者接案」出發：計費與交付節點要搭配計時紀律。 說明如何搭配「52／17 長衝刺」安排專注與休息。若你屬於「自由工作者接案」，可把「52／17 長衝刺」當成對外承諾的節拍，降低拖延與過度疲勞。"
+      },
+      "rxv-seo-pm-017": {
+        "title": "番茄鐘｜程式與寫作長任務（52／17 長衝刺）",
+        "desc": "此頁從「程式與寫作長任務」出發：避免長時間低頭，休息可做伸展。 說明如何搭配「52／17 長衝刺」安排專注與休息。若你屬於「程式與寫作長任務」，可把「52／17 長衝刺」當成對外承諾的節拍，降低拖延與過度疲勞。"
+      },
+      "rxv-seo-pm-018": {
+        "title": "番茄鐘｜親子與照護者偷時間（52／17 長衝刺）",
+        "desc": "此頁從「親子與照護者偷時間」出發：短番茄串聯，目標要切更小。 說明如何搭配「52／17 長衝刺」安排專注與休息。若你屬於「親子與照護者偷時間」，可把「52／17 長衝刺」當成對外承諾的節拍，降低拖延與過度疲勞。"
+      },
+      "rxv-seo-pm-019": {
+        "title": "番茄鐘｜通勤與行動學習（52／17 長衝刺）",
+        "desc": "此頁從「通勤與行動學習」出發：音訊與閱讀交替，番茄長度可縮短。 說明如何搭配「52／17 長衝刺」安排專注與休息。若你屬於「通勤與行動學習」，可把「52／17 長衝刺」當成對外承諾的節拍，降低拖延與過度疲勞。"
+      },
+      "rxv-seo-pm-020": {
+        "title": "番茄鐘｜團隊協作衝刺（52／17 長衝刺）",
+        "desc": "此頁從「團隊協作衝刺」出發：對齊衝刺長度，方便 stand-up 對照。 說明如何搭配「52／17 長衝刺」安排專注與休息。若你屬於「團隊協作衝刺」，可把「52／17 長衝刺」當成對外承諾的節拍，降低拖延與過度疲勞。"
+      },
+      "rxv-seo-pm-021": {
+        "title": "番茄鐘｜運動與復健計畫並行（52／17 長衝刺）",
+        "desc": "此頁從「運動與復健計畫並行」出發：體力與專注並非無限，休息要真的離開螢幕。 說明如何搭配「52／17 長衝刺」安排專注與休息。若你屬於「運動與復健計畫並行」，可把「52／17 長衝刺」當成對外承諾的節拍，降低拖延與過度疲勞。"
+      },
+      "rxv-seo-pm-022": {
+        "title": "番茄鐘｜新手建立專注習慣（52／17 長衝刺）",
+        "desc": "此頁從「新手建立專注習慣」出發：從較短番茄開始，逐步延長。 說明如何搭配「52／17 長衝刺」安排專注與休息。若你屬於「新手建立專注習慣」，可把「52／17 長衝刺」當成對外承諾的節拍，降低拖延與過度疲勞。"
+      },
+      "rxv-seo-pm-023": {
+        "title": "番茄鐘｜學生備考與寫作（15／5 微番茄）",
+        "desc": "此頁從「學生備考與寫作」出發：科目輪替與考古題段落，適合短衝刺。 說明如何搭配「15／5 微番茄」安排專注與休息。完成「15／5 微番茄」設定後，請把休息也寫進行事曆；對「學生備考與寫作」而言，休息品質常決定下一顆番茄效率。"
+      },
+      "rxv-seo-pm-024": {
+        "title": "番茄鐘｜上班族專案與會議空檔（15／5 微番茄）",
+        "desc": "此頁從「上班族專案與會議空檔」出發：會議前後的碎片專注，需防打斷。 說明如何搭配「15／5 微番茄」安排專注與休息。完成「15／5 微番茄」設定後，請把休息也寫進行事曆；對「上班族專案與會議空檔」而言，休息品質常決定下一顆番茄效率。"
+      },
+      "rxv-seo-pm-025": {
+        "title": "番茄鐘｜深度工作與創作（15／5 微番茄）",
+        "desc": "此頁從「深度工作與創作」出發：長時段心流，休息間隔可略拉長。 說明如何搭配「15／5 微番茄」安排專注與休息。完成「15／5 微番茄」設定後，請把休息也寫進行事曆；對「深度工作與創作」而言，休息品質常決定下一顆番茄效率。"
+      },
+      "rxv-seo-pm-026": {
+        "title": "番茄鐘｜遠距與家務間切換（15／5 微番茄）",
+        "desc": "此頁從「遠距與家務間切換」出發：專注區與家務區界線清楚時較易維持節奏。 說明如何搭配「15／5 微番茄」安排專注與休息。完成「15／5 微番茄」設定後，請把休息也寫進行事曆；對「遠距與家務間切換」而言，休息品質常決定下一顆番茄效率。"
+      },
+      "rxv-seo-pm-027": {
+        "title": "番茄鐘｜自由工作者接案（15／5 微番茄）",
+        "desc": "此頁從「自由工作者接案」出發：計費與交付節點要搭配計時紀律。 說明如何搭配「15／5 微番茄」安排專注與休息。完成「15／5 微番茄」設定後，請把休息也寫進行事曆；對「自由工作者接案」而言，休息品質常決定下一顆番茄效率。"
+      },
+      "rxv-seo-pm-028": {
+        "title": "番茄鐘｜程式與寫作長任務（15／5 微番茄）",
+        "desc": "此頁從「程式與寫作長任務」出發：避免長時間低頭，休息可做伸展。 說明如何搭配「15／5 微番茄」安排專注與休息。完成「15／5 微番茄」設定後，請把休息也寫進行事曆；對「程式與寫作長任務」而言，休息品質常決定下一顆番茄效率。"
+      },
+      "rxv-seo-pm-029": {
+        "title": "番茄鐘｜親子與照護者偷時間（15／5 微番茄）",
+        "desc": "此頁從「親子與照護者偷時間」出發：短番茄串聯，目標要切更小。 說明如何搭配「15／5 微番茄」安排專注與休息。完成「15／5 微番茄」設定後，請把休息也寫進行事曆；對「親子與照護者偷時間」而言，休息品質常決定下一顆番茄效率。"
+      },
+      "rxv-seo-pm-030": {
+        "title": "番茄鐘｜通勤與行動學習（15／5 微番茄）",
+        "desc": "此頁從「通勤與行動學習」出發：音訊與閱讀交替，番茄長度可縮短。 說明如何搭配「15／5 微番茄」安排專注與休息。完成「15／5 微番茄」設定後，請把休息也寫進行事曆；對「通勤與行動學習」而言，休息品質常決定下一顆番茄效率。"
+      },
+      "rxv-seo-pm-031": {
+        "title": "番茄鐘｜團隊協作衝刺（15／5 微番茄）",
+        "desc": "此頁從「團隊協作衝刺」出發：對齊衝刺長度，方便 stand-up 對照。 說明如何搭配「15／5 微番茄」安排專注與休息。完成「15／5 微番茄」設定後，請把休息也寫進行事曆；對「團隊協作衝刺」而言，休息品質常決定下一顆番茄效率。"
+      },
+      "rxv-seo-pm-032": {
+        "title": "番茄鐘｜運動與復健計畫並行（15／5 微番茄）",
+        "desc": "此頁從「運動與復健計畫並行」出發：體力與專注並非無限，休息要真的離開螢幕。 說明如何搭配「15／5 微番茄」安排專注與休息。完成「15／5 微番茄」設定後，請把休息也寫進行事曆；對「運動與復健計畫並行」而言，休息品質常決定下一顆番茄效率。"
+      },
+      "rxv-seo-pm-033": {
+        "title": "番茄鐘｜新手建立專注習慣（15／5 微番茄）",
+        "desc": "此頁從「新手建立專注習慣」出發：從較短番茄開始，逐步延長。 說明如何搭配「15／5 微番茄」安排專注與休息。完成「15／5 微番茄」設定後，請把休息也寫進行事曆；對「新手建立專注習慣」而言，休息品質常決定下一顆番茄效率。"
+      },
+      "rxv-seo-pm-034": {
+        "title": "番茄鐘｜學生備考與寫作（自訂分段與檢核點）",
+        "desc": "此頁從「學生備考與寫作」出發：科目輪替與考古題段落，適合短衝刺。 說明如何搭配「自訂分段與檢核點」安排專注與休息。此頁也提醒：科目輪替與考古題段落，適合短衝刺。 搭配「自訂分段與檢核點」時，請依體力調整長度，不必硬套公式。"
+      },
+      "rxv-seo-pm-035": {
+        "title": "番茄鐘｜上班族專案與會議空檔（自訂分段與檢核點）",
+        "desc": "此頁從「上班族專案與會議空檔」出發：會議前後的碎片專注，需防打斷。 說明如何搭配「自訂分段與檢核點」安排專注與休息。此頁也提醒：會議前後的碎片專注，需防打斷。 搭配「自訂分段與檢核點」時，請依體力調整長度，不必硬套公式。"
+      },
+      "rxv-seo-pm-036": {
+        "title": "番茄鐘｜深度工作與創作（自訂分段與檢核點）",
+        "desc": "此頁從「深度工作與創作」出發：長時段心流，休息間隔可略拉長。 說明如何搭配「自訂分段與檢核點」安排專注與休息。此頁也提醒：長時段心流，休息間隔可略拉長。 搭配「自訂分段與檢核點」時，請依體力調整長度，不必硬套公式。"
+      },
+      "rxv-seo-pm-037": {
+        "title": "番茄鐘｜遠距與家務間切換（自訂分段與檢核點）",
+        "desc": "此頁從「遠距與家務間切換」出發：專注區與家務區界線清楚時較易維持節奏。 說明如何搭配「自訂分段與檢核點」安排專注與休息。此頁也提醒：專注區與家務區界線清楚時較易維持節奏。 搭配「自訂分段與檢核點」時，請依體力調整長度，不必硬套公式。"
+      },
+      "rxv-seo-pm-038": {
+        "title": "番茄鐘｜自由工作者接案（自訂分段與檢核點）",
+        "desc": "此頁從「自由工作者接案」出發：計費與交付節點要搭配計時紀律。 說明如何搭配「自訂分段與檢核點」安排專注與休息。此頁也提醒：計費與交付節點要搭配計時紀律。 搭配「自訂分段與檢核點」時，請依體力調整長度，不必硬套公式。"
+      },
+      "rxv-seo-pm-039": {
+        "title": "番茄鐘｜程式與寫作長任務（自訂分段與檢核點）",
+        "desc": "此頁從「程式與寫作長任務」出發：避免長時間低頭，休息可做伸展。 說明如何搭配「自訂分段與檢核點」安排專注與休息。此頁也提醒：避免長時間低頭，休息可做伸展。 搭配「自訂分段與檢核點」時，請依體力調整長度，不必硬套公式。"
+      },
+      "rxv-seo-pm-040": {
+        "title": "番茄鐘｜親子與照護者偷時間（自訂分段與檢核點）",
+        "desc": "此頁從「親子與照護者偷時間」出發：短番茄串聯，目標要切更小。 說明如何搭配「自訂分段與檢核點」安排專注與休息。此頁也提醒：短番茄串聯，目標要切更小。 搭配「自訂分段與檢核點」時，請依體力調整長度，不必硬套公式。"
+      },
+      "rxv-seo-pm-041": {
+        "title": "番茄鐘｜通勤與行動學習（自訂分段與檢核點）",
+        "desc": "此頁從「通勤與行動學習」出發：音訊與閱讀交替，番茄長度可縮短。 說明如何搭配「自訂分段與檢核點」安排專注與休息。此頁也提醒：音訊與閱讀交替，番茄長度可縮短。 搭配「自訂分段與檢核點」時，請依體力調整長度，不必硬套公式。"
+      },
+      "rxv-seo-pm-042": {
+        "title": "番茄鐘｜團隊協作衝刺（自訂分段與檢核點）",
+        "desc": "此頁從「團隊協作衝刺」出發：對齊衝刺長度，方便 stand-up 對照。 說明如何搭配「自訂分段與檢核點」安排專注與休息。此頁也提醒：對齊衝刺長度，方便 stand-up 對照。 搭配「自訂分段與檢核點」時，請依體力調整長度，不必硬套公式。"
+      },
+      "rxv-seo-pm-043": {
+        "title": "番茄鐘｜運動與復健計畫並行（自訂分段與檢核點）",
+        "desc": "此頁從「運動與復健計畫並行」出發：體力與專注並非無限，休息要真的離開螢幕。 說明如何搭配「自訂分段與檢核點」安排專注與休息。此頁也提醒：體力與專注並非無限，休息要真的離開螢幕。 搭配「自訂分段與檢核點」時，請依體力調整長度，不必硬套公式。"
+      },
+      "rxv-seo-pm-044": {
+        "title": "番茄鐘｜新手建立專注習慣（自訂分段與檢核點）",
+        "desc": "此頁從「新手建立專注習慣」出發：從較短番茄開始，逐步延長。 說明如何搭配「自訂分段與檢核點」安排專注與休息。此頁也提醒：從較短番茄開始，逐步延長。 搭配「自訂分段與檢核點」時，請依體力調整長度，不必硬套公式。"
+      },
+      "convert-png-to-jpg": {
+        "title": "PNG 轉 JPG 線上工具｜透明背景轉白底",
+        "desc": "將 PNG 轉成 JPG 以符合僅收 JPEG 的上傳或信箱限制。RxV 在瀏覽器以 canvas 輸出，透明區域會以白底填滿；若需保留透明請維持 PNG 或改 WebP。"
+      },
+      "convert-jpg-to-png": {
+        "title": "JPG 轉 PNG 線上｜去背前備援格式",
+        "desc": "需要無損編輯或後續去背時，可先將 JPG 轉為 PNG 再進後製。本工具在瀏覽器內解碼與輸出，不經伺服器；檔案可能變大，建議完成後再視需求壓縮。"
+      },
+      "convert-png-to-webp": {
+        "title": "PNG 轉 WebP｜網站圖檔縮體積",
+        "desc": "WebP 常能在保留可接受畫質下縮小體積。若 PNG 含透明，轉 WebP 可保留 Alpha；完成後可再接圖片壓縮或尺寸調整以符合版位。"
+      },
+      "convert-webp-to-png": {
+        "title": "WebP 轉 PNG｜相容性與編輯需求",
+        "desc": "部分軟體或表單仍偏好 PNG。將 WebP 轉成 PNG 可在瀏覽器完成，適合需要貼到只支援 PNG 的流程；若原檔有透明，輸出會盡量保留。"
+      },
+      "convert-jpg-to-webp": {
+        "title": "JPG 轉 WebP｜加速網頁載入",
+        "desc": "部落格與官網常希望圖檔更小。將 JPG 轉 WebP 可再降低體積；請在轉檔後於實機檢查畫質，並確認目標瀏覽器支援 WebP。"
+      },
+      "convert-webp-to-jpg": {
+        "title": "WebP 轉 JPG｜通用分享與上傳",
+        "desc": "需要寄 Email、上傳僅收 JPG 的表單時，可把 WebP 轉成 JPG。透明區域會以白底處理；若需保留透明請改輸出 PNG。"
+      },
+      "png-to-jpg-online": {
+        "title": "PNG 轉 JPG 線上｜免安裝",
+        "desc": "免下載軟體即可在瀏覽器將 PNG 轉 JPG。適合臨時交件、公共電腦或不想安裝編輯器的情境；處理完請直接下載並關閉分頁以釋放記憶體。"
+      },
+      "jpg-to-png-online": {
+        "title": "JPG 轉 PNG 線上｜快速產出可編輯圖檔",
+        "desc": "線上將 JPG 轉 PNG，方便後續合成或去背流程。注意 PNG 通常比同尺寸的 JPG 大，建議只在真的需要無損或透明時轉檔。"
+      },
+      "png-to-webp-online": {
+        "title": "PNG 轉 WebP 線上｜網站與部落格",
+        "desc": "把大型 PNG 轉成 WebP 可改善載入速度。若素材含細線文字，轉檔後請放大檢查邊緣；重要版面可再手動調品質參數。"
+      },
+      "webp-to-png-online": {
+        "title": "WebP 轉 PNG 線上｜簡報與文書嵌入",
+        "desc": "簡報或文書軟體若不吃 WebP，可先轉 PNG 再插入。轉檔在裝置本機瀏覽器完成，檔案不離開你的裝置（依瀏覽器行為為準）。"
+      },
+      "convert-image-to-webp": {
+        "title": "圖片轉 WebP｜多格式輸入",
+        "desc": "從 PNG、JPG 等常見格式轉成 WebP，方便統一網站素材。建議建立命名規則（例如同一主視覺多格式）避免混用舊檔。"
+      },
+      "convert-image-to-png": {
+        "title": "圖片轉 PNG｜保留細節與透明",
+        "desc": "需要 PNG 作為中間格式時，可在瀏覽器將 JPG／WebP 等轉出。PNG 不適合追求極小體積，若目標是檔案大小請優先評估 WebP 或 JPG。"
+      },
+      "convert-image-to-jpg": {
+        "title": "圖片轉 JPG｜相容與檔案大小",
+        "desc": "JPG 適合相片與不需要透明的素材。將其他格式轉 JPG 時請留意透明區域會變白底；若需保留透明請勿選 JPG。"
+      },
+      "webp-to-jpg-online": {
+        "title": "WebP 轉 JPG 線上｜社群與舊系統",
+        "desc": "部分社群舊版或內部系統仍只收 JPG。線上把 WebP 轉 JPG 可快速交件；若出現色偏，請確認螢幕與色彩描述（多為 sRGB）。"
+      },
+      "jpg-to-webp-online": {
+        "title": "JPG 轉 WebP 線上｜縮短載入時間",
+        "desc": "在相同觀感下，WebP 常比 JPG 更小。轉檔後請在實際頁面環境檢視，並保留原 JPG 備份以便回溯。"
+      },
+      "png-to-jpg-without-quality-loss": {
+        "title": "PNG 轉 JPG 與「畫質」說明",
+        "desc": "JPG 為有損壓縮，嚴格上無法與 PNG 無損完全等價。實務上可透過較高品質係數減少視覺差異；若不能有任何損失請勿轉 JPG。"
+      },
+      "convert-photo-to-webp": {
+        "title": "相片轉 WebP｜相簿與網站展示",
+        "desc": "手機相片多為 JPG／HEIC，若網站要統一成 WebP，可在瀏覽器轉出。注意高解析度相片轉檔較耗記憶體，建議分批處理。"
+      },
+      "convert-webp-for-website": {
+        "title": "網站用 WebP 轉檔｜與備援圖搭配",
+        "desc": "前端常需 WebP 搭配 JPG/PNG 備援。此頁說明格式轉換在素材準備的角色；實際 HTML picture 語法請依專案架構設定。"
+      },
+      "convert-image-format-online": {
+        "title": "線上圖片格式轉換｜PNG／JPG／WebP",
+        "desc": "在瀏覽器完成常見點陣格式互轉，無需安裝軟體。建議先確認目標平台接受的格式與單檔上限，再選擇輸出與後續壓縮流程。"
+      },
+      "image-format-converter": {
+        "title": "圖片格式轉換器｜瀏覽器即轉即下載",
+        "desc": "使用 canvas 將像素資料寫成指定 MIME 類型並下載。適合一次性轉檔與小批量；大量檔案建議分批避免分頁卡頓。"
+      },
+      "crop-image-online": {
+        "title": "Crop image online | aspect presets & download",
+        "desc": "Upload an image, adjust the crop with 1:1, 4:5, 16:9, 9:16, or freeform, preview, then download PNG or JPG in the browser."
+      },
+      "crop-photo-online": {
+        "title": "Crop photos online | portraits & social ratios",
+        "desc": "Crop photos to common social and platform ratios, preview the result, and download—ideal for profile shots, products, and travel photos."
+      }
+    }
+  }
 }
-
-

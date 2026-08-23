@@ -19,32 +19,24 @@ const WishMenu: React.FC = () => {
       id: 'create-chant-wish',
       title: t('i_want_to_create_chant_wish'),
       description: t('create_chant_wish_description'),
-      gradient: 'from-purple-500 to-pink-500',
-      hoverGradient: 'from-purple-600 to-pink-600',
       onClick: () => navigate('/chant-wish-create')
     },
     {
       id: 'view-chant-wall',
       title: t('view_chant_wall'),
       description: t('view_chant_wall_description'),
-      gradient: 'from-blue-500 to-cyan-500',
-      hoverGradient: 'from-blue-600 to-cyan-600',
       onClick: () => navigate('/chant-wish-wall')
     },
     {
       id: 'view-stats',
       title: t('view_statistics'),
       description: t('view_statistics_description'),
-      gradient: 'from-indigo-500 to-purple-500',
-      hoverGradient: 'from-indigo-600 to-purple-600',
       onClick: () => navigate('/chant-stats')
     },
     {
       id: 'view-ranking',
       title: t('view_ranking'),
       description: t('view_ranking_description'),
-      gradient: 'from-emerald-500 to-teal-500',
-      hoverGradient: 'from-emerald-600 to-teal-600',
       onClick: () => navigate('/chant-ranking')
     }
   ];
@@ -61,9 +53,8 @@ const WishMenu: React.FC = () => {
               key={item.id}
               onClick={item.onClick}
               className={`
-                w-full sm:w-auto bg-gradient-to-r ${item.gradient} hover:${item.hoverGradient}
-                text-white font-bold py-3 sm:py-4 px-3 sm:px-4 rounded-xl
-                transition-all duration-200 transform hover:scale-105
+                w-full sm:w-auto bg-blue-600 text-white font-bold py-3 sm:py-4 px-3 sm:px-4 rounded-lg
+                hover:bg-blue-700 transition transform hover:scale-105
                 shadow-md hover:shadow-lg
                 flex flex-col items-center justify-center
                 min-h-[70px] sm:min-h-[80px] space-y-1

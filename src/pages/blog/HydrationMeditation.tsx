@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function HydrationMeditation() {
   return (
@@ -22,6 +23,9 @@ export default function HydrationMeditation() {
           也讓心靈回歸平靜與當下。
         </p>
 
+        <ArticleCTA placement="start" focus="tools" />
+
+
         <h2 className="text-2xl font-semibold mt-8 mb-3">🪷 五感覺察練習</h2>
         <ol className="list-decimal ml-6 space-y-2 mb-4">
           <li>
@@ -41,11 +45,15 @@ export default function HydrationMeditation() {
           </li>
         </ol>
 
+        <ArticleCTA placement="middle" focus="tools" />
+
         <h2 className="text-2xl font-semibold mt-8 mb-3">💧 每次喝水，都是一次重啟</h2>
         <p className="mb-4">
           當你用覺察的方式喝水，身體獲得補充，心靈也被清洗。
           這是一個簡單卻強大的習慣，提醒自己：你在照顧的不只是身體，還有當下的自己。
         </p>
+
+        <ArticleCTA placement="bottom" focus="tools" />
 
         <hr className="my-8 border-gray-300" />
 
@@ -80,6 +88,8 @@ export default function HydrationMeditation() {
           Each mindful sip is a reset for your body and soul.
           You're not just hydrating your body—you're nurturing your awareness of the present moment.
         </p>
+
+        <ArticleCTA placement="afterFaq" focus="tools" />
 
         <p className="mt-8 text-gray-500 text-center text-sm">
           文章由 RxV 夢想創作工作室撰寫 · 保留所有權利

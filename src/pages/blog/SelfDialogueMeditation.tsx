@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function SelfDialogueMeditation() {
   return (
@@ -22,6 +23,9 @@ export default function SelfDialogueMeditation() {
           並以溫柔的方式與自己重新連結。
         </p>
 
+        <ArticleCTA placement="start" focus="tools" />
+
+
         <h2 className="text-2xl font-semibold mt-8 mb-3">💬 三步驟內在對話練習</h2>
         <ol className="list-decimal ml-6 space-y-2 mb-4">
           <li>
@@ -42,12 +46,16 @@ export default function SelfDialogueMeditation() {
           你會發現，這份溫柔的力量會慢慢長出來。
         </p>
 
+        <ArticleCTA placement="middle" focus="tools" />
+
         <h2 className="text-2xl font-semibold mt-8 mb-3">🌿 結語：與自己成為朋友</h2>
         <p className="mb-4">
           當你願意靜下來傾聽內在的聲音，
           你會發現焦慮漸漸淡去，取而代之的是理解與平靜。
           每一次自我對話，都是自我療癒的開始。
         </p>
+
+        <ArticleCTA placement="bottom" focus="tools" />
 
         <hr className="my-8 border-gray-300" />
 
@@ -84,6 +92,8 @@ export default function SelfDialogueMeditation() {
           When you listen to your inner voice, anxiety fades away—replaced by understanding and peace.
           Every self-dialogue is the first step toward healing.
         </p>
+
+        <ArticleCTA placement="afterFaq" focus="tools" />
 
         <p className="mt-8 text-gray-500 text-center text-sm">
           文章由 RxV 夢想創作工作室撰寫 · 保留所有權利

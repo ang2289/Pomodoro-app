@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function BreathPrayer() {
   return (
@@ -21,6 +22,9 @@ export default function BreathPrayer() {
           吸氣時，我們接納世界；吐氣時，我們釋放煩惱。
           每一個有意識的呼吸，都是對宇宙的回應與感謝。
         </p>
+
+        <ArticleCTA placement="start" focus="tools" />
+
 
         <h2 className="text-2xl font-semibold mt-8 mb-3">🕊️ 三步祈願呼吸法</h2>
         <ol className="list-decimal ml-6 space-y-3 mb-4">
@@ -55,11 +59,15 @@ export default function BreathPrayer() {
           這樣的微小舉動，會讓世界多一份柔軟。
         </p>
 
+        <ArticleCTA placement="middle" focus="tools" />
+
         <h2 className="text-2xl font-semibold mt-8 mb-3">✨ 結語：一呼一吸，皆是修行</h2>
         <p className="mb-4">
           呼吸不是單純的生理動作，而是一種心的禮物。
           當你用呼吸連結願望，世界也會以祝福回應你。
         </p>
+
+        <ArticleCTA placement="bottom" focus="tools" />
 
         <hr className="my-8 border-gray-300" />
 
@@ -109,6 +117,8 @@ export default function BreathPrayer() {
           Breathing is more than biology—it's a spiritual gift.
           When you align your breath with your wishes, the universe breathes blessings back.
         </p>
+
+        <ArticleCTA placement="afterFaq" focus="tools" />
 
         <p className="mt-8 text-gray-500 text-center text-sm">
           所有文章由 RxV 夢想創作工作室撰寫 · 保留所有權利

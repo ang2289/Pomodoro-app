@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import SEO from "../../components/SEO";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function HSRBookingSystemExplainedPage() {
   // 獲取今天的日期（格式：YYYY-MM-DD）
@@ -43,6 +44,9 @@ export default function HSRBookingSystemExplainedPage() {
               很多人都有搶高鐵票的經驗，一開賣就秒殺，為什麼會這樣？高鐵的售票制度是怎麼設計的？其實這背後有一套複雜的系統，不只是「先來先得」這麼簡單。
             </p>
 
+            <ArticleCTA placement="start" focus="summary" />
+
+
             <h2 className="text-2xl font-semibold mt-8 mb-4">為什麼一開賣就容易滿？</h2>
             <p className="mb-4">
               高鐵票一開賣就秒殺的主要原因有幾個：
@@ -56,6 +60,8 @@ export default function HSRBookingSystemExplainedPage() {
             <p className="mb-4">
               所以即使高鐵系統運作正常，在需求量遠超過供給量的情況下，一開賣就秒殺是很正常的現象。
             </p>
+
+            <ArticleCTA placement="middle" focus="summary" />
 
             <h2 className="text-2xl font-semibold mt-8 mb-4">系統怎麼分配座位？</h2>
             <p className="mb-4">
@@ -106,6 +112,8 @@ export default function HSRBookingSystemExplainedPage() {
             </div>
           </div>
 
+          <ArticleCTA placement="afterFaq" focus="summary" />
+
           {/* 相關文章區塊 */}
           <div className="mt-12 pt-8 border-t border-gray-200">
             <h3 className="text-2xl font-bold text-gray-900 mb-2">
@@ -141,8 +149,6 @@ export default function HSRBookingSystemExplainedPage() {
               </Link>
             </div>
           </div>
-
-          {/* 導流區塊：摘要模組 */}
           <div className="mt-12 pt-8 border-t border-gray-200">
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 text-center">
               <h3 className="text-xl font-bold text-gray-900 mb-2">
@@ -153,7 +159,7 @@ export default function HSRBookingSystemExplainedPage() {
               </p>
               <Link
                 to="/summary"
-                className="inline-block px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg drop-shadow-md"
+                className="inline-block bg-blue-600 text-white px-5 py-3 rounded-lg text-base font-medium hover:bg-blue-700 transition"
                 style={{ textShadow: '0 1px 2px rgba(0,0,0,0.1)' }}
               >
                 貼上文章，幫我整理
@@ -217,6 +223,7 @@ export default function HSRBookingSystemExplainedPage() {
               </li>
             </ul>
           </div>
+          <ArticleCTA placement="bottom" focus="summary" />
 
           <div className="mt-8 pt-6 border-t border-gray-200">
             <Link

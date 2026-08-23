@@ -94,7 +94,7 @@ export default function TodoList({ todos, onDelete, onToggleComplete, onEdit, fo
           <div className="mt-4 flex gap-2 justify-end">
             <button
               onClick={() => onEdit?.(todo.id)}
-              className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-sm transition-colors duration-200"
+              className="bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700 text-sm transition-colors duration-200"
             >
               ✏️ 編輯
             </button>

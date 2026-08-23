@@ -1,0 +1,11 @@
+請確認 D:\Pomodoro-app\index.html 的 <head> 內至少有以下設定（若已存在可不用重複）：
+
+<link rel="manifest" href="/manifest.json" />
+<meta name="theme-color" content="#f87171" />
+<link rel="apple-touch-icon" href="/icons/icon-180.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="RxV Tools" />
+
+本壓縮檔已包含 public/manifest.json、public/sw.js、public/icons/*、src/components/PWAInstallPrompt.tsx、src/layouts/MainLayout.tsx。
+覆蓋後執行 npm run build 測試即可。

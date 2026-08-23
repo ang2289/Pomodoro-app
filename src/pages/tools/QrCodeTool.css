@@ -1,0 +1,461 @@
+/* QR Code 工具：預覽僅縮放顯示，不改 canvas 生成尺寸（qrSize 仍為 128～1024） */
+/* 合成圖預覽：800×900 等比例縮放；桌機主預覽約 380～420px 寬 */
+.qr-composite-preview {
+  max-width: 100%;
+  height: auto;
+  image-rendering: auto;
+}
+
+.qr-tool-main {
+  align-items: start;
+}
+
+/* 主預覽區：確保合成 canvas 在窄螢幕仍不過小 */
+@media (min-width: 1024px) {
+  .qr-preview-panel__hero .qr-composite-preview {
+    min-width: 380px;
+  }
+}
+
+
+/* ===== SaaS UI v2 ===== */
+.qr-saas-page {
+  background:
+    radial-gradient(1200px 480px at 0% -10%, rgba(59,130,246,.10), transparent 60%),
+    radial-gradient(900px 420px at 100% 0%, rgba(168,85,247,.08), transparent 55%),
+    #f5f5f7;
+}
+
+.qr-saas-shell {
+  position: relative;
+}
+
+.qr-tool-hero--v2 {
+  position: relative;
+  padding: 1.25rem 1.25rem 0;
+}
+
+.qr-tool-hero--v2::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 28px;
+  background: linear-gradient(180deg, rgba(255,255,255,.85), rgba(255,255,255,.55));
+  border: 1px solid rgba(255,255,255,.65);
+  box-shadow: 0 12px 50px rgba(15,23,42,.06);
+  z-index: -1;
+}
+
+.qr-tool-main--v2 {
+  align-items: start;
+}
+
+.qr-tool-sidebar,
+.qr-tool-preview-col {
+  min-width: 0;
+}
+
+.qr-tool-sidebar > *,
+.qr-tool-preview-col > * {
+  border-radius: 28px;
+}
+
+.qr-tool-sidebar > * {
+  border: 1px solid rgba(226,232,240,.9);
+  background: rgba(255,255,255,.88);
+  box-shadow: 0 16px 50px rgba(15,23,42,.07);
+  backdrop-filter: blur(10px);
+}
+
+.qr-tool-preview-col > * {
+  border: 1px solid rgba(226,232,240,.95);
+  background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(248,250,252,.96));
+  box-shadow: 0 18px 60px rgba(15,23,42,.08);
+  backdrop-filter: blur(10px);
+}
+
+/* 預覽僅縮放顯示，不改 canvas 生成尺寸 */
+.qr-composite-preview {
+  display: block;
+  width: min(100%, 720px);
+  max-width: 100%;
+  height: auto;
+  margin-inline: auto;
+  border-radius: 26px;
+  box-shadow: 0 18px 48px rgba(15,23,42,.12);
+  background: #fff;
+  image-rendering: auto;
+}
+
+/* 主預覽區：確保合成 canvas 在桌機夠大 */
+@media (min-width: 1024px) {
+  .qr-preview-panel__hero .qr-composite-preview {
+    min-width: 420px;
+  }
+}
+
+/* 常見預覽容器 */
+.qr-preview-panel__hero,
+.qr-preview-panel,
+[class*="qr-preview-panel"] {
+  width: 100%;
+}
+
+.qr-preview-panel__hero {
+  position: relative;
+}
+
+/* 預覽標題、副標與卡片區更有層級 */
+.qr-tool-preview-col h2,
+.qr-tool-preview-col h3 {
+  letter-spacing: -0.02em;
+}
+
+/* 分享與下載按鈕區 */
+.qr-tool-preview-col .share-buttons,
+.qr-tool-preview-col [class*="share-buttons"],
+.qr-tool-preview-col [class*="shareActions"],
+.qr-tool-preview-col [class*="preview-actions"] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.qr-tool-preview-col .share-button,
+.qr-tool-preview-col [class*="share-button"],
+.qr-tool-preview-col [class*="shareButton"],
+.qr-tool-preview-col [class*="preview-action"] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+  min-width: 76px;
+  min-height: 42px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.qr-tool-preview-col button span,
+.qr-tool-preview-col a span {
+  white-space: nowrap;
+}
+
+/* 下載按鈕更像主 CTA */
+.qr-tool-preview-col [class*="download"] button,
+.qr-tool-preview-col [class*="download"] a,
+.qr-tool-preview-col .download-button {
+  min-height: 48px;
+  border-radius: 16px;
+  font-weight: 700;
+}
+
+/* 常見輸入控制質感 */
+.qr-tool-sidebar input,
+.qr-tool-sidebar textarea,
+.qr-tool-sidebar select {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.6);
+}
+
+.qr-tool-sidebar input:focus,
+.qr-tool-sidebar textarea:focus,
+.qr-tool-sidebar select:focus {
+  box-shadow: 0 0 0 4px rgba(59,130,246,.10);
+}
+
+/* 讓設定分組更像 SaaS 卡片 section */
+.qr-tool-sidebar [class*="section"],
+.qr-tool-sidebar [class*="panel"],
+.qr-tool-sidebar [class*="group"] {
+  border-radius: 20px;
+}
+
+/* QR 貼紙 / 說明區文字不要過小 */
+.qr-tool-preview-col .qr-card-title,
+.qr-tool-preview-col [class*="card-title"] {
+  font-size: clamp(1.25rem, 1rem + .8vw, 1.8rem);
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+.qr-tool-preview-col .qr-card-subtitle,
+.qr-tool-preview-col [class*="card-subtitle"],
+.qr-tool-preview-col [class*="payload"] {
+  font-size: clamp(.95rem, .85rem + .3vw, 1.08rem);
+  line-height: 1.5;
+}
+
+/* 模擬手機掃描區退到輔助視覺 */
+.qr-tool-preview-col [class*="phone"],
+.qr-tool-preview-col [class*="mobile-preview"] {
+  opacity: .9;
+}
+
+.qr-tool-preview-col [class*="phone"] canvas,
+.qr-tool-preview-col [class*="mobile-preview"] canvas {
+  border-radius: 18px;
+}
+
+/* 讓長網址不會把排版撐爆 */
+.qr-tool-preview-col,
+.qr-tool-sidebar {
+  overflow-wrap: anywhere;
+}
+
+/* hero 底下內容區與 FAQ 保持舒適寬度 */
+.qr-saas-shell > section {
+  max-width: 1180px;
+}
+
+@media (max-width: 1023px) {
+  .qr-tool-hero--v2 {
+    padding: 1rem 0 0;
+  }
+
+  .qr-tool-hero--v2::after {
+    inset: -8px -10px 0;
+  }
+
+  .qr-tool-main--v2 {
+    gap: 1.25rem;
+  }
+
+  .qr-tool-preview-col {
+    position: static !important;
+    top: auto !important;
+  }
+
+  .qr-composite-preview {
+    width: min(100%, 540px);
+  }
+}
+
+@media (max-width: 640px) {
+  .qr-saas-shell {
+    padding-inline: 12px;
+  }
+
+  .qr-tool-hero--v2::after {
+    inset: -8px -6px 0;
+    border-radius: 22px;
+  }
+
+  .qr-tool-sidebar > *,
+  .qr-tool-preview-col > * {
+    border-radius: 22px;
+  }
+
+  .qr-tool-preview-col .share-button,
+  .qr-tool-preview-col [class*="share-button"],
+  .qr-tool-preview-col [class*="shareButton"],
+  .qr-tool-preview-col [class*="preview-action"] {
+    min-width: 68px;
+    padding: 9px 12px;
+    font-size: 13px;
+  }
+
+  .qr-composite-preview {
+    width: 100%;
+    border-radius: 22px;
+  }
+}
+
+
+/* ===== SaaS UI v3 fixes ===== */
+.qr-saas-shell {
+  max-width: 1440px;
+}
+
+.qr-tool-hero--v2 {
+  max-width: 1180px;
+  margin-inline: auto;
+  padding: 1rem 1rem 0.25rem;
+}
+
+.qr-tool-main--v2 {
+  align-items: start;
+}
+
+@media (min-width: 1024px) {
+  .qr-tool-main--v2 {
+    grid-template-columns: minmax(400px, 470px) minmax(560px, 1fr) !important;
+  }
+
+  .qr-tool-sidebar {
+    max-width: 470px !important;
+  }
+
+  .qr-tool-preview-col {
+    max-width: min(100%, 760px);
+    justify-self: stretch;
+  }
+}
+
+.qr-preview-panel {
+  width: 100%;
+  max-width: 760px;
+  margin-inline: auto;
+}
+
+.qr-preview-panel__hero {
+  max-width: 560px !important;
+  padding: 1.25rem !important;
+  margin-top: 1.25rem !important;
+}
+
+.qr-preview-panel__hero .qr-composite-preview {
+  width: 100%;
+  max-width: 560px !important;
+  min-width: 0 !important;
+}
+
+.qr-composite-preview {
+  width: 100%;
+  max-width: 560px !important;
+  height: auto;
+  background: #fff;
+  border-radius: 24px;
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.12);
+}
+
+.qr-preview-panel__actions {
+  max-width: 560px;
+  margin-inline: auto;
+}
+
+.qr-preview-panel__download-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.qr-preview-panel__share-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.qr-preview-panel__share-button {
+  white-space: nowrap;
+  min-width: 0;
+  padding-inline: 12px !important;
+}
+
+.qr-preview-panel__phone-wrap {
+  max-width: 240px;
+  margin-inline: auto;
+}
+
+.qr-preview-panel__phone-shell {
+  height: 118px !important;
+  width: 72px !important;
+}
+
+.qr-preview-panel__ranking {
+  max-width: 560px;
+  margin-inline: auto;
+}
+
+.qr-preview-panel__ranking-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.qr-preview-panel__ranking-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(226,232,240,.9);
+  background: #fff;
+  padding: 10px 12px;
+}
+
+.qr-preview-panel__ranking-badge {
+  display: inline-flex;
+  height: 26px;
+  min-width: 26px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #4338ca;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.qr-preview-panel__ranking-text {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.qr-preview-panel__ranking-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.qr-preview-panel__ranking-meta {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.qr-preview-panel__hint {
+  max-width: 560px;
+  margin-inline: auto;
+}
+
+@media (max-width: 1023px) {
+  .qr-tool-hero--v2 {
+    max-width: 100%;
+  }
+
+  .qr-tool-main--v2 {
+    gap: 20px;
+  }
+
+  .qr-tool-preview-col {
+    position: static !important;
+    max-width: 100%;
+  }
+
+  .qr-preview-panel {
+    max-width: 100%;
+  }
+
+  .qr-preview-panel__hero {
+    max-width: min(100%, 480px) !important;
+  }
+
+  .qr-preview-panel__actions,
+  .qr-preview-panel__ranking,
+  .qr-preview-panel__hint {
+    max-width: min(100%, 480px);
+  }
+}
+
+@media (max-width: 640px) {
+  .qr-preview-panel__download-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .qr-preview-panel__share-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .qr-preview-panel__share-button {
+    min-height: 44px;
+    font-size: 13px !important;
+  }
+}

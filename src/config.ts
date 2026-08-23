@@ -55,3 +55,18 @@ export function getFreeTrialQuota(): number {
 export function getPlanQuota(planKey: keyof typeof PLANS): number {
   return PLANS[planKey].monthlyQuota
 }
+
+/**
+ * 圖片生成扣點規則（固定扣點，不依字數計算）
+ * 100,000 點 = NT$99 時，20,000 點約等於 NT$19.8。
+ */
+export const PRODUCT_IMAGE_POINTS = {
+  white: 20000,
+  premium: 25000,
+  social: 25000,
+  delivery: 25000,
+  promo: 30000,
+  multiSize: 5000,
+} as const
+
+export type ProductImageStyleId = keyof Omit<typeof PRODUCT_IMAGE_POINTS, 'multiSize'>

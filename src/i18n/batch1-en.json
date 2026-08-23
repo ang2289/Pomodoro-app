@@ -1,0 +1,750 @@
+{
+  "seoTitleSuffix": " | RxV AI Tools & Life Services",
+  "related_tools_section_title": "Related tools",
+  "site_nav_back_home": "Back to home",
+  "batch1_tools_hub_cta": "Browse the full RxV tools hub",
+  "help": {
+    "seo": {
+      "title": "Help & FAQ",
+      "description": "Sign-in & trial, credits, bank transfer & top-ups, and frequently asked questions."
+    },
+    "hero": {
+      "title": "Help & FAQ",
+      "subtitle": "Full guide and answers to common questions"
+    },
+    "section": {
+      "login": "Sign-in & trial",
+      "credits": "How credits work",
+      "payment": "Payment & top-up"
+    },
+    "login": {
+      "trial_title": "Free trial",
+      "trial_li1": "New users get <strong>10,000 credits</strong> after sign-up",
+      "trial_li2": "Trial lasts <strong>7 days</strong> with full access during the period",
+      "trial_li3": "After the trial, credits remain usable but trial top-ups are no longer available",
+      "trial_li4": "Trial and paid credits share one balance; trial credits are used first",
+      "method_title": "Sign-in",
+      "method_li1": "Email sign-up and sign-in",
+      "method_li2": "After sign-in you can use all features",
+      "hint": "<strong>💡 Tip:</strong> AI features require sign-in. Please sign in to start."
+    },
+    "credits": {
+      "principle_title": "How credits are counted",
+      "principle_li1": "Credits are based on <strong>actual input characters</strong> you send",
+      "principle_li2": "Each AI use deducts credits immediately",
+      "principle_li3": "If credits are insufficient, features are paused until you top up",
+      "example_title": "Examples",
+      "example_li1": "Summarize a 2,500-character article → deducts <strong>2,500 credits</strong>",
+      "example_li2": "Solve a 300-character problem → deducts <strong>300 credits</strong>",
+      "example_li3": "Analyze 1,000 characters → deducts <strong>1,000 credits</strong>",
+      "warn": "<strong>⚠️ Note:</strong> Credits are one-time use with no expiry until used. No refunds after use."
+    },
+    "payment": {
+      "flow_title": "Buying and topping up credits",
+      "flow_intro": "Supported payment methods (via EcPay):",
+      "pay_li1": "<strong>Credit card</strong> (including Apple Pay / Google Pay)",
+      "pay_li2": "<strong>ATM virtual account</strong> (credits added automatically after payment)",
+      "steps_title": "Top-up flow",
+      "steps_li1": "Choose a credit pack",
+      "steps_li2": "Pay via EcPay (card or ATM virtual account)",
+      "steps_li3": "After payment succeeds, credits are added automatically and you get an email",
+      "steps_li4": "No forms required—often completes in seconds",
+      "plans_title": "Reference packs",
+      "plans_li1": "NT$99 → 100,000 credits (~30–35 summaries)",
+      "plans_li2": "NT$199 → 300,000 credits (~90–100 summaries)",
+      "faq_section_title": "FAQ"
+    },
+    "faq": {
+      "q1": "Q: How long until credits appear after payment?",
+      "a1": "A: Usually within 5–10 seconds, with an email confirmation.",
+      "q2": "Q: Do credits expire?",
+      "a2": "A: No. Credits are a one-time balance with no time limit until used.",
+      "q3": "Q: Can I get a refund?",
+      "a3": "A: Once credits are used, the service is considered delivered. Unused credits remain on your account.",
+      "q4": "Q: Can I transfer credits?",
+      "a4": "A: No. Credits are tied to your account and cannot be transferred."
+    },
+    "reminder": {
+      "title": "<strong>⚠️ Reminders</strong>",
+      "li1": "Sign in before use",
+      "li2": "Credits are one-time use with no expiry, but non-refundable",
+      "li3": "For bulk purchase or business, contact us by email"
+    },
+    "cta": {
+      "pricing": "View plans",
+      "start": "Get started"
+    }
+  },
+  "pricingLegacy": {
+    "seo": {
+      "title": "Plans & pricing",
+      "description": "Choose a plan based on character quota. No per-session cap, unlimited sessions."
+    },
+    "hero": {
+      "title": "Usage plans (one-time purchase, use until exhausted)"
+    },
+    "trial": {
+      "notice": "⚠️ Trial phase\nOnly the free trial is available; paid plans are not open yet.\nPrices shown are for reference before launch."
+    },
+    "plan": {
+      "free_title": "Free trial",
+      "free_chars": "About {{count}} characters included",
+      "free_li1": "No credit card required",
+      "free_li2": "No expiry date",
+      "free_li3": "Shared quota for summary and homework helper",
+      "plan99_title": "NT$99 plan",
+      "plan199_title": "NT$199 plan",
+      "paid_chars": "{{count}} characters included",
+      "paid_li1": "One-time purchase",
+      "paid_li2": "<strong>No auto-renewal</strong>",
+      "paid_li3": "<strong>No expiry date</strong>",
+      "license_note": "Digital service license—not stored value or points",
+      "buy_btn": "Purchase plan"
+    },
+    "usage": {
+      "section_title": "How it works",
+      "new_user_title": "🎁 New user trial quota",
+      "new_user_body": "First-time users receive about {{count}} characters of trial quota for testing features. Trial quota must be used within 7 days.",
+      "paid_title": "💳 Paid plans",
+      "paid_body": "<strong>NT$99 plan:</strong> {{c99}} characters<br /><strong>NT$199 plan:</strong> {{c199}} characters<br />Paid plans remain valid with no expiry and accumulate over time.",
+      "calc_title": "📌 How quota is calculated",
+      "calc_body": "Quota is counted only when you actually use AI features. No charge when idle.",
+      "important": "<strong>Important:</strong> This is a digital service license—not stored value or points."
+    },
+    "charCount": {
+      "header": "📊 How characters are counted",
+      "li1": "Totals follow the characters you send and generate",
+      "li2": "You can see “used” and “remaining” in real time",
+      "li3": "When quota is exhausted, service pauses until you purchase more"
+    },
+    "charExplain": {
+      "header": "📌 Character counting explained",
+      "p1": "Each use deducts based on actual input characters.",
+      "example_title": "Examples:",
+      "ex1": "2,500-character summary → 2,500 characters used",
+      "ex2": "300-character homework problem → 300 characters used",
+      "p2": "Quota is one-time use with no time limit until exhausted."
+    },
+    "fairness": {
+      "header": "🔒 Fair use",
+      "li1": "We may apply reasonable resource controls to maintain quality",
+      "li2": "Unusual or abusive usage may be limited",
+      "li3": "Actual usage is always what the system shows"
+    },
+    "modal": {
+      "title": "Purchases not available yet",
+      "body": "Only the free trial (~{{count}} characters) is open.\nPaid plans (NT$99 / NT$199) are not available for purchase yet.\nPrices are for reference only before launch.",
+      "ok": "Got it"
+    },
+    "back_summary": "Back to summary tool"
+  },
+  "aiSummaryGuide": {
+    "seo": {
+      "title": "AI Summary | Long text, notes & PDF highlights | RxV",
+      "description": "Online AI summary: paste long text or notes to get bullet points for reading, research, and lesson prep. No install—works with Pomodoro and todos.",
+      "keywords": "AI summary, long text, notes, free tool"
+    },
+    "banner": "🔥 Early Bird — Only 50 Copies Available (50% OFF) | Current Price: $14.5",
+    "h1": "AI summary tool (free) | Recommended",
+    "intro": "A free AI summary tool for long-form content and structured summaries in the browser—no download required.",
+    "audience_label": "Great for:",
+    "audience": "Students, professionals handling long emails and announcements, and curators who need key points fast.",
+    "pair_label": "Pairs well with:",
+    "pair": "Use Pomodoro for execution blocks and todos for next steps; homework helper and image tools are listed under Related tools.",
+    "how_title": "How to use",
+    "how_p": "Summarize articles or video transcripts to grasp ideas faster.",
+    "steps_title": "Steps",
+    "step1": "Paste content",
+    "step2": "Generate summary",
+    "step3": "Copy or refine",
+    "scenarios_title": "Use cases",
+    "sc1": "Study notes",
+    "sc2": "Research",
+    "sc3": "Long articles",
+    "what_title": "What is the AI summary tool?",
+    "what_p": "A productivity tool to turn long text into short, actionable summaries.",
+    "why_title": "Why use it?",
+    "why_li1": "Free to start",
+    "why_li2": "No install",
+    "why_li3": "Fast workflow",
+    "seo_para": "High-demand AI tool for meetings, coursework, and content ops. Add it to your free toolkit for long-term efficiency.",
+    "marketing": {
+      "heroLine1": "AI Tools Guide",
+      "heroLine2": "How the Summary Tool Works",
+      "heroIntro": "Learn how our AI summary tool works, from JSON schema validation to multilingual support. Perfect for developers and content creators.",
+      "tryCta": "Try Summary Tool",
+      "buyTemplate": "Buy Template",
+      "howWorksTitle": "🚀 How It Works",
+      "howWorksBody": "Our AI summary tool uses Supabase Edge Functions combined with Gemini Flash to generate clean, validated JSON summaries. The system enforces JSON Schema validation to ensure stable output.",
+      "techTitle": "🔧 Technical Stack",
+      "techLi1": "<strong>Supabase Edge Functions:</strong> Serverless backend with input validation",
+      "techLi2": "<strong>Gemini Flash 2.0:</strong> Fast and accurate AI model",
+      "techLi3": "<strong>JSON Schema:</strong> Ensures stable, machine-readable output",
+      "techLi4": "<strong>React + TypeScript:</strong> Modern frontend framework",
+      "featuresTitle": "🌐 Features",
+      "featLi1": "<strong>Automatic Language Detection:</strong> Supports English and Chinese",
+      "featLi2": "<strong>Daily Limits:</strong> Free 3 summaries per day (auto-reset at midnight)",
+      "featLi3": "<strong>Clean JSON Output:</strong> Validated schema, production-ready",
+      "featLi4": "<strong>Multiple Input Types:</strong> Articles, URLs, and YouTube content",
+      "devTitle": "💡 Developer Template",
+      "devIntro": "Want to build your own AI summary tool? Get the full developer template with:",
+      "devLi1": "Complete Supabase Edge Function code",
+      "devLi2": "JSON Schema definitions",
+      "devLi3": "Frontend React components",
+      "devLi4": "Production-ready API setup",
+      "buyDevTemplate": "Buy Developer Template →",
+      "backHub": "← Back to AI Tools Hub",
+      "floatBuy": "🚀 Buy Template"
+    },
+    "jsonLd": {
+      "webName": "AI summary tool",
+      "webDesc": "Free AI summary for long text and structured output.",
+      "appDesc": "Summarize articles, URLs, and subtitles with multilingual support."
+    }
+  },
+  "imageCompress": {
+    "seo": {
+      "title": "Image compressor | Free online JPG, PNG, WebP",
+      "description": "Compress JPG, PNG, and WebP in your browser. Choose format and quality—no download required.",
+      "keywords": "image compress, JPG, PNG, WebP, online, batch"
+    },
+    "jsonLd": {
+      "webName": "Image compressor",
+      "webDesc": "Free browser-based image compression for JPG, PNG, WebP.",
+      "appDesc": "Compress images and download single files or ZIP."
+    },
+    "h1": "Image compressor | Free online JPG, PNG, WebP",
+    "intro": "Upload images and compress locally in the browser—no server upload or desktop app. Supports JPG, PNG, WebP.",
+    "upload": "Upload images",
+    "upload_hint": "Drag & drop or multi-select",
+    "output_format": "Output format",
+    "opt_jpg": "JPG (recommended)",
+    "opt_webp": "WebP (smaller)",
+    "opt_png": "PNG (transparency)",
+    "quality": "Quality: {{v}}",
+    "format_note_jpg": "JPG: best compatibility",
+    "format_note_webp": "WebP: smaller files for the web",
+    "format_note_png": "PNG: keeps transparency",
+    "png_warn_title": "⚠ PNG is lossless—files may not shrink much.",
+    "png_warn_body": "PNG stays lossless; for smaller files choose JPG or WebP.",
+    "err_partial": "Some files were skipped. Only JPG, PNG, WebP are processed.",
+    "err_generic": "Something went wrong. Please try again.",
+    "err_zip": "ZIP failed. Please try again.",
+    "err_load": "Failed to load image",
+    "err_canvas": "Canvas not supported",
+    "err_compress": "Compression failed. Please try again.",
+    "original": "Original",
+    "compressed": "Compressed",
+    "alt_original": "Original preview",
+    "alt_compressed": "Compressed preview",
+    "please_upload": "Upload an image first",
+    "compressing": "Compressing…",
+    "no_result": "No compressed output yet",
+    "batch_title": "Batch results",
+    "orig_size": "Original size: {{v}}",
+    "comp_size": "Compressed size: {{v}}",
+    "saved": "Saved: {{v}}",
+    "saved_pct": "Saved: {{v}}%",
+    "out_fmt": "Format: {{v}}",
+    "dim": "Dimensions: {{v}} / {{v2}}",
+    "batch_total": "Batch: original {{o}}, compressed {{c}}, saved {{s}} ({{p}}%)",
+    "processed_n": "Processed {{n}} image(s)",
+    "zip_will": "ZIP uses {{v}}",
+    "current_fmt": "Current format: {{v}}",
+    "download_one": "Download compressed",
+    "download_zip": "Download ZIP",
+    "zipping": "Zipping…",
+    "download_this": "Download this file",
+    "zip_need_files": "Upload and compress first",
+    "how_title": "How to use",
+    "who_label": "Great for:",
+    "who": "Websites, ecommerce, email attachments, form limits, and batch screenshots.",
+    "how_p": "Compress JPG/PNG/WebP locally. Pick a quality that fits your display needs; pair with resize or AI summary from Related tools.",
+    "steps_title": "Steps",
+    "s1": "Upload",
+    "s2": "Choose format",
+    "s3": "Adjust quality",
+    "s4": "Download",
+    "use_cases_title": "Use cases",
+    "uc1": "Web performance",
+    "uc2": "Product photos",
+    "uc3": "Social sharing",
+    "faq_title": "FAQ",
+    "rec_title": "Recommended next steps",
+    "rec_p": "Need exact platform sizes? Try",
+    "rec_resize": "Image resize",
+    "rec_mid": "; share links with",
+    "rec_qr": "QR Code generator",
+    "rec_tail": "; summarize long copy with",
+    "rec_ai": "AI summary",
+    "rec_end": ". Related tools match the site SEO modules.",
+    "faq": {
+      "q1": "Are images uploaded to a server?",
+      "a1": "No. Processing happens locally in your browser.",
+      "q2": "Will quality drop a lot?",
+      "a2": "Depends on quality and format. JPG/WebP usually shrink a lot with acceptable quality.",
+      "q3": "WebP or JPG for websites?",
+      "a3": "WebP is often smaller; JPG has wider compatibility.",
+      "q4": "Why is PNG still large?",
+      "a4": "PNG is lossless—switch to JPG or WebP for smaller files."
+    }
+  },
+  "imageConvert": {
+    "seo": {
+      "title": "Image format converter | PNG, JPG, WebP online | RxV",
+      "description": "Convert PNG↔JPG, PNG↔WebP, JPG↔WebP in your browser with canvas—no server upload required.",
+      "keywords": "image converter, PNG to JPG, JPG to PNG, WebP, online"
+    },
+    "jsonLd": {
+      "webName": "Image format converter",
+      "webDesc": "Convert PNG, JPG, and WebP locally in the browser.",
+      "appDesc": "Pick a preset, upload, and download converted files."
+    },
+    "h1": "Image format converter | PNG, JPG, WebP",
+    "intro": "Browser-side decode and encode for common raster formats. Transparent areas become white when exporting to JPEG.",
+    "preset_title": "Conversion preset",
+    "preset_png_jpg": "PNG → JPG",
+    "preset_jpg_png": "JPG → PNG",
+    "preset_png_webp": "PNG → WebP",
+    "preset_webp_png": "WebP → PNG",
+    "preset_jpg_webp": "JPG → WebP",
+    "preset_webp_jpg": "WebP → JPG",
+    "preset_hint": "Output: {{fmt}} — upload files that match the source type.",
+    "upload": "Click or drag images here",
+    "upload_hint": "Only matching source types for the preset (multi-select OK)",
+    "quality": "Output quality: {{v}} (JPG/WebP only)",
+    "png_lossless": "PNG is lossless; no quality slider.",
+    "converting": "Converting…",
+    "results": "Results",
+    "out_label": "Output",
+    "size_out": "~{{v}} KB",
+    "download": "Download",
+    "download_all_zip": "Download all (ZIP)",
+    "clear_results": "Clear results",
+    "zipping": "Creating ZIP…",
+    "zip_error": "Could not create ZIP. Please try again.",
+    "err_type": "No files match the current preset. Check the input format.",
+    "err_partial": "Some files were skipped (wrong type).",
+    "err_generic": "Conversion failed. Try another image or retry later.",
+    "faq_title": "FAQ",
+    "rec_title": "Related tools",
+    "faq": {
+      "q1": "Are images uploaded to a server?",
+      "a1": "Processing stays in your browser; files are not intentionally sent to our servers.",
+      "q2": "Why did transparency turn white?",
+      "a2": "JPEG has no alpha. We fill transparent areas with white; use PNG or WebP to keep transparency.",
+      "q3": "Does WebP export work in every browser?",
+      "a3": "It depends on canvas WebP support. If it fails, try the latest Chrome or Edge.",
+      "q4": "Do you support HEIC?",
+      "a4": "We accept PNG, JPG, and WebP. Export HEIC to JPG in Photos first."
+    }
+  },
+  "imageResizeExtra": {
+    "seo": {
+      "title": "Image resize | IG, YouTube, Shopee presets | RxV",
+      "description": "Crop, pad, and export preset sizes for IG, Shorts, Shopee, and more in your browser. Then compress or share with QR.",
+      "keywords": "image resize, IG size, YouTube thumbnail, Shopee, TikTok"
+    },
+    "jsonLd": {
+      "webName": "Image resize tool",
+      "webDesc": "Resize images for IG, TikTok, YouTube, and Shopee.",
+      "appDesc": "Multi-platform sizes with PNG/JPG download and ZIP batch export."
+    },
+    "h1": "Image resize (free) | Recommended",
+    "audience_label": "Great for:",
+    "audience": "Social editors, marketplace sellers, students, and anyone matching IG/YouTube/Shopee dimensions.",
+    "intro2": "Crop and pad online—no install. Use Related tools below to compress or create QR links.",
+    "preview_mode_pad": "Contain mode: frame shows the output aspect ratio.",
+    "preview_mode_crop": "Cover mode: areas outside the frame may be cropped.",
+    "output_wh": "Output width × height",
+    "aria_w": "Output width",
+    "aria_h": "Output height",
+    "custom_label": "Custom",
+    "zip_select_all": "Select all",
+    "zip_select_none": "Clear",
+    "zip_selected": "{{n}}/{{total}} selected{{all}}",
+    "zip_all_suffix": " (all)",
+    "zip_checked_n": "{{n}} size(s) selected",
+    "zip_preset_hint": "Common presets are pre-selected",
+    "zip_packaging": "Packaging…",
+    "zip_download": "Download ZIP",
+    "zip_pick": "Select sizes first",
+    "zip_fail": "ZIP failed. Try again.",
+    "sizes_extra_line": "Includes YouTube 1280×720, Facebook 1200×630, TikTok 1080×1920, and Shopee long 1080×1920.",
+    "how_title": "How to use",
+    "how_p": "Resize for social platforms or custom dimensions.",
+    "steps_title": "Steps",
+    "st1": "Upload",
+    "st2": "Pick a preset or custom size",
+    "st3": "Choose pad or crop",
+    "st4": "Download",
+    "cases_title": "Use cases",
+    "c1": "Instagram posts",
+    "c2": "YouTube thumbnails",
+    "c3": "TikTok covers",
+    "what_title": "What is image resize?",
+    "what_p": "A fast, install-free way to match platform dimensions.",
+    "why_title": "Why this tool?",
+    "why_li1": "Free",
+    "why_li2": "No install",
+    "why_li3": "Quick batch ZIP",
+    "seo_bottom": "Resize is a high-traffic step before publishing—pair with compress and AI summary for a full workflow.",
+    "apply_size": "Apply size",
+    "suggested": "Suggested:",
+    "card_youtube_title": "YouTube thumbnail",
+    "card_youtube_ratio": "16:9",
+    "card_youtube_desc": "Covers and thumbnails for YouTube.",
+    "card_fb_title": "Facebook share image",
+    "card_fb_ratio": "1.91:1",
+    "card_fb_desc": "Open Graph and feed previews.",
+    "card_tiktok_title": "TikTok video",
+    "card_tiktok_ratio": "9:16",
+    "card_tiktok_desc": "Vertical TikTok assets.",
+    "card_shopee_long_title": "Shopee long image",
+    "card_shopee_long_ratio": "9:16",
+    "card_shopee_long_desc": "Long product detail images.",
+    "group": {
+      "IG": "IG",
+      "YouTube": "YouTube",
+      "TikTok": "TikTok",
+      "Shopee": "Shopee",
+      "Facebook": "Facebook"
+    },
+    "faqExtra": {
+      "youtube_q": "YouTube thumbnail size?",
+      "youtube_a": "1280 × 720 (16:9) is recommended.",
+      "tiktok_q": "TikTok video size?",
+      "tiktok_a": "1080 × 1920 (9:16) is common.",
+      "facebook_q": "Facebook share image size?",
+      "facebook_a": "1200 × 630 is widely used."
+    }
+  },
+  "qr": {
+    "seo": {
+      "title": "QR Code generator | URL, WiFi, Email & logo | RxV",
+      "description": "Create QR codes for URLs, text, mail, phone, and WiFi. Customize colors, size, and logo. Download PNG/SVG in your browser.",
+      "keywords": "QR code generator, WiFi QR, URL QR, free tool"
+    },
+    "tabs": {
+      "url": "URL",
+      "text": "Text",
+      "email": "Email",
+      "phone": "Phone",
+      "wifi": "WiFi"
+    },
+    "styleNames": {
+      "bw": "Classic B/W",
+      "blue": "Blue tech",
+      "green": "Brand green",
+      "gold": "Gold & black",
+      "bw2": "Classic B/W",
+      "blue2": "Blue & white",
+      "gold2": "Gold premium"
+    },
+    "social": {
+      "ig": "IG post",
+      "line": "LINE share",
+      "card": "Business card"
+    },
+    "wifiSec": {
+      "wpa": "WPA/WPA2",
+      "wpa3": "WPA3",
+      "wep": "WEP",
+      "nopass": "Open"
+    },
+    "template": {
+      "restaurantUrl": "https://your-menu-link",
+      "igUrl": "https://instagram.com/yourname",
+      "vcard": "Name: Jane Doe\nPhone: +1-555-0100\nLINE: @yourid"
+    },
+    "placeholder": {
+      "textDefault": "Type text to preview your QR code",
+      "wifiPw": "Wi‑Fi password"
+    },
+    "share": {
+      "ogText": "Free QR Code generator | Logo & social sharing",
+      "apiTitle": "QR share link",
+      "apiDesc": "QR share payload"
+    },
+    "jsonLd": {
+      "webName": "QR Code generator",
+      "webDesc": "Free QR codes for URLs, text, email, phone, and WiFi.",
+      "appDesc": "Customize colors, logo, and size. Export PNG/SVG.",
+      "faq1q": "Can I use QR codes commercially?",
+      "faq1a": "Yes—codes you generate here may be used freely.",
+      "faq2q": "Can I download high resolution?",
+      "faq2a": "Yes—128–1024 px plus SVG export."
+    },
+    "err": {
+      "shortHttp": "Short URL error (HTTP {{status}})",
+      "shortFmt": "Short URL response missing shortUrl",
+      "shortGeneric": "Could not create a short URL. Try again.",
+      "shortFallback": "Could not create short URL; copied original link instead",
+      "shortNeedUrlMode": "Switch to the “URL” tab and enter a full http(s) URL to shorten.",
+      "shortInvalidUrl": "URL is empty or invalid. Use a valid URL (e.g. https://example.com).",
+      "shortNetwork": "Network error—check your connection and try again.",
+      "shortServer": "Server is not responding. Please try again later.",
+      "shortConfig": "Supabase or site URL is not configured. Set SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, and VITE_SITE_URL (or NEXT_PUBLIC_SITE_URL).",
+      "shortDb": "Database write failed. Try again later or contact support.",
+      "shortApiRoute": "Short URL API not found—check dev proxy / backend.",
+      "shortBadGateway": "Bad gateway (502/504)—check VITE_VERCEL_URL points to your local API."
+    },
+    "notice": {
+      "shortUnavailable": "Short URLs are temporarily unavailable—using the full link."
+    },
+    "alert": {
+      "shortFail": "Short URL failed: {{msg}}",
+      "copiedShort": "Short URL copied",
+      "copiedLink": "Link copied",
+      "copyFallback": "Short URL failed ({{msg}}); copied original link"
+    },
+    "canvasTitle": "QR preview",
+    "hero": {
+      "h1": "QR Code generator (free) | Recommended",
+      "p1": "Turn URLs, text, and contact info into scannable codes—no install, runs in your browser.",
+      "audience_label": "Great for:",
+      "audience": "Retail counters, events, menus, business cards, decks, and guest WiFi.",
+      "scenario_label": "Common uses:",
+      "scenario": "Websites, forms, LINE, phone, and email sharing—export for print or screen.",
+      "pair_label": "Pair with:",
+      "pair_before_resize": "Before large prints, use",
+      "resize_link": "Image resize",
+      "pair_mid": "to match dimensions; large files? try",
+      "compress_link": "Image compress",
+      "pair_after_compress": "; long copy? summarize with",
+      "ai_link": "AI summary",
+      "pair_end": "before publishing."
+    },
+    "section": {
+      "content": "Content",
+      "url_label": "URL",
+      "url_hint": "Shows a sample URL if empty",
+      "text_label": "Text",
+      "text_ph": "Enter any text…",
+      "text_hint": "Shows placeholder text if empty",
+      "email_label": "Email",
+      "email_hint": "Encoded as mailto: (sample if empty)",
+      "phone_label": "Phone",
+      "phone_hint": "Encoded as tel: (country code allowed)",
+      "ssid": "Network name (SSID)",
+      "sec": "Security",
+      "password": "Password",
+      "wifi_fmt": "Format: WIFI:T:…;S:SSID;P:password;; (sample SSID if empty)",
+      "short_hint": "Shortens the long URL in the field above and writes the short link back (URL tab only)."
+    },
+    "shortUrl": {
+      "generating": "Working…",
+      "generate": "Create short URL",
+      "fail_title": "Could not create short URL",
+      "done": "Short URL ready",
+      "appliedToField": "Applied to the URL field above—preview updated.",
+      "reused": "This URL already has a short link—we reused it.",
+      "successApplied": "Short URL applied to the URL field",
+      "open": "Open (new tab)",
+      "copy": "Copy"
+    },
+    "templates": {
+      "title": "Quick templates",
+      "subtitle": "Preset content and colors for common scenarios",
+      "restaurant": "Restaurant menu",
+      "ig": "Instagram",
+      "card": "vCard QR",
+      "reset": "Reset defaults"
+    },
+    "color": {
+      "title": "Colors",
+      "style_label": "Style presets",
+      "fg": "Foreground",
+      "bg": "Background",
+      "aria_fg": "Foreground color",
+      "aria_bg": "Background color"
+    },
+    "socialSize": {
+      "label": "Social sizes"
+    },
+    "output": {
+      "px": "Output size (px)"
+    },
+    "logo": {
+      "title": "Center logo (optional)",
+      "desc": "Centered at ~20% of the QR edge with modules cleared for scan reliability (high error correction on).",
+      "pick": "Choose image",
+      "remove": "Remove logo"
+    },
+    "preview": {
+      "label": "Preview",
+      "scan_test": "Scan test",
+      "phone_mock": "Phone mockup"
+    },
+    "contrast": {
+      "warn": "⚠ Low contrast may fail scans—prefer dark on light.",
+      "fix": "Fix contrast"
+    },
+    "hint": {
+      "default_content": "Showing sample content—updates as you type."
+    },
+    "download": {
+      "png": "Download PNG",
+      "svg": "Download SVG",
+      "copy": "Copy"
+    },
+    "how": {
+      "title": "How to use",
+      "p": "Generate codes for links, WiFi, email, or contacts.",
+      "steps": "Steps",
+      "s1": "Enter a URL or text",
+      "s2": "Customize content",
+      "s3": "Download",
+      "cases": "Use cases",
+      "c1": "Posters",
+      "c2": "Menus",
+      "c3": "Social"
+    },
+    "seoBlock": {
+      "h2": "Free QR Code generator",
+      "what_qr": "What is a QR code?",
+      "what_qr_p": "A 2D barcode for URLs, text, or contacts—great for sites, LINE, cards, and promos.",
+      "faq_h": "FAQ",
+      "faq_q1": "Q: Commercial use?",
+      "faq_a1": "A: Yes—use freely.",
+      "faq_q2": "Q: High resolution?",
+      "faq_a2": "A: 128–1024 px plus SVG.",
+      "how_make_h": "How to make one?",
+      "how_make_p": "Enter text or URLs, tune colors/size/logo, then download.",
+      "logo_h": "Can I add a logo?",
+      "logo_p": "Yes—keep contrast and quiet zones to stay scannable.",
+      "fail_h": "Why scans fail",
+      "f1": "Low contrast",
+      "f2": "Too small",
+      "f3": "Logo too large"
+    },
+    "bottom": {
+      "what_h": "What is a QR generator?",
+      "what_p": "A simple AI-era utility to speed up sharing in work and daily life.",
+      "why_h": "Why this tool?",
+      "w1": "Free",
+      "w2": "No install",
+      "w3": "Fast",
+      "long_p": "Streamline sharing for events, cards, and campaigns—an easy starting point in your free toolkit."
+    }
+  },
+  "nav": {
+    "breadcrumb": {
+      "toolsHub": "Tools hub",
+      "search": "Search",
+      "siteSearch": "Site search"
+    }
+  },
+  "landing": {
+    "section": {
+      "intro": "Overview",
+      "steps": "How to use",
+      "situations": "When to use",
+      "faq": "FAQ"
+    },
+    "cta": {
+      "primary": "Open main tool",
+      "primaryDesc": "When you are ready, go to the main tool page to get started.",
+      "compare": "Open related tool",
+      "compareDesc": "Jump to the matching RxV tool for this topic."
+    },
+    "relatedTools": "Related tools",
+    "popularPagesSeo": "Popular SEO topic pages",
+    "popularPagesDefault": "Popular topics"
+  },
+  "compare": {
+    "section": {
+      "intro": "Overview",
+      "table": "Key comparison",
+      "criterion": "Criteria",
+      "situations": "When to use",
+      "faq": "FAQ"
+    },
+    "pros": "Pros",
+    "cons": "Cons",
+    "prosConsHeading": "{{label}}: pros & cons"
+  },
+  "searchTemplate": {
+    "fallbackSeoTitle": "Site search topics | RxV",
+    "fallbackSeoDesc": "This keyword does not yet have an indexable search topic page; use the tools hub or the links below.",
+    "fallbackH1": "Search topic",
+    "fallbackBody": "There is no indexable topic page for “{{slug}}” yet (or the keyword is not on the allowlist). Try <searchLink>site search</searchLink> or open the <toolsLink>tools hub</toolsLink>.",
+    "relatedLandings": "Related SEO landing pages",
+    "relatedTools": "Matching tools",
+    "guides": "Matching guides",
+    "ctaTitle": "Open main tool",
+    "ctaDesc": "Go to the main tool page to get started."
+  },
+  "guideIndex": {
+    "seo": {
+      "title": "Guides hub | AI & image tool tutorials",
+      "description": "20 tutorials covering image sizing, compression, QR codes, AI summary, and homework helper."
+    },
+    "collectionName": "Guides hub",
+    "collectionDesc": "Hands-on tutorials for AI and image tools—sizing, compression, summary, and homework flows.",
+    "h1": "Guides hub",
+    "intro": "From beginner to advanced—common scenarios, steps, and FAQs with links back to each tool.",
+    "breadcrumbCurrent": "Guides"
+  },
+  "guide": {
+    "related": {
+      "title": "Related guides"
+    }
+  },
+  "home": {
+    "seo": {
+      "title": "RxV AI tools & life services | productivity & AI utilities",
+      "description": "AI utilities, productivity tools, and life services—including AI summary, homework helper, QR codes, image compression, and resizing.",
+      "keywords": "AI tools, free AI, AI summary, homework helper, productivity, Pomodoro, todo"
+    },
+    "jsonLd": {
+      "websiteName": "RxV AI tools hub",
+      "organizationName": "RxV AI tools hub"
+    }
+  },
+  "categoryTools": {
+    "h1": "Free tools overview | AI tool picks",
+    "lead": "Browse AI and productivity tools in one place—run in the browser, no install, get things done fast.",
+    "seoTitle": "Tools overview | Free tools - RxV AI hub",
+    "seoDesc": "Overview of free online tools—fast tasks, no download required.",
+    "seoKeywords": "tools overview, AI tools, free tools",
+    "introH3Line": "LINE sticker organizer",
+    "introH3Resize": "Image resize",
+    "introH3Ai": "AI summary",
+    "introH3Pomodoro": "Pomodoro",
+    "whatTitle": "What is this overview?",
+    "whatP": "This hub helps you discover AI and productivity tools for work, study, and daily use.",
+    "whyTitle": "Why use it?",
+    "whyLi1": "Free to use",
+    "whyLi2": "No install",
+    "whyLi3": "Quick workflows",
+    "moreTitle": "More tools",
+    "moreLinkTools": "Tools hub",
+    "moreLinkSummary": "AI summary",
+    "moreLinkHomework": "Homework helper",
+    "longP": "Use this page to compare tools and jump in—whether you are studying, working, or building a longer toolkit list.",
+    "ctaMore": "See more AI tools"
+  },
+  "toolCategory": {
+    "seoTitle": "{{h1}} | Category hub & guides",
+    "sectionIntro": "About this category",
+    "sectionToolCards": "Tools in this category",
+    "sectionUsage": "How to use this hub",
+    "sectionUsageP": "Pick one tool to start, then combine related tools into a full workflow.",
+    "popularTitle": "Popular pages in this category",
+    "guidesTitle": "Recommended guides",
+    "toolsTitle": "Related tools"
+  },
+  "guideArticle": {
+    "defaultSeoTitle": "{{title}} | RxV Guide",
+    "sectionHighlights": "Key points",
+    "sectionSteps": "Steps",
+    "ctaHeading": "Open the tool",
+    "ctaBody": "Apply this guide directly in the tool.",
+    "ctaButton": "Go to {{name}}"
+  },
+  "toolsHub": {
+    "badgeDev": "In development",
+    "badgeLocked": "Not available yet"
+  }
+}

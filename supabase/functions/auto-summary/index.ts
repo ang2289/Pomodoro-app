@@ -8,10 +8,13 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-// ⚠️ 原樣保留（不換 preview）
-const GEMINI_MODEL = "gemini-2.5-flash-preview-09-2025";
-const GEMINI_API_URL =
-  "https://generativelanguage.googleapis.com/v1beta/models";
+const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models";
+
+/**
+ * ✅ 不再鎖定 preview（preview 常下線）
+ * 依序嘗試：2.0 flash → 1.5 flash（可自行加）
+ */
+const GEMINI_MODELS = ["gemini-2.6-flash"];
 
 const SYSTEM_PROMPT = `
 Analyze the provided article content.
@@ -29,22 +32,58 @@ You must complete ALL tasks below:
 Respond ONLY in valid JSON. No explanation text.
 `;
 
+/**
+ * ⚠️ responseSchema / responseMimeType 在某些模型/版本可能 400
+ * 所以：先帶 schema 試；若失敗再「移除 schema」重試（同一模型）
+ */
 const RESPONSE_SCHEMA = {
   type: "OBJECT",
   properties: {
     summary: { type: "STRING" },
-    keywords: {
-      type: "ARRAY",
-      items: { type: "STRING" },
-    },
-    traffic_keywords: {
-      type: "ARRAY",
-      items: { type: "STRING" },
-    },
+    keywords: { type: "ARRAY", items: { type: "STRING" } },
+    traffic_keywords: { type: "ARRAY", items: { type: "STRING" } },
   },
   required: ["summary", "keywords", "traffic_keywords"],
   propertyOrdering: ["summary", "keywords", "traffic_keywords"],
 };
+
+function pickGeminiKey(): string | null {
+  // ✅ Edge Secrets 常見命名都支援（你畫面有 GEMINI_API_KEY）
+  return (
+    Deno.env.get("GEMINI_API_KEY") ||
+    Deno.env.get("GEMINI_API_KEY_SUMMARY") ||
+    Deno.env.get("VITE_GEMINI_API_KEY") ||
+    Deno.env.get("VITE_GEMINI_API_KEY_SUMMARY") ||
+    null
+  );
+}
+
+async function callGemini(model: string, apiKey: string, payload: any) {
+  const url = `${GEMINI_API_URL}/${model}:generateContent?key=${apiKey}`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const text = await res.text();
+  let json: any = null;
+  try {
+    json = text ? JSON.parse(text) : null;
+  } catch {
+    // keep raw text
+  }
+
+  return { res, status: res.status, text, json };
+}
+
+function safeParseAiJson(rawText: string) {
+  try {
+    return { ok: true, value: JSON.parse(rawText) };
+  } catch {
+    return { ok: false, value: null };
+  }
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -54,28 +93,54 @@ serve(async (req) => {
   if (req.method !== "POST") {
     return new Response(JSON.stringify({ error: "Only POST allowed" }), {
       status: 405,
-      headers: corsHeaders,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 
   try {
-    const body = await req.json();
-    const content = body.content || "";
-    const title = body.title || "AI Summary";
-
-    if (!content) {
-      return new Response(JSON.stringify({ error: "Missing content" }), {
-        status: 400,
-        headers: corsHeaders,
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const bearer = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
+    if (!serviceRoleKey || bearer !== serviceRoleKey) {
+      return new Response(JSON.stringify({ error: "FORBIDDEN" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const GEMINI_KEY = Deno.env.get("GEMINI_API_KEY");
-    if (!GEMINI_KEY) {
-      throw new Error("GEMINI_API_KEY not set");
+    const body = await req.json();
+    const internalUserId = body?.internalUserId;
+    if (
+      typeof internalUserId !== "string" ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(internalUserId)
+    ) {
+      return new Response(JSON.stringify({ error: "INVALID_INTERNAL_USER" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const content = (body?.content || "").toString();
+    const title = (body?.title || "AI Summary").toString();
+
+    if (!content.trim()) {
+      return new Response(JSON.stringify({ error: "Missing content" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    const payload = {
+    const apiKey = pickGeminiKey();
+    if (!apiKey) {
+      return new Response(
+        JSON.stringify({
+          error: "GEMINI_API_KEY not set",
+          hint: "請到 Supabase Dashboard → Edge Functions → Secrets 設定 GEMINI_API_KEY",
+        }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ✅ 先用 schema 版本的 payload
+    const payloadWithSchema = {
       contents: [
         {
           role: "user",
@@ -89,91 +154,119 @@ serve(async (req) => {
       },
     };
 
-    const res = await fetch(
-      `${GEMINI_API_URL}/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      }
-    );
+    // ✅ 移除 schema 的備援 payload（避免 400）
+    const payloadNoSchema = {
+      contents: payloadWithSchema.contents,
+      generationConfig: {
+        temperature: 0.35,
+      },
+    };
 
-    // 🔒 MINIMAL GUARD ①：避免 Gemini 回錯直接炸
-    if (!res.ok) {
-      const errText = await res.text();
-      return new Response(
-        JSON.stringify({
-          error: "Gemini API error",
-          detail: errText,
-        }),
-        { status: 502, headers: corsHeaders }
-      );
-    }
+    const attempts: any[] = [];
 
-    const data = await res.json();
-    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    // 依序嘗試 model；每個 model：先帶 schema → 不行再不帶 schema
+    for (const model of GEMINI_MODELS) {
+      // A) with schema
+      const a = await callGemini(model, apiKey, payloadWithSchema);
+      attempts.push({
+        model,
+        variant: "with_schema",
+        status: a.status,
+        body: a.text,
+      });
 
-    // 🔒 防止 Gemini 回傳空結構時直接丟 500
-    if (!rawText) {
-      return new Response(
-        JSON.stringify({
-          title,
-          summary: "",
-          result: "",
-          keywords: [],
-          traffic_keywords: [],
-          modelUsed: GEMINI_MODEL,
-          status: "empty"
-        }),
-        {
-          headers: {
-            ...corsHeaders,
-            "Content-Type": "application/json"
+      if (a.res.ok) {
+        const rawText = a.json?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (rawText) {
+          const parsed = safeParseAiJson(rawText);
+          if (parsed.ok) {
+            const ai = parsed.value || {};
+            const summaryText = (ai.summary ?? "").toString();
+
+            return new Response(
+              JSON.stringify({
+                title,
+                summary: summaryText,
+                result: summaryText,
+                keywords: Array.isArray(ai.keywords) ? ai.keywords.slice(0, 5) : [],
+                traffic_keywords: Array.isArray(ai.traffic_keywords)
+                  ? ai.traffic_keywords.slice(0, 5)
+                  : [],
+                model_used: model,
+                status: "success",
+                attempts,
+              }),
+              { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          } else {
+            // schema 成功但模型回傳不是 JSON：改走 no-schema 重試，或下一個 model
           }
         }
-      );
+      }
+
+      // B) no schema
+      const b = await callGemini(model, apiKey, payloadNoSchema);
+      attempts.push({
+        model,
+        variant: "no_schema",
+        status: b.status,
+        body: b.text,
+      });
+
+      if (b.res.ok) {
+        // no-schema 時，通常回傳是純文字；我們仍要求 JSON，所以取 candidates text 再 JSON.parse
+        const rawText = b.json?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (rawText) {
+          const parsed = safeParseAiJson(rawText);
+          if (parsed.ok) {
+            const ai = parsed.value || {};
+            const summaryText = (ai.summary ?? "").toString();
+
+            return new Response(
+              JSON.stringify({
+                title,
+                summary: summaryText,
+                result: summaryText,
+                keywords: Array.isArray(ai.keywords) ? ai.keywords.slice(0, 5) : [],
+                traffic_keywords: Array.isArray(ai.traffic_keywords)
+                  ? ai.traffic_keywords.slice(0, 5)
+                  : [],
+                model_used: model,
+                status: "success",
+                attempts,
+              }),
+              { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          } else {
+            // 如果模型回傳「非 JSON」，就把原文透出，方便你 debug / 也不至於 500
+            return new Response(
+              JSON.stringify({
+                error: "Invalid AI JSON response",
+                title,
+                model_tried: model,
+                raw: rawText,
+                attempts,
+              }),
+              { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
+        }
+      }
     }
 
-    // 🔒 MINIMAL GUARD ②：JSON parse 防護
-    let ai: any;
-    try {
-      ai = JSON.parse(rawText);
-    } catch {
-      return new Response(
-        JSON.stringify({
-          error: "Invalid AI JSON response",
-          raw: rawText,
-        }),
-        { status: 502, headers: corsHeaders }
-      );
-    }
-
-    const summaryText = ai.summary ?? "";
-
+    // 全部失敗：回傳最後一次錯誤（含 attempts）
     return new Response(
       JSON.stringify({
-        title,
-        summary: summaryText,
-        result: summaryText,
-        keywords: Array.isArray(ai.keywords) ? ai.keywords.slice(0, 5) : [],
-        traffic_keywords: Array.isArray(ai.traffic_keywords)
-          ? ai.traffic_keywords.slice(0, 5)
-          : [],
-        modelUsed: GEMINI_MODEL,
-        status: "success",
+        error: "Gemini API failed",
+        model_tried: GEMINI_MODELS,
+        attempts,
       }),
-      {
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "application/json",
-        },
-      }
+      { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err: any) {
-    // 🔒 MINIMAL GUARD ③：確保不再 FUNCTION_INVOCATION_FAILED
     return new Response(
       JSON.stringify({ error: err?.message || "Internal error" }),
-      { status: 500, headers: corsHeaders }
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });

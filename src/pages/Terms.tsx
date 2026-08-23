@@ -1,15 +1,13 @@
 import React from "react"
 import { useTranslation } from 'react-i18next'
-import ModuleDropdown from '../components/ModuleDropdown'
 
 export default function TermsPage() {
   const { t } = useTranslation()
   
   return (
     <div className="p-6 max-w-3xl mx-auto text-gray-800 leading-relaxed">
-      <div className="flex items-center justify-between mb-4">
+      <div className="mb-4">
         <h1 className="text-2xl font-bold">{t('terms_title')}</h1>
-        <ModuleDropdown />
       </div>
 
       {/* Beta 測試標示 */}

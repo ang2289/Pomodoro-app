@@ -306,7 +306,7 @@ export default function RentalSubsidy2025() {
       <div className="text-center mt-8">
         <Link
           to="/aids"
-          className="bg-blue-600 hover:bg-blue-700 !text-white font-semibold py-2 px-6 rounded-full inline-block"
+          className="bg-blue-600 hover:bg-blue-700 !text-white font-semibold py-2 px-6 rounded-full inline-block transition"
         >
           {isEnglish ? "← Back to Subsidy Package" : "← 回到補助懶人包"}
         </Link>

@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import SEO from "../../components/SEO";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function CollegeEntranceExamExplainedPage() {
   // 獲取今天的日期（格式：YYYY-MM-DD）
@@ -43,6 +44,9 @@ export default function CollegeEntranceExamExplainedPage() {
               大學學測（學科能力測驗）是目前台灣高中生升大學的主要管道之一，跟以前的聯考制度有很大差異。很多人對學測制度不太了解，或是還停留在聯考時代的觀念，其實兩者差很多。
             </p>
 
+            <ArticleCTA placement="start" focus="summary" />
+
+
             <h2 className="text-2xl font-semibold mt-8 mb-4">為什麼會有學測？</h2>
             <p className="mb-4">
               學測是為了取代以前的聯考制度而設計的。聯考制度是「一次定終身」，只看一次考試的成績，而且每個科系都用同一套標準。學測制度則希望：
@@ -69,6 +73,8 @@ export default function CollegeEntranceExamExplainedPage() {
             <p className="mb-4">
               所以學測成績不是「唯一的標準」，只是「其中一個條件」。每個科系會要求不同的科目成績，有些科系可能只看某些科目，有些科系可能會要求全部科目都要達到一定標準。
             </p>
+
+            <ArticleCTA placement="middle" focus="summary" />
 
             <h2 className="text-2xl font-semibold mt-8 mb-4">家長與學生最容易誤會的地方</h2>
             
@@ -115,6 +121,8 @@ export default function CollegeEntranceExamExplainedPage() {
             </p>
           </div>
 
+          <ArticleCTA placement="afterFaq" focus="summary" />
+
           {/* 相關文章區塊 */}
           <div className="mt-12 pt-8 border-t border-gray-200">
             <h3 className="text-2xl font-bold text-gray-900 mb-2">
@@ -150,8 +158,6 @@ export default function CollegeEntranceExamExplainedPage() {
               </Link>
             </div>
           </div>
-
-          {/* 導流區塊：摘要模組 */}
           <div className="mt-12 pt-8 border-t border-gray-200">
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 text-center">
               <h3 className="text-xl font-bold text-gray-900 mb-2">
@@ -162,7 +168,7 @@ export default function CollegeEntranceExamExplainedPage() {
               </p>
               <Link
                 to="/summary"
-                className="inline-block px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg drop-shadow-md"
+                className="inline-block bg-blue-600 text-white px-5 py-3 rounded-lg text-base font-medium hover:bg-blue-700 transition"
                 style={{ textShadow: '0 1px 2px rgba(0,0,0,0.1)' }}
               >
                 貼上文章，幫我整理
@@ -242,6 +248,7 @@ export default function CollegeEntranceExamExplainedPage() {
               </li>
             </ul>
           </div>
+          <ArticleCTA placement="bottom" focus="summary" />
 
           <div className="mt-8 pt-6 border-t border-gray-200">
             <Link

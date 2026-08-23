@@ -190,7 +190,7 @@ export default function ChantRankingPage() {
               <p className="text-gray-600 mb-4">{t('ranking_will_appear_after_activities')}</p>
               <Link
                 to="/chant-wish-wall"
-                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg inline-block"
+                className="inline-block bg-blue-600 text-white hover:bg-blue-700 font-bold py-3 px-6 rounded-lg transition transform hover:scale-105 shadow-lg"
                 style={{ color: '#ffffff' }}
               >
                 🙏 {t('create_chant_activity')}
@@ -280,7 +280,7 @@ export default function ChantRankingPage() {
                 <div className="flex justify-center">
                   <Link
                     to={`/chant-wish-detail/${wish.wish_no}`}
-                    className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 !text-white font-bold py-2 px-4 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
+                    className="bg-blue-600 hover:bg-blue-700 !text-white font-bold py-2 px-4 rounded-lg transition transform hover:scale-105 shadow-lg"
                     style={{ color: '#ffffff' }}
                   >
                     🔍 {t('view_details')}

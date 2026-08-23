@@ -28,7 +28,7 @@ export default function ModuleSwitcher() {
             onClick={() => handleModuleClick(item.path)}
             className={`w-12 h-12 rounded-full shadow-lg transition-all duration-200 flex items-center justify-center ${
               isActive 
-                ? 'bg-blue-500 text-white scale-110' 
+                ? 'bg-blue-600 text-white scale-110' 
                 : 'bg-white text-gray-600 hover:bg-gray-50 hover:scale-105'
             }`}
             title={item.label}

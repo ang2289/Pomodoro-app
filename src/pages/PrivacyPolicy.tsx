@@ -1,12 +1,10 @@
 import React from "react"
-import ModuleDropdown from '../components/ModuleDropdown'
 
 export default function PrivacyPolicyPage() {
   return (
     <div className="p-6 max-w-3xl mx-auto text-gray-800 leading-relaxed">
-      <div className="flex items-center justify-between mb-4">
+      <div className="mb-4">
         <h1 className="text-2xl font-bold">隱私權政策與 Cookie 政策</h1>
-        <ModuleDropdown />
       </div>
 
       {/* Beta 測試標示 */}

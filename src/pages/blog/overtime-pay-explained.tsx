@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import SEO from "../../components/SEO";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function OvertimePayExplainedPage() {
   // 獲取今天的日期（格式：YYYY-MM-DD）
@@ -42,6 +43,9 @@ export default function OvertimePayExplainedPage() {
             <p className="mb-4">
               加班費是法律規定的，雇主應該要給，但很多人其實拿不到。這不是因為「法律沒規定」，而是因為實務上有很多「灰色地帶」，例如責任制、補休、或是雇主用其他方式規避。
             </p>
+
+            <ArticleCTA placement="start" focus="summary" />
+
 
             <h2 className="text-2xl font-semibold mt-8 mb-4">加班費制度存在的原意</h2>
             <p className="mb-4">
@@ -96,6 +100,9 @@ export default function OvertimePayExplainedPage() {
             <p className="mb-4">
               責任制不是「雇主說了算」，而是有很嚴格的條件：
             </p>
+
+            <ArticleCTA placement="middle" focus="summary" />
+
             <ul className="list-disc pl-6 space-y-2 mb-4">
               <li>只有特定行業和職位才能適用責任制</li>
               <li>要經過主管機關核定</li>
@@ -154,6 +161,8 @@ export default function OvertimePayExplainedPage() {
             </div>
           </div>
 
+          <ArticleCTA placement="afterFaq" focus="summary" />
+
           {/* 相關文章區塊 */}
           <div className="mt-12 pt-8 border-t border-gray-200">
             <h3 className="text-2xl font-bold text-gray-900 mb-2">
@@ -189,8 +198,6 @@ export default function OvertimePayExplainedPage() {
               </Link>
             </div>
           </div>
-
-          {/* 導流區塊：摘要模組 */}
           <div className="mt-12 pt-8 border-t border-gray-200">
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 text-center">
               <h3 className="text-xl font-bold text-gray-900 mb-2">
@@ -201,7 +208,7 @@ export default function OvertimePayExplainedPage() {
               </p>
               <Link
                 to="/summary"
-                className="inline-block px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg drop-shadow-md"
+                className="inline-block bg-blue-600 text-white px-5 py-3 rounded-lg text-base font-medium hover:bg-blue-700 transition"
                 style={{ textShadow: '0 1px 2px rgba(0,0,0,0.1)' }}
               >
                 貼上文章，幫我整理
@@ -281,6 +288,7 @@ export default function OvertimePayExplainedPage() {
               </li>
             </ul>
           </div>
+          <ArticleCTA placement="bottom" focus="summary" />
 
           <div className="mt-8 pt-6 border-t border-gray-200">
             <Link

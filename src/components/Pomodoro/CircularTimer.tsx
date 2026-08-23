@@ -115,7 +115,7 @@ const CircularTimer: React.FC<CircularTimerProps> = ({
                 className="text-4xl font-bold text-blue-600 text-center bg-transparent border-none outline-none"
                 autoFocus
               />
-              <button type="submit" className="mt-2 px-3 py-1 bg-blue-500 text-white rounded-md">
+              <button type="submit" className="mt-2 px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
                 {t('save')}
               </button>
             </form>

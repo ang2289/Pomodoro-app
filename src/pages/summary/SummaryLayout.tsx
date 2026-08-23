@@ -1,6 +1,8 @@
+//src/pages/summary/SummaryLayout.tsx
 import { Helmet } from 'react-helmet-async'
 import { Link, useNavigate } from 'react-router-dom'
 import React, { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { trackEvent } from '@/utils/analytics'
 
 import SectionHeader from '../../components/SectionHeader'
@@ -10,82 +12,10 @@ import { isLoggedIn } from '@/lib/auth'
 import UpgradeModal from '@/components/UpgradeModal'
 import TwoColumnToolLayout from '@/components/TwoColumnToolLayout'
 import PricingPlanCard from '@/components/PricingPlanCard'
-import { buildSEO } from '../../lib/seo'
 import PrimaryButton from '@/components/ui/PrimaryButton'
 import InsufficientCreditsPrompt from '@/components/InsufficientCreditsPrompt'
 import LowCreditsNotice from '@/components/LowCreditsNotice'
 import { Card, CardContent } from '@/components/ui/card'
-
-// ===== 🔤 MVP 語系 =====
-const LANG_TEXT = {
-  'zh-tw': {
-    langLabel: '繁體中文',
-    inputTitle: '文字輸入',
-    placeholder: '請貼上要摘要的文章...',
-    summaryTitle: '📌 摘要結果',
-    copySummary: '複製摘要',
-    keywordTitle: '🔖 相關關鍵字',
-    copyKeywords: '複製關鍵字',
-    trafficKeywordTitle: '流量關鍵字建議',
-    copyTrafficKeywords: '複製流量關鍵字',
-    conversionKeywordTitle: '高轉換關鍵字（諮詢 / 行動導向）',
-    conversionKeywordSubtitle: '適合用於諮詢、下一步行動或專業協助判斷',
-    conversionKeywordHover: '這類關鍵字通常出現在使用者準備採取行動前',
-    pending: '（內容將顯示於此）',
-    btn: '一鍵摘要',
-    loading: '生成中…',
-    previewTitle: '✨ 即將上線功能（預告）',
-    previewList: [
-      '網址自動抓全文摘要',
-      '多語言自動識別 & 多語輸出',
-      '一鍵分享 FB / LINE / Reddit',
-      'AI 摘要歷史記錄',
-      '深度重點提取（非一般摘要）',
-      'AI 真人朗讀（未來付費功能）',
-      '上傳 PDF → 自動擷取文字（未來進階功能）'
-    ],
-    currentLength: '目前輸入字數',
-    freeLimitTitle: '⚡ 免費方案：總額 10,000 字',
-    freeLimitSub: '字數以實際輸入內容計算，不限月份、不限天數，用完為止'
-  },
-  en: {
-    langLabel: 'English',
-    inputTitle: 'Text Input',
-    placeholder: 'Paste the article…',
-    summaryTitle: '📌 Summary Result',
-    copySummary: 'Copy Summary',
-    keywordTitle: '🔖 Keywords',
-    copyKeywords: 'Copy Keywords',
-    trafficKeywordTitle: 'Traffic Keyword Suggestions',
-    copyTrafficKeywords: 'Copy Traffic Keywords',
-    conversionKeywordTitle: 'Conversion Keywords (Consultation / Action-Oriented)',
-    conversionKeywordSubtitle: 'Suitable for consultation, next steps, or professional assistance',
-    conversionKeywordHover: 'These keywords typically appear when users are ready to take action',
-    pending: '(Summary will appear here)',
-    btn: 'Generate',
-    loading: 'Generating…',
-    previewTitle: '✨ Coming Soon Features',
-    previewList: [
-      'Auto URL full-text extraction',
-      'Multi-language detection & output',
-      'One-click share to FB / LINE / Reddit',
-      'Summary history record',
-      'Deep insight extraction',
-      'AI human-voice reading (future paid feature)',
-      'Upload PDF → extract text (future feature)'
-    ],
-    currentLength: 'Current Input Length',
-    freeLimitTitle: '⚡ Free Plan: 10,000 characters',
-    freeLimitSub: 'Characters are calculated based on actual input, no expiration date'
-  }
-}
-
-const seo = buildSEO({
-  title: 'AI 摘要工具',
-  description: '貼上文章內容，AI 自動生成摘要與關鍵字。支援繁中 / 英文切換，簡單快速抓重點。',
-  url: 'https://pomodoro-app-eight-rouge.vercel.app/summary',
-  image: '/seo/summary-tool.png',
-})
 
 interface SummaryLayoutProps {
   // Language
@@ -119,6 +49,8 @@ interface SummaryLayoutProps {
   
   // Keywords
   keywords: string[]
+  /** 預設關鍵字為 i18n 鍵時，顯示與複製會依語系翻譯 */
+  defaultKeywordKeys?: string[]
   
   // Traffic Keywords
   trafficKeywords: string[]
@@ -168,6 +100,7 @@ export default function SummaryLayout(props: SummaryLayoutProps) {
     lastUsedPoints,
     usageChars,
     keywords,
+    defaultKeywordKeys,
     trafficKeywords,
     trafficKeywordsReady,
     highIntentContent,
@@ -184,9 +117,21 @@ export default function SummaryLayout(props: SummaryLayoutProps) {
     planLimit,
   } = props
 
-  // UI 僅做狀態顯示，不碰資料來源
-  const t = LANG_TEXT[lang]
+  const { t, i18n } = useTranslation()
+  const copySeparator = "\n"
   const navigate = useNavigate()
+  /** 若為預設 i18n 鍵則顯示翻譯，否則顯示 API 回傳字串 */
+  const getKeywordLabel = (k: string) => (defaultKeywordKeys && defaultKeywordKeys.includes(k) ? t(k) : k)
+
+  // 追蹤導流卡顯示（摘要結果產出後）
+  const hasTrackedCrossPromo = React.useRef(false)
+  useEffect(() => {
+    if (summary.content?.trim() && !loading && !hasTrackedCrossPromo.current) {
+      trackEvent('crosspromo_show_homework', { source: 'summary' })
+      hasTrackedCrossPromo.current = true
+    }
+    if (!summary.content?.trim()) hasTrackedCrossPromo.current = false
+  }, [summary.content, loading])
 
   // 追蹤升級提示 UI 顯示（使用 ref 避免重複觸發）
   const hasTrackedUpgradeModal = React.useRef(false)
@@ -246,17 +191,16 @@ export default function SummaryLayout(props: SummaryLayoutProps) {
   const handlePurchaseClick = (e: React.MouseEvent) => {
     if (!isLoggedIn()) {
       e.preventDefault()
-      alert('請先註冊或登入，才能使用本功能')
+      alert(t('summary_please_login'))
       navigate('/login')
       return
     }
-    // 已登入，允許跳轉到 /pricing
   }
 
   // Copy functions
   const copyText = (text: string) => {
     navigator.clipboard.writeText(text)
-    alert(lang === 'zh-tw' ? '已複製！' : 'Copied!')
+    alert(t('summary_copied'))
   }
 
   const copySummary = () => {
@@ -267,9 +211,7 @@ export default function SummaryLayout(props: SummaryLayoutProps) {
 
   const copyKeywords = () => {
     if (keywords.length > 0) {
-      // 根據語言使用不同的分隔符：中文用「、」，英文用「, 」
-      const separator = lang === 'zh-tw' ? '、' : ', '
-      copyText(keywords.join(separator))
+      copyText(keywords.map(getKeywordLabel).join(copySeparator))
     }
   }
 
@@ -280,17 +222,12 @@ export default function SummaryLayout(props: SummaryLayoutProps) {
     // 禁止使用 slice、filter、去重（includes / startsWith）等任何加工邏輯
     if (trafficKeywordsReady && trafficKeywords.length > 0) {
       try {
-        // ⚠️ 完全信任後端回傳，禁止任何前端加工
-        // 直接使用所有後端回傳的關鍵字，不做任何處理
-        const separator = lang === 'zh-tw' ? '、' : ', '
-        const text = trafficKeywords.join(separator)
+        const text = trafficKeywords.join(copySeparator)
         
-        // 使用 navigator.clipboard 複製所有流量關鍵字
         if (navigator.clipboard && navigator.clipboard.writeText) {
           await navigator.clipboard.writeText(text)
-          alert(lang === 'zh-tw' ? '流量關鍵字已複製' : 'Traffic keywords copied')
+          alert(t('summary_traffic_copied'))
         } else {
-          // Fallback：使用舊的 document.execCommand 方法
           const textArea = document.createElement('textarea')
           textArea.value = text
           textArea.style.position = 'fixed'
@@ -299,43 +236,41 @@ export default function SummaryLayout(props: SummaryLayoutProps) {
           textArea.select()
           document.execCommand('copy')
           document.body.removeChild(textArea)
-          alert(lang === 'zh-tw' ? '流量關鍵字已複製' : 'Traffic keywords copied')
+          alert(t('summary_traffic_copied'))
         }
       } catch (err) {
         console.error('複製流量關鍵字失敗:', err)
-        alert(lang === 'zh-tw' ? '複製失敗，請手動選取複製' : 'Copy failed, please select and copy manually')
+        alert(t('summary_copy_failed'))
       }
     }
   }
 
   const copyConversionKeyword = (keyword: string) => {
-    // 複製單一高轉換關鍵字
-    // ⚠️ 高轉換關鍵字由 Supabase Edge Function + Gemini JSON Schema 生成
-    // 前端不得再做任何修正、去重或補齊，避免破壞搜尋語意
     if (keyword && keyword.trim().length > 0) {
       navigator.clipboard.writeText(keyword.trim())
-      alert(lang === 'zh-tw' ? '高轉換關鍵字已複製' : 'Conversion keyword copied')
+      alert(t('summary_conversion_copied'))
     }
   }
 
   return (
     <div>
       <Helmet>
-        <title>{seo.title}</title>
+        <title>{t('summary_article_tool')}</title>
       </Helmet>
+
+
       
       {/* 頁面標題與首頁按鈕 */}
-      <div className="mb-6 flex items-center justify-between relative">
-        <div className="flex-1"></div>
-        <h1 className="text-3xl font-bold text-gray-900 flex-1 text-center absolute left-0 right-0">文章摘要工具</h1>
+      <div className="mb-8 flex items-center justify-between">
+        <h1 className="text-3xl font-bold text-gray-900 flex-1 text-center">{t('summary_article_tool')}</h1>
         <Link
           to="/"
-          className="inline-flex items-center justify-center px-3 py-1.5 bg-blue-600 hover:bg-blue-700 font-bold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 text-sm sm:text-base relative z-10"
-          style={{ color: '#ffffff' }}
+          className="inline-flex items-center justify-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-bold text-sm sm:text-base"
         >
-          <span style={{ color: '#ffffff' }}>首頁</span>
+          <span className="text-white">{t('homepage')}</span>
         </Link>
       </div>
+
       
       {/* 🔒 字數不足升級彈窗 - 統一使用 UpgradeModal，僅在 remainingChars <= 0 時顯示 */}
       <UpgradeModal
@@ -358,10 +293,10 @@ export default function SummaryLayout(props: SummaryLayoutProps) {
           <div>
             {/* 輸入框 */}
             <div className="shadow-md border rounded-2xl p-5 bg-white transition">
-              <SectionHeader title={t.inputTitle} />
+              <SectionHeader title={t('summary_input_title')} />
               <textarea
                 className="w-full h-[380px] bg-gray-50 border rounded-xl p-3 focus:ring-2 focus:ring-blue-500"
-                placeholder={t.placeholder}
+                placeholder={t('summary_placeholder')}
                 value={input}
                 onChange={(e) => onInputChange(e.target.value)}
               />
@@ -374,10 +309,10 @@ export default function SummaryLayout(props: SummaryLayoutProps) {
               className={`w-full py-3 rounded-xl font-semibold transition
                 ${loading
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:opacity-90'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
                 }`}
             >
-              {loading ? '生成中…' : '產生摘要'}
+              {loading ? t('summary_loading') : t('summary_btn_generate')}
             </button>
 
             {/* 手機版優先顯示：摘要結果 */}
@@ -386,34 +321,53 @@ export default function SummaryLayout(props: SummaryLayoutProps) {
               <Card>
                 <CardContent className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-semibold">📌 摘要結果</h3>
+                    <h3 className="font-semibold">📌 {t('summary_result_title')}</h3>
                     <button
                       onClick={copySummary}
-                      className="px-3 py-1.5 rounded-md text-sm bg-indigo-500 text-white hover:bg-indigo-600 active:scale-95 transition"
+                      className="px-3 py-1.5 rounded-md text-sm bg-blue-600 text-white hover:bg-blue-700 active:scale-95 transition"
                     >
-                      複製摘要
+                      {t('summary_copy_summary')}
                     </button>
                   </div>
-                  {/* ✅ 使用 state: summary.content */}
                   {summary.content && summary.content.trim() !== '' ? (
                     <>
                       <p className="text-gray-800 leading-relaxed">{summary.content}</p>
                       {lastUsedPoints && (
                         <div className="mt-2 text-sm text-gray-500">
-                          共輸入 <strong>{lastUsedPoints.inputLength}</strong> 字，輸出 <strong>{lastUsedPoints.outputLength}</strong> 字，合計扣除 <strong>{lastUsedPoints.totalUsedPoints}</strong> 點。
+                          {t('summary_last_use_detail', {
+                            input: lastUsedPoints.inputLength,
+                            output: lastUsedPoints.outputLength,
+                            points: lastUsedPoints.totalUsedPoints,
+                          })}
                         </div>
                       )}
                       {usageChars !== null && (
                         <div className="text-sm text-gray-500">
-                          本次使用字數：{usageChars.toLocaleString()} 字
+                          {t('summary_usage_this_time', { count: usageChars })}
                         </div>
                       )}
                     </>
                   ) : (
-                    <div className="text-gray-400">尚未生成摘要</div>
+                    <div className="text-gray-400">{t('summary_no_summary_yet')}</div>
                   )}
                 </CardContent>
               </Card>
+              {/* 導流卡：作業解題（僅在摘要產出後顯示） */}
+              {summary.content?.trim() && !loading && (
+                <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
+                  <h4 className="text-sm font-semibold text-slate-800">📌 {t('summary_homework_promo_title')}</h4>
+                  <p className="mt-2 text-sm text-slate-600 leading-relaxed">
+                    {t('summary_homework_promo_desc')}
+                  </p>
+                  <Link
+                    to="/tools/homework-helper"
+                    onClick={() => trackEvent('crosspromo_click_homework', { source: 'summary' })}
+                    className="mt-3 block w-full rounded-lg bg-blue-600 py-2 text-center text-sm font-medium text-white hover:bg-blue-700"
+                  >
+                    {t('summary_go_homework')}
+                  </Link>
+                </div>
+              )}
             </div>
 
             {/* 手機版優先顯示：關鍵字建議 */}
@@ -422,22 +376,21 @@ export default function SummaryLayout(props: SummaryLayoutProps) {
               <Card>
                 <CardContent className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-semibold">關鍵字建議</h3>
+                    <h3 className="font-semibold">{t('summary_keywords_title')}</h3>
                     <button 
                       onClick={copyKeywords}
                       className="btn-green"
                     >
-                      複製關鍵字
+                      {t('summary_copy_keywords')}
                     </button>
                   </div>
 
-                  {/* ✅ 使用 state: keywords */}
                   {keywords.length === 0 ? (
-                    <div className="text-sm text-gray-400">尚未產生關鍵字</div>
+                    <div className="text-sm text-gray-400">{t('summary_no_keywords_yet')}</div>
                   ) : (
                     <div className="flex flex-wrap gap-2">
                       {keywords.map((k, i) => (
-                        <span key={i} className="tag-blue">{k}</span>
+                        <span key={i} className="tag-blue">{getKeywordLabel(k)}</span>
                       ))}
                     </div>
                   )}
@@ -451,19 +404,18 @@ export default function SummaryLayout(props: SummaryLayoutProps) {
               <Card>
                 <CardContent className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-semibold">流量關鍵字</h3>
+                    <h3 className="font-semibold">{t('summary_traffic_keywords')}</h3>
                     <button 
                       onClick={copyTrafficKeywords}
                       className="btn-emerald"
                     >
-                      複製流量關鍵字
+                      {t('summary_copy_traffic_keywords')}
                     </button>
                   </div>
 
-                  {/* ✅ 使用 state: trafficKeywords */}
                   {trafficKeywords.length === 0 ? (
                     <div className="text-sm text-gray-400">
-                      尚未產生流量關鍵字
+                      {t('summary_no_traffic_keywords_yet')}
                     </div>
                   ) : (
                     <div className="flex flex-wrap gap-2">
@@ -478,103 +430,120 @@ export default function SummaryLayout(props: SummaryLayoutProps) {
 
             {/* 點數顯示 */}
             {isLoggedIn() ? (
-              // ✅ 已登入時：隱藏免費次數，改顯示目前剩餘點數
               <div className="mt-3 text-sm text-gray-500 space-y-1">
-                <div>已用點數：{(usedChars ?? 0).toLocaleString()}</div>
-                <div>剩餘點數：{remainingChars !== null ? remainingChars.toLocaleString() : '—'}</div>
+                <div>{t('summary_used_chars')}：{(usedChars ?? 0).toLocaleString()}</div>
+                <div>{t('summary_remaining_chars')}：{remainingChars !== null ? remainingChars.toLocaleString() : '—'}</div>
               </div>
             ) : (
-              // ✅ 未登入時：顯示「已使用 X / 3 次免費體驗」
               <div className="mt-3 text-sm text-gray-500 space-y-1">
                 <div>
-                  已使用 {freeTrialUsedCount ?? 0} / 3 次免費體驗
+                  {t('summary_free_trial_used', { count: freeTrialUsedCount ?? 0 })}
                 </div>
                 {freeTrialRemainingCount !== null && freeTrialRemainingCount > 0 && (
                   <div className="text-blue-600 font-medium">
-                    剩餘 {freeTrialRemainingCount} 次免費體驗
+                    {t('summary_free_trial_remaining', { count: freeTrialRemainingCount })}
                   </div>
                 )}
-                {/* ✅ 免費次數用完但未登入時：顯示登入提示 */}
                 {freeTrialRemainingCount !== null && freeTrialRemainingCount === 0 && (
                   <div className="text-red-600 font-medium mt-2">
-                    {lang === 'zh-tw' ? '免費體驗已用完，請登入以繼續使用' : 'Free trial exhausted, please log in to continue'}
+                    {t('summary_free_trial_exhausted')}
                   </div>
                 )}
               </div>
             )}
 
-            {/* 購買點數方案區塊（手機版移到關鍵字建議之後） */}
-            {/* ✅ 免費次數用完但未登入時：不顯示購買點數 */}
-            {!(freeTrialRemainingCount !== null && freeTrialRemainingCount === 0 && !isLoggedIn()) && (
-            <div className="mt-6 bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-xl p-6 shadow-md">
-              <div className="text-center mb-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-2">
-                  {lang === 'zh-tw' ? '購買點數方案' : 'Purchase Credits'}
-                </h2>
-                <p className="text-sm text-gray-700">
-                  {lang === 'zh-tw' ? '升級方案後可繼續使用 AI 摘要功能' : 'Upgrade your plan to continue using AI summary features'}
-                </p>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* 標準方案 NT$99 */}
-                <div className="bg-white rounded-lg p-5 border-2 border-blue-300 shadow-sm hover:shadow-md transition">
-                  <div className="text-center mb-4">
-                    <span className="text-3xl mb-2 block">💎</span>
-                    <h3 className="text-lg font-bold text-blue-900 mb-1">
-                      {lang === 'zh-tw' ? '標準方案' : 'Standard Plan'}
-                    </h3>
-                    <p className="text-xl font-bold text-blue-900">
-                      NT${PLANS.plan99.price}
-                    </p>
-                    <p className="text-sm text-gray-600 mt-1">
-                      {getPlanChars('pack99').toLocaleString()} {lang === 'zh-tw' ? '字' : 'chars'}
-                    </p>
-                  </div>
-                  <Link 
-                    to="/pricing" 
-                    onClick={(e) => {
-                      handlePurchaseClick(e)
-                      trackEvent('click_pricing', { source_page: 'summary' })
-                    }} 
-                    className="block"
-                  >
-                    <PrimaryButton fullWidth className="mt-4">
-                      {lang === 'zh-tw' ? '立即升級' : 'Upgrade Now'}
-                    </PrimaryButton>
-                  </Link>
-                </div>
+{/* 購買點數方案區塊（手機版移到關鍵字建議之後）- 一律顯示 */}
+<div className="mt-6 bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-xl p-6 shadow-md">
+  <div className="text-center mb-6">
+    <h2 className="text-xl font-bold text-gray-900 mb-2">
+      {t('summary_purchase_credits')}
+    </h2>
+    <p className="text-sm text-gray-700">
+      {t('summary_purchase_credits_desc')}
+    </p>
+  </div>
 
-                {/* 進階方案 NT$199 */}
-                <div className="bg-white rounded-lg p-5 border-2 border-purple-300 shadow-sm hover:shadow-md transition">
-                  <div className="text-center mb-4">
-                    <span className="text-3xl mb-2 block">💎</span>
-                    <h3 className="text-lg font-bold text-purple-900 mb-1">
-                      {lang === 'zh-tw' ? '進階方案' : 'Advanced Plan'}
-                    </h3>
-                    <p className="text-xl font-bold text-purple-900">
-                      NT${PLANS.plan199.price}
-                    </p>
-                    <p className="text-sm text-gray-600 mt-1">
-                      {getPlanChars('pack199').toLocaleString()} {lang === 'zh-tw' ? '字' : 'chars'}
-                    </p>
-                  </div>
-                  <Link 
-                    to="/pricing" 
-                    onClick={(e) => {
-                      handlePurchaseClick(e)
-                      trackEvent('click_pricing', { source_page: 'summary' })
-                    }} 
-                    className="block"
-                  >
-                    <PrimaryButton fullWidth className="mt-4">
-                      {lang === 'zh-tw' ? '立即升級' : 'Upgrade Now'}
-                    </PrimaryButton>
-                  </Link>
-                </div>
-              </div>
-            </div>
-            )}
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="bg-white rounded-lg p-5 border-2 border-blue-300 shadow-sm hover:shadow-md transition">
+      <div className="text-center mb-4">
+        <span className="text-3xl mb-2 block">💎</span>
+        <h3 className="text-lg font-bold text-blue-900 mb-1">
+          {t('summary_standard_plan')}
+        </h3>
+        <p className="text-xl font-bold text-blue-900">
+          NT${PLANS.plan99.price}
+        </p>
+        <p className="text-sm text-gray-600 mt-1">
+          {getPlanChars('pack99').toLocaleString()} {t('summary_credits_unit')}
+        </p>
+        <p className="text-sm font-semibold text-blue-600 mt-2">
+          {t('summary_standard_plan_desc')}
+        </p>
+      </div>
+
+      <Link
+        to="/pricing"
+        onClick={(e) => {
+          handlePurchaseClick(e)
+          trackEvent('click_pricing', { source_page: 'summary' })
+        }}
+        className="block"
+      >
+        <PrimaryButton fullWidth className="mt-4">
+          {t('summary_buy_credits')}
+        </PrimaryButton>
+      </Link>
+    </div>
+
+    <div className="bg-white rounded-lg p-5 border-2 border-purple-400 shadow-md hover:shadow-lg ring-2 ring-purple-200 transition">
+      <div className="text-center mb-4">
+        <span className="text-3xl mb-2 block">💎</span>
+        <h3 className="text-lg font-bold text-purple-900 mb-1">
+          {t('summary_advanced_plan')}
+        </h3>
+        <p className="text-xl font-bold text-purple-900">
+          NT${PLANS.plan199.price}
+        </p>
+        <p className="text-sm text-gray-600 mt-1">
+          {getPlanChars('pack199').toLocaleString()} {t('summary_credits_unit')}
+        </p>
+        <p className="text-sm font-bold text-purple-600 mt-2">
+          {t('summary_advanced_plan_desc')}
+        </p>
+      </div>
+
+      <Link
+        to="/pricing"
+        onClick={(e) => {
+          handlePurchaseClick(e)
+          trackEvent('click_pricing', { source_page: 'summary' })
+        }}
+        className="block"
+      >
+        <PrimaryButton fullWidth className="mt-4">
+          {t('summary_buy_credits')}
+        </PrimaryButton>
+      </Link>
+    </div>
+  </div>
+
+  <p className="mt-4 text-sm text-gray-600 text-center">
+    {t('summary_credits_usage_note')}
+  </p>
+
+  <div className="mt-3 flex flex-wrap justify-center gap-x-6 gap-y-1 text-sm text-gray-600">
+    <span>✓ {t('summary_free_images')}</span>
+    <span>✓ {t('summary_standard_images')}</span>
+    <span>✓ {t('summary_premium_images')}</span>
+  </div>
+</div>
+
+
+
+
+
+
 
             {/* 低點數提醒：當 remainingChars < 5000 且 > 0 時顯示 */}
             {remainingChars !== null && remainingChars > 0 && remainingChars < 5000 && (
@@ -591,16 +560,24 @@ export default function SummaryLayout(props: SummaryLayoutProps) {
 
             {/* 使用說明文字 */}
             <p className="text-sm text-gray-500">
-              本功能依實際輸入與 AI 輸出內容計算使用量，
-              僅供學習、作業理解與內容整理輔助用途。
+              {t('summary_usage_note')}
             </p>
 
             {/* 簡易使用說明：僅顯示連結到完整說明頁 */}
             <div className="mt-2 text-xs text-gray-500 text-center">
               <Link to="/points" className="text-blue-600 hover:underline">
-                查看完整使用說明 →
+                {t('summary_view_full_usage')} →
               </Link>
             </div>
+
+            {/* SEO 內鏈 */}
+            <p className="mt-4 text-sm text-gray-600 text-center">
+              {t('summary_seo_homework_intro')}{' '}
+              <Link to="/tools/homework-helper" className="text-blue-600 hover:text-blue-700 hover:underline font-medium">
+                {t('summary_seo_homework_link')}
+              </Link>{' '}
+              {t('summary_seo_homework_outro')}
+            </p>
 
             {error && (
               <p className="mt-3 p-3 bg-red-100 border border-red-300 text-red-600 rounded">
@@ -617,58 +594,74 @@ export default function SummaryLayout(props: SummaryLayoutProps) {
               <Card>
                 <CardContent className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-semibold">📌 摘要結果</h3>
+                    <h3 className="font-semibold">📌 {t('summary_result_title')}</h3>
                     <button
                       onClick={copySummary}
-                      className="px-3 py-1.5 rounded-md text-sm bg-indigo-500 text-white hover:bg-indigo-600 active:scale-95 transition"
+                      className="px-3 py-1.5 rounded-md text-sm bg-blue-600 text-white hover:bg-blue-700 active:scale-95 transition"
                     >
-                      複製摘要
+                      {t('summary_copy_summary')}
                     </button>
                   </div>
-                  {/* ✅ 使用 state: summary.content */}
                   {summary.content && summary.content.trim() !== '' ? (
                     <>
                       <p className="text-gray-800 leading-relaxed">{summary.content}</p>
                       {lastUsedPoints && (
                         <div className="mt-2 text-sm text-gray-500">
-                          共輸入 <strong>{lastUsedPoints.inputLength}</strong> 字，輸出 <strong>{lastUsedPoints.outputLength}</strong> 字，合計扣除 <strong>{lastUsedPoints.totalUsedPoints}</strong> 點。
+                          {t('summary_last_use_detail', {
+                            input: lastUsedPoints.inputLength,
+                            output: lastUsedPoints.outputLength,
+                            points: lastUsedPoints.totalUsedPoints,
+                          })}
                         </div>
                       )}
                       {usageChars !== null && (
                         <div className="text-sm text-gray-500">
-                          本次使用字數：{usageChars.toLocaleString()} 字
+                          {t('summary_usage_this_time', { count: usageChars })}
                         </div>
                       )}
                     </>
                   ) : (
-                    <div className="text-gray-400">尚未生成摘要</div>
+                    <div className="text-gray-400">{t('summary_no_summary_yet')}</div>
                   )}
                 </CardContent>
               </Card>
+              {summary.content?.trim() && !loading && (
+                <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
+                  <h4 className="text-sm font-semibold text-slate-800">📌 {t('summary_homework_promo_title')}</h4>
+                  <p className="mt-2 text-sm text-slate-600 leading-relaxed">
+                    {t('summary_homework_promo_desc')}
+                  </p>
+                  <Link
+                    to="/tools/homework-helper"
+                    onClick={() => trackEvent('crosspromo_click_homework', { source: 'summary' })}
+                    className="mt-3 block w-full rounded-lg bg-blue-600 py-2 text-center text-sm font-medium text-white hover:bg-blue-700"
+                  >
+                    {t('summary_go_homework')}
+                  </Link>
+                </div>
+              )}
             </div>
 
             {/* 桌面版顯示：關鍵字 */}
-            {/* ✅ STATE 變數：keywords */}
             <div className="hidden lg:block">
               <Card>
                 <CardContent className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-semibold">關鍵字建議</h3>
+                    <h3 className="font-semibold">{t('summary_keywords_title')}</h3>
                     <button 
                       onClick={copyKeywords}
                       className="btn-green"
                     >
-                      複製關鍵字
+                      {t('summary_copy_keywords')}
                     </button>
                   </div>
 
-                  {/* ✅ 使用 state: keywords */}
                   {keywords.length === 0 ? (
-                    <div className="text-sm text-gray-400">尚未產生關鍵字</div>
+                    <div className="text-sm text-gray-400">{t('summary_no_keywords_yet')}</div>
                   ) : (
                     <div className="flex flex-wrap gap-2">
                       {keywords.map((k, i) => (
-                        <span key={i} className="tag-blue">{k}</span>
+                        <span key={i} className="tag-blue">{getKeywordLabel(k)}</span>
                       ))}
                     </div>
                   )}
@@ -677,23 +670,21 @@ export default function SummaryLayout(props: SummaryLayoutProps) {
             </div>
 
             {/* 流量關鍵字（重點） */}
-            {/* ✅ STATE 變數：trafficKeywords */}
             <Card>
               <CardContent className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-semibold">流量關鍵字</h3>
+                  <h3 className="font-semibold">{t('summary_traffic_keywords')}</h3>
                   <button 
                     onClick={copyTrafficKeywords}
                     className="btn-emerald"
                   >
-                    複製流量關鍵字
+                    {t('summary_copy_traffic_keywords')}
                   </button>
                 </div>
 
-                {/* ✅ 使用 state: trafficKeywords */}
                 {trafficKeywords.length === 0 ? (
                   <div className="text-sm text-gray-400">
-                    尚未產生流量關鍵字
+                    {t('summary_no_traffic_keywords_yet')}
                   </div>
                 ) : (
                   <div className="flex flex-wrap gap-2">
@@ -711,4 +702,3 @@ export default function SummaryLayout(props: SummaryLayoutProps) {
     </div>
   )
 }
-

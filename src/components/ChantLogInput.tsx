@@ -87,7 +87,7 @@ export default function ChantLogInput({ wishId, onLogSuccess }: ChantLogInputPro
         <button
           onClick={handleLog}
           disabled={isSubmitting || !userName.trim() || count <= 0}
-          className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 disabled:from-gray-300 disabled:to-gray-400 !text-white font-bold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 disabled:scale-100 disabled:cursor-not-allowed"
+          className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:hover:bg-gray-300 !text-white font-bold py-3 px-6 rounded-lg transition transform hover:scale-105 disabled:scale-100 disabled:cursor-not-allowed"
           style={{ color: '#ffffff' }}
         >
           {isSubmitting ? (

@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import SEO from "../../components/SEO";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function CarImportTariffExplainedPage() {
   return (
@@ -41,6 +42,8 @@ export default function CarImportTariffExplainedPage() {
               這篇文章將為你詳細解釋汽車關稅的運作方式，以及它如何影響你購買的車價。
             </p>
 
+            <ArticleCTA placement="start" focus="summary" />
+
             <h2 className="text-2xl font-semibold mt-8 mb-4">什麼是汽車關稅？</h2>
             <p className="mb-4">
               汽車關稅是政府對進口汽車課徵的稅費，主要目的是保護國內汽車產業，同時也是政府的重要稅收來源。
@@ -51,6 +54,8 @@ export default function CarImportTariffExplainedPage() {
               進口車的關稅會直接反映在最終售價上，通常會讓進口車的價格比原產地高出一定比例。
             </p>
 
+            <ArticleCTA placement="middle" focus="summary" />
+
             <h2 className="text-2xl font-semibold mt-8 mb-4">一般消費者需要知道的重點</h2>
             <ul className="list-disc pl-6 space-y-2 mb-6">
               <li>關稅會影響進口車的價格</li>
@@ -60,6 +65,8 @@ export default function CarImportTariffExplainedPage() {
 
             {/* 文章正文內容請在此處填入 */}
           </div>
+
+          <ArticleCTA placement="afterFaq" focus="summary" />
 
           {/* 相關文章區塊 */}
           <div className="mt-12 pt-8 border-t border-gray-200">
@@ -96,8 +103,6 @@ export default function CarImportTariffExplainedPage() {
               </Link>
             </div>
           </div>
-
-          {/* 導流區塊：摘要模組 */}
           <div className="mt-12 pt-8 border-t border-gray-200">
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 text-center">
               <h3 className="text-xl font-bold text-gray-900 mb-2">
@@ -108,7 +113,7 @@ export default function CarImportTariffExplainedPage() {
               </p>
               <Link
                 to="/summary"
-                className="inline-block px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg drop-shadow-md"
+                className="inline-block bg-blue-600 text-white px-5 py-3 rounded-lg text-base font-medium hover:bg-blue-700 transition"
               >
                 貼上文章，幫我整理
               </Link>
@@ -203,6 +208,7 @@ export default function CarImportTariffExplainedPage() {
               </li>
             </ul>
           </div>
+          <ArticleCTA placement="bottom" focus="summary" />
 
           <div className="mt-8 pt-6 border-t border-gray-200">
             <Link

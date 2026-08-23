@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function NightReset() {
   return (
@@ -22,6 +23,9 @@ export default function NightReset() {
           與自己和平道別今日。
         </p>
 
+        <ArticleCTA placement="start" focus="tools" />
+
+
         <h2 className="text-2xl font-semibold mt-8 mb-3">🕯️ 三步驟放鬆儀式</h2>
         <ol className="list-decimal ml-6 space-y-2 mb-4">
           <li>
@@ -42,11 +46,15 @@ export default function NightReset() {
           幫助你從思緒回到感官。
         </p>
 
+        <ArticleCTA placement="middle" focus="tools" />
+
         <h2 className="text-2xl font-semibold mt-8 mb-3">💤 結語：為夢境留下一盞溫柔的燈</h2>
         <p className="mb-4">
           夜晚不只是結束，更是重生的起點。
           當你學會溫柔地與自己告別，安眠便會自然降臨。
         </p>
+
+        <ArticleCTA placement="bottom" focus="tools" />
 
         <hr className="my-8 border-gray-300" />
 
@@ -81,6 +89,8 @@ export default function NightReset() {
           Night is not just an end—it's the beginning of renewal.
           When you learn to say goodnight to yourself with kindness, rest will find you naturally.
         </p>
+
+        <ArticleCTA placement="afterFaq" focus="tools" />
 
         <p className="mt-8 text-gray-500 text-center text-sm">
           文章由 RxV 夢想創作工作室撰寫 · 保留所有權利

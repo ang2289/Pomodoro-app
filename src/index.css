@@ -159,6 +159,13 @@ input[type="number"] {
   --sidebar-ring: oklch(0.704 0.04 256.788);
 }
 
+/* 顏色穩定性保護：避免瀏覽器強制深色模式干擾 */
+html {
+  color-scheme: light;
+  background: #ffffff;
+  color: #111827;
+}
+
 a {
   font-weight: 500;
   color: #646cff;
@@ -174,9 +181,46 @@ body {
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
-  background-color: #ffffff;
-  color: #213547;
+  background: #ffffff;
+  color: #111827;
   font-family: 'Noto Sans TC', sans-serif;
+}
+
+/* 保持主要閱讀區不受濾鏡與混色影響 */
+.app-main-reading {
+  background: #ffffff;
+  color: #111827;
+  opacity: 1;
+  filter: none;
+  mix-blend-mode: normal;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* 平板（768~1024）加強防護：避免半透明白底 + 模糊造成整頁發白 */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .app-main-reading [class*="bg-white/"][class*="backdrop-blur"] {
+    background-color: #ffffff !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  .app-main-reading [class*="backdrop-blur"],
+  .app-main-reading [class*="backdrop-filter"] {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  .app-main-reading [style*="backdrop-filter"],
+  .app-main-reading [style*="backdropFilter"] {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  .app-main-reading [style*="mix-blend-mode"],
+  .app-main-reading [style*="mixBlendMode"] {
+    mix-blend-mode: normal !important;
+  }
 }
 
 h1 {
@@ -1105,3 +1149,67 @@ input[type="time"] {
 .summary-button-white:hover {
   color: #ffffff !important;
 }
+
+/* ========== 全站共用按鈕樣式（可讀性優化：白字 #fff＋對比足夠） ========== */
+/* 基礎：白字、字重、追蹤、陰影、focus ring（可單獨使用或與 Tailwind 搭配） */
+.btn-base {
+  color: #ffffff !important;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.15));
+}
+.btn-base:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px #60a5fa;
+}
+.btn-base:hover,
+.btn-base:active {
+  color: #ffffff !important;
+}
+
+/* 藍色主按鈕 */
+.btn-primary {
+  color: #ffffff !important;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.15));
+  background-color: #2563eb;
+}
+.btn-primary:hover { background-color: #1d4ed8; color: #ffffff !important; }
+.btn-primary:active { background-color: #1e40af; color: #ffffff !important; }
+.btn-primary:focus { outline: none; box-shadow: 0 0 0 2px #fff, 0 0 0 4px #60a5fa; }
+
+/* 綠色成功按鈕 */
+.btn-success {
+  color: #ffffff !important;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.15));
+  background-color: #16a34a;
+}
+.btn-success:hover { background-color: #15803d; color: #ffffff !important; }
+.btn-success:active { background-color: #166534; color: #ffffff !important; }
+.btn-success:focus { outline: none; box-shadow: 0 0 0 2px #fff, 0 0 0 4px #60a5fa; }
+
+/* 紅色危險按鈕 */
+.btn-danger {
+  color: #ffffff !important;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.15));
+  background-color: #dc2626;
+}
+.btn-danger:hover { background-color: #b91c1c; color: #ffffff !important; }
+.btn-danger:active { background-color: #991b1b; color: #ffffff !important; }
+.btn-danger:focus { outline: none; box-shadow: 0 0 0 2px #fff, 0 0 0 4px #60a5fa; }
+
+/* 邊框按鈕：白底深字，確保可讀 */
+.btn-outline {
+  background-color: #ffffff;
+  border: 2px solid #cbd5e1;
+  color: #0f172a !important;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+}
+.btn-outline:hover { background-color: #f8fafc; border-color: #94a3b8; }
+.btn-outline:focus { outline: none; box-shadow: 0 0 0 2px #fff, 0 0 0 4px #60a5fa; }

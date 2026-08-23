@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function PowerOfSilence() {
   return (
@@ -21,6 +22,9 @@ export default function PowerOfSilence() {
           這些外在的喧囂讓我們失去了與內在對話的機會。沉默不是空白，而是一種空間，
           讓我們能夠聽見內心的聲音，重新與自己連結。
         </p>
+
+        <ArticleCTA placement="start" focus="tools" />
+
 
         <h2 className="text-2xl font-semibold mt-8 mb-3">🕯️ 沉默的三種層次</h2>
         <ol className="list-decimal ml-6 space-y-3 mb-4">
@@ -68,6 +72,8 @@ export default function PowerOfSilence() {
           更重要的是，沉默讓我們有機會聽見內心的智慧與直覺。
         </p>
 
+        <ArticleCTA placement="middle" focus="tools" />
+
         <h2 className="text-2xl font-semibold mt-8 mb-3">💫 結語：在沉默中聽見真實</h2>
         <p className="mb-4">
           在一個充滿聲音的世界裡，沉默變得稀有而珍貴。
@@ -75,6 +81,8 @@ export default function PowerOfSilence() {
           你會發現，最深的智慧往往來自於無聲的內在。
           讓沉默成為你每天的禮物，在那裡，你會找到真正的自己。
         </p>
+
+        <ArticleCTA placement="bottom" focus="tools" />
 
         <hr className="my-8 border-gray-300" />
 
@@ -139,6 +147,8 @@ export default function PowerOfSilence() {
           you'll discover that the deepest wisdom often comes from the silent within.
           Let silence be your daily gift—there, you'll find your true self.
         </p>
+
+        <ArticleCTA placement="afterFaq" focus="tools" />
 
         <p className="mt-8 text-gray-500 text-center text-sm">
           所有文章由 RxV 夢想創作工作室撰寫 · 保留所有權利

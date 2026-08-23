@@ -106,7 +106,7 @@ export default function DietMind2025() {
       <div className="text-center mt-8">
         <Link
           to="/health"
-          className="bg-blue-600 hover:bg-blue-700 !text-white font-semibold py-2 px-6 rounded-full inline-block"
+          className="bg-blue-600 hover:bg-blue-700 !text-white font-semibold py-2 px-6 rounded-full inline-block transition"
         >
           {lang.startsWith("zh") ? "← 回到健康生活專欄" : "← Back to Health Living"}
         </Link>

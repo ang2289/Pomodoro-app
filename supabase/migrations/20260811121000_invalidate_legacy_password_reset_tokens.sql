@@ -1,0 +1,8 @@
+-- No-op migration retained to preserve the migration version.
+--
+-- Security audit result:
+-- - public.password_resets contained 0 rows at audit time.
+-- - Phase 1 disables direct anon/authenticated access to the table.
+-- - The application currently has no production password reset API.
+--
+-- No row data needs to be changed or invalidated.

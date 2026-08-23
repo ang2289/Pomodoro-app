@@ -14,13 +14,11 @@
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { featureFlags } from '@/config/featureFlags';
+import { isLocalDevelopment } from '@/lib/isLocalDevelopment';
+import VideoToolUnavailable from '@/components/VideoToolUnavailable';
+import SEO from '@/components/SEO';
 
-export default function ShopeeSingleVideoPage() {
-  // 🔒 功能開關檢查：防止直接輸入網址進入
-  if (!featureFlags.videoTool) {
-    return <Navigate to="/" replace />;
-  }
-
+function ShopeeSingleVideoPageInner() {
   const [inputUrl, setInputUrl] = useState('');
 
   const [videoUrl, setVideoUrl] = useState('https://www.w3schools.com/html/mov_bbb.mp4'); // 預設影片
@@ -137,13 +135,24 @@ export default function ShopeeSingleVideoPage() {
 
   };
 
-
+  if (!featureFlags.videoTool) {
+    return <Navigate to="/" replace />;
+  }
 
   return (
+    <>
+      <SEO
+        title="Shopee 單支影片工具｜免費Shopee 單支影片工具 - RxV AI工具中心"
+        description="免費Shopee 單支影片工具，支援線上使用，快速完成任務，無需下載。"
+        keywords="Shopee 單支影片工具, AI工具, 免費工具"
+        path="/tools/shopee-single-video"
+      />
+      <div className="max-w-xl mx-auto p-6">
 
-    <div className="max-w-xl mx-auto p-6">
-
-      <h1 className="text-2xl font-bold mb-4">🎬 Shopee 單支影片產生工具</h1>
+      <h1 className="text-2xl font-bold mb-2">Shopee 單支影片工具（免費）｜AI工具推薦</h1>
+      <p className="text-gray-600 text-sm mb-4">
+        這是一款免費Shopee 單支影片工具，可用於單一商品快速產生短影音內容，支援線上使用，不需下載，快速完成任務。
+      </p>
 
 
 
@@ -169,7 +178,7 @@ export default function ShopeeSingleVideoPage() {
 
         disabled={loading}
 
-        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition"
 
       >
 
@@ -275,8 +284,44 @@ export default function ShopeeSingleVideoPage() {
 
       )}
 
-    </div>
+        <section className="mt-12 rounded-xl border border-slate-200 bg-white p-6">
+          <h2 className="text-xl font-semibold text-slate-900">什麼是Shopee 單支影片工具？</h2>
+          <p className="mt-3 text-sm leading-relaxed text-slate-600">
+            Shopee 單支影片工具是一種常見的AI工具，可幫助使用者提升效率，適合用於工作、學習與日常應用。
+          </p>
+
+          <h2 className="mt-6 text-xl font-semibold text-slate-900">為什麼使用這個工具？</h2>
+          <ul className="list-disc pl-5 mt-3 space-y-1 text-sm text-slate-600">
+            <li>免費使用</li>
+            <li>不需安裝</li>
+            <li>支援快速處理</li>
+          </ul>
+
+          <h2 className="mt-6 text-xl font-semibold text-slate-900">更多相關工具</h2>
+          <ul className="list-disc pl-5 mt-3 space-y-1 text-sm text-slate-600">
+            <li><a href="/tools" className="text-blue-600 hover:underline">工具中心</a></li>
+            <li><a href="/summary" className="text-blue-600 hover:underline">AI摘要工具</a></li>
+            <li><a href="/tools/homework-helper" className="text-blue-600 hover:underline">AI作業解題</a></li>
+          </ul>
+          <p className="mt-4 text-sm leading-relaxed text-slate-600">
+            Shopee 單支影片工具是電商常見的AI工具，可針對單一商品快速生成內容。這款免費工具能降低剪輯門檻，讓 Shopee 單支影片工具更適合快速上架流程。若你要擴充AI工具與免費工具組合，Shopee 單支影片工具很值得加入。
+          </p>
+          <div className="mt-8">
+            <a href="/tools" className="inline-flex items-center justify-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 active:scale-[0.98]">
+              👉 查看更多 AI 工具
+            </a>
+          </div>
+        </section>
+      </div>
+    </>
 
   );
 
+}
+
+export default function ShopeeSingleVideoPage() {
+  if (!isLocalDevelopment()) {
+    return <VideoToolUnavailable />;
+  }
+  return <ShopeeSingleVideoPageInner />;
 }
