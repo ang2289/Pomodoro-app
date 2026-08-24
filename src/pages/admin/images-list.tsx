@@ -17,7 +17,7 @@ export default function AdminImagesListPage() {
     setLoading(true)
     try {
       const key = getImageAdminKey(); if (!key) throw new Error('請輸入圖片後台管理金鑰')
-      const response = await fetch('/api/image-admin?action=admin-list-images', { headers: { 'X-RXV-Image-Admin-Key': key } })
+      const response = await fetch('/api/main?action=admin-list-images', { headers: { 'X-RXV-Image-Admin-Key': key } })
       const data = await response.json().catch(() => ({})); if (!response.ok || !data?.ok) throw new Error(data?.error || `HTTP ${response.status}`)
       setAllImages(Array.isArray(data.images) ? data.images : [])
     } catch (error: any) { setLoadError(error?.message || '圖片清單載入失敗') } finally { setLoading(false) }

@@ -181,6 +181,7 @@ export default function PaymentReportPage() {
   const [accountLastFive, setAccountLastFive] = useState('')
   const [transferDate, setTransferDate] = useState(taipeiDateLocal())
   const [note, setNote] = useState('')
+  const [paymentProof, setPaymentProof] = useState<File | null>(null)
   const [submittedOrderNo, setSubmittedOrderNo] = useState('')
 
   const plan = useMemo<Plan | null>(() => {
@@ -239,12 +240,23 @@ export default function PaymentReportPage() {
     setSubmitting(true)
     try {
       if (isImageBundleMode) {
+        if (!paymentProof) throw new Error('請選擇匯款證明圖片。')
+        if (!['image/jpeg', 'image/png', 'image/webp'].includes(paymentProof.type) || paymentProof.size > 8 * 1024 * 1024) {
+          throw new Error('匯款證明只支援 JPG、PNG、WEBP，且不得超過 8MB。')
+        }
+        const proof = await imageBundleOrderRequest<{ proofKey: string; uploadUrl: string }>('create-proof-upload-url', 'POST', {
+          product: 'image-bundle-full', fileName: paymentProof.name, contentType: paymentProof.type, sizeBytes: paymentProof.size,
+        })
+        const proofUpload = await fetch(proof.uploadUrl, { method: 'PUT', headers: { 'Content-Type': paymentProof.type }, body: paymentProof })
+        if (!proofUpload.ok) throw new Error(`匯款證明上傳失敗（HTTP ${proofUpload.status}）`)
         const result = await imageBundleOrderRequest<{ order?: { orderNo?: string; status?: string } }>('create', 'POST', {
           productCode: 'image-bundle-full',
           email: email.trim().toLowerCase(),
           accountLastFive,
           transferDate,
           note,
+          payment_proof_object_key: proof.proofKey,
+          payment_proof_file_name: paymentProof.name,
         })
         setSubmittedOrderNo(String(result?.order?.orderNo || ''))
       } else {
@@ -357,6 +369,13 @@ export default function PaymentReportPage() {
                   />
                 </div>
               ) : null}
+              {isImageBundleMode ? (
+                <div>
+                  <label htmlFor="paymentProof" className="mb-1.5 block text-sm font-black text-slate-800">匯款證明圖片 <span className="text-rose-600">*</span></label>
+                  <input id="paymentProof" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setPaymentProof(event.target.files?.[0] || null)} disabled={submitting} className="block w-full text-sm text-slate-700" />
+                  <p className="mt-1.5 text-xs text-slate-500">只支援 JPG、PNG、WEBP，檔案上限 8MB；證明會私有儲存在 R2，僅供管理員核對。</p>
+                </div>
+              ) : null}
               <div>
                 <label htmlFor="accountLastFive" className="mb-1.5 block text-sm font-black text-slate-800">
                   匯出帳號後五碼 <span className="text-rose-600">*</span>
@@ -408,7 +427,7 @@ export default function PaymentReportPage() {
             <div className="mt-6 flex">
               <button
                 type="submit"
-                disabled={submitting || !plan || (isImageBundleMode && !email.trim()) || !accountLastFive || !transferDate}
+                disabled={submitting || !plan || (isImageBundleMode && (!email.trim() || !paymentProof)) || !accountLastFive || !transferDate}
                 className="inline-flex min-h-[52px] items-center justify-center rounded-xl bg-emerald-600 px-6 py-3 text-base font-black !text-white shadow-md transition hover:-translate-y-0.5 hover:bg-emerald-700 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
                 style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}
               >

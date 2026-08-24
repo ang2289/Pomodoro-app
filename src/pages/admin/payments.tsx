@@ -30,6 +30,8 @@ type DigitalProductOrder = {
   download_expires_at?: string | null
   download_count?: number
   download_limit?: number
+  proof_key?: string | null
+  proof_file_name?: string | null
 }
 
 type DigitalProductBundleSummary = {
@@ -595,6 +597,19 @@ export default function AdminPaymentsPage() {
     }
   }
 
+  const openDigitalOrderProof = async (order: DigitalProductOrder) => {
+    setProcessingKey(`digital-proof-${order.id}`)
+    setError('')
+    try {
+      const data = await imageBundleAdminRequest<{ signedUrl: string }>('proof-link', 'POST', { orderId: order.id })
+      window.open(data.signedUrl, '_blank', 'noopener,noreferrer')
+    } catch (err: any) {
+      setError(err?.message || '取得匯款證明失敗。')
+    } finally {
+      setProcessingKey('')
+    }
+  }
+
   const approveReport = async (report: BankTransferReport) => {
     const relationshipPlan = isRelationshipPaymentReport(report)
     const storefrontOnly = isStorefrontPaymentReport(report)
@@ -1119,6 +1134,14 @@ export default function AdminPaymentsPage() {
                       {order.note ? <p className="mt-3 rounded-lg bg-slate-50 p-3 text-sm text-slate-700"><span className="font-bold">備註：</span>{order.note}</p> : null}
                     </div>
                     <div className="flex shrink-0 flex-col gap-2 sm:flex-row lg:flex-col">
+                      {order.proof_key ? <button
+                        type="button"
+                        disabled={Boolean(processingKey)}
+                        onClick={() => void openDigitalOrderProof(order)}
+                        className="inline-flex min-h-[46px] items-center justify-center rounded-xl border border-violet-300 bg-white px-5 py-3 font-black text-violet-800 transition hover:bg-violet-50 disabled:opacity-50"
+                      >
+                        {processingKey === `digital-proof-${order.id}` ? '取得中…' : '查看匯款證明'}
+                      </button> : null}
                       {order.status === 'pending' ? <button
                         type="button"
                         disabled={Boolean(processingKey)}

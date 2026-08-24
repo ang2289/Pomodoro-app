@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --port 3005",
-    "dev:image-admin": "concurrently \"tsx scripts/dev-image-admin-api.ts\" \"vite --config vite.image-admin.config.ts\"",
+    "dev:image-admin": "vercel dev",
     "server": "node -r dotenv/config server/image-to-video-server.cjs",
     "dev:all": "concurrently \"npm run dev\" \"npm run server\"",
     "prebuild": "npm run generate-sitemap && npm run generate-image-sitemap && npm run generate-rss",

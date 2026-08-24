@@ -44,7 +44,7 @@ export default function AdminImagesPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const refreshCatalog = async () => {
-    const response = await imageAdminFetch('/api/image-admin?action=admin-list-images')
+    const response = await imageAdminFetch('/api/main?action=admin-list-images')
     const data = await response.json().catch(() => ({}))
     if (!response.ok || !data?.ok) throw new Error(data?.error || `HTTP ${response.status}`)
     const uniqueCategories = new Map<string, ImageCategory>()
@@ -138,20 +138,18 @@ export default function AdminImagesPage() {
     setPreviewUrls(previews)
   }
 
-  // 將檔案轉換為 base64 字串
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.readAsDataURL(file)
-      reader.onload = () => {
-        if (typeof reader.result === 'string') {
-          resolve(reader.result)
-        } else {
-          reject(new Error('Failed to convert file to base64'))
-        }
-      }
-      reader.onerror = (error) => reject(error)
-    })
+  // 原圖絕不經過 Vercel：瀏覽器只把它直接 PUT 到私有 R2，縮圖亦直接寫 public R2。
+  const makeThumbnail = async (file: File): Promise<Blob> => {
+    const bitmap = await createImageBitmap(file)
+    const scale = Math.min(1, 480 / Math.max(bitmap.width, bitmap.height))
+    const canvas = document.createElement('canvas')
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale))
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale))
+    canvas.getContext('2d')?.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+    bitmap.close()
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/webp', 0.78))
+    if (!blob) throw new Error('THUMBNAIL_GENERATION_FAILED')
+    return blob
   }
 
   // 處理單張圖片上傳
@@ -160,39 +158,42 @@ export default function AdminImagesPage() {
     console.log('檔案大小:', (file.size / 1024 / 1024).toFixed(2), 'MB')
 
     try {
-      // 將檔案轉換為 base64
-      const fileDataBase64 = await fileToBase64(file)
-
-      // 呼叫後端 API 上傳圖片
-      const response = await imageAdminFetch('/api/image-admin?action=uploadImage', {
+      const categoryName = categories.find((category) => category.id === selectedCategoryId)?.name || selectedCategoryId
+      const create = await imageAdminFetch('/api/main?action=create-image-upload-url', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          base64: fileDataBase64,
           category_id: selectedCategoryId,
-          category_name: categories.find((category) => category.id === selectedCategoryId)?.name || selectedCategoryId,
+          category_name: categoryName,
           price_type: 'bundle',
           file_name: file.name,
           mime_type: file.type,
           file_size: file.size,
         }),
       })
-
-      const rawText = await response.text()
-      let data: any = {}
-      try {
-        data = rawText ? JSON.parse(rawText) : {}
-      } catch {
-        data = { success: false, error: rawText || `HTTP ${response.status}` }
-      }
-
-      if (!response.ok || !data.success) {
-        const errorMessage = data.error || '上傳失敗'
+      const createData: any = await create.json().catch(() => ({}))
+      if (!create.ok || !createData.success) {
+        const errorMessage = createData.error || '建立 R2 上傳權限失敗'
         console.error(`[${index + 1}/${total}] 上傳失敗:`, errorMessage)
         throw new Error(`${file.name}: ${errorMessage}`)
       }
+
+      const thumbnail = await makeThumbnail(file)
+      const [originalUpload, thumbnailUpload] = await Promise.all([
+        fetch(createData.originalUploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type || 'image/jpeg' }, body: file }),
+        fetch(createData.thumbnailUploadUrl, { method: 'PUT', headers: { 'Content-Type': 'image/webp' }, body: thumbnail }),
+      ])
+      if (!originalUpload.ok) throw new Error(`${file.name}: R2_PRIVATE_ORIGINAL_UPLOAD_FAILED:${originalUpload.status}`)
+      if (!thumbnailUpload.ok) throw new Error(`${file.name}: R2_PUBLIC_THUMBNAIL_UPLOAD_FAILED:${thumbnailUpload.status}`)
+
+      const response = await imageAdminFetch('/api/main?action=finalize-image-upload', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageId: createData.imageId, category_id: selectedCategoryId, category_name: categoryName, file_name: file.name, mime_type: file.type, file_size: file.size, price_type: 'bundle' }),
+      })
+      const data: any = await response.json().catch(() => ({}))
+      if (!response.ok || !data.success) throw new Error(`${file.name}: ${data.error || 'R2 catalog 更新失敗'}`)
 
       console.log(`[${index + 1}/${total}] 圖片已成功上傳並登錄:`, data)
       return { success: true, fileName: file.name, manifestCount: Number(data.manifest_count || 0) || undefined }

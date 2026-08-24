@@ -1029,6 +1029,120 @@ async function handleUploadImage(req: any, res: any, body: any) {
   }
 }
 
+const IMAGE_UPLOAD_URL_TTL_SECONDS = 15 * 60;
+
+function readImageUploadPayload(body: any) {
+  const categoryId = safeText(body?.category_id || body?.categoryId);
+  const categoryName = safeText(body?.category_name || body?.categoryName || body?.category || categoryId);
+  const fileName = safeText(body?.file_name || body?.fileName || body?.filename || '圖片素材');
+  const mimeType = safeText(body?.mime_type || body?.mimeType).toLowerCase().replace('image/jpg', 'image/jpeg');
+  const extension = mimeType === 'image/jpeg' ? 'jpg' : mimeType === 'image/png' ? 'png' : mimeType === 'image/webp' ? 'webp' : '';
+  if (!categoryId || !categoryName) throw new Error('IMAGE_UPLOAD_CATEGORY_REQUIRED');
+  if (!extension) throw new Error('IMAGE_UPLOAD_UNSUPPORTED_FORMAT');
+  return { categoryId, categoryName, fileName, mimeType, extension };
+}
+
+function imageOriginalKey(imageId: string, extension: string) {
+  return `originals/by-image-id/${imageId}/original.${extension}`;
+}
+
+function imageThumbnailKey(imageId: string) {
+  return `thumbnails/by-image-id/${imageId}.webp`;
+}
+
+async function handleCreateImageUploadUrl(req: any, res: any, body: any) {
+  if (req.method !== 'POST') return jsonResponse(res, 405, { ok: false, error: 'Method Not Allowed' });
+  try {
+    await requireImageAdmin(req);
+    const runtime = getImageR2RuntimeConfig();
+    const payload = readImageUploadPayload(body);
+    const imageId = crypto.randomUUID();
+    const originalKey = imageOriginalKey(imageId, payload.extension);
+    const thumbnailKey = imageThumbnailKey(imageId);
+    const client = getImageCatalogR2Client();
+    const [originalUploadUrl, thumbnailUploadUrl] = await Promise.all([
+      getSignedUrl(client, new PutObjectCommand({
+        Bucket: runtime.privateBucket, Key: originalKey, ContentType: payload.mimeType, CacheControl: 'private, no-store',
+      }), { expiresIn: IMAGE_UPLOAD_URL_TTL_SECONDS }),
+      getSignedUrl(client, new PutObjectCommand({
+        Bucket: runtime.publicBucket, Key: thumbnailKey, ContentType: 'image/webp', CacheControl: 'public, max-age=31536000, immutable',
+      }), { expiresIn: IMAGE_UPLOAD_URL_TTL_SECONDS }),
+    ]);
+    return jsonResponse(res, 200, {
+      ok: true, success: true, imageId, originalKey, thumbnailKey, originalUploadUrl, thumbnailUploadUrl,
+      expiresAt: new Date(Date.now() + IMAGE_UPLOAD_URL_TTL_SECONDS * 1000).toISOString(),
+    });
+  } catch (error: any) {
+    const code = safeText(error?.message || 'R2_IMAGE_UPLOAD_URL_CREATE_FAILED');
+    return jsonResponse(res, code === 'RXV_IMAGE_ADMIN_KEY_MISSING' ? 503 : 400, { ok: false, success: false, error: code });
+  }
+}
+
+async function handleFinalizeImageUpload(req: any, res: any, body: any) {
+  if (req.method !== 'POST') return jsonResponse(res, 405, { ok: false, error: 'Method Not Allowed' });
+  let uploaded: Array<{ bucket: string; key: string }> = [];
+  try {
+    await requireImageAdmin(req);
+    const runtime = getImageR2RuntimeConfig();
+    const payload = readImageUploadPayload(body);
+    const imageId = safeText(body?.imageId || body?.image_id);
+    if (!isUuid(imageId)) throw new Error('IMAGE_UPLOAD_ID_INVALID');
+    const originalKey = imageOriginalKey(imageId, payload.extension);
+    const thumbnailKey = imageThumbnailKey(imageId);
+    const client = getImageCatalogR2Client();
+    await Promise.all([
+      client.send(new HeadObjectCommand({ Bucket: runtime.privateBucket, Key: originalKey })),
+      client.send(new HeadObjectCommand({ Bucket: runtime.publicBucket, Key: thumbnailKey })),
+    ]);
+    uploaded = [{ bucket: runtime.privateBucket, key: originalKey }, { bucket: runtime.publicBucket, key: thumbnailKey }];
+    const catalog = await readPublicImageCatalogFromR2();
+    if (catalog.images.some((item: any) => safeText(item?.id) === imageId)) throw new Error('R2_PUBLIC_MANIFEST_ID_COLLISION');
+    const thumbnailUrl = buildPublicImageAssetUrl(thumbnailKey, catalog);
+    const record = {
+      id: imageId, title: sanitizeImageTitle(payload.fileName), category: payload.categoryName,
+      category_id: payload.categoryId, category_name: payload.categoryName, thumbnail_url: thumbnailUrl,
+      preview_url: thumbnailUrl, plan_type: 'bundle', price_type: 'bundle', created_at: new Date().toISOString(),
+    };
+    const nextImages = [...catalog.images, record];
+    await writePublicImageCatalogToR2(catalog, nextImages);
+    return jsonResponse(res, 200, { ok: true, success: true, image: record, thumbnail_url: thumbnailUrl, manifest_count: nextImages.length });
+  } catch (error: any) {
+    // These keys are generated for this request's UUID only; rollback cannot affect an existing catalog image.
+    if (uploaded.length) await Promise.allSettled(uploaded.map(({ bucket, key }) => deleteImageObjectFromBucket(bucket, key)));
+    const code = safeText(error?.message || 'R2_PUBLIC_MANIFEST_WRITE_FAILED');
+    console.error('IMAGE_UPLOAD_FINALIZE_FAILED', code);
+    return jsonResponse(res, /^(IMAGE_UPLOAD_|R2_PUBLIC_MANIFEST_ID_COLLISION)/.test(code) ? 400 : 500, { ok: false, success: false, error: code });
+  }
+}
+
+async function handleAdminListR2Images(req: any, res: any) {
+  if (req.method !== 'GET') return jsonResponse(res, 405, { ok: false, error: 'Method Not Allowed' });
+  try {
+    await requireImageAdmin(req);
+    const catalog = await readPublicImageCatalogFromR2();
+    const images = catalog.images.map((image: any) => ({ ...image, public_url: safeText(image?.thumbnail_url || image?.preview_url), plan_type: catalogPlanType(image), price_type: catalogPlanType(image) }));
+    return jsonResponse(res, 200, { ok: true, success: true, source: 'r2-public-catalog', total: images.length, images });
+  } catch (error: any) {
+    return jsonResponse(res, 500, { ok: false, success: false, error: safeText(error?.message || 'R2_PUBLIC_MANIFEST_READ_FAILED') });
+  }
+}
+
+async function handleAdminListR2ImageCategories(req: any, res: any) {
+  if (req.method !== 'GET') return jsonResponse(res, 405, { ok: false, error: 'Method Not Allowed' });
+  try {
+    await requireImageAdmin(req);
+    const catalog = await readPublicImageCatalogFromR2();
+    const found = new Map<string, string>();
+    for (const image of catalog.images) {
+      const id = safeText(image?.category_id || image?.category);
+      if (id && !found.has(id)) found.set(id, catalogCategoryName(image));
+    }
+    return jsonResponse(res, 200, { ok: true, success: true, categories: [...found].map(([id, name], sort_order) => ({ id, name, sort_order, is_active: true })) });
+  } catch (error: any) {
+    return jsonResponse(res, 500, { ok: false, success: false, error: safeText(error?.message || 'R2_PUBLIC_MANIFEST_READ_FAILED') });
+  }
+}
+
 async function getUserByEmail(email: string) {
   const res = await supabaseRest(`users?select=*&email=eq.${escapeFilterValue(email)}&limit=1`, {
     method: "GET",
@@ -3459,6 +3573,10 @@ type R2DigitalProductOrder = {
   download_limit: number;
   last_download_at?: string | null;
   bundle_file_id?: string | null;
+  proof_key?: string | null;
+  proof_file_name?: string | null;
+  proof_content_type?: string | null;
+  proof_size_bytes?: number | null;
 };
 
 type DigitalProductBundleFile = {
@@ -3503,6 +3621,59 @@ function imageBundleDownloadTokenKey(token: string) {
 function imageBundleOrderNo() {
   const date = getTaipeiDateKey().replace(/-/g, '');
   return `IMG${date}-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+}
+
+const IMAGE_BUNDLE_PROOF_MAX_BYTES = 8 * 1024 * 1024;
+
+function imageBundleProofKey(proofId: string, extension: string) {
+  const now = new Date();
+  return `payment-proofs/${now.getUTCFullYear()}/${String(now.getUTCMonth() + 1).padStart(2, '0')}/${proofId}.${extension}`;
+}
+
+function readPaymentProofPayload(body: any) {
+  const fileName = safeText(body?.fileName || body?.file_name).replace(/[<>:"/\\|?*\x00-\x1F]/g, '_').slice(0, 180);
+  const contentType = safeText(body?.contentType || body?.content_type).toLowerCase().replace('image/jpg', 'image/jpeg');
+  const extension = contentType === 'image/jpeg' ? 'jpg' : contentType === 'image/png' ? 'png' : contentType === 'image/webp' ? 'webp' : '';
+  const sizeBytes = Number(body?.sizeBytes || body?.size_bytes || 0);
+  if (!fileName || !extension) throw new Error('PAYMENT_PROOF_UNSUPPORTED_FORMAT');
+  if (!Number.isFinite(sizeBytes) || sizeBytes <= 0 || sizeBytes > IMAGE_BUNDLE_PROOF_MAX_BYTES) throw new Error('PAYMENT_PROOF_SIZE_INVALID');
+  return { fileName, contentType, extension, sizeBytes };
+}
+
+function isImageBundleProofKey(value: string) {
+  return /^payment-proofs\/\d{4}\/\d{2}\/[0-9a-f-]{36}\.(?:jpg|png|webp)$/i.test(value);
+}
+
+async function handleCreateImageBundleProofUploadUrl(req: any, res: any, body: any) {
+  if (req.method !== 'POST') return jsonResponse(res, 405, { ok: false, error: 'Method Not Allowed' });
+  try {
+    if (safeText(body?.product || body?.productCode || body?.product_code) !== IMAGE_BUNDLE_PRODUCT.code) {
+      return jsonResponse(res, 400, { ok: false, error: 'PAYMENT_PROOF_PRODUCT_INVALID' });
+    }
+    const proof = readPaymentProofPayload(body);
+    const proofKey = imageBundleProofKey(crypto.randomUUID(), proof.extension);
+    const uploadUrl = await getSignedUrl(getR2Client(), new PutObjectCommand({
+      Bucket: R2_BUCKET_NAME, Key: proofKey, ContentType: proof.contentType, ContentLength: proof.sizeBytes, CacheControl: 'private, no-store',
+    }), { expiresIn: 10 * 60 });
+    return jsonResponse(res, 200, { ok: true, storage: 'r2', proofKey, uploadUrl, expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString() });
+  } catch (error: any) {
+    return jsonResponse(res, 400, { ok: false, error: safeText(error?.message || 'PAYMENT_PROOF_UPLOAD_URL_FAILED') });
+  }
+}
+
+async function handleAdminGetImageBundleProofUrl(req: any, res: any, body: any) {
+  if (req.method !== 'POST') return jsonResponse(res, 405, { ok: false, error: 'Method Not Allowed' });
+  try {
+    await requireImageBundleAdmin(req);
+    const orderId = safeText(body?.orderId || body?.order_id);
+    const order = await readR2DigitalProductOrder(orderId);
+    const proofKey = safeText(order?.proof_key);
+    if (!order || !isImageBundleProofKey(proofKey)) return jsonResponse(res, 404, { ok: false, error: 'PAYMENT_PROOF_NOT_FOUND' });
+    const signedUrl = await getSignedUrl(getR2Client(), new GetObjectCommand({ Bucket: R2_BUCKET_NAME, Key: proofKey }), { expiresIn: 10 * 60 });
+    return jsonResponse(res, 200, { ok: true, signedUrl, expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString() });
+  } catch (error: any) {
+    return jsonResponse(res, Number(error?.statusCode || 500), { ok: false, error: safeText(error?.message || 'PAYMENT_PROOF_SIGN_FAILED') });
+  }
 }
 
 function isR2NotFound(error: any) {
@@ -3705,6 +3876,15 @@ async function handleCreateDigitalProductOrder(req: any, res: any, body: any) {
     const transferDate = safeText(body?.transferDate || body?.transfer_date);
     const transferDateIso = parseTaipeiTransferDate(transferDate);
     const note = safeText(body?.note).slice(0, 500) || null;
+    const proofKey = safeText(body?.payment_proof_object_key || body?.proofKey || body?.proof_key);
+    const proofFileName = safeText(body?.payment_proof_file_name || body?.proofFileName || body?.proof_file_name).slice(0, 180);
+    if (!isImageBundleProofKey(proofKey)) return jsonResponse(res, 400, { ok: false, error: 'PAYMENT_PROOF_KEY_INVALID' });
+    const proofHead = await getR2Client().send(new HeadObjectCommand({ Bucket: R2_BUCKET_NAME, Key: proofKey }));
+    const proofSize = Number(proofHead.ContentLength || 0);
+    const proofContentType = safeText(proofHead.ContentType).toLowerCase().replace('image/jpg', 'image/jpeg');
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(proofContentType) || proofSize <= 0 || proofSize > IMAGE_BUNDLE_PROOF_MAX_BYTES) {
+      return jsonResponse(res, 400, { ok: false, error: 'PAYMENT_PROOF_OBJECT_INVALID' });
+    }
 
     const existingPending = await findPendingR2OrderByEmail(email);
     if (existingPending) {
@@ -3737,6 +3917,10 @@ async function handleCreateDigitalProductOrder(req: any, res: any, body: any) {
       download_limit: IMAGE_BUNDLE_DOWNLOAD_LIMIT,
       last_download_at: null,
       bundle_file_id: null,
+      proof_key: proofKey,
+      proof_file_name: proofFileName || null,
+      proof_content_type: proofContentType,
+      proof_size_bytes: proofSize,
     };
 
     // Email pending index 使用 If-None-Match:* 當成輕量鎖，避免快速重複送出。
@@ -8095,6 +8279,12 @@ export default async function handler(req: any, res: any) {
 
     // NT$399 素材庫全部留在同一支 /api/main，不新增 Vercel Function。
     switch (subAction) {
+      case "create":
+        return handleCreateDigitalProductOrder(req, res, body);
+      case "create-proof-upload-url":
+        return handleCreateImageBundleProofUploadUrl(req, res, body);
+      case "proof-link":
+        return handleAdminGetImageBundleProofUrl(req, res, body);
       case "list":
         return handleAdminListDigitalProductOrders(req, res);
       case "summary":
@@ -8163,7 +8353,7 @@ export default async function handler(req: any, res: any) {
     case "get-public-deals":
       return handleGetPublicDeals(req, res);
     case "admin-list-image-categories":
-      return handleAdminListImageCategories(req, res);
+      return handleAdminListR2ImageCategories(req, res);
     case "admin-create-image-category":
       return handleAdminCreateImageCategory(req, res, body);
     case "admin-update-image-category":
@@ -8171,7 +8361,7 @@ export default async function handler(req: any, res: any) {
     case "admin-delete-image-category":
       return handleAdminDeleteImageCategory(req, res, body);
     case "admin-list-images":
-      return handleAdminListImages(req, res);
+      return handleAdminListR2Images(req, res);
     case "admin-update-image":
       return handleAdminUpdateImage(req, res, body);
     case "admin-delete-image":
@@ -8285,6 +8475,10 @@ export default async function handler(req: any, res: any) {
     case "uploadimage":
     case "upload-image":
       return handleUploadImage(req, res, body);
+    case "create-image-upload-url":
+      return handleCreateImageUploadUrl(req, res, body);
+    case "finalize-image-upload":
+      return handleFinalizeImageUpload(req, res, body);
     case "shopee":
       return handleShopee(req, res, body);
     case "shopeeimportcsv":
