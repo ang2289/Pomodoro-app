@@ -1131,6 +1131,7 @@ export default function AdminPaymentsPage() {
                         {order.status === 'approved' ? <p><span className="font-bold">下載連結期限：</span>{formatDate(order.download_expires_at)}　<span className="text-slate-500">已下載 {Number(order.download_count || 0)} / {Number(order.download_limit || 3)} 次</span></p> : null}
                         {order.status === 'approved' ? <p className={digitalBundleSummary?.bundleFile ? 'font-bold text-emerald-700' : 'font-bold text-rose-700'}>{digitalBundleSummary?.bundleFile ? '可交付' : '已收款，尚無可交付檔'}</p> : null}
                       </div>
+                      {order.proof_key ? null : <p className="mt-3 rounded-lg bg-amber-50 p-3 text-sm font-bold text-amber-900">未提供匯款證明｜請依後五碼核對</p>}
                       {order.note ? <p className="mt-3 rounded-lg bg-slate-50 p-3 text-sm text-slate-700"><span className="font-bold">備註：</span>{order.note}</p> : null}
                     </div>
                     <div className="flex shrink-0 flex-col gap-2 sm:flex-row lg:flex-col">

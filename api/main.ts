@@ -3878,12 +3878,16 @@ async function handleCreateDigitalProductOrder(req: any, res: any, body: any) {
     const note = safeText(body?.note).slice(0, 500) || null;
     const proofKey = safeText(body?.payment_proof_object_key || body?.proofKey || body?.proof_key);
     const proofFileName = safeText(body?.payment_proof_file_name || body?.proofFileName || body?.proof_file_name).slice(0, 180);
-    if (!isImageBundleProofKey(proofKey)) return jsonResponse(res, 400, { ok: false, error: 'PAYMENT_PROOF_KEY_INVALID' });
-    const proofHead = await getR2Client().send(new HeadObjectCommand({ Bucket: R2_BUCKET_NAME, Key: proofKey }));
-    const proofSize = Number(proofHead.ContentLength || 0);
-    const proofContentType = safeText(proofHead.ContentType).toLowerCase().replace('image/jpg', 'image/jpeg');
-    if (!['image/jpeg', 'image/png', 'image/webp'].includes(proofContentType) || proofSize <= 0 || proofSize > IMAGE_BUNDLE_PROOF_MAX_BYTES) {
-      return jsonResponse(res, 400, { ok: false, error: 'PAYMENT_PROOF_OBJECT_INVALID' });
+    let proofContentType: string | null = null;
+    let proofSize: number | null = null;
+    if (proofKey) {
+      if (!isImageBundleProofKey(proofKey)) return jsonResponse(res, 400, { ok: false, error: 'PAYMENT_PROOF_KEY_INVALID' });
+      const proofHead = await getR2Client().send(new HeadObjectCommand({ Bucket: R2_BUCKET_NAME, Key: proofKey }));
+      proofSize = Number(proofHead.ContentLength || 0);
+      proofContentType = safeText(proofHead.ContentType).toLowerCase().replace('image/jpg', 'image/jpeg');
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(proofContentType) || proofSize <= 0 || proofSize > IMAGE_BUNDLE_PROOF_MAX_BYTES) {
+        return jsonResponse(res, 400, { ok: false, error: 'PAYMENT_PROOF_OBJECT_INVALID' });
+      }
     }
 
     const existingPending = await findPendingR2OrderByEmail(email);
@@ -3917,7 +3921,7 @@ async function handleCreateDigitalProductOrder(req: any, res: any, body: any) {
       download_limit: IMAGE_BUNDLE_DOWNLOAD_LIMIT,
       last_download_at: null,
       bundle_file_id: null,
-      proof_key: proofKey,
+      proof_key: proofKey || null,
       proof_file_name: proofFileName || null,
       proof_content_type: proofContentType,
       proof_size_bytes: proofSize,
