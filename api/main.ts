@@ -4320,6 +4320,20 @@ async function handleAdminGetDigitalProductDownloadLink(req: any, res: any, body
   }
 }
 
+async function handleAdminResetDigitalProductDownloadCount(req: any, res: any, body: any) {
+  if (req.method !== 'POST') return jsonResponse(res, 405, { ok: false, error: 'Method Not Allowed' });
+  try {
+    await requireImageBundleAdmin(req);
+    const orderId = safeText(body?.orderId || body?.order_id);
+    const order = await readR2DigitalProductOrder(orderId);
+    if (!order || order.status !== 'approved') return jsonResponse(res, 404, { ok: false, error: '找不到已核准的素材庫訂單。' });
+    await writeR2DigitalProductOrder({ ...order, download_count: 0, last_download_at: null });
+    return jsonResponse(res, 200, { ok: true, storage: 'r2', orderId });
+  } catch (error: any) {
+    return jsonResponse(res, Number(error?.statusCode || 500), { ok: false, error: error?.message || '重設下載次數失敗。' });
+  }
+}
+
 async function handleDownloadDigitalProductBundle(req: any, res: any) {
   if (req.method !== 'GET') return jsonResponse(res, 405, { ok: false, error: 'Method Not Allowed' });
   try {
@@ -4348,7 +4362,14 @@ async function handleDownloadDigitalProductBundle(req: any, res: any) {
       return jsonResponse(res, 403, { ok: false, error: '下載次數已達上限，請聯絡管理者。' });
     }
 
-    // 先登記一次下載，再開始串流，避免同一 token 快速重複請求繞過次數限制。
+    const safeName = bundleFile.file_name.replace(/[\r\n"]/g, '_');
+    const signedUrl = await getSignedUrl(getR2Client(), new GetObjectCommand({
+      Bucket: R2_BUCKET_NAME,
+      Key: bundleFile.object_key,
+      ResponseContentDisposition: `attachment; filename="${safeName}"; filename*=UTF-8''${encodeURIComponent(safeName)}`,
+    }), { expiresIn: 10 * 60 });
+
+    // Signed URL 成功產生後才計次，避免 Vercel/R2 建立連結失敗也消耗額度。
     const claimedOrder: R2DigitalProductOrder = {
       ...order,
       download_count: currentCount + 1,
@@ -4356,19 +4377,7 @@ async function handleDownloadDigitalProductBundle(req: any, res: any) {
       bundle_file_id: bundleFile.id,
     };
     await writeR2DigitalProductOrder(claimedOrder);
-
-    const object = await getR2Client().send(new GetObjectCommand({ Bucket: R2_BUCKET_NAME, Key: bundleFile.object_key }));
-    if (!object.Body) throw new Error('DIGITAL_PRODUCT_BUNDLE_FILE_UNAVAILABLE');
-
-    const safeName = bundleFile.file_name.replace(/[\r\n"]/g, '_');
-    res.status(200);
-    res.setHeader('Content-Type', object.ContentType || bundleFile.content_type || 'application/zip');
-    res.setHeader('Content-Length', String(object.ContentLength || bundleFile.size_bytes));
-    res.setHeader('Content-Disposition', `attachment; filename="${safeName}"; filename*=UTF-8''${encodeURIComponent(safeName)}`);
-    res.setHeader('Cache-Control', 'private, no-store');
-    const stream = object.Body as any;
-    stream.on?.('error', () => { if (!res.writableEnded) res.end(); });
-    return stream.pipe(res);
+    return res.redirect(302, signedUrl);
   } catch (error: any) {
     console.error('R2_IMAGE_BUNDLE_DOWNLOAD_FAILED', error?.message || error);
     return jsonResponse(res, Number(error?.statusCode || 500), { ok: false, error: '素材檔下載失敗，請聯絡管理者。' });
@@ -8305,6 +8314,8 @@ export default async function handler(req: any, res: any) {
         return handleAdminDeleteDigitalProductBundle(req, res);
       case "download-link":
         return handleAdminGetDigitalProductDownloadLink(req, res, body);
+      case "reset-download-count":
+        return handleAdminResetDigitalProductDownloadCount(req, res, body);
       case "delete-test-order":
         return handleAdminDeleteDigitalProductTestOrder(req, res, body);
       default:

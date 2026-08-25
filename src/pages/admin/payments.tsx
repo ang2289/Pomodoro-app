@@ -597,6 +597,22 @@ export default function AdminPaymentsPage() {
     }
   }
 
+  const resetDigitalOrderDownloadCount = async (order: DigitalProductOrder) => {
+    if (!window.confirm(`重設 ${order.order_no} 的下載次數為 0？不會延長下載期限。`)) return
+    setProcessingKey(`digital-reset-${order.id}`)
+    setError('')
+    setMessage('')
+    try {
+      await imageBundleAdminRequest('reset-download-count', 'POST', { orderId: order.id })
+      setMessage(`已重設 ${order.order_no} 的下載次數。`)
+      await loadImageBundleOrders()
+    } catch (err: any) {
+      setError(err?.message || '重設下載次數失敗。')
+    } finally {
+      setProcessingKey('')
+    }
+  }
+
   const openDigitalOrderProof = async (order: DigitalProductOrder) => {
     setProcessingKey(`digital-proof-${order.id}`)
     setError('')
@@ -1176,6 +1192,14 @@ export default function AdminPaymentsPage() {
                         className="inline-flex min-h-[46px] items-center justify-center rounded-xl border border-sky-300 bg-white px-5 py-3 font-black text-sky-800 transition hover:bg-sky-50 disabled:opacity-50"
                       >
                         {processingKey === `digital-link-${order.id}` ? '取得中…' : '複製客戶下載連結'}
+                      </button> : null}
+                      {order.status === 'approved' ? <button
+                        type="button"
+                        disabled={Boolean(processingKey)}
+                        onClick={() => void resetDigitalOrderDownloadCount(order)}
+                        className="inline-flex min-h-[46px] items-center justify-center rounded-xl border border-amber-300 bg-white px-5 py-3 font-black text-amber-800 transition hover:bg-amber-50 disabled:opacity-50"
+                      >
+                        {processingKey === `digital-reset-${order.id}` ? '重設中…' : '重設下載次數'}
                       </button> : null}
                     </div>
                   </div>
