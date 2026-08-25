@@ -3846,6 +3846,36 @@ async function handleGetImageBundleBankTransferInfo(req: any, res: any) {
   }
 }
 
+async function sendImageBundlePaymentNotification(order: R2DigitalProductOrder) {
+  const apiKey = safeText(process.env.RESEND_API_KEY);
+  const recipient = safeText(process.env.PAYMENT_NOTIFY_EMAIL);
+  if (!apiKey || !recipient) return;
+
+  const from = safeText(process.env.PAYMENT_NOTIFY_FROM) || 'RxV <onboarding@resend.dev>';
+  const subject = `【RxV 新匯款回報】NT$399 圖片素材庫｜${order.order_no}`;
+  const text = [
+    `訂單編號：${order.order_no}`,
+    '金額：NT$399',
+    `客戶 Email：${order.email}`,
+    `匯款帳號後五碼：${order.account_last_five}`,
+    `匯款日期：${order.transfer_date}`,
+    `備註：${order.note || '（無）'}`,
+    `回報時間：${order.created_at}`,
+    '後台：https://pomodoro-app-eight-rouge.vercel.app/admin/payments#image-bundle',
+  ].join('\n');
+
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from, to: [recipient], subject, text }),
+    });
+    if (!response.ok) throw new Error(`HTTP_${response.status}`);
+  } catch (error: any) {
+    console.error('IMAGE_BUNDLE_PAYMENT_NOTIFY_FAILED', error?.message || 'UNKNOWN');
+  }
+}
+
 async function handleCreateDigitalProductOrder(req: any, res: any, body: any) {
   if (req.method !== 'POST') {
     return jsonResponse(res, 405, { ok: false, error: 'Method Not Allowed' });
@@ -3947,6 +3977,7 @@ async function handleCreateDigitalProductOrder(req: any, res: any, body: any) {
     }
 
     await writeR2DigitalProductOrder(order);
+    await sendImageBundlePaymentNotification(order);
 
     return jsonResponse(res, 200, {
       ok: true,
