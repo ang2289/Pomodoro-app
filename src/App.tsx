@@ -135,6 +135,7 @@ import ShoppingResultsPage from './pages/shopping/results'
 import AirfryerPage from './pages/goods/airfryer-keshaui'
 import AIHome from './pages/AIHome'
 import AISummaryGuide from './pages/tools/ai-summary'
+import AIContentWorkflowPage from './pages/tools/ai-content-workflow'
 import ShopeeSingleVideoPage from './pages/tools/ShopeeSingleVideoPage'
 import ShopeeVideoPage from './pages/tools/shopee-video/index.tsx'
 import HomeworkHelper from './pages/tools/homework-helper'
@@ -350,6 +351,7 @@ function App() {
             {/* 預留功能路由 */}
             <Route path="tools" element={<AIHome />} />
             <Route path="tools/ai-summary" element={<AISummaryGuide />} />
+            <Route path="tools/ai-content-workflow" element={<AIContentWorkflowPage />} />
             <Route path="tools/shopee-single-video" element={<ShopeeSingleVideoPage />} />
             {/* 工具路由封鎖 */}
             <Route path="tools/shopee-video" element={<NotFoundPage />} />
