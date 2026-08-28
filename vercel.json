@@ -1,7 +1,21 @@
 {
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/$1" },
-    { "source": "/(.*)", "destination": "/" }
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
+    },
+    {
+      "source": "/shop/:slug",
+      "destination": "/api/storefront-share?slug=:slug"
+    },
+    {
+      "source": "/goods-share/(.*)",
+      "destination": "/goods-share/$1"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/"
+    }
   ],
   "cleanUrls": true,
   "crons": [
@@ -11,6 +25,3 @@
     }
   ]
 }
-
-
-
