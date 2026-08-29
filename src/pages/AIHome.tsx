@@ -37,6 +37,17 @@ export default function AIHome() {
             </p>
           </Link>
 
+          {/* AI 短影音內容工廠 */}
+          <Link
+            to="/tools/ai-content-workflow"
+            className="p-6 shadow rounded-xl border border-blue-200 hover:shadow-lg transition bg-white"
+          >
+            <h2 className="font-bold text-lg mb-2">AI 短影音內容工廠</h2>
+            <p className="text-gray-600 text-sm">
+              零 API 成本產生短影音總指令，整理圖片 Prompt、FLOW Prompt、Hook 與社群文案。
+            </p>
+          </Link>
+
           {/* 補助懶人包 */}
           <Link
             to="/aids"
