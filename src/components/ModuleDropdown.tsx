@@ -1,0 +1,144 @@
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useNavigate, useLocation } from 'react-router-dom'
+
+const isChantWishEnabled =
+  import.meta.env.VITE_ENABLE_CHANT === 'true' ||
+  import.meta.env.NEXT_PUBLIC_ENABLE_CHANT === 'true'
+
+const baseModuleOptions = [
+  { value: '/tools/line-sticker', labelKey: 'line_sticker_tool' },
+  { value: '/tools/image-resize', labelKey: 'image_resize_tool' },
+
+  { value: '/', labelKey: 'homepage' },
+  { value: '/pomodoro', labelKey: 'pomodoro' },
+  { value: '/todo', labelKey: 'todo' },
+
+  { value: '/summary', labelKey: 'ai_summary' },
+  { value: '/tools/homework-helper', labelKey: 'homework_helper' },
+
+  { value: '/images', labelKey: 'image_library' },
+
+  { value: '/aids', labelKey: 'subsidy_package' },
+  { value: '/finance', labelKey: 'health_finance' },
+  { value: '/retirement', labelKey: 'retirement_calc' },
+
+  { value: '/blog', labelKey: 'blog' },
+
+  { value: '/chant', labelKey: 'chant' },
+
+  { value: '/features', labelKey: 'features' },
+  { value: '/settings', labelKey: 'settings' }
+]
+
+const chantWishModuleOptions = isChantWishEnabled
+  ? [
+      { value: '/chant-wish-create', labelKey: 'wish' },
+      { value: '/chant-wish-wall', labelKey: 'wish_wall' },
+      { value: '/chant-stats', labelKey: 'statistics' },
+      { value: '/chant-ranking', labelKey: 'ranking' }
+    ]
+  : []
+
+const moduleOptions = [...baseModuleOptions, ...chantWishModuleOptions]
+
+export default function ModuleDropdown() {
+  const { t } = useTranslation()
+  const [isOpen, setIsOpen] = useState(false)
+  const navigate = useNavigate()
+  const location = useLocation()
+
+  const currentPath = location.pathname
+
+  const getCurrentOption = () => {
+    const currentOption = moduleOptions.find(
+      option =>
+        option.value === currentPath ||
+        (option.value === '/pomodoro' && currentPath === '/') ||
+        (option.value === '/' && currentPath === '/')
+    )
+
+    return currentOption || { labelKey: 'menu' }
+  }
+
+  const handleChange = (value: string) => {
+    navigate(value)
+    setIsOpen(false)
+  }
+
+  return (
+    <div className="relative">
+
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-3 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 max-w-[280px]"
+        style={{ minWidth: '200px' }}
+      >
+        <span className="text-sm sm:text-base font-medium text-gray-700 truncate">
+          {getCurrentOption().labelKey ? t(getCurrentOption().labelKey!) : t('select_module')}
+        </span>
+
+        <svg
+          className={`w-4 h-4 text-gray-500 ${isOpen ? 'rotate-180' : ''}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/>
+        </svg>
+      </button>
+
+      {isOpen && (
+        <div className="absolute top-full left-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-50 min-w-full max-w-[380px]">
+
+          <div className="py-1">
+
+            {moduleOptions.map(option => {
+
+              const isActive =
+                currentPath === option.value ||
+                (option.value === '/pomodoro' && currentPath === '/') ||
+                (option.value === '/' && currentPath === '/')
+
+              return (
+                <button
+                  key={option.value}
+                  onClick={() => handleChange(option.value)}
+                  className={`w-full text-left px-4 py-3 text-sm transition-colors
+                  ${isActive
+                    ? 'bg-blue-50 text-blue-700 font-medium'
+                    : 'text-gray-700 hover:bg-gray-50'}`}
+                >
+
+                  <div className="flex items-center justify-between">
+
+                    <span>
+                      {t(option.labelKey || 'select_module')}
+                    </span>
+
+                    {isActive && (
+                      <svg className="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd"
+                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                          clipRule="evenodd"/>
+                      </svg>
+                    )}
+
+                  </div>
+
+                </button>
+              )
+            })}
+
+          </div>
+
+        </div>
+      )}
+
+      {isOpen && (
+        <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
+      )}
+
+    </div>
+  )
+}

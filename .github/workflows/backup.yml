@@ -1,0 +1,42 @@
+name: 自動備份
+
+on:
+  schedule:
+    # 每天凌晨 2 點自動執行
+    - cron: '0 2 * * *'
+  workflow_dispatch: # 手動觸發
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 檢查代碼
+      uses: actions/checkout@v4
+      
+    - name: 建立備份檔案
+      run: |
+        # 建立時間戳記
+        TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+        
+        # 建立備份目錄
+        mkdir -p backup
+        
+        # 備份整個專案（排除 node_modules）
+        tar -czf "backup/pomodoro_backup_${TIMESTAMP}.tar.gz" \
+          --exclude=node_modules \
+          --exclude=.git \
+          --exclude=dist \
+          .
+          
+    - name: 上傳備份到 GitHub Releases
+      uses: softprops/action-gh-release@v1
+      with:
+        files: backup/*.tar.gz
+        tag_name: backup-${{ github.run_number }}
+        name: 自動備份 ${{ github.run_number }}
+        body: |
+          自動備份於 ${{ github.run_number }} 執行
+          時間：$(date)
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

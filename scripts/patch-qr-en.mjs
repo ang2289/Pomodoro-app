@@ -1,0 +1,182 @@
+import fs from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const p = path.join(__dirname, '../src/i18n/batch1-en.json')
+const j = JSON.parse(fs.readFileSync(p, 'utf8'))
+
+j.qr = {
+  seo: {
+    title: 'QR Code generator | URL, WiFi, Email & logo | RxV',
+    description:
+      'Create QR codes for URLs, text, mail, phone, and WiFi. Customize colors, size, and logo. Download PNG/SVG in your browser.',
+    keywords: 'QR code generator, WiFi QR, URL QR, free tool',
+  },
+  tabs: { url: 'URL', text: 'Text', email: 'Email', phone: 'Phone', wifi: 'WiFi' },
+  styleNames: {
+    bw: 'Classic B/W',
+    blue: 'Blue tech',
+    green: 'Brand green',
+    gold: 'Gold & black',
+    bw2: 'Classic B/W',
+    blue2: 'Blue & white',
+    gold2: 'Gold premium',
+  },
+  social: { ig: 'IG post', line: 'LINE share', card: 'Business card' },
+  wifiSec: { wpa: 'WPA/WPA2', wpa3: 'WPA3', wep: 'WEP', nopass: 'Open' },
+  template: {
+    restaurantUrl: 'https://your-menu-link',
+    igUrl: 'https://instagram.com/yourname',
+    vcard: 'Name: Jane Doe\nPhone: +1-555-0100\nLINE: @yourid',
+  },
+  placeholder: {
+    textDefault: 'Type text to preview your QR code',
+    wifiPw: 'Wi‑Fi password',
+  },
+  share: {
+    ogText: 'Free QR Code generator | Logo & social sharing',
+    apiTitle: 'QR share link',
+    apiDesc: 'QR share payload',
+  },
+  jsonLd: {
+    webName: 'QR Code generator',
+    webDesc: 'Free QR codes for URLs, text, email, phone, and WiFi.',
+    appDesc: 'Customize colors, logo, and size. Export PNG/SVG.',
+    faq1q: 'Can I use QR codes commercially?',
+    faq1a: 'Yes—codes you generate here may be used freely.',
+    faq2q: 'Can I download high resolution?',
+    faq2a: 'Yes—128–1024 px plus SVG export.',
+  },
+  err: {
+    shortHttp: 'Short URL error (HTTP {{status}})',
+    shortFmt: 'Short URL response missing shortUrl',
+    shortGeneric: 'Could not create a short URL. Try again.',
+    shortFallback: 'Could not create short URL; copied original link instead',
+  },
+  notice: {
+    shortUnavailable: 'Short URLs are temporarily unavailable—using the full link.',
+  },
+  alert: {
+    shortFail: 'Short URL failed: {{msg}}',
+    copiedShort: 'Short URL copied',
+    copiedLink: 'Link copied',
+    copyFallback: 'Short URL failed ({{msg}}); copied original link',
+  },
+  canvasTitle: 'QR preview',
+  hero: {
+    h1: 'QR Code generator (free) | Recommended',
+    p1: 'Turn URLs, text, and contact info into scannable codes—no install, runs in your browser.',
+    audience_label: 'Great for:',
+    audience: 'Retail counters, events, menus, business cards, decks, and guest WiFi.',
+    scenario_label: 'Common uses:',
+    scenario: 'Websites, forms, LINE, phone, and email sharing—export for print or screen.',
+    pair_label: 'Pair with:',
+    pair_before_resize: 'Before large prints, use',
+    resize_link: 'Image resize',
+    pair_mid: 'to match dimensions; large files? try',
+    compress_link: 'Image compress',
+    pair_after_compress: '; long copy? summarize with',
+    ai_link: 'AI summary',
+    pair_end: 'before publishing.',
+  },
+  section: {
+    content: 'Content',
+    url_label: 'URL',
+    url_hint: 'Shows a sample URL if empty',
+    text_label: 'Text',
+    text_ph: 'Enter any text…',
+    text_hint: 'Shows placeholder text if empty',
+    email_label: 'Email',
+    email_hint: 'Encoded as mailto: (sample if empty)',
+    phone_label: 'Phone',
+    phone_hint: 'Encoded as tel: (country code allowed)',
+    ssid: 'Network name (SSID)',
+    sec: 'Security',
+    password: 'Password',
+    wifi_fmt: 'Format: WIFI:T:…;S:SSID;P:password;; (sample SSID if empty)',
+  },
+  shortUrl: {
+    generating: 'Working…',
+    generate: 'Create short URL',
+    fail_title: 'Short URL failed',
+    done: 'Short URL ready',
+    open: 'Open (new tab)',
+    copy: 'Copy',
+  },
+  templates: {
+    title: 'Quick templates',
+    subtitle: 'Preset content and colors for common scenarios',
+    restaurant: 'Restaurant menu',
+    ig: 'Instagram',
+    card: 'vCard QR',
+    reset: 'Reset defaults',
+  },
+  color: {
+    title: 'Colors',
+    style_label: 'Style presets',
+    fg: 'Foreground',
+    bg: 'Background',
+    aria_fg: 'Foreground color',
+    aria_bg: 'Background color',
+  },
+  socialSize: { label: 'Social sizes' },
+  output: { px: 'Output size (px)' },
+  logo: {
+    title: 'Center logo (optional)',
+    desc: 'Centered at ~20% of the QR edge with modules cleared for scan reliability (high error correction on).',
+    pick: 'Choose image',
+    remove: 'Remove logo',
+  },
+  preview: { label: 'Preview', scan_test: 'Scan test', phone_mock: 'Phone mockup' },
+  contrast: {
+    warn: '⚠ Low contrast may fail scans—prefer dark on light.',
+    fix: 'Fix contrast',
+  },
+  hint: { default_content: 'Showing sample content—updates as you type.' },
+  download: { png: 'Download PNG', svg: 'Download SVG', copy: 'Copy' },
+  how: {
+    title: 'How to use',
+    p: 'Generate codes for links, WiFi, email, or contacts.',
+    steps: 'Steps',
+    s1: 'Enter a URL or text',
+    s2: 'Customize content',
+    s3: 'Download',
+    cases: 'Use cases',
+    c1: 'Posters',
+    c2: 'Menus',
+    c3: 'Social',
+  },
+  seoBlock: {
+    h2: 'Free QR Code generator',
+    what_qr: 'What is a QR code?',
+    what_qr_p:
+      'A 2D barcode for URLs, text, or contacts—great for sites, LINE, cards, and promos.',
+    faq_h: 'FAQ',
+    faq_q1: 'Q: Commercial use?',
+    faq_a1: 'A: Yes—use freely.',
+    faq_q2: 'Q: High resolution?',
+    faq_a2: 'A: 128–1024 px plus SVG.',
+    how_make_h: 'How to make one?',
+    how_make_p: 'Enter text or URLs, tune colors/size/logo, then download.',
+    logo_h: 'Can I add a logo?',
+    logo_p: 'Yes—keep contrast and quiet zones to stay scannable.',
+    fail_h: 'Why scans fail',
+    f1: 'Low contrast',
+    f2: 'Too small',
+    f3: 'Logo too large',
+  },
+  bottom: {
+    what_h: 'What is a QR generator?',
+    what_p: 'A simple AI-era utility to speed up sharing in work and daily life.',
+    why_h: 'Why this tool?',
+    w1: 'Free',
+    w2: 'No install',
+    w3: 'Fast',
+    long_p:
+      'Streamline sharing for events, cards, and campaigns—an easy starting point in your free toolkit.',
+  },
+}
+
+fs.writeFileSync(p, JSON.stringify(j, null, 2), 'utf8')
+console.log('patched qr en')

@@ -1,0 +1,50 @@
+drop table if exists public.short_clicks cascade;
+drop table if exists public.short_links cascade;
+
+create table public.short_links (
+  id uuid primary key default gen_random_uuid(),
+  code varchar(20) not null,
+  original_url text not null,
+  click_count integer not null default 0,
+  created_at timestamp with time zone not null default now(),
+  updated_at timestamp with time zone not null default now()
+);
+
+create unique index uq_short_links_code
+on public.short_links(code);
+
+create unique index uq_short_links_original_url
+on public.short_links(original_url);
+
+create index idx_short_links_created_at
+on public.short_links(created_at desc);
+
+create table public.short_clicks (
+  id uuid primary key default gen_random_uuid(),
+  short_code varchar(20) not null,
+  ip text,
+  user_agent text,
+  referer text,
+  created_at timestamp with time zone not null default now()
+);
+
+create index idx_short_clicks_short_code
+on public.short_clicks(short_code);
+
+create index idx_short_clicks_created_at
+on public.short_clicks(created_at desc);
+
+create or replace function public.set_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+create trigger trg_short_links_updated_at
+before update on public.short_links
+for each row
+execute procedure public.set_updated_at();

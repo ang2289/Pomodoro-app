@@ -1,0 +1,117 @@
+import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { Todo } from '../types/Todo'
+
+interface Props {
+  todos: Todo[]
+  onDelete: (id: string) => void
+  onToggleComplete: (id: string) => void
+  onEdit?: (id: string) => void
+  formatDate: (dateString: string) => string
+}
+
+export default function TodoList({ todos, onDelete, onToggleComplete, onEdit, formatDate }: Props) {
+  const { t } = useTranslation();
+  const [tasks, setTasks] = useState(todos);
+  const [statistics, setStatistics] = useState({
+    total: 0,
+    done: 0,
+    notStarted: 0,
+    doing: 0,
+  });
+
+  useEffect(() => {
+    localStorage.setItem('tasks', JSON.stringify(tasks));
+
+    const total = tasks.length;
+    const done = tasks.filter(task => task.status === '已完成').length;
+    const notStarted = tasks.filter(task => task.status === '未開始').length;
+    const doing = tasks.filter(task => task.status === '進行中').length;
+
+    setStatistics({ total, done, notStarted, doing });
+  }, [tasks]);
+
+  const handleToggleStatus = (id: string) => {
+    setTasks(prev =>
+      prev.map(task =>
+        task.id === id
+          ? {
+              ...task,
+              status: task.status === '已完成' ? '未開始' : '已完成'
+            }
+          : task
+      )
+    );
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="mb-4 p-4 sm:p-6 bg-gray-50 rounded-xl">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 text-sm sm:text-base overflow-wrap break-word">
+          <p>{t('total_tasks')}: {statistics.total}</p>
+          <p>{t('completed')}: {statistics.done}</p>
+          <p>{t('not_started')}: {statistics.notStarted}</p>
+          <p>{t('in_progress')}: {statistics.doing}</p>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        {tasks.map(todo => (
+          <div 
+            key={todo.id} 
+            className="w-full bg-white rounded-xl shadow-md p-4 sm:p-6 overflow-wrap break-word"
+          >
+          <div className="flex justify-between items-start">
+            <div>
+              <h3 className={`text-sm sm:text-base font-medium mb-2 overflow-wrap break-word ${
+                todo.status === '已完成' 
+                  ? 'line-through text-gray-400' 
+                  : 'text-gray-800'
+              }`}>
+                {todo.title}
+              </h3>
+              <p className="text-xs sm:text-sm text-gray-500 overflow-wrap break-word">📅 {t('task_date')}: {formatDate(todo.datetime)}</p>
+              <p className="text-xs sm:text-sm text-gray-500 overflow-wrap break-word">🏷️ {t('priority')}: <span className={`font-bold ${
+                todo.priority === 'high' ? 'text-red-600' : 
+                todo.priority === 'medium' ? 'text-orange-600' : 
+                'text-green-600'
+              }`}>
+                {todo.priority === 'high' ? t('priority_high') : todo.priority === 'medium' ? t('priority_medium') : t('priority_low')}
+              </span></p>
+            </div>
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={todo.status === t('status_completed')}
+                onChange={() => {
+                  handleToggleStatus(todo.id);
+                  onToggleComplete?.(todo.id);
+                }}
+                className="h-5 w-5 mt-1 text-green-500 cursor-pointer"
+              />
+              <span className="sr-only">Toggle task status</span>
+            </label>
+          </div>
+          <div className="mt-4 flex gap-2 justify-end">
+            <button
+              onClick={() => onEdit?.(todo.id)}
+              className="bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700 text-sm transition-colors duration-200"
+            >
+              ✏️ 編輯
+            </button>
+            <button
+              onClick={() => {
+                if (window.confirm(t('confirm_delete_task'))) {
+                  onDelete(todo.id);
+                }
+              }}
+              className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 text-sm transition-colors duration-200"
+            >
+              🗑️ 刪除
+            </button>
+          </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

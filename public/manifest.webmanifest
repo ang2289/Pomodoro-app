@@ -1,0 +1,8 @@
+{
+  "name": "RxV AI 工具與生活服務中心",
+  "short_name": "RxV AI",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#6366f1"
+}

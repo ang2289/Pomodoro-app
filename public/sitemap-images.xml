@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset
+  xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
+>
+
+  <url>
+    <loc>https://pomodoro-app-eight-rouge.vercel.app/</loc>
+    <image:image>
+      <image:loc>https://pomodoro-app-eight-rouge.vercel.app/icons/icon-512.png</image:loc>
+      <image:title>RxV AI 工具中心</image:title>
+    </image:image>
+  </url>
+
+  <url>
+    <loc>https://pomodoro-app-eight-rouge.vercel.app/tools/image-resize</loc>
+    <image:image>
+      <image:loc>https://pomodoro-app-eight-rouge.vercel.app/icons/icon-192.png</image:loc>
+      <image:title>圖片尺寸轉換工具</image:title>
+    </image:image>
+  </url>
+
+  <url>
+    <loc>https://pomodoro-app-eight-rouge.vercel.app/tools/image-compress</loc>
+    <image:image>
+      <image:loc>https://pomodoro-app-eight-rouge.vercel.app/icons/icon-192.png</image:loc>
+      <image:title>圖片壓縮工具</image:title>
+    </image:image>
+  </url>
+
+  <url>
+    <loc>https://pomodoro-app-eight-rouge.vercel.app/tools/qr-code</loc>
+    <image:image>
+      <image:loc>https://pomodoro-app-eight-rouge.vercel.app/icons/icon-192.png</image:loc>
+      <image:title>QR Code 產生器</image:title>
+    </image:image>
+  </url>
+
+  <url>
+    <loc>https://pomodoro-app-eight-rouge.vercel.app/tools/line-sticker</loc>
+    <image:image>
+      <image:loc>https://pomodoro-app-eight-rouge.vercel.app/icons/icon-192.png</image:loc>
+      <image:title>LINE 貼圖整理工具</image:title>
+    </image:image>
+  </url>
+</urlset>

@@ -1,0 +1,48 @@
+{
+  "compilerOptions": {
+    /* Deno 環境設定 */
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    
+    /* 關閉 Node.js 的 module resolution，使用 Deno 的 URL imports */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "noResolve": false,
+    
+    /* Deno 全域型別 - 讓 TypeScript 知道 Deno 是合法全域 */
+    "types": [],
+    "skipLibCheck": true,
+    
+    /* 型別檢查 */
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    
+    /* 編譯選項 */
+    "allowJs": true,
+    "checkJs": false,
+    "noEmit": true,
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    
+    /* 其他 */
+    "forceConsistentCasingInFileNames": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": [
+    "**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
+

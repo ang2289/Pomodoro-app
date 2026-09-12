@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://pomodoro-app-eight-rouge.vercel.app/sitemap.xml

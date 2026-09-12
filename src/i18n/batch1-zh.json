@@ -1,0 +1,750 @@
+{
+  "seoTitleSuffix": "｜AI 工具與生活服務中心",
+  "related_tools_section_title": "相關工具",
+  "site_nav_back_home": "回首頁",
+  "batch1_tools_hub_cta": "前往 RxV 工具中心瀏覽完整工具清單",
+  "help": {
+    "seo": {
+      "title": "使用說明",
+      "description": "登入與試用說明、點數計算方式、匯款與補點流程、常見問題"
+    },
+    "hero": {
+      "title": "使用說明",
+      "subtitle": "完整的使用指南與常見問題解答"
+    },
+    "section": {
+      "login": "登入與試用說明",
+      "credits": "點數計算方式",
+      "payment": "付款與補點方式"
+    },
+    "login": {
+      "trial_title": "免費試用",
+      "trial_li1": "新用戶註冊後即可獲得 <strong>10,000 點</strong>免費試用額度",
+      "trial_li2": "試用期為 <strong>7 天</strong>，試用期內可自由使用",
+      "trial_li3": "試用期過後，點數仍可使用，但無法再補充試用額度",
+      "trial_li4": "試用額度與付費點數共用，使用時會優先扣除試用額度",
+      "method_title": "登入方式",
+      "method_li1": "支援 Email 註冊與登入",
+      "method_li2": "登入後即可開始使用所有功能",
+      "hint": "<strong>💡 提示：</strong>未登入時無法使用 AI 功能，請先登入以開始試用。"
+    },
+    "credits": {
+      "principle_title": "計算原則",
+      "principle_li1": "系統會依<strong>實際輸入的文字字數</strong>計算使用額度",
+      "principle_li2": "每次使用 AI 功能時，會即時扣除對應點數",
+      "principle_li3": "點數不足時無法使用功能，需補充點數後才能繼續使用",
+      "example_title": "範例說明",
+      "example_li1": "輸入 2,500 字文章進行摘要 → 扣除 <strong>2,500 點</strong>",
+      "example_li2": "輸入 300 字題目進行解題 → 扣除 <strong>300 點</strong>",
+      "example_li3": "輸入 1,000 字內容進行分析 → 扣除 <strong>1,000 點</strong>",
+      "warn": "<strong>⚠️ 注意：</strong>點數為一次性使用額度，不限使用期限，用完為止。使用後無法退款。"
+    },
+    "payment": {
+      "flow_title": "點數購買與補充流程",
+      "flow_intro": "目前支援以下付款方式（透過綠界金流）：",
+      "pay_li1": "<strong>信用卡付款</strong>（含 Apple Pay / Google Pay）",
+      "pay_li2": "<strong>ATM 虛擬帳號轉帳</strong>（付款後自動加點）",
+      "steps_title": "補點流程說明",
+      "steps_li1": "選擇你想購買的點數方案",
+      "steps_li2": "透過綠界付款（信用卡或 ATM 虛擬帳號）",
+      "steps_li3": "付款成功後，系統會自動加點並 Email 通知",
+      "steps_li4": "無需填寫表單，最快幾秒內自動完成",
+      "plans_title": "點數方案參考",
+      "plans_li1": "NT$99 → 100,000 點（約 30～35 次摘要）",
+      "plans_li2": "NT$199 → 300,000 點（約 90～100 次摘要）",
+      "faq_section_title": "常見問題 Q&A"
+    },
+    "faq": {
+      "q1": "Q: 付款後多久會補點？",
+      "a1": "A: 一般會在 5～10 秒內完成補點，並收到 Email 通知。",
+      "q2": "Q: 點數有使用期限嗎？",
+      "a2": "A: 沒有。點數為一次性額度，不限時間，用完為止。",
+      "q3": "Q: 可以退款嗎？",
+      "a3": "A: 點數使用後即視為完成服務，恕不退款。未用完點數可永久保留。",
+      "q4": "Q: 點數可以轉讓嗎？",
+      "a4": "A: 不可。每筆點數與帳號綁定，不可轉讓或轉移。"
+    },
+    "reminder": {
+      "title": "<strong>⚠️ 提醒事項：</strong>",
+      "li1": "使用前請先登入帳號",
+      "li2": "點數為一次性使用，不限時間但無法退款",
+      "li3": "若需大量點數購買或企業合作，請來信聯絡"
+    },
+    "cta": {
+      "pricing": "查看方案",
+      "start": "開始使用"
+    }
+  },
+  "pricingLegacy": {
+    "seo": {
+      "title": "方案與價格",
+      "description": "選擇適合你的方案，依字數額度制計算，不限使用次數、不限單次長度。"
+    },
+    "hero": {
+      "title": "使用方案（一次購買，用完為止）"
+    },
+    "trial": {
+      "notice": "⚠️ 目前為試用階段\n本服務僅開放免費試用，所有付費方案尚未開放購買與收費。\n顯示價格僅供正式上線前參考。"
+    },
+    "plan": {
+      "free_title": "免費體驗",
+      "free_chars": "可處理約 {{count}} 字",
+      "free_li1": "不需信用卡",
+      "free_li2": "不限使用期限",
+      "free_li3": "摘要與作業解題共用",
+      "plan99_title": "NT$99 方案",
+      "plan199_title": "NT$199 方案",
+      "paid_chars": "可處理 {{count}} 字",
+      "paid_li1": "一次購買",
+      "paid_li2": "<strong>不自動續費</strong>",
+      "paid_li3": "<strong>不限使用期限</strong>",
+      "license_note": "數位服務使用授權，非儲值、非點數",
+      "buy_btn": "購買方案"
+    },
+    "usage": {
+      "section_title": "使用說明",
+      "new_user_title": "🎁 新用戶免費體驗額度",
+      "new_user_body": "首次使用即可獲得可處理約 {{count}} 字的免費體驗額度，體驗額度僅供功能試用，需於 7 日內使用完畢。",
+      "paid_title": "💳 付費使用方案",
+      "paid_body": "<strong>NT$99 方案：</strong>可處理 {{c99}} 字<br /><strong>NT$199 方案：</strong>可處理 {{c199}} 字<br />付費購買之使用方案為永久有效，不限使用期限、不會過期，可長期累積使用。",
+      "calc_title": "📌 使用額度計算說明",
+      "calc_body": "使用額度僅在實際使用 AI 服務時才會計算，未使用不會產生任何費用。",
+      "important": "<strong>重要說明：</strong>本服務為數位服務使用授權，非儲值、非點數。"
+    },
+    "charCount": {
+      "header": "📊 字數如何計算？",
+      "li1": "系統會依照你實際送出與產生的文字數量累計",
+      "li2": "使用中可即時查看「已使用」與「剩餘可用」",
+      "li3": "使用額度用完後，服務將暫停，需再次購買使用方案才能繼續使用"
+    },
+    "charExplain": {
+      "header": "📌 字數計算方式說明",
+      "p1": "每次使用時，系統會依「實際輸入的文字字數」計算使用額度。",
+      "example_title": "範例說明：",
+      "ex1": "輸入 2,500 字文章摘要 → 使用 2,500 字",
+      "ex2": "解題輸入 300 字題目 → 使用 300 字",
+      "p2": "可處理字數為一次性使用額度，不限使用期限，用完為止。"
+    },
+    "fairness": {
+      "header": "🔒 使用與公平性說明",
+      "li1": "為維持服務品質，系統會進行合理的資源控管",
+      "li2": "異常或非一般使用行為，可能會受到限制",
+      "li3": "所有方案之實際使用狀況，以系統顯示為準"
+    },
+    "modal": {
+      "title": "購買功能尚未開放",
+      "body": "目前僅開放免費試用可處理約 {{count}} 字，\n付費方案（NT$99 / NT$199）尚未開放購買。\n顯示價格僅供正式上線前參考。",
+      "ok": "我知道了"
+    },
+    "back_summary": "返回摘要工具"
+  },
+  "aiSummaryGuide": {
+    "seo": {
+      "title": "AI 摘要工具｜長文、筆記與 PDF 重點整理｜RxV",
+      "description": "線上 AI 摘要：貼上長文或筆記即可產出條列重點，協助閱讀、研究與備課。免安裝，與番茄鐘、待辦搭配更易執行。",
+      "keywords": "AI 摘要, 長文整理, 筆記摘要, 免費工具"
+    },
+    "banner": "🔥 Early Bird — Only 50 Copies Available (50% OFF) | Current Price: $14.5",
+    "h1": "AI 摘要工具（免費）｜AI工具推薦",
+    "intro": "這是一款免費AI 摘要工具，可用於快速整理長文重點與輸出結構化摘要內容，支援線上使用，不需下載，快速完成任務。",
+    "audience_label": "適合誰用：",
+    "audience": "學生備考與論文初讀、上班族消化長信與公告、內容策展需快速抓重點者。",
+    "pair_label": "推薦搭配：",
+    "pair": "摘要後可用番茄鐘分段執行行動項，或以待辦拆解後續任務；與作業解題、圖片壓縮等工具同列於下方「相關工具」。",
+    "how_title": "如何使用此工具？",
+    "how_p": "AI 摘要工具可快速整理文章或影片內容，幫助快速理解重點。",
+    "steps_title": "使用步驟",
+    "step1": "貼上文章或影片內容",
+    "step2": "生成摘要",
+    "step3": "複製或整理內容",
+    "scenarios_title": "適合使用情境",
+    "sc1": "學習筆記",
+    "sc2": "研究資料",
+    "sc3": "長文章整理",
+    "what_title": "什麼是AI 摘要工具？",
+    "what_p": "AI 摘要工具是一種常見的AI工具，可幫助使用者提升效率，適合用於工作、學習與日常應用。",
+    "why_title": "為什麼使用這個工具？",
+    "why_li1": "免費使用",
+    "why_li2": "不需安裝",
+    "why_li3": "支援快速處理",
+    "seo_para": "AI 摘要工具是高需求的AI工具，可協助你快速整理長文重點。這個免費工具能應用在會議筆記與學習摘要，讓 AI 摘要工具在內容管理更有效率。若你要持續擴充AI工具與免費工具清單，AI 摘要工具會是必備選項。",
+    "marketing": {
+      "heroLine1": "AI 工具指南",
+      "heroLine2": "摘要工具如何運作",
+      "heroIntro": "了解我們的 AI 摘要工具如何運作：從 JSON Schema 驗證到多語系支援，適合開發者與內容工作者。",
+      "tryCta": "試用摘要工具",
+      "buyTemplate": "購買模板",
+      "howWorksTitle": "🚀 運作方式",
+      "howWorksBody": "我們的 AI 摘要工具使用 Supabase Edge Functions 搭配 Gemini Flash，產出經驗證的 JSON 摘要；系統透過 JSON Schema 驗證，盡量輸出有效 JSON。",
+      "techTitle": "🔧 技術堆疊",
+      "techLi1": "<strong>Supabase Edge Functions：</strong>無伺服器後端與輸入驗證",
+      "techLi2": "<strong>Gemini Flash 2.0：</strong>快速且準確的模型",
+      "techLi3": "<strong>JSON Schema：</strong>穩定、可機讀的輸出",
+      "techLi4": "<strong>React + TypeScript：</strong>現代前端框架",
+      "featuresTitle": "🌐 功能亮點",
+      "featLi1": "<strong>自動語言偵測：</strong>支援英文與中文",
+      "featLi2": "<strong>每日額度：</strong>免費每日 3 次摘要（午夜重置）",
+      "featLi3": "<strong>乾淨 JSON 輸出：</strong>經驗證的結構，利於串接",
+      "featLi4": "<strong>多種輸入：</strong>文章、網址與 YouTube 內容",
+      "devTitle": "💡 開發者模板",
+      "devIntro": "想自建 AI 摘要工具？取得完整開發者模板，包含：",
+      "devLi1": "完整的 Supabase Edge Function 程式碼",
+      "devLi2": "JSON Schema 定義",
+      "devLi3": "前端 React 元件",
+      "devLi4": "可上線的 API 設定",
+      "buyDevTemplate": "購買開發者模板 →",
+      "backHub": "← 返回 AI 工具中心",
+      "floatBuy": "🚀 購買模板"
+    },
+    "jsonLd": {
+      "webName": "AI 摘要工具",
+      "webDesc": "免費 AI 摘要工具，快速整理長文重點與產出摘要內容。",
+      "appDesc": "可快速整理文章、網址與內容重點，支援多語系摘要。"
+    }
+  },
+  "imageCompress": {
+    "seo": {
+      "title": "圖片壓縮工具｜免費線上壓縮 JPG、PNG、WebP",
+      "description": "免費圖片壓縮工具，支援 JPG、PNG、WebP 線上壓縮，可選輸出格式並快速縮小檔案大小，免下載即可使用。",
+      "keywords": "圖片壓縮, JPG壓縮, PNG壓縮, WebP壓縮, 線上圖片壓縮, 批量圖片壓縮"
+    },
+    "jsonLd": {
+      "webName": "圖片壓縮工具",
+      "webDesc": "免費圖片壓縮工具，支援 JPG、PNG、WebP 線上壓縮。",
+      "appDesc": "可在瀏覽器壓縮 JPG、PNG、WebP 並下載單張或 ZIP。"
+    },
+    "h1": "圖片壓縮工具｜免費線上壓縮 JPG、PNG、WebP",
+    "intro": "上傳單張圖片後即可在瀏覽器中完成壓縮，無需後端或下載軟體。支援 JPG、PNG、WebP。",
+    "upload": "上傳圖片",
+    "upload_hint": "支援拖曳上傳與多選圖片",
+    "output_format": "輸出格式",
+    "opt_jpg": "JPG（推薦）",
+    "opt_webp": "WebP（更小）",
+    "opt_png": "PNG（保留透明）",
+    "quality": "壓縮品質：{{v}}",
+    "format_note_jpg": "JPG：最通用壓縮格式（推薦）",
+    "format_note_webp": "WebP：體積更小，適合網站圖片",
+    "format_note_png": "PNG：保留透明背景",
+    "png_warn_title": "⚠ PNG 為無損格式，通常不會大幅縮小檔案。",
+    "png_warn_body": "PNG 屬於無損格式，壓縮後檔案不一定會變小。若需要更小的圖片檔案，建議選擇 JPG 或 WebP。",
+    "err_partial": "部分檔案格式不支援，僅處理 JPG、PNG、WebP",
+    "err_generic": "處理失敗，請稍後重試",
+    "err_zip": "ZIP 打包失敗，請稍後再試",
+    "err_load": "圖片載入失敗",
+    "err_canvas": "瀏覽器不支援 canvas",
+    "err_compress": "壓縮失敗，請稍後重試",
+    "original": "原始圖片",
+    "compressed": "壓縮後圖片",
+    "alt_original": "原始圖片預覽",
+    "alt_compressed": "壓縮後圖片預覽",
+    "please_upload": "請先上傳圖片",
+    "compressing": "壓縮中...",
+    "no_result": "尚未產生壓縮結果",
+    "batch_title": "批量壓縮結果",
+    "orig_size": "原始大小：{{v}}",
+    "comp_size": "壓縮後大小：{{v}}",
+    "saved": "節省容量：{{v}}",
+    "saved_pct": "節省比例：{{v}}%",
+    "out_fmt": "輸出格式：{{v}}",
+    "dim": "原始尺寸 / 輸出尺寸：{{v}} / {{v2}}",
+    "batch_total": "批量總計：原始 {{o}}，壓縮後 {{c}}，共省下 {{s}}（{{p}}%）",
+    "processed_n": "已處理 {{n}} 張圖片",
+    "zip_will": "ZIP 將輸出為 {{v}}",
+    "current_fmt": "目前格式：{{v}}",
+    "download_one": "下載壓縮圖片",
+    "download_zip": "下載全部 ZIP",
+    "zipping": "正在打包...",
+    "download_this": "下載此張",
+    "zip_need_files": "請先上傳並完成壓縮",
+    "how_title": "如何使用此工具？",
+    "who_label": "適合誰用：",
+    "who": "部落格與官網維運、電商上架、Email 附檔、表單上傳有 KB 上限者，以及批次處理截圖與相片者。",
+    "how_p": "此工具可在線上壓縮 JPG、PNG 或 WebP，減少檔案大小。建議先確認顯示所需解析度，再調整品質；完成後可用「相關工具」做尺寸轉換或 AI 摘要配文。",
+    "steps_title": "使用步驟",
+    "s1": "上傳圖片",
+    "s2": "選擇輸出格式",
+    "s3": "調整壓縮品質",
+    "s4": "下載壓縮圖片",
+    "use_cases_title": "適合使用情境",
+    "uc1": "網站圖片優化",
+    "uc2": "電商商品圖",
+    "uc3": "社群圖片分享",
+    "faq_title": "常見問題",
+    "rec_title": "推薦搭配工具",
+    "rec_p": "上架或投稿前若需對齊平台長寬，可先使用",
+    "rec_resize": "圖片尺寸轉換",
+    "rec_mid": "；要分享下載頁或表單可搭配",
+    "rec_qr": "QR Code 產生器",
+    "rec_tail": "；長篇說明則可用",
+    "rec_ai": "AI 摘要",
+    "rec_end": "濃縮重點。下方「相關工具」與站內 SEO 內鏈模組一致。",
+    "faq": {
+      "q1": "圖片會上傳到伺服器嗎？",
+      "a1": "圖片僅在本機瀏覽器內處理，不會上傳到伺服器，也不會儲存。",
+      "q2": "圖片壓縮後畫質會差很多嗎？",
+      "a2": "壓縮程度取決於品質設定與輸出格式。一般情況下，JPG 與 WebP 能在保留可接受畫質下明顯縮小檔案。",
+      "q3": "WebP 和 JPG 哪個比較適合網站？",
+      "a3": "WebP 通常能提供更小檔案，較適合網站圖片；若需要更高相容性，可選擇 JPG。",
+      "q4": "為什麼 PNG 壓縮後有時還是很大？",
+      "a4": "PNG 屬於無損格式，若需要更小檔案，建議改輸出為 JPG 或 WebP。"
+    }
+  },
+  "imageConvert": {
+    "seo": {
+      "title": "圖片格式轉換｜PNG、JPG、WebP 線上互轉｜RxV",
+      "description": "免費線上圖片格式轉換：PNG↔JPG、PNG↔WebP、JPG↔WebP。使用瀏覽器 canvas 處理，無需上傳伺服器即可下載。",
+      "keywords": "圖片格式轉換,PNG轉JPG,JPG轉PNG,WebP,線上轉檔"
+    },
+    "jsonLd": {
+      "webName": "圖片格式轉換工具",
+      "webDesc": "PNG、JPG、WebP 在瀏覽器互轉，免安裝。",
+      "appDesc": "選擇轉檔方向、上傳圖片後即可下載。"
+    },
+    "h1": "圖片格式轉換｜PNG、JPG、WebP 線上互轉",
+    "intro": "支援 PNG、JPG、WebP 常見組合互轉；解碼與輸出在您的瀏覽器完成。轉成 JPG 時透明區域會以白底填滿。",
+    "preset_title": "轉檔方向（預設）",
+    "preset_png_jpg": "PNG → JPG",
+    "preset_jpg_png": "JPG → PNG",
+    "preset_png_webp": "PNG → WebP",
+    "preset_webp_png": "WebP → PNG",
+    "preset_jpg_webp": "JPG → WebP",
+    "preset_webp_jpg": "WebP → JPG",
+    "preset_hint": "目前輸出格式：{{fmt}}；請上傳符合左側來源類型的圖片。",
+    "upload": "點此或拖曳上傳圖片",
+    "upload_hint": "依上方預設只接受對應來源格式（可多選）",
+    "quality": "輸出品質：{{v}}（僅適用 JPG／WebP）",
+    "png_lossless": "PNG 為無損輸出，不需調整品質滑桿。",
+    "converting": "轉換中…",
+    "results": "轉換結果",
+    "out_label": "輸出",
+    "size_out": "約 {{v}} KB",
+    "download": "下載",
+    "download_all_zip": "下載全部 ZIP",
+    "clear_results": "清空結果",
+    "zipping": "打包中…",
+    "zip_error": "無法建立 ZIP，請稍後再試。",
+    "err_type": "沒有符合目前預設的圖片格式，請確認副檔名與預設一致。",
+    "err_partial": "部分檔案已略過（格式不符）。",
+    "err_generic": "轉檔失敗，請換一張圖或稍後再試。",
+    "faq_title": "常見問題",
+    "rec_title": "推薦搭配工具",
+    "faq": {
+      "q1": "圖片會上傳到伺服器嗎？",
+      "a1": "轉檔在瀏覽器內處理，不會因本工具而刻意將檔案送到我們的伺服器。",
+      "q2": "為什麼透明區域變成白色？",
+      "a2": "JPG 不支援透明，轉成 JPG 時一般會以白底填滿；需要透明請選 PNG 或 WebP。",
+      "q3": "Safari 或舊瀏覽器能轉 WebP 嗎？",
+      "a3": "取決於瀏覽器是否支援 canvas 輸出 WebP；若不支援，請改試 Chrome／Edge 最新版。",
+      "q4": "可以 HEIC 嗎？",
+      "a4": "本工具目前接受 PNG、JPG、WebP；HEIC 請先在系統相簿轉出為 JPG 再上傳。"
+    }
+  },
+  "imageResizeExtra": {
+    "seo": {
+      "title": "圖片尺寸調整｜IG、YouTube、蝦皮預設與自訂寬高｜RxV",
+      "description": "線上裁切、補白與多平台預設尺寸（IG、Shorts、蝦皮等），瀏覽器即可完成。完成後可再接圖片壓縮與 QR 分享。",
+      "keywords": "圖片尺寸調整, IG圖片尺寸, YouTube縮圖尺寸, 蝦皮圖片尺寸, TikTok尺寸, 圖片尺寸工具"
+    },
+    "jsonLd": {
+      "webName": "圖片尺寸調整工具",
+      "webDesc": "免費圖片尺寸調整工具，支援 IG、TikTok、YouTube、蝦皮商品圖尺寸。",
+      "appDesc": "可調整多平台尺寸，支援 PNG/JPG 單張下載與 ZIP 批次輸出。"
+    },
+    "h1": "圖片尺寸調整工具（免費）｜AI工具推薦",
+    "audience_label": "適合誰用：",
+    "audience": "社群小編、蝦皮賣家、學生報告與簡報配圖，以及需要快速對齊 IG／YouTube／蝦皮等平台長寬者。",
+    "intro2": "支援線上裁切、補白與多組預設尺寸；不需下載軟體。完成後可搭配下方「相關工具」進行壓縮或產生 QR 分享連結。",
+    "preview_mode_pad": "目前為完整顯示模式，框線代表輸出畫面比例。",
+    "preview_mode_crop": "目前為裁切滿版模式，框線外的區域可能不會出現在最終圖片中。",
+    "output_wh": "輸出尺寸（寬 × 高）",
+    "aria_w": "輸出寬度",
+    "aria_h": "輸出高度",
+    "custom_label": "自訂尺寸",
+    "zip_select_all": "全選",
+    "zip_select_none": "全不選",
+    "zip_selected": "已選 {{n}}/{{total}}{{all}}",
+    "zip_all_suffix": "（全部）",
+    "zip_checked_n": "目前已勾選 {{n}} 個尺寸",
+    "zip_preset_hint": "已預設勾選常用平台尺寸",
+    "zip_packaging": "正在打包...",
+    "zip_download": "下載 ZIP 整包",
+    "zip_pick": "請先勾選尺寸",
+    "zip_fail": "ZIP 打包失敗，請稍後再試",
+    "sizes_extra_line": "常見尺寸也包含 YouTube 縮圖 1280 × 720、Facebook 分享圖 1200 × 630、TikTok 影片 1080 × 1920、蝦皮商品長圖 1080 × 1920。",
+    "how_title": "如何使用此工具？",
+    "how_p": "快速調整圖片尺寸，支援社群平台尺寸與自訂寬高。",
+    "steps_title": "使用步驟",
+    "st1": "上傳圖片",
+    "st2": "選擇平台尺寸或自訂尺寸",
+    "st3": "選擇裁切或補白模式",
+    "st4": "下載圖片",
+    "cases_title": "適合使用情境",
+    "c1": "Instagram 貼文",
+    "c2": "YouTube 縮圖",
+    "c3": "TikTok 影片封面",
+    "what_title": "什麼是圖片尺寸調整工具？",
+    "what_p": "圖片尺寸調整工具是一種常見的AI工具，可幫助使用者提升效率，適合用於工作、學習與日常應用。",
+    "why_title": "為什麼使用這個工具？",
+    "why_li1": "免費使用",
+    "why_li2": "不需安裝",
+    "why_li3": "支援快速處理",
+    "seo_bottom": "圖片尺寸調整工具是高頻使用的AI工具之一，可用於社群與電商圖像優化。這個免費工具讓你不安裝軟體也能完成轉換，圖片尺寸調整工具在日常工作特別省時。若你希望一次整合更多AI工具與免費工具，圖片尺寸調整工具很適合作為第一步。",
+    "apply_size": "套用尺寸",
+    "suggested": "建議尺寸：",
+    "card_youtube_title": "YouTube 縮圖",
+    "card_youtube_ratio": "比例：16:9",
+    "card_youtube_desc": "適合 YouTube 影片封面與縮圖使用。",
+    "card_fb_title": "Facebook 分享圖",
+    "card_fb_ratio": "比例：1.91:1",
+    "card_fb_desc": "適合 Facebook 貼文分享與網站預覽圖。",
+    "card_tiktok_title": "TikTok 影片",
+    "card_tiktok_ratio": "比例：9:16",
+    "card_tiktok_desc": "適合 TikTok 直式短影音封面或素材。",
+    "card_shopee_long_title": "蝦皮商品長圖",
+    "card_shopee_long_ratio": "比例：9:16",
+    "card_shopee_long_desc": "適合蝦皮商品詳情長圖與展示圖。",
+    "group": {
+      "IG": "IG",
+      "YouTube": "YouTube",
+      "TikTok": "TikTok",
+      "Shopee": "蝦皮",
+      "Facebook": "Facebook"
+    },
+    "faqExtra": {
+      "youtube_q": "YouTube 縮圖尺寸是多少？",
+      "youtube_a": "YouTube 縮圖建議尺寸為 1280 × 720，比例為 16:9。",
+      "tiktok_q": "TikTok 影片尺寸是多少？",
+      "tiktok_a": "TikTok 影片建議尺寸為 1080 × 1920，比例為 9:16。",
+      "facebook_q": "Facebook 貼文圖片尺寸是多少？",
+      "facebook_a": "Facebook 分享圖片建議尺寸為 1200 × 630。"
+    }
+  },
+  "qr": {
+    "seo": {
+      "title": "QR Code 產生器｜網址、WiFi、Email 與 Logo｜RxV",
+      "description": "線上產生 QR Code：網址、文字、郵件、電話與 WiFi；可調顏色、尺寸並嵌入 Logo。瀏覽器即可用，下載 PNG／SVG。",
+      "keywords": "QR Code 產生器, WiFi QR, 網址 QR, 免費工具"
+    },
+    "tabs": {
+      "url": "網址",
+      "text": "文字",
+      "email": "Email",
+      "phone": "電話",
+      "wifi": "WiFi"
+    },
+    "styleNames": {
+      "bw": "黑白經典",
+      "blue": "藍色科技",
+      "green": "品牌綠",
+      "gold": "精品金黑",
+      "bw2": "黑白經典",
+      "blue2": "藍白科技",
+      "gold2": "金黑高級"
+    },
+    "social": {
+      "ig": "IG貼文",
+      "line": "LINE分享",
+      "card": "名片"
+    },
+    "wifiSec": {
+      "wpa": "WPA/WPA2",
+      "wpa3": "WPA3",
+      "wep": "WEP",
+      "nopass": "無密碼"
+    },
+    "template": {
+      "restaurantUrl": "https://你的菜單連結",
+      "igUrl": "https://instagram.com/xxx",
+      "vcard": "姓名：王小明\n電話：0912-345-678\nLINE：@yourlineid"
+    },
+    "placeholder": {
+      "textDefault": "在此輸入文字後即可預覽 QR Code",
+      "wifiPw": "WiFi 密碼"
+    },
+    "share": {
+      "ogText": "免費 QR Code 產生器｜支援Logo・社群分享",
+      "apiTitle": "QR Code 分享 - 自動生成",
+      "apiDesc": "QR Code 分享連結"
+    },
+    "jsonLd": {
+      "webName": "QR Code 產生器",
+      "webDesc": "免費 QR Code 產生器，支援網址、文字、Email、電話與 WiFi 內容。",
+      "appDesc": "可自訂顏色、Logo 與尺寸，並下載 PNG/SVG 的 QR Code 工具。",
+      "faq1q": "QR Code 可以商業使用嗎？",
+      "faq1a": "本工具生成的 QR Code 可自由使用。",
+      "faq2q": "可以下載高畫質嗎？",
+      "faq2a": "支援 128～1024 像素與 SVG 格式。"
+    },
+    "err": {
+      "shortHttp": "短網址服務錯誤（HTTP {{status}}）",
+      "shortFmt": "短網址服務回傳格式錯誤（缺少 shortUrl）",
+      "shortGeneric": "產生失敗，請稍後再試",
+      "shortFallback": "產生短網址失敗，改複製原始連結",
+      "shortNeedUrlMode": "請先切換到「網址」分頁，並輸入要縮短的完整網址（http 或 https）",
+      "shortInvalidUrl": "網址為空或格式不正確，請輸入有效網址（例如 https://example.com）",
+      "shortNetwork": "無法連線到伺服器，請檢查網路後再試",
+      "shortServer": "伺服器暫時無法回應，請稍後再試",
+      "shortConfig": "Supabase 或網站網域未設定：請設定 SUPABASE_URL、SUPABASE_SERVICE_ROLE_KEY，以及 VITE_SITE_URL（或 NEXT_PUBLIC_SITE_URL）。",
+      "shortDb": "資料庫寫入失敗，請稍後再試或聯絡管理員。",
+      "shortApiRoute": "找不到短網址 API（請確認開發環境 proxy 或後端是否正常）。",
+      "shortBadGateway": "API 閘道錯誤（502/504），請確認 VITE_VERCEL_URL 是否指向正確的本機 API。"
+    },
+    "notice": {
+      "shortUnavailable": "短網址服務暫時不可用，已改用原始分享連結。"
+    },
+    "alert": {
+      "shortFail": "產生短網址失敗：{{msg}}",
+      "copiedShort": "已複製短網址",
+      "copiedLink": "已複製連結",
+      "copyFallback": "短網址失敗（{{msg}}），已改複製原始連結"
+    },
+    "canvasTitle": "QR Code 預覽",
+    "hero": {
+      "h1": "QR Code 產生器（免費）｜AI工具推薦",
+      "p1": "這是一款免費QR Code 產生器，可用於將網址、文字與聯絡資訊快速轉成可掃描內容，支援線上使用，不需下載，快速完成任務。",
+      "audience_label": "適合誰用：",
+      "audience": "店舖櫃台、活動報到、餐飲菜單、名片與講者投影片尾頁，以及需讓訪客一掃連 WiFi 的場域。",
+      "scenario_label": "常見情境：",
+      "scenario": "官網導流、問卷表單、LINE 官方帳號、電話與 Email 快速分享；產出圖檔後可再依印刷或螢幕需求調整尺寸。",
+      "pair_label": "推薦搭配：",
+      "pair_before_resize": "印刷或大型輸出前可用",
+      "resize_link": "圖片尺寸轉換",
+      "pair_mid": "對齊長邊；檔案偏大時以",
+      "compress_link": "圖片壓縮",
+      "pair_after_compress": "縮小附檔；長篇說明文案可搭配",
+      "ai_link": "AI 摘要",
+      "pair_end": "先整理重點再上稿。"
+    },
+    "section": {
+      "content": "內容",
+      "url_label": "網址",
+      "url_hint": "留空時顯示範例網址",
+      "text_label": "文字內容",
+      "text_ph": "輸入任意文字…",
+      "text_hint": "留空時顯示預設提示文字",
+      "email_label": "電子郵件",
+      "email_hint": "將編碼為 mailto:（留空顯示範例）",
+      "phone_label": "電話號碼",
+      "phone_hint": "將編碼為 tel:（可含國碼 +）",
+      "ssid": "無線網路名稱（SSID）",
+      "sec": "加密方式",
+      "password": "密碼",
+      "wifi_fmt": "格式：WIFI:T:類型;S:SSID;P:密碼;;（SSID 未填時使用預設範例）",
+      "short_hint": "將上方「網址」欄的長連結縮成短連結，並自動填入欄位以更新 QR（請先選「網址」分頁）。"
+    },
+    "shortUrl": {
+      "generating": "產生中...",
+      "generate": "產生短網址",
+      "fail_title": "無法產生短網址",
+      "done": "已產生短網址",
+      "appliedToField": "已套用至上方「網址」欄位，QR 預覽已更新",
+      "reused": "此網址已有短連結，已為你帶入既有短網址",
+      "successApplied": "短網址已套用至網址欄位",
+      "open": "開啟（新分頁）",
+      "copy": "複製"
+    },
+    "templates": {
+      "title": "一鍵套用模板",
+      "subtitle": "快速建立常見商業情境的 QR Code 內容與配色",
+      "restaurant": "餐廳菜單",
+      "ig": "IG導流",
+      "card": "名片QR",
+      "reset": "恢復預設"
+    },
+    "color": {
+      "title": "顏色",
+      "style_label": "QR 樣式模板",
+      "fg": "前景色",
+      "bg": "背景色",
+      "aria_fg": "前景色",
+      "aria_bg": "背景色"
+    },
+    "socialSize": {
+      "label": "社群尺寸"
+    },
+    "output": {
+      "px": "輸出尺寸（像素）"
+    },
+    "logo": {
+      "title": "中央 Logo（選填）",
+      "desc": "上傳後置中顯示，約為 QR 邊長 20%，並自動挖空模組以維持可掃描性；建議搭配高容錯（已自動使用）。",
+      "pick": "選擇圖片",
+      "remove": "移除 Logo"
+    },
+    "preview": {
+      "label": "QR 預覽",
+      "scan_test": "掃描測試",
+      "phone_mock": "模擬手機掃描效果"
+    },
+    "contrast": {
+      "warn": "⚠ 對比過低，可能掃描失敗，建議使用深色前景＋淺色背景",
+      "fix": "一鍵修正為最佳對比"
+    },
+    "hint": {
+      "default_content": "目前為預設範例內容，開始輸入後會即時更新"
+    },
+    "download": {
+      "png": "下載 PNG",
+      "svg": "下載 SVG",
+      "copy": "複製"
+    },
+    "how": {
+      "title": "如何使用此工具？",
+      "p": "快速生成 QR Code，可用於網站連結、WiFi、Email 或聯絡資訊。",
+      "steps": "使用步驟",
+      "s1": "輸入網址或文字",
+      "s2": "自訂 QR Code 內容",
+      "s3": "下載圖片",
+      "cases": "適合使用情境",
+      "c1": "活動海報",
+      "c2": "菜單 QR",
+      "c3": "社群分享"
+    },
+    "seoBlock": {
+      "h2": "免費 QR Code 產生器",
+      "what_qr": "什麼是 QR Code？",
+      "what_qr_p": "QR Code 是一種可儲存網址、文字或聯絡資訊的二維條碼，常用於網站分享、LINE 加好友、名片、商品導購與宣傳。",
+      "faq_h": "常見問題",
+      "faq_q1": "Q：QR Code 可以商業使用嗎？",
+      "faq_a1": "A：本工具生成的 QR Code 可自由使用。",
+      "faq_q2": "Q：可以下載高畫質嗎？",
+      "faq_a2": "A：支援 128～1024 像素與 SVG 格式。",
+      "how_make_h": "QR Code 怎麼製作？",
+      "how_make_p": "輸入網址或文字後即可自動生成，並可自訂顏色、尺寸與 Logo 後下載使用。",
+      "logo_h": "QR Code 可以放 Logo 嗎？",
+      "logo_p": "可以，但需保持高對比與足夠留白，避免影響掃描成功率。",
+      "fail_h": "QR Code 掃描失敗原因",
+      "f1": "顏色對比過低",
+      "f2": "尺寸過小",
+      "f3": "中間 Logo 過大"
+    },
+    "bottom": {
+      "what_h": "什麼是QR Code 產生器？",
+      "what_p": "QR Code 產生器是一種常見的AI工具，可幫助使用者提升效率，適合用於工作、學習與日常應用。",
+      "why_h": "為什麼使用這個工具？",
+      "w1": "免費使用",
+      "w2": "不需安裝",
+      "w3": "支援快速處理",
+      "long_p": "QR Code 產生器作為實用的AI工具，能把分享流程變簡單。這款免費工具適合社群導流、名片交換與活動宣傳，讓 QR Code 產生器在工作與學習情境都能快速上手。若你正在找好用的AI工具與免費工具，QR Code 產生器會是很實用的起點。"
+    }
+  },
+  "nav": {
+    "breadcrumb": {
+      "toolsHub": "工具中心",
+      "search": "搜尋",
+      "siteSearch": "站內搜尋"
+    }
+  },
+  "landing": {
+    "section": {
+      "intro": "簡介",
+      "steps": "使用方式步驟",
+      "situations": "使用情境",
+      "faq": "FAQ"
+    },
+    "cta": {
+      "primary": "前往主工具",
+      "primaryDesc": "準備好後可直接進入主工具頁開始操作。",
+      "compare": "前往對應工具",
+      "compareDesc": "依本頁主題前往 RxV 工具開始操作。"
+    },
+    "relatedTools": "相關工具推薦",
+    "popularPagesSeo": "熱門 SEO 主題頁",
+    "popularPagesDefault": "熱門主題頁"
+  },
+  "compare": {
+    "section": {
+      "intro": "簡介",
+      "table": "重點比較",
+      "criterion": "比較項目",
+      "situations": "使用情境",
+      "faq": "FAQ"
+    },
+    "pros": "優點",
+    "cons": "限制",
+    "prosConsHeading": "{{label}}：優點與限制"
+  },
+  "searchTemplate": {
+    "fallbackSeoTitle": "站內搜尋主題｜RxV",
+    "fallbackSeoDesc": "此關鍵字尚未建立可索引的搜尋主題頁；請改由工具中心或下方推薦連結前往。",
+    "fallbackH1": "搜尋主題",
+    "fallbackBody": "「{{slug}}」目前沒有對應的可索引主題頁（或關鍵字尚未納入白名單）。請使用 <searchLink>站內搜尋</searchLink> 或前往 <toolsLink>工具中心</toolsLink>。",
+    "relatedLandings": "相關 SEO 落地頁",
+    "relatedTools": "對應工具推薦",
+    "guides": "對應教學文章",
+    "ctaTitle": "前往主工具",
+    "ctaDesc": "由此進入主工具頁開始操作。"
+  },
+  "guideIndex": {
+    "seo": {
+      "title": "Guide 教學中心｜AI工具與圖片工具完整教學",
+      "description": "收錄 20 篇工具教學，從圖片尺寸、壓縮、QR Code 到 AI 摘要與作業解題。"
+    },
+    "collectionName": "Guide 教學中心",
+    "collectionDesc": "AI工具與圖片工具實作教學，涵蓋尺寸、壓縮、摘要與解題流程。",
+    "h1": "Guide 教學中心",
+    "intro": "從新手到進階都能快速上手，這裡整理常見工具情境、步驟與 FAQ，並直接導回可使用的工具入口。",
+    "breadcrumbCurrent": "Guide"
+  },
+  "guide": {
+    "related": {
+      "title": "相關教學文章"
+    }
+  },
+  "home": {
+    "seo": {
+      "title": "RxV AI 工具與生活服務中心｜AI工具與效率工具",
+      "description": "整合 AI 工具、效率工具與生活服務，包含 AI 摘要、作業解題、QR Code 產生、圖片壓縮與尺寸調整等免費工具。",
+      "keywords": "AI工具, 免費AI工具, AI摘要, 作業解題, 效率工具, 番茄鐘, 待辦清單"
+    },
+    "jsonLd": {
+      "websiteName": "RxV AI 工具中心",
+      "organizationName": "RxV AI 工具中心"
+    }
+  },
+  "categoryTools": {
+    "h1": "工具總覽（免費）｜AI工具推薦",
+    "lead": "這是一款免費工具總覽頁，可用於快速找到 AI 工具與效率工具入口，支援線上使用，不需下載，快速完成任務。",
+    "seoTitle": "工具總覽｜免費工具總覽工具 - RxV AI工具中心",
+    "seoDesc": "免費工具總覽工具，支援線上使用，快速完成任務，無需下載。",
+    "seoKeywords": "工具總覽, AI工具, 免費工具",
+    "introH3Line": "LINE 貼圖整理工具",
+    "introH3Resize": "圖片尺寸轉換工具",
+    "introH3Ai": "AI 摘要工具",
+    "introH3Pomodoro": "番茄鐘",
+    "whatTitle": "什麼是工具總覽？",
+    "whatP": "工具總覽是一種常見的AI工具，可幫助使用者提升效率，適合用於工作、學習與日常應用。",
+    "whyTitle": "為什麼使用這個工具？",
+    "whyLi1": "免費使用",
+    "whyLi2": "不需安裝",
+    "whyLi3": "支援快速處理",
+    "moreTitle": "更多相關工具",
+    "moreLinkTools": "工具中心",
+    "moreLinkSummary": "AI摘要工具",
+    "moreLinkHomework": "AI作業解題",
+    "longP": "工具總覽是整合型AI工具入口，可協助你快速找到適合需求的功能。這個免費工具頁面能一次比較多個工具，讓工具總覽在工作、學習與日常都更好用。若你要持續擴充AI工具與免費工具清單，工具總覽是最方便的起點。",
+    "ctaMore": "👉 查看更多 AI 工具"
+  },
+  "toolCategory": {
+    "seoTitle": "{{h1}}｜工具分類與教學入口",
+    "sectionIntro": "分類介紹",
+    "sectionToolCards": "工具卡片列表",
+    "sectionUsage": "工具用途說明",
+    "sectionUsageP": "這個分類頁整合常用入口與操作方向，建議先挑選一個目標工具開始，再搭配相關工具形成完整工作流。",
+    "popularTitle": "本分類熱門頁面",
+    "guidesTitle": "本分類推薦教學",
+    "toolsTitle": "搭配工具推薦"
+  },
+  "guideArticle": {
+    "defaultSeoTitle": "{{title}}｜RxV 教學",
+    "sectionHighlights": "教學重點",
+    "sectionSteps": "步驟",
+    "ctaHeading": "導回工具",
+    "ctaBody": "看完教學後可直接進入工具實作。",
+    "ctaButton": "前往 {{name}}"
+  },
+  "toolsHub": {
+    "badgeDev": "開發中",
+    "badgeLocked": "未開放"
+  }
+}
