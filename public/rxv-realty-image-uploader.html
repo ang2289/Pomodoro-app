@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RxV 房仲／房地產圖片上傳</title>
+  <style>
+    :root { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #172033; background: #f5f7fb; }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 24px; }
+    .wrap { max-width: 860px; margin: 0 auto; }
+    .card { background: #fff; border: 1px solid #dfe5ef; border-radius: 16px; padding: 20px; margin-bottom: 16px; box-shadow: 0 4px 18px rgba(23,32,51,.06); }
+    h1 { margin: 0 0 8px; font-size: 28px; }
+    h2 { margin: 0 0 12px; font-size: 18px; }
+    p { line-height: 1.6; }
+    .fixed { display: grid; grid-template-columns: 150px 1fr; gap: 8px 12px; background: #f7f9fc; border-radius: 12px; padding: 14px; margin: 12px 0; }
+    label { display: block; font-weight: 700; margin: 14px 0 7px; }
+    input[type="password"], input[type="file"] { width: 100%; padding: 11px; border: 1px solid #cfd7e6; border-radius: 10px; background: #fff; }
+    button { width: 100%; margin-top: 16px; border: 0; border-radius: 10px; padding: 13px 16px; font-weight: 800; cursor: pointer; background: #2563eb; color: #fff; }
+    button:disabled { background: #aab4c5; cursor: not-allowed; }
+    .warn { color: #8a4b00; background: #fff7e6; border: 1px solid #f5d28b; border-radius: 10px; padding: 12px; }
+    .ok { color: #126a3a; }
+    .bad { color: #b42318; }
+    #status { white-space: pre-wrap; min-height: 24px; }
+    progress { width: 100%; height: 18px; margin-top: 10px; }
+    .small { font-size: 13px; color: #657084; }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card">
+      <h1>房仲／房地產圖片上傳</h1>
+      <p>此頁只上傳「房仲／房地產」圖片，不建立子分類。手機 APP 不需修改；圖片會沿用既有 R2 catalog 同步機制。</p>
+      <div class="fixed">
+        <strong>分類 ID</strong><span>real-estate</span>
+        <strong>分類名稱</strong><span>房仲／房地產</span>
+        <strong>下載權限</strong><span>完整素材庫（bundle）</span>
+      </div>
+      <div class="warn">請只選已確認要上架的房仲圖片。這個工具不會修改既有 APP 功能，也不會更改 catalog 格式。</div>
+    </section>
+
+    <section class="card">
+      <h2>1. 管理金鑰</h2>
+      <label for="adminKey">圖片後台管理金鑰</label>
+      <input id="adminKey" type="password" autocomplete="off" placeholder="輸入 RXV 圖片管理金鑰" />
+
+      <h2 style="margin-top:22px">2. 選擇圖片</h2>
+      <input id="files" type="file" accept="image/jpeg,image/png,image/webp" multiple />
+      <p id="selection" class="small">尚未選擇圖片</p>
+
+      <button id="upload" type="button" disabled>上傳到「房仲／房地產」</button>
+      <progress id="progress" max="1" value="0" hidden></progress>
+      <p id="status"></p>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const CATEGORY_ID = 'real-estate';
+      const CATEGORY_NAME = '房仲／房地產';
+      const keyInput = document.getElementById('adminKey');
+      const filesInput = document.getElementById('files');
+      const uploadButton = document.getElementById('upload');
+      const selection = document.getElementById('selection');
+      const progress = document.getElementById('progress');
+      const status = document.getElementById('status');
+      const STORAGE_KEY = 'rxv_image_admin_key';
+
+      keyInput.value = sessionStorage.getItem(STORAGE_KEY) || '';
+
+      function updateButton() {
+        const count = filesInput.files ? filesInput.files.length : 0;
+        uploadButton.disabled = !keyInput.value.trim() || count === 0;
+        selection.textContent = count ? `已選擇 ${count} 張圖片` : '尚未選擇圖片';
+      }
+
+      keyInput.addEventListener('input', updateButton);
+      filesInput.addEventListener('change', updateButton);
+
+      function readAsDataUrl(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      }
+
+      async function convertToWebp(file) {
+        if (file.type === 'image/webp' || /\.webp$/i.test(file.name)) return file;
+        const url = URL.createObjectURL(file);
+        try {
+          const image = await new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = () => reject(new Error('圖片讀取失敗'));
+            img.src = url;
+          });
+          const canvas = document.createElement('canvas');
+          canvas.width = image.naturalWidth;
+          canvas.height = image.naturalHeight;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) throw new Error('無法建立圖片轉檔畫布');
+          ctx.drawImage(image, 0, 0);
+          const blob = await new Promise((resolve, reject) => {
+            canvas.toBlob((value) => value ? resolve(value) : reject(new Error('WebP 轉檔失敗')), 'image/webp', 0.82);
+          });
+          const base = file.name.replace(/\.[^.]+$/, '') || 'real-estate';
+          return new File([blob], `${base}.webp`, { type: 'image/webp', lastModified: Date.now() });
+        } finally {
+          URL.revokeObjectURL(url);
+        }
+      }
+
+      async function uploadOne(file, adminKey) {
+        const uploadFile = await convertToWebp(file);
+        const base64 = await readAsDataUrl(uploadFile);
+        const response = await fetch('/api/image-admin?action=uploadImage', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-RXV-Image-Admin-Key': adminKey,
+          },
+          body: JSON.stringify({
+            base64,
+            category_id: CATEGORY_ID,
+            category_name: CATEGORY_NAME,
+            price_type: 'bundle',
+            file_name: uploadFile.name,
+            mime_type: uploadFile.type,
+            file_size: uploadFile.size,
+          }),
+        });
+        const text = await response.text();
+        let data = {};
+        try { data = text ? JSON.parse(text) : {}; } catch { data = { error: text }; }
+        if (!response.ok || !data.success) throw new Error(data.error || `HTTP ${response.status}`);
+        return data;
+      }
+
+      uploadButton.addEventListener('click', async () => {
+        const adminKey = keyInput.value.trim();
+        const files = Array.from(filesInput.files || []);
+        if (!adminKey || !files.length) return;
+
+        sessionStorage.setItem(STORAGE_KEY, adminKey);
+        uploadButton.disabled = true;
+        progress.hidden = false;
+        progress.max = files.length;
+        progress.value = 0;
+        status.className = '';
+        status.textContent = `準備上傳 ${files.length} 張…`;
+
+        let success = 0;
+        const failed = [];
+        let lastManifestCount = null;
+
+        for (let i = 0; i < files.length; i += 1) {
+          const file = files[i];
+          status.textContent = `上傳中 ${i + 1}/${files.length}：${file.name}`;
+          try {
+            const result = await uploadOne(file, adminKey);
+            success += 1;
+            if (result.manifest_count) lastManifestCount = result.manifest_count;
+          } catch (error) {
+            failed.push(`${file.name}：${error && error.message ? error.message : String(error)}`);
+          }
+          progress.value = i + 1;
+        }
+
+        if (!failed.length) {
+          status.className = 'ok';
+          status.textContent = `完成：成功 ${success} 張。${lastManifestCount ? `\n目前 catalog 共 ${lastManifestCount} 張。` : ''}`;
+          filesInput.value = '';
+        } else {
+          status.className = 'bad';
+          status.textContent = `完成：成功 ${success} 張，失敗 ${failed.length} 張。\n${failed.join('\n')}`;
+        }
+        updateButton();
+      });
+
+      updateButton();
+    })();
+  </script>
+</body>
+</html>
