@@ -6,6 +6,23 @@ const PENDING_POINT_TRANSFER_KEY = 'rxv_pending_point_transfer_v1'
 const DOUBLE_POINTS_PROMO_ACTIVE = false
 const DOUBLE_POINTS_PROMO_END_TEXT = '7/10 23:59 前'
 
+const IMAGE_BUNDLE_PAYMENT = {
+  bank: {
+    name: '新光銀行',
+    code: '103',
+    branch: '桃園分行',
+    account: '0231-50-801141-0',
+    accountName: '何健蒝',
+  },
+  product: {
+    code: 'image-bundle-full' as const,
+    displayName: '1,584+ 高畫質圖片素材庫完整版',
+    amountNtd: 199,
+    originalAmountNtd: 399,
+  },
+  contactEmail: 'rxv0227@gmail.com',
+} as const
+
 function getPromoTotalPoints(points: number) {
   return DOUBLE_POINTS_PROMO_ACTIVE ? points * 2 : points
 }
@@ -31,7 +48,6 @@ function savePendingPointTransfer(input: { planId: '99' | '199'; amount: number;
     // 暫存失敗不影響正常銀行匯款流程。
   }
 }
-
 
 type ProductImagePlanId = '99' | '199'
 type RelationshipPlanId = 'relationship_pro' | 'relationship_business'
@@ -63,24 +79,6 @@ type BankInfoResponse = {
   error?: string
 }
 
-type ImageBundleBankInfoResponse = {
-  ok: boolean
-  bank: {
-    name: string
-    code: string
-    branch?: string
-    account: string
-    accountName: string
-  }
-  product: {
-    code: ImageBundlePlanId
-    displayName: string
-    amountNtd: number
-  }
-  error?: string
-}
-
-
 function getAuthToken() {
   if (typeof window === 'undefined') return ''
   return (window.localStorage.getItem('auth_token') || window.localStorage.getItem('token') || '').trim()
@@ -93,13 +91,6 @@ async function apiGet<T>(action: string): Promise<T> {
   const response = await fetch(`/api/main?action=${encodeURIComponent(action)}`, {
     headers: { Authorization: `Bearer ${token}` },
   })
-  const data = await response.json().catch(() => ({}))
-  if (!response.ok) throw new Error(String(data?.error || '讀取資料失敗。'))
-  return data as T
-}
-
-async function publicApiGet<T>(action: string): Promise<T> {
-  const response = await fetch(`/api/main?action=${encodeURIComponent(action)}`)
   const data = await response.json().catch(() => ({}))
   if (!response.ok) throw new Error(String(data?.error || '讀取資料失敗。'))
   return data as T
@@ -191,31 +182,56 @@ export default function BankTransferPage() {
   const isImageBundleMode = planId === 'image-bundle-full'
   const isRelationshipMode = planId === 'relationship_pro' || planId === 'relationship_business'
   const isStorefrontMode = !isImageBundleMode && mode === 'storefront'
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(!isImageBundleMode)
   const [error, setError] = useState('')
   const [data, setData] = useState<BankInfoResponse | null>(null)
-  const [bundleData, setBundleData] = useState<ImageBundleBankInfoResponse | null>(null)
+  const bundleData = IMAGE_BUNDLE_PAYMENT
 
   const plan = useMemo<Plan | null>(() => {
-    if (isImageBundleMode && bundleData?.product) {
-      return { id: 'image-bundle-full', amount: bundleData.product.amountNtd, points: 0, maxItems: 0, grantedMonths: 0, productType: 'image_bundle', displayName: '1,584+ 高畫質圖片素材庫完整版' }
+    if (isImageBundleMode) {
+      return {
+        id: 'image-bundle-full',
+        amount: bundleData.product.amountNtd,
+        points: 0,
+        maxItems: 0,
+        grantedMonths: 0,
+        productType: 'image_bundle',
+        displayName: bundleData.product.displayName,
+      }
     }
     return planId && data?.plans ? data.plans[planId] || null : null
-  }, [planId, data, bundleData, isImageBundleMode])
+  }, [planId, data, isImageBundleMode, bundleData.product.amountNtd, bundleData.product.displayName])
+
+  const bundleMailtoHref = useMemo(() => {
+    const subject = `RXV 圖片素材包 NT$${bundleData.product.amountNtd} 匯款回報`
+    const body = [
+      `商品：${bundleData.product.displayName}`,
+      `金額：NT$${bundleData.product.amountNtd}`,
+      '',
+      '匯款日期：',
+      '匯款帳號末 5 碼：',
+      '姓名：',
+      '收件 Email：',
+    ].join('\n')
+    return `mailto:${bundleData.contactEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+  }, [bundleData.contactEmail, bundleData.product.amountNtd, bundleData.product.displayName])
 
   useEffect(() => {
-    if (!planId) return
+    if (!planId) {
+      setLoading(false)
+      return
+    }
 
     const load = async () => {
-      setLoading(true)
       setError('')
-      try {
-        if (isImageBundleMode) {
-          const info = await publicApiGet<ImageBundleBankInfoResponse>('get-image-bundle-bank-transfer-info')
-          setBundleData(info)
-          return
-        }
 
+      if (isImageBundleMode) {
+        setLoading(false)
+        return
+      }
+
+      setLoading(true)
+      try {
         if (!getAuthToken()) {
           navigate('/login')
           return
@@ -246,7 +262,7 @@ export default function BankTransferPage() {
       <main className="min-h-screen bg-slate-50 px-4 py-12">
         <div className="mx-auto max-w-md rounded-2xl bg-white p-8 text-center shadow-lg">
           <h1 className="text-xl font-black text-slate-950">請先選擇方案</h1>
-          <Link to={product === "image-bundle-full" ? "/images" : product ? "/relationship-ai" : isStorefrontMode ? "/tools/product-showcase-page" : "/pricing"} className="mt-5 inline-flex rounded-xl bg-blue-600 px-5 py-3 font-black !text-white">
+          <Link to={product === 'image-bundle-full' ? '/images' : product ? '/relationship-ai' : isStorefrontMode ? '/tools/product-showcase-page' : '/pricing'} className="mt-5 inline-flex rounded-xl bg-blue-600 px-5 py-3 font-black !text-white">
             返回方案頁
           </Link>
         </div>
@@ -259,8 +275,18 @@ export default function BankTransferPage() {
       <div className="mx-auto max-w-2xl">
         <header className="mb-6 text-center">
           <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-sm font-black text-emerald-800">銀行轉帳／人工核對</span>
-          <h1 className="mt-3 text-3xl font-black text-slate-950">完成匯款後再送出回報</h1>
-          <p className="mt-2 text-slate-600">{isImageBundleMode ? "完成匯款後送出回報；站方確認入帳後會核准完整圖片素材庫訂單。" : isRelationshipMode ? "站方確認銀行入帳後，將人工開通 AI 回覆軍師方案 30 天。" : isStorefrontMode ? "站方確認銀行入帳後，預計 1～2 天內人工開通或展延商品展示頁。" : "站方確認銀行入帳後，預計 1～2 天內加點並人工開通店家商品展示頁。"}</p>
+          <h1 className="mt-3 text-3xl font-black text-slate-950">
+            {isImageBundleMode ? '圖片素材包 NT$199 匯款付款' : '完成匯款後再送出回報'}
+          </h1>
+          <p className="mt-2 text-slate-600">
+            {isImageBundleMode
+              ? '匯款完成後請寄 Email 回覆付款資料；確認入帳後會回覆圖片素材包下載方式。'
+              : isRelationshipMode
+                ? '站方確認銀行入帳後，將人工開通 AI 回覆軍師方案 30 天。'
+                : isStorefrontMode
+                  ? '站方確認銀行入帳後，預計 1～2 天內人工開通或展延商品展示頁。'
+                  : '站方確認銀行入帳後，預計 1～2 天內加點並人工開通店家商品展示頁。'}
+          </p>
         </header>
 
         {loading ? (
@@ -268,7 +294,7 @@ export default function BankTransferPage() {
         ) : error ? (
           <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-center shadow-sm">
             <p className="font-black text-rose-800">{error}</p>
-            <Link to={isImageBundleMode ? "/images" : isRelationshipMode ? "/relationship-ai" : isStorefrontMode ? "/tools/product-showcase-page" : "/pricing"} className="mt-5 inline-flex rounded-xl bg-blue-600 px-5 py-3 font-black !text-white">
+            <Link to={isImageBundleMode ? '/images' : isRelationshipMode ? '/relationship-ai' : isStorefrontMode ? '/tools/product-showcase-page' : '/pricing'} className="mt-5 inline-flex rounded-xl bg-blue-600 px-5 py-3 font-black !text-white">
               返回方案頁
             </Link>
           </div>
@@ -278,12 +304,28 @@ export default function BankTransferPage() {
               <p className="text-sm font-bold text-blue-700">本次選擇方案</p>
               <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
                 <div>
-                  <h2 className="text-2xl font-black text-slate-950">{isImageBundleMode ? plan?.displayName : isRelationshipMode ? plan?.displayName : isStorefrontMode ? `NT${plan?.amount} 商品展示頁正式版` : `NT${plan?.amount} 商品圖點數方案`}</h2>
-                  <p className="mt-1 text-slate-700">{isImageBundleMode ? `一次買斷 NT$${plan?.amount}｜完整素材包` : isRelationshipMode ? `NT$${plan?.amount}／30 天` : isStorefrontMode ? "首波方案：3 個月，付款確認後預計 1～2 天內人工開通／展延" : `原有 ${Number(plan?.points || 0).toLocaleString()} 點`}</p>
+                  <h2 className="text-2xl font-black text-slate-950">
+                    {isImageBundleMode ? plan?.displayName : isRelationshipMode ? plan?.displayName : isStorefrontMode ? `NT${plan?.amount} 商品展示頁正式版` : `NT${plan?.amount} 商品圖點數方案`}
+                  </h2>
+                  {isImageBundleMode ? (
+                    <div className="mt-2 flex flex-wrap items-center gap-3">
+                      <span className="text-base font-bold text-slate-500 line-through">原價 NT${bundleData.product.originalAmountNtd}</span>
+                      <span className="text-3xl font-black text-rose-600">NT${bundleData.product.amountNtd}</span>
+                      <span className="rounded-full bg-rose-100 px-3 py-1 text-sm font-black text-rose-700">首波限時優惠</span>
+                    </div>
+                  ) : (
+                    <p className="mt-1 text-slate-700">
+                      {isRelationshipMode ? `NT$${plan?.amount}／30 天` : isStorefrontMode ? '首波方案：3 個月，付款確認後預計 1～2 天內人工開通／展延' : `原有 ${Number(plan?.points || 0).toLocaleString()} 點`}
+                    </p>
+                  )}
                 </div>
-                {isImageBundleMode ? <span className="rounded-full bg-white px-3 py-1.5 text-sm font-black text-emerald-700 shadow-sm">分類整理・一次下載</span> : !isRelationshipMode ? <span className="rounded-full bg-white px-3 py-1.5 text-sm font-black text-emerald-700 shadow-sm">
-                  {isStorefrontMode ? "商品展示頁：可放商品、價格、LINE 詢問與 QR Code" : `加贈商品展示頁：${plan?.maxItems} 個商品／${plan?.grantedMonths} 個月`}
-                </span> : null}
+                {isImageBundleMode ? (
+                  <span className="rounded-full bg-white px-3 py-1.5 text-sm font-black text-emerald-700 shadow-sm">分類整理・一次下載</span>
+                ) : !isRelationshipMode ? (
+                  <span className="rounded-full bg-white px-3 py-1.5 text-sm font-black text-emerald-700 shadow-sm">
+                    {isStorefrontMode ? '商品展示頁：可放商品、價格、LINE 詢問與 QR Code' : `加贈商品展示頁：${plan?.maxItems} 個商品／${plan?.grantedMonths} 個月`}
+                  </span>
+                ) : null}
               </div>
             </section>
 
@@ -294,33 +336,65 @@ export default function BankTransferPage() {
               <p className="mt-2 text-sm leading-relaxed text-slate-600">可點選複製，匯款金額請使用本次方案金額。</p>
 
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                <CopyValue label="銀行名稱" value={(isImageBundleMode ? bundleData?.bank.name : data?.bank.name)} />
-                <CopyValue label="銀行代碼" value={(isImageBundleMode ? bundleData?.bank.code : data?.bank.code)} />
-                <CopyValue label="分行" value={(isImageBundleMode ? bundleData?.bank.branch : data?.bank.branch)} />
-                <CopyValue label="戶名" value={(isImageBundleMode ? bundleData?.bank.accountName : data?.bank.accountName)} />
+                <CopyValue label="銀行名稱" value={isImageBundleMode ? bundleData.bank.name : data?.bank.name} />
+                <CopyValue label="銀行代碼" value={isImageBundleMode ? bundleData.bank.code : data?.bank.code} />
+                <CopyValue label="分行" value={isImageBundleMode ? bundleData.bank.branch : data?.bank.branch} />
+                <CopyValue label="戶名" value={isImageBundleMode ? bundleData.bank.accountName : data?.bank.accountName} />
                 <div className="sm:col-span-2">
-                  <CopyValue label="匯款帳號" value={(isImageBundleMode ? bundleData?.bank.account : data?.bank.account)} />
+                  <CopyValue label="匯款帳號" value={isImageBundleMode ? bundleData.bank.account : data?.bank.account} />
                 </div>
+                {isImageBundleMode ? (
+                  <div className="sm:col-span-2">
+                    <CopyValue label="匯款完成後收件 Email" value={bundleData.contactEmail} />
+                  </div>
+                ) : null}
               </div>
 
               <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-relaxed text-amber-900">
                 <p className="font-black">匯款前請確認</p>
-                <ul className="mt-2 list-disc space-y-1 pl-5">
-                  <li>匯款金額：NT${plan?.amount}</li>
-                  <li>完成匯款後，請填寫匯出帳號後五碼與匯款日期。</li>
-                  {DOUBLE_POINTS_PROMO_ACTIVE && !isImageBundleMode && !isStorefrontMode && !isRelationshipMode ? <li>請於 {DOUBLE_POINTS_PROMO_END_TEXT} 前完成匯款並送出回報，符合活動資格者核准後雙倍入帳。</li> : null}
-                  <li>{isImageBundleMode ? "請以實際銀行入帳為準；確認收款後才會核准素材庫訂單。" : isRelationshipMode ? "匯款回報送出後，站方會依實際入帳人工核對；確認後開通 AI 回覆軍師方案 30 天。" : isStorefrontMode ? "請以實際銀行入帳為準；確認入帳後預計 1～2 天內開通或展延商品展示頁，未核對前不會開通或展延。" : "請以實際銀行入帳為準；確認入帳後預計 1～2 天內加點或開通商品頁，未核對前不會加點或開通。"}</li>
-                </ul>
+                {isImageBundleMode ? (
+                  <ul className="mt-2 list-disc space-y-1 pl-5">
+                    <li>本次優惠價：NT${bundleData.product.amountNtd}。</li>
+                    <li>匯款完成後，請寄 Email 提供：匯款日期、匯款帳號末 5 碼、姓名、收件 Email。</li>
+                    <li>確認款項後，會以 Email 回覆圖片素材包下載方式。</li>
+                    <li>此付款頁為靜態匯款頁，不需登入，也不會自動建立訂單。</li>
+                  </ul>
+                ) : (
+                  <ul className="mt-2 list-disc space-y-1 pl-5">
+                    <li>匯款金額：NT${plan?.amount}</li>
+                    <li>完成匯款後，請填寫匯出帳號後五碼與匯款日期。</li>
+                    {DOUBLE_POINTS_PROMO_ACTIVE && !isStorefrontMode && !isRelationshipMode ? <li>請於 {DOUBLE_POINTS_PROMO_END_TEXT} 前完成匯款並送出回報，符合活動資格者核准後雙倍入帳。</li> : null}
+                    <li>{isRelationshipMode ? '匯款回報送出後，站方會依實際入帳人工核對；確認後開通 AI 回覆軍師方案 30 天。' : isStorefrontMode ? '請以實際銀行入帳為準；確認入帳後預計 1～2 天內開通或展延商品展示頁，未核對前不會開通或展延。' : '請以實際銀行入帳為準；確認入帳後預計 1～2 天內加點或開通商品頁，未核對前不會加點或開通。'}</li>
+                  </ul>
+                )}
               </div>
 
-              <div className="mt-6 flex">
-                <Link
-                  to={isImageBundleMode ? "/payment/report?product=image-bundle-full" : isRelationshipMode ? `/payment/report?product=${planId}` : `/payment/report?plan=${planId}&mode=${mode}` }
-                  className="inline-flex min-h-[52px] items-center justify-center rounded-xl bg-emerald-600 px-6 py-3 text-base font-black !text-white shadow-md transition hover:-translate-y-0.5 hover:bg-emerald-700 hover:shadow-lg"
-                  style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}
-                >
-                  我已完成匯款，送出回報
-                </Link>
+              <div className="mt-6 flex flex-wrap gap-3">
+                {isImageBundleMode ? (
+                  <a
+                    href={bundleMailtoHref}
+                    className="inline-flex min-h-[52px] items-center justify-center rounded-xl bg-emerald-600 px-6 py-3 text-base font-black !text-white shadow-md transition hover:-translate-y-0.5 hover:bg-emerald-700 hover:shadow-lg"
+                    style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}
+                  >
+                    匯款完成，寄 Email 回報
+                  </a>
+                ) : (
+                  <Link
+                    to={isRelationshipMode ? `/payment/report?product=${planId}` : `/payment/report?plan=${planId}&mode=${mode}`}
+                    className="inline-flex min-h-[52px] items-center justify-center rounded-xl bg-emerald-600 px-6 py-3 text-base font-black !text-white shadow-md transition hover:-translate-y-0.5 hover:bg-emerald-700 hover:shadow-lg"
+                    style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}
+                  >
+                    我已完成匯款，送出回報
+                  </Link>
+                )}
+                {isImageBundleMode ? (
+                  <Link
+                    to="/images"
+                    className="inline-flex min-h-[52px] items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 text-base font-black text-slate-700 transition hover:bg-slate-50"
+                  >
+                    返回圖片素材庫
+                  </Link>
+                ) : null}
               </div>
             </section>
           </>
