@@ -3,19 +3,18 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="description" content="RXV 夢想創作工作室商用圖片素材小包：房仲、美髮等主題圖組，適合網站、社群、廣告與商業宣傳。" />
-  <title>RXV 商用圖片素材小包</title>
+  <meta name="description" content="RXV 夢想創作工作室專業職業圖片素材小包：房仲、美髮等主題圖組，每包 NT$99，適合網站、社群、廣告與商業宣傳。" />
+  <title>RXV 專業職業圖片素材小包</title>
   <style>
     :root {
       color-scheme: light;
       --bg: #f8fafc;
-      --card: #ffffff;
+      --card: #fff;
       --text: #0f172a;
       --muted: #64748b;
       --line: #e2e8f0;
       --brand: #059669;
       --brand-dark: #047857;
-      --blue: #2563eb;
       --rose: #e11d48;
       --amber: #b45309;
     }
@@ -24,36 +23,84 @@
       margin: 0;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
       color: var(--text);
-      background: linear-gradient(180deg, #ecfdf5 0, var(--bg) 320px);
+      background: linear-gradient(180deg, #ecfdf5 0, var(--bg) 340px);
     }
     a { color: inherit; }
-    .wrap { width: min(1120px, calc(100% - 32px)); margin: 0 auto; }
+    .wrap { width: min(1040px, calc(100% - 32px)); margin: 0 auto; }
     .topbar {
-      padding: 16px 0;
-      border-bottom: 1px solid rgba(226,232,240,.9);
-      background: rgba(255,255,255,.88);
-      backdrop-filter: blur(10px);
       position: sticky;
       top: 0;
       z-index: 20;
+      padding: 14px 0;
+      border-bottom: 1px solid rgba(226,232,240,.9);
+      background: rgba(255,255,255,.92);
+      backdrop-filter: blur(10px);
     }
     .topbar-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-    .brand { font-weight: 900; letter-spacing: .2px; }
-    .nav { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
-    .nav a { text-decoration: none; font-size: 14px; font-weight: 800; color: #334155; padding: 8px 10px; border-radius: 10px; }
+    .brand { font-weight: 950; }
+    .nav { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+    .nav a { text-decoration: none; font-size: 14px; font-weight: 850; color: #334155; padding: 8px 10px; border-radius: 10px; }
     .nav a:hover { background: #f1f5f9; }
-    .hero { padding: 58px 0 34px; text-align: center; }
-    .badge { display: inline-flex; align-items: center; gap: 6px; background: #d1fae5; color: #065f46; border-radius: 999px; padding: 8px 12px; font-weight: 900; font-size: 14px; }
-    h1 { margin: 18px 0 12px; font-size: clamp(32px, 6vw, 54px); line-height: 1.08; }
-    .lead { max-width: 780px; margin: 0 auto; color: #475569; line-height: 1.8; font-size: 18px; }
-    .hero-actions { margin-top: 24px; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+    .hero { padding: 52px 0 28px; text-align: center; }
+    .badge { display: inline-flex; border-radius: 999px; background: #d1fae5; color: #065f46; padding: 8px 12px; font-size: 14px; font-weight: 950; }
+    h1 { margin: 16px 0 12px; font-size: clamp(32px, 6vw, 50px); line-height: 1.08; }
+    .lead { max-width: 760px; margin: 0 auto; color: #475569; font-size: 18px; line-height: 1.8; }
+    .library-note {
+      margin: 28px auto 0;
+      max-width: 820px;
+      border: 1px solid #fcd34d;
+      border-radius: 18px;
+      background: #fffbeb;
+      padding: 18px;
+      color: #78350f;
+      line-height: 1.7;
+    }
+    .library-note strong { color: #be123c; }
+    .library-note a { display: inline-flex; margin-top: 10px; font-weight: 900; color: #047857; }
+    .products { padding: 26px 0 52px; }
+    .section-title { margin: 0 0 8px; font-size: 28px; }
+    .section-desc { margin: 0 0 22px; color: var(--muted); line-height: 1.7; }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 18px; }
+    .card {
+      display: flex;
+      flex-direction: column;
+      min-height: 100%;
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: var(--card);
+      padding: 22px;
+      box-shadow: 0 14px 40px rgba(15,23,42,.06);
+    }
+    .thumb {
+      aspect-ratio: 16 / 9;
+      display: grid;
+      place-items: center;
+      border-radius: 16px;
+      padding: 24px;
+      text-align: center;
+      color: #fff;
+      font-size: 25px;
+      font-weight: 950;
+      margin-bottom: 18px;
+    }
+    .thumb.realty { background: linear-gradient(135deg,#334155,#0f766e); }
+    .thumb.hair { background: linear-gradient(135deg,#7c3aed,#db2777); }
+    .pill { display: inline-flex; align-self: flex-start; border-radius: 999px; background: #f1f5f9; color: #475569; padding: 6px 10px; font-size: 12px; font-weight: 900; }
+    .card h2 { margin: 12px 0 8px; font-size: 23px; }
+    .card p { color: #475569; line-height: 1.7; }
+    .features { list-style: none; padding: 0; margin: 8px 0 18px; color: #334155; }
+    .features li { position: relative; margin: 8px 0; padding-left: 22px; }
+    .features li::before { content: "✓"; position: absolute; left: 0; color: var(--brand); font-weight: 950; }
+    .price { margin-top: auto; padding-top: 8px; }
+    .price small { display: block; color: var(--muted); font-weight: 800; }
+    .price strong { font-size: 34px; color: var(--rose); }
     .btn {
       appearance: none;
       border: 0;
       border-radius: 12px;
       padding: 12px 18px;
-      font-weight: 900;
       font-size: 15px;
+      font-weight: 950;
       cursor: pointer;
       text-decoration: none;
       display: inline-flex;
@@ -63,73 +110,32 @@
     }
     .btn-primary { background: var(--brand); color: #fff; }
     .btn-primary:hover { background: var(--brand-dark); }
-    .btn-secondary { background: #fff; color: #0f172a; border: 1px solid var(--line); }
-    .btn-blue { background: var(--blue); color: #fff; }
-    .products { padding: 24px 0 52px; }
-    .section-title { margin: 0 0 8px; font-size: 28px; }
-    .section-desc { margin: 0 0 24px; color: var(--muted); line-height: 1.7; }
-    .grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 18px; }
-    .card {
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: 20px;
-      padding: 22px;
-      box-shadow: 0 14px 40px rgba(15,23,42,.06);
-      display: flex;
-      flex-direction: column;
-      min-height: 100%;
-    }
-    .thumb {
-      aspect-ratio: 16 / 9;
-      border-radius: 16px;
-      display: grid;
-      place-items: center;
-      padding: 24px;
-      text-align: center;
-      font-weight: 950;
-      font-size: 24px;
-      color: #fff;
-      margin-bottom: 18px;
-    }
-    .thumb.realty { background: linear-gradient(135deg,#334155,#0f766e); }
-    .thumb.hair { background: linear-gradient(135deg,#7c3aed,#db2777); }
-    .thumb.combo { background: linear-gradient(135deg,#0f766e,#7c3aed); }
-    .pill { display: inline-flex; align-self: flex-start; border-radius: 999px; padding: 6px 10px; background: #f1f5f9; color: #475569; font-size: 12px; font-weight: 900; }
-    .card h2 { margin: 12px 0 8px; font-size: 22px; }
-    .card p { color: #475569; line-height: 1.7; }
-    .features { padding: 0; margin: 8px 0 16px; list-style: none; color: #334155; }
-    .features li { margin: 8px 0; padding-left: 22px; position: relative; }
-    .features li::before { content: "✓"; position: absolute; left: 0; color: var(--brand); font-weight: 950; }
-    .price-row { margin-top: auto; padding-top: 6px; display: flex; align-items: end; justify-content: space-between; gap: 12px; }
-    .price small { display: block; color: var(--muted); font-weight: 800; margin-bottom: 2px; }
-    .price strong { font-size: 30px; color: var(--rose); }
     .card .btn { width: 100%; margin-top: 16px; }
-    .payment { padding: 28px 0 64px; }
-    .payment-box { background: #fff; border: 1px solid var(--line); border-radius: 22px; padding: 26px; box-shadow: 0 14px 40px rgba(15,23,42,.05); }
-    .selected { padding: 16px; border-radius: 14px; background: #eff6ff; border: 1px solid #bfdbfe; margin: 16px 0 20px; }
+    .payment { padding: 18px 0 64px; }
+    .payment-box { border: 1px solid var(--line); border-radius: 22px; background: #fff; padding: 26px; box-shadow: 0 14px 40px rgba(15,23,42,.05); }
+    .selected { margin: 16px 0 20px; border: 1px solid #bfdbfe; border-radius: 14px; background: #eff6ff; padding: 16px; }
     .selected strong { color: #1d4ed8; }
     .bank-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
-    .bank-item { border: 1px solid var(--line); border-radius: 14px; padding: 14px; background: #f8fafc; }
+    .bank-item { border: 1px solid var(--line); border-radius: 14px; background: #f8fafc; padding: 14px; }
     .bank-item span { display: block; color: var(--muted); font-size: 12px; font-weight: 900; margin-bottom: 4px; }
     .bank-item strong { display: block; word-break: break-all; font-size: 17px; }
-    .steps { margin: 24px 0 0; padding: 0; list-style: none; counter-reset: step; }
-    .steps li { counter-increment: step; position: relative; padding: 0 0 18px 46px; line-height: 1.65; color: #334155; }
-    .steps li::before { content: counter(step); position: absolute; left: 0; top: 0; width: 30px; height: 30px; border-radius: 999px; display: grid; place-items: center; background: #d1fae5; color: #065f46; font-weight: 950; }
+    .steps { margin: 24px 0 0; padding-left: 22px; color: #334155; line-height: 1.7; }
+    .steps li { margin: 8px 0; }
     .payment-actions { margin-top: 20px; display: flex; gap: 12px; flex-wrap: wrap; }
-    .notice { margin-top: 18px; border-radius: 14px; background: #fffbeb; border: 1px solid #fde68a; color: #92400e; padding: 14px 16px; line-height: 1.7; }
+    .payment-actions .btn { background: #fff; border: 1px solid var(--line); color: #0f172a; }
+    .payment-actions .btn-primary { border: 0; background: var(--brand); color: #fff; }
+    .notice { margin-top: 18px; border: 1px solid #fde68a; border-radius: 14px; background: #fffbeb; color: #92400e; padding: 14px 16px; line-height: 1.7; }
     .license { padding: 0 0 64px; }
     .license-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; }
     .license-card { border: 1px solid var(--line); border-radius: 18px; background: #fff; padding: 20px; }
     .license-card h3 { margin-top: 0; }
     footer { border-top: 1px solid var(--line); padding: 28px 0 46px; color: var(--muted); text-align: center; }
-    .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); padding: 10px 14px; background: #0f172a; color: #fff; border-radius: 10px; font-weight: 800; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 50; }
+    .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); border-radius: 10px; background: #0f172a; color: #fff; padding: 10px 14px; font-weight: 800; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 50; }
     .toast.show { opacity: 1; }
-    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
-    @media (max-width: 640px) {
-      .topbar-inner { align-items: flex-start; }
+    @media (max-width: 760px) {
+      .grid, .bank-grid, .license-grid { grid-template-columns: 1fr; }
       .nav { display: none; }
-      .hero { padding-top: 40px; }
-      .bank-grid, .license-grid { grid-template-columns: 1fr; }
+      .hero { padding-top: 38px; }
       .payment-actions .btn { width: 100%; }
     }
   </style>
@@ -139,8 +145,8 @@
     <div class="wrap topbar-inner">
       <div class="brand">RXV 夢想創作工作室</div>
       <nav class="nav">
-        <a href="/images">圖片素材庫</a>
-        <a href="#products">小包圖組</a>
+        <a href="/images">綜合圖片素材庫</a>
+        <a href="#products">專業小包</a>
         <a href="#payment">付款方式</a>
       </nav>
     </div>
@@ -149,61 +155,48 @@
   <main>
     <section class="hero">
       <div class="wrap">
-        <span class="badge">商用圖片小包｜買需要的主題就好</span>
-        <h1>RXV 商用圖片素材小包</h1>
-        <p class="lead">適合房仲、美髮店家、自媒體與小型商家。圖片可用於網站、社群貼文、廣告、Banner 與商業宣傳。完整 ZIP 於付款確認後提供私人下載連結。</p>
-        <div class="hero-actions">
-          <a class="btn btn-primary" href="#products">查看小包</a>
-          <a class="btn btn-secondary" href="/images">先看網站圖片素材</a>
+        <span class="badge">專業職業主題包｜NT$99／包</span>
+        <h1>只買自己行業真正會用到的圖</h1>
+        <p class="lead">專業小包不是把綜合圖庫拆開重賣，而是另外整理的職業主題素材。檔名直接標示用途，ZIP 內附授權與使用說明，下載後更容易搜尋與使用。</p>
+        <div class="library-note">
+          想要大量不同題材？網站另有 <strong>1,591 張綜合圖片素材庫完整版｜限時 NT$199</strong>。<br />
+          房仲、美髮等專業職業主題包為另外整理的商品，<strong>不包含在 NT$199 綜合素材庫方案內</strong>。
+          <br /><a href="/images">← 查看 1,591 張綜合素材庫</a>
         </div>
       </div>
     </section>
 
     <section class="products" id="products">
       <div class="wrap">
-        <h2 class="section-title">目前可購買</h2>
-        <p class="section-desc">先以小包試賣，不必一次購買整個圖片庫。每包 ZIP 皆附使用說明與授權說明。</p>
+        <h2 class="section-title">目前可購買的專業小包</h2>
+        <p class="section-desc">目前先上架房仲與美髮；之後可再增加美甲、SPA、餐飲等職業主題，每包維持清楚獨立。</p>
         <div class="grid">
           <article class="card">
             <div class="thumb realty">房仲／房地產<br />商用圖片包</div>
             <span class="pill">83 張｜16:9 高解析</span>
             <h2>房仲帶看宣傳圖片包</h2>
-            <p>適合房仲帶看、成交交屋、公設介紹、驗屋、社區生活機能等行銷情境。</p>
+            <p>適合住宅帶看、成交交屋、公設社區、實務看屋驗屋、商用與生活機能等房仲行銷情境。</p>
             <ul class="features">
-              <li>檔名已加用途名稱，搜尋更快</li>
-              <li>附授權與使用說明</li>
-              <li>可加字、Logo、電話與 CTA 後商用</li>
+              <li>統一採「用途_圖片名」命名</li>
+              <li>附商品介紹、使用說明與授權說明</li>
+              <li>可加字、Logo、電話與 CTA 後商業使用</li>
             </ul>
-            <div class="price-row"><div class="price"><small>首波試賣價</small><strong>NT$99</strong></div></div>
-            <button class="btn btn-primary buy-btn" data-product="RXV 房仲帶看宣傳圖片包｜83張" data-amount="99">立即購買</button>
+            <div class="price"><small>專業主題小包</small><strong>NT$99</strong></div>
+            <button class="btn btn-primary buy-btn" data-product="RXV 房仲帶看宣傳圖片包｜83張" data-amount="99">購買房仲包 NT$99</button>
           </article>
 
           <article class="card">
             <div class="thumb hair">美髮沙龍<br />商用圖片包</div>
             <span class="pill">多場景職業素材</span>
             <h2>美髮沙龍職業圖片包</h2>
-            <p>適合髮型諮詢、洗護、剪髮、染燙、造型、髮廊日常、預約宣傳與專業工具等情境。</p>
+            <p>適合顧客接待、洗護、剪髮、染燙、完成造型、髮廊日常、預約宣傳與專業工具等情境。</p>
             <ul class="features">
               <li>統一採「用途_圖片名」命名</li>
-              <li>附授權與使用說明</li>
+              <li>附商品介紹、使用說明與授權說明</li>
               <li>適合髮廊網站、社群、廣告與預約宣傳</li>
             </ul>
-            <div class="price-row"><div class="price"><small>首波試賣價</small><strong>NT$99</strong></div></div>
-            <button class="btn btn-primary buy-btn" data-product="RXV 美髮沙龍職業商用圖片包" data-amount="99">立即購買</button>
-          </article>
-
-          <article class="card">
-            <div class="thumb combo">房仲＋美髮<br />雙包優惠</div>
-            <span class="pill">一次取得 2 包</span>
-            <h2>雙包組合</h2>
-            <p>同時需要不同商業題材，或想先建立自己的素材庫，可直接購買兩包組合。</p>
-            <ul class="features">
-              <li>包含房仲完整包</li>
-              <li>包含美髮完整包</li>
-              <li>兩包都附授權與使用說明</li>
-            </ul>
-            <div class="price-row"><div class="price"><small>首波組合價</small><strong>NT$169</strong></div></div>
-            <button class="btn btn-blue buy-btn" data-product="RXV 房仲＋美髮雙包組合" data-amount="169">購買雙包</button>
+            <div class="price"><small>專業主題小包</small><strong>NT$99</strong></div>
+            <button class="btn btn-primary buy-btn" data-product="RXV 美髮沙龍職業商用圖片包" data-amount="99">購買美髮包 NT$99</button>
           </article>
         </div>
       </div>
@@ -213,9 +206,9 @@
       <div class="wrap">
         <div class="payment-box">
           <h2 class="section-title">付款與交付方式</h2>
-          <p class="section-desc">目前採銀行匯款＋人工確認，不需要登入。確認入帳後，以 Email 回覆私人 Google Drive 下載連結。</p>
+          <p class="section-desc">目前先採銀行匯款＋Email 人工確認。確認入帳後，再以 Email 提供該商品的私人 ZIP 下載連結。</p>
 
-          <div class="selected" id="selectedBox">
+          <div class="selected">
             已選商品：<strong id="selectedProduct">尚未選擇</strong><br />
             應付金額：<strong id="selectedAmount">—</strong>
           </div>
@@ -223,25 +216,23 @@
           <div class="bank-grid">
             <div class="bank-item"><span>銀行</span><strong>新光銀行（103）</strong></div>
             <div class="bank-item"><span>分行</span><strong>桃園分行</strong></div>
-            <div class="bank-item"><span>帳號</span><strong id="bankAccount">0231-50-801141-0</strong></div>
+            <div class="bank-item"><span>帳號</span><strong>0231-50-801141-0</strong></div>
             <div class="bank-item"><span>戶名</span><strong>何健蒝</strong></div>
           </div>
 
           <ol class="steps">
-            <li>先在上方選擇要購買的圖片包。</li>
+            <li>在上方選擇要購買的專業小包。</li>
             <li>依顯示金額完成銀行匯款。</li>
             <li>按「匯款完成，寄 Email 回報」，填入匯款日期、帳號末 5 碼、姓名與收件 Email。</li>
-            <li>確認入帳後，以 Email 回覆私人下載連結。請勿把私人下載連結轉傳給其他人。</li>
+            <li>確認入帳後，會以 Email 回覆該商品的私人下載連結。</li>
           </ol>
 
           <div class="payment-actions">
-            <button class="btn btn-secondary" id="copyBankBtn">複製匯款資料</button>
+            <button class="btn" id="copyBankBtn">複製匯款資料</button>
             <button class="btn btn-primary" id="emailBtn">匯款完成，寄 Email 回報</button>
           </div>
 
-          <div class="notice">
-            完整 ZIP 不直接公開放在免費圖片庫。網站僅提供預覽與部分免費圖；付費包確認付款後再提供私人下載連結。
-          </div>
+          <div class="notice">完整 ZIP 不直接公開在免費圖片庫。網站可放部分預覽圖；付費 ZIP 於確認付款後再提供私人下載連結。</div>
         </div>
       </div>
     </section>
@@ -249,7 +240,7 @@
     <section class="license">
       <div class="wrap">
         <h2 class="section-title">簡要授權</h2>
-        <p class="section-desc">每個 ZIP 內會附完整的「授權與使用說明」。</p>
+        <p class="section-desc">每個 ZIP 內都會附完整的授權與使用說明。</p>
         <div class="license-grid">
           <div class="license-card">
             <h3>可以</h3>
