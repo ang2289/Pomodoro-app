@@ -587,6 +587,28 @@ export default function ImagesPage() {
           </p>
         </div>
 
+        {/* RXV_PRO_PACK_ENTRY */}
+        <section className="mb-6 rounded-3xl border border-violet-200 bg-gradient-to-br from-violet-50 via-white to-emerald-50 p-5 shadow-sm sm:p-6">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <span className="inline-flex rounded-full bg-violet-100 px-3 py-1.5 text-sm font-black text-violet-800">專業職業主題包｜NT$99／包</span>
+              <h2 className="mt-3 text-2xl font-black text-slate-950">只買自己行業真正會用到的圖</h2>
+              <p className="mt-2 max-w-3xl text-sm leading-7 text-slate-700 sm:text-base">房仲、美髮等職業情境另外整理成專業小包，檔名直接標示用途。專業小包為獨立商品，不包含在 NT$199 綜合素材庫方案內。</p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <span className="rounded-full border border-emerald-200 bg-white px-3 py-2 text-sm font-black text-emerald-800">房仲帶看宣傳圖片包｜83 張｜NT$99</span>
+                <span className="rounded-full border border-fuchsia-200 bg-white px-3 py-2 text-sm font-black text-fuchsia-800">美髮沙龍職業圖片包｜NT$99</span>
+              </div>
+            </div>
+            <Link
+              to="/image-packs"
+              className="inline-flex min-h-[50px] shrink-0 items-center justify-center rounded-xl bg-violet-600 px-6 py-3 font-black !text-white shadow-md transition hover:-translate-y-0.5 hover:bg-violet-700"
+              style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}
+            >
+              查看 NT$99 專業圖片包
+            </Link>
+          </div>
+        </section>
+
         {/* 分類篩選：手機版改成橫向滑動，避免按鈕全部擠在一起。 */}
         {!loadingCategories && categories.length > 0 && (
           <div className="mb-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">

@@ -205,6 +205,7 @@ import HomeworkHelper from './pages/tools/homework-helper'
 import ToolCategoryPage from './pages/tools/ToolCategoryPage'
 import ToolLandingPage from './pages/tools/ToolLandingPage'
 import ImagesPage from './pages/images'
+import ImagePacksPage from './pages/ImagePacksPage'
 import RxVAutoShortsPage from './pages/RxVAutoShortsPage'
 import RedirectShorts from './pages/rxv-auto-shorts'
 import NotFoundPage from './pages/NotFound'
@@ -729,6 +730,7 @@ function App() {
             <Route path="tools/homework-helper" element={<PausedAiToolPage />} />
             {/* 圖片素材 */}
             <Route path="images" element={<ImagesPage />} />
+            <Route path="image-packs" element={<ImagePacksPage />} />
             <Route path="automation" element={<AIHome />} />
             <Route path="rxv-auto-shorts" element={<RedirectShorts />} />
             <Route path="video-preview" element={<VideoPreviewPage />} />
