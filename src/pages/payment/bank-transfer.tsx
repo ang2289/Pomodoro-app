@@ -21,6 +21,7 @@ const IMAGE_BUNDLE_PAYMENT = {
     originalAmountNtd: 399,
   },
   contactEmail: 'rxv0227@gmail.com',
+  contactLineId: 'ang22899',
 } as const
 
 function getPromoTotalPoints(points: number) {
@@ -201,20 +202,49 @@ export default function BankTransferPage() {
     }
     return planId && data?.plans ? data.plans[planId] || null : null
   }, [planId, data, isImageBundleMode, bundleData.product.amountNtd, bundleData.product.displayName])
+  const bundleReportSubject = `RXV 圖片素材包 NT${bundleData.product.amountNtd} 匯款回報`
+
+  const bundleReportBody = useMemo(() => [
+    `商品：${bundleData.product.displayName}`,
+    `金額：NT${bundleData.product.amountNtd}`,
+    '',
+    '匯款日期：',
+    '匯款帳號末 5 碼：',
+    '姓名：',
+    '收件 Email：',
+  ].join('\n'), [bundleData.product.amountNtd, bundleData.product.displayName])
+
+  const bundleGmailHref = useMemo(() => {
+    const params = new URLSearchParams({
+      view: 'cm',
+      fs: '1',
+      to: bundleData.contactEmail,
+      su: bundleReportSubject,
+      body: bundleReportBody,
+    })
+    return `https://mail.google.com/mail/?${params.toString()}`
+  }, [bundleData.contactEmail, bundleReportBody, bundleReportSubject])
 
   const bundleMailtoHref = useMemo(() => {
-    const subject = `RXV 圖片素材包 NT$${bundleData.product.amountNtd} 匯款回報`
-    const body = [
-      `商品：${bundleData.product.displayName}`,
-      `金額：NT$${bundleData.product.amountNtd}`,
-      '',
-      '匯款日期：',
-      '匯款帳號末 5 碼：',
-      '姓名：',
-      '收件 Email：',
-    ].join('\n')
-    return `mailto:${bundleData.contactEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
-  }, [bundleData.contactEmail, bundleData.product.amountNtd, bundleData.product.displayName])
+    return `mailto:${bundleData.contactEmail}?subject=${encodeURIComponent(bundleReportSubject)}&body=${encodeURIComponent(bundleReportBody)}`
+  }, [bundleData.contactEmail, bundleReportBody, bundleReportSubject])
+
+  const bundleLineShareHref = useMemo(() => {
+    return `https://line.me/R/share?text=${encodeURIComponent(bundleReportBody)}`
+  }, [bundleReportBody])
+
+  const bundleLineAddFriendHref = useMemo(() => {
+    return `https://line.me/ti/p/~${encodeURIComponent(bundleData.contactLineId)}`
+  }, [bundleData.contactLineId])
+
+  const handleLineReport = () => {
+    try {
+      void navigator.clipboard.writeText(bundleReportBody).catch(() => undefined)
+    } catch {
+      // Clipboard backup is optional.
+    }
+    window.open(bundleLineShareHref, '_blank', 'noopener,noreferrer')
+  }
 
   useEffect(() => {
     if (!planId) {
@@ -280,7 +310,7 @@ export default function BankTransferPage() {
           </h1>
           <p className="mt-2 text-slate-600">
             {isImageBundleMode
-              ? '匯款完成後請寄 Email 回覆付款資料；確認入帳後會回覆圖片素材包下載方式。'
+              ? '匯款完成後可用 Gmail 或 LINE 回覆付款資料；確認入帳後會回覆圖片素材包下載方式。'
               : isRelationshipMode
                 ? '站方確認銀行入帳後，將人工開通 AI 回覆軍師方案 30 天。'
                 : isStorefrontMode
@@ -371,13 +401,42 @@ export default function BankTransferPage() {
 
               <div className="mt-6 flex flex-wrap gap-3">
                 {isImageBundleMode ? (
-                  <a
-                    href={bundleMailtoHref}
-                    className="inline-flex min-h-[52px] items-center justify-center rounded-xl bg-emerald-600 px-6 py-3 text-base font-black !text-white shadow-md transition hover:-translate-y-0.5 hover:bg-emerald-700 hover:shadow-lg"
-                    style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}
-                  >
-                    匯款完成，寄 Email 回報
-                  </a>
+                  <>
+                    <a
+                      href={bundleGmailHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex min-h-[52px] items-center justify-center rounded-xl bg-emerald-600 px-6 py-3 text-base font-black !text-white shadow-md transition hover:-translate-y-0.5 hover:bg-emerald-700 hover:shadow-lg"
+                      style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}
+                    >
+                      匯款完成，用 Gmail 回報
+                    </a>
+                    <button
+                      type="button"
+                      onClick={handleLineReport}
+                      className="inline-flex min-h-[52px] items-center justify-center rounded-xl bg-[#06C755] px-6 py-3 text-base font-black !text-white shadow-md transition hover:-translate-y-0.5 hover:brightness-95 hover:shadow-lg"
+                      style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}
+                    >
+                      匯款完成，用 LINE 回報（預帶資料）
+                    </button>
+                    <a
+                      href={bundleMailtoHref}
+                      className="inline-flex min-h-[52px] items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50"
+                    >
+                      其他 Email 軟體
+                    </a>
+                    <p className="basis-full text-sm font-bold text-slate-600">
+                      LINE ID：{bundleData.contactLineId}。LINE 回報會預帶商品、金額與回報欄位；若尚未加好友，可先加入後再回來使用。
+                      <a
+                        href={bundleLineAddFriendHref}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="ml-2 font-black text-emerald-700 underline hover:text-emerald-800"
+                      >
+                        先加 LINE 好友
+                      </a>
+                    </p>
+                  </>
                 ) : (
                   <Link
                     to={isRelationshipMode ? `/payment/report?product=${planId}` : `/payment/report?plan=${planId}&mode=${mode}`}

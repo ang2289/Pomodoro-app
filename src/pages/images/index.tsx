@@ -343,14 +343,49 @@ export default function ImagesPage() {
           ? manifest.images
           : [];
 
+        // RXV_HIDE_PUBLIC_TEST_CATEGORY
+        // Keep R2/catalog data untouched; hide internal test categories only on the public website.
+        const hiddenPublicCategoryNames = new Set(["\u672c\u6a5f WebP \u6e2c\u8a66"]);
+        const hiddenPublicCategoryIds = new Set(
+          (manifest.categories || [])
+            .filter((category) =>
+              hiddenPublicCategoryNames.has(String(category?.name || "").trim()),
+            )
+            .map((category) => String(category?.id || "").trim())
+            .filter(Boolean),
+        );
+
         const categoryMap = new Map<string, ImageCategory>();
 
         (manifest.categories || []).forEach((category) => {
-          if (category?.id) categoryMap.set(category.id, category);
+          const categoryId = String(category?.id || "").trim();
+          const categoryName = String(category?.name || "").trim();
+          if (
+            categoryId &&
+            !hiddenPublicCategoryIds.has(categoryId) &&
+            !hiddenPublicCategoryNames.has(categoryName)
+          ) {
+            categoryMap.set(categoryId, category);
+          }
         });
 
         const formatted: ImageAsset[] = sourceImages
-          .filter((img) => img?.id)
+          .filter((img) => {
+            if (!img?.id) return false;
+            const categoryId = String(
+              img.category_id ||
+                img.category_slug ||
+                img.category_name ||
+                img.category ||
+                "",
+            ).trim();
+            const categoryName = String(img.category_name || img.category || "").trim();
+            return (
+              !hiddenPublicCategoryIds.has(categoryId) &&
+              !hiddenPublicCategoryNames.has(categoryId) &&
+              !hiddenPublicCategoryNames.has(categoryName)
+            );
+          })
           .map((img) => {
             const categoryId =
               img.category_id ||
@@ -608,7 +643,7 @@ export default function ImagesPage() {
                     ? "正在統計圖片數量…"
                     : selectedCategoryId
                       ? `「${selectedCategoryName}」共有 ${totalImages} 張素材，目前先顯示 ${images.length} 張。`
-                      : `目前素材庫已累積 ${totalImages} 張素材，本頁先顯示 ${images.length} 張；免費圖片可直接下載，其餘可加入 NT$399 完整素材庫。`}
+                      : `目前素材庫已累積 ${totalImages} 張素材，本頁先顯示 ${images.length} 張；免費圖片可直接下載，其餘可加入 NT$199 完整素材庫。`}
               </p>
             </div>
             {totalImages !== null && totalImages > 0 && (
@@ -928,7 +963,7 @@ export default function ImagesPage() {
         <div className="mt-12 rounded-lg border bg-white p-6 text-sm leading-relaxed text-gray-700">
           <h3 className="mb-3 text-base font-semibold">圖片素材使用說明</h3>
           <ul className="list-disc space-y-2 pl-5">
-            <li>標示「免費下載」的圖片可直接下載試用；其餘圖片屬於 NT$399 完整素材庫。</li>
+            <li>標示「免費下載」的圖片可直接下載試用；其餘圖片屬於 NT$199 完整素材庫。</li>
             <li>
               圖片可作為社群貼文、短影音封面、商品圖靈感、LINE
               貼圖測試、個人創作練習與一般商用設計使用。
@@ -994,7 +1029,7 @@ export default function ImagesPage() {
                 <p className="mt-1 text-sm text-slate-500">
                   {previewImage.planType === "free"
                     ? "免費圖片，可直接下載"
-                    : "完整版素材，可預覽；高畫質原圖包含於 NT$399 完整素材庫"}
+                    : "完整版素材，可預覽；高畫質原圖包含於 NT$199 完整素材庫"}
                 </p>
               </div>
 
@@ -1011,7 +1046,7 @@ export default function ImagesPage() {
               >
                 {previewImage.planType === "free"
                   ? "免費下載"
-                  : "取得 NT$399 完整素材庫"}
+                  : "取得 NT$199 完整素材庫"}
               </button>
             </div>
           </div>
