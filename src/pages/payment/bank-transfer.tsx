@@ -1,281 +1,452 @@
-// 匯款資訊頁面
-// 根據 URL 參數 plan 顯示對應的方案資訊
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
-import { useState, useEffect } from 'react'
-import { useSearchParams, Link } from 'react-router-dom'
-import { PLANS } from '../../config'
-import { getPlanChars } from '../../lib/usagePlans'
-import PrimaryButton from '@/components/ui/PrimaryButton'
-import { supabase } from '@/lib/supabase'
-// ⚠️ 已移除 useAuth
+const PENDING_POINT_TRANSFER_KEY = 'rxv_pending_point_transfer_v1'
 
-export default function BankTransferPage() {
-  const [searchParams] = useSearchParams()
-  const planParam = searchParams.get('plan')
-  const [showReminder, setShowReminder] = useState(false)
+const DOUBLE_POINTS_PROMO_ACTIVE = false
+const DOUBLE_POINTS_PROMO_END_TEXT = '7/10 23:59 前'
 
-  // 根據 URL 參數決定方案
-  let planName = ''
-  let planPrice = 0
-  let planChars = 0
-  let planValue = ''
+const IMAGE_BUNDLE_PAYMENT = {
+  bank: {
+    name: '新光銀行',
+    code: '103',
+    branch: '桃園分行',
+    account: '0231-50-801141-0',
+    accountName: '何健蒝',
+  },
+  product: {
+    code: 'image-bundle-full' as const,
+    displayName: '1,584+ 高畫質圖片素材庫完整版',
+    amountNtd: 199,
+    originalAmountNtd: 399,
+  },
+  contactEmail: 'rxv0227@gmail.com',
+  contactLineId: 'ang22899',
+} as const
 
-  if (planParam === '99') {
-    planName = '標準方案'
-    planPrice = PLANS.plan99.price
-    planChars = getPlanChars('pack99')
-    planValue = '99'
-  } else if (planParam === '199') {
-    planName = '進階方案'
-    planPrice = PLANS.plan199.price
-    planChars = getPlanChars('pack199')
-    planValue = '199'
-  } else {
-    // 如果沒有有效的 plan 參數，導向 pricing 頁面
-    return (
-      <div className="min-h-screen bg-gray-50 py-12 px-4">
-        <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg p-8 text-center">
-          <p className="text-gray-700 mb-4">無效的方案參數</p>
-          <Link to="/pricing">
-            <PrimaryButton>返回方案選擇</PrimaryButton>
-          </Link>
-        </div>
-      </div>
-    )
+function getPromoTotalPoints(points: number) {
+  return DOUBLE_POINTS_PROMO_ACTIVE ? points * 2 : points
+}
+
+function getWhiteImageEstimate(points: number) {
+  return Math.floor(points / 20000)
+}
+
+function getCommercialImageEstimate(points: number) {
+  return Math.floor(points / 30000)
+}
+
+function savePendingPointTransfer(input: { planId: '99' | '199'; amount: number; email?: string; mode?: 'product-image' | 'storefront' }) {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.setItem(PENDING_POINT_TRANSFER_KEY, JSON.stringify({
+      ...input,
+      email: String(input.email || '').trim().toLowerCase() || undefined,
+      createdAt: new Date().toISOString(),
+    }))
+    window.dispatchEvent(new Event('rxv-pending-payment-changed'))
+  } catch {
+    // 暫存失敗不影響正常銀行匯款流程。
   }
+}
 
-  // 複製到剪貼簿的函數
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text)
-      // 可以選擇顯示一個簡短的提示，但用戶要求不需要動畫
-    } catch (err) {
-      console.error('複製失敗：', err)
-    }
+type ProductImagePlanId = '99' | '199'
+type RelationshipPlanId = 'relationship_pro' | 'relationship_business'
+type ImageBundlePlanId = 'image-bundle-full'
+type PlanId = ProductImagePlanId | RelationshipPlanId | ImageBundlePlanId
+
+type Plan = {
+  id: PlanId
+  amount: number
+  points: number
+  maxItems: number
+  grantedMonths: number
+  durationDays?: number
+  productType: 'product_image' | 'relationship_ai' | 'image_bundle'
+  displayName: string
+}
+
+type BankInfoResponse = {
+  ok: boolean
+  accountEmail: string
+  bank: {
+    name: string
+    code: string
+    branch?: string
+    account: string
+    accountName: string
   }
+  plans: Partial<Record<PlanId, Plan>>
+  error?: string
+}
 
-  // 48 小時未回報提醒機制
-  useEffect(() => {
-    const checkReminder = async () => {
-      // 如果沒有有效的 plan 參數，不檢查
-      if (!planParam || (planParam !== '99' && planParam !== '199')) {
-        return
-      }
+function getAuthToken() {
+  if (typeof window === 'undefined') return ''
+  return (window.localStorage.getItem('auth_token') || window.localStorage.getItem('token') || '').trim()
+}
 
-      // 檢查是否已經顯示過提醒
-      const reminderShown = localStorage.getItem('payment_reminder_shown')
-      if (reminderShown === 'true') {
-        return
-      }
+async function apiGet<T>(action: string): Promise<T> {
+  const token = getAuthToken()
+  if (!token) throw new Error('請先登入後再選擇銀行轉帳。')
 
-      // 檢查是否有選擇方案的記錄
-      const visitKey = `payment_visit_${planParam}`
-      const visitTimeStr = localStorage.getItem(visitKey)
-      
-      if (!visitTimeStr) {
-        // 首次訪問，記錄時間戳
-        localStorage.setItem(visitKey, Date.now().toString())
-        return
-      }
+  const response = await fetch(`/api/main?action=${encodeURIComponent(action)}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  const data = await response.json().catch(() => ({}))
+  if (!response.ok) throw new Error(String(data?.error || '讀取資料失敗。'))
+  return data as T
+}
 
-      // 檢查是否超過 48 小時（48 * 60 * 60 * 1000 毫秒）
-      const visitTime = parseInt(visitTimeStr, 10)
-      const now = Date.now()
-      const hoursPassed = (now - visitTime) / (1000 * 60 * 60)
+function DoublePointsPromoCard({ plan }: { plan: Plan | null }) {
+  if (!DOUBLE_POINTS_PROMO_ACTIVE || !plan) return null
 
-      if (hoursPassed >= 48) {
-        // ⚠️ 已移除回報記錄檢查邏輯
-        let hasReport = false
-
-        // 如果沒有回報記錄，顯示提醒
-        if (!hasReport) {
-          setShowReminder(true)
-        }
-      }
-    }
-
-    checkReminder()
-  }, [planParam, user])
-
-  // 記錄使用者訪問此頁面（選擇方案）
-  useEffect(() => {
-    if (planParam && (planParam === '99' || planParam === '199')) {
-      const visitKey = `payment_visit_${planParam}`
-      const existingTime = localStorage.getItem(visitKey)
-      
-      // 如果沒有記錄，或記錄超過 48 小時，更新為當前時間
-      if (!existingTime) {
-        localStorage.setItem(visitKey, Date.now().toString())
-      } else {
-        const visitTime = parseInt(existingTime, 10)
-        const hoursPassed = (Date.now() - visitTime) / (1000 * 60 * 60)
-        // 如果超過 48 小時，重新記錄（表示使用者可能重新考慮）
-        if (hoursPassed >= 48) {
-          localStorage.setItem(visitKey, Date.now().toString())
-        }
-      }
-    }
-  }, [planParam])
+  const totalPoints = getPromoTotalPoints(Number(plan.points || 0))
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
-      <div className="max-w-2xl mx-auto">
-        {/* 48 小時未回報提醒 */}
-        {showReminder && (
-          <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-lg mb-6">
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0">
-                <svg
-                  className="w-5 h-5 text-amber-600 mt-0.5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                  />
-                </svg>
-              </div>
-              <div className="flex-1">
-                <p className="text-sm text-amber-800 mb-3">
-                  提醒你，如果已完成匯款，記得填寫回報表單，我們才能為你完成加點。
-                </p>
-                <Link to={`/payment/report?plan=${planValue}`} onClick={() => {
-                  // 點擊後標記為已顯示，避免重複提醒
-                  localStorage.setItem('payment_reminder_shown', 'true')
-                }}>
-                  <PrimaryButton 
-                    fullWidth={false}
-                    className="bg-amber-600 hover:bg-amber-700 text-white"
-                  >
-                    前往填寫匯款回報
-                  </PrimaryButton>
-                </Link>
-                <p className="text-xs text-amber-700 mt-2">
-                  填寫回報後，通常會在 24 小時內完成加點
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 流程安心提示 */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-          <p className="text-sm text-blue-800 text-center">
-            <span className="font-medium">流程說明：</span>
-            <span className="ml-2">1️⃣ 選擇方案</span>
-            <span className="mx-2">2️⃣ 完成匯款</span>
-            <span className="mx-2">3️⃣ 填寫回報</span>
-            <span className="mx-2">4️⃣ 24 小時內完成加點</span>
-          </p>
+    <section className="mb-6 rounded-2xl border-2 border-rose-200 bg-gradient-to-br from-rose-50 via-white to-amber-50 p-5 shadow-sm">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="rounded-full bg-rose-600 px-3 py-1.5 text-sm font-black !text-white" style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}>
+          🔥 限時活動｜商品圖額度雙倍送
+        </span>
+        <span className="text-sm font-black text-rose-700">{DOUBLE_POINTS_PROMO_END_TEXT}</span>
+      </div>
+      <p className="mt-3 text-xl font-black leading-relaxed text-slate-950">
+        NT${plan.amount} 方案核准後，商品圖額度直接加倍
+      </p>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <div className="rounded-xl border border-slate-200 bg-white p-4">
+          <p className="text-sm font-bold text-slate-500">原有商品圖額度</p>
+          <p className="mt-1 text-xl font-black text-slate-700">{Number(plan.points || 0).toLocaleString()} 點</p>
         </div>
-
-        {/* 方案資訊 */}
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2 text-center">
-            {planName} NT${planPrice} / {planChars.toLocaleString()} 字
-          </h1>
+        <div className="rounded-xl border border-rose-200 bg-rose-100/70 p-4">
+          <p className="text-sm font-bold text-rose-700">活動後核准入帳</p>
+          <p className="mt-1 text-2xl font-black text-rose-700">共 {totalPoints.toLocaleString()} 點</p>
         </div>
+      </div>
+      <ul className="mt-4 space-y-2 text-base font-bold leading-relaxed text-slate-700">
+        <li>✓ 白底商品圖約 {getWhiteImageEstimate(totalPoints)} 張</li>
+        <li>✓ 高級商業／社群／外送主圖約 {getCommercialImageEstimate(totalPoints)} 張</li>
+      </ul>
+      <p className="mt-4 text-sm leading-relaxed text-rose-800">
+        請於 {DOUBLE_POINTS_PROMO_END_TEXT} 前完成匯款並送出回報；活動資格以系統建立匯款回報時間及站方核准結果為準。
+      </p>
+    </section>
+  )
+}
 
-        {/* 匯款資訊區塊 */}
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">
-            匯款資訊
-          </h2>
-          <p className="text-xs text-gray-500 mb-4">
-            點擊可複製，避免輸入錯誤
-          </p>
-          <div className="space-y-3">
-            <div className="flex items-start">
-              <span className="text-gray-700 font-medium w-24">銀行：</span>
-              <span 
-                className="text-gray-900 flex-1 cursor-pointer hover:text-blue-600 transition-colors"
-                onClick={() => copyToClipboard('玉山銀行')}
-                title="點擊複製"
-              >
-                玉山銀行
-              </span>
-            </div>
-            <div className="flex items-start">
-              <span className="text-gray-700 font-medium w-24">銀行代號：</span>
-              <span 
-                className="text-gray-900 flex-1 cursor-pointer hover:text-blue-600 transition-colors"
-                onClick={() => copyToClipboard('808')}
-                title="點擊複製"
-              >
-                808
-              </span>
-            </div>
-            <div className="flex items-start">
-              <span className="text-gray-700 font-medium w-24">銀行分行：</span>
-              <span 
-                className="text-gray-900 flex-1 cursor-pointer hover:text-blue-600 transition-colors"
-                onClick={() => copyToClipboard('基隆分行')}
-                title="點擊複製"
-              >
-                基隆分行
-              </span>
-            </div>
-            <div className="flex items-start">
-              <span className="text-gray-700 font-medium w-24">帳號：</span>
-              <span 
-                className="text-gray-900 flex-1 cursor-pointer hover:text-blue-600 transition-colors"
-                onClick={() => copyToClipboard('0783979283619')}
-                title="點擊複製"
-              >
-                0783979283619
-              </span>
-            </div>
-            <div className="flex items-start">
-              <span className="text-gray-700 font-medium w-24">戶名：</span>
-              <span 
-                className="text-gray-900 flex-1 cursor-pointer hover:text-blue-600 transition-colors"
-                onClick={() => copyToClipboard('林雨晴')}
-                title="點擊複製"
-              >
-                林雨晴
-              </span>
-            </div>
-          </div>
-        </div>
+function CopyValue({ label, value }: { label: string; value?: string }) {
+  const [copied, setCopied] = useState(false)
+  const canCopy = Boolean(value)
 
-        {/* 匯款說明 */}
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-6">
-          <h2 className="text-lg font-bold text-blue-900 mb-3">
-            匯款說明
-          </h2>
-          <ul className="space-y-2 text-blue-800 mb-3">
-            <li>• 請於匯款備註填寫「註冊 Email」</li>
-            <li>• 匯款完成後 24 小時內人工加點</li>
-          </ul>
-          <p className="text-sm text-blue-700 font-medium mt-4 pt-3 border-t border-blue-300">
-            請務必使用「註冊 Email」進行回報，避免無法對帳
-          </p>
-        </div>
+  const copy = async () => {
+    if (!value) return
+    try {
+      await navigator.clipboard.writeText(value)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 1600)
+    } catch {
+      window.alert('無法自動複製，請手動選取文字。')
+    }
+  }
 
-        {/* 按鈕 */}
-        <div className="text-center">
-          {/* 信心文案 */}
-          <p className="text-sm text-gray-600 mb-4">
-            填寫回報後，系統會為你人工確認並加點
-          </p>
-          
-          <Link to={`/payment/report?plan=${planValue}`}>
-            <PrimaryButton fullWidth className="max-w-md mx-auto">
-              我已完成匯款，送出回報
-            </PrimaryButton>
-          </Link>
-          
-          {/* 安心感補充文案 */}
-          <p className="mt-4 text-xs text-gray-500 text-center">
-            匯款後 24 小時內完成加點，通常更快
-          </p>
-        </div>
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+      <p className="text-xs font-bold text-slate-500">{label}</p>
+      <div className="mt-1 flex items-center justify-between gap-3">
+        <p className="min-w-0 break-all text-base font-black text-slate-900">{value || '—'}</p>
+        <button
+          type="button"
+          disabled={!canCopy}
+          onClick={copy}
+          className="shrink-0 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-black text-emerald-800 transition hover:-translate-y-0.5 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          {copied ? '已複製' : '複製'}
+        </button>
       </div>
     </div>
   )
 }
 
+export default function BankTransferPage() {
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const product = searchParams.get('product')
+  const legacyPlan = searchParams.get('plan')
+  const planId: PlanId | null = product === 'image-bundle-full'
+    ? product
+    : product === 'relationship_pro' || product === 'relationship_business'
+      ? product
+      : legacyPlan === '199' || legacyPlan === '99'
+        ? legacyPlan
+        : null
+  const mode = searchParams.get('mode') === 'storefront' ? 'storefront' : 'product-image'
+  const isImageBundleMode = planId === 'image-bundle-full'
+  const isRelationshipMode = planId === 'relationship_pro' || planId === 'relationship_business'
+  const isStorefrontMode = !isImageBundleMode && mode === 'storefront'
+  const [loading, setLoading] = useState(!isImageBundleMode)
+  const [error, setError] = useState('')
+  const [data, setData] = useState<BankInfoResponse | null>(null)
+  const bundleData = IMAGE_BUNDLE_PAYMENT
+
+  const plan = useMemo<Plan | null>(() => {
+    if (isImageBundleMode) {
+      return {
+        id: 'image-bundle-full',
+        amount: bundleData.product.amountNtd,
+        points: 0,
+        maxItems: 0,
+        grantedMonths: 0,
+        productType: 'image_bundle',
+        displayName: bundleData.product.displayName,
+      }
+    }
+    return planId && data?.plans ? data.plans[planId] || null : null
+  }, [planId, data, isImageBundleMode, bundleData.product.amountNtd, bundleData.product.displayName])
+  const bundleReportSubject = `RXV 圖片素材包 NT${bundleData.product.amountNtd} 匯款回報`
+
+  const bundleReportBody = useMemo(() => [
+    `商品：${bundleData.product.displayName}`,
+    `金額：NT${bundleData.product.amountNtd}`,
+    '',
+    '匯款日期：',
+    '匯款帳號末 5 碼：',
+    '姓名：',
+    '收件 Email：',
+  ].join('\n'), [bundleData.product.amountNtd, bundleData.product.displayName])
+
+  const bundleGmailHref = useMemo(() => {
+    const params = new URLSearchParams({
+      view: 'cm',
+      fs: '1',
+      to: bundleData.contactEmail,
+      su: bundleReportSubject,
+      body: bundleReportBody,
+    })
+    return `https://mail.google.com/mail/?${params.toString()}`
+  }, [bundleData.contactEmail, bundleReportBody, bundleReportSubject])
+
+  const bundleMailtoHref = useMemo(() => {
+    return `mailto:${bundleData.contactEmail}?subject=${encodeURIComponent(bundleReportSubject)}&body=${encodeURIComponent(bundleReportBody)}`
+  }, [bundleData.contactEmail, bundleReportBody, bundleReportSubject])
+
+  const bundleLineHref = useMemo(() => {
+    return `https://line.me/ti/p/~${encodeURIComponent(bundleData.contactLineId)}`
+  }, [bundleData.contactLineId])
+
+  const handleLineReport = async () => {
+    try {
+      await navigator.clipboard.writeText(bundleReportBody)
+    } catch {
+      // 若剪貼簿不可用，仍繼續開 LINE。
+    }
+    window.open(bundleLineHref, '_blank', 'noopener,noreferrer')
+  }
+
+  useEffect(() => {
+    if (!planId) {
+      setLoading(false)
+      return
+    }
+
+    const load = async () => {
+      setError('')
+
+      if (isImageBundleMode) {
+        setLoading(false)
+        return
+      }
+
+      setLoading(true)
+      try {
+        if (!getAuthToken()) {
+          navigate('/login')
+          return
+        }
+        const info = await apiGet<BankInfoResponse>('get-bank-transfer-info')
+        setData(info)
+        const selectedPlan = info?.plans?.[planId]
+        if (selectedPlan && !isRelationshipMode) {
+          savePendingPointTransfer({
+            planId: planId as ProductImagePlanId,
+            amount: Number(selectedPlan.amount || 0),
+            email: info.accountEmail,
+            mode,
+          })
+        }
+      } catch (err: any) {
+        setError(err?.message || '讀取銀行轉帳資訊失敗。')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    void load()
+  }, [navigate, planId, mode, isRelationshipMode, isImageBundleMode])
+
+  if (!planId) {
+    return (
+      <main className="min-h-screen bg-slate-50 px-4 py-12">
+        <div className="mx-auto max-w-md rounded-2xl bg-white p-8 text-center shadow-lg">
+          <h1 className="text-xl font-black text-slate-950">請先選擇方案</h1>
+          <Link to={product === 'image-bundle-full' ? '/images' : product ? '/relationship-ai' : isStorefrontMode ? '/tools/product-showcase-page' : '/pricing'} className="mt-5 inline-flex rounded-xl bg-blue-600 px-5 py-3 font-black !text-white">
+            返回方案頁
+          </Link>
+        </div>
+      </main>
+    )
+  }
+
+  return (
+    <main className="min-h-screen bg-slate-50 px-4 py-10">
+      <div className="mx-auto max-w-2xl">
+        <header className="mb-6 text-center">
+          <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-sm font-black text-emerald-800">銀行轉帳／人工核對</span>
+          <h1 className="mt-3 text-3xl font-black text-slate-950">
+            {isImageBundleMode ? '圖片素材包 NT$199 匯款付款' : '完成匯款後再送出回報'}
+          </h1>
+          <p className="mt-2 text-slate-600">
+            {isImageBundleMode
+              ? '匯款完成後可用 Gmail 或 LINE 回覆付款資料；確認入帳後會回覆圖片素材包下載方式。'
+              : isRelationshipMode
+                ? '站方確認銀行入帳後，將人工開通 AI 回覆軍師方案 30 天。'
+                : isStorefrontMode
+                  ? '站方確認銀行入帳後，預計 1～2 天內人工開通或展延商品展示頁。'
+                  : '站方確認銀行入帳後，預計 1～2 天內加點並人工開通店家商品展示頁。'}
+          </p>
+        </header>
+
+        {loading ? (
+          <div className="rounded-2xl bg-white p-10 text-center shadow-sm text-slate-600">正在讀取匯款資訊…</div>
+        ) : error ? (
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-center shadow-sm">
+            <p className="font-black text-rose-800">{error}</p>
+            <Link to={isImageBundleMode ? '/images' : isRelationshipMode ? '/relationship-ai' : isStorefrontMode ? '/tools/product-showcase-page' : '/pricing'} className="mt-5 inline-flex rounded-xl bg-blue-600 px-5 py-3 font-black !text-white">
+              返回方案頁
+            </Link>
+          </div>
+        ) : (
+          <>
+            <section className="mb-6 rounded-2xl border border-blue-200 bg-blue-50 p-6 shadow-sm">
+              <p className="text-sm font-bold text-blue-700">本次選擇方案</p>
+              <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <h2 className="text-2xl font-black text-slate-950">
+                    {isImageBundleMode ? plan?.displayName : isRelationshipMode ? plan?.displayName : isStorefrontMode ? `NT${plan?.amount} 商品展示頁正式版` : `NT${plan?.amount} 商品圖點數方案`}
+                  </h2>
+                  {isImageBundleMode ? (
+                    <div className="mt-2 flex flex-wrap items-center gap-3">
+                      <span className="text-base font-bold text-slate-500 line-through">原價 NT${bundleData.product.originalAmountNtd}</span>
+                      <span className="text-3xl font-black text-rose-600">NT${bundleData.product.amountNtd}</span>
+                      <span className="rounded-full bg-rose-100 px-3 py-1 text-sm font-black text-rose-700">首波限時優惠</span>
+                    </div>
+                  ) : (
+                    <p className="mt-1 text-slate-700">
+                      {isRelationshipMode ? `NT$${plan?.amount}／30 天` : isStorefrontMode ? '首波方案：3 個月，付款確認後預計 1～2 天內人工開通／展延' : `原有 ${Number(plan?.points || 0).toLocaleString()} 點`}
+                    </p>
+                  )}
+                </div>
+                {isImageBundleMode ? (
+                  <span className="rounded-full bg-white px-3 py-1.5 text-sm font-black text-emerald-700 shadow-sm">分類整理・一次下載</span>
+                ) : !isRelationshipMode ? (
+                  <span className="rounded-full bg-white px-3 py-1.5 text-sm font-black text-emerald-700 shadow-sm">
+                    {isStorefrontMode ? '商品展示頁：可放商品、價格、LINE 詢問與 QR Code' : `加贈商品展示頁：${plan?.maxItems} 個商品／${plan?.grantedMonths} 個月`}
+                  </span>
+                ) : null}
+              </div>
+            </section>
+
+            {!isImageBundleMode && !isStorefrontMode && !isRelationshipMode ? <DoublePointsPromoCard plan={plan} /> : null}
+
+            <section className="rounded-2xl bg-white p-6 shadow-lg">
+              <h2 className="text-xl font-black text-slate-950">匯款帳戶</h2>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">可點選複製，匯款金額請使用本次方案金額。</p>
+
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                <CopyValue label="銀行名稱" value={isImageBundleMode ? bundleData.bank.name : data?.bank.name} />
+                <CopyValue label="銀行代碼" value={isImageBundleMode ? bundleData.bank.code : data?.bank.code} />
+                <CopyValue label="分行" value={isImageBundleMode ? bundleData.bank.branch : data?.bank.branch} />
+                <CopyValue label="戶名" value={isImageBundleMode ? bundleData.bank.accountName : data?.bank.accountName} />
+                <div className="sm:col-span-2">
+                  <CopyValue label="匯款帳號" value={isImageBundleMode ? bundleData.bank.account : data?.bank.account} />
+                </div>
+                {isImageBundleMode ? (
+                  <div className="sm:col-span-2">
+                    <CopyValue label="匯款完成後收件 Email" value={bundleData.contactEmail} />
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-relaxed text-amber-900">
+                <p className="font-black">匯款前請確認</p>
+                {isImageBundleMode ? (
+                  <ul className="mt-2 list-disc space-y-1 pl-5">
+                    <li>本次優惠價：NT${bundleData.product.amountNtd}。</li>
+                    <li>匯款完成後，請寄 Email 提供：匯款日期、匯款帳號末 5 碼、姓名、收件 Email。</li>
+                    <li>確認款項後，會以 Email 回覆圖片素材包下載方式。</li>
+                    <li>此付款頁為靜態匯款頁，不需登入，也不會自動建立訂單。</li>
+                  </ul>
+                ) : (
+                  <ul className="mt-2 list-disc space-y-1 pl-5">
+                    <li>匯款金額：NT${plan?.amount}</li>
+                    <li>完成匯款後，請填寫匯出帳號後五碼與匯款日期。</li>
+                    {DOUBLE_POINTS_PROMO_ACTIVE && !isStorefrontMode && !isRelationshipMode ? <li>請於 {DOUBLE_POINTS_PROMO_END_TEXT} 前完成匯款並送出回報，符合活動資格者核准後雙倍入帳。</li> : null}
+                    <li>{isRelationshipMode ? '匯款回報送出後，站方會依實際入帳人工核對；確認後開通 AI 回覆軍師方案 30 天。' : isStorefrontMode ? '請以實際銀行入帳為準；確認入帳後預計 1～2 天內開通或展延商品展示頁，未核對前不會開通或展延。' : '請以實際銀行入帳為準；確認入帳後預計 1～2 天內加點或開通商品頁，未核對前不會加點或開通。'}</li>
+                  </ul>
+                )}
+              </div>
+
+              <div className="mt-6 flex flex-wrap gap-3">
+                {isImageBundleMode ? (
+                  <>
+                    <a
+                      href={bundleGmailHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex min-h-[52px] items-center justify-center rounded-xl bg-emerald-600 px-6 py-3 text-base font-black !text-white shadow-md transition hover:-translate-y-0.5 hover:bg-emerald-700 hover:shadow-lg"
+                      style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}
+                    >
+                      匯款完成，用 Gmail 回報
+                    </a>
+                    <button
+                      type="button"
+                      onClick={handleLineReport}
+                      className="inline-flex min-h-[52px] items-center justify-center rounded-xl bg-[#06C755] px-6 py-3 text-base font-black !text-white shadow-md transition hover:-translate-y-0.5 hover:brightness-95 hover:shadow-lg"
+                      style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}
+                    >
+                      匯款完成，用 LINE 回報
+                    </button>
+                    <a
+                      href={bundleMailtoHref}
+                      className="inline-flex min-h-[52px] items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50"
+                    >
+                      其他 Email 軟體
+                    </a>
+                    <p className="basis-full text-sm font-bold text-slate-600">
+                      LINE ID：{bundleData.contactLineId}。點 LINE 回報時會先複製匯款回報格式，開啟 LINE 後貼上並補齊資料即可。
+                    </p>
+                  </>
+                ) : (
+                  <Link
+                    to={isRelationshipMode ? `/payment/report?product=${planId}` : `/payment/report?plan=${planId}&mode=${mode}`}
+                    className="inline-flex min-h-[52px] items-center justify-center rounded-xl bg-emerald-600 px-6 py-3 text-base font-black !text-white shadow-md transition hover:-translate-y-0.5 hover:bg-emerald-700 hover:shadow-lg"
+                    style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}
+                  >
+                    我已完成匯款，送出回報
+                  </Link>
+                )}
+                {isImageBundleMode ? (
+                  <Link
+                    to="/images"
+                    className="inline-flex min-h-[52px] items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 text-base font-black text-slate-700 transition hover:bg-slate-50"
+                  >
+                    返回圖片素材庫
+                  </Link>
+                ) : null}
+              </div>
+            </section>
+          </>
+        )}
+      </div>
+    </main>
+  )
+}
