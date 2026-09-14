@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>RXV 小包推廣器 v1</title>
+  <style>
+    :root{font-family:Inter,"Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;color:#102a43;background:#f5f8fb}
+    *{box-sizing:border-box} body{margin:0;background:#f5f8fb} button,input,select,textarea{font:inherit}
+    .wrap{max-width:1180px;margin:0 auto;padding:24px}.hero{background:linear-gradient(135deg,#0f766e,#0ea5e9);color:#fff;border-radius:24px;padding:28px;box-shadow:0 16px 40px rgba(2,132,199,.18)}
+    h1{margin:0 0 8px;font-size:32px}.hero p{margin:0;opacity:.92}.grid{display:grid;gap:16px}.g2{grid-template-columns:repeat(2,minmax(0,1fr))}.g3{grid-template-columns:repeat(3,minmax(0,1fr))}.card{background:#fff;border:1px solid #d9e2ec;border-radius:18px;padding:18px;box-shadow:0 8px 24px rgba(16,42,67,.06)}
+    .section-title{font-size:22px;font-weight:900;margin:28px 0 12px}.label{display:block;font-weight:800;font-size:14px;margin-bottom:7px;color:#334e68}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    input,select,textarea{width:100%;border:1px solid #bcccdc;border-radius:12px;padding:11px 12px;background:#fff;color:#102a43} textarea{min-height:220px;resize:vertical;line-height:1.65}
+    .btn{border:0;border-radius:12px;padding:11px 15px;font-weight:900;cursor:pointer;background:#e6f6ff;color:#0369a1}.btn.primary{background:#0f766e;color:#fff}.btn.dark{background:#102a43;color:#fff}.btn.orange{background:#ea580c;color:#fff}.btn.gray{background:#e9eff5;color:#334e68}.btn.danger{background:#b91c1c;color:#fff}.btn:disabled{opacity:.45;cursor:not-allowed}
+    .chip{display:inline-flex;border-radius:999px;padding:7px 11px;background:#e6fffa;color:#0f766e;font-weight:900;font-size:13px}.muted{color:#627d98;font-size:14px}.notice{background:#fff7ed;border:1px solid #fdba74;border-radius:14px;padding:12px 14px;color:#9a3412;font-weight:700}
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px}.stat{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);border-radius:14px;padding:12px}.stat b{display:block;font-size:24px}
+    .platforms{display:flex;gap:8px;flex-wrap:wrap}.platforms button.active{background:#0f766e;color:#fff}.copy-ok{color:#047857;font-weight:900;font-size:13px}
+    table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:10px;border-bottom:1px solid #e5edf3;text-align:left;vertical-align:top}th{background:#f0f4f8}.table-wrap{overflow:auto;border:1px solid #e5edf3;border-radius:14px}
+    .mini{font-size:12px}.right{margin-left:auto}.hidden{display:none!important}.link{color:#0369a1;font-weight:800;text-decoration:none}.link:hover{text-decoration:underline}
+    @media(max-width:800px){.g2,.g3,.stats{grid-template-columns:1fr}.wrap{padding:14px}.hero{padding:20px}h1{font-size:26px}.right{margin-left:0}}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <section class="hero">
+    <div class="row"><div><h1>RXV 小包推廣器 v1</h1><p>Windows 半自動版｜零 API 成本｜文案產生、FB 社團整理、發文紀錄</p></div><span class="chip right">本機資料不外傳</span></div>
+    <div class="stats">
+      <div class="stat"><span>社團總數</span><b id="statGroups">0</b></div>
+      <div class="stat"><span>待發社團</span><b id="statPending">0</b></div>
+      <div class="stat"><span>已發紀錄</span><b id="statPosted">0</b></div>
+      <div class="stat"><span>目前商品</span><b id="statProduct">房仲</b></div>
+    </div>
+  </section>
+
+  <div class="section-title">1. 選商品與產生多平台文案</div>
+  <section class="card">
+    <div class="grid g3">
+      <div><label class="label">商品</label><select id="productSelect"></select></div>
+      <div><label class="label">文案語氣</label><select id="toneSelect"><option value="sales">成交導向</option><option value="professional">專業實用</option><option value="soft">自然分享</option></select></div>
+      <div><label class="label">版本</label><select id="variantSelect"><option value="1">版本 A</option><option value="2">版本 B</option><option value="3">版本 C</option></select></div>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <button class="btn primary" id="generateAllBtn">產生全部平台文案</button>
+      <button class="btn dark" id="openProductBtn">開啟商品頁</button>
+      <span id="globalCopyStatus" class="copy-ok"></span>
+    </div>
+    <div class="notice" style="margin-top:14px">第一版不會自動替你按「發佈」。FB 社團採半自動：找社團 → 開啟 → 複製適合文案 → 你確認後發佈。這樣較穩定，也能避免誤貼或違反社團規則。</div>
+  </section>
+
+  <section id="copyGrid" class="grid g2" style="margin-top:16px"></section>
+
+  <div class="section-title">2. FB 社團搜尋助手</div>
+  <section class="card">
+    <div class="grid g2">
+      <div>
+        <label class="label">建議搜尋關鍵字</label>
+        <div id="keywordChips" class="row"></div>
+      </div>
+      <div>
+        <label class="label">自訂搜尋字</label>
+        <input id="customSearchKeyword" placeholder="例如：房仲交流 台灣" />
+        <div class="row" style="margin-top:10px">
+          <button class="btn primary" id="facebookSearchBtn">Facebook 找社團</button>
+          <button class="btn" id="googleSearchBtn">Google 找 FB 社團</button>
+        </div>
+      </div>
+    </div>
+    <p class="muted" style="margin-bottom:0">找到適合的社團後，把社團名稱與網址貼到下方清單。建議先看社團規則，確認是否允許商業推廣。</p>
+  </section>
+
+  <div class="section-title">3. FB 社團名單與發文紀錄</div>
+  <section class="card">
+    <div class="grid g3">
+      <div><label class="label">社團名稱</label><input id="groupName" placeholder="例如：房仲業務交流" /></div>
+      <div><label class="label">社團網址</label><input id="groupUrl" placeholder="https://www.facebook.com/groups/..." /></div>
+      <div><label class="label">適合商品</label><select id="groupProduct"></select></div>
+      <div><label class="label">社團規則狀態</label><select id="groupRule"><option value="unknown">待確認</option><option value="allowed">允許推廣</option><option value="limited">有限制／指定日</option><option value="blocked">禁止推廣</option></select></div>
+      <div><label class="label">建議間隔天數</label><input id="groupInterval" type="number" min="1" value="7" /></div>
+      <div><label class="label">備註</label><input id="groupNote" placeholder="例如：週三可工商" /></div>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <button class="btn primary" id="addGroupBtn">加入社團清單</button>
+      <button class="btn orange" id="nextGroupBtn">開啟下一個待發社團</button>
+      <button class="btn" id="exportJsonBtn">匯出備份 JSON</button>
+      <button class="btn" id="exportCsvBtn">匯出 CSV</button>
+      <label class="btn gray" style="cursor:pointer">匯入 JSON<input id="importJsonInput" type="file" accept="application/json" class="hidden" /></label>
+    </div>
+    <div class="table-wrap" style="margin-top:16px">
+      <table>
+        <thead><tr><th>社團</th><th>商品</th><th>規則</th><th>最後發文</th><th>下一次</th><th>操作</th></tr></thead>
+        <tbody id="groupTableBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="section-title">4. 第一版操作方式</div>
+  <section class="card">
+    <div class="grid g3">
+      <div><span class="chip">步驟 1</span><h3>選商品</h3><p class="muted">房仲或美髮，按「產生全部平台文案」。</p></div>
+      <div><span class="chip">步驟 2</span><h3>FB 找社團</h3><p class="muted">一鍵開搜尋，把可發文的社團加入清單。</p></div>
+      <div><span class="chip">步驟 3</span><h3>每天照清單發</h3><p class="muted">按「下一個待發社團」，複製文案，發完按「標記已發」。</p></div>
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+  const SALES_URL = 'https://pomodoro-app-eight-rouge.vercel.app/image-packs';
+  const PRODUCTS = {
+    realEstate: {
+      id:'realEstate', short:'房仲', name:'RXV 房仲帶看宣傳圖片包', price:99, count:'83 張', category:'房仲／房地產',
+      audience:'房仲業務、不動產經紀人、房地產社群經營者',
+      uses:['住宅帶看','成交交屋','公設社區','看屋驗屋','生活機能','房仲社群貼文'],
+      pain:'每天要發房屋貼文，卻常常卡在「沒有合適配圖」？',
+      search:['房仲交流','房地產業務','不動產經紀人','房仲行銷','房仲素材','房地產社群經營','房仲業務交流 台灣']
+    },
+    hair: {
+      id:'hair', short:'美髮', name:'RXV 美髮沙龍職業圖片包', price:99, count:'多場景', category:'美髮／沙龍',
+      audience:'髮型設計師、美髮工作室、髮廊店家、沙龍經營者',
+      uses:['髮型諮詢','洗護','剪髮','染燙','完成造型','預約宣傳','沙龍日常'],
+      pain:'髮廊每天想發作品、預約或活動，卻沒有足夠的商用情境圖？',
+      search:['美髮設計師交流','髮型設計師','髮廊經營','美髮創業','美髮行銷','沙龍經營','美髮工作室 台灣']
+    }
+  };
+  const PLATFORMS = [
+    {id:'fbGroup',name:'FB 社團'}, {id:'fbPage',name:'FB 個人／粉專'}, {id:'threads',name:'Threads'},
+    {id:'instagram',name:'Instagram'}, {id:'pinterest',name:'Pinterest'}, {id:'tiktok',name:'TikTok'}, {id:'line',name:'LINE'}
+  ];
+  const STORE_KEY='rxv_small_pack_promoter_v1';
+  const state = loadState();
+
+  const $ = (id) => document.getElementById(id);
+  const esc = (s='') => String(s).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+  const today = () => new Date().toISOString().slice(0,10);
+  function addDays(dateStr, days){ if(!dateStr) return ''; const d=new Date(dateStr+'T00:00:00'); d.setDate(d.getDate()+Number(days||7)); return d.toISOString().slice(0,10); }
+  function loadState(){ try { return Object.assign({groups:[],posted:0,selectedProduct:'realEstate'}, JSON.parse(localStorage.getItem(STORE_KEY)||'{}')); } catch { return {groups:[],posted:0,selectedProduct:'realEstate'}; } }
+  function saveState(){ localStorage.setItem(STORE_KEY, JSON.stringify(state)); renderStats(); }
+  function currentProduct(){ return PRODUCTS[$('productSelect').value] || PRODUCTS.realEstate; }
+
+  function buildCopy(platform, p, tone, variant){
+    const useText=p.uses.slice(0,variant==='3'?5:4).join('、');
+    const softOpen = tone==='soft' ? `分享一個最近整理好的 ${p.category} 圖片包。` : tone==='professional' ? `如果你是${p.audience}，這包是直接針對日常宣傳情境整理的。` : p.pain;
+    const urgency = '目前單包 NT$99，如有價格調整以商品頁為準。';
+    const common = `${softOpen}\n\n${p.name}\n${p.count}｜NT$${p.price}\n\n可用情境：${useText}\n可加字、Logo、電話、CTA 後用於網站、社群與廣告。\n\n${urgency}\n商品頁：${SALES_URL}`;
+    const hashtags = p.id==='realEstate' ? '#房仲 #房地產 #不動產 #房仲行銷 #社群素材 #商用圖片 #RXV' : '#美髮 #髮型設計師 #髮廊 #沙龍 #美髮行銷 #商用圖片 #RXV';
+    if(platform==='fbGroup') return `${common}\n\n※ 若社團不允許商業推廣請勿張貼；也可先留言詢問是否有人需要。\n${hashtags}`;
+    if(platform==='fbPage') return `📌 ${p.name}\n\n${common}\n\n${hashtags}`;
+    if(platform==='threads') return `${p.pain}\n\n${p.name}｜NT$${p.price}\n${useText}\n\n需要的人可看商品頁：${SALES_URL}\n${hashtags}`;
+    if(platform==='instagram') return `📷 ${p.name}\n\n${p.pain}\n\n✔ ${useText}\n✔ 可加字／Logo／電話後商用\n✔ NT$${p.price}\n\n商品頁：${SALES_URL}\n\n${hashtags}`;
+    if(platform==='pinterest') return `${p.name}｜${p.category}商用圖片素材\n\n${p.count}、NT$${p.price}。適合${useText}，可用於社群貼文、網站 Banner、廣告素材與宣傳設計。\n\n${SALES_URL}\n\n關鍵字：${p.search.slice(0,5).join('、')}`;
+    if(platform==='tiktok') return `${p.pain}\n${p.name} NT$${p.price}\n${useText}\n商品頁：${SALES_URL}\n${hashtags} #短影音素材`;
+    if(platform==='line') return `【${p.name}】\n${p.count}｜NT$${p.price}\n${useText}\n需要可直接看：${SALES_URL}`;
+    return common;
+  }
+
+  function renderCopies(){
+    const p=currentProduct(), tone=$('toneSelect').value, variant=$('variantSelect').value;
+    $('copyGrid').innerHTML = PLATFORMS.map(pl => {
+      const text=buildCopy(pl.id,p,tone,variant);
+      return `<article class="card"><div class="row"><h3 style="margin:0">${esc(pl.name)}</h3><span id="status-${pl.id}" class="copy-ok right"></span></div><textarea id="copy-${pl.id}">${esc(text)}</textarea><div class="row" style="margin-top:10px"><button class="btn primary" data-copy="${pl.id}">一鍵複製</button>${platformOpenButton(pl.id)}</div></article>`;
+    }).join('');
+    document.querySelectorAll('[data-copy]').forEach(btn => btn.addEventListener('click', () => copyText($('copy-'+btn.dataset.copy).value, 'status-'+btn.dataset.copy)));
+    document.querySelectorAll('[data-open-platform]').forEach(btn => btn.addEventListener('click', () => openPlatform(btn.dataset.openPlatform)));
+  }
+
+  function platformOpenButton(id){
+    const names={fbGroup:'開 Facebook',fbPage:'開 Facebook',threads:'開 Threads',instagram:'開 Instagram',pinterest:'開 Pinterest',tiktok:'開 TikTok',line:'開 LINE'};
+    return `<button class="btn gray" data-open-platform="${id}">${names[id]||'開啟平台'}</button>`;
+  }
+  function openPlatform(id){
+    const urls={fbGroup:'https://www.facebook.com/groups/feed/',fbPage:'https://www.facebook.com/',threads:'https://www.threads.net/',instagram:'https://www.instagram.com/',pinterest:'https://www.pinterest.com/',tiktok:'https://www.tiktok.com/',line:'https://line.me/ti/p/~ang22899'};
+    window.open(urls[id]||SALES_URL,'_blank','noopener');
+  }
+  async function copyText(text,statusId){
+    let ok=false;
+    try { await navigator.clipboard.writeText(text); ok=true; } catch {}
+    if(!ok){ const ta=document.createElement('textarea'); ta.value=text; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); try{ok=document.execCommand('copy');}catch{} ta.remove(); }
+    const el=$(statusId); if(el){ el.textContent=ok?'已複製':''; setTimeout(()=>el.textContent='',1600); }
+    return ok;
+  }
+
+  function renderKeywords(){ const p=currentProduct(); $('keywordChips').innerHTML=p.search.map(k=>`<button class="btn gray mini" data-keyword="${esc(k)}">${esc(k)}</button>`).join(''); document.querySelectorAll('[data-keyword]').forEach(b=>b.onclick=()=>{$('customSearchKeyword').value=b.dataset.keyword;}); }
+  function searchKeyword(){ return $('customSearchKeyword').value.trim() || currentProduct().search[0]; }
+  function fbSearch(){ const q=encodeURIComponent(searchKeyword()); window.open(`https://www.facebook.com/search/groups/?q=${q}`,'_blank','noopener'); }
+  function googleSearch(){ const q=encodeURIComponent(`site:facebook.com/groups ${searchKeyword()}`); window.open(`https://www.google.com/search?q=${q}`,'_blank','noopener'); }
+
+  function renderGroupProductOptions(){
+    const html=Object.values(PRODUCTS).map(p=>`<option value="${p.id}">${esc(p.name)}｜NT$${p.price}</option>`).join('');
+    $('groupProduct').innerHTML=html;
+  }
+  function addGroup(){
+    const name=$('groupName').value.trim(), url=$('groupUrl').value.trim();
+    if(!name||!url){ alert('請先填社團名稱與網址。'); return; }
+    state.groups.push({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),name,url,product:$('groupProduct').value,rule:$('groupRule').value,interval:Number($('groupInterval').value||7),note:$('groupNote').value.trim(),lastPosted:''});
+    $('groupName').value=''; $('groupUrl').value=''; $('groupNote').value=''; saveState(); renderGroups();
+  }
+  function ruleLabel(v){ return ({unknown:'待確認',allowed:'允許推廣',limited:'有限制',blocked:'禁止推廣'})[v]||v; }
+  function dueDate(g){ return g.lastPosted ? addDays(g.lastPosted,g.interval) : today(); }
+  function isDue(g){ return g.rule!=='blocked' && (!g.lastPosted || dueDate(g)<=today()); }
+  function renderGroups(){
+    const body=$('groupTableBody');
+    if(!state.groups.length){ body.innerHTML='<tr><td colspan="6" class="muted">尚未加入社團。先用上方搜尋助手找 3～5 個社團測試。</td></tr>'; renderStats(); return; }
+    body.innerHTML=state.groups.map(g=>`<tr><td><b>${esc(g.name)}</b><div class="mini muted">${esc(g.note||'')}</div></td><td>${esc(PRODUCTS[g.product]?.short||g.product)}</td><td>${esc(ruleLabel(g.rule))}</td><td>${esc(g.lastPosted||'尚未')}</td><td>${esc(dueDate(g))}${isDue(g)?' <span class="copy-ok">可發</span>':''}</td><td><div class="row"><button class="btn gray mini" data-open-group="${g.id}">開啟</button><button class="btn mini" data-copy-group="${g.id}">複製文案</button><button class="btn primary mini" data-posted-group="${g.id}">標記已發</button><button class="btn danger mini" data-delete-group="${g.id}">刪除</button></div></td></tr>`).join('');
+    document.querySelectorAll('[data-open-group]').forEach(b=>b.onclick=()=>{const g=findGroup(b.dataset.openGroup); if(g)window.open(g.url,'_blank','noopener');});
+    document.querySelectorAll('[data-copy-group]').forEach(b=>b.onclick=async()=>{const g=findGroup(b.dataset.copyGroup); if(!g)return; const p=PRODUCTS[g.product]||currentProduct(); await copyText(buildCopy('fbGroup',p,$('toneSelect').value,$('variantSelect').value),'globalCopyStatus');});
+    document.querySelectorAll('[data-posted-group]').forEach(b=>b.onclick=()=>markPosted(b.dataset.postedGroup));
+    document.querySelectorAll('[data-delete-group]').forEach(b=>b.onclick=()=>deleteGroup(b.dataset.deleteGroup));
+    renderStats();
+  }
+  function findGroup(id){ return state.groups.find(g=>g.id===id); }
+  function markPosted(id){ const g=findGroup(id); if(!g)return; g.lastPosted=today(); state.posted=(state.posted||0)+1; saveState(); renderGroups(); }
+  function deleteGroup(id){ const g=findGroup(id); if(!g)return; if(confirm(`刪除社團清單：${g.name}？\n只刪本機清單，不會退出 Facebook 社團。`)){ state.groups=state.groups.filter(x=>x.id!==id); saveState(); renderGroups(); } }
+  async function nextDueGroup(){
+    const p=currentProduct();
+    const candidates=state.groups.filter(g=>g.product===p.id && isDue(g) && g.rule!=='blocked');
+    if(!candidates.length){ alert(`目前沒有「${p.short}」可發的社團。可先新增社團，或等待下次發文日期。`); return; }
+    const g=candidates[0]; await copyText(buildCopy('fbGroup',p,$('toneSelect').value,$('variantSelect').value),'globalCopyStatus'); window.open(g.url,'_blank','noopener');
+  }
+
+  function download(name,text,type='application/json'){ const blob=new Blob([text],{type}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000); }
+  function exportJson(){ download(`RXV小包推廣器備份_${today()}.json`, JSON.stringify(state,null,2)); }
+  function exportCsv(){
+    const rows=[['社團名稱','網址','商品','規則','最後發文','間隔天數','備註'],...state.groups.map(g=>[g.name,g.url,PRODUCTS[g.product]?.name||g.product,ruleLabel(g.rule),g.lastPosted,g.interval,g.note])];
+    const csv='\ufeff'+rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n'); download(`RXV_FB社團清單_${today()}.csv`,csv,'text/csv;charset=utf-8');
+  }
+  function importJson(file){ const reader=new FileReader(); reader.onload=()=>{ try{ const obj=JSON.parse(String(reader.result||'{}')); if(!Array.isArray(obj.groups))throw new Error(); Object.assign(state,obj); saveState(); renderGroups(); alert('匯入完成。'); }catch{alert('JSON 格式不正確。');} }; reader.readAsText(file,'utf-8'); }
+
+  function renderStats(){ $('statGroups').textContent=state.groups.length; $('statPending').textContent=state.groups.filter(isDue).length; $('statPosted').textContent=state.posted||0; $('statProduct').textContent=currentProduct().short; }
+  function syncProduct(){ state.selectedProduct=$('productSelect').value; saveState(); renderCopies(); renderKeywords(); $('groupProduct').value=state.selectedProduct; }
+
+  function init(){
+    $('productSelect').innerHTML=Object.values(PRODUCTS).map(p=>`<option value="${p.id}">${esc(p.name)}｜NT$${p.price}</option>`).join('');
+    $('productSelect').value=state.selectedProduct in PRODUCTS ? state.selectedProduct : 'realEstate';
+    renderGroupProductOptions(); $('groupProduct').value=$('productSelect').value;
+    $('productSelect').onchange=syncProduct; $('toneSelect').onchange=renderCopies; $('variantSelect').onchange=renderCopies;
+    $('generateAllBtn').onclick=renderCopies; $('openProductBtn').onclick=()=>window.open(SALES_URL,'_blank','noopener');
+    $('facebookSearchBtn').onclick=fbSearch; $('googleSearchBtn').onclick=googleSearch; $('addGroupBtn').onclick=addGroup; $('nextGroupBtn').onclick=nextDueGroup;
+    $('exportJsonBtn').onclick=exportJson; $('exportCsvBtn').onclick=exportCsv; $('importJsonInput').onchange=e=>e.target.files?.[0]&&importJson(e.target.files[0]);
+    renderCopies(); renderKeywords(); renderGroups(); renderStats();
+  }
+  init();
+})();
+</script>
+</body>
+</html>
