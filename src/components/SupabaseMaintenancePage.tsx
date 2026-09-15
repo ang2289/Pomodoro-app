@@ -1,10 +1,19 @@
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
+import ImageToVideo from '../pages/tools/ImageToVideo'
 
 type SupabaseMaintenancePageProps = {
   admin?: boolean
 }
 
 export default function SupabaseMaintenancePage({ admin = false }: SupabaseMaintenancePageProps) {
+  const location = useLocation()
+
+  // 圖片轉短影音已改為「瀏覽器本機產生 MP4」：
+  // 不使用 Supabase、不中轉圖片／MP3／影片，因此即使 Supabase 維護中也可公開使用。
+  if (location.pathname === '/tools/image-to-video') {
+    return <ImageToVideo />
+  }
+
   return (
     <main className="mx-auto flex min-h-screen max-w-xl items-center px-4 py-16">
       <section className="w-full rounded-2xl border border-amber-200 bg-amber-50 p-7 text-center shadow-sm">
