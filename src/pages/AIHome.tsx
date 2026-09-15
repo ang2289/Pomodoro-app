@@ -37,9 +37,9 @@ const tools: ToolDef[] = [
   {
     id: 'ai-short-video',
     icon: '🎬',
-    title: 'AI 短影音',
-    desc: '圖片轉短影片，適合社群內容',
-    category: 'AI工具',
+    title: '一鍵短影音製作器',
+    desc: '1～12張圖片＋MP3，本機直接產生 MP4；支援 Reels、TikTok、Shorts',
+    category: '熱門工具',
     href: '/tools/image-to-video',
   },
   {
@@ -175,11 +175,11 @@ export default function AIHome() {
         {/* 2. 快速開始 */}
         <div className="mx-auto mt-8 w-full max-w-lg">
           <Link
-            to="/pomodoro"
+            to="/tools/image-to-video"
             className="flex w-full flex-col items-center justify-center rounded-2xl bg-blue-600 px-6 py-5 text-center text-white shadow-lg transition hover:bg-blue-700 active:scale-[0.99]"
           >
-            <span className="text-lg font-bold">開始專注</span>
-            <span className="mt-1 text-sm text-blue-100">快速進入番茄鐘</span>
+            <span className="text-lg font-bold">🎬 一鍵做短影音</span>
+            <span className="mt-1 text-sm text-blue-100">選圖片＋MP3 → 自動產生 MP4</span>
           </Link>
         </div>
 
@@ -193,7 +193,7 @@ export default function AIHome() {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="搜尋工具（例如：番茄鐘、貼圖、摘要）"
+            placeholder="搜尋工具（例如：短影音、貼圖、摘要）"
             className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             autoComplete="off"
           />
