@@ -1,0 +1,11 @@
+RXV v3.5 建立方式：
+1. 確認 v3.4 工具已在本機。
+2. 執行 node scripts/build-rxv-small-pack-video-promoter-v3-5.mjs
+3. 啟動 .\RXV-小包短影音推廣器-v3.5.cmd
+
+v3.5 新增：
+- 每張圖片使用不同用途/利益點文字
+- 最後 2 秒成交 CTA
+- CTA 可顯示商品網址與 LINE ID
+- 保留智慧滿版、MP3 背景音樂、音量、淡入淡出
+- MP4 繼續輸出 D:\RXV-短影音輸出
