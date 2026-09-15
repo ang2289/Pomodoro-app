@@ -1,13 +1,10 @@
 import React, { useMemo, useRef, useState } from "react";
-import { FFmpeg } from "@ffmpeg/ffmpeg";
-import { fetchFile, toBlobURL } from "@ffmpeg/util";
 
 const MAX_IMAGES = 12;
-const CORE = "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd";
 type Ratio = "9:16" | "1:1" | "16:9";
 type Quality = "720p" | "1080p";
 type Fit = "contain" | "cover";
-type Stage = "idle" | "loading" | "preparing" | "encoding" | "done" | "error";
+type Stage = "idle" | "preparing" | "encoding" | "done" | "error";
 type Item = { id: string; file: File; url: string };
 
 const ratioInfo: Record<Ratio, { label: string; platforms: string }> = {
@@ -23,32 +20,49 @@ function sizeOf(ratio: Ratio, quality: Quality) {
   return high ? [1080, 1080] : [720, 720];
 }
 
-function toJpeg(file: File, width: number, height: number, fit: Fit): Promise<Blob> {
-  return createImageBitmap(file).then((bitmap) => {
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("瀏覽器無法處理圖片");
-    ctx.fillStyle = "#0f172a";
-    ctx.fillRect(0, 0, width, height);
-    const scale = fit === "cover"
-      ? Math.max(width / bitmap.width, height / bitmap.height)
-      : Math.min(width / bitmap.width, height / bitmap.height);
-    const w = Math.round(bitmap.width * scale);
-    const h = Math.round(bitmap.height * scale);
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = "high";
-    ctx.drawImage(bitmap, Math.round((width - w) / 2), Math.round((height - h) / 2), w, h);
-    bitmap.close();
-    return new Promise<Blob>((resolve, reject) =>
-      canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("圖片轉換失敗")), "image/jpeg", 0.9),
-    );
-  });
+function pickMp4Mime(hasAudio: boolean) {
+  const candidates = hasAudio
+    ? [
+        'video/mp4;codecs="avc1.42E01E,mp4a.40.2"',
+        "video/mp4",
+      ]
+    : [
+        'video/mp4;codecs="avc1.42E01E"',
+        "video/mp4",
+      ];
+  return candidates.find((mime) => MediaRecorder.isTypeSupported(mime)) || "";
+}
+
+function drawBitmap(
+  ctx: CanvasRenderingContext2D,
+  bitmap: ImageBitmap,
+  width: number,
+  height: number,
+  fit: Fit,
+  alpha = 1,
+) {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = "#0f172a";
+  ctx.fillRect(0, 0, width, height);
+  const scale = fit === "cover"
+    ? Math.max(width / bitmap.width, height / bitmap.height)
+    : Math.min(width / bitmap.width, height / bitmap.height);
+  const w = Math.round(bitmap.width * scale);
+  const h = Math.round(bitmap.height * scale);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(bitmap, Math.round((width - w) / 2), Math.round((height - h) / 2), w, h);
+  ctx.restore();
+}
+
+async function createBitmaps(files: File[]) {
+  const bitmaps: ImageBitmap[] = [];
+  for (const file of files) bitmaps.push(await createImageBitmap(file));
+  return bitmaps;
 }
 
 export default function ImageToVideo() {
-  const ffmpegRef = useRef<FFmpeg | null>(null);
   const [images, setImages] = useState<Item[]>([]);
   const [purpose, setPurpose] = useState("通用短影音");
   const [ratio, setRatio] = useState<Ratio>("9:16");
@@ -62,11 +76,12 @@ export default function ImageToVideo() {
   const [progress, setProgress] = useState(0);
   const [message, setMessage] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
+  const cancelRef = useRef<() => void>(() => {});
 
   const duration = custom ? Math.min(30, Math.max(5, seconds)) : seconds;
   const [width, height] = sizeOf(ratio, quality);
   const each = images.length ? duration / images.length : 0;
-  const busy = stage === "loading" || stage === "preparing" || stage === "encoding";
+  const busy = stage === "preparing" || stage === "encoding";
   const outputName = useMemo(() => `RXV_${ratio.replace(":", "x")}_${duration}s.mp4`, [ratio, duration]);
 
   const clearResult = () => {
@@ -113,94 +128,137 @@ export default function ImageToVideo() {
     });
   };
 
-  const getFfmpeg = async () => {
-    if (ffmpegRef.current) return ffmpegRef.current;
-    setStage("loading");
-    setMessage("第一次使用會載入免費影片引擎，請稍候。");
-    let ffmpeg = new FFmpeg();
-    const onProgress = ({ progress: p }: { progress: number }) => {
-      if (Number.isFinite(p)) setProgress(Math.min(99, Math.max(0, Math.round(p * 100))));
-    };
-    ffmpeg.on("progress", onProgress);
-    try {
-      await ffmpeg.load({
-        coreURL: await toBlobURL(`${CORE}/ffmpeg-core.js`, "text/javascript"),
-        wasmURL: await toBlobURL(`${CORE}/ffmpeg-core.wasm`, "application/wasm"),
-      });
-    } catch {
-      try { ffmpeg.terminate(); } catch { /* noop */ }
-      ffmpeg = new FFmpeg();
-      ffmpeg.on("progress", onProgress);
-      await ffmpeg.load({
-        coreURL: "/ffmpeg-core/ffmpeg-core.js",
-        wasmURL: "/ffmpeg-core/ffmpeg-core.wasm",
-      });
-    }
-    ffmpegRef.current = ffmpeg;
-    return ffmpeg;
-  };
-
   const generate = async () => {
     if (!images.length) {
       setStage("error");
       setMessage("請先選圖片。");
       return;
     }
+    if (typeof MediaRecorder === "undefined") {
+      setStage("error");
+      setMessage("目前瀏覽器不支援影片錄製，請改用最新版 Edge 或 Chrome。");
+      return;
+    }
+
     clearResult();
-    setProgress(1);
+    setStage("preparing");
+    setProgress(2);
+    setMessage("正在準備圖片與音樂…");
+
+    let bitmaps: ImageBitmap[] = [];
+    let audioContext: AudioContext | null = null;
+    let audioSource: AudioBufferSourceNode | null = null;
+    let timer = 0;
+    let stopped = false;
+
     try {
-      const ffmpeg = await getFfmpeg();
-      setStage("preparing");
-      setMessage(`正在整理 ${images.length} 張圖片…`);
-      const names: string[] = [];
-      for (let i = 0; i < images.length; i++) {
-        const blob = await toJpeg(images[i].file, width, height, fit);
-        const name = `img_${i}.jpg`;
-        names.push(name);
-        await ffmpeg.writeFile(name, await fetchFile(blob));
-        setProgress(Math.round(((i + 1) / images.length) * 18));
+      const mimeType = pickMp4Mime(Boolean(music));
+      if (!mimeType) throw new Error("這個瀏覽器目前不支援直接輸出 MP4，請使用最新版 Edge 或 Chrome。");
+
+      bitmaps = await createBitmaps(images.map((x) => x.file));
+      setProgress(8);
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d", { alpha: false });
+      if (!ctx) throw new Error("瀏覽器無法建立影片畫布。");
+
+      drawBitmap(ctx, bitmaps[0], width, height, fit);
+      const canvasStream = canvas.captureStream(15);
+      const tracks: MediaStreamTrack[] = [...canvasStream.getVideoTracks()];
+
+      if (music) {
+        audioContext = new AudioContext();
+        await audioContext.resume();
+        const decoded = await audioContext.decodeAudioData(await music.arrayBuffer());
+        const dest = audioContext.createMediaStreamDestination();
+        const gain = audioContext.createGain();
+        gain.gain.value = Math.max(0, Math.min(1, volume / 100));
+        audioSource = audioContext.createBufferSource();
+        audioSource.buffer = decoded;
+        audioSource.loop = true;
+        audioSource.connect(gain);
+        gain.connect(dest);
+        tracks.push(...dest.stream.getAudioTracks());
       }
-      const per = duration / images.length;
-      let list = "";
-      names.forEach((name) => {
-        list += `file '${name}'\nduration ${per.toFixed(3)}\n`;
+
+      const stream = new MediaStream(tracks);
+      const chunks: Blob[] = [];
+      const recorder = new MediaRecorder(stream, {
+        mimeType,
+        videoBitsPerSecond: quality === "1080p" ? 5_000_000 : 2_500_000,
+        audioBitsPerSecond: music ? 128_000 : undefined,
       });
-      list += `file '${names[names.length - 1]}'\n`;
-      await ffmpeg.writeFile("input.txt", list);
-      if (music) await ffmpeg.writeFile("bgm.mp3", await fetchFile(music));
+
+      const done = new Promise<Blob>((resolve, reject) => {
+        recorder.ondataavailable = (event) => {
+          if (event.data.size > 0) chunks.push(event.data);
+        };
+        recorder.onerror = (event) => reject((event as any).error || new Error("影片錄製失敗"));
+        recorder.onstop = () => resolve(new Blob(chunks, { type: "video/mp4" }));
+      });
 
       setStage("encoding");
-      setMessage("正在產生 MP4，手機請不要關閉頁面。");
-      const inputs = ["-f", "concat", "-safe", "0", "-i", "input.txt"];
-      if (music) inputs.push("-stream_loop", "-1", "-i", "bgm.mp3");
-      const maps = music ? ["-map", "0:v:0", "-map", "1:a:0"] : ["-map", "0:v:0", "-an"];
-      const audio = music
-        ? ["-c:a", "aac", "-b:a", "128k", "-af", `volume=${(volume / 100).toFixed(2)},afade=t=out:st=${Math.max(duration - 1, 0)}:d=1`]
-        : [];
-      const tail = [
-        "-vf", `fps=30,format=yuv420p,fade=t=in:st=0:d=.25,fade=t=out:st=${Math.max(duration - 0.5, 0)}:d=.5`,
-        "-r", "30", "-pix_fmt", "yuv420p", ...audio,
-        "-t", String(duration), "-shortest", "-movflags", "+faststart",
-      ];
-      let out = "output.mp4";
-      try {
-        await ffmpeg.exec([...inputs, ...maps, ...tail, "-c:v", "libx264", "-preset", "ultrafast", "-crf", "24", out]);
-      } catch {
-        out = "output2.mp4";
-        await ffmpeg.exec([...inputs, ...maps, ...tail, "-c:v", "mpeg4", "-q:v", "5", out]);
-      }
-      const data = (await ffmpeg.readFile(out)) as Uint8Array;
-      const copy = new Uint8Array(data.length);
-      copy.set(data);
-      setVideoUrl(URL.createObjectURL(new Blob([copy], { type: "video/mp4" })));
+      setProgress(10);
+      setMessage(`正在產生 ${duration} 秒 MP4；這版採即時生成，大約需要 ${duration} 秒，請保持此分頁開啟。`);
+
+      const totalMs = duration * 1000;
+      const perMs = totalMs / bitmaps.length;
+      const transitionMs = Math.min(300, perMs * 0.2);
+      const start = performance.now();
+
+      recorder.start(1000);
+      audioSource?.start(0);
+
+      const renderFrame = () => {
+        if (stopped) return;
+        const elapsed = Math.min(totalMs, performance.now() - start);
+        const rawIndex = Math.min(bitmaps.length - 1, Math.floor(elapsed / perMs));
+        const local = elapsed - rawIndex * perMs;
+        const nextIndex = Math.min(bitmaps.length - 1, rawIndex + 1);
+
+        drawBitmap(ctx, bitmaps[rawIndex], width, height, fit);
+        if (nextIndex !== rawIndex && local > perMs - transitionMs) {
+          const alpha = Math.min(1, (local - (perMs - transitionMs)) / transitionMs);
+          drawBitmap(ctx, bitmaps[nextIndex], width, height, fit, alpha);
+        }
+
+        setProgress(Math.min(99, 10 + Math.round((elapsed / totalMs) * 89)));
+        if (elapsed >= totalMs) {
+          stopped = true;
+          try { audioSource?.stop(); } catch { /* noop */ }
+          recorder.stop();
+          return;
+        }
+        timer = window.setTimeout(renderFrame, 1000 / 15);
+      };
+
+      cancelRef.current = () => {
+        stopped = true;
+        window.clearTimeout(timer);
+        try { audioSource?.stop(); } catch { /* noop */ }
+        if (recorder.state !== "inactive") recorder.stop();
+      };
+
+      renderFrame();
+      const blob = await done;
+      if (!blob.size) throw new Error("影片檔案為空，請再試一次。");
+      const url = URL.createObjectURL(blob);
+      setVideoUrl(url);
       setProgress(100);
       setStage("done");
-      setMessage(`完成：${images.length} 張、${duration} 秒、${width}×${height}。`);
+      setMessage(`完成：${images.length} 張、${duration} 秒、${width}×${height}，可直接下載 MP4。`);
     } catch (error) {
       console.error(error);
       setStage("error");
       setProgress(0);
-      setMessage(error instanceof Error ? `產生失敗：${error.message}` : "產生失敗，請改用 720p 或減少圖片再試。");
+      const text = error instanceof Error ? error.message : String(error || "未知錯誤");
+      setMessage(`產生失敗：${text}`);
+    } finally {
+      window.clearTimeout(timer);
+      bitmaps.forEach((bitmap) => bitmap.close());
+      try { await audioContext?.close(); } catch { /* noop */ }
     }
   };
 
@@ -213,7 +271,7 @@ export default function ImageToVideo() {
   };
 
   const stageText: Record<Stage, string> = {
-    idle: "準備中", loading: "載入引擎", preparing: "整理圖片", encoding: "產生 MP4", done: "完成", error: "需要調整",
+    idle: "準備中", preparing: "整理素材", encoding: "產生 MP4", done: "完成", error: "需要調整",
   };
 
   return (
