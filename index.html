@@ -208,6 +208,13 @@
               ) {
                 nextText = `${countLabel} 張高畫質圖片完整版，限時 NT$199；包含房仲、美髮、美甲、美容 SPA、牙醫等職業主題，以及食物、商業、花卉、社群、桌布等分類；另提供部分圖片免費試用。`;
               } else if (
+                text.includes("張高畫質圖片完整版，限時 NT$199；包含房仲")
+              ) {
+                nextText = text.replace(
+                  /^[\d,]+\s*張高畫質圖片完整版/,
+                  `${countLabel} 張高畫質圖片完整版`,
+                );
+              } else if (
                 text.trim() === "NT$399" &&
                 belongsToImageLibraryCard(node)
               ) {
@@ -215,13 +222,21 @@
               }
             }
 
-            if (
-              path === "/" &&
-              text.includes(
-                "原價 NT$399，首波限時優惠 NT$199；涵蓋食物、商業、花卉、社群、桌布、節慶與更多分類，另提供部分圖片免費試用。",
-              )
-            ) {
-              nextText = `${countLabel} 張高畫質圖片素材，原價 NT$399，限時優惠 NT$199；包含房仲、美髮、美甲、美容 SPA、牙醫等職業主題，以及食物、商業、花卉、社群、桌布、節慶等更多分類；另提供部分圖片免費試用。`;
+            if (path === "/") {
+              if (
+                text.includes(
+                  "原價 NT$399，首波限時優惠 NT$199；涵蓋食物、商業、花卉、社群、桌布、節慶與更多分類，另提供部分圖片免費試用。",
+                )
+              ) {
+                nextText = `${countLabel} 張高畫質圖片素材，原價 NT$399，限時優惠 NT$199；包含房仲、美髮、美甲、美容 SPA、牙醫等職業主題，以及食物、商業、花卉、社群、桌布、節慶等更多分類；另提供部分圖片免費試用。`;
+              } else if (
+                text.includes("張高畫質圖片素材，原價 NT$399，限時優惠 NT$199；包含房仲")
+              ) {
+                nextText = text.replace(
+                  /^[\d,]+\s*張高畫質圖片素材/,
+                  `${countLabel} 張高畫質圖片素材`,
+                );
+              }
             }
 
             if (nextText !== text) node.nodeValue = nextText;
