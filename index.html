@@ -143,6 +143,168 @@
       })();
     </script>
 
+    <!-- RXV 2026-09-16：首頁與工具入口自動同步圖片總數與限時價格。 -->
+    <script>
+      (() => {
+        const FALLBACK_COUNT = 2239;
+        let latestCount = FALLBACK_COUNT;
+
+        const cleanEnvValue = (value) => {
+          const text = String(value || "").trim();
+          if (
+            !text ||
+            text.includes("%VITE_") ||
+            text === "undefined" ||
+            text === "null"
+          ) {
+            return "";
+          }
+          return text;
+        };
+
+        const r2Base = cleanEnvValue("%VITE_PUBLIC_R2_URL%").replace(/\/$/, "");
+        const configuredManifest = cleanEnvValue("%VITE_IMAGE_MANIFEST_URL%");
+        const manifestUrl = r2Base
+          ? `${r2Base}/catalog/images-public.json`
+          : configuredManifest || "/data/images-public.json";
+
+        const formatCount = () => latestCount.toLocaleString("zh-TW");
+
+        const belongsToImageLibraryCard = (textNode) => {
+          let element = textNode.parentElement;
+          for (
+            let depth = 0;
+            element && depth < 10;
+            depth += 1, element = element.parentElement
+          ) {
+            if ((element.textContent || "").includes("高畫質圖片素材庫")) {
+              return true;
+            }
+          }
+          return false;
+        };
+
+        const patchEntryCopy = () => {
+          const path = window.location.pathname;
+          if (path !== "/" && path !== "/tools") return;
+          if (!document.body) return;
+
+          const countLabel = formatCount();
+          const walker = document.createTreeWalker(
+            document.body,
+            NodeFilter.SHOW_TEXT,
+          );
+
+          let node;
+          while ((node = walker.nextNode())) {
+            const text = node.nodeValue || "";
+            let nextText = text;
+
+            if (path === "/tools") {
+              if (
+                text.includes(
+                  "1,583+ 張高畫質圖片完整版 NT$399，涵蓋食物、商業、花卉、社群、桌布等分類；另提供部分圖片免費試用。",
+                )
+              ) {
+                nextText = `${countLabel} 張高畫質圖片完整版，限時 NT$199；包含房仲、美髮、美甲、美容 SPA、牙醫等職業主題，以及食物、商業、花卉、社群、桌布等分類；另提供部分圖片免費試用。`;
+              } else if (
+                text.trim() === "NT$399" &&
+                belongsToImageLibraryCard(node)
+              ) {
+                nextText = text.replace("NT$399", "NT$199");
+              }
+            }
+
+            if (
+              path === "/" &&
+              text.includes(
+                "原價 NT$399，首波限時優惠 NT$199；涵蓋食物、商業、花卉、社群、桌布、節慶與更多分類，另提供部分圖片免費試用。",
+              )
+            ) {
+              nextText = `${countLabel} 張高畫質圖片素材，原價 NT$399，限時優惠 NT$199；包含房仲、美髮、美甲、美容 SPA、牙醫等職業主題，以及食物、商業、花卉、社群、桌布、節慶等更多分類；另提供部分圖片免費試用。`;
+            }
+
+            if (nextText !== text) node.nodeValue = nextText;
+          }
+        };
+
+        const countVisibleImages = (raw) => {
+          const manifest = Array.isArray(raw)
+            ? { images: raw, categories: [] }
+            : raw || {};
+          const images = Array.isArray(manifest.images) ? manifest.images : [];
+          const categories = Array.isArray(manifest.categories)
+            ? manifest.categories
+            : [];
+          const hiddenCategoryNames = new Set(["本機 WebP 測試"]);
+          const hiddenCategoryIds = new Set(
+            categories
+              .filter((category) =>
+                hiddenCategoryNames.has(String(category?.name || "").trim()),
+              )
+              .map((category) => String(category?.id || "").trim())
+              .filter(Boolean),
+          );
+
+          return images.filter((image) => {
+            if (!image?.id) return false;
+            const categoryId = String(
+              image.category_id ||
+                image.category_slug ||
+                image.category_name ||
+                image.category ||
+                "",
+            ).trim();
+            const categoryName = String(
+              image.category_name || image.category || "",
+            ).trim();
+
+            return (
+              !hiddenCategoryIds.has(categoryId) &&
+              !hiddenCategoryNames.has(categoryId) &&
+              !hiddenCategoryNames.has(categoryName)
+            );
+          }).length;
+        };
+
+        const start = () => {
+          patchEntryCopy();
+
+          const observer = new MutationObserver(patchEntryCopy);
+          observer.observe(document.body, {
+            childList: true,
+            subtree: true,
+            characterData: true,
+          });
+
+          fetch(manifestUrl, { cache: "no-cache" })
+            .then((response) => {
+              if (!response.ok) throw new Error(`HTTP ${response.status}`);
+              return response.json();
+            })
+            .then((raw) => {
+              const count = countVisibleImages(raw);
+              if (count > 0) {
+                latestCount = count;
+                patchEntryCopy();
+              }
+            })
+            .catch((error) => {
+              console.warn(
+                "圖片入口數量同步失敗，暫時使用備用數量",
+                error,
+              );
+            });
+        };
+
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", start, { once: true });
+        } else {
+          start();
+        }
+      })();
+    </script>
+
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
