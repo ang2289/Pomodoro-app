@@ -76,6 +76,73 @@
     <!-- Affiliates.One：先暫停首頁自動載入，避免 api.pub.affiliates.one 404/429 影響主流程。
          如需啟用，請在首頁點「啟用聯盟推薦」再動態載入。 -->
 
+    <!-- RXV 2026-09-16：統一 NT$199 完整素材庫與 NT$99 職業小包說明。 -->
+    <script>
+      (() => {
+        const copyReplacements = [
+          [
+            "食物、花卉、商業圖、社群背景、桌布、節慶與更多分類，持續增加。適合網站、社群貼文、廣告、YouTube／短影音與商業設計使用。",
+            "包含房仲、美髮、美甲、美容 SPA、牙醫等全部職業主題，以及食物、花卉、商業圖、社群背景、桌布、節慶等更多分類，持續增加。適合網站、社群貼文、廣告、YouTube／短影音與商業設計使用。",
+          ],
+          [
+            "房仲、美髮、美甲、美容 SPA、牙醫等職業情境另外整理成專業小包，檔名直接標示用途。專業小包為獨立商品，不包含在 NT$199 綜合素材庫方案內。",
+            "房仲、美髮、美甲、美容 SPA、牙醫等職業圖片都已包含在 NT$199 完整素材庫。若只需要單一職業，也可選擇 NT$99 專業小包，檔名直接標示用途。",
+          ],
+          [
+            "想要大量不同題材？網站另有綜合圖片素材庫完整版，限時 NT$199。",
+            "想一次取得全部圖片？完整圖片素材庫限時 NT$199，包含網站現有全部職業主題與其他圖片素材。",
+          ],
+          [
+            "房仲、美髮等專業職業包為另外整理的商品，不包含在 NT$199 綜合素材庫方案內。",
+            "若只需要單一職業素材，也可選擇 NT$99 專業小包；若需要全部圖片，選 NT$199 完整素材庫更划算。",
+          ],
+        ];
+
+        const supportedPaths = new Set(["/images", "/image-packs"]);
+
+        const applyCopyFix = () => {
+          if (!supportedPaths.has(window.location.pathname)) return;
+          if (!document.body) return;
+
+          const walker = document.createTreeWalker(
+            document.body,
+            NodeFilter.SHOW_TEXT,
+          );
+
+          let node;
+          while ((node = walker.nextNode())) {
+            let text = node.nodeValue || "";
+            let changed = false;
+
+            for (const [from, to] of copyReplacements) {
+              if (text.includes(from)) {
+                text = text.replace(from, to);
+                changed = true;
+              }
+            }
+
+            if (changed) node.nodeValue = text;
+          }
+        };
+
+        const start = () => {
+          applyCopyFix();
+          const observer = new MutationObserver(applyCopyFix);
+          observer.observe(document.body, {
+            childList: true,
+            subtree: true,
+            characterData: true,
+          });
+        };
+
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", start, { once: true });
+        } else {
+          start();
+        }
+      })();
+    </script>
+
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
