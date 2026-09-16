@@ -1,11 +1,15 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
+type PackId = 'real-estate' | 'hair-salon' | 'manicure' | 'beauty-spa' | 'dental'
+
 type Pack = {
-  id: 'real-estate' | 'hair-salon'
+  id: PackId
   category: string
   name: string
   amount: number
+  fallbackCount: number
+  aliases: string[]
   badge: string
   description: string
   details: string[]
@@ -18,7 +22,9 @@ const PACKS: Pack[] = [
     category: '房仲／房地產',
     name: 'RXV 房仲帶看宣傳圖片包',
     amount: 99,
-    badge: '83 張｜16:9 高解析',
+    fallbackCount: 115,
+    aliases: ['房仲／房地產', '房仲/房地產'],
+    badge: '職業行銷素材',
     description: '住宅帶看、成交交屋、公設社區、實務看屋驗屋與生活機能等房仲行銷情境。',
     details: ['檔名採「用途_圖片名」', '附商品介紹、使用說明、授權與使用說明', '可加字、Logo、電話與 CTA 後商用'],
     accent: 'emerald',
@@ -28,12 +34,54 @@ const PACKS: Pack[] = [
     category: '美髮／沙龍',
     name: 'RXV 美髮沙龍職業圖片包',
     amount: 99,
+    fallbackCount: 133,
+    aliases: ['美髮／沙龍', '美髮/沙龍'],
     badge: '多場景職業素材',
     description: '髮型諮詢、洗護、剪髮、染燙、完成造型、髮廊日常、預約宣傳與專業工具等情境。',
     details: ['檔名採「用途_圖片名」', '附商品介紹、使用說明、授權與使用說明', '適合髮廊網站、社群、廣告與預約宣傳'],
     accent: 'fuchsia',
   },
+  {
+    id: 'manicure',
+    category: '美甲',
+    name: 'RXV 美甲職業圖片包',
+    amount: 99,
+    fallbackCount: 133,
+    aliases: ['美甲'],
+    badge: '美甲宣傳素材',
+    description: '凝膠美甲、手部保養、款式展示、色系提案、預約宣傳與美甲日常等情境。',
+    details: ['適合社群貼文與預約宣傳', '可加入品牌 Logo、電話與 CTA', '小店家可直接挑圖使用'],
+    accent: 'emerald',
+  },
+  {
+    id: 'beauty-spa',
+    category: '美容SPA',
+    name: 'RXV 美容 SPA 職業圖片包',
+    amount: 99,
+    fallbackCount: 135,
+    aliases: ['美容SPA', '美容 SPA', '美容／SPA'],
+    badge: '美容芳療素材',
+    description: '臉部保養、身體按摩、芳療、療程介紹、環境氛圍與預約宣傳等情境。',
+    details: ['適合美容工作室與 SPA', '可做療程介紹、社群與廣告', '可加入品牌資訊後商用'],
+    accent: 'fuchsia',
+  },
+  {
+    id: 'dental',
+    category: '牙醫',
+    name: 'RXV 牙醫職業圖片包',
+    amount: 99,
+    fallbackCount: 104,
+    aliases: ['牙醫'],
+    badge: '診所宣傳素材',
+    description: '看診情境、牙齒衛教、設備消毒、醫病溝通、診所環境與預約宣傳等情境。',
+    details: ['適合診所網站與衛教貼文', '可做預約、設備與服務介紹', '可加入診所品牌資訊後使用'],
+    accent: 'emerald',
+  },
 ]
+const PUBLIC_R2_MANIFEST_BASE = String(import.meta.env.VITE_PUBLIC_R2_URL || '').replace(/\/$/, '')
+const IMAGE_MANIFEST_URL = PUBLIC_R2_MANIFEST_BASE
+  ? `${PUBLIC_R2_MANIFEST_BASE}/catalog/images-public.json`
+  : import.meta.env.VITE_IMAGE_MANIFEST_URL || '/data/images-public.json'
 
 const CONTACT_EMAIL = 'rxv0227@gmail.com'
 const LINE_ID = 'ang22899'
@@ -47,6 +95,40 @@ const BANK = {
 
 export default function ImagePacksPage() {
   const [selectedId, setSelectedId] = useState<Pack['id'] | null>(null)
+  const [liveCounts, setLiveCounts] = useState<Record<PackId, number>>(() =>
+    Object.fromEntries(PACKS.map((pack) => [pack.id, pack.fallbackCount])) as Record<PackId, number>,
+  )
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const response = await fetch(IMAGE_MANIFEST_URL, { cache: 'no-cache' })
+        if (!response.ok) throw new Error('HTTP ' + response.status)
+        const raw = await response.json()
+        const manifest = Array.isArray(raw) ? { images: raw, categories: [] } : raw
+        const items = Array.isArray(manifest?.images) ? manifest.images : []
+        const categories = Array.isArray(manifest?.categories) ? manifest.categories : []
+        const nameById = new Map(categories.map((category: any) => [String(category?.id || ''), String(category?.name || '')]))
+        const next = Object.fromEntries(PACKS.map((pack) => [pack.id, 0])) as Record<PackId, number>
+        for (const item of items) {
+          const categoryName = String(
+            item?.category_name || item?.category || nameById.get(String(item?.category_id || '')) || '',
+          ).trim()
+          for (const pack of PACKS) {
+            if (pack.aliases.includes(categoryName)) next[pack.id] += 1
+          }
+        }
+        for (const pack of PACKS) {
+          if (next[pack.id] <= 0) next[pack.id] = pack.fallbackCount
+        }
+        if (!cancelled) setLiveCounts(next)
+      } catch (error) {
+        console.warn('專業小包張數同步失敗，使用備用數量', error)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [])
   const [copied, setCopied] = useState(false)
   const selectedPack = useMemo(() => PACKS.find((pack) => pack.id === selectedId) || null, [selectedId])
 
@@ -157,7 +239,7 @@ export default function ImagePacksPage() {
 
         <section id="pack-products" className="scroll-mt-28 py-9 sm:py-12">
           <h2 className="text-2xl font-black text-slate-950 sm:text-3xl">目前可購買的專業小包</h2>
-          <p className="mt-2 text-slate-600">目前先上架房仲與美髮；之後可持續增加美甲、SPA、餐飲等職業主題。</p>
+          <p className="mt-2 text-slate-600">目前已上架房仲、美髮、美甲、美容 SPA、牙醫 5 款專業圖片小包；之後還可持續增加更多職業主題。</p>
 
           <div className="mt-6 grid gap-5 lg:grid-cols-2">
             {PACKS.map((pack) => {
@@ -167,7 +249,7 @@ export default function ImagePacksPage() {
                   <div className={`rounded-2xl p-6 text-center text-2xl font-black text-white ${isEmerald ? 'bg-gradient-to-br from-slate-700 to-emerald-700' : 'bg-gradient-to-br from-violet-600 to-fuchsia-600'}`}>
                     {pack.category}<br />商用圖片包
                   </div>
-                  <span className="mt-5 w-fit rounded-full bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-600">{pack.badge}</span>
+                  <span className="mt-5 w-fit rounded-full bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-600">{liveCounts[pack.id] ?? pack.fallbackCount} 張｜{pack.badge}</span>
                   <h3 className="mt-3 text-xl font-black text-slate-950 sm:text-2xl">{pack.name}</h3>
                   <p className="mt-2 leading-7 text-slate-600">{pack.description}</p>
                   <ul className="mt-4 space-y-2 text-sm font-bold leading-6 text-slate-700">

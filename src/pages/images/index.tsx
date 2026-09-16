@@ -253,6 +253,29 @@ export default function ImagesPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [totalImages, setTotalImages] = useState<number | null>(null);
 
+  // RXV_PRO_PACK_LIVE_COUNTS：由目前網站 manifest 已載入資料即時計算，不另外打 API。
+  const getProfessionalPackCount = (aliases: string[], fallback: number) => {
+    if (allImages.length === 0 || categories.length === 0) return fallback;
+    const categoryIds = new Set(
+      categories
+        .filter((category) => aliases.includes(String(category.name || '').trim()))
+        .map((category) => category.id),
+    );
+    if (categoryIds.size === 0) return fallback;
+    const count = allImages.filter(
+      (image) => image.category_id && categoryIds.has(image.category_id),
+    ).length;
+    return count > 0 ? count : fallback;
+  };
+
+  const professionalPackCounts = {
+    realEstate: getProfessionalPackCount(['房仲／房地產', '房仲/房地產'], 115),
+    hairSalon: getProfessionalPackCount(['美髮／沙龍', '美髮/沙龍'], 133),
+    manicure: getProfessionalPackCount(['美甲'], 133),
+    beautySpa: getProfessionalPackCount(['美容SPA', '美容 SPA', '美容／SPA'], 135),
+    dental: getProfessionalPackCount(['牙醫'], 104),
+  };
+
   // 下載成功只顯示短暫小提示，避免連續下載時一直要求客戶手動關閉。
   useEffect(() => {
     if (!downloadToastId) return;
@@ -593,10 +616,13 @@ export default function ImagesPage() {
             <div>
               <span className="inline-flex rounded-full bg-violet-100 px-3 py-1.5 text-sm font-black text-violet-800">專業職業主題包｜NT$99／包</span>
               <h2 className="mt-3 text-2xl font-black text-slate-950">只買自己行業真正會用到的圖</h2>
-              <p className="mt-2 max-w-3xl text-sm leading-7 text-slate-700 sm:text-base">房仲、美髮等職業情境另外整理成專業小包，檔名直接標示用途。專業小包為獨立商品，不包含在 NT$199 綜合素材庫方案內。</p>
+              <p className="mt-2 max-w-3xl text-sm leading-7 text-slate-700 sm:text-base">房仲、美髮、美甲、美容 SPA、牙醫等職業情境另外整理成專業小包，檔名直接標示用途。專業小包為獨立商品，不包含在 NT$199 綜合素材庫方案內。</p>
               <div className="mt-4 flex flex-wrap gap-2">
-                <span className="rounded-full border border-emerald-200 bg-white px-3 py-2 text-sm font-black text-emerald-800">房仲帶看宣傳圖片包｜83 張｜NT$99</span>
-                <span className="rounded-full border border-fuchsia-200 bg-white px-3 py-2 text-sm font-black text-fuchsia-800">美髮沙龍職業圖片包｜NT$99</span>
+                <span className="rounded-full border border-emerald-200 bg-white px-3 py-2 text-sm font-black text-emerald-800">房仲帶看宣傳圖片包｜{professionalPackCounts.realEstate} 張｜NT$99</span>
+                <span className="rounded-full border border-fuchsia-200 bg-white px-3 py-2 text-sm font-black text-fuchsia-800">美髮沙龍職業圖片包｜{professionalPackCounts.hairSalon} 張｜NT$99</span>
+                <span className="rounded-full border border-rose-200 bg-white px-3 py-2 text-sm font-black text-rose-800">美甲職業圖片包｜{professionalPackCounts.manicure} 張｜NT$99</span>
+                <span className="rounded-full border border-amber-200 bg-white px-3 py-2 text-sm font-black text-amber-800">美容 SPA 職業圖片包｜{professionalPackCounts.beautySpa} 張｜NT$99</span>
+                <span className="rounded-full border border-sky-200 bg-white px-3 py-2 text-sm font-black text-sky-800">牙醫職業圖片包｜{professionalPackCounts.dental} 張｜NT$99</span>
               </div>
             </div>
             <Link
@@ -604,12 +630,12 @@ export default function ImagesPage() {
               className="inline-flex min-h-[50px] shrink-0 items-center justify-center rounded-xl bg-violet-600 px-6 py-3 font-black !text-white shadow-md transition hover:-translate-y-0.5 hover:bg-violet-700"
               style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}
             >
-              查看 NT$99 專業圖片包
+              查看 5 款 NT$99 專業圖片包
             </Link>
           </div>
         </section>
 
-        {/* 分類篩選：手機版改成橫向滑動，避免按鈕全部擠在一起。 */}
+        {/* 分類篩選：手機版改成橫向滑動，避免按鈕全部擠在一起。 */}        {/* 分類篩選：手機版改成橫向滑動，避免按鈕全部擠在一起。 */}
         {!loadingCategories && categories.length > 0 && (
           <div className="mb-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between gap-3">
