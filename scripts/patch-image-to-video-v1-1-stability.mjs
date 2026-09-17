@@ -13,6 +13,8 @@ fs.mkdirSync(backupDir, { recursive: true });
 fs.copyFileSync(target, path.join(backupDir, `ImageToVideo.tsx.${stamp}.bak`));
 
 let s = fs.readFileSync(target, 'utf8');
+// Normalize line endings so Windows CRLF does not make exact patch matching fail.
+s = s.replace(/\r\n/g, '\n');
 
 const marker = `function makeFileName() {`;
 if (!s.includes(marker)) {
