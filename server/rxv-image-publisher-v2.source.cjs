@@ -658,8 +658,71 @@ refreshAll();
   var creator=null;
   function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
   async function api(url,init){var r=await fetch(url,init);var d=await r.json().catch(function(){return {}});if(!r.ok||!d.ok)throw new Error(d.message||d.error||('HTTP '+r.status));return d}
-  function choice(label,key,disabled,checked){return '<label><input type="checkbox" data-rxv="'+key+'" '+(checked?'checked ':'')+(disabled?'disabled ':'')+'> '+label+(disabled?'（TikTok 目前停用）':'')+'</label>'}
-  function decorate(){document.querySelectorAll('#jobs .card').forEach(function(card){if(card.querySelector('.rxvTikTokReviewDemo'))return;var old=card.querySelector('[data-a="publish"]');if(!old)return;old.style.display='none';var video=card.querySelector('video');var id=decodeURIComponent(old.dataset.id||'');var c=creator||{};var options=Array.isArray(c.privacy_level_options)?c.privacy_level_options:[];var selfOnly=!!c.direct_self_only_test||(options.length===1&&options[0]==='SELF_ONLY');var privacy='<option value="">請主動選擇誰可以觀看</option>'+options.map(function(x){return '<option value="'+esc(x)+'" '+(selfOnly&&x==='SELF_ONLY'?'selected':'')+'>'+esc(x)+'</option>'}).join('');var panel=document.createElement('section');panel.className='rxvTikTokReviewDemo';panel.innerHTML='<b>TikTok Production Review 發布確認</b><div class="notice">已授權帳號：'+esc(c.creator_username?'@'+c.creator_username:'查詢中')+'｜發布前請確認下方 MP4 預覽、文案與選項。</div>'+(video?'':'<div class="error">尚未產生可預覽 MP4，不能發布。</div>')+'<label>誰可以觀看<select data-rxv="privacy" '+(selfOnly?'disabled':'')+'>'+privacy+'</select></label><div class="grid">'+choice('Allow Comment','comment',!!c.comment_disabled,!c.comment_disabled)+choice('Allow Duet','duet',!!c.duet_disabled,!c.duet_disabled)+choice('Allow Stitch','stitch',!!c.stitch_disabled,!c.stitch_disabled)+'</div><div class="notice"><b>Commercial Content disclosure</b>（SELF_ONLY 測試時固定關閉）</div><div class="grid">'+choice('Promote my own brand','brandOrganic',selfOnly,false)+choice('Branded content','brandContent',selfOnly,false)+'</div><label><input type="checkbox" data-rxv="music"> By posting, you agree to TikTok\\'s Music Usage Confirmation</label><button class="btn" data-rxv="confirm" '+(video?'':'disabled')+'>確認並發布 TikTok</button><div class="result" data-rxv="result"></div>';old.parentNode.insertBefore(panel,old);panel.querySelector('[data-rxv="confirm"]').addEventListener('click',async function(){var result=panel.querySelector('[data-rxv="result"]');var privacyEl=panel.querySelector('[data-rxv="privacy"]');var music=panel.querySelector('[data-rxv="music"]');if(!video){result.textContent='需要 MP4 預覽後才能發布。';return}if(!privacyEl.value){result.textContent='請先選擇「誰可以觀看」。';return}if(!music.checked){result.textContent='請先主動勾選 Music Usage Confirmation。';return}this.disabled=true;result.textContent='正在依 TikTok 官方流程發布：creator_info/query → video/init → FILE_UPLOAD → status/fetch…';try{var cap=card.querySelector('textarea');var d=await api('/api/jobs/publish',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({videoId:id,caption:cap?cap.value:'',tiktokOptions:{privacyLevel:privacyEl.value,allowComment:!!panel.querySelector('[data-rxv="comment"]').checked,allowDuet:!!panel.querySelector('[data-rxv="duet"]').checked,allowStitch:!!panel.querySelector('[data-rxv="stitch"]').checked,brandOrganic:!!panel.querySelector('[data-rxv="brandOrganic"]').checked,brandContent:!!panel.querySelector('[data-rxv="brandContent"]').checked}})});result.textContent='publish_id: '+(d.publishId||'-')+'\\nTikTok processing status: '+(d.providerStatus||'-')+'\\n'+(d.published?'PUBLISH_COMPLETE':d.processing?'PROCESSING':d.needsManualAction?'SEND_TO_USER_INBOX':'')+(d.message?'\\n'+d.message:'');}catch(e){result.className='result error';result.textContent='FAILED: '+e.message}finally{this.disabled=false}})})}
+  function choice(label,key,disabled){return '<label><input type="checkbox" data-rxv="'+key+'" '+(disabled?'disabled ':'')+'> '+label+(disabled?'（TikTok 目前停用）':'')+'</label>'}
+  function decorate(){document.querySelectorAll('#jobs .card').forEach(function(card){
+    if(card.querySelector('.rxvTikTokReviewDemo'))return;
+    var old=card.querySelector('[data-a="publish"]');if(!old)return;
+    old.style.display='none';
+    var video=card.querySelector('video');
+    var id=decodeURIComponent(old.dataset.id||'');
+    var c=creator||{};
+    var options=Array.isArray(c.privacy_level_options)?c.privacy_level_options.map(String):[];
+    var selfOnly=!!c.direct_self_only_test||(options.length===1&&options[0]==='SELF_ONLY');
+    if(selfOnly){options=options.filter(function(x){return x==='SELF_ONLY'});if(!options.length)options=['SELF_ONLY']}
+    var privacy='<option value="">請主動選擇誰可以觀看</option>'+options.map(function(x){return '<option value="'+esc(x)+'">'+esc(x)+'</option>'}).join('');
+    var panel=document.createElement('section');
+    panel.className='rxvTikTokReviewDemo';
+    panel.innerHTML='<b>TikTok Production Review 發布確認</b>'+
+      '<div class="notice">已授權帳號：'+esc(c.creator_username?'@'+c.creator_username:'查詢中')+'｜發布前請確認 MP4 預覽、文案與下列選項。</div>'+
+      (selfOnly?'<div class="notice"><b>Sandbox 測試：</b>目前只能選 SELF_ONLY，但仍需由使用者親自選擇。</div>':'')+
+      (video?'':'<div class="error">尚未產生可預覽 MP4，不能發布。</div>')+
+      '<label>誰可以觀看<select data-rxv="privacy">'+privacy+'</select></label>'+
+      '<div class="grid">'+choice('Allow Comment','comment',!!c.comment_disabled)+choice('Allow Duet','duet',!!c.duet_disabled)+choice('Allow Stitch','stitch',!!c.stitch_disabled)+'</div>'+
+      '<div class="notice"><b>Commercial Content disclosure</b>（預設關閉；SELF_ONLY 測試時不可開啟）</div>'+
+      '<div class="grid">'+choice('Promote my own brand','brandOrganic',selfOnly)+choice('Branded content','brandContent',selfOnly)+'</div>'+
+      '<label><input type="checkbox" data-rxv="music"> By posting, you agree to TikTok\\'s Music Usage Confirmation</label>'+
+      '<button class="btn" data-rxv="confirm" disabled>確認並發布 TikTok</button>'+
+      '<div class="result" data-rxv="result"></div>';
+    old.parentNode.insertBefore(panel,old);
+    var privacyEl=panel.querySelector('[data-rxv="privacy"]');
+    var music=panel.querySelector('[data-rxv="music"]');
+    var confirmBtn=panel.querySelector('[data-rxv="confirm"]');
+    function updateReady(){confirmBtn.disabled=!video||!privacyEl.value||!music.checked}
+    privacyEl.addEventListener('change',updateReady);
+    music.addEventListener('change',updateReady);
+    updateReady();
+    confirmBtn.addEventListener('click',async function(){
+      var result=panel.querySelector('[data-rxv="result"]');
+      if(!video){result.textContent='需要 MP4 預覽後才能發布。';return}
+      if(!privacyEl.value){result.textContent='請先選擇「誰可以觀看」。';return}
+      if(!music.checked){result.textContent='請先主動勾選 Music Usage Confirmation。';return}
+      if(!confirm('確認以目前畫面中的文案、隱私與互動設定發布到 TikTok？'))return;
+      this.disabled=true;
+      result.className='result';
+      result.textContent='正在依 TikTok 官方流程發布：creator_info/query → video/init → FILE_UPLOAD → status/fetch…';
+      try{
+        var cap=card.querySelector('textarea');
+        var d=await api('/api/jobs/publish',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+          videoId:id,
+          caption:cap?cap.value:'',
+          tiktokOptions:{
+            privacyLevel:privacyEl.value,
+            allowComment:!!panel.querySelector('[data-rxv="comment"]').checked,
+            allowDuet:!!panel.querySelector('[data-rxv="duet"]').checked,
+            allowStitch:!!panel.querySelector('[data-rxv="stitch"]').checked,
+            brandOrganic:!!panel.querySelector('[data-rxv="brandOrganic"]').checked,
+            brandContent:!!panel.querySelector('[data-rxv="brandContent"]').checked
+          }
+        })});
+        result.textContent='publish_id: '+(d.publishId||'-')+'\\nTikTok processing status: '+(d.providerStatus||'-')+'\\n'+(d.published?'PUBLISH_COMPLETE':d.processing?'PROCESSING':d.needsManualAction?'SEND_TO_USER_INBOX':'')+(d.message?'\\n'+d.message:'');
+      }catch(e){
+        result.className='result error';
+        result.textContent='FAILED: '+e.message;
+      }finally{
+        updateReady();
+      }
+    });
+  })}
   async function load(){try{var d=await api('/api/rxv-tiktok-creator-info?force=1');creator=d.creator||{};decorate()}catch(e){creator={privacy_level_options:[]};decorate();console.warn('[RXV TikTok review demo]',e.message)}}
   new MutationObserver(decorate).observe(document.documentElement,{childList:true,subtree:true});load();
 })();
@@ -735,8 +798,7 @@ async function runAutoOnce() {
   console.log("[RXV v2] 建立任務：", videoId);
   const rendered = await renderVideoJob(videoId, { mp3Choice: process.env.RXV_AUTO_MP3 || "auto" });
   console.log("[RXV v2] MP4：", rendered.videoPath);
-  const result = await publishVideoJob(videoId, "");
-  console.log(JSON.stringify(result, null, 2));
+  console.log(JSON.stringify({ ok: true, videoId, videoPath: rendered.videoPath, readyForManualReview: true, message: "已準備完成；請開啟 RXV UI 檢查預覽、文案、隱私與 Music Usage Confirmation 後手動發布。" }, null, 2));
 }
 
 async function main() {
