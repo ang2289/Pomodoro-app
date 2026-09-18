@@ -1,7 +1,7 @@
 @echo off
 cd /d "%~dp0"
 title RXV ONE CLICK
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0RXV-ONECLICK.ps1"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0RXV-ONECLICK.ps1" -SkipUpdate
 set "RC=%ERRORLEVEL%"
 if not "%RC%"=="0" (
   echo.

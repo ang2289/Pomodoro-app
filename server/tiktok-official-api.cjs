@@ -555,28 +555,35 @@ function createTikTokOfficialApi(options = {}) {
     });
   }
 
-  async function initDirectPost({ plan, title, creator }) {
+  async function initDirectPost({ plan, title, creator, postOptions = {} }) {
     const c = config();
     const options = Array.isArray(creator?.privacy_level_options)
       ? creator.privacy_level_options.map((x) => String(x))
       : [];
 
-    let privacyLevel = c.directSelfOnlyTest ? "SELF_ONLY" : c.privacyLevel;
+    const requestedPrivacy = String(postOptions?.privacyLevel || "").trim().toUpperCase();
+    let privacyLevel = c.directSelfOnlyTest ? "SELF_ONLY" : (requestedPrivacy || c.privacyLevel);
     if (options.length && !options.includes(privacyLevel)) {
       privacyLevel = options.includes("SELF_ONLY") ? "SELF_ONLY" : options[0];
     }
     if (!privacyLevel) throw createHttpError("TIKTOK_PRIVACY_LEVEL_UNAVAILABLE", "TIKTOK_PRIVACY_LEVEL_UNAVAILABLE");
 
+    const allowComment = !Boolean(creator?.comment_disabled) && postOptions?.allowComment !== false;
+    const allowDuet = !Boolean(creator?.duet_disabled) && postOptions?.allowDuet !== false;
+    const allowStitch = !Boolean(creator?.stitch_disabled) && postOptions?.allowStitch !== false;
+    const brandContent = privacyLevel === "SELF_ONLY" ? false : Boolean(postOptions?.brandContent);
+    const brandOrganic = privacyLevel === "SELF_ONLY" ? false : Boolean(postOptions?.brandOrganic);
+
     return apiPost("/v2/post/publish/video/init/", {
       post_info: {
         title,
         privacy_level: privacyLevel,
-        disable_duet: Boolean(creator?.duet_disabled),
-        disable_comment: Boolean(creator?.comment_disabled),
-        disable_stitch: Boolean(creator?.stitch_disabled),
+        disable_duet: !allowDuet,
+        disable_comment: !allowComment,
+        disable_stitch: !allowStitch,
         video_cover_timestamp_ms: 1000,
-        brand_content_toggle: privacyLevel === "SELF_ONLY" ? false : Boolean(c.brandContent),
-        brand_organic_toggle: privacyLevel === "SELF_ONLY" ? false : Boolean(c.brandOrganic),
+        brand_content_toggle: brandContent,
+        brand_organic_toggle: brandOrganic,
         is_aigc: Boolean(c.isAigc),
       },
       source_info: {
@@ -588,7 +595,7 @@ function createTikTokOfficialApi(options = {}) {
     });
   }
 
-  async function publishPublisherJob({ row, payload, publishText, source = "manual" } = {}) {
+  async function publishPublisherJob({ row, payload, publishText, source = "manual", postOptions = {} } = {}) {
     const c = config();
     const publishMode = effectivePostMode(c);
     if (!hasClientConfig()) throw createHttpError("TIKTOK_CLIENT_CONFIG_MISSING", "TIKTOK_CLIENT_CONFIG_MISSING");
@@ -666,7 +673,7 @@ function createTikTokOfficialApi(options = {}) {
       );
     }
 
-    const init = await initDirectPost({ plan, title, creator });
+    const init = await initDirectPost({ plan, title, creator, postOptions });
     const publishId = String(init?.publish_id || "");
     const uploadUrl = String(init?.upload_url || "");
     if (!publishId || !uploadUrl) {
