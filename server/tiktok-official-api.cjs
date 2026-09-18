@@ -179,6 +179,9 @@ function createTikTokOfficialApi(options = {}) {
       token_type: String(tokens.token_type || prior.token_type || "Bearer"),
       open_id: String(tokens.open_id || prior.open_id || ""),
       scope: String(tokens.scope || prior.scope || ""),
+      account_display_name: String(tokens.account_display_name || prior.account_display_name || ""),
+      creator_username: String(tokens.creator_username || prior.creator_username || ""),
+      creator_nickname: String(tokens.creator_nickname || prior.creator_nickname || ""),
       access_expires_at: Number(
         tokens.access_expires_at ||
           (tokens.expires_in ? now + Number(tokens.expires_in) * 1000 : prior.access_expires_at || 0),
@@ -413,6 +416,11 @@ function createTikTokOfficialApi(options = {}) {
       cache.user = result.user || null;
       cache.creator = result.creator || null;
       cache.error = "";
+      writeTokenStore({
+        account_display_name: String(result.user?.display_name || ""),
+        creator_username: String(result.creator?.creator_username || ""),
+        creator_nickname: String(result.creator?.creator_nickname || ""),
+      });
     } catch (error) {
       result.ok = false;
       result.error = String(error?.code || error?.message || error);
@@ -425,6 +433,13 @@ function createTikTokOfficialApi(options = {}) {
   function publicStatus() {
     const c = config();
     const store = readTokenStore();
+    const persistedUser = store.account_display_name ? { display_name: String(store.account_display_name) } : null;
+    const persistedCreator = (store.creator_username || store.creator_nickname)
+      ? {
+          creator_username: String(store.creator_username || ""),
+          creator_nickname: String(store.creator_nickname || ""),
+        }
+      : null;
     return {
       provider: "tiktok-content-posting-api",
       configured: hasClientConfig(),
@@ -440,8 +455,8 @@ function createTikTokOfficialApi(options = {}) {
       openId: store.open_id ? "present-not-exposed" : "missing",
       tokenStorage: "local-user-profile",
       tokenFile,
-      user: cache.user,
-      creator: cache.creator,
+      user: cache.user || persistedUser,
+      creator: cache.creator || persistedCreator,
       verifiedAt: cache.verifiedAt,
       error: cache.error,
       cloudStagingUsed: false,
@@ -798,6 +813,14 @@ ${verified && !verified.ok ? `<div class="warn bad"><b>驗證失敗：</b> ${saf
         });
       }
     });
+  }
+
+  if (hasStoredAuthorization()) {
+    setTimeout(() => {
+      verifyConnection().catch((error) => {
+        cache.error = String(error?.code || error?.message || error || "");
+      });
+    }, 150);
   }
 
   return {
