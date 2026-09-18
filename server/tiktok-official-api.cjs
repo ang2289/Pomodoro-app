@@ -148,6 +148,7 @@ function createTikTokOfficialApi(options = {}) {
       mode,
       privacyLevel: env("TIKTOK_PRIVACY_LEVEL", "SELF_ONLY").toUpperCase(),
       audited: boolEnv("TIKTOK_CLIENT_AUDITED", false),
+      directSelfOnlyTest: boolEnv("TIKTOK_DIRECT_SELF_ONLY_TEST", !boolEnv("TIKTOK_CLIENT_AUDITED", false)),
       brandContent: boolEnv("TIKTOK_BRAND_CONTENT_TOGGLE", true),
       brandOrganic: boolEnv("TIKTOK_BRAND_ORGANIC_TOGGLE", false),
       isAigc: boolEnv("TIKTOK_IS_AIGC", false),
@@ -459,6 +460,8 @@ function createTikTokOfficialApi(options = {}) {
       configuredPostMode: c.mode,
       postMode: effectivePostMode(c),
       privacyLevel: c.privacyLevel,
+      effectivePrivacyLevel: c.mode === "direct" && c.directSelfOnlyTest ? "SELF_ONLY" : c.privacyLevel,
+      directSelfOnlyTest: Boolean(c.directSelfOnlyTest),
       audited: c.audited,
       auditStatusSource: "local_env_only",
       auditStatusNote: "TIKTOK_CLIENT_AUDITED is only a local setting; it is not fetched from TikTok.",
@@ -550,7 +553,7 @@ function createTikTokOfficialApi(options = {}) {
       ? creator.privacy_level_options.map((x) => String(x))
       : [];
 
-    let privacyLevel = c.privacyLevel;
+    let privacyLevel = c.directSelfOnlyTest ? "SELF_ONLY" : c.privacyLevel;
     if (options.length && !options.includes(privacyLevel)) {
       privacyLevel = options.includes("SELF_ONLY") ? "SELF_ONLY" : options[0];
     }
@@ -585,7 +588,7 @@ function createTikTokOfficialApi(options = {}) {
 
     if (publishMode === "upload" && !grantedScopes().includes("video.upload")) {
       throw createHttpError(
-        "目前 Direct Post 尚未通過 Audit，工具已改用 Upload Draft。請重新連接 TikTok，授權 video.upload 後再試一次。",
+        "目前使用 Upload Draft，但 OAuth 沒有 video.upload 權限。請重新連接 TikTok 後再試一次。",
         "TIKTOK_UPLOAD_SCOPE_REQUIRED",
       );
     }
@@ -674,6 +677,8 @@ function createTikTokOfficialApi(options = {}) {
           mode: "direct",
           publishId,
           status,
+          privacyLevel: c.directSelfOnlyTest ? "SELF_ONLY" : c.privacyLevel,
+          directSelfOnlyTest: Boolean(c.directSelfOnlyTest),
           cloudStagingUsed: false,
         },
       };
@@ -693,6 +698,8 @@ function createTikTokOfficialApi(options = {}) {
         publishId,
         postId,
         status,
+        privacyLevel: c.directSelfOnlyTest ? "SELF_ONLY" : c.privacyLevel,
+        directSelfOnlyTest: Boolean(c.directSelfOnlyTest),
         creatorUsername: username,
         cloudStagingUsed: false,
       },
@@ -708,10 +715,12 @@ function createTikTokOfficialApi(options = {}) {
     const connected = Boolean(s.authorized);
     const configured = Boolean(s.configured);
     const modeText = s.postMode === "direct"
-      ? "Direct Post（直接發布）"
+      ? (s.directSelfOnlyTest ? "Direct Post 測試（SELF_ONLY／僅自己可見）" : "Direct Post（直接發布）")
       : "Upload Draft（上傳草稿）";
     const warning = s.postMode === "direct"
-      ? "Direct Post 會直接呼叫 TikTok 官方 API。Audit 顯示僅為本機設定，不代表 TikTok 官方即時審核狀態。"
+      ? (s.directSelfOnlyTest
+          ? "目前沿用先前蝦皮影音成功測試路徑：Direct Post + SELF_ONLY。影片會直接送 TikTok API，但只對本人可見；先確認 PUBLISH_COMPLETE，再處理公開權限。"
+          : "Direct Post 會直接呼叫 TikTok 官方 API。Audit 顯示僅為本機設定，不代表 TikTok 官方即時審核狀態。")
       : (s.needsUploadReauth
           ? "目前需要重新連接 TikTok，取得 video.upload 授權後才能傳到草稿／收件匣。"
           : "Upload Draft 會把 TikTok 專用乾淨版 MP4 傳到帳號草稿／收件匣；最後文字與正式發布請在 TikTok App 完成。");
@@ -728,7 +737,7 @@ h1{font-size:24px;margin:0 0 16px}.ok{color:#087f5b}.bad{color:#c92a2a}.muted{co
 <h1>RxV V40.0｜TikTok Official API</h1>
 <div class="row">設定：<b class="${configured ? "ok" : "bad"}">${configured ? "完成" : "尚未設定 Client Key / Secret"}</b></div>
 <div class="row">OAuth：<b class="${connected ? "ok" : "bad"}">${connected ? "已授權" : "尚未授權"}</b></div>
-<div class="row">模式：<b>${safeHtml(modeText)}</b></div>\n<div class="row">Upload 授權：<b class="${s.needsUploadReauth ? "bad" : "ok"}">${s.needsUploadReauth ? "需要重新連接 TikTok" : "可用"}</b></div>
+<div class="row">模式：<b>${safeHtml(modeText)}</b></div>\n<div class="row">實際隱私：<b>${safeHtml(s.effectivePrivacyLevel || s.privacyLevel || "")}</b></div>\n<div class="row">Upload 授權：<b class="${s.needsUploadReauth ? "bad" : "ok"}">${s.needsUploadReauth ? "需要重新連接 TikTok" : "可用"}</b></div>
 <div class="row">Redirect URI：<code>${safeHtml(s.redirectUri)}</code></div>
 <div class="row">要求 Scopes：<code>${safeHtml(requested)}</code></div>
 <div class="row">已授權 Scopes：<code>${safeHtml(scopes)}</code></div>

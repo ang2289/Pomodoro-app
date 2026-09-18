@@ -64,3 +64,13 @@
 - 若目前 OAuth 沒有 `video.upload` scope，畫面會顯示「Upload：需重新授權」，請開啟 TikTok 授權設定重新連接。
 - Upload Draft 成功後，影片會送到 TikTok 草稿／收件匣；最後文字與正式發布在 TikTok App 完成。
 - 商品價格、完整素材庫 NT$199、小包 NT$99 等銷售資訊仍保留在 v2 產生的貼文文案中，影片本身不燒促銷 CTA。
+
+
+## v2.3：沿用蝦皮影音成功的 TikTok Direct Post 測試路徑
+- `TIKTOK_POST_MODE=direct` 時仍走 TikTok 官方 Direct Post API，不再因本機 Audit flag 自動改成 Upload Draft。
+- 本機尚未標記 Audit 通過時，預設使用 `SELF_ONLY`，也就是只對自己的 TikTok 帳號可見。
+- 這個模式用來先確認舊版成功路徑：`creator_info/query → video/init → FILE_UPLOAD → status/fetch → PUBLISH_COMPLETE`。
+- 成功條件是 TikTok 回傳 `PUBLISH_COMPLETE`，工具才記錄為已發布。
+- 畫面會清楚顯示「Direct Post 測試（SELF_ONLY）」與實際隱私。
+- 若之後 Production / Direct Post 正式權限確認可公開，再把 `TIKTOK_DIRECT_SELF_ONLY_TEST=0`，即可使用設定的公開隱私等級。
+- 此版不會自動把 SELF_ONLY 測試影片當成公開影片；先驗證 API 路徑是否可成功。
