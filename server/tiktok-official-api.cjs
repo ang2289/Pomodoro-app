@@ -149,7 +149,7 @@ function createTikTokOfficialApi(options = {}) {
       privacyLevel: env("TIKTOK_PRIVACY_LEVEL", "SELF_ONLY").toUpperCase(),
       audited: boolEnv("TIKTOK_CLIENT_AUDITED", false),
       directSelfOnlyTest: boolEnv("TIKTOK_DIRECT_SELF_ONLY_TEST", !boolEnv("TIKTOK_CLIENT_AUDITED", false)),
-      brandContent: boolEnv("TIKTOK_BRAND_CONTENT_TOGGLE", true),
+      brandContent: boolEnv("TIKTOK_BRAND_CONTENT_TOGGLE", false),
       brandOrganic: boolEnv("TIKTOK_BRAND_ORGANIC_TOGGLE", false),
       isAigc: boolEnv("TIKTOK_IS_AIGC", false),
       allowScheduledUpload: boolEnv("TIKTOK_ALLOW_SCHEDULED_UPLOAD", false),
@@ -346,11 +346,19 @@ function createTikTokOfficialApi(options = {}) {
     const apiError = data?.error || {};
     const code = String(apiError?.code || "");
     if (response.status < 200 || response.status >= 300 || (code && code !== "ok")) {
+      let message = apiError?.message || data?.message || `${fallbackCode}_HTTP_${response.status}`;
+      if (code === "unaudited_client_can_only_post_to_private_accounts") {
+        message = "TikTok 測試模式限制：目前 API client 尚未完成 audit。請先把目標 TikTok 帳號設為「私人帳號」，並維持影片隱私 SELF_ONLY，再重新發布。";
+      } else if (code === "privacy_level_option_mismatch") {
+        message = "TikTok 隱私設定不符合目前帳號可用選項，請重新驗證帳號後再發布。";
+      } else if (code === "scope_not_authorized") {
+        message = "TikTok OAuth 尚未授權 video.publish，請重新連接 TikTok OAuth。";
+      }
       throw createHttpError(
-        apiError?.message || data?.message || `${fallbackCode}_HTTP_${response.status}`,
+        message,
         code && code !== "ok" ? code : fallbackCode,
         response.status,
-        { logId: apiError?.log_id || apiError?.logid || "" },
+        { logId: apiError?.log_id || apiError?.logid || "", providerMessage: apiError?.message || data?.message || "" },
       );
     }
     return data?.data || {};
@@ -567,8 +575,8 @@ function createTikTokOfficialApi(options = {}) {
         disable_comment: Boolean(creator?.comment_disabled),
         disable_stitch: Boolean(creator?.stitch_disabled),
         video_cover_timestamp_ms: 1000,
-        brand_content_toggle: Boolean(c.brandContent),
-        brand_organic_toggle: Boolean(c.brandOrganic),
+        brand_content_toggle: privacyLevel === "SELF_ONLY" ? false : Boolean(c.brandContent),
+        brand_organic_toggle: privacyLevel === "SELF_ONLY" ? false : Boolean(c.brandOrganic),
         is_aigc: Boolean(c.isAigc),
       },
       source_info: {
@@ -719,7 +727,7 @@ function createTikTokOfficialApi(options = {}) {
       : "Upload Draft（上傳草稿）";
     const warning = s.postMode === "direct"
       ? (s.directSelfOnlyTest
-          ? "目前沿用先前蝦皮影音成功測試路徑：Direct Post + SELF_ONLY。影片會直接送 TikTok API，但只對本人可見；先確認 PUBLISH_COMPLETE，再處理公開權限。"
+          ? "目前沿用先前蝦皮影音成功測試路徑：Direct Post + SELF_ONLY。若 API client 尚未完成 audit，TikTok 要求目標帳號本身也必須先設為私人帳號。測試成功後再處理公開權限。"
           : "Direct Post 會直接呼叫 TikTok 官方 API。Audit 顯示僅為本機設定，不代表 TikTok 官方即時審核狀態。")
       : (s.needsUploadReauth
           ? "目前需要重新連接 TikTok，取得 video.upload 授權後才能傳到草稿／收件匣。"
