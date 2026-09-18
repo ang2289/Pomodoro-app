@@ -178,6 +178,8 @@ function injectTikTokAccountBanner(sourceText) {
 }
 
 let source = loadBundledSource("rxv-image-publisher-v2.cjs");
+source = source.replace(/Audit：測試\/未通過/g, "Audit：本機未標記");
+source = source.replace(/Audit：已通過/g, "Audit：本機已標記");
 source = injectTikTokAccountBanner(source);
 
 process.env.RXV_V2_BUNDLE_MAIN = "1";
