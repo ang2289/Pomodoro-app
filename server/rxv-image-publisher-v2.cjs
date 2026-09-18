@@ -3,6 +3,8 @@ const fs = require("node:fs");
 const path = require("node:path");
 const zlib = require("node:zlib");
 const Module = require("node:module");
+const http = require("node:http");
+const { createTikTokOfficialApi } = require("./tiktok-official-api.cjs");
 
 function loadBundledSource(prefix) {
   const files = fs.readdirSync(__dirname)
@@ -13,50 +15,152 @@ function loadBundledSource(prefix) {
   return zlib.gunzipSync(Buffer.from(b64, "base64")).toString("utf8");
 }
 
-function patchAccountDisplay(sourceText) {
-  let source = String(sourceText || "");
+const accountApi = createTikTokOfficialApi();
+let accountCache = {
+  checkedAt: 0,
+  pending: false,
+  data: null,
+};
 
-  const localStatusPattern = /function localTikTokStatus\(\) \{[\s\S]*?\n\}/;
-  if (localStatusPattern.test(source)) {
-    source = source.replace(
-      localStatusPattern,
-      `function localTikTokStatus() {
-  const s = tiktokOfficial.publicStatus();
-  const user = s && s.user ? s.user : {};
-  const creator = s && s.creator ? s.creator : {};
+function normalizeAccount(status, verified) {
+  const s = status || {};
+  const v = verified || {};
+  const user = v.user || s.user || {};
+  const creator = v.creator || s.creator || {};
+  const username = String(creator.creator_username || "").replace(/^@+/, "");
+  const displayName = String(user.display_name || creator.creator_nickname || "");
   return {
-    configured: Boolean(s.configured),
-    authorized: Boolean(s.authorized),
-    postMode: String(s.postMode || ""),
+    ok: Boolean(v.ok !== false),
+    authorized: Boolean(v.authorized ?? s.authorized),
+    configured: Boolean(v.configured ?? s.configured),
+    username,
+    displayName,
+    postMode: String(v.mode || s.postMode || ""),
     audited: Boolean(s.audited),
-    scopesGranted: Array.isArray(s.scopesGranted) ? s.scopesGranted : [],
-    displayName: String(user.display_name || creator.creator_nickname || ""),
-    creatorUsername: String(creator.creator_username || "").replace(/^@+/, ""),
-    verifiedAt: String(s.verifiedAt || ""),
-    accountError: String(s.error || ""),
-    ffmpegPath: resolveFfmpegPath()
+    verifiedAt: String(v.verifiedAt || s.verifiedAt || ""),
+    error: String(v.error || s.error || ""),
   };
-}`
-    );
-  } else {
-    console.warn("[RXV v2] localTikTokStatus patch target not found");
+}
+
+async function getAccountInfo(force = false) {
+  const now = Date.now();
+  if (!force && accountCache.data && now - accountCache.checkedAt < 30000) {
+    return accountCache.data;
+  }
+  if (accountCache.pending && accountCache.data) return accountCache.data;
+
+  accountCache.pending = true;
+  try {
+    const status = accountApi.publicStatus();
+    let verified = null;
+    if (status.authorized) {
+      try {
+        verified = await accountApi.verifyConnection();
+      } catch (error) {
+        verified = {
+          ok: false,
+          authorized: true,
+          configured: status.configured,
+          mode: status.postMode,
+          error: String(error?.code || error?.message || error),
+        };
+      }
+    }
+    const data = normalizeAccount(accountApi.publicStatus(), verified);
+    accountCache = { checkedAt: Date.now(), pending: false, data };
+    return data;
+  } catch (error) {
+    const data = {
+      ok: false,
+      authorized: false,
+      configured: false,
+      username: "",
+      displayName: "",
+      postMode: "",
+      audited: false,
+      verifiedAt: "",
+      error: String(error?.message || error),
+    };
+    accountCache = { checkedAt: Date.now(), pending: false, data };
+    return data;
+  }
+}
+
+const originalCreateServer = http.createServer;
+http.createServer = function patchedCreateServer(listener, ...rest) {
+  if (typeof listener !== "function") {
+    return originalCreateServer.call(http, listener, ...rest);
   }
 
-  const uiStatusPattern = /document\.getElementById\('tiktokStatus'\)\.textContent=[^;]+;/;
-  if (uiStatusPattern.test(source)) {
-    source = source.replace(
-      uiStatusPattern,
-      "document.getElementById('tiktokStatus').textContent='TikTok 帳號：'+(ts.creatorUsername?('@'+ts.creatorUsername):(ts.displayName||(ts.authorized?'查詢中…':'尚未授權')))+'｜授權：'+(ts.authorized?'已授權':'未授權')+'｜模式：'+(ts.postMode||'-')+'｜Audit：'+(ts.audited?'已通過':'未通過/測試')+'｜FFmpeg：'+(ts.ffmpegPath?'已找到':'未找到');"
-    );
-  } else {
-    console.warn("[RXV v2] TikTok status UI patch target not found");
+  const wrapped = async function rxvWrappedListener(req, res) {
+    try {
+      const url = new URL(req.url || "/", "http://127.0.0.1");
+      if (url.pathname === "/api/rxv-tiktok-account") {
+        const force = url.searchParams.get("force") === "1";
+        const info = await getAccountInfo(force);
+        res.statusCode = info.authorized ? 200 : 409;
+        res.setHeader("Content-Type", "application/json; charset=utf-8");
+        res.setHeader("Cache-Control", "no-store");
+        res.end(JSON.stringify({ ok: true, account: info }));
+        return;
+      }
+    } catch {}
+    return listener(req, res);
+  };
+
+  return originalCreateServer.call(http, wrapped, ...rest);
+};
+
+function injectTikTokAccountBanner(sourceText) {
+  let source = String(sourceText || "");
+  if (source.includes("rxvTikTokAccountBanner")) return source;
+
+  const banner = `
+<div id="rxvTikTokAccountBanner" style="margin:10px 0 4px;padding:12px 14px;border:1px solid #dbeafe;border-radius:10px;background:#eff6ff;color:#0f172a;font-weight:700">
+  TikTok 已連線帳號：查詢中…
+</div>
+<script>
+(function(){
+  var el=document.getElementById('rxvTikTokAccountBanner');
+  if(!el)return;
+  var tries=0;
+  async function loadAccount(){
+    tries++;
+    try{
+      var r=await fetch('/api/rxv-tiktok-account'+(tries===1?'?force=1':''),{cache:'no-store'});
+      var j=await r.json();
+      var a=j&&j.account?j.account:{};
+      var who=a.username?('@'+a.username):(a.displayName||'尚未取得帳號名稱');
+      var auth=a.authorized?'已授權':'未授權';
+      var mode=a.postMode||'-';
+      var audit=a.audited?'已通過':'未通過／測試';
+      el.textContent='TikTok 已連線帳號：'+who+'｜授權：'+auth+'｜模式：'+mode+'｜Audit：'+audit;
+      if(a.authorized&&!a.username&&tries<8)setTimeout(loadAccount,1200);
+    }catch(e){
+      el.textContent='TikTok 已連線帳號：查詢失敗，請重新整理';
+      if(tries<5)setTimeout(loadAccount,1500);
+    }
+  }
+  loadAccount();
+})();
+</script>`;
+
+  const exact = "RXV 圖片自動推廣器 v2</h1>";
+  if (source.includes(exact)) {
+    return source.replace(exact, exact + banner);
   }
 
+  const h1Pattern = /(RXV 圖片自動推廣器 v2[\s\S]{0,120}?<\/h1>)/;
+  if (h1Pattern.test(source)) {
+    return source.replace(h1Pattern, "$1" + banner);
+  }
+
+  console.warn("[RXV v2] TikTok account banner injection target not found");
   return source;
 }
 
 let source = loadBundledSource("rxv-image-publisher-v2.cjs");
-source = patchAccountDisplay(source);
+source = injectTikTokAccountBanner(source);
 
 process.env.RXV_V2_BUNDLE_MAIN = "1";
 const inner = new Module(path.join(__dirname, "rxv-image-publisher-v2.source.cjs"), module);
