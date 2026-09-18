@@ -46,8 +46,12 @@ function normalizeScopes(value, mode) {
     .filter(Boolean);
   const scopes = new Set(raw);
   scopes.add("user.info.basic");
-  if (mode === "direct") scopes.add("video.publish");
-  else scopes.add("video.upload");
+  if (mode === "direct") {
+    scopes.add("video.publish");
+    scopes.add("video.upload");
+  } else {
+    scopes.add("video.upload");
+  }
   return [...scopes];
 }
 
@@ -151,6 +155,11 @@ function createTikTokOfficialApi(options = {}) {
       timeoutMs: Math.max(15000, Number(env("TIKTOK_HTTP_TIMEOUT_MS", "180000")) || 180000),
       scopes: normalizeScopes(env("TIKTOK_OAUTH_SCOPES"), mode),
     };
+  }
+
+  function effectivePostMode(c = config()) {
+    if (c.mode === "direct" && !c.audited) return "upload";
+    return c.mode;
   }
 
   function hasClientConfig() {
@@ -389,7 +398,8 @@ function createTikTokOfficialApi(options = {}) {
       ok: true,
       configured: hasClientConfig(),
       authorized: hasStoredAuthorization(),
-      mode: config().mode,
+      mode: effectivePostMode(config()),
+      configuredMode: config().mode,
       scopesRequested: config().scopes,
       scopesGranted: grantedScopes(),
       user: null,
@@ -447,11 +457,13 @@ function createTikTokOfficialApi(options = {}) {
       clientKey: c.clientKey ? "present-not-exposed" : "missing",
       clientSecret: c.clientSecret ? "present-not-exposed" : "missing",
       redirectUri: c.redirectUri,
-      postMode: c.mode,
+      configuredPostMode: c.mode,
+      postMode: effectivePostMode(c),
       privacyLevel: c.privacyLevel,
       audited: c.audited,
       scopesRequested: c.scopes,
       scopesGranted: grantedScopes(),
+      needsUploadReauth: effectivePostMode(c) === "upload" && !grantedScopes().includes("video.upload"),
       openId: store.open_id ? "present-not-exposed" : "missing",
       tokenStorage: "local-user-profile",
       tokenFile,
@@ -567,11 +579,19 @@ function createTikTokOfficialApi(options = {}) {
 
   async function publishPublisherJob({ row, payload, publishText, source = "manual" } = {}) {
     const c = config();
+    const publishMode = effectivePostMode(c);
     if (!hasClientConfig()) throw createHttpError("TIKTOK_CLIENT_CONFIG_MISSING", "TIKTOK_CLIENT_CONFIG_MISSING");
     if (!hasStoredAuthorization()) throw createHttpError("TIKTOK_OAUTH_REQUIRED", "TIKTOK_OAUTH_REQUIRED");
 
+    if (publishMode === "upload" && !grantedScopes().includes("video.upload")) {
+      throw createHttpError(
+        "目前 Direct Post 尚未通過 Audit，工具已改用 Upload Draft。請重新連接 TikTok，授權 video.upload 後再試一次。",
+        "TIKTOK_UPLOAD_SCOPE_REQUIRED",
+      );
+    }
+
     const manual = String(source || "") === "manual";
-    if (!manual && !(c.mode === "upload" && c.allowScheduledUpload)) {
+    if (!manual && !(publishMode === "upload" && c.allowScheduledUpload)) {
       throw createHttpError(
         "TikTok 官方 Content Posting API 需要使用者在送出內容時明確同意；V40.0 預設只允許手動按「立即發布」觸發。",
         "TIKTOK_EXPLICIT_CONSENT_REQUIRED",
@@ -582,6 +602,13 @@ function createTikTokOfficialApi(options = {}) {
     if (!videoPath || !fs.existsSync(videoPath)) {
       throw createHttpError("VIDEO_FILE_NOT_FOUND", "VIDEO_FILE_NOT_FOUND");
     }
+    if (!c.audited && !/_tiktok_safe\.mp4$/i.test(videoPath)) {
+      throw createHttpError(
+        "這支是舊版促銷 MP4。請先重新產生 TikTok 專用乾淨版（無 QR、網址、LINE、價格 CTA）再上傳。",
+        "TIKTOK_SAFE_VIDEO_REQUIRED",
+      );
+    }
+
     const stat = await fsp.stat(videoPath);
     if (!stat.isFile() || stat.size <= 0) {
       throw createHttpError("VIDEO_FILE_INVALID", "VIDEO_FILE_INVALID");
@@ -589,7 +616,7 @@ function createTikTokOfficialApi(options = {}) {
     const plan = chooseUploadPlan(stat.size);
     const title = composeTikTokTitle({ publishText, payload, row });
 
-    if (c.mode === "upload") {
+    if (publishMode === "upload") {
       const init = await initUploadDraft({ plan });
       const publishId = String(init?.publish_id || "");
       const uploadUrl = String(init?.upload_url || "");
@@ -609,6 +636,8 @@ function createTikTokOfficialApi(options = {}) {
         message: "影片已透過 TikTok 官方 Upload API 傳到帳號草稿／收件匣；請在 TikTok App 內完成最後編輯與發布。",
         providerResponse: {
           mode: "upload",
+          configuredMode: c.mode,
+          autoFallbackFromDirect: c.mode === "direct" && !c.audited,
           publishId,
           status,
           cloudStagingUsed: false,
@@ -678,10 +707,16 @@ function createTikTokOfficialApi(options = {}) {
     const requested = (s.scopesRequested || []).join(", ");
     const connected = Boolean(s.authorized);
     const configured = Boolean(s.configured);
-    const modeText = s.postMode === "direct" ? "Direct Post（直接發布）" : "Upload Draft（上傳草稿）";
+    const modeText = s.postMode === "direct"
+      ? "Direct Post（直接發布）"
+      : (s.configuredPostMode === "direct" && !s.audited
+          ? "Upload Draft（Audit 未通過，自動切換）"
+          : "Upload Draft（上傳草稿）");
     const warning = s.postMode === "direct"
-      ? "Direct Post 未通過 TikTok audit 時會受到私人可見與帳號條件限制；V40.0 也不會用排程自動繞過使用者明確同意。"
-      : "Upload Draft 會把影片送到 TikTok 草稿／收件匣；此官方 Upload API 不會替草稿附上 RxV caption／分潤連結／Hashtag，最後文字與發布需在 TikTok App 完成。";
+      ? "Direct Post 已啟用。送出前仍會要求使用者明確確認。"
+      : (s.needsUploadReauth
+          ? "目前需要重新連接 TikTok，取得 video.upload 授權後才能傳到草稿／收件匣。"
+          : "Upload Draft 會把 TikTok 專用乾淨版 MP4 傳到帳號草稿／收件匣；最後文字與正式發布請在 TikTok App 完成。");
 
     return `<!doctype html>
 <meta charset="utf-8">
@@ -695,7 +730,7 @@ h1{font-size:24px;margin:0 0 16px}.ok{color:#087f5b}.bad{color:#c92a2a}.muted{co
 <h1>RxV V40.0｜TikTok Official API</h1>
 <div class="row">設定：<b class="${configured ? "ok" : "bad"}">${configured ? "完成" : "尚未設定 Client Key / Secret"}</b></div>
 <div class="row">OAuth：<b class="${connected ? "ok" : "bad"}">${connected ? "已授權" : "尚未授權"}</b></div>
-<div class="row">模式：<b>${safeHtml(modeText)}</b></div>
+<div class="row">模式：<b>${safeHtml(modeText)}</b></div>\n<div class="row">Upload 授權：<b class="${s.needsUploadReauth ? "bad" : "ok"}">${s.needsUploadReauth ? "需要重新連接 TikTok" : "可用"}</b></div>
 <div class="row">Redirect URI：<code>${safeHtml(s.redirectUri)}</code></div>
 <div class="row">要求 Scopes：<code>${safeHtml(requested)}</code></div>
 <div class="row">已授權 Scopes：<code>${safeHtml(scopes)}</code></div>
