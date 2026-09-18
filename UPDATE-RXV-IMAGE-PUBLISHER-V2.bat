@@ -1,3 +1,4 @@
 @echo off
 chcp 65001 >nul
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0UPDATE-RXV-IMAGE-PUBLISHER-V2.ps1"
+cd /d "%~dp0"
+call "%~dp0RXV-一鍵啟動.bat"
