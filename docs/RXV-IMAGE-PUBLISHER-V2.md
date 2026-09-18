@@ -74,3 +74,10 @@
 - 畫面會清楚顯示「Direct Post 測試（SELF_ONLY）」與實際隱私。
 - 若之後 Production / Direct Post 正式權限確認可公開，再把 `TIKTOK_DIRECT_SELF_ONLY_TEST=0`，即可使用設定的公開隱私等級。
 - 此版不會自動把 SELF_ONLY 測試影片當成公開影片；先驗證 API 路徑是否可成功。
+
+
+## v2.3.1：TikTok SELF_ONLY 測試相容修正
+- TikTok 官方規則要求：未完成 audit 的 Direct Post client，目標 TikTok 帳號本身也必須先設為私人帳號，內容隱私維持 `SELF_ONLY`。
+- SELF_ONLY 測試時強制 `brand_content_toggle=false`、`brand_organic_toggle=false`，避免商業內容揭露設定與私人可見衝突。
+- `brand_content_toggle` 預設改為 false，符合 TikTok 官方「預設關閉」的產品規則。
+- 若 TikTok 回傳 `unaudited_client_can_only_post_to_private_accounts`，工具會直接顯示「請先把目標帳號設為私人帳號」。
