@@ -15,6 +15,18 @@ function Stop-Port([int]$Port) {
   } catch {}
 }
 
+function Stop-RxvNodeProcesses {
+  try {
+    $items = Get-CimInstance Win32_Process -Filter "Name='node.exe'" -ErrorAction SilentlyContinue
+    foreach ($item in $items) {
+      $cmd = [string]$item.CommandLine
+      if ($cmd -match "image-to-video-server\.cjs" -or $cmd -match "rxv-image-publisher-v2\.cjs") {
+        Stop-Process -Id $item.ProcessId -Force -ErrorAction SilentlyContinue
+      }
+    }
+  } catch {}
+}
+
 function Wait-Port([int]$Port, [int]$TimeoutSeconds = 20) {
   $end = (Get-Date).AddSeconds($TimeoutSeconds)
   while ((Get-Date) -lt $end) {
@@ -35,6 +47,31 @@ function Ensure-EnvFile {
   }
 }
 
+function Backup-LocalDatabases {
+  $backup = "D:\RXV-AutoVideo\state-backup"
+  New-Item -ItemType Directory -Force -Path $backup | Out-Null
+  $dataDir = Join-Path $Root "data"
+  if (Test-Path $dataDir) {
+    Get-ChildItem $dataDir -File -ErrorAction SilentlyContinue | Where-Object {
+      $_.Name -match "\.db($|-wal$|-shm$)"
+    } | ForEach-Object {
+      Copy-Item $_.FullName (Join-Path $backup $_.Name) -Force -ErrorAction SilentlyContinue
+    }
+  }
+  return $backup
+}
+
+function Restore-LocalDatabases([string]$BackupDir) {
+  if (-not (Test-Path $BackupDir)) { return }
+  $dataDir = Join-Path $Root "data"
+  New-Item -ItemType Directory -Force -Path $dataDir | Out-Null
+  Get-ChildItem $BackupDir -File -ErrorAction SilentlyContinue | Where-Object {
+    $_.Name -match "\.db($|-wal$|-shm$)"
+  } | ForEach-Object {
+    Copy-Item $_.FullName (Join-Path $dataDir $_.Name) -Force -ErrorAction SilentlyContinue
+  }
+}
+
 function Find-Node {
   $cmd = Get-Command node -ErrorAction SilentlyContinue
   if (-not $cmd) { throw "Node.js was not found." }
@@ -51,17 +88,30 @@ function Start-NodeService {
 try {
   Ensure-EnvFile
 
+  Log "Stopping old RXV services..."
+  Stop-Port 3006
+  Stop-Port 3018
+  Stop-RxvNodeProcesses
+  Start-Sleep -Milliseconds 1000
+
+  $DbBackup = Backup-LocalDatabases
+
   if (-not $SkipUpdate) {
     Log "Checking GitHub updates..."
     try {
       git fetch origin main | Out-Null
       if ($LASTEXITCODE -eq 0) {
         git reset --hard origin/main | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw "git reset failed" }
+        Restore-LocalDatabases $DbBackup
         Log "GitHub update complete."
       }
     } catch {
+      Restore-LocalDatabases $DbBackup
       Write-Host "[RXV] GitHub update failed. Continuing with local files." -ForegroundColor Yellow
     }
+  } else {
+    Restore-LocalDatabases $DbBackup
   }
 
   Ensure-EnvFile
@@ -83,9 +133,10 @@ try {
     throw "node_modules was not found."
   }
 
-  Log "Restarting services..."
+  Log "Starting services..."
   Stop-Port 3006
   Stop-Port 3018
+  Stop-RxvNodeProcesses
   Start-Sleep -Milliseconds 800
 
   Start-NodeService -NodePath $Node -NodeArgs @("-r","dotenv/config","server\image-to-video-server.cjs") -OutLog (Join-Path $LogRoot "3006-out.log") -ErrLog (Join-Path $LogRoot "3006-error.log") | Out-Null
