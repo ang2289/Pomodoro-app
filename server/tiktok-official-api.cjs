@@ -48,7 +48,6 @@ function normalizeScopes(value, mode) {
   scopes.add("user.info.basic");
   if (mode === "direct") {
     scopes.add("video.publish");
-    scopes.add("video.upload");
   } else {
     scopes.add("video.upload");
   }
@@ -562,15 +561,23 @@ function createTikTokOfficialApi(options = {}) {
       : [];
 
     const requestedPrivacy = String(postOptions?.privacyLevel || "").trim().toUpperCase();
-    let privacyLevel = c.directSelfOnlyTest ? "SELF_ONLY" : (requestedPrivacy || c.privacyLevel);
-    if (options.length && !options.includes(privacyLevel)) {
-      privacyLevel = options.includes("SELF_ONLY") ? "SELF_ONLY" : options[0];
+    let privacyLevel = c.directSelfOnlyTest ? "SELF_ONLY" : requestedPrivacy;
+    if (!privacyLevel) {
+      throw createHttpError(
+        "請先在發布畫面主動選擇「誰可以觀看」。",
+        "TIKTOK_PRIVACY_SELECTION_REQUIRED",
+      );
     }
-    if (!privacyLevel) throw createHttpError("TIKTOK_PRIVACY_LEVEL_UNAVAILABLE", "TIKTOK_PRIVACY_LEVEL_UNAVAILABLE");
+    if (options.length && !options.includes(privacyLevel)) {
+      throw createHttpError(
+        "你選擇的 TikTok 隱私選項目前不可用，請重新整理 creator_info 後再選一次。",
+        "privacy_level_option_mismatch",
+      );
+    }
 
-    const allowComment = !Boolean(creator?.comment_disabled) && postOptions?.allowComment !== false;
-    const allowDuet = !Boolean(creator?.duet_disabled) && postOptions?.allowDuet !== false;
-    const allowStitch = !Boolean(creator?.stitch_disabled) && postOptions?.allowStitch !== false;
+    const allowComment = !Boolean(creator?.comment_disabled) && Boolean(postOptions?.allowComment);
+    const allowDuet = !Boolean(creator?.duet_disabled) && Boolean(postOptions?.allowDuet);
+    const allowStitch = !Boolean(creator?.stitch_disabled) && Boolean(postOptions?.allowStitch);
     const brandContent = privacyLevel === "SELF_ONLY" ? false : Boolean(postOptions?.brandContent);
     const brandOrganic = privacyLevel === "SELF_ONLY" ? false : Boolean(postOptions?.brandOrganic);
 
@@ -620,9 +627,9 @@ function createTikTokOfficialApi(options = {}) {
     if (!videoPath || !fs.existsSync(videoPath)) {
       throw createHttpError("VIDEO_FILE_NOT_FOUND", "VIDEO_FILE_NOT_FOUND");
     }
-    if (publishMode === "upload" && !/_tiktok_safe\.mp4$/i.test(videoPath)) {
+    if (!/_tiktok_safe\.mp4$/i.test(videoPath)) {
       throw createHttpError(
-        "這支是舊版促銷 MP4。請先重新產生 TikTok 專用乾淨版（無 QR、網址、LINE、價格 CTA）再上傳。",
+        "這支不是 TikTok 專用乾淨版 MP4。請先重新產生無 QR、網址、LINE、價格 CTA 的 _tiktok_safe.mp4 再發布。",
         "TIKTOK_SAFE_VIDEO_REQUIRED",
       );
     }
