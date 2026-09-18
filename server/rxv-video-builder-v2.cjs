@@ -83,6 +83,14 @@ function xmlEscape(value) {
     .replace(/'/g, "&apos;");
 }
 
+function tikTokSafeMode(options = {}) {
+  if (options && options.videoVariant === "promo") return false;
+  if (options && options.videoVariant === "tiktok-safe") return true;
+  return !["0", "false", "off", "no"].includes(
+    String(process.env.RXV_TIKTOK_SAFE_VIDEO || "1").trim().toLowerCase(),
+  );
+}
+
 function wrapText(value, maxChars = 17, maxLines = 3) {
   const text = String(value || "").trim();
   if (!text) return [];
@@ -117,6 +125,15 @@ function contentOverlaySvg({ headline, footer, brand = "RXV 圖片素材" }) {
     <rect x="48" y="1515" width="984" height="310" rx="36" fill="rgba(10,10,10,0.76)"/>
     ${svgTextLines(footerLines, { x: 540, y: 1618, lineHeight: 62, fontSize: 48 })}
     <text x="540" y="1770" text-anchor="middle" font-family="Microsoft JhengHei,Microsoft YaHei,Noto Sans CJK TC,sans-serif" font-size="40" font-weight="700" fill="#f5e8b6">${xmlEscape(brand)}</text>
+  </svg>`, "utf8");
+}
+
+function safeContentOverlaySvg({ headline }) {
+  const headLines = wrapText(headline, 18, 3);
+  return Buffer.from(`
+  <svg width="1080" height="1920" xmlns="http://www.w3.org/2000/svg">
+    <rect x="48" y="58" width="984" height="242" rx="36" fill="rgba(10,10,10,0.68)"/>
+    ${svgTextLines(headLines, { x: 540, y: 132, lineHeight: 66, fontSize: 54 })}
   </svg>`, "utf8");
 }
 
@@ -218,7 +235,7 @@ function run(file, args, timeoutMs = 240000) {
   });
 }
 
-async function renderContentSlide(sharp, imagePath, outputPath, headline, footer) {
+async function renderContentSlide(sharp, imagePath, outputPath, headline, footer, safeMode = false) {
   const bg = await sharp(imagePath)
     .rotate()
     .resize(1080, 1920, {
@@ -230,7 +247,7 @@ async function renderContentSlide(sharp, imagePath, outputPath, headline, footer
     .png()
     .toBuffer();
   await sharp(bg)
-    .composite([{ input: contentOverlaySvg({ headline, footer }) }])
+    .composite([{ input: safeMode ? safeContentOverlaySvg({ headline }) : contentOverlaySvg({ headline, footer }) }])
     .png()
     .toFile(outputPath);
 }
@@ -317,9 +334,10 @@ async function addAudio(ffmpeg, inputVideo, mp3Path, outputPath) {
 
 async function buildVideo(options = {}) {
   const sharp = requireOptional("sharp");
-  const QRCode = requireOptional("qrcode");
+  const safeMode = tikTokSafeMode(options);
+  const QRCode = safeMode ? null : requireOptional("qrcode");
   if (!sharp) throw new Error("找不到 sharp。請確認 D:\\Pomodoro-app\\node_modules 可用。");
-  if (!QRCode) throw new Error("找不到 qrcode。請確認 D:\\Pomodoro-app\\node_modules 可用。");
+  if (!safeMode && !QRCode) throw new Error("找不到 qrcode。請確認 D:\\Pomodoro-app\\node_modules 可用。");
   const ffmpeg = resolveFfmpeg();
   if (!ffmpeg) throw new Error("找不到 FFmpeg。請確認 ffmpeg-static 或系統 FFmpeg 可用。");
   const videoId = safeFileName(options.videoId || Date.now());
@@ -332,30 +350,47 @@ async function buildVideo(options = {}) {
   const slideDir = ensureDir(path.join(workDir, "slides"));
   const segmentDir = ensureDir(path.join(workDir, "segments"));
   const outputDir = ensureDir(path.join(root, "output"));
-  const painLines = Array.isArray(options.painLines) && options.painLines.length ? options.painLines : [
-    (options.categoryLabel || "社群") + "每天發文還在花時間找圖嗎？",
-    "常用情境素材一次整理",
-    "買一次即可重複使用，發文直接挑圖",
-    "小包 NT$99｜全部素材 NT$199",
-  ];
-  const footer = (options.packCount || requestedCount) + " 張小包 NT$99｜全部 " + (options.siteTotal || requestedCount) + " 張 NT$199";
+  const defaultPainLines = safeMode
+    ? [
+        (options.categoryLabel || "社群") + "每天發文還在花時間找圖嗎？",
+        "常用情境素材一次整理",
+        "發文直接挑圖，省下找素材時間",
+        "讓社群內容更快準備完成",
+      ]
+    : [
+        (options.categoryLabel || "社群") + "每天發文還在花時間找圖嗎？",
+        "常用情境素材一次整理",
+        "買一次即可重複使用，發文直接挑圖",
+        "小包 NT$99｜全部素材 NT$199",
+      ];
+  const painLines = Array.isArray(options.painLines) && options.painLines.length
+    ? (safeMode
+        ? options.painLines.filter((line) => !/NT\$|https?:|LINE|掃碼|QR|購買|限時價/i.test(String(line || "")))
+        : options.painLines)
+    : defaultPainLines;
+  while (safeMode && painLines.length < 4) painLines.push(defaultPainLines[painLines.length % defaultPainLines.length]);
+  const footer = safeMode
+    ? ""
+    : (options.packCount || requestedCount) + " 張小包 NT$99｜全部 " + (options.siteTotal || requestedCount) + " 張 NT$199";
   const slides = [];
   for (let i = 0; i < localImages.length; i += 1) {
     const slide = path.join(slideDir, "slide_" + String(i + 1).padStart(2, "0") + ".png");
-    await renderContentSlide(sharp, localImages[i], slide, painLines[i % painLines.length], footer);
+    await renderContentSlide(sharp, localImages[i], slide, painLines[i % painLines.length], footer, safeMode);
     slides.push({ path: slide, duration: Number(options.secondsPerImage || 2.0) });
   }
-  const ctaSlide = path.join(slideDir, "slide_cta.png");
-  await renderCtaSlide(sharp, QRCode, localImages[localImages.length - 1], ctaSlide, {
-    packLabel: options.packLabel || (options.categoryLabel || "專業") + "常用圖片",
-    packCount: Number(options.packCount || requestedCount),
-    siteTotal: Number(options.siteTotal || requestedCount),
-    smallPrice: Number(options.smallPrice || 99),
-    allPrice: Number(options.allPrice || 199),
-    salesUrl: options.salesUrl || SALES_URL,
-    lineId: options.lineId || LINE_ID,
-  });
-  slides.push({ path: ctaSlide, duration: Number(options.ctaSeconds || 2.5) });
+  if (!safeMode) {
+    const ctaSlide = path.join(slideDir, "slide_cta.png");
+    await renderCtaSlide(sharp, QRCode, localImages[localImages.length - 1], ctaSlide, {
+      packLabel: options.packLabel || (options.categoryLabel || "專業") + "常用圖片",
+      packCount: Number(options.packCount || requestedCount),
+      siteTotal: Number(options.siteTotal || requestedCount),
+      smallPrice: Number(options.smallPrice || 99),
+      allPrice: Number(options.allPrice || 199),
+      salesUrl: options.salesUrl || SALES_URL,
+      lineId: options.lineId || LINE_ID,
+    });
+    slides.push({ path: ctaSlide, duration: Number(options.ctaSeconds || 2.5) });
+  }
   const segmentPaths = [];
   for (let i = 0; i < slides.length; i += 1) {
     const segment = path.join(segmentDir, "seg_" + String(i + 1).padStart(2, "0") + ".mp4");
@@ -365,13 +400,14 @@ async function buildVideo(options = {}) {
   const silent = path.join(workDir, "joined-silent.mp4");
   await concatSegments(ffmpeg, segmentPaths, silent, workDir);
   const selectedMp3 = chooseMp3(options.mp3Choice || "auto");
-  const finalPath = path.join(outputDir, videoId + ".mp4");
+  const finalPath = path.join(outputDir, videoId + (safeMode ? "_tiktok_safe" : "_promo") + ".mp4");
   await addAudio(ffmpeg, silent, selectedMp3, finalPath);
   const totalDuration = slides.reduce((sum, item) => sum + Number(item.duration || 0), 0);
   const stat = fs.statSync(finalPath);
   return {
     ok: true,
-    version: "v2.1-916-originals",
+    version: safeMode ? "v2.2-tiktok-safe" : "v2.2-promo",
+    variant: safeMode ? "tiktok-safe" : "promo",
     videoPath: finalPath,
     durationSec: Number(totalDuration.toFixed(2)),
     sizeBytes: stat.size,
@@ -399,4 +435,5 @@ module.exports = {
   chooseMp3,
   resolveFfmpeg,
   outputRoot,
+  tikTokSafeMode,
 };
