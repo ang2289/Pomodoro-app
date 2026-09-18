@@ -186,3 +186,9 @@ private-data/
 
 # ===== RXV CLEAN GITHUB REBUILD END =====
 
+
+# RXV local publisher state / generated media
+/data/*.db
+/data/*.db-wal
+/data/*.db-shm
+/.local-tools/
