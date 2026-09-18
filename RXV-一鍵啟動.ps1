@@ -59,18 +59,17 @@ function Start-NodeService {
   Start-Process -FilePath $Node -ArgumentList $Args -WorkingDirectory $Root -WindowStyle Hidden -RedirectStandardOutput $OutLog -RedirectStandardError $ErrLog -PassThru
 }
 
-Ensure-Env
+try {
+  Ensure-Env
 
-if (-not $SkipUpdate) {
+  if (-not $SkipUpdate) {
   Write-Step '檢查 GitHub 最新版本...'
   try {
     git fetch origin main | Out-Null
     if ($LASTEXITCODE -eq 0) {
       git reset --hard origin/main | Out-Null
       Write-Step '已同步最新版本。'
-      $self = $MyInvocation.MyCommand.Path
-      Start-Process powershell.exe -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-File',$self,'-SkipUpdate') -WorkingDirectory $Root
-      exit 0
+      Write-Step '直接使用更新後檔案繼續啟動，不再重開 PowerShell。'
     }
   } catch {
     Write-Host '[RXV] GitHub 更新失敗，改用目前本機版本繼續。' -ForegroundColor Yellow
@@ -150,4 +149,22 @@ Write-Host '==========================================' -ForegroundColor Green
 Write-Host ''
 Write-Host '平常只要雙擊 RXV-一鍵啟動.bat。'
 Write-Host '若 TikTok 要重新授權，瀏覽器會自動開啟授權頁。'
-Start-Sleep -Seconds 3
+Start-Sleep -Seconds 2
+exit 0
+}
+catch {
+  $msg = String($_.Exception.Message)
+  Write-Host ''
+  Write-Host '==========================================' -ForegroundColor Red
+  Write-Host '[RXV] 一鍵啟動失敗' -ForegroundColor Red
+  Write-Host $msg -ForegroundColor Yellow
+  Write-Host '==========================================' -ForegroundColor Red
+  try {
+    $fallback = 'D:\RXV-AutoVideo\logs\oneclick-error.txt'
+    New-Item -ItemType Directory -Force -Path (Split-Path -Parent $fallback) | Out-Null
+    Set-Content -Path $fallback -Value ($msg + [Environment]::NewLine + $_.ScriptStackTrace) -Encoding UTF8
+    Start-Process notepad.exe $fallback
+  } catch {}
+  Read-Host '按 Enter 關閉'
+  exit 1
+}
