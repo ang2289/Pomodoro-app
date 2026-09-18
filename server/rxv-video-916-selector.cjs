@@ -114,7 +114,14 @@ function openMetadataDb() {
     " is_high_res_916 INTEGER NOT NULL DEFAULT 0," +
     " original_path TEXT NOT NULL DEFAULT ''," +
     " checked_at TEXT NOT NULL DEFAULT ''" +
-    ");"
+    ");" +
+    "CREATE TABLE IF NOT EXISTS rxv_video_916_usage (" +
+    " video_id TEXT NOT NULL," +
+    " image_id TEXT NOT NULL," +
+    " used_at TEXT NOT NULL," +
+    " PRIMARY KEY(video_id,image_id)" +
+    ");" +
+    "CREATE INDEX IF NOT EXISTS idx_rxv_video_916_usage_image ON rxv_video_916_usage(image_id);"
   );
   return db;
 }
@@ -139,6 +146,12 @@ function readPreviouslyUsedImageIds(db) {
   try {
     if (tableExists(db, "rxv_video_job_images")) {
       const rows = db.prepare("SELECT image_id FROM rxv_video_job_images").all();
+      for (const row of rows) if (row && row.image_id) used.add(String(row.image_id));
+    }
+  } catch {}
+  try {
+    if (tableExists(db, "rxv_video_916_usage")) {
+      const rows = db.prepare("SELECT image_id FROM rxv_video_916_usage").all();
       for (const row of rows) if (row && row.image_id) used.add(String(row.image_id));
     }
   } catch {}
@@ -281,6 +294,23 @@ async function inspectCandidate916(sharp, db, image, cacheDir) {
   };
 }
 
+function record916Usage(videoId, items) {
+  const db = openMetadataDb();
+  if (!db) return;
+  try {
+    const stmt = db.prepare(
+      "INSERT OR REPLACE INTO rxv_video_916_usage(video_id,image_id,used_at) VALUES(?,?,?)"
+    );
+    const now = new Date().toISOString();
+    for (const item of Array.isArray(items) ? items : []) {
+      const imageId = String(item && item.image && (item.image.image_id || item.image.id) || "").trim();
+      if (imageId) stmt.run(String(videoId || "video"), imageId, now);
+    }
+  } finally {
+    try { db.close(); } catch {}
+  }
+}
+
 async function prepare916Images(options, sharp, requestedCount) {
   const current = Array.isArray(options.images)
     ? options.images.filter((x) => x && (x.image_id || x.id))
@@ -353,6 +383,7 @@ async function prepare916Images(options, sharp, requestedCount) {
 
 module.exports = {
   prepare916Images,
+  record916Usage,
   is916Size,
   isHighRes916Size,
   MIN_WIDTH,
