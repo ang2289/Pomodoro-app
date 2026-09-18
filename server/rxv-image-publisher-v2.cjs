@@ -36,7 +36,9 @@ function normalizeAccount(status, verified) {
     username,
     displayName,
     postMode: String(v.mode || s.postMode || ""),
+    configuredPostMode: String(v.configuredMode || s.configuredPostMode || ""),
     audited: Boolean(s.audited),
+    needsUploadReauth: Boolean(s.needsUploadReauth),
     verifiedAt: String(v.verifiedAt || s.verifiedAt || ""),
     error: String(v.error || s.error || ""),
   };
@@ -77,7 +79,9 @@ async function getAccountInfo(force = false) {
       username: "",
       displayName: "",
       postMode: "",
+      configuredPostMode: "",
       audited: false,
+      needsUploadReauth: false,
       verifiedAt: "",
       error: String(error?.message || error),
     };
@@ -119,9 +123,14 @@ function injectTikTokAccountBanner(sourceText) {
 <div id="rxvTikTokAccountBanner" style="margin:10px 0 4px;padding:12px 14px;border:1px solid #dbeafe;border-radius:10px;background:#eff6ff;color:#0f172a;font-weight:700">
   TikTok 已連線帳號：查詢中…
 </div>
+<div id="rxvTikTokUploadHint" style="display:none;margin:6px 0 4px;padding:10px 14px;border:1px solid #fed7aa;border-radius:10px;background:#fff7ed;color:#9a3412">
+  Direct Post 尚未通過 Audit，目前改用 Upload Draft。
+  <a href="http://localhost:3006/tiktok/setup" target="_blank" rel="noopener" style="font-weight:700;color:#9a3412">開啟 TikTok 授權設定</a>
+</div>
 <script>
 (function(){
   var el=document.getElementById('rxvTikTokAccountBanner');
+  var hint=document.getElementById('rxvTikTokUploadHint');
   if(!el)return;
   var tries=0;
   async function loadAccount(){
@@ -134,7 +143,15 @@ function injectTikTokAccountBanner(sourceText) {
       var auth=a.authorized?'已授權':'未授權';
       var mode=a.postMode||'-';
       var audit=a.audited?'已通過':'未通過／測試';
-      el.textContent='TikTok 已連線帳號：'+who+'｜授權：'+auth+'｜模式：'+mode+'｜Audit：'+audit;
+      var modeLabel=mode==='upload'?'Upload Draft':mode;
+      var reauth=a.needsUploadReauth?'｜Upload：需重新授權':'';
+      el.textContent='TikTok 已連線帳號：'+who+'｜授權：'+auth+'｜模式：'+modeLabel+'｜Audit：'+audit+reauth;
+      if(hint){
+        hint.style.display=(a.needsUploadReauth||(!a.audited&&a.configuredPostMode==='direct'))?'block':'none';
+        if(!a.needsUploadReauth&&hint.style.display==='block'){
+          hint.firstChild.textContent='Direct Post 尚未通過 Audit，目前會自動改用 Upload Draft。';
+        }
+      }
       if(a.authorized&&!a.username&&tries<8)setTimeout(loadAccount,1200);
     }catch(e){
       el.textContent='TikTok 已連線帳號：查詢失敗，請重新整理';
