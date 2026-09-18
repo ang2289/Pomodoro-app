@@ -346,12 +346,13 @@ async function prepare916Images(options, sharp, requestedCount) {
 
   if (selected.length < requestedCount) {
     const manifest = await loadPublicManifest();
-    const matcher = categoryMatcher(options.categoryLabel || "");
+    const targetLabel = String(options.categoryLabel || (current[0] && current[0].category) || "").trim();
+    const matcher = categoryMatcher(targetLabel);
     let candidates = normalizeManifestImages(manifest);
     if (matcher) {
       candidates = candidates.filter((img) => matcher.test(String(img.category || "") + " " + String(img.title || "")));
-    } else if (String(options.categoryLabel || "").trim()) {
-      const label = String(options.categoryLabel || "").trim().toLowerCase();
+    } else if (targetLabel) {
+      const label = targetLabel.toLowerCase();
       candidates = candidates.filter((img) =>
         (String(img.category || "") + " " + String(img.title || "")).toLowerCase().includes(label)
       );
