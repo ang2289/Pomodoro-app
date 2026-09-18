@@ -643,7 +643,36 @@ async function api(url,opts){const r=await fetch(url,opts);const d=await r.json(
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function setMsg(s){document.getElementById('msg').textContent=s||''}
 function actionPost(url,body){return api(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body||{})})}
-function fillStatus(s){document.getElementById('total').textContent=s.total;document.getElementById('remaining').textContent=s.remaining;document.getElementById('pending').textContent=s.draftReady||0;document.getElementById('published').textContent=s.published||0;const catSel=document.getElementById('category');const current=catSel.value;catSel.innerHTML='<option value="auto">自動選分類</option>'+((s.categories||[]).map(x=>'<option value="'+esc(x.key)+'">'+esc(x.label)+'（'+x.count+' 張）</option>').join(''));if([...catSel.options].some(o=>o.value===current))catSel.value=current;const mp=document.getElementById('mp3');const mpCur=mp.value;mp.innerHTML='<option value="auto">自動選第一首</option><option value="none">不加音樂</option>'+((s.mp3||[]).map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>').join(''));if([...mp.options].some(o=>o.value===mpCur))mp.value=mpCur;document.getElementById('cats').innerHTML=(s.categories||[]).map(x=>'<span class="cat">'+esc(x.label)+' '+x.count+' 張</span>').join('');const tk=s.tiktok||{};document.getElementById('sys').textContent='TikTok：'+(tk.authorized?'已授權':'未授權)+'｜模式：'+(tk.postMode==='direct'?'Direct Post + SELF_ONLY':(tk.postMode||'-'))+'｜FFmpeg：'+(s.ffmpeg?'已找到':'未找到')+'｜MP4：'+(s.outputRoot||'-')}
+function fillStatus(s){
+  document.getElementById('total').textContent=s.total;
+  document.getElementById('remaining').textContent=s.remaining;
+  document.getElementById('pending').textContent=s.draftReady||0;
+  document.getElementById('published').textContent=s.published||0;
+
+  const catSel=document.getElementById('category');
+  const current=catSel.value;
+  const catOptions=(s.categories||[]).map(function(x){
+    return '<option value="'+esc(x.key)+'">'+esc(x.label)+'（'+x.count+' 張）</option>';
+  }).join('');
+  catSel.innerHTML='<option value="auto">自動選分類</option>'+catOptions;
+  if(Array.from(catSel.options).some(function(o){return o.value===current}))catSel.value=current;
+
+  const mp=document.getElementById('mp3');
+  const mpCur=mp.value;
+  const mpOptions=(s.mp3||[]).map(function(x){
+    return '<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>';
+  }).join('');
+  mp.innerHTML='<option value="auto">自動選第一首</option><option value="none">不加音樂</option>'+mpOptions;
+  if(Array.from(mp.options).some(function(o){return o.value===mpCur}))mp.value=mpCur;
+
+  document.getElementById('cats').innerHTML=(s.categories||[]).map(function(x){
+    return '<span class="cat">'+esc(x.label)+' '+x.count+' 張</span>';
+  }).join('');
+
+  const tk=s.tiktok||{};
+  const mode=tk.postMode==='direct'?'Direct Post + SELF_ONLY':(tk.postMode||'-');
+  document.getElementById('sys').textContent='TikTok：'+(tk.authorized?'已授權':'未授權')+'｜模式：'+mode+'｜FFmpeg：'+(s.ffmpeg?'已找到':'未找到')+'｜MP4：'+(s.outputRoot||'-');
+}
 async function refreshAll(){try{setMsg('同步網站最新數量中…');const s=await api('/api/status');fillStatus(s);const j=await api('/api/jobs?limit=30');renderJobs(j.items||[]);setMsg('已同步｜網站公開圖片 '+s.total+' 張｜來源：'+s.manifestSource)}catch(e){setMsg('錯誤：'+e.message)}}
 async function createJobs(n){try{setMsg('正在挑選未使用圖片並建立影片任務…');const d=await actionPost('/api/jobs/generate',{count:n,categoryKey:document.getElementById('category').value,imagesPerVideo:Number(document.getElementById('imageCount').value),mp3Choice:document.getElementById('mp3').value});setMsg('已建立 '+d.created+' 支待發影片');await refreshAll()}catch(e){setMsg('建立失敗：'+e.message)}}
 function renderJobs(items){const box=document.getElementById('jobs');if(!items.length){box.innerHTML='<div class="muted">目前沒有影片任務。按「自動建立 1 支」。</div>';return}box.innerHTML=items.map(j=>{const imgs=(j.images||[]).map(i=>'<img src="'+esc(i.image_url)+'" title="'+esc(i.title)+'">').join('');const vid=j.video_path&&['ready','publishing','scheduled','published'].includes(j.status)?'<video class="video" controls preload="metadata" src="/api/video?videoId='+encodeURIComponent(j.video_id)+'"></video>':'';return '<div class="card"><div class="row"><div><div class="thumbs">'+imgs+'</div>'+vid+'</div><div class="jobmain"><span class="tag">'+esc(j.category_label)+'</span><span class="status">'+esc(j.status)+'</span><h3>'+esc(j.pack_label)+'｜'+j.pack_count+' 張 NT$99｜全部 '+j.site_total+' 張 NT$199</h3><textarea id="cap_'+esc(j.video_id)+'">'+esc(j.caption||'')+'</textarea><div class="small">圖片 '+j.image_count+' 張｜MP3：'+esc(j.mp3_path||j.mp3_choice||'auto')+(j.video_path?'｜本機：'+esc(j.video_path):'')+'</div>'+((j.error_message&&!/Direct Post 尚未通過 Audit[，,]工具已改用 Upload Draft/.test(j.error_message))?'<div class="error">'+esc(j.error_message)+'</div>':'')+'<div class="actions"><button class="btn green" data-a="render" data-id="'+encodeURIComponent(j.video_id)+'">產生 MP4</button><button class="btn" data-a="publish" data-id="'+encodeURIComponent(j.video_id)+'">確認並發布 TikTok</button>'+(j.publish_id?'<button class="btn gray" data-a="check" data-id="'+encodeURIComponent(j.video_id)+'">查 TikTok 狀態</button>':'')+'<button class="btn light" data-a="copy" data-id="'+encodeURIComponent(j.video_id)+'">複製文案</button><button class="btn red" data-a="cancel" data-id="'+encodeURIComponent(j.video_id)+'">取消任務</button></div></div></div></div>'}).join('');box.querySelectorAll('[data-a]').forEach(btn=>btn.addEventListener('click',()=>handleAction(btn.dataset.a,decodeURIComponent(btn.dataset.id||''))))}
