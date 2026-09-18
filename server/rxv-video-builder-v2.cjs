@@ -4,6 +4,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { spawn, execFileSync } = require("node:child_process");
 const { createRequire } = require("node:module");
+const { prepare916Images, record916Usage, RATIO_MIN, RATIO_MAX, MIN_WIDTH, MIN_HEIGHT } = require("./rxv-video-916-selector.cjs");
 
 const ROOT = path.resolve(__dirname, "..");
 const DEFAULT_SOURCE_ROOT = process.env.RXV_SOURCE_ROOT || "D:\\Pomodoro-app";
@@ -220,8 +221,12 @@ function run(file, args, timeoutMs = 240000) {
 async function renderContentSlide(sharp, imagePath, outputPath, headline, footer) {
   const bg = await sharp(imagePath)
     .rotate()
-    .resize(1080, 1920, { fit: "cover", position: "attention" })
-    .modulate({ brightness: 0.92, saturation: 0.96 })
+    .resize(1080, 1920, {
+      fit: "contain",
+      background: "#000000",
+      kernel: sharp.kernel.lanczos3,
+    })
+    .modulate({ brightness: 0.98, saturation: 1.0 })
     .png()
     .toBuffer();
   await sharp(bg)
@@ -313,82 +318,78 @@ async function addAudio(ffmpeg, inputVideo, mp3Path, outputPath) {
 async function buildVideo(options = {}) {
   const sharp = requireOptional("sharp");
   const QRCode = requireOptional("qrcode");
-  if (!sharp) throw new Error("找不到 sharp。請確認 D:\\Pomodoro-app\\node_modules 可用。\n");
-  if (!QRCode) throw new Error("找不到 qrcode。請確認 D:\\Pomodoro-app\\node_modules 可用。\n");
+  if (!sharp) throw new Error("找不到 sharp。請確認 D:\\Pomodoro-app\\node_modules 可用。");
+  if (!QRCode) throw new Error("找不到 qrcode。請確認 D:\\Pomodoro-app\\node_modules 可用。");
   const ffmpeg = resolveFfmpeg();
-  if (!ffmpeg) throw new Error("找不到 FFmpeg。請確認 ffmpeg-static 或系統 FFmpeg 可用。\n");
-
+  if (!ffmpeg) throw new Error("找不到 FFmpeg。請確認 ffmpeg-static 或系統 FFmpeg 可用。");
   const videoId = safeFileName(options.videoId || Date.now());
-  const images = Array.isArray(options.images) ? options.images.filter((x) => x && x.image_url) : [];
-  if (images.length < 2) throw new Error("至少需要 2 張圖片才能建立多圖 MP4");
-
+  const inputImages = Array.isArray(options.images) ? options.images.filter((x) => x && (x.image_id || x.id)) : [];
+  const requestedCount = Math.max(2, Math.min(6, Number(options.imageCount || inputImages.length || 4) || 4));
+  const prepared = await prepare916Images(options, sharp, requestedCount);
+  const localImages = prepared.map((item) => item.localPath);
   const root = outputRoot();
   const workDir = ensureDir(path.join(root, "work", videoId));
-  const imageDir = ensureDir(path.join(workDir, "images"));
   const slideDir = ensureDir(path.join(workDir, "slides"));
   const segmentDir = ensureDir(path.join(workDir, "segments"));
   const outputDir = ensureDir(path.join(root, "output"));
-
-  const localImages = [];
-  for (let i = 0; i < images.length; i += 1) {
-    const image = images[i];
-    const local = await downloadImageSmart(image.image_url, imageDir, `${String(i + 1).padStart(2, "0")}_${image.image_id || image.title || "image"}`);
-    localImages.push(local);
-  }
-
-  const painLines = Array.isArray(options.painLines) && options.painLines.length
-    ? options.painLines
-    : [
-        `${options.categoryLabel || "社群"}每天發文還在花時間找圖嗎？`,
-        "常用情境素材一次整理",
-        "發文直接挑圖，不用每次重新找",
-        "小包 NT$99｜全部素材 NT$199",
-      ];
-
-  const footer = `${options.packCount || images.length} 張小包 NT$99｜全部 ${options.siteTotal || images.length} 張 NT$199`;
+  const painLines = Array.isArray(options.painLines) && options.painLines.length ? options.painLines : [
+    (options.categoryLabel || "社群") + "每天發文還在花時間找圖嗎？",
+    "常用情境素材一次整理",
+    "買一次即可重複使用，發文直接挑圖",
+    "小包 NT$99｜全部素材 NT$199",
+  ];
+  const footer = (options.packCount || requestedCount) + " 張小包 NT$99｜全部 " + (options.siteTotal || requestedCount) + " 張 NT$199";
   const slides = [];
   for (let i = 0; i < localImages.length; i += 1) {
-    const slide = path.join(slideDir, `slide_${String(i + 1).padStart(2, "0")}.png`);
+    const slide = path.join(slideDir, "slide_" + String(i + 1).padStart(2, "0") + ".png");
     await renderContentSlide(sharp, localImages[i], slide, painLines[i % painLines.length], footer);
-    slides.push({ path: slide, duration: Number(options.secondsPerImage || 2.25) });
+    slides.push({ path: slide, duration: Number(options.secondsPerImage || 2.0) });
   }
-
   const ctaSlide = path.join(slideDir, "slide_cta.png");
   await renderCtaSlide(sharp, QRCode, localImages[localImages.length - 1], ctaSlide, {
-    packLabel: options.packLabel || `${options.categoryLabel || "專業"}常用圖片`,
-    packCount: Number(options.packCount || images.length),
-    siteTotal: Number(options.siteTotal || images.length),
+    packLabel: options.packLabel || (options.categoryLabel || "專業") + "常用圖片",
+    packCount: Number(options.packCount || requestedCount),
+    siteTotal: Number(options.siteTotal || requestedCount),
     smallPrice: Number(options.smallPrice || 99),
     allPrice: Number(options.allPrice || 199),
     salesUrl: options.salesUrl || SALES_URL,
     lineId: options.lineId || LINE_ID,
   });
-  slides.push({ path: ctaSlide, duration: Number(options.ctaSeconds || 3) });
-
+  slides.push({ path: ctaSlide, duration: Number(options.ctaSeconds || 2.5) });
   const segmentPaths = [];
   for (let i = 0; i < slides.length; i += 1) {
-    const segment = path.join(segmentDir, `seg_${String(i + 1).padStart(2, "0")}.mp4`);
+    const segment = path.join(segmentDir, "seg_" + String(i + 1).padStart(2, "0") + ".mp4");
     await createSegment(ffmpeg, slides[i].path, segment, slides[i].duration);
     segmentPaths.push(segment);
   }
-
   const silent = path.join(workDir, "joined-silent.mp4");
   await concatSegments(ffmpeg, segmentPaths, silent, workDir);
-
   const selectedMp3 = chooseMp3(options.mp3Choice || "auto");
-  const finalPath = path.join(outputDir, `${videoId}.mp4`);
+  const finalPath = path.join(outputDir, videoId + ".mp4");
   await addAudio(ffmpeg, silent, selectedMp3, finalPath);
-
   const totalDuration = slides.reduce((sum, item) => sum + Number(item.duration || 0), 0);
   const stat = fs.statSync(finalPath);
   return {
     ok: true,
+    version: "v2.1-916-originals",
     videoPath: finalPath,
     durationSec: Number(totalDuration.toFixed(2)),
     sizeBytes: stat.size,
     mp3Path: selectedMp3,
     ffmpegPath: ffmpeg,
     workDir,
+    selectedImages: prepared.map((item) => ({
+      imageId: String(item.image && (item.image.image_id || item.image.id) || ""),
+      title: String(item.image && item.image.title || ""),
+      category: String(item.image && item.image.category || options.categoryLabel || ""),
+      width: Number(item.width || 0),
+      height: Number(item.height || 0),
+      ratio: Number(Number(item.ratio || 0).toFixed(4)),
+      is916: Boolean(item.is916),
+      isHighRes916: Boolean(item.isHighRes916),
+      originalPath: item.localPath,
+    })),
+    selectionRule: { only916: true, originalImageOnly: true, ratioMin: RATIO_MIN, ratioMax: RATIO_MAX, minWidth: MIN_WIDTH, minHeight: MIN_HEIGHT },
   };
 }
 
