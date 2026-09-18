@@ -151,7 +151,8 @@ function injectTikTokAccountBanner(sourceText) {
       var reauth=a.needsUploadReauth?'｜Upload：需重新授權':'';
       el.textContent='TikTok 已連線帳號：'+who+'｜授權：'+auth+'｜模式：'+modeLabel+privacy+'｜Audit設定：'+audit+reauth;
       if(hint){
-        hint.style.display=a.needsUploadReauth?'block':'none';
+        hint.style.display=(a.needsUploadReauth||a.directSelfOnlyTest)?'block':'none';
+        if(a.directSelfOnlyTest){hint.firstChild.textContent='TikTok 測試模式：請先把 @'+(a.username||'目標帳號')+' 設為「私人帳號」，再用 SELF_ONLY 發布測試。 ';}
       }
       if(a.authorized&&!a.username&&tries<8)setTimeout(loadAccount,1200);
     }catch(e){
