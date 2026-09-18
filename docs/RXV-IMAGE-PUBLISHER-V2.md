@@ -53,3 +53,14 @@
 - 實際用進影片的 9:16 圖會寫入 `rxv_video_916_usage`，下一支優先避開重複。
 - 內容頁使用 contain，不把橫圖硬裁成直式；CTA 頁仍可模糊背景。
 - 如果原本任務選到橫圖或低解析度圖，產片時會自動從同分類改找合格 9:16 原圖。
+
+
+## v2.2：TikTok 安全版 + Upload Draft
+- v2 啟動器預設開啟 `RXV_TIKTOK_SAFE_VIDEO=1`。
+- TikTok 專用 MP4 只保留 9:16 原圖與痛點字幕，不燒入 QR Code、網址、LINE、NT$99 / NT$199 CTA。
+- TikTok 專用輸出檔名會以 `_tiktok_safe.mp4` 結尾。
+- 舊版促銷 MP4 在 Audit 未通過時不會送 TikTok，請重新產生新版 MP4。
+- 如果設定原本是 Direct Post，但 `TIKTOK_CLIENT_AUDITED=false`，工具會自動切換為 Upload Draft。
+- 若目前 OAuth 沒有 `video.upload` scope，畫面會顯示「Upload：需重新授權」，請開啟 TikTok 授權設定重新連接。
+- Upload Draft 成功後，影片會送到 TikTok 草稿／收件匣；最後文字與正式發布在 TikTok App 完成。
+- 商品價格、完整素材庫 NT$199、小包 NT$99 等銷售資訊仍保留在 v2 產生的貼文文案中，影片本身不燒促銷 CTA。
