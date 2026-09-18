@@ -22,7 +22,9 @@ if not exist ".env.local" if exist "D:\Pomodoro-app\.env.local" (
 )
 
 set "RXV_SOURCE_ROOT=D:\Pomodoro-app"
-set "RXV_AUTO_VIDEO_ROOT=D:\RXV-AutoVideo"\nset "RXV_TIKTOK_SAFE_VIDEO=1"
+set "RXV_AUTO_VIDEO_ROOT=D:\RXV-AutoVideo"
+set "RXV_TIKTOK_SAFE_VIDEO=1"
+
 if exist "%~dp0node_modules" (
   set "NODE_PATH=%~dp0node_modules"
 ) else if exist "D:\Pomodoro-app\node_modules" (
