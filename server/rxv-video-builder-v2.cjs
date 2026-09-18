@@ -4,7 +4,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { spawn, execFileSync } = require("node:child_process");
 const { createRequire } = require("node:module");
-const { prepare916Images, RATIO_MIN, RATIO_MAX, MIN_WIDTH, MIN_HEIGHT } = require("./rxv-video-916-selector.cjs");
+const { prepare916Images, record916Usage, RATIO_MIN, RATIO_MAX, MIN_WIDTH, MIN_HEIGHT } = require("./rxv-video-916-selector.cjs");
 
 const ROOT = path.resolve(__dirname, "..");
 const DEFAULT_SOURCE_ROOT = process.env.RXV_SOURCE_ROOT || "D:\\Pomodoro-app";
