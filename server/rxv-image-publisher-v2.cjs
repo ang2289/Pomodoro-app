@@ -37,6 +37,8 @@ function normalizeAccount(status, verified) {
     displayName,
     postMode: String(v.mode || s.postMode || ""),
     configuredPostMode: String(v.configuredMode || s.configuredPostMode || ""),
+    privacyLevel: String(s.effectivePrivacyLevel || s.privacyLevel || ""),
+    directSelfOnlyTest: Boolean(s.directSelfOnlyTest),
     audited: Boolean(s.audited),
     auditStatusSource: String(s.auditStatusSource || ""),
     needsUploadReauth: Boolean(s.needsUploadReauth),
@@ -125,7 +127,7 @@ function injectTikTokAccountBanner(sourceText) {
   TikTok 已連線帳號：查詢中…
 </div>
 <div id="rxvTikTokUploadHint" style="display:none;margin:6px 0 4px;padding:10px 14px;border:1px solid #fed7aa;border-radius:10px;background:#fff7ed;color:#9a3412">
-  Audit 狀態目前只是本機設定，不代表 TikTok 官方即時審核結果。
+  目前 Direct Post 測試會使用 SELF_ONLY（僅自己可見），先確認 TikTok API 可成功到 PUBLISH_COMPLETE。
   <a href="http://localhost:3006/tiktok/setup" target="_blank" rel="noopener" style="font-weight:700;color:#9a3412">開啟 TikTok 設定</a>
 </div>
 <script>
@@ -144,9 +146,10 @@ function injectTikTokAccountBanner(sourceText) {
       var auth=a.authorized?'已授權':'未授權';
       var mode=a.postMode||'-';
       var audit=a.audited?'本機已標記通過':'本機未標記';
-      var modeLabel=mode==='upload'?'Upload Draft':(mode==='direct'?'Direct Post':mode);
+      var modeLabel=mode==='upload'?'Upload Draft':(mode==='direct'?(a.directSelfOnlyTest?'Direct Post 測試（SELF_ONLY）':'Direct Post'):mode);
+      var privacy=a.privacyLevel?('｜隱私：'+a.privacyLevel):'';
       var reauth=a.needsUploadReauth?'｜Upload：需重新授權':'';
-      el.textContent='TikTok 已連線帳號：'+who+'｜授權：'+auth+'｜模式：'+modeLabel+'｜Audit設定：'+audit+reauth;
+      el.textContent='TikTok 已連線帳號：'+who+'｜授權：'+auth+'｜模式：'+modeLabel+privacy+'｜Audit設定：'+audit+reauth;
       if(hint){
         hint.style.display=a.needsUploadReauth?'block':'none';
       }
