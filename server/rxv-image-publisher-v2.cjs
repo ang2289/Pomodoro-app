@@ -7,10 +7,15 @@ const http = require("node:http");
 const { createTikTokOfficialApi } = require("./tiktok-official-api.cjs");
 
 function loadBundledSource(prefix) {
+  const plainName = String(prefix).replace(/\.cjs$/i, ".source.cjs");
+  const plainPath = path.join(__dirname, plainName);
+  if (fs.existsSync(plainPath)) {
+    return fs.readFileSync(plainPath, "utf8");
+  }
   const files = fs.readdirSync(__dirname)
     .filter((name) => name.startsWith(prefix + ".src.b64.part-"))
     .sort();
-  if (!files.length) throw new Error("RXV v2 source bundle missing: " + prefix);
+  if (!files.length) throw new Error("RXV v2 source missing: " + prefix);
   const b64 = files.map((name) => fs.readFileSync(path.join(__dirname, name), "utf8").trim()).join("");
   return zlib.gunzipSync(Buffer.from(b64, "base64")).toString("utf8");
 }
