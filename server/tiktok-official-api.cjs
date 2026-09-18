@@ -158,7 +158,6 @@ function createTikTokOfficialApi(options = {}) {
   }
 
   function effectivePostMode(c = config()) {
-    if (c.mode === "direct" && !c.audited) return "upload";
     return c.mode;
   }
 
@@ -461,6 +460,8 @@ function createTikTokOfficialApi(options = {}) {
       postMode: effectivePostMode(c),
       privacyLevel: c.privacyLevel,
       audited: c.audited,
+      auditStatusSource: "local_env_only",
+      auditStatusNote: "TIKTOK_CLIENT_AUDITED is only a local setting; it is not fetched from TikTok.",
       scopesRequested: c.scopes,
       scopesGranted: grantedScopes(),
       needsUploadReauth: effectivePostMode(c) === "upload" && !grantedScopes().includes("video.upload"),
@@ -550,7 +551,6 @@ function createTikTokOfficialApi(options = {}) {
       : [];
 
     let privacyLevel = c.privacyLevel;
-    if (!c.audited) privacyLevel = "SELF_ONLY";
     if (options.length && !options.includes(privacyLevel)) {
       privacyLevel = options.includes("SELF_ONLY") ? "SELF_ONLY" : options[0];
     }
@@ -602,7 +602,7 @@ function createTikTokOfficialApi(options = {}) {
     if (!videoPath || !fs.existsSync(videoPath)) {
       throw createHttpError("VIDEO_FILE_NOT_FOUND", "VIDEO_FILE_NOT_FOUND");
     }
-    if (!c.audited && !/_tiktok_safe\.mp4$/i.test(videoPath)) {
+    if (publishMode === "upload" && !/_tiktok_safe\.mp4$/i.test(videoPath)) {
       throw createHttpError(
         "這支是舊版促銷 MP4。請先重新產生 TikTok 專用乾淨版（無 QR、網址、LINE、價格 CTA）再上傳。",
         "TIKTOK_SAFE_VIDEO_REQUIRED",
@@ -709,11 +709,9 @@ function createTikTokOfficialApi(options = {}) {
     const configured = Boolean(s.configured);
     const modeText = s.postMode === "direct"
       ? "Direct Post（直接發布）"
-      : (s.configuredPostMode === "direct" && !s.audited
-          ? "Upload Draft（Audit 未通過，自動切換）"
-          : "Upload Draft（上傳草稿）");
+      : "Upload Draft（上傳草稿）";
     const warning = s.postMode === "direct"
-      ? "Direct Post 已啟用。送出前仍會要求使用者明確確認。"
+      ? "Direct Post 會直接呼叫 TikTok 官方 API。Audit 顯示僅為本機設定，不代表 TikTok 官方即時審核狀態。"
       : (s.needsUploadReauth
           ? "目前需要重新連接 TikTok，取得 video.upload 授權後才能傳到草稿／收件匣。"
           : "Upload Draft 會把 TikTok 專用乾淨版 MP4 傳到帳號草稿／收件匣；最後文字與正式發布請在 TikTok App 完成。");
@@ -736,7 +734,7 @@ h1{font-size:24px;margin:0 0 16px}.ok{color:#087f5b}.bad{color:#c92a2a}.muted{co
 <div class="row">已授權 Scopes：<code>${safeHtml(scopes)}</code></div>
 <div class="row">TikTok 帳號：<b>${safeHtml(user.display_name || creator.creator_nickname || "尚未驗證")}</b></div>
 <div class="row">Creator username：<b>${safeHtml(creator.creator_username || "")}</b></div>
-<div class="row">Direct Post audit：<b>${s.audited ? "已設定為通過" : "目前設定為未通過／測試"}</b></div>
+<div class="row">Audit：<b>${s.audited ? "本機設定：已標記通過" : "本機設定：未標記（非 TikTok 官方查詢結果）"}</b></div>
 <a class="btn" href="/tiktok/oauth/start">連接 TikTok OAuth</a>
 <a class="btn secondary" href="/tiktok/setup?verify=1">重新驗證</a>
 <button class="btn secondary" onclick="fetch('/tiktok/disconnect',{method:'POST'}).then(()=>location.reload())">清除本機 TikTok 授權</button>
