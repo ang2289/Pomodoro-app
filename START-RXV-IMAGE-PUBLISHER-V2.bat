@@ -35,14 +35,13 @@ echo [TikTok] 檢查 localhost:3006...
 powershell -NoProfile -Command "$c=Get-NetTCPConnection -LocalPort 3006 -State Listen -ErrorAction SilentlyContinue; if($c){exit 0}else{exit 1}"
 if errorlevel 1 (
   echo [TikTok] 3006 尚未啟動，正在自動啟動授權服務...
-  start "RXV TikTok OAuth 3006" /min cmd /c "cd /d %~dp0 && set DOTENV_CONFIG_PATH=%~dp0.env.local && set NODE_PATH=D:\Pomodoro-app\node_modules && node -r dotenv/config server\image-to-video-server.cjs"
+  start "RXV TikTok OAuth 3006" /min cmd /c call "%~dp0START-RXV-TIKTOK-OAUTH-3006.bat"
   powershell -NoProfile -Command "for($i=0;$i -lt 20;$i++){Start-Sleep -Milliseconds 500; $c=Get-NetTCPConnection -LocalPort 3006 -State Listen -ErrorAction SilentlyContinue; if($c){exit 0}}; exit 1"
   if errorlevel 1 (
     echo [警告] TikTok 授權服務 3006 尚未成功啟動。
     echo       可先開另一個 PowerShell 執行：
-    echo       cd %~dp0
-    echo       $env:DOTENV_CONFIG_PATH='%~dp0.env.local'
-    echo       node -r dotenv/config server\image-to-video-server.cjs
+    echo       請直接雙擊：
+    echo       START-RXV-TIKTOK-OAUTH-3006.bat
   ) else (
     echo [TikTok] 3006 授權服務已啟動。
   )
