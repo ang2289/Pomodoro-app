@@ -396,6 +396,53 @@ async function handleUpdateCategory(req: any, res: any, body: any) {
   return sendJson(res, 200, { ok: true, success: true, action: 'updateImageCategory', updated, manifest_count: nextImages.length });
 }
 
+async function handleUpdatePriceType(req: any, res: any, body: any) {
+  requireAdmin(req);
+  const imageIds = normalizeImageIds(body);
+  const requestedPriceType = safeText(body?.price_type || body?.plan_type).toLowerCase();
+  if (!imageIds.length) return sendJson(res, 400, { ok: false, error: 'IMAGE_IDS_REQUIRED' });
+  if (requestedPriceType !== 'free' && requestedPriceType !== 'bundle') {
+    return sendJson(res, 400, { ok: false, error: 'IMAGE_PRICE_TYPE_INVALID' });
+  }
+
+  const doc = await readCatalog(true);
+  const wanted = new Set(imageIds);
+  let updated = 0;
+  const nextImages = doc.images.map((image: any) => {
+    const id = safeText(image?.id);
+    if (!wanted.has(id)) return image;
+    updated += 1;
+
+    const next = {
+      ...image,
+      plan_type: requestedPriceType,
+      price_type: requestedPriceType,
+      is_free: requestedPriceType === 'free',
+    };
+
+    if (requestedPriceType === 'free') {
+      return {
+        ...next,
+        download_url: `/api/main?action=get-r2-free-image-download&id=${encodeURIComponent(id)}`,
+      };
+    }
+
+    const { download_url: _downloadUrl, ...locked } = next;
+    return locked;
+  });
+
+  if (!updated) return sendJson(res, 404, { ok: false, error: 'IMAGE_NOT_FOUND' });
+  await writeCatalog(doc, nextImages);
+  return sendJson(res, 200, {
+    ok: true,
+    success: true,
+    action: 'updateImagePriceType',
+    updated,
+    price_type: requestedPriceType,
+    manifest_count: nextImages.length,
+  });
+}
+
 function publicKeyFromUrl(value: any) {
   const raw = safeText(value);
   if (!raw) return '';
@@ -469,6 +516,10 @@ export default async function handler(req: any, res: any) {
     if (action === "updateImageCategory") {
       if (req.method !== "POST") return sendJson(res, 405, { ok: false, success: false, error: "Method Not Allowed" });
       return await handleUpdateCategory(req, res, normalizeBody(req));
+    }
+    if (action === "updateImagePriceType") {
+      if (req.method !== "POST") return sendJson(res, 405, { ok: false, success: false, error: "Method Not Allowed" });
+      return await handleUpdatePriceType(req, res, normalizeBody(req));
     }
     if (action === "deleteImages") {
       if (req.method !== "POST") return sendJson(res, 405, { ok: false, success: false, error: "Method Not Allowed" });
