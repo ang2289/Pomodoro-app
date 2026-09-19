@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function WeeklyBreathChallenge() {
   return (
@@ -21,6 +22,9 @@ export default function WeeklyBreathChallenge() {
           若能每天透過不同的呼吸練習釋放能量，就能讓情緒自然代謝，恢復平衡。
           這一週，你將體驗七種呼吸法，每天只需三到五分鐘。
         </p>
+
+        <ArticleCTA placement="start" focus="tools" />
+
 
         <h2 className="text-2xl font-semibold mt-8 mb-3">📅 七日呼吸挑戰流程</h2>
         <ul className="list-disc ml-6 space-y-3 mb-4">
@@ -61,12 +65,16 @@ export default function WeeklyBreathChallenge() {
           讓呼吸練習不只是靜心，也成為一場心靈旅程。
         </p>
 
+        <ArticleCTA placement="middle" focus="tools" />
+
         <h2 className="text-2xl font-semibold mt-8 mb-3">🌈 結語：呼吸，是最溫柔的力量</h2>
         <p className="mb-4">
           不需要昂貴課程或特別裝備，只需留給自己三分鐘，
           在呼吸間，讓一週的你從壓力到平靜、從混亂到明亮。
           呼吸，就是心的 reset 鍵。
         </p>
+
+        <ArticleCTA placement="bottom" focus="tools" />
 
         <hr className="my-8 border-gray-300" />
 
@@ -114,6 +122,8 @@ export default function WeeklyBreathChallenge() {
           You need no special tools—just three mindful minutes a day.
           In each breath, you reset from stress to serenity, from chaos to clarity.
         </p>
+
+        <ArticleCTA placement="afterFaq" focus="tools" />
 
         <p className="mt-8 text-gray-500 text-center text-sm">
           文章由 RxV 夢想創作工作室撰寫 · 保留所有權利

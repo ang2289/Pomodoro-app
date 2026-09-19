@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function MorningBreath() {
   return (
@@ -21,6 +22,9 @@ export default function MorningBreath() {
           深呼吸能刺激副交感神經，讓身體甦醒、頭腦清晰、心情穩定。
           每天只要三分鐘，就能喚醒全身的能量流動。
         </p>
+
+        <ArticleCTA placement="start" focus="tools" />
+
 
         <h2 className="text-2xl font-semibold mt-8 mb-3">🌺 三分鐘晨間呼吸法</h2>
         <ol className="list-decimal ml-6 space-y-3 mb-4">
@@ -54,11 +58,15 @@ export default function MorningBreath() {
           將「覺醒」變成每日自然的習慣。
         </p>
 
+        <ArticleCTA placement="middle" focus="tools" />
+
         <h2 className="text-2xl font-semibold mt-8 mb-3">✨ 結語：用一口氣，開啟光亮的一天</h2>
         <p className="mb-4">
           每一次深呼吸，都是與生命的重新連結。
           從早晨開始呼吸覺察，你將發現整天都更穩定、更有力量。
         </p>
+
+        <ArticleCTA placement="bottom" focus="tools" />
 
         <hr className="my-8 border-gray-300" />
 
@@ -95,6 +103,8 @@ export default function MorningBreath() {
           Every deep breath reconnects you with life itself.
           Begin your morning with mindful breathing—and carry that calm energy all day.
         </p>
+
+        <ArticleCTA placement="afterFaq" focus="tools" />
 
         <p className="mt-8 text-gray-500 text-center text-sm">
           文章由 RxV 夢想創作工作室撰寫 · 保留所有權利

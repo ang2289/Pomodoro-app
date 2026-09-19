@@ -1,5 +1,4 @@
-import fs from "fs";
-import path from "path";
+﻿import fs from "fs";
 import crypto from "crypto";
 import sharp from "sharp";
 import {
@@ -24,47 +23,7 @@ function safeText(value: any) {
   return String(value ?? "").trim();
 }
 
-function loadLocalEnvIfNeeded() {
-  if (
-    process.env.RXV_IMAGE_ADMIN_KEY &&
-    process.env.R2_ACCOUNT_ID &&
-    process.env.R2_ACCESS_KEY_ID &&
-    process.env.R2_SECRET_ACCESS_KEY
-  ) return;
-
-  const candidates = [
-    path.resolve(process.cwd(), ".env.local"),
-    path.resolve(process.cwd(), "..", ".env.local"),
-    process.platform === "win32" ? String.raw`D:\Pomodoro-app\.env.local` : "",
-  ].filter(Boolean);
-
-  const envPath = candidates.find((candidate) => {
-    try { return fs.existsSync(candidate); } catch { return false; }
-  });
-  if (!envPath) return;
-
-  try {
-    const lines = fs.readFileSync(envPath, "utf8").split(/\r?\n/);
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith("#")) continue;
-      const i = trimmed.indexOf("=");
-      if (i <= 0) continue;
-      const key = trimmed.slice(0, i).trim();
-      let value = trimmed.slice(i + 1).trim();
-      if (
-        (value.startsWith('"') && value.endsWith('"')) ||
-        (value.startsWith("'") && value.endsWith("'"))
-      ) value = value.slice(1, -1);
-      if (!process.env[key] && value) process.env[key] = value;
-    }
-  } catch {
-    // Production relies on Vercel env vars; local parsing is best-effort only.
-  }
-}
-
 function getRuntimeConfig() {
-  loadLocalEnvIfNeeded();
   const cfg = {
     adminKey: safeText(process.env.RXV_IMAGE_ADMIN_KEY),
     accountId: safeText(process.env.R2_ACCOUNT_ID),
@@ -322,6 +281,8 @@ async function handleUpload(req: any, res: any, body: any) {
   const cfg = getRuntimeConfig();
   const categoryId = safeText(body?.category_id || body?.categoryId);
   const categoryName = safeText(body?.category_name || body?.categoryName || body?.category || categoryId);
+  const requestedPriceType = safeText(body?.price_type || body?.plan_type).toLowerCase();
+  const priceType = requestedPriceType === "free" ? "free" : "bundle";
   const base64 = body?.base64 || body?.fileDataBase64 || body?.imageBase64;
 
   if (!base64) return sendJson(res, 400, { ok: false, success: false, error: "IMAGE_UPLOAD_BASE64_REQUIRED" });
@@ -358,9 +319,12 @@ async function handleUpload(req: any, res: any, body: any) {
       category_name: categoryName,
       thumbnail_url: thumbnailUrl,
       preview_url: thumbnailUrl,
-      plan_type: "bundle",
-      price_type: "bundle",
-      is_free: false,
+      plan_type: priceType,
+      price_type: priceType,
+      is_free: priceType === "free",
+      ...(priceType === "free"
+        ? { download_url: `/api/main?action=get-r2-free-image-download&id=${encodeURIComponent(imageId)}` }
+        : {}),
       created_at: now.toISOString(),
     };
 
@@ -397,6 +361,87 @@ async function handleUpload(req: any, res: any, body: any) {
   }
 }
 
+// RXV_IMAGE_ADMIN_MANAGE_V1
+function normalizeImageIds(body: any) {
+  const raw = Array.isArray(body?.image_ids) ? body.image_ids : Array.isArray(body?.imageIds) ? body.imageIds : [];
+  return [...new Set(raw.map((value: any) => safeText(value)).filter(Boolean))].slice(0, 300);
+}
+
+async function handleUpdateCategory(req: any, res: any, body: any) {
+  requireAdmin(req);
+  const imageIds = normalizeImageIds(body);
+  const categoryId = safeText(body?.category_id || body?.categoryId);
+  const categoryName = safeText(body?.category_name || body?.categoryName || body?.category || categoryId);
+  const requestedPriceType = safeText(body?.price_type || body?.plan_type).toLowerCase();
+  const priceType = requestedPriceType === "free" ? "free" : "bundle";
+  if (!imageIds.length) return sendJson(res, 400, { ok: false, error: 'IMAGE_IDS_REQUIRED' });
+  if (!categoryId || !categoryName) return sendJson(res, 400, { ok: false, error: 'IMAGE_CATEGORY_REQUIRED' });
+
+  const doc = await readCatalog(true);
+  const wanted = new Set(imageIds);
+  let updated = 0;
+  const nextImages = doc.images.map((image: any) => {
+    if (!wanted.has(safeText(image?.id))) return image;
+    updated += 1;
+    return {
+      ...image,
+      category: categoryName,
+      category_id: categoryId,
+      category_name: categoryName,
+    };
+  });
+
+  if (!updated) return sendJson(res, 404, { ok: false, error: 'IMAGE_NOT_FOUND' });
+  await writeCatalog(doc, nextImages);
+  return sendJson(res, 200, { ok: true, success: true, action: 'updateImageCategory', updated, manifest_count: nextImages.length });
+}
+
+function publicKeyFromUrl(value: any) {
+  const raw = safeText(value);
+  if (!raw) return '';
+  try {
+    const url = new URL(raw);
+    return decodeURIComponent(url.pathname.replace(/^\/+/, ''));
+  } catch {
+    return '';
+  }
+}
+
+async function handleDeleteImages(req: any, res: any, body: any) {
+  requireAdmin(req);
+  const cfg = getRuntimeConfig();
+  const imageIds = normalizeImageIds(body);
+  if (!imageIds.length) return sendJson(res, 400, { ok: false, error: 'IMAGE_IDS_REQUIRED' });
+
+  const doc = await readCatalog(true);
+  const wanted = new Set(imageIds);
+  const targets = doc.images.filter((image: any) => wanted.has(safeText(image?.id)));
+  if (!targets.length) return sendJson(res, 404, { ok: false, error: 'IMAGE_NOT_FOUND' });
+
+  for (const image of targets) {
+    const id = safeText(image?.id);
+    const publicKeys = new Set<string>();
+    for (const value of [image?.thumbnail_url, image?.preview_url, image?.public_url]) {
+      const key = publicKeyFromUrl(value);
+      if (key) publicKeys.add(key);
+    }
+    if (id) publicKeys.add(`thumbnails/by-image-id/${id}.webp`);
+
+    const tasks: Promise<any>[] = [];
+    for (const key of publicKeys) tasks.push(removeObject(cfg.publicBucket, key));
+    if (id) {
+      for (const ext of ['webp', 'jpg', 'jpeg', 'png']) {
+        tasks.push(removeObject(cfg.privateBucket, `originals/by-image-id/${id}/original.${ext}`));
+      }
+    }
+    await Promise.allSettled(tasks);
+  }
+
+  const nextImages = doc.images.filter((image: any) => !wanted.has(safeText(image?.id)));
+  await writeCatalog(doc, nextImages);
+  return sendJson(res, 200, { ok: true, success: true, action: 'deleteImages', deleted: targets.length, manifest_count: nextImages.length });
+}
+
 function normalizeBody(req: any) {
   if (req?.body == null) return {};
   if (typeof req.body === "string") {
@@ -421,6 +466,14 @@ export default async function handler(req: any, res: any) {
       if (req.method !== "GET") return sendJson(res, 405, { ok: false, error: "Method Not Allowed" });
       return await handleCategories(req, res);
     }
+    if (action === "updateImageCategory") {
+      if (req.method !== "POST") return sendJson(res, 405, { ok: false, success: false, error: "Method Not Allowed" });
+      return await handleUpdateCategory(req, res, normalizeBody(req));
+    }
+    if (action === "deleteImages") {
+      if (req.method !== "POST") return sendJson(res, 405, { ok: false, success: false, error: "Method Not Allowed" });
+      return await handleDeleteImages(req, res, normalizeBody(req));
+    }
     if (action === "uploadImage") {
       if (req.method !== "POST") return sendJson(res, 405, { ok: false, success: false, error: "Method Not Allowed" });
       return await handleUpload(req, res, normalizeBody(req));
@@ -431,3 +484,4 @@ export default async function handler(req: any, res: any) {
     return sendJson(res, status, { ok: false, success: false, error: safeText(error?.message || "IMAGE_ADMIN_FAILED") });
   }
 }
+

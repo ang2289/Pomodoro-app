@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from "react-router-dom";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function EveningDetox() {
   return (
@@ -18,6 +19,9 @@ export default function EveningDetox() {
         <p className="mb-4">
           在現代生活的壓力轟炸下，睡前總是胡思亂想、翻來覆去睡不著？這篇文章帶你用五分鐘，清除一天累積的壓力與雜念，讓你徹底安睡！
         </p>
+
+        <ArticleCTA placement="start" focus="tools" />
+
 
         <p className="mb-6 text-sm text-gray-500 italic">
           💤 Struggling with racing thoughts at bedtime? This five-minute routine is your quick fix to release stress and mental clutter — so you can finally get the deep sleep you deserve.
@@ -48,10 +52,14 @@ export default function EveningDetox() {
           今晚不再批判自己，允許自己「無條件地休息」，因為你已經努力了一整天。
         </p>
 
+        <ArticleCTA placement="middle" focus="tools" />
+
         <h2 className="text-2xl font-semibold mt-8 mb-3">✨ 結語</h2>
         <p className="mb-10">
           今晚，請帶著溫柔與感激入睡。你值得一場深沉平靜的夢。
         </p>
+
+        <ArticleCTA placement="bottom" focus="tools" />
 
         <hr className="my-8 border-gray-300" />
 
@@ -85,6 +93,8 @@ export default function EveningDetox() {
         <p className="mb-4">
           Tonight, let go of self-criticism. Allow yourself to rest unconditionally, because you've already worked hard all day.
         </p>
+
+        <ArticleCTA placement="afterFaq" focus="tools" />
 
         <p className="mt-8 text-gray-500 text-center text-sm">
           文章由 RxV 夢想創作工作室撰寫 · 保留所有權利

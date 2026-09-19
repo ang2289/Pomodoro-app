@@ -237,8 +237,8 @@ i18n.changeLanguage('en') // Switch to English
             onClick={() => changeLanguage('zh-TW')}
             className={`px-4 py-2 rounded-lg border transition-colors ${
               currentLang === 'zh-TW'
-                ? 'bg-blue-500 text-white border-blue-500'
-                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                ? 'bg-blue-600 text-white border-black'
+                : 'bg-white text-blue-600 border-blue-200 hover:bg-blue-50'
             }`}
           >
             繁體中文
@@ -247,8 +247,8 @@ i18n.changeLanguage('en') // Switch to English
             onClick={() => changeLanguage('en')}
             className={`px-4 py-2 rounded-lg border transition-colors ${
               currentLang === 'en'
-                ? 'bg-blue-500 text-white border-blue-500'
-                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                ? 'bg-blue-600 text-white border-black'
+                : 'bg-white text-blue-600 border-blue-200 hover:bg-blue-50'
             }`}
           >
             English
@@ -296,7 +296,7 @@ i18n.changeLanguage('en') // Switch to English
         <div className="mt-8 text-center">
           <Link
             to="/"
-            className="inline-block px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            className="inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
           >
             {currentLang === 'zh-TW' ? '返回首頁' : 'Back to Home'}
           </Link>

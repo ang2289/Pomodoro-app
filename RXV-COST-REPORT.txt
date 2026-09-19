@@ -1,0 +1,256 @@
+RXV COST POLICY REPORT
+======================
+Project: D:\Pomodoro-app
+Scanned active text files: 1230
+Ignored backups: yes
+
+HIGH RISK (metered/paid-capable API): 95
+- Gemini / Google Generative AI API: .env
+- Gemini / Google Generative AI API: .env.local
+- Gemini / Google Generative AI API: .env.local.before-admin-key-20260913-160423.bak
+- Gemini / Google Generative AI API: api-unused\homework-solve.ts
+- Gemini / Google Generative AI API: GOOGLE_CALENDAR_SETUP.md
+- Gemini / Google Generative AI API: package-lock.json
+- Gemini / Google Generative AI API: package.json
+- Gemini / Google Generative AI API: server\image-to-video-server.before-v37-10.cjs
+- Gemini / Google Generative AI API: server\image-to-video-server.before-v37-11.cjs
+- Gemini / Google Generative AI API: server\image-to-video-server.before-v37-13.cjs
+- Gemini / Google Generative AI API: server\image-to-video-server.before-v37-14.cjs
+- Gemini / Google Generative AI API: server\image-to-video-server.before-v37-6.cjs
+- Gemini / Google Generative AI API: server\image-to-video-server.before-v37-7.cjs
+- Gemini / Google Generative AI API: server\image-to-video-server.before-v37-8.cjs
+- Gemini / Google Generative AI API: server\image-to-video-server.before-v38-0.cjs
+- Gemini / Google Generative AI API: server\image-to-video-server.before-v38-1-1.cjs
+- Gemini / Google Generative AI API: server\image-to-video-server.before-v38-1.cjs
+- Gemini / Google Generative AI API: server\image-to-video-server.before-v38-3.cjs
+- Gemini / Google Generative AI API: server\image-to-video-server.before-v38-4-10.cjs
+- Gemini / Google Generative AI API: server\image-to-video-server.before-v38-4-11.cjs
+- Gemini / Google Generative AI API: server\image-to-video-server.before-v38-4-2.cjs
+- Gemini / Google Generative AI API: server\image-to-video-server.before-v38-4-3.cjs
+- Gemini / Google Generative AI API: server\image-to-video-server.before-v38-4-5.cjs
+- Gemini / Google Generative AI API: server\image-to-video-server.before-v38-4-6.cjs
+- Gemini / Google Generative AI API: server\image-to-video-server.before-v38-4-7.cjs
+- Gemini / Google Generative AI API: server\image-to-video-server.before-v38-4-8.cjs
+- Gemini / Google Generative AI API: server\image-to-video-server.before-v38-4-9.cjs
+- Gemini / Google Generative AI API: server\image-to-video-server.before-v38-4.cjs
+- Gemini / Google Generative AI API: server\image-to-video-server.before-v38-5.cjs
+- Gemini / Google Generative AI API: server\image-to-video-server.before-v38-6-1.cjs
+- Gemini / Google Generative AI API: server\image-to-video-server.before-v38-6-2.cjs
+- Gemini / Google Generative AI API: server\image-to-video-server.before-v38-6.cjs
+- Gemini / Google Generative AI API: server\image-to-video-server.before-v39-0.cjs
+- Gemini / Google Generative AI API: server\image-to-video-server.before-v39-1.cjs
+- Gemini / Google Generative AI API: server\image-to-video-server.before-v39-10-20260903-171218.cjs
+- Gemini / Google Generative AI API: server\image-to-video-server.before-v39-2.cjs
+- Gemini / Google Generative AI API: server\image-to-video-server.before-v39-3.cjs
+- Gemini / Google Generative AI API: server\image-to-video-server.before-v39-4.cjs
+- Gemini / Google Generative AI API: server\image-to-video-server.before-v39-5-1-20260903-132344.cjs
+- Gemini / Google Generative AI API: server\image-to-video-server.before-v39-5.cjs
+- Gemini / Google Generative AI API: server\image-to-video-server.before-v39-6-20260903-133538.cjs
+- Gemini / Google Generative AI API: server\image-to-video-server.before-v39-6.cjs
+- Gemini / Google Generative AI API: server\image-to-video-server.before-v39-7.cjs
+- Gemini / Google Generative AI API: server\image-to-video-server.before-v39-8-20260903-151931.cjs
+- Gemini / Google Generative AI API: server\image-to-video-server.before-v40-0-20260904-040047.cjs
+- Gemini / Google Generative AI API: server\image-to-video-server.before-v40-0-20260904-125652.cjs
+- Gemini / Google Generative AI API: server\image-to-video-server.cjs
+- Gemini / Google Generative AI API: src\lib\env.ts
+- Gemini / Google Generative AI API: src\pages\tools\shopee-video\index.before-v37-10.tsx
+- Gemini / Google Generative AI API: src\pages\tools\shopee-video\index.before-v37-11.tsx
+- Gemini / Google Generative AI API: src\pages\tools\shopee-video\index.before-v37-13.tsx
+- Gemini / Google Generative AI API: src\pages\tools\shopee-video\index.before-v37-14.tsx
+- Gemini / Google Generative AI API: src\pages\tools\shopee-video\index.before-v37-6.tsx
+- Gemini / Google Generative AI API: src\pages\tools\shopee-video\index.before-v37-7.tsx
+- Gemini / Google Generative AI API: src\pages\tools\shopee-video\index.before-v37-8.tsx
+- Gemini / Google Generative AI API: src\pages\tools\shopee-video\index.before-v38-0.tsx
+- Gemini / Google Generative AI API: src\pages\tools\shopee-video\index.before-v38-1-1.tsx
+- Gemini / Google Generative AI API: src\pages\tools\shopee-video\index.before-v38-1.tsx
+- Gemini / Google Generative AI API: src\pages\tools\shopee-video\index.before-v38-3.tsx
+- Gemini / Google Generative AI API: src\pages\tools\shopee-video\index.before-v38-4-10.tsx
+- Gemini / Google Generative AI API: src\pages\tools\shopee-video\index.before-v38-4-11.tsx
+- Gemini / Google Generative AI API: src\pages\tools\shopee-video\index.before-v38-4-2.tsx
+- Gemini / Google Generative AI API: src\pages\tools\shopee-video\index.before-v38-4-3.tsx
+- Gemini / Google Generative AI API: src\pages\tools\shopee-video\index.before-v38-4-5.tsx
+- Gemini / Google Generative AI API: src\pages\tools\shopee-video\index.before-v38-4-6.tsx
+- Gemini / Google Generative AI API: src\pages\tools\shopee-video\index.before-v38-4-7.tsx
+- Gemini / Google Generative AI API: src\pages\tools\shopee-video\index.before-v38-4-8.tsx
+- Gemini / Google Generative AI API: src\pages\tools\shopee-video\index.before-v38-4-9.tsx
+- Gemini / Google Generative AI API: src\pages\tools\shopee-video\index.before-v38-4.tsx
+- Gemini / Google Generative AI API: src\pages\tools\shopee-video\index.before-v38-5.tsx
+- Gemini / Google Generative AI API: src\pages\tools\shopee-video\index.before-v38-6-1.tsx
+- Gemini / Google Generative AI API: src\pages\tools\shopee-video\index.before-v38-6-2.tsx
+- Gemini / Google Generative AI API: src\pages\tools\shopee-video\index.before-v38-6.tsx
+- Gemini / Google Generative AI API: src\pages\tools\shopee-video\index.before-v39-0.tsx
+- Gemini / Google Generative AI API: src\pages\tools\shopee-video\index.before-v39-1.tsx
+- Gemini / Google Generative AI API: src\pages\tools\shopee-video\index.before-v39-2.tsx
+- Gemini / Google Generative AI API: src\pages\tools\shopee-video\index.before-v39-3.tsx
+- Gemini / Google Generative AI API: src\pages\tools\shopee-video\index.before-v39-4.tsx
+- Gemini / Google Generative AI API: src\pages\tools\shopee-video\index.before-v39-5.tsx
+- Gemini / Google Generative AI API: src\pages\tools\shopee-video\index.before-v39-6.tsx
+- Gemini / Google Generative AI API: src\pages\tools\shopee-video\index.before-v39-7.tsx
+- Gemini / Google Generative AI API: src\services\gemini.ts
+- Gemini / Google Generative AI API: src\services\googleCalendarService.js
+- Gemini / Google Generative AI API: src\services\googleCalendarService.ts
+- Gemini / Google Generative AI API: src\vite-env.d.ts
+- Gemini / Google Generative AI API: supabase\functions\auto-summary\index.ts
+- Gemini / Google Generative AI API: supabase\functions\homework-helper\index.ts
+- Gemini / Google Generative AI API: supabase\functions\relationship-ai\index.ts
+- Gemini / Google Generative AI API: supabase\functions\summary\index.ts
+- Gemini / Google Generative AI API: supabase\functions\v1\homework-helper.ts
+- Gemini / Google Generative AI API: supabase\functions\video-script\index.ts
+- OpenAI API: .env
+- OpenAI API: api-unused\summary.ts
+- OpenAI API: api\main.ts
+- OpenAI API: supabase\functions\product-image-generator\index.ts
+
+MEDIUM RISK (cloud compute/storage usage): 44
+- Supabase Edge Function / Functions code: supabase\functions\admin-add-credits\index.ts
+- Supabase Edge Function / Functions code: supabase\functions\approve-topup\index.ts
+- Supabase Edge Function / Functions code: supabase\functions\auto-summary-phase2-preview\index.ts
+- Supabase Edge Function / Functions code: supabase\functions\auto-summary-phase2\index.ts
+- Supabase Edge Function / Functions code: supabase\functions\auto-summary\index.ts
+- Supabase Edge Function / Functions code: supabase\functions\consume-credits-phase2-preview\index.ts
+- Supabase Edge Function / Functions code: supabase\functions\consume-credits-phase2\index.ts
+- Supabase Edge Function / Functions code: supabase\functions\consume-credits\index.ts
+- Supabase Edge Function / Functions code: supabase\functions\homework-helper-phase2-preview\index.ts
+- Supabase Edge Function / Functions code: supabase\functions\homework-helper-phase2\index.ts
+- Supabase Edge Function / Functions code: supabase\functions\homework-helper\index.ts
+- Supabase Edge Function / Functions code: supabase\functions\list-topups\index.ts
+- Supabase Edge Function / Functions code: supabase\functions\ping\index.ts
+- Supabase Edge Function / Functions code: supabase\functions\product-image-generator-phase2-preview\index.ts
+- Supabase Edge Function / Functions code: supabase\functions\product-image-generator-phase2\index.ts
+- Supabase Edge Function / Functions code: supabase\functions\product-image-generator\index.ts
+- Supabase Edge Function / Functions code: supabase\functions\relationship-ai\index.ts
+- Supabase Edge Function / Functions code: supabase\functions\send-email\index.ts
+- Supabase Edge Function / Functions code: supabase\functions\summary-phase2-preview\index.ts
+- Supabase Edge Function / Functions code: supabase\functions\summary-phase2\index.ts
+- Supabase Edge Function / Functions code: supabase\functions\summary\index.ts
+- Supabase Edge Function / Functions code: supabase\functions\tsconfig.json
+- Supabase Edge Function / Functions code: supabase\functions\v1\homework-helper.ts
+- Supabase Edge Function / Functions code: supabase\functions\video-script\index.ts
+- Supabase Storage: android\app\src\main\assets\public\assets\index-C5J1GBC3.js
+- Supabase Storage: delete-old-supabase-images.ts
+- Supabase Storage: scripts\delete-old-supabase-images.ts
+- Supabase Storage: src\components\ImageUpload.js
+- Supabase Storage: src\components\ImageUpload.tsx
+- Supabase Storage: src\utils\deleteChantWish.js
+- Supabase Storage: src\utils\deleteChantWish.ts
+- Supabase Storage: supabase\functions\product-image-generator\index.ts
+- Vercel / serverless API route: api\commerce.ts
+- Vercel / serverless API route: api\ecpay\index.ts
+- Vercel / serverless API route: api\group-buy-cron.ts
+- Vercel / serverless API route: api\group-buy.ts
+- Vercel / serverless API route: api\image-admin.ts
+- Vercel / serverless API route: api\main.ts
+- Vercel / serverless API route: api\patches\patch_digital_card_duration_to_6.mjs
+- Vercel / serverless API route: api\relationship-ai.ts
+- Vercel / serverless API route: api\run-shopee-video.ts
+- Vercel / serverless API route: api\shopee-flash-sale.ts
+- Vercel / serverless API route: api\shorten.ts
+- Vercel / serverless API route: api\storefront-share.ts
+
+INFO (cloud service present, review limits): 57
+- Cloudflare R2 / S3 client: .env
+- Cloudflare R2 / S3 client: .env.local
+- Cloudflare R2 / S3 client: .env.local.before-admin-key-20260913-160423.bak
+- Cloudflare R2 / S3 client: api\image-admin.ts
+- Cloudflare R2 / S3 client: api\main.ts
+- Cloudflare R2 / S3 client: image-admin.ts
+- Cloudflare R2 / S3 client: image-bundle-orders.ts
+- Cloudflare R2 / S3 client: patch-download-image.cjs
+- Cloudflare R2 / S3 client: r2-check.mjs
+- Cloudflare R2 / S3 client: README_安裝.txt
+- Cloudflare R2 / S3 client: RXV_399圖片包_R2收款獨立版_鎖檔修正版\image-bundle-orders.ts
+- Cloudflare R2 / S3 client: RXV_399圖片包_R2收款獨立版_鎖檔修正版\README_安裝.txt
+- Cloudflare R2 / S3 client: scripts\apply-professional-packs-v5-live-counts.mjs
+- Cloudflare R2 / S3 client: scripts\build-image-bundle-zip.mjs
+- Cloudflare R2 / S3 client: scripts\classify-image-catalog-local.mjs
+- Cloudflare R2 / S3 client: scripts\classify-image-catalog-second-pass.mjs
+- Cloudflare R2 / S3 client: scripts\diagnose-r2-image-admin.mjs
+- Cloudflare R2 / S3 client: scripts\find-working-r2-credentials.mjs
+- Cloudflare R2 / S3 client: scripts\fix-image-admin-local-env.mjs
+- Cloudflare R2 / S3 client: scripts\generate-r2-image-catalog.mjs
+- Cloudflare R2 / S3 client: scripts\migrate-public-r2-catalog.mjs
+- Cloudflare R2 / S3 client: scripts\restore-working-r2-credentials-v2.mjs
+- Cloudflare R2 / S3 client: scripts\verify-public-r2-images-local.mjs
+- Cloudflare R2 / S3 client: server\image-bundle-orders-r2.mjs
+- Cloudflare R2 / S3 client: server\image-bundle-orders-r2.ts
+- Cloudflare R2 / S3 client: server\image-to-video-server.before-v38-1-1.cjs
+- Cloudflare R2 / S3 client: server\image-to-video-server.before-v38-3.cjs
+- Cloudflare R2 / S3 client: server\image-to-video-server.before-v38-4-10.cjs
+- Cloudflare R2 / S3 client: server\image-to-video-server.before-v38-4-11.cjs
+- Cloudflare R2 / S3 client: server\image-to-video-server.before-v38-4-2.cjs
+- Cloudflare R2 / S3 client: server\image-to-video-server.before-v38-4-3.cjs
+- Cloudflare R2 / S3 client: server\image-to-video-server.before-v38-4-5.cjs
+- Cloudflare R2 / S3 client: server\image-to-video-server.before-v38-4-6.cjs
+- Cloudflare R2 / S3 client: server\image-to-video-server.before-v38-4-7.cjs
+- Cloudflare R2 / S3 client: server\image-to-video-server.before-v38-4-8.cjs
+- Cloudflare R2 / S3 client: server\image-to-video-server.before-v38-4-9.cjs
+- Cloudflare R2 / S3 client: server\image-to-video-server.before-v38-4.cjs
+- Cloudflare R2 / S3 client: server\image-to-video-server.before-v38-5.cjs
+- Cloudflare R2 / S3 client: server\image-to-video-server.before-v38-6-1.cjs
+- Cloudflare R2 / S3 client: server\image-to-video-server.before-v38-6-2.cjs
+- Cloudflare R2 / S3 client: server\image-to-video-server.before-v38-6.cjs
+- Cloudflare R2 / S3 client: server\image-to-video-server.before-v39-0.cjs
+- Cloudflare R2 / S3 client: server\image-to-video-server.before-v39-1.cjs
+- Cloudflare R2 / S3 client: server\image-to-video-server.before-v39-10-20260903-171218.cjs
+- Cloudflare R2 / S3 client: server\image-to-video-server.before-v39-2.cjs
+- Cloudflare R2 / S3 client: server\image-to-video-server.before-v39-3.cjs
+- Cloudflare R2 / S3 client: server\image-to-video-server.before-v39-4.cjs
+- Cloudflare R2 / S3 client: server\image-to-video-server.before-v39-5-1-20260903-132344.cjs
+- Cloudflare R2 / S3 client: server\image-to-video-server.before-v39-5.cjs
+- Cloudflare R2 / S3 client: server\image-to-video-server.before-v39-6-20260903-133538.cjs
+- Cloudflare R2 / S3 client: server\image-to-video-server.before-v39-6.cjs
+- Cloudflare R2 / S3 client: server\image-to-video-server.before-v39-7.cjs
+- Cloudflare R2 / S3 client: server\image-to-video-server.before-v39-8-20260903-151931.cjs
+- Cloudflare R2 / S3 client: server\image-to-video-server.before-v40-0-20260904-040047.cjs
+- Cloudflare R2 / S3 client: server\image-to-video-server.before-v40-0-20260904-125652.cjs
+- Cloudflare R2 / S3 client: server\image-to-video-server.cjs
+- Cloudflare R2 / S3 client: src\pages\images\index.tsx
+
+ENV VARIABLE NAMES FOUND (values are NOT shown):
+- GEMINI_API_KEY
+- GEMINI_IMAGE_MODEL
+- OPENAI_API_KEY
+- OPENAI_IMAGE_MODEL
+- OPENAI_IMAGE_QUALITY
+- R2_ACCESS_KEY_ID
+- R2_ACCOUNT_ID
+- R2_BUCKET
+- R2_BUCKET_NAME
+- R2_ENDPOINT
+- R2_PRIVATE_BUCKET_NAME
+- R2_PUBLIC_ASSET_URL
+- R2_PUBLIC_BASE_URL
+- R2_PUBLIC_BUCKET_NAME
+- R2_PUBLIC_URL
+- R2_SECRET_ACCESS_KEY
+- SUPABASE_ANON_KEY
+- SUPABASE_SERVICE_ROLE_KEY
+- SUPABASE_STORAGE_BUCKET
+- SUPABASE_URL
+- VERCEL
+- VERCEL_ENV
+- VERCEL_GIT_COMMIT_AUTHOR_LOGIN
+- VERCEL_GIT_COMMIT_AUTHOR_NAME
+- VERCEL_GIT_COMMIT_MESSAGE
+- VERCEL_GIT_COMMIT_REF
+- VERCEL_GIT_COMMIT_SHA
+- VERCEL_GIT_PREVIOUS_SHA
+- VERCEL_GIT_PROVIDER
+- VERCEL_GIT_PULL_REQUEST_ID
+- VERCEL_GIT_REPO_ID
+- VERCEL_GIT_REPO_OWNER
+- VERCEL_GIT_REPO_SLUG
+- VERCEL_OIDC_TOKEN
+- VERCEL_TARGET_ENV
+- VERCEL_URL
+- VITE_GEMINI_API_KEY_HOMEWORK
+- VITE_PUBLIC_R2_URL
+- VITE_SUPABASE_ANON_KEY
+- VITE_SUPABASE_URL
+
+Interpretation:
+- HIGH does NOT mean you are currently being charged.
+- It means active code contains an API that can create usage-based cost.
+- MEDIUM means cloud compute/storage exists and should be checked against free-tier limits.
+- Backup folders/files are excluded from this report.
+- This scanner is warning-only and does not modify or block your app.

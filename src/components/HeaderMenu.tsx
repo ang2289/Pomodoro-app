@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next'
 const isChantWishEnabled = import.meta.env.VITE_ENABLE_CHANT === 'true' || import.meta.env.NEXT_PUBLIC_ENABLE_CHANT === 'true';
 
 const baseMenuItems = [
-  { path: '/summary', labelKey: 'AI 摘要工具' },
+  { path: '/summary', labelKey: 'ai_summary' },
   { path: '/chant', labelKey: 'chant' },
   { path: '/todo', labelKey: 'todo' },
   { path: 'pomodoro', labelKey: 'pomodoro' }
@@ -31,10 +31,6 @@ export default function HeaderMenu() {
       (item.path === '/chant' && currentPath === '/')
     )
     if (currentItem) {
-      // 如果是自定義標籤（非翻譯鍵），直接返回
-      if (currentItem.labelKey === 'AI 摘要工具') {
-        return currentItem.labelKey
-      }
       return t(currentItem.labelKey)
     }
     return t('menu')
@@ -83,7 +79,7 @@ export default function HeaderMenu() {
                       : 'text-gray-700 hover:bg-gray-50'
                   }`}
                 >
-                  <span>{item.labelKey === 'AI 摘要工具' ? item.labelKey : t(item.labelKey)}</span>
+                  <span>{t(item.labelKey)}</span>
                   {isActive && (
                     <svg className="w-4 h-4 ml-auto text-blue-600" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />

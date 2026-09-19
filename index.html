@@ -1,54 +1,81 @@
 <!doctype html>
 <html lang="zh-Hant">
   <head>
+    <meta
+      name="google-site-verification"
+      content="YhCZ1yeedyIk5_cSLLmTeADDpoadAMUcaZJq45ynOLE"
+    />
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    
-    <!-- 基本 SEO -->
-    <meta name="theme-color" content="#ffffff" />
+    <meta name="color-scheme" content="light" />
+
+    <meta name="theme-color" content="#6366f1" />
     <meta name="author" content="RxV 夢想創作工作室" />
-    
-    <!-- 預設 Open Graph -->
-    <meta property="og:site_name" content="AI 工具與生活服務中心" />
+
+    <meta property="og:site_name" content="RxV 夢想創作工作室" />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="zh_TW" />
-    
-    <!-- Twitter -->
+
+    <meta name="description" content="RxV 夢想創作工作室提供 AI 商品圖工具、LINE 貼圖設計與店家商品展示頁服務。" />
+    <meta property="og:title" content="RxV 夢想創作工作室" />
+    <meta property="og:description" content="AI 商品圖工具、LINE 貼圖設計與店家商品展示頁服務。" />
+    <meta property="og:image" content="/icon.png" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:creator" content="@rxvstudio" />
-    
-    <!-- Favicon 設定 -->
+
     <link rel="icon" type="image/png" href="/favicon.ico" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico" />
-    
-    <!-- PWA Manifest -->
-    <link rel="manifest" href="/manifest.json" />
-    
-    <!-- RSS Feed -->
-    <link rel="alternate" type="application/rss+xml" title="RxV RSS Feed" href="/rss.xml" />
-    
-    <!-- 字體設定 -->
-    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap" rel="stylesheet">
-    
-    <!-- Google AdSense -->
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4098050974072911"
-     crossorigin="anonymous"></script>
-    
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-BDND2JZKLE"></script>
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="RxV AI" />
+
+    <link
+      rel="alternate"
+      type="application/rss+xml"
+      title="RxV RSS Feed"
+      href="/rss.xml"
+    />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap"
+      rel="stylesheet"
+    />
+
+    <script
+      async
+      src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4098050974072911"
+      crossorigin="anonymous"
+    ></script>
+
+    <script
+      async
+      src="https://www.googletagmanager.com/gtag/js?id=G-BDND2JZKLE"
+    ></script>
     <script>
       window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-BDND2JZKLE');
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag("js", new Date());
+      gtag("config", "G-BDND2JZKLE");
     </script>
-    
-    <title>番茄鐘應用程式</title>
+
+    <title>RxV AI 工具與生活服務中心</title>
   </head>
   <body>
     <div id="root"></div>
+
+    <script>
+      var ConverlyCustomData = { channelId: null };
+    </script>
+    <!-- Affiliates.One：先暫停首頁自動載入，避免 api.pub.affiliates.one 404/429 影響主流程。
+         如需啟用，請在首頁點「啟用聯盟推薦」再動態載入。 -->
+
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-

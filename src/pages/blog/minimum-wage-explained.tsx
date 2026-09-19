@@ -1,10 +1,41 @@
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import SEO from "../../components/SEO";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function MinimumWageExplainedPage() {
   // 獲取今天的日期（格式：YYYY-MM-DD）
   const today = new Date().toISOString().split('T')[0];
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: "Q1：基本工資調整後，我的薪水會自動調高嗎？",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "A：如果你的薪水已經高於基本工資，通常不會自動調高。但如果你的薪水剛好在基本工資邊緣或低於基本工資，雇主必須調高到至少符合新標準。不過，有些公司會因為基本工資調整，連帶調整其他員工的薪水，這要看公司的政策。",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Q2：基本工資調整會影響加班費嗎？",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "A：會。因為加班費的計算基礎是「平日每小時工資額」，如果基本工資調高，你的時薪基礎也會跟著提高，加班費自然也會增加。例如，平日加班前 2 小時是 1.34 倍，如果時薪基礎提高，加班費也會提高。",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Q3：如果雇主沒有調高到基本工資標準，該怎麼辦？",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "A：如果雇主給你的薪水低於基本工資，這是違法的。你可以：向勞動部或地方勞工局申訴、要求雇主補足差額、如果雇主不配合，可以申請勞資爭議調解或提起訴訟。基本工資是法律強制規定，雇主不能以任何理由不遵守。",
+        },
+      },
+    ],
+  };
 
   return (
     <>
@@ -43,6 +74,9 @@ export default function MinimumWageExplainedPage() {
               基本工資是政府規定的最低工資標準，不管是月薪制還是時薪制，雇主給員工的薪水都不能低於這個標準。每年政府會根據物價、經濟狀況等因素調整基本工資，這會直接影響到很多上班族的收入。
             </p>
 
+            <ArticleCTA placement="start" focus="summary" />
+
+
             <h2 className="text-2xl font-semibold mt-8 mb-4">什麼是基本工資？</h2>
             <p className="mb-4">
               基本工資就是法律規定的最低工資標準，分為兩種：
@@ -67,6 +101,8 @@ export default function MinimumWageExplainedPage() {
             <p className="mb-4">
               政府會組成「基本工資審議委員會」，由勞方、資方、政府、學者等代表一起討論，決定當年度要不要調整、調整多少。
             </p>
+
+            <ArticleCTA placement="middle" focus="summary" />
 
             <h2 className="text-2xl font-semibold mt-8 mb-4">對月薪制、時薪制的實際差異</h2>
             <p className="mb-4">
@@ -118,6 +154,8 @@ export default function MinimumWageExplainedPage() {
             </div>
           </div>
 
+          <ArticleCTA placement="afterFaq" focus="summary" />
+
           {/* 相關文章區塊 */}
           <div className="mt-12 pt-8 border-t border-gray-200">
             <h3 className="text-2xl font-bold text-gray-900 mb-2">
@@ -153,8 +191,6 @@ export default function MinimumWageExplainedPage() {
               </Link>
             </div>
           </div>
-
-          {/* 導流區塊：摘要模組 */}
           <div className="mt-12 pt-8 border-t border-gray-200">
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 text-center">
               <h3 className="text-xl font-bold text-gray-900 mb-2">
@@ -165,7 +201,7 @@ export default function MinimumWageExplainedPage() {
               </p>
               <Link
                 to="/summary"
-                className="inline-block px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg drop-shadow-md"
+                className="inline-block bg-blue-600 text-white px-5 py-3 rounded-lg text-base font-medium hover:bg-blue-700 transition"
                 style={{ textShadow: '0 1px 2px rgba(0,0,0,0.1)' }}
               >
                 貼上文章，幫我整理
@@ -309,6 +345,7 @@ export default function MinimumWageExplainedPage() {
               </li>
             </ul>
           </div>
+          <ArticleCTA placement="bottom" focus="summary" />
 
           <div className="mt-8 pt-6 border-t border-gray-200">
             <Link
@@ -344,6 +381,9 @@ export default function MinimumWageExplainedPage() {
               "@id": "https://pomodoro-app-eight-rouge.vercel.app/blog/minimum-wage-explained"
             }
           })}
+        </script>
+        <script type="application/ld+json">
+          {JSON.stringify(faqJsonLd)}
         </script>
       </Helmet>
     </>

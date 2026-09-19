@@ -18,7 +18,7 @@ const HighIntentSection: React.FC<HighIntentSectionProps> = ({ data, lang = 'zh-
 
   const t = {
     'zh-tw': {
-      title: '第三組：高轉換關鍵問題（諮詢 / 行動建議）',
+      title: '第三組：高意圖問題（諮詢 / 行動建議）',
       subtitle: '適合用於諮詢、下一步行動或專業協助判斷',
       description: '此區塊提供 AI 對摘要內容的進一步理解與行動方向建議',
       emptyMessage: '此內容將在摘要完成後顯示',

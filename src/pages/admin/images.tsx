@@ -3,23 +3,30 @@ import { Link } from 'react-router-dom'
 
 const IMAGE_ADMIN_KEY_STORAGE = 'rxv_image_admin_key'
 
+function isLocalImageAdmin() {
+  return window.location.hostname === '127.0.0.1' && window.location.port === '3010'
+}
+
 function getImageAdminKey() {
-  let key = sessionStorage.getItem(IMAGE_ADMIN_KEY_STORAGE) || ''
+  if (isLocalImageAdmin()) return ''
+  let key = localStorage.getItem(IMAGE_ADMIN_KEY_STORAGE) || ''
   if (!key) {
     key = window.prompt('請輸入圖片後台管理金鑰')?.trim() || ''
-    if (key) sessionStorage.setItem(IMAGE_ADMIN_KEY_STORAGE, key)
+    if (key) localStorage.setItem(IMAGE_ADMIN_KEY_STORAGE, key)
   }
   return key
 }
 
 async function imageAdminFetch(url: string, init: RequestInit = {}) {
-  const key = getImageAdminKey()
-  if (!key) throw new Error('請輸入圖片後台管理金鑰')
   const headers = new Headers(init.headers || {})
-  headers.set('X-RXV-Image-Admin-Key', key)
+  if (!isLocalImageAdmin()) {
+    const key = getImageAdminKey()
+    if (!key) throw new Error('請輸入圖片後台管理金鑰')
+    headers.set('X-RXV-Image-Admin-Key', key)
+  }
   const response = await fetch(url, { ...init, headers })
-  if (response.status === 401 || response.status === 403) {
-    sessionStorage.removeItem(IMAGE_ADMIN_KEY_STORAGE)
+  if (!isLocalImageAdmin() && (response.status === 401 || response.status === 403)) {
+    localStorage.removeItem(IMAGE_ADMIN_KEY_STORAGE)
   }
   return response
 }
@@ -31,8 +38,86 @@ interface ImageCategory {
   is_active: boolean
 }
 
+// RXV_IMAGE_ADMIN_V4: 後台固定大分類只影響網站上傳介面，不改 APP，也不改 catalog JSON 結構。
+const FALLBACK_IMAGE_CATEGORIES: ImageCategory[] = [
+  { id: 'real-estate', name: '房仲／房地產', sort_order: 0, is_active: true },
+  { id: 'hair-salon', name: '美髮／沙龍', sort_order: 1, is_active: true },
+  { id: 'beauty-fashion', name: '美容／時尚', sort_order: 2, is_active: true },
+  { id: 'food-drink', name: '食物／飲品', sort_order: 3, is_active: true },
+  { id: 'business-office', name: '商業／辦公', sort_order: 4, is_active: true },
+  { id: 'product-display', name: '商品展示', sort_order: 5, is_active: true },
+  { id: 'home-lifestyle', name: '居家／生活', sort_order: 6, is_active: true },
+  { id: 'flower-plant', name: '花卉／植物', sort_order: 7, is_active: true },
+  { id: 'background-wallpaper', name: '背景／桌布', sort_order: 8, is_active: true },
+  { id: 'pet-animal', name: '寵物／動物', sort_order: 9, is_active: true },
+  { id: 'wedding-event', name: '婚禮／活動', sort_order: 10, is_active: true },
+  { id: 'travel-hotel', name: '旅遊／住宿', sort_order: 11, is_active: true },
+  { id: 'education', name: '教育／學習', sort_order: 12, is_active: true },
+  { id: 'finance', name: '金融／理財', sort_order: 13, is_active: true },
+  { id: 'professional-service', name: '專業服務', sort_order: 14, is_active: true },
+  { id: 'taiwan-local', name: '台灣在地生活', sort_order: 15, is_active: true },
+  { id: 'nature-landscape', name: '自然／風景', sort_order: 16, is_active: true },
+  { id: 'festival', name: '節慶／節日', sort_order: 17, is_active: true },
+  { id: 'religion-healing', name: '宗教／療癒', sort_order: 18, is_active: true },
+  { id: 'technology', name: '科技／數位', sort_order: 19, is_active: true },
+  { id: 'other', name: '其他素材', sort_order: 20, is_active: true },
+]
+
+type UploadCandidate = {
+  sourceFile: File
+  uploadFile?: File
+  conversionError?: string
+}
+
+function isWebpFile(file: File) {
+  return file.type === 'image/webp' || /\.webp$/i.test(file.name)
+}
+
+function shouldConvertToWebp(file: File) {
+  return ['image/jpeg', 'image/jpg', 'image/png'].includes(file.type) || /\.(jpe?g|png)$/i.test(file.name)
+}
+
+function formatBytes(bytes: number) {
+  if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(2)} MB`
+  return `${Math.max(1, Math.round(bytes / 1024))} KB`
+}
+
+function formatImageType(file: File) {
+  if (isWebpFile(file)) return 'WebP'
+  if (file.type === 'image/png' || /\.png$/i.test(file.name)) return 'PNG'
+  return 'JPG'
+}
+
+async function convertToWebp(file: File): Promise<File> {
+  if (!shouldConvertToWebp(file)) return file
+
+  const objectUrl = URL.createObjectURL(file)
+  try {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const source = new Image()
+      source.onload = () => resolve(source)
+      source.onerror = () => reject(new Error('瀏覽器無法讀取這張圖片。'))
+      source.src = objectUrl
+    })
+    const canvas = document.createElement('canvas')
+    canvas.width = image.naturalWidth
+    canvas.height = image.naturalHeight
+    const context = canvas.getContext('2d')
+    if (!context) throw new Error('瀏覽器無法建立圖片轉檔畫布。')
+    context.drawImage(image, 0, 0)
+
+    const webpBlob = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error('WebP 轉檔失敗。')), 'image/webp', 0.82)
+    })
+    const baseName = file.name.replace(/\.[^.]+$/, '') || 'image'
+    return new File([webpBlob], `${baseName}.webp`, { type: 'image/webp', lastModified: Date.now() })
+  } finally {
+    URL.revokeObjectURL(objectUrl)
+  }
+}
+
 export default function AdminImagesPage() {
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
+  const [selectedFiles, setSelectedFiles] = useState<UploadCandidate[]>([])
   const [uploading, setUploading] = useState(false)
   const [uploadStatus, setUploadStatus] = useState<string>('')
   const [previewUrls, setPreviewUrls] = useState<{ file: File; url: string }[]>([])
@@ -40,6 +125,7 @@ export default function AdminImagesPage() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('')
   const [selectedPriceType, setSelectedPriceType] = useState<string>('bundle')
   const [loadingCategories, setLoadingCategories] = useState(false)
+  const [catalogWarning, setCatalogWarning] = useState('')
   const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -48,6 +134,9 @@ export default function AdminImagesPage() {
     const data = await response.json().catch(() => ({}))
     if (!response.ok || !data?.ok) throw new Error(data?.error || `HTTP ${response.status}`)
     const uniqueCategories = new Map<string, ImageCategory>()
+    for (const category of FALLBACK_IMAGE_CATEGORIES) {
+      uniqueCategories.set(category.id, category)
+    }
     for (const image of Array.isArray(data?.images) ? data.images : []) {
       const id = String(image?.category_id || '').trim()
       const name = String(image?.category_name || '').trim()
@@ -55,9 +144,30 @@ export default function AdminImagesPage() {
         uniqueCategories.set(id, { id, name, sort_order: uniqueCategories.size, is_active: true })
       }
     }
-    const rows = [...uniqueCategories.values()]
+    
+    const fixedJobCategories: ImageCategory[] = [
+      { id: 'real-estate', name: '\u623f\u4ef2\uff0f\u623f\u5730\u7522', sort_order: 0, is_active: true },
+      { id: 'hair-salon', name: '\u7f8e\u9aee\uff0f\u6c99\u9f8d', sort_order: 1, is_active: true },
+      { id: 'nail-salon', name: '\u7f8e\u7532', sort_order: 2, is_active: true },
+      { id: 'beauty-spa', name: '\u7f8e\u5bb9SPA', sort_order: 3, is_active: true },
+      { id: 'dentist', name: '\u7259\u91ab', sort_order: 4, is_active: true },
+      { id: 'pet-grooming', name: '\u5bf5\u7269\u7f8e\u5bb9', sort_order: 5, is_active: true },
+    ]
+
+    const fixedJobCategoryIds = new Set(
+      fixedJobCategories.map((category) => category.id)
+    )
+
+    const rows = [
+      ...fixedJobCategories,
+      ...[...uniqueCategories.values()].filter(
+        (category) => !fixedJobCategoryIds.has(category.id)
+      ),
+    ]
+
     setCategories(rows)
     setSelectedCategoryId((current) => current || rows[0]?.id || '')
+    setCatalogWarning('')
     return Number(data?.total || 0)
   }
 
@@ -68,7 +178,10 @@ export default function AdminImagesPage() {
       await refreshCatalog()
     } catch (err: any) {
       console.error('載入分類時發生錯誤:', err)
-      setUploadStatus('載入分類時發生錯誤：' + err.message)
+      setCategories(FALLBACK_IMAGE_CATEGORIES)
+      setSelectedCategoryId((current) => current || FALLBACK_IMAGE_CATEGORIES[0]?.id || '')
+      setCatalogWarning('目前無法讀取 R2 分類清單，已改用固定大分類。可先選分類；若上傳仍失敗，請確認本機圖片 API 是否正常。')
+      setUploadStatus('')
     } finally {
       setLoadingCategories(false)
     }
@@ -89,7 +202,7 @@ export default function AdminImagesPage() {
   }, [previewUrls])
 
   // 處理檔案選擇
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (!files || files.length === 0) return
 
@@ -127,7 +240,15 @@ export default function AdminImagesPage() {
       return
     }
 
-    setSelectedFiles(validFiles)
+    const candidates = await Promise.all(validFiles.map(async (sourceFile): Promise<UploadCandidate> => {
+      try {
+        return { sourceFile, uploadFile: await convertToWebp(sourceFile) }
+      } catch (error: any) {
+        return { sourceFile, conversionError: error?.message || 'WebP 轉檔失敗。' }
+      }
+    }))
+
+    setSelectedFiles(candidates)
     setUploadStatus('')
 
     // 產生預覽 URL
@@ -155,13 +276,17 @@ export default function AdminImagesPage() {
   }
 
   // 處理單張圖片上傳
-  const uploadSingleImage = async (file: File, index: number, total: number) => {
-    console.log(`[${index + 1}/${total}] 開始上傳圖片: ${file.name}`)
-    console.log('檔案大小:', (file.size / 1024 / 1024).toFixed(2), 'MB')
+  const uploadSingleImage = async (candidate: UploadCandidate, index: number, total: number) => {
+    const { sourceFile, uploadFile, conversionError } = candidate
+    if (!uploadFile) {
+      return { success: false, fileName: sourceFile.name, error: `${sourceFile.name}: ${conversionError || 'WebP 轉檔失敗。'}` }
+    }
+    console.log(`[${index + 1}/${total}] 開始上傳圖片: ${uploadFile.name}`)
+    console.log('檔案大小:', (uploadFile.size / 1024 / 1024).toFixed(2), 'MB')
 
     try {
       // 將檔案轉換為 base64
-      const fileDataBase64 = await fileToBase64(file)
+      const fileDataBase64 = await fileToBase64(uploadFile)
 
       // 呼叫後端 API 上傳圖片
       const response = await imageAdminFetch('/api/image-admin?action=uploadImage', {
@@ -173,10 +298,10 @@ export default function AdminImagesPage() {
           base64: fileDataBase64,
           category_id: selectedCategoryId,
           category_name: categories.find((category) => category.id === selectedCategoryId)?.name || selectedCategoryId,
-          price_type: 'bundle',
-          file_name: file.name,
-          mime_type: file.type,
-          file_size: file.size,
+          price_type: selectedPriceType,
+          file_name: uploadFile.name,
+          mime_type: uploadFile.type,
+          file_size: uploadFile.size,
         }),
       })
 
@@ -191,14 +316,14 @@ export default function AdminImagesPage() {
       if (!response.ok || !data.success) {
         const errorMessage = data.error || '上傳失敗'
         console.error(`[${index + 1}/${total}] 上傳失敗:`, errorMessage)
-        throw new Error(`${file.name}: ${errorMessage}`)
+        throw new Error(`${uploadFile.name}: ${errorMessage}`)
       }
 
       console.log(`[${index + 1}/${total}] 圖片已成功上傳並登錄:`, data)
-      return { success: true, fileName: file.name, manifestCount: Number(data.manifest_count || 0) || undefined }
+      return { success: true, fileName: uploadFile.name, manifestCount: Number(data.manifest_count || 0) || undefined }
     } catch (err: any) {
       console.error(`[${index + 1}/${total}] 處理失敗:`, err)
-      return { success: false, fileName: file.name, error: err.message }
+      return { success: false, fileName: uploadFile.name, error: err.message }
     }
   }
 
@@ -292,7 +417,7 @@ export default function AdminImagesPage() {
               🖼️ 圖片上傳管理
             </h1>
             <div className="flex items-center gap-2">
-              <button type="button" onClick={() => { sessionStorage.removeItem(IMAGE_ADMIN_KEY_STORAGE); window.location.reload() }} className="px-3 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200">
+              <button type="button" onClick={() => { localStorage.removeItem(IMAGE_ADMIN_KEY_STORAGE); window.location.reload() }} className="px-3 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200">
                 重設管理金鑰
               </button>
               <Link to="/admin/images/list" className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors duration-200 ease-out hover:-translate-y-0.5 hover:shadow-xl hover:brightness-110 active:scale-[0.98]">
@@ -322,7 +447,7 @@ export default function AdminImagesPage() {
               type="file"
               accept="image/jpeg,image/jpg,image/png,image/webp"
               multiple
-              onChange={handleFileSelect}
+              onChange={(event) => { void handleFileSelect(event) }}
               className="block w-full text-sm text-gray-500
                 file:mr-4 file:py-2 file:px-4
                 file:rounded-lg file:border-0
@@ -371,6 +496,11 @@ export default function AdminImagesPage() {
             {!selectedCategoryId && uploadStatus === '請先選擇圖片分類' && (
               <p className="text-sm text-red-600 mt-1">請先選擇圖片分類</p>
             )}
+            {catalogWarning && (
+              <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm leading-relaxed text-amber-800">
+                {catalogWarning}
+              </p>
+            )}
           </div>
 
           {/* 圖片方案選擇 */}
@@ -379,11 +509,16 @@ export default function AdminImagesPage() {
               圖片下載權限 <span className="text-red-500">*</span>
             </label>
             <select
-              value="bundle"
-              className="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-gray-50 text-gray-700"
-              disabled
+              value={selectedPriceType}
+              onChange={(e) => {
+                setSelectedPriceType(e.target.value)
+                setUploadStatus('')
+              }}
+              className="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white text-gray-700"
+              disabled={uploading}
             >
-              <option value="bundle">完整素材庫（NT$399 素材包）－本階段固定</option>
+              <option value="bundle">{"\uD83D\uDD12 \u9396\u4f4f\u4e0b\u8f09\uff08\u5b8c\u6574\u7d20\u6750\u5eab\uff09"}</option>
+              <option value="free">{"\u2705 \u514d\u8cbb\u4e0b\u8f09"}</option>
             </select>
             {!selectedPriceType && uploadStatus === '請先選擇圖片下載權限' && (
               <p className="text-sm text-red-600 mt-1">請先選擇圖片下載權限</p>
@@ -410,9 +545,24 @@ export default function AdminImagesPage() {
                     <p className="text-xs text-gray-500 truncate" title={preview.file.name}>
                       {preview.file.name}
                     </p>
-                    <p className="text-xs text-gray-400">
-                      {(preview.file.size / 1024).toFixed(2)} KB
-                    </p>
+                    {(() => {
+                      const candidate = selectedFiles[index]
+                      const uploadFile = candidate?.uploadFile
+                      const savedPercent = uploadFile && preview.file.size > 0
+                        ? Math.max(0, Math.round((1 - uploadFile.size / preview.file.size) * 100))
+                        : 0
+                      return <div className="mt-1 space-y-0.5 text-xs text-gray-500">
+                        <p>原始：{formatBytes(preview.file.size)} {formatImageType(preview.file)}</p>
+                        {candidate?.conversionError ? (
+                          <p className="text-red-600">轉檔失敗：{candidate.conversionError}</p>
+                        ) : uploadFile ? (
+                          <>
+                            <p>上傳：{formatBytes(uploadFile.size)} {formatImageType(uploadFile)}</p>
+                            {uploadFile !== preview.file && <p className="text-emerald-700">節省：約 {savedPercent}%</p>}
+                          </>
+                        ) : null}
+                      </div>
+                    })()}
                   </div>
                 ))}
               </div>

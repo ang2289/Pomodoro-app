@@ -84,7 +84,7 @@ export default function WishInput({ onSuccess }: WishInputProps) {
         <button
           onClick={handleSubmit}
           disabled={isSubmitting || content.trim().length === 0}
-          className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 disabled:from-gray-300 disabled:to-gray-400 text-white font-bold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 disabled:scale-100 disabled:cursor-not-allowed"
+          className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:hover:bg-gray-300 text-white font-bold py-3 px-6 rounded-lg transition transform hover:scale-105 disabled:scale-100 disabled:cursor-not-allowed"
         >
           {isSubmitting ? (
             <span className="flex items-center justify-center">

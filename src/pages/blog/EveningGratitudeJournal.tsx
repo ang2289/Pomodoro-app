@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function EveningGratitudeJournal() {
   return (
@@ -21,6 +22,9 @@ export default function EveningGratitudeJournal() {
           寫下感恩的事能幫助我們轉換視角，從疲憊中看見美好，
           從挫折中看見成長。這不僅是記錄，更是一種心靈的整理與修復。
         </p>
+
+        <ArticleCTA placement="start" focus="tools" />
+
 
         <h2 className="text-2xl font-semibold mt-8 mb-3">📔 夜間感恩日記的三個問題</h2>
         <ol className="list-decimal ml-6 space-y-3 mb-4">
@@ -67,6 +71,8 @@ export default function EveningGratitudeJournal() {
           即使是不起眼的小事，也能成為支撐我們度過困難時刻的力量。
         </p>
 
+        <ArticleCTA placement="middle" focus="tools" />
+
         <h2 className="text-2xl font-semibold mt-8 mb-3">💤 結語：讓感恩成為睡前的最後一盞燈</h2>
         <p className="mb-4">
           當你學會在夜晚感謝今天的自己，
@@ -75,6 +81,8 @@ export default function EveningGratitudeJournal() {
           讓感恩日記成為你與自己對話的橋樑，
           讓每一天的結束，都帶著溫柔與希望。
         </p>
+
+        <ArticleCTA placement="bottom" focus="tools" />
 
         <hr className="my-8 border-gray-300" />
 
@@ -141,6 +149,8 @@ export default function EveningGratitudeJournal() {
           Let gratitude journaling be a bridge for conversation with yourself,
           so every day ends with gentleness and hope.
         </p>
+
+        <ArticleCTA placement="afterFaq" focus="tools" />
 
         <p className="mt-8 text-gray-500 text-center text-sm">
           所有文章由 RxV 夢想創作工作室撰寫 · 保留所有權利

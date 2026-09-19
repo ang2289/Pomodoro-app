@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function AfternoonStretch() {
   return (
@@ -21,6 +22,9 @@ export default function AfternoonStretch() {
           午間伸展能喚醒身體活力，讓下午的工作與學習更有效率。
         </p>
 
+        <ArticleCTA placement="start" focus="tools" />
+
+
         <h2 className="text-2xl font-semibold mt-8 mb-3">🪶 三步驟快速伸展法</h2>
         <ol className="list-decimal ml-6 space-y-2 mb-4">
           <li>
@@ -34,11 +38,15 @@ export default function AfternoonStretch() {
           </li>
         </ol>
 
+        <ArticleCTA placement="middle" focus="tools" />
+
         <h2 className="text-2xl font-semibold mt-8 mb-3">🌿 心靈重啟的 3 分鐘</h2>
         <p className="mb-4">
           伸展不只是身體活動，更是一種心靈轉換。
           當你專注在呼吸與身體感受時，大腦會自然進入放鬆與覺察狀態，像是重新按下「重啟鍵」。
         </p>
+
+        <ArticleCTA placement="bottom" focus="tools" />
 
         <hr className="my-8 border-gray-300" />
 
@@ -66,6 +74,8 @@ export default function AfternoonStretch() {
         <p className="mb-4">
           Stretching isn't only physical—it's also mental. Focusing on your breath and sensations resets your mind, like pressing a mental "refresh" button.
         </p>
+
+        <ArticleCTA placement="afterFaq" focus="tools" />
 
         <p className="mt-8 text-gray-500 text-center text-sm">
           文章由 RxV 夢想創作工作室撰寫 · 保留所有權利

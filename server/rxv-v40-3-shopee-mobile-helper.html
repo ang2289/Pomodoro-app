@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>RxV V40.4.1 蝦皮 / Facebook 短影音發布助手</title>
+<style>
+body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;margin:0;background:#f8fafc;color:#0f172a}header{padding:18px 22px;background:white;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:2}.wrap{max-width:1240px;margin:0 auto;padding:18px}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:16px;margin-bottom:14px}.btn{border:0;border-radius:9px;padding:9px 13px;font-weight:700;cursor:pointer}.btn:disabled{opacity:.45;cursor:not-allowed}.primary{background:#ea580c;color:#fff}.blue{background:#2563eb;color:#fff}.fb{background:#1877f2;color:#fff}.green{background:#059669;color:#fff}.ghost{background:#fff;border:1px solid #cbd5e1;color:#334155}.muted{color:#64748b;font-size:13px}.ok{color:#047857}.warn{color:#b45309}.bad{color:#b91c1c}.item{display:grid;grid-template-columns:44px minmax(260px,1.2fr) 120px 230px minmax(300px,1fr);gap:10px;align-items:start;padding:14px 0;border-top:1px solid #eef2f7}.item:first-child{border-top:0}.text{white-space:pre-wrap;font-size:13px;background:#f8fafc;border-radius:8px;padding:8px;max-height:150px;overflow:auto}.fbtext{background:#eff6ff}.badge{display:inline-block;padding:3px 7px;border-radius:999px;background:#f1f5f9;font-size:12px;margin:0 4px 4px 0}.small{font-size:12px}.label{font-size:12px;font-weight:700;margin-bottom:5px}.stack{display:flex;flex-direction:column;gap:7px}.copycol{grid-column:2/-1;min-width:0}.copycol .text{width:auto;min-width:0;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7}.notice{padding:10px 12px;border-radius:9px;background:#eff6ff;color:#1e3a8a;font-size:13px}@media(max-width:920px){.item{grid-template-columns:36px minmax(0,1fr)}.wide{grid-column:2}.copycol{grid-column:2}}
+</style>
+</head>
+<body>
+<header><div class="wrap" style="padding:0"><b>RxV V40.4.1｜蝦皮 + Facebook 短影音發布助手</b><div class="muted">影片與文案由 RxV 準備；蝦皮與 Facebook 都保留最後人工確認，不做自動按下發布。</div></div></header>
+<div class="wrap">
+  <div class="card">
+    <div class="row"><button class="btn blue" onclick="refreshAll()">重新整理</button><button class="btn primary" onclick="pushSelected()">傳選取影片到手機</button><button class="btn green" onclick="openScrcpy()">在電腦開手機畫面</button><button class="btn ghost" onclick="openShopee()">開啟蝦皮 App</button><button class="btn fb" onclick="openFacebook()">開啟 Facebook App</button></div>
+    <div id="status" class="muted" style="margin-top:10px">檢查手機連線中...</div>
+    <div class="notice" style="margin-top:12px">V40.4.1 手動發布流程會先從商品名稱辨識品類與具體特徵，再產生較精準的蝦皮文案與 Hashtag；Facebook 版另外加入<strong>蝦皮分潤連結與分潤揭露</strong>。若 FB 按鈕呈灰色，代表該商品尚未存入分潤連結。</div>
+  </div>
+  <div class="card">
+    <div class="row"><b>待發布影片</b><span id="count" class="badge">0</span><button class="btn green small" onclick="goNextShopee()">下一支蝦皮待發</button><button class="btn fb small" onclick="goNextFacebook()">下一支 FB 待發</button><button class="btn ghost small" onclick="selectReady()">勾選未發布</button><button class="btn ghost small" onclick="clearSelection()">取消勾選</button></div><div class="muted" style="margin-top:7px">標記發布完成後會自動跳到下一支尚未發布的商品，減少逐列尋找。</div>
+    <div id="items" style="margin-top:8px"></div>
+  </div>
+</div>
+<script>
+let items=[];
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+async function api(url,opts){const r=await fetch(url,opts);const d=await r.json().catch(()=>({}));if(!r.ok||d.ok===false)throw new Error(d.message||d.error||'操作失敗');return d}
+async function refreshAll(){
+  const s=await api('/rxv-v40-3/status');
+  const dev=s.devices||[];const online=dev.filter(x=>x.state==='device');
+  document.getElementById('status').innerHTML = `版本：<span class="ok">${esc(s.build||'V40.3.9')}</span>　ADB：${s.adbPath?'<span class="ok">已找到</span>':'<span class="warn">未找到</span>'}　scrcpy：${s.scrcpyPath?'<span class="ok">已找到</span>':'<span class="warn">未找到</span>'}　手機：${online.length?'<span class="ok">'+esc(online.map(x=>x.model||x.serial).join(', '))+'</span>':'<span class="warn">未連線／未授權 USB 偵錯</span>'}`;
+  const d=await api('/shopee-mobile/items?limit=300');items=d.items||[];render();
+}
+function render(){
+  document.getElementById('count').textContent=items.length;
+  document.getElementById('items').innerHTML=items.map((x,i)=>`<div class="item" id="item-${i}">
+    <div><input type="checkbox" class="sel" data-key="${esc(x.productKey)}" ${x.videoExists&&x.mobileStatus!=='published'?'checked':''}></div>
+    <div><b>${esc(x.productTitle||'(無標題)')}</b><div class="muted">${esc(x.videoFilename||x.videoPath)}</div><div class="small ${x.videoExists?'ok':'bad'}">${x.videoExists?'MP4 已完成':'找不到 MP4'}</div><div class="small ${x.facebookReady?'ok':'bad'}">${x.facebookReady?(x.affiliateUrlRecovered?'已從舊文案找回 FB 分潤連結':'FB 分潤連結已準備'):'缺少 FB 分潤連結，請先貼上'}</div>
+      <div class="row" style="margin-top:7px;gap:6px"><input id="aff-${i}" type="url" placeholder="貼上蝦皮分潤連結" value="${esc(x.affiliateUrl||'')}" style="min-width:230px;max-width:100%;padding:7px;border:1px solid #cbd5e1;border-radius:8px"><button class="btn ghost small" onclick="pasteAndSaveAffiliate(${i})">從剪貼簿貼上</button><button class="btn blue small" onclick="saveAffiliate(${i})">儲存分潤連結</button></div></div>
+    <div class="wide"><span class="badge">蝦皮 ${esc(x.mobileStatus)}</span><span class="badge">FB ${esc(x.facebookStatus||'ready')}</span></div>
+    <div class="wide small"><b>精準品類：</b>${esc(x.precisionCategory||'其他商品')}　<b>特徵：</b>${esc((x.precisionFeatures||[]).join('、')||'依既有文案')}<div class="muted" style="margin-top:3px">${esc((x.precisionTags||[]).join(' '))}</div></div>
+    <div class="wide stack">
+      <button class="btn ghost small" onclick="copyShopeeText(${i})">複製蝦皮文案</button>
+      <button class="btn ghost small" onclick="copyFacebookText(${i})" ${x.facebookReady?'':'disabled'}>複製 FB 文案</button>
+      <button class="btn fb small" onclick="facebookShare(${i})" ${x.facebookReady&&x.videoExists?'':'disabled'}>FB 分享影片</button>
+      <button class="btn ghost small" onclick="markShopeePublished(${i})">標記蝦皮已發布</button>
+      <button class="btn ghost small" onclick="markFacebookPublished(${i})">標記 FB 已發布</button>
+      <button class="btn green small" onclick="goNextShopee(${i})">下一支</button>
+    </div>
+    <div class="wide copycol">
+      <div class="label">蝦皮文案</div><div class="text">${esc(x.shopeeText||x.productTitle)}</div>
+      <div class="label" style="margin-top:8px">Facebook 文案（含分潤連結）</div><div class="text fbtext">${esc(x.facebookText||'尚未設定蝦皮分潤連結')}</div>
+    </div>
+  </div>`).join('')||'<div class="muted">目前沒有已產生 MP4 的商品。</div>';
+}
+function selectedKeys(){return [...document.querySelectorAll('.sel:checked')].map(x=>x.dataset.key)}
+function selectReady(){document.querySelectorAll('.sel').forEach(x=>{const it=items.find(i=>i.productKey===x.dataset.key);x.checked=!!it?.videoExists&&it.mobileStatus!=='published'})}
+function clearSelection(){document.querySelectorAll('.sel').forEach(x=>x.checked=false)}
+async function pushSelected(){const keys=selectedKeys();if(!keys.length)return alert('請先勾選影片');const d=await api('/shopee-mobile/push-batch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({productKeys:keys,limit:50})});alert(`已傳送 ${d.pushed} 支到手機 Movies/RxV${d.failed?'，失敗 '+d.failed+' 支':''}`);await refreshAll()}
+async function openScrcpy(){try{await api('/shopee-mobile/open-scrcpy',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});}catch(e){alert(e.message)}}
+async function openShopee(){try{await api('/shopee-mobile/open-shopee',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});}catch(e){alert(e.message)}}
+async function openFacebook(){try{const d=await api('/shopee-mobile/open-facebook',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});if(d.message)alert(d.message)}catch(e){alert(e.message)}}
+async function saveAffiliate(i){
+  const x=items[i];if(!x)return;
+  const input=document.getElementById(`aff-${i}`);
+  const affiliateUrl=String(input?.value||'').trim();
+  if(!affiliateUrl)return alert('請先貼上蝦皮分潤連結');
+  try{
+    await api('/shopee-mobile/affiliate-link',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({productKey:x.productKey,affiliateUrl})});
+    await refreshAll();
+    const ni=items.findIndex(y=>y.productKey===x.productKey);if(ni>=0)scrollToItem(ni);
+    alert('分潤連結已儲存，FB 文案與「FB 分享影片」已啟用');
+  }catch(e){alert(e.message)}
+}
+async function pasteAndSaveAffiliate(i){
+  try{
+    const t=await navigator.clipboard.readText();
+    const input=document.getElementById(`aff-${i}`);if(input)input.value=String(t||'').trim();
+    await saveAffiliate(i);
+  }catch(e){alert('無法讀取剪貼簿，請直接把分潤連結貼到欄位後按「儲存分潤連結」。')}
+}
+async function copyShopeeText(i){const t=items[i]?.shopeeText||items[i]?.productTitle||'';await navigator.clipboard.writeText(t);alert('蝦皮文案已複製')}
+async function copyFacebookText(i){const x=items[i];if(!x?.facebookReady)return alert('這個商品沒有蝦皮分潤連結，先不要發 Facebook');await navigator.clipboard.writeText(x.facebookText||'');alert('FB 文案已複製，內含蝦皮分潤連結')}
+async function facebookShare(i){const x=items[i];if(!x)return;if(!x.facebookReady)return alert('這個商品沒有蝦皮分潤連結，先不要發 Facebook');try{await navigator.clipboard.writeText(x.facebookText||'');const d=await api('/shopee-mobile/facebook-share',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({productKey:x.productKey})});alert(d.message||'影片已交給 Facebook；請貼上剛複製的 FB 文案後由你確認發布。');await refreshAll()}catch(e){alert(e.message)}}
+function scrollToItem(index){if(index<0||index>=items.length)return false;const el=document.getElementById(`item-${index}`);if(!el)return false;el.scrollIntoView({behavior:'smooth',block:'center'});el.style.outline='3px solid #22c55e';setTimeout(()=>{el.style.outline=''},1600);return true}
+function nextIndex(kind,from=-1){const start=Number.isInteger(from)?from+1:0;for(let i=start;i<items.length;i++){const x=items[i];if(!x?.videoExists)continue;if(kind==='facebook'){if(x.facebookReady&&x.facebookStatus!=='published')return i}else{if(x.mobileStatus!=='published')return i}}for(let i=0;i<Math.min(start,items.length);i++){const x=items[i];if(!x?.videoExists)continue;if(kind==='facebook'){if(x.facebookReady&&x.facebookStatus!=='published')return i}else{if(x.mobileStatus!=='published')return i}}return -1}
+function goNextShopee(from=-1){const i=nextIndex('shopee',from);if(i<0)return alert('目前沒有下一支蝦皮待發布影片');scrollToItem(i)}
+function goNextFacebook(from=-1){const i=nextIndex('facebook',from);if(i<0)return alert('目前沒有下一支 Facebook 待發布影片');scrollToItem(i)}
+async function markShopeePublished(i){const x=items[i];if(!x)return;const key=x.productKey;await api('/shopee-mobile/mark',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({productKey:key,status:'published'})});await refreshAll();const newIndex=items.findIndex(y=>y.productKey===key);goNextShopee(newIndex)}
+async function markFacebookPublished(i){const x=items[i];if(!x)return;const key=x.productKey;await api('/shopee-mobile/facebook-mark',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({productKey:key,status:'published'})});await refreshAll();const newIndex=items.findIndex(y=>y.productKey===key);goNextFacebook(newIndex)}
+refreshAll().catch(e=>document.getElementById('status').innerHTML='<span class="bad">'+esc(e.message)+'</span>');
+</script>
+</body></html>

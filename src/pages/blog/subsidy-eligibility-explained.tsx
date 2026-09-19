@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import SEO from "../../components/SEO";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function SubsidyEligibilityExplainedPage() {
   return (
@@ -39,6 +40,9 @@ export default function SubsidyEligibilityExplainedPage() {
             <p className="mb-4">
               每當政府推出補助政策，總會看到很多人分享「我有領到」、「這個很好申請」，但實際自己去看公告時，卻常常看不懂，也不知道自己到底符不符合。
             </p>
+
+            <ArticleCTA placement="start" focus="summary" />
+
 
             <p className="mb-4">
               其實，大多數補助的判斷邏輯都不複雜，只是公告寫法偏向行政用語，讓一般人很難快速理解。
@@ -89,6 +93,8 @@ export default function SubsidyEligibilityExplainedPage() {
                   為什麼最近一直在談台美關稅？
                 </Link>
               </div>
+            <ArticleCTA placement="middle" focus="summary" />
+
             </div>
 
             <h2 className="text-2xl font-semibold mt-8 mb-4">很多人不是「不能領」，而是「不知道自己卡在哪一個條件」</h2>
@@ -100,6 +106,8 @@ export default function SubsidyEligibilityExplainedPage() {
               你可以把補助公告或新聞內容貼上來，系統會幫你整理成白話版本，快速告訴你「這個補助跟你有沒有關係」。
             </p>
           </div>
+
+          <ArticleCTA placement="afterFaq" focus="summary" />
 
           {/* 相關文章區塊 */}
           <div className="mt-12 pt-8 border-t border-gray-200">
@@ -136,8 +144,6 @@ export default function SubsidyEligibilityExplainedPage() {
               </Link>
             </div>
           </div>
-
-          {/* 導流區塊：摘要模組 */}
           <div className="mt-12 pt-8 border-t border-gray-200">
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 text-center">
               <h3 className="text-xl font-bold text-gray-900 mb-2">
@@ -148,7 +154,7 @@ export default function SubsidyEligibilityExplainedPage() {
               </p>
               <Link
                 to="/summary"
-                className="inline-block px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg drop-shadow-md"
+                className="inline-block bg-blue-600 text-white px-5 py-3 rounded-lg text-base font-medium hover:bg-blue-700 transition"
               >
                 貼上公告，幫我判斷
               </Link>
@@ -243,6 +249,7 @@ export default function SubsidyEligibilityExplainedPage() {
               </li>
             </ul>
           </div>
+          <ArticleCTA placement="bottom" focus="summary" />
 
           <div className="mt-8 pt-6 border-t border-gray-200">
             <Link

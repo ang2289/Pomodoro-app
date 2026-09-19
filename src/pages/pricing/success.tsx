@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { buildSEO } from '../../lib/seo'
-import { supabase } from '@/lib/supabase'
+import { getCustomSessionToken, getPurchaseStatus } from '@/lib/accountApi'
 import PrimaryButton from '@/components/ui/PrimaryButton'
 
 const seo = buildSEO({
@@ -25,6 +25,8 @@ export default function PaymentSuccessPage() {
   const [searchParams] = useSearchParams()
   const [loading, setLoading] = useState(true)
   const [purchaseInfo, setPurchaseInfo] = useState<PurchaseInfo | null>(null)
+  const displayAmount = purchaseInfo?.amount ?? Number(searchParams.get('TradeAmt') || 0)
+  const includesStorefrontGift = displayAmount === 99 || displayAmount === 199
 
   useEffect(() => {
     const fetchPaymentData = async () => {
@@ -33,7 +35,6 @@ export default function PaymentSuccessPage() {
         
         // 從 URL 參數取得付款資訊（綠界會回傳）
         const merchantTradeNo = searchParams.get('MerchantTradeNo')
-        const tradeAmt = searchParams.get('TradeAmt')
 
         if (!merchantTradeNo) {
           console.warn('[PaymentSuccess] 沒有訂單編號')
@@ -42,8 +43,8 @@ export default function PaymentSuccessPage() {
         }
 
         // 取得使用者 ID
-        const userId = localStorage.getItem('userId')
-        if (!userId) {
+        const sessionToken = getCustomSessionToken()
+        if (!sessionToken) {
           console.warn('[PaymentSuccess] 沒有使用者 ID')
           setLoading(false)
           return
@@ -58,12 +59,8 @@ export default function PaymentSuccessPage() {
         const retryDelay = 1000 // 1 秒
 
         while (!purchaseData && retryCount < maxRetries) {
-          const { data, error } = await supabase
-            .from('purchase_logs')
-            .select('points, amount, status, order_no, created_at')
-            .eq('order_no', merchantTradeNo)
-            .eq('user_id', userId)
-            .maybeSingle()
+          const data = await getPurchaseStatus(merchantTradeNo).catch(() => null)
+          const error = data ? null : new Error('PURCHASE_STATUS_NOT_READY')
 
           if (error) {
             console.error('[PaymentSuccess] 查詢購點紀錄失敗：', error)
@@ -83,28 +80,6 @@ export default function PaymentSuccessPage() {
         }
 
         // 如果還是沒找到，使用 URL 參數中的金額來判斷點數（備用方案）
-        if (!purchaseData && tradeAmt) {
-          const tradeAmtNum = parseInt(tradeAmt)
-          let points = 0
-          if (tradeAmtNum === 99) {
-            points = 100000
-          } else if (tradeAmtNum === 199) {
-            points = 300000
-          } else if (tradeAmtNum === 10) {
-            points = 10
-          }
-
-          if (points > 0) {
-            purchaseData = {
-              points,
-              amount: tradeAmtNum,
-              status: 'pending',
-              order_no: merchantTradeNo,
-              created_at: new Date().toISOString(),
-            }
-          }
-        }
-
         if (purchaseData) {
           setPurchaseInfo(purchaseData)
         }
@@ -196,7 +171,16 @@ export default function PaymentSuccessPage() {
                 </div>
               )}
 
-              {/* 回到首頁按鈕 */}
+              {includesStorefrontGift ? (
+                <div className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-left">
+                  <p className="text-sm font-black text-emerald-700">🎁 本次點數包包含店家商品展示頁</p>
+                  <h2 className="mt-2 text-lg font-black text-slate-950">站方確認後會為你人工開通</h2>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                    商品展示頁會由站方依付款紀錄開通。完成後會通知你，再使用付款時的同一個帳號登入設定店名、商品、聯絡方式與 QR Code。
+                  </p>
+                </div>
+              ) : null}
+
               <PrimaryButton
                 onClick={() => navigate('/')}
                 fullWidth
@@ -211,4 +195,3 @@ export default function PaymentSuccessPage() {
     </>
   )
 }
-

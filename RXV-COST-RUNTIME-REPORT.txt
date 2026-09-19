@@ -1,0 +1,124 @@
+RXV RUNTIME COST AUDIT
+======================
+Project: D:\Pomodoro-app
+Runtime files scanned: 673
+Excluded: backups, *.bak, *.before-*, api-unused, docs, package files, build outputs
+
+HIGH: 17
+- OpenAI API: .env
+- Gemini API: .env
+- Gemini API: .env.local
+- OpenAI API: api\main.ts
+- Gemini API: server\image-to-video-server.cjs
+- Gemini API: src\lib\env.ts
+- Gemini API: src\services\gemini.ts
+- Gemini API: src\services\googleCalendarService.js
+- Gemini API: src\services\googleCalendarService.ts
+- Gemini API: src\vite-env.d.ts
+- Gemini API: supabase\functions\auto-summary\index.ts
+- Gemini API: supabase\functions\homework-helper\index.ts
+- OpenAI API: supabase\functions\product-image-generator\index.ts
+- Gemini API: supabase\functions\relationship-ai\index.ts
+- Gemini API: supabase\functions\summary\index.ts
+- Gemini API: supabase\functions\v1\homework-helper.ts
+- Gemini API: supabase\functions\video-script\index.ts
+
+MEDIUM: 40
+- Vercel API Route: api\commerce.ts
+- Vercel API Route: api\ecpay\index.ts
+- Vercel API Route: api\group-buy-cron.ts
+- Vercel API Route: api\group-buy.ts
+- Vercel API Route: api\image-admin.ts
+- Vercel API Route: api\main.ts
+- Vercel API Route: api\patches\patch_digital_card_duration_to_6.mjs
+- Vercel API Route: api\relationship-ai.ts
+- Vercel API Route: api\run-shopee-video.ts
+- Vercel API Route: api\shopee-flash-sale.ts
+- Vercel API Route: api\shorten.ts
+- Vercel API Route: api\storefront-share.ts
+- Supabase Storage: src\components\ImageUpload.js
+- Supabase Storage: src\components\ImageUpload.tsx
+- Supabase Storage: src\utils\deleteChantWish.js
+- Supabase Storage: src\utils\deleteChantWish.ts
+- Supabase Edge Function: supabase\functions\admin-add-credits\index.ts
+- Supabase Edge Function: supabase\functions\approve-topup\index.ts
+- Supabase Edge Function: supabase\functions\auto-summary-phase2-preview\index.ts
+- Supabase Edge Function: supabase\functions\auto-summary-phase2\index.ts
+- Supabase Edge Function: supabase\functions\auto-summary\index.ts
+- Supabase Edge Function: supabase\functions\consume-credits-phase2-preview\index.ts
+- Supabase Edge Function: supabase\functions\consume-credits-phase2\index.ts
+- Supabase Edge Function: supabase\functions\consume-credits\index.ts
+- Supabase Edge Function: supabase\functions\homework-helper-phase2-preview\index.ts
+- Supabase Edge Function: supabase\functions\homework-helper-phase2\index.ts
+- Supabase Edge Function: supabase\functions\homework-helper\index.ts
+- Supabase Edge Function: supabase\functions\list-topups\index.ts
+- Supabase Edge Function: supabase\functions\ping\index.ts
+- Supabase Edge Function: supabase\functions\product-image-generator-phase2-preview\index.ts
+- Supabase Edge Function: supabase\functions\product-image-generator-phase2\index.ts
+- Supabase Storage: supabase\functions\product-image-generator\index.ts
+- Supabase Edge Function: supabase\functions\product-image-generator\index.ts
+- Supabase Edge Function: supabase\functions\relationship-ai\index.ts
+- Supabase Edge Function: supabase\functions\send-email\index.ts
+- Supabase Edge Function: supabase\functions\summary-phase2-preview\index.ts
+- Supabase Edge Function: supabase\functions\summary-phase2\index.ts
+- Supabase Edge Function: supabase\functions\summary\index.ts
+- Supabase Edge Function: supabase\functions\v1\homework-helper.ts
+- Supabase Edge Function: supabase\functions\video-script\index.ts
+
+INFO: 8
+- Cloudflare R2 / S3: .env
+- Cloudflare R2 / S3: .env.local
+- Cloudflare R2 / S3: api\image-admin.ts
+- Cloudflare R2 / S3: api\main.ts
+- Cloudflare R2 / S3: server\image-bundle-orders-r2.mjs
+- Cloudflare R2 / S3: server\image-bundle-orders-r2.ts
+- Cloudflare R2 / S3: server\image-to-video-server.cjs
+- Cloudflare R2 / S3: src\pages\images\index.tsx
+
+LIVE ENV VARIABLE NAMES (values hidden):
+- GEMINI_API_KEY
+- GEMINI_IMAGE_MODEL
+- OPENAI_API_KEY
+- OPENAI_IMAGE_MODEL
+- OPENAI_IMAGE_QUALITY
+- R2_ACCESS_KEY_ID
+- R2_ACCOUNT_ID
+- R2_BUCKET
+- R2_BUCKET_NAME
+- R2_ENDPOINT
+- R2_PRIVATE_BUCKET_NAME
+- R2_PUBLIC_ASSET_URL
+- R2_PUBLIC_BASE_URL
+- R2_PUBLIC_BUCKET_NAME
+- R2_PUBLIC_URL
+- R2_SECRET_ACCESS_KEY
+- SUPABASE_ANON_KEY
+- SUPABASE_SERVICE_ROLE_KEY
+- SUPABASE_STORAGE_BUCKET
+- SUPABASE_URL
+- VERCEL
+- VERCEL_ENV
+- VERCEL_GIT_COMMIT_AUTHOR_LOGIN
+- VERCEL_GIT_COMMIT_AUTHOR_NAME
+- VERCEL_GIT_COMMIT_MESSAGE
+- VERCEL_GIT_COMMIT_REF
+- VERCEL_GIT_COMMIT_SHA
+- VERCEL_GIT_PREVIOUS_SHA
+- VERCEL_GIT_PROVIDER
+- VERCEL_GIT_PULL_REQUEST_ID
+- VERCEL_GIT_REPO_ID
+- VERCEL_GIT_REPO_OWNER
+- VERCEL_GIT_REPO_SLUG
+- VERCEL_OIDC_TOKEN
+- VERCEL_TARGET_ENV
+- VERCEL_URL
+- VITE_GEMINI_API_KEY_HOMEWORK
+- VITE_PUBLIC_R2_URL
+- VITE_SUPABASE_ANON_KEY
+- VITE_SUPABASE_URL
+
+Meaning:
+- HIGH = active runtime code or live env references a paid-capable API.
+- MEDIUM = active cloud compute/storage path exists.
+- INFO = cloud service exists and should be kept under free-tier limits.
+- Presence does not prove current billing.

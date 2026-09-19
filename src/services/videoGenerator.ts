@@ -49,8 +49,21 @@ export async function generateShopeeVideo(
     throw new Error("無法載入影片處理引擎。請確認 FFmpeg 核心文件已正確複製到 public/ffmpeg-core/ 目錄。");
   }
 
-  // 取前三張圖
+  // 取前 1～3 張圖
   const selected = imageFiles.slice(0, 3);
+
+  // 決定每張圖片的停留秒數，總長固定 6 秒
+  // 1 張：6；2 張：3 + 3；3 張：2 + 2 + 2
+  const count = selected.length;
+  let durations: number[];
+  if (count === 1) {
+    durations = [6];
+  } else if (count === 2) {
+    durations = [3, 3];
+  } else {
+    // 3 張或以上（已經 slice 成最多 3 張）
+    durations = [2, 2, 2].slice(0, count);
+  }
 
   // 寫入 FFmpeg 暫存檔
   try {
@@ -66,15 +79,15 @@ export async function generateShopeeVideo(
     throw new Error('無法讀取圖片檔案');
   }
 
-  // 生成 input.txt（淡入淡出效果＋每張 3 秒）
-  const inputText =
-    selected
-      .map(
-        (_, i) =>
-          `file img${i}.jpg\n` +
-          `duration 2.5\n`
-      )
-      .join("") + `file img${selected.length - 1}.jpg`;
+  // 生成 input.txt（FFmpeg concat demuxer 格式）
+  // file 路徑與 duration 必須成對，最後一張需再寫一次 file 才會吃到 duration
+  let inputText = "";
+  selected.forEach((_, i) => {
+    inputText += `file img${i}.jpg\n`;
+    inputText += `duration ${durations[i]}\n`;
+  });
+  // 再寫入最後一張 file，不加 duration
+  inputText += `file img${selected.length - 1}.jpg`;
 
   console.log("寫入 input.txt:", inputText);
   await ffmpeg.writeFile("input.txt", inputText);
@@ -106,7 +119,11 @@ export async function generateShopeeVideo(
     console.log("開始讀取生成的影片檔案...");
     const data = await ffmpeg.readFile("output.mp4");
     console.log("影片檔案讀取成功，大小:", data.length, "bytes");
-    const blob = new Blob([data], { type: "video/mp4" });
+    // 複製為新 Uint8Array 以取得標準 ArrayBuffer，避免 BlobPart 型別不相容
+    const arr = data as Uint8Array;
+    const copy = new Uint8Array(arr.length);
+    copy.set(arr);
+    const blob = new Blob([copy], { type: "video/mp4" });
     const url = URL.createObjectURL(blob);
     console.log("影片 URL 創建成功:", url);
     return url;

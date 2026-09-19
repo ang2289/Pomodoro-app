@@ -154,7 +154,7 @@ export default function InsuranceOldage2025() {
         <div className="text-center mt-8">
           <Link
             to="/pension"
-            className="bg-blue-600 hover:bg-blue-700 !text-white font-semibold py-2 px-6 rounded-full inline-block"
+            className="bg-blue-600 hover:bg-blue-700 !text-white font-semibold py-2 px-6 rounded-full inline-block transition"
           >
             {isEnglish ? "← Back to Pension Guide" : "← 回到退休金懶人包"}
           </Link>

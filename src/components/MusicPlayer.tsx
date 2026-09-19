@@ -53,7 +53,7 @@ export default function MusicPlayer() {
       <div className="mt-2">
         <button
           onClick={togglePlay}
-          className="bg-blue-500 text-white px-4 py-1 rounded hover:bg-blue-600"
+          className="bg-blue-600 text-white px-4 py-1 rounded-lg hover:bg-blue-700 transition"
         >
           {isPlaying ? '⏸ 暫停音樂' : '▶️ 播放音樂'}
         </button>

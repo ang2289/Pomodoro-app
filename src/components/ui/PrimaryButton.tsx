@@ -23,15 +23,15 @@ export default function PrimaryButton({
   }
 
   const baseClasses =
-    'inline-flex items-center justify-center rounded-xl font-semibold transition ' +
-    'shadow-sm whitespace-nowrap select-none focus:outline-none focus:ring-2 focus:ring-blue-400'
+    'inline-flex items-center justify-center rounded-lg font-semibold transition whitespace-nowrap select-none ' +
+    'text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400'
 
   const widthClass = fullWidth ? 'w-full' : 'w-auto'
   const sizeClass = sizeClasses[size]
 
   const stateClasses = disabled
-    ? '!bg-gray-300 !text-gray-500 cursor-not-allowed'
-    : '!bg-blue-600 hover:!bg-blue-700 active:!bg-blue-800 !text-white'
+    ? '!bg-gray-300 cursor-not-allowed !text-gray-500'
+    : '!bg-blue-600 hover:!bg-blue-700 active:!bg-blue-800 !text-white hover:!text-white'
 
   return (
     <button

@@ -1,0 +1,31 @@
+{
+  "mode": "FREE_ONLY",
+  "localFirst": true,
+  "paidApisAllowed": false,
+  "autoRechargeAllowed": false,
+  "supabase": {
+    "auth": true,
+    "database": true,
+    "storage": false,
+    "largeFiles": false
+  },
+  "vercel": {
+    "staticHosting": true,
+    "serverless": "MINIMAL_ONLY",
+    "largeFiles": false,
+    "backgroundJobs": false
+  },
+  "cloudflareR2": {
+    "enabled": true,
+    "warningGB": 7,
+    "stopUploadGB": 8
+  },
+  "github": {
+    "codeOnly": true,
+    "largeBinaryFiles": false
+  },
+  "ai": {
+    "preferLocal": true,
+    "paidAPI": false
+  }
+}

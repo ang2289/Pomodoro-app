@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function CalmBreath() {
   return (
@@ -21,6 +22,9 @@ export default function CalmBreath() {
           你不需要長時間冥想，只要 10 秒深呼吸，
           就能重新奪回對情緒的主導權。
         </p>
+
+        <ArticleCTA placement="start" focus="tools" />
+
 
         <h2 className="text-2xl font-semibold mt-8 mb-3">🌸 10 秒平靜呼吸步驟</h2>
         <ol className="list-decimal ml-6 space-y-2 mb-4">
@@ -56,12 +60,16 @@ export default function CalmBreath() {
           讓使用者隨時透過短暫練習回到安定狀態。
         </p>
 
+        <ArticleCTA placement="middle" focus="tools" />
+
         <h2 className="text-2xl font-semibold mt-8 mb-3">🌼 結語：一口氣，就是力量</h2>
         <p className="mb-4">
           平靜不需等待。
           下一次當你心煩意亂時，
           試著深吸一口氣——那一刻，你已開始改變。
         </p>
+
+        <ArticleCTA placement="bottom" focus="tools" />
 
         <hr className="my-8 border-gray-300" />
 
@@ -106,6 +114,8 @@ export default function CalmBreath() {
           Peace doesn't wait.
           The moment you take that first deep breath, change has already begun.
         </p>
+
+        <ArticleCTA placement="afterFaq" focus="tools" />
 
         <p className="mt-8 text-gray-500 text-center text-sm">
           所有文章由 RxV 夢想創作工作室撰寫 · 保留所有權利

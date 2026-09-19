@@ -1,4 +1,4 @@
-# Logs
+﻿# Logs
 logs
 *.log
 npm-debug.log*
@@ -115,3 +115,74 @@ private-data/
 /APPLY_399*.ps1
 
 /api/patches/
+
+# ===== RXV CLEAN GITHUB REBUILD START =====
+
+# 私密環境 / 金鑰
+.env
+.env.*
+.env*.local
+*.local
+
+# 本機工具與暫存
+/.shopee-browser-profile/
+/.vercel/
+/supabase/.temp/
+/node_modules/
+/dist/
+/build/
+/coverage/
+/.cache/
+
+# RXV 根目錄備份
+/_rxv_backup_*/
+/_backup_*/
+/backup/
+/backup_v*/
+/.local-backups/
+/.local-preview-deploy/
+
+# 明顯舊版快照
+/src/pages/tools/shopee-video/index.before-*
+/src/pages/tools/shopee-video/*.before-*
+/server/*.before-*
+/browser-extension/*.before-*/
+/browser-extension/*/*.before-*
+/src/pages/PomodoroPage-202601250627.tsx
+/src/pages/index-20260823.tsx
+/src/locales/zh-TW--202601271235.json
+/src/locales/zh-TW_fixed.json
+/vite.config.ts.before-*
+
+# 根目錄暫時複本 / 修補檔
+/bank-transfer.tsx
+/image-admin.ts
+/image-bundle-orders.ts
+/index.tsx
+/payments.tsx
+/report.tsx
+/dev-image-admin-api.ts
+/delete-old-supabase-images.ts
+/rxv-image-bundle-admin.html
+/_patch_*.js
+/APPLY_*.ps1
+
+# 暫存 / 測試輸出
+/ffmpeg2pass-*.log*
+/test/
+/tmp/
+/temp/
+/output/
+/out_mp4/
+/debug_pick/
+/debug_shopee/
+/server/uploads/
+/server/temp_input.csv
+
+# 大型影片（保留本機/R2）
+/public/line-sticker-guide.mp4
+/public/videos/line-sticker-guide.mp4
+/public/videos/line-sticker-guide--2--.mp4
+
+# ===== RXV CLEAN GITHUB REBUILD END =====
+

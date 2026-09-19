@@ -1,16 +1,46 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { Helmet } from "react-helmet-async";
 import FAQ from '@/components/FAQ';
 import ShareButtons from '@/components/ShareButtons';
 
 export default function HealthBalance2025() {
   const { i18n } = useTranslation();
   const isEnglish = !i18n.language.startsWith("zh");
+  const faqItems = isEnglish
+    ? [
+        { q: 'Do I have to start with investing?', a: 'Not necessarily. First make expenses transparent and rhythm stable, then consider investing for higher success rates.' },
+        { q: 'What should I do when I spend impulsively due to emotional instability?', a: 'First address sleep, breathing, and walking—mind-body regulation—then handle finances.' },
+        { q: 'Can I save money with low income?', a: 'Yes. Start by reducing volatility and fixing your lifestyle rhythm, which is more effective than trying to save a lot at once.' },
+        { q: 'I\'m too lazy to exercise?', a: 'Start by establishing a 3-minute stretching ritual, and the time will naturally extend.' },
+      ]
+    : [
+        { q: '理財一定要從投資開始嗎？', a: '不一定。先讓支出透明與節奏穩定，再考慮投資，成功率更高。' },
+        { q: '情緒不穩時會亂花錢怎麼辦？', a: '先處理睡眠與呼吸、散步等身心調節，再處理金流。' },
+        { q: '收入不高能存錢嗎？', a: '可以。從降低波動與固定生活節奏著手，比追求一次多存更有效。' },
+        { q: '很懶不想運動？', a: '先建立 3 分鐘伸展的儀式感，時間會自然延長。' },
+      ];
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqItems.map((item) => ({
+      "@type": "Question",
+      name: item.q,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: item.a,
+      },
+    })),
+  };
 
   return (
-    <main className="max-w-3xl mx-auto px-4 py-8">
-      <article className="bg-white p-6 rounded-2xl border shadow-sm text-lg">
+    <>
+      <Helmet>
+        <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>
+      </Helmet>
+      <main className="max-w-3xl mx-auto px-4 py-8">
+        <article className="bg-white p-6 rounded-2xl border shadow-sm text-lg">
         <h1 className="text-2xl md:text-3xl font-bold mb-3">
           {isEnglish
             ? "Mind-Body Balanced Financial Management | Building Stable Health and Finances from Daily Habits"
@@ -123,19 +153,7 @@ export default function HealthBalance2025() {
 
         <FAQ
           title={isEnglish ? "FAQ Q&A" : "常見問題 Q&A"}
-          items={isEnglish
-            ? [
-                { q: 'Do I have to start with investing?', a: 'Not necessarily. First make expenses transparent and rhythm stable, then consider investing for higher success rates.' },
-                { q: 'What should I do when I spend impulsively due to emotional instability?', a: 'First address sleep, breathing, and walking—mind-body regulation—then handle finances.' },
-                { q: 'Can I save money with low income?', a: 'Yes. Start by reducing volatility and fixing your lifestyle rhythm, which is more effective than trying to save a lot at once.' },
-                { q: 'I\'m too lazy to exercise?', a: 'Start by establishing a 3-minute stretching ritual, and the time will naturally extend.' },
-              ]
-            : [
-                { q: '理財一定要從投資開始嗎？', a: '不一定。先讓支出透明與節奏穩定，再考慮投資，成功率更高。' },
-                { q: '情緒不穩時會亂花錢怎麼辦？', a: '先處理睡眠與呼吸、散步等身心調節，再處理金流。' },
-                { q: '收入不高能存錢嗎？', a: '可以。從降低波動與固定生活節奏著手，比追求一次多存更有效。' },
-                { q: '很懶不想運動？', a: '先建立 3 分鐘伸展的儀式感，時間會自然延長。' },
-              ]}
+          items={faqItems}
         />
 
         <ShareButtons title={isEnglish
@@ -158,13 +176,14 @@ export default function HealthBalance2025() {
         <div className="mt-10">
           <Link
             to="/finance"
-            className="inline-block bg-blue-600 !text-white font-bold px-5 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            className="inline-block bg-blue-600 !text-white font-bold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
             style={{ color: '#ffffff' }}
           >
             {isEnglish ? "← Back to Health & Finance Column" : "← 回到健康與理財專欄"}
           </Link>
         </div>
-      </article>
-    </main>
+        </article>
+      </main>
+    </>
   );
 }

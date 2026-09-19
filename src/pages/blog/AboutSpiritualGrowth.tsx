@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function AboutSpiritualGrowth() {
   return (
@@ -21,6 +22,9 @@ export default function AboutSpiritualGrowth() {
           它關乎我們如何理解自己、如何與世界連結、如何在變化中找到穩定。
           靈性成長是從表面的忙碌轉向內在的平靜，從外在的追求轉向內在的滿足。
         </p>
+
+        <ArticleCTA placement="start" focus="tools" />
+
 
         <h2 className="text-2xl font-semibold mt-8 mb-3">🌿 靈性成長的三個面向</h2>
         <ol className="list-decimal ml-6 space-y-3 mb-4">
@@ -73,6 +77,8 @@ export default function AboutSpiritualGrowth() {
           靈性成長是一個持續的過程，沒有終點，只有不斷的深化。
         </p>
 
+        <ArticleCTA placement="middle" focus="tools" />
+
         <h2 className="text-2xl font-semibold mt-8 mb-3">💫 結語：在靜心中找到自己</h2>
         <p className="mb-4">
           靈性成長不是遙遠的目標，而是當下的選擇。
@@ -81,6 +87,8 @@ export default function AboutSpiritualGrowth() {
           讓靈性成長成為你生活的指南針，
           在忙碌的世界中，找到屬於自己的深度與平靜。
         </p>
+
+        <ArticleCTA placement="bottom" focus="tools" />
 
         <hr className="my-8 border-gray-300" />
 
@@ -151,6 +159,8 @@ export default function AboutSpiritualGrowth() {
           Let spiritual growth be your life's compass,
           finding your own depth and peace in a busy world.
         </p>
+
+        <ArticleCTA placement="afterFaq" focus="tools" />
 
         <p className="mt-8 text-gray-500 text-center text-sm">
           所有文章由 RxV 夢想創作工作室撰寫 · 保留所有權利

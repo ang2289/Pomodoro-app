@@ -1,0 +1,15 @@
+---
+description: RXV zero-cost development policy
+alwaysApply: true
+---
+
+Before making architecture or code changes:
+
+1. Read /AGENTS.md
+2. Read /COST_LIMITS.json
+3. Follow FREE_ONLY policy
+4. Prefer frontend, local processing, static data and free services
+5. Do not introduce metered or paid services without explicit user approval
+6. Do not use Supabase Storage for large images, videos, ZIPs or backups
+7. Do not add heavy Vercel Functions if frontend or local processing can do the job
+8. If a change may create recurring or usage-based cost, stop and explain the risk before implementing it

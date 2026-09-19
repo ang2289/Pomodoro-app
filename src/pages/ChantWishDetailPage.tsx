@@ -565,7 +565,7 @@ export default function ChantWishDetailPage() {
             </button>
             <button
               onClick={handleShare}
-              className="w-full sm:w-1/2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 !text-white font-bold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
+              className="w-full sm:w-1/2 bg-blue-600 hover:bg-blue-700 !text-white font-bold py-3 px-6 rounded-lg transition transform hover:scale-105 shadow-lg"
               style={{ color: '#ffffff' }}
             >
               🔁 複製訊息
@@ -580,7 +580,7 @@ export default function ChantWishDetailPage() {
           <div className="space-y-4">
             <button
               onClick={() => navigate('/chant')}
-              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 !text-white font-bold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
+              className="w-full bg-blue-600 hover:bg-blue-700 !text-white font-bold py-3 px-6 rounded-lg transition transform hover:scale-105 shadow-lg"
               style={{ color: '#ffffff' }}
             >
               🧘 開始念誦

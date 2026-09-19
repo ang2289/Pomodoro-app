@@ -107,7 +107,7 @@ const ChantExportButton: React.FC<ChantExportButtonProps> = () => {
         }}
         variant="primary"
         label={`📄 ${t('export_all_scripture_records_csv')}`}
-        className="w-1/2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold py-1.5 px-2 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
+        className="w-1/2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-2 rounded-lg transition transform hover:scale-105 shadow-lg"
       />
     </div>
   );

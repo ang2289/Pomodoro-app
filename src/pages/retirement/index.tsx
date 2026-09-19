@@ -48,7 +48,7 @@ export default function RetirementPage() {
         <div className="text-right mb-4">
           <Link
             to="/"
-            className="bg-blue-500 !text-white px-4 py-2 rounded-md text-sm hover:bg-blue-600"
+            className="bg-blue-600 !text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition"
           >
             {t("homepage")}
           </Link>
@@ -80,7 +80,7 @@ export default function RetirementPage() {
             <p className="text-gray-500 text-sm mb-4">2025-11-04</p>
             <Link
               to="/pension/insurance-oldage-2025"
-              className="inline-block bg-blue-500 !text-white font-bold px-4 py-2 rounded-md text-sm hover:bg-blue-600 transition-colors duration-200"
+              className="inline-block bg-blue-600 !text-white font-bold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200"
               style={{ color: '#ffffff', fontWeight: '700' }}
             >
               {isEnglish ? "Read More →" : "閱讀詳情 →"}
@@ -102,7 +102,7 @@ export default function RetirementPage() {
             <p className="text-gray-500 text-sm mb-4">2025-11-04</p>
             <Link
               to="/pension/self-contribution-2025"
-              className="inline-block bg-blue-500 !text-white font-bold px-4 py-2 rounded-md text-sm hover:bg-blue-600 transition-colors duration-200"
+              className="inline-block bg-blue-600 !text-white font-bold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200"
               style={{ color: '#ffffff', fontWeight: '700' }}
             >
               {isEnglish ? "Read More →" : "閱讀詳情 →"}

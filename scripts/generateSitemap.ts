@@ -1,18 +1,79 @@
 // scripts/generateSitemap.ts
 import fs from "fs";
 import path from "path";
+import { comparisonRoutePaths } from "../src/data/comparisonSeoContent";
+import { searchSeoIndexablePaths } from "../src/data/searchSeoPages";
+import { seoPagesToolRoutePaths } from "../src/data/seoPages";
+import {
+  guideRoutePaths,
+  toolCategoryRoutePaths,
+  toolLandingRoutePaths,
+} from "../src/data/toolSeoContent";
 
-const BASE_URL = "https://rxv-dreamstudio.vercel.app";
+const BASE_URL =
+  process.env.VITE_SITE_URL || "https://pomodoro-app-eight-rouge.vercel.app";
+
+const WINDOWS_FILE_RETRY_DELAYS_MS = [40, 80, 160, 320, 640];
+
+function waitSync(milliseconds: number) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, milliseconds);
+}
+
+function writeFileAtomically(outputPath: string, contents: string) {
+  const tempPath = `${outputPath}.${process.pid}.${Date.now()}.tmp`;
+  fs.writeFileSync(tempPath, contents, { encoding: "utf8", flag: "wx" });
+
+  try {
+    for (let attempt = 0; ; attempt += 1) {
+      try {
+        fs.renameSync(tempPath, outputPath);
+        return;
+      } catch (error) {
+        const code = (error as NodeJS.ErrnoException).code;
+        const retryable = process.platform === "win32"
+          && ["EACCES", "EBUSY", "EPERM", "UNKNOWN"].includes(String(code));
+
+        if (!retryable || attempt >= WINDOWS_FILE_RETRY_DELAYS_MS.length) {
+          throw error;
+        }
+
+        waitSync(WINDOWS_FILE_RETRY_DELAYS_MS[attempt]);
+      }
+    }
+  } finally {
+    if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
+  }
+}
 
 // 靜態頁面
 const staticPages = [
   "/",
+  "/tools",
+  "/summary",
+  "/tools/summary",
+  "/tools/homework-helper",
+  "/tools/qr-code",
+  "/tools/image-resize",
+  "/tools/image-compress",
+  "/tools/image-convert",
+  "/tools/image-crop",
+  "/pomodoro",
+  "/tools/line-sticker",
+  "/services/design-commission",
+  "/tools/scam-check",
   "/aids",
   "/finance",
   "/retirement",
   "/blog",
   "/privacy",
   "/terms",
+  "/policy-explained",
+  ...toolCategoryRoutePaths,
+  ...toolLandingRoutePaths,
+  ...seoPagesToolRoutePaths,
+  ...comparisonRoutePaths,
+  ...guideRoutePaths,
+  ...searchSeoIndexablePaths,
 ];
 
 // 檔案名到路由名稱的映射
@@ -124,7 +185,7 @@ function generateSitemap() {
   </urlset>`;
 
   const outputPath = path.join(process.cwd(), "public", "sitemap.xml");
-  fs.writeFileSync(outputPath, sitemap.trim());
+  writeFileAtomically(outputPath, sitemap.trim());
   console.log("✅ 自動 Sitemap 生成完成，含 lastmod / changefreq");
 }
 

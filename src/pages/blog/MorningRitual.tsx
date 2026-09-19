@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function MorningRitual() {
   return (
@@ -21,6 +22,9 @@ export default function MorningRitual() {
           那股平靜能量會影響整個白天。即使只有五分鐘，也能改變你的節奏與心境。
         </p>
 
+        <ArticleCTA placement="start" focus="tools" />
+
+
         <h2 className="text-2xl font-semibold mt-8 mb-3">🌞 建立你的早晨三步驟</h2>
         <ol className="list-decimal ml-6 space-y-2 mb-4">
           <li>
@@ -40,11 +44,15 @@ export default function MorningRitual() {
           幫助你快速啟動一天的幸福循環。
         </p>
 
+        <ArticleCTA placement="middle" focus="tools" />
+
         <h2 className="text-2xl font-semibold mt-8 mb-3">🌸 結語：給自己溫柔的開始</h2>
         <p className="mb-4">
           不論你多忙，都值得用幾分鐘與自己對話。
           每個早晨都是新的起點，請為自己點亮那盞內在的小燈。
         </p>
+
+        <ArticleCTA placement="bottom" focus="tools" />
 
         <hr className="my-8 border-gray-300" />
 
@@ -79,6 +87,8 @@ export default function MorningRitual() {
           No matter how busy you are, you deserve a moment to meet yourself.
           Every morning is a new beginning—light your inner lamp with kindness.
         </p>
+
+        <ArticleCTA placement="afterFaq" focus="tools" />
 
         <p className="mt-8 text-gray-500 text-center text-sm">
           文章由 RxV 夢想創作工作室撰寫 · 保留所有權利

@@ -3,30 +3,30 @@
 import { useEffect } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { featureFlags } from "@/config/featureFlags";
+import { isLocalDevelopment } from "@/lib/isLocalDevelopment";
+import VideoToolUnavailable from "@/components/VideoToolUnavailable";
 
 export default function RedirectShorts() {
-  // 🔒 功能開關檢查：防止直接輸入網址進入
-  if (!featureFlags.videoTool) {
+  const navigate = useNavigate();
+  const local = isLocalDevelopment();
+  const videoOn = featureFlags.videoTool;
+
+  useEffect(() => {
+    if (!local || !videoOn) return;
+    navigate("/tools/shopee-video", { replace: true });
+  }, [navigate, local, videoOn]);
+
+  if (!local) {
+    return <VideoToolUnavailable />;
+  }
+
+  if (!videoOn) {
     return <Navigate to="/" replace />;
   }
 
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    navigate("/tools/shopee-video", { replace: true });
-  }, [navigate]);
-
-
-
   return (
-
     <div style={{ padding: 40, fontSize: 20, textAlign: "center" }}>
-
       🚀 正在為您前往新版 AI 自動短影音工具...
-
     </div>
-
   );
-
 }
-

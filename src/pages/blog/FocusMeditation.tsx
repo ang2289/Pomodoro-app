@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function FocusMeditation() {
   return (
@@ -21,6 +22,9 @@ export default function FocusMeditation() {
           當你觀察呼吸、感受身體時，大腦的預設模式網路（DMN）會暫時關閉，
           這能顯著提升專注力與情緒穩定。
         </p>
+
+        <ArticleCTA placement="start" focus="tools" />
+
 
         <h2 className="text-2xl font-semibold mt-8 mb-3">⏳ 三分鐘專注冥想步驟</h2>
         <ol className="list-decimal ml-6 space-y-3 mb-4">
@@ -53,11 +57,15 @@ export default function FocusMeditation() {
           它不僅能恢復注意力，也能重啟心態，減少焦慮與疲勞。
         </p>
 
+        <ArticleCTA placement="middle" focus="tools" />
+
         <h2 className="text-2xl font-semibold mt-8 mb-3">✨ 結語：專注，是一種溫柔的力量</h2>
         <p className="mb-4">
           專注並非緊繃的控制，而是柔軟的回到當下。
           當你學會讓心停留在此刻，你就擁有了清明與力量。
         </p>
+
+        <ArticleCTA placement="bottom" focus="tools" />
 
         <hr className="my-8 border-gray-300" />
 
@@ -93,6 +101,8 @@ export default function FocusMeditation() {
           Focus isn't about control—it's the art of returning softly to the moment.
           In presence, you find both clarity and strength.
         </p>
+
+        <ArticleCTA placement="afterFaq" focus="tools" />
 
         <p className="mt-8 text-gray-500 text-center text-sm">
           文章由 RxV 夢想創作工作室撰寫 · 保留所有權利

@@ -1,7 +1,7 @@
 // src/pages/tools/shopee-video/hooks/useBatchVideo.ts
 
 import { useState } from "react";
-import { generateVideoFromScript } from "@/services/video-api";
+import type { TFunction } from "i18next";
 
 export interface BatchTask {
   id: string;
@@ -9,13 +9,22 @@ export interface BatchTask {
   productId: string | null;
   title: string;
   price: string;
+  promoUrl: string;
   highlights: string[];
   images: string[];
+  /** 由 shopeeParse 補圖 API 回傳的圖片網址，下載 scripts.json 時優先使用 */
+  imageUrls?: string[];
+  /** 自動補圖狀態：pending=尚未處理 filled=已補到圖 manual=被擋需手動補圖 */
+  imageFillStatus?: "pending" | "filled" | "manual";
+  /** 補圖失敗時的原因（供 UI 顯示） */
+  imageFillReason?: string;
+  /** 補圖失敗時後端回傳的 debug 物件（開發模式可展開） */
+  imageFillDebug?: unknown;
   script?: string;
   videoUrl?: string;
 }
 
-export function useBatchVideo() {
+export function useBatchVideo(t: TFunction) {
   const [batchUrls, setBatchUrls] = useState("");
   const [tasks, setTasks] = useState<BatchTask[]>([]);
   const [loading, setLoading] = useState(false);
@@ -39,7 +48,7 @@ export function useBatchVideo() {
   // --------------------------------------------------
   const createBatchTasks = () => {
     if (!batchUrls.trim()) {
-      setError("請輸入至少 1 個商品網址");
+      setError(t("shopee_video_enter_url"));
       return;
     }
 
@@ -49,7 +58,7 @@ export function useBatchVideo() {
       .filter((l) => l.length > 0);
 
     if (lines.length === 0) {
-      setError("請輸入至少 1 個商品網址");
+      setError(t("shopee_video_enter_url"));
       return;
     }
 
@@ -59,6 +68,7 @@ export function useBatchVideo() {
       productId: parseProductId(url),
       title: "",
       price: "",
+      promoUrl: "",
       highlights: [""],
       images: [],
       script: "",
@@ -150,16 +160,6 @@ export function useBatchVideo() {
   };
 
   // --------------------------------------------------
-  // 驗證 Task 是否可產生影片
-  // --------------------------------------------------
-  const validateTask = (task: BatchTask) => {
-    if (!task.title.trim()) return false;
-    if (task.highlights.filter((h) => h.trim()).length === 0) return false;
-    if (task.images.length === 0) return false;
-    return true;
-  };
-
-  // --------------------------------------------------
   // 單 Task：產生腳本
   // --------------------------------------------------
   const generateScript = async (taskId: string) => {
@@ -167,13 +167,13 @@ export function useBatchVideo() {
     if (!task) return;
 
     if (!task.title.trim()) {
-      setError("請填商品名稱");
+      setError(t("shopee_video_enter_name"));
       return;
     }
 
     const cleanHighlights = task.highlights.filter((h) => h.trim());
     if (cleanHighlights.length === 0) {
-      setError("請至少填 1 個賣點");
+      setError(t("shopee_video_enter_highlights"));
       return;
     }
 
@@ -195,50 +195,14 @@ export function useBatchVideo() {
       const data = await res.json();
 
       if (data.error) {
-        setError("腳本生成失敗：" + data.error);
+        setError(t("shopee_video_script_failed", { error: data.error }));
         setLoading(false);
         return;
       }
 
       updateTask(taskId, { script: data.script });
     } catch (err: any) {
-      setError("腳本生成失敗：" + (err.message || "未知錯誤"));
-    }
-
-    setLoading(false);
-  };
-
-  // --------------------------------------------------
-  // 單 Task：產生影片
-  // --------------------------------------------------
-  const generateVideo = async (taskId: string) => {
-    const task = tasks.find((t) => t.id === taskId);
-    if (!task) return;
-
-    if (!validateTask(task)) {
-      setError("請補齊商品資訊（名稱、賣點、至少 1 張圖片）");
-      return;
-    }
-
-    if (!task.script) {
-      setError("請先產生腳本");
-      return;
-    }
-
-    setLoading(true);
-    setError("");
-
-    try {
-      const url = await generateVideoFromScript({
-        title: task.title,
-        price: task.price || undefined,
-        script: task.script,
-        images: task.images,
-      });
-
-      updateTask(taskId, { videoUrl: url });
-    } catch (err: any) {
-      setError("影片產生失敗：" + (err.message || "未知錯誤"));
+      setError(t("shopee_video_script_failed", { error: err.message || t("shopee_video_script_unknown") }));
     }
 
     setLoading(false);
@@ -253,6 +217,7 @@ export function useBatchVideo() {
     setBatchUrls,
     createBatchTasks,
     updateTask,
+    setTasks,
 
     addHighlight,
     updateHighlight,
@@ -263,7 +228,6 @@ export function useBatchVideo() {
     removeImage,
 
     generateScript,
-    generateVideo,
   };
 }
 

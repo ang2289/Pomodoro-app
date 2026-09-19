@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function ChantFocusArticle() {
   return (
@@ -20,6 +21,9 @@ export default function ChantFocusArticle() {
           若能善用「專注力訓練法」──例如番茄鐘或呼吸計數──便能幫助我們回到當下，
           讓每一句佛號都更有力量、更清晰。
         </p>
+
+        <ArticleCTA placement="start" focus="tools" />
+
 
         <p className="mb-4">
           嘗試設定一個 25 分鐘的唸經時間，期間不滑手機、不交談，
@@ -50,6 +54,9 @@ export default function ChantFocusArticle() {
           This practice helps you connect more deeply with yourself.
         </p>
 
+        <ArticleCTA placement="middle" focus="tools" />
+
+
         <h2 className="text-2xl font-semibold mt-8 mb-3">💡 延伸練習 / Further Practice</h2>
         <ul className="list-disc pl-6 space-y-2">
           <li>每天固定時間唸經，例如早晨或睡前。</li>
@@ -58,9 +65,13 @@ export default function ChantFocusArticle() {
           <li>Use a journal to note your feelings after each session.</li>
         </ul>
 
+        <ArticleCTA placement="afterFaq" focus="tools" />
+
         <p className="mt-8 text-gray-500 text-center text-sm">
           文章由 RxV 夢想創作工作室撰寫 · 保留所有權利
         </p>
+
+        <ArticleCTA placement="bottom" focus="tools" />
 
         <hr className="my-8 border-gray-300" />
 

@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function MorningMeditationArticle() {
   return (
@@ -21,6 +22,9 @@ export default function MorningMeditationArticle() {
           讓呼吸、思緒與身體緩緩同步，
           一整天都會更加平靜、有方向。
         </p>
+
+        <ArticleCTA placement="start" focus="tools" />
+
 
         <p className="mb-4">
           清晨靜坐不需複雜的姿勢或儀式，
@@ -53,6 +57,9 @@ export default function MorningMeditationArticle() {
           notice them without judgment, then gently return to your breath.
         </p>
 
+        <ArticleCTA placement="middle" focus="tools" />
+
+
         <h2 className="text-2xl font-semibold mt-8 mb-3">💡 延伸練習 / Extended Practice</h2>
         <ul className="list-disc pl-6 space-y-2">
           <li>可搭配柔和音樂或自然鳥鳴聲。</li>
@@ -61,9 +68,13 @@ export default function MorningMeditationArticle() {
           <li>End each session with gratitude for the new day.</li>
         </ul>
 
+        <ArticleCTA placement="afterFaq" focus="tools" />
+
         <p className="mt-8 text-gray-500 text-center text-sm">
           文章由 RxV 夢想創作工作室撰寫 · 保留所有權利
         </p>
+
+        <ArticleCTA placement="bottom" focus="tools" />
 
         <hr className="my-8 border-gray-300" />
 

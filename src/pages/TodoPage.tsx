@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import ModuleDropdown from '../components/ModuleDropdown'
 import { defaultCategories, Category } from '../lib/defaultCategories'
 import TodoExportButton from '../components/TodoExportButton'
 import PrimaryButton from '@/components/ui/PrimaryButton'
+import { RelatedTools } from '@/components/seo/RelatedTools'
+import { RelatedGuides } from '@/components/seo/RelatedGuides'
+import { getRelatedGuideItems, getRelatedToolsItems } from '@/data/internalLinks'
 
 interface Todo {
   id: string
@@ -203,8 +205,6 @@ export default function TodoPage() {
   return (
     <div className="gradient-bg min-h-screen p-4">
       <div className="max-w-screen-md mx-auto px-4 w-full">
-        <ModuleDropdown />
-        
         <div className="card mb-6">
           <h1 className="text-lg sm:text-xl font-bold text-gray-800 mb-4 sm:mb-6 overflow-wrap break-word">📋 {t('todo_config.title')}</h1>
 
@@ -318,7 +318,7 @@ export default function TodoPage() {
             <div className="mt-4">
               <button
                 onClick={addTodo}
-                className="w-full max-w-xs lg:w-40 mx-auto block px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+                className="w-full max-w-xs lg:w-40 mx-auto block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
                 {t('todo_config.button.add')}
               </button>
@@ -331,7 +331,7 @@ export default function TodoPage() {
               <button
                 onClick={() => setFilter('all')}
                 className={`flex-1 sm:flex-initial sm:px-4 py-2 rounded-md transition-colors ${
-                  filter === 'all' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  filter === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                 }`}
               >
                 {t('todo_config.filter.all')}
@@ -347,7 +347,7 @@ export default function TodoPage() {
               <button
                 onClick={() => setFilter('completed')}
                 className={`flex-1 sm:flex-initial sm:px-4 py-2 rounded-md transition-colors ${
-                  filter === 'completed' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  filter === 'completed' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                 }`}
               >
                 {t('todo_config.filter.completed')}
@@ -475,6 +475,9 @@ export default function TodoPage() {
               </div>
             </div>
           )}
+
+          <RelatedTools items={getRelatedToolsItems('todo')} title="相關工具" />
+          <RelatedGuides items={getRelatedGuideItems('todo')} />
         </div>
       </div>
     </div>

@@ -67,7 +67,7 @@ const TimeSettings: React.FC<TimeSettingsProps> = ({
               variant={isRunning ? 'secondary' : 'primary'}
               icon={<span style={{ color: 'white !important', filter: 'brightness(0) invert(1)' }}>➖</span>}
               label={t('decrease')}
-              className="bg-blue-600 text-white font-bold text-lg px-4 py-2 rounded hover:bg-blue-700 transition"
+              className="bg-blue-600 text-white font-bold text-lg px-4 py-2 rounded-lg hover:bg-blue-700 transition"
             />
             <input
               type="number"
@@ -96,7 +96,7 @@ const TimeSettings: React.FC<TimeSettingsProps> = ({
               variant={isRunning ? 'secondary' : 'primary'}
               icon={<span style={{ color: 'white !important', filter: 'brightness(0) invert(1)' }}>➕</span>}
               label={t('increase')}
-              className="bg-blue-600 text-white font-bold text-lg px-4 py-2 rounded hover:bg-blue-700 transition"
+              className="bg-blue-600 text-white font-bold text-lg px-4 py-2 rounded-lg hover:bg-blue-700 transition"
             />
           </div>
         </div>
@@ -120,7 +120,7 @@ const TimeSettings: React.FC<TimeSettingsProps> = ({
               variant={isRunning ? 'secondary' : 'primary'}
               icon={<span style={{ color: 'white !important', filter: 'brightness(0) invert(1)' }}>➖</span>}
               label={t('decrease')}
-              className="bg-blue-600 text-white font-bold text-lg px-4 py-2 rounded hover:bg-blue-700 transition"
+              className="bg-blue-600 text-white font-bold text-lg px-4 py-2 rounded-lg hover:bg-blue-700 transition"
             />
             <input
               type="number"
@@ -149,7 +149,7 @@ const TimeSettings: React.FC<TimeSettingsProps> = ({
               variant={isRunning ? 'secondary' : 'primary'}
               icon={<span style={{ color: 'white !important', filter: 'brightness(0) invert(1)' }}>➕</span>}
               label={t('increase')}
-              className="bg-blue-600 text-white font-bold text-lg px-4 py-2 rounded hover:bg-blue-700 transition"
+              className="bg-blue-600 text-white font-bold text-lg px-4 py-2 rounded-lg hover:bg-blue-700 transition"
             />
           </div>
         </div>

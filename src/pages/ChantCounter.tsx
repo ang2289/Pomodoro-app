@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import ModuleDropdown from '../components/ModuleDropdown'
 
 const ChantCounter = () => {
   const navigate = useNavigate()
@@ -148,8 +147,6 @@ const ChantCounter = () => {
   return (
     <div className="gradient-bg min-h-screen p-3 sm:p-4">
       <div className="w-full max-w-screen-md mx-auto px-4">
-        <ModuleDropdown />
-        
         <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 mb-4 sm:mb-6">
           <h1 className="text-xl sm:text-2xl font-bold text-center text-gray-800 mb-4 sm:mb-6">🙏 念誦計數器</h1>
           
@@ -220,7 +217,7 @@ const ChantCounter = () => {
           <div className="flex gap-2">
             <button
               onClick={addChant}
-              className="flex-1 sm:flex-initial sm:px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm sm:text-base"
+              className="flex-1 sm:flex-initial sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
             >
               新增念誦
             </button>
@@ -286,14 +283,14 @@ const ChantCounter = () => {
             <div className="space-y-2 sm:space-y-3">
               <button
                 onClick={() => navigate('/chant-wish-wall')}
-                className="w-full p-2 sm:p-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all text-sm sm:text-base"
+                className="w-full p-2 sm:p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all text-sm sm:text-base"
               >
                 🙏 發起集氣活動
               </button>
               
               <button
                 onClick={() => navigate('/chant-wish-wall')}
-                className="w-full p-2 sm:p-3 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg hover:from-blue-600 hover:to-indigo-600 transition-all text-sm sm:text-base"
+                className="w-full p-2 sm:p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all text-sm sm:text-base"
               >
                 📣 查看集氣牆
               </button>

@@ -192,7 +192,7 @@ export default function LazyHome() {
 
             <Link
               to="/finance/anti-fraud-2025"
-              className="inline-block bg-blue-500 !text-white !font-bold px-4 py-2 rounded-full hover:bg-blue-600 transition-all duration-200"
+              className="inline-block bg-blue-600 !text-white !font-bold px-4 py-2 rounded-full hover:bg-blue-700 transition-all duration-200"
               style={{ 
                 color: '#ffffff', 
                 fontWeight: '700',

@@ -1,9 +1,7 @@
-// 覆蓋到 D:\Pomodoro-app\api\main.ts
 import fs from "fs";
 import path from "path";
 import { spawn } from "child_process";
 import crypto from "crypto";
-import dotenv from "dotenv";
 import sharp from "sharp";
 import {
   DeleteObjectCommand,
@@ -15,57 +13,6 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
-// 圖片後台本機環境固定載入：
-// Vercel Dev 可能帶入已連結專案的舊環境值，因此只要本機存在 .env.local，
-// 圖片後台所需的 R2 / admin key 一律以本機 .env.local 為準。
-// 只覆蓋圖片後台相關變數，不影響會員、付款、Supabase 等其他功能。
-function loadLocalImageAdminEnv() {
-  const candidates = [
-    process.env.INIT_CWD ? path.resolve(process.env.INIT_CWD, ".env.local") : "",
-    path.resolve(process.cwd(), ".env.local"),
-    path.resolve(process.cwd(), "..", ".env.local"),
-    path.resolve(process.cwd(), "..", "..", ".env.local"),
-    process.platform === "win32" ? String.raw`D:\Pomodoro-app\.env.local` : "",
-  ].filter(Boolean);
-
-  const envPath = Array.from(new Set(candidates)).find((candidate) => {
-    try {
-      return fs.existsSync(candidate);
-    } catch {
-      return false;
-    }
-  });
-
-  if (!envPath) return;
-
-  try {
-    const parsed = dotenv.parse(fs.readFileSync(envPath));
-    const imageEnvNames = [
-      "RXV_IMAGE_ADMIN_KEY",
-      "RXV_IMAGE_BUNDLE_ADMIN_KEY",
-      "R2_ACCOUNT_ID",
-      "R2_ACCESS_KEY_ID",
-      "R2_SECRET_ACCESS_KEY",
-      "R2_BUCKET_NAME",
-      "R2_PUBLIC_URL",
-      "R2_PRIVATE_BUCKET_NAME",
-      "R2_PUBLIC_BUCKET_NAME",
-      "R2_PUBLIC_ASSET_URL",
-      "VITE_PUBLIC_R2_URL",
-    ];
-
-    for (const name of imageEnvNames) {
-      const value = String(parsed[name] || "").trim();
-      if (value) process.env[name] = value;
-    }
-
-    console.log("[IMAGE_R2_ENV] local image-admin env loaded");
-  } catch (error: any) {
-    console.error("[IMAGE_R2_ENV] local env load failed", error?.message || "UNKNOWN");
-  }
-}
-
-loadLocalImageAdminEnv();
 
 const SHOPEE_JOBS_DIR = path.join(process.cwd(), "output", "shopee-jobs");
 const SHOPEE_PROFILE_DIR =
@@ -415,35 +362,8 @@ type ImageR2RuntimeConfig = {
 };
 
 function getImageR2RuntimeConfig(): ImageR2RuntimeConfig {
-  // 重要：圖片後台每次請求都即時讀取本機 .env.local。
-  // 避免 vercel dev / Vite / 已連結專案的舊環境值或模組初始化快取干擾。
-  const candidates = [
-    process.platform === "win32" ? String.raw`D:\Pomodoro-app\.env.local` : "",
-    process.env.INIT_CWD ? path.resolve(process.env.INIT_CWD, ".env.local") : "",
-    path.resolve(process.cwd(), ".env.local"),
-    path.resolve(process.cwd(), "..", ".env.local"),
-    path.resolve(process.cwd(), "..", "..", ".env.local"),
-  ].filter(Boolean);
-
-  let localEnv: Record<string, string> = {};
-  const envPath = Array.from(new Set(candidates)).find((candidate) => {
-    try {
-      return fs.existsSync(candidate);
-    } catch {
-      return false;
-    }
-  });
-
-  if (envPath) {
-    try {
-      localEnv = dotenv.parse(fs.readFileSync(envPath, "utf8"));
-    } catch (error: any) {
-      console.error("[IMAGE_R2_RUNTIME_ENV] read failed", error?.message || "UNKNOWN");
-    }
-  }
-
   const pick = (name: string, fallback = "") =>
-    safeText(localEnv[name] || process.env[name] || fallback);
+    safeText(process.env[name] || fallback);
 
   const config: ImageR2RuntimeConfig = {
     accountId: pick("R2_ACCOUNT_ID"),
@@ -471,7 +391,7 @@ function getImageR2RuntimeConfig(): ImageR2RuntimeConfig {
 function getImageCatalogR2Client() {
   const config = getImageR2RuntimeConfig();
 
-  // 不快取 R2 client：本機修改 .env.local 後下一個請求立即生效。
+  // 不快取 R2 client：每次請求直接使用目前的環境變數。
   return new S3Client({
     region: "auto",
     endpoint: `https://${config.accountId}.r2.cloudflarestorage.com`,
@@ -3518,7 +3438,7 @@ const IMAGE_BUNDLE_PRODUCT = {
   code: 'image-bundle-full',
   productName: '1500+ 高畫質圖片素材庫完整版',
   displayName: '1,583+ 高畫質圖片素材庫完整版',
-  amountNtd: 399,
+  amountNtd: 199,
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -3778,10 +3698,10 @@ async function sendImageBundlePaymentNotification(order: R2DigitalProductOrder) 
   if (!apiKey || !recipient) return;
 
   const from = safeText(process.env.PAYMENT_NOTIFY_FROM) || 'RxV <onboarding@resend.dev>';
-  const subject = `【RxV 新匯款回報】NT$399 圖片素材庫｜${order.order_no}`;
+  const subject = `【RxV 新匯款回報】NT$${IMAGE_BUNDLE_PRODUCT.amountNtd} 圖片素材庫｜${order.order_no}`;
   const text = [
     `訂單編號：${order.order_no}`,
-    '金額：NT$399',
+    `金額：NT$${IMAGE_BUNDLE_PRODUCT.amountNtd}`,
     `客戶 Email：${order.email}`,
     `匯款帳號後五碼：${order.account_last_five}`,
     `匯款日期：${order.transfer_date}`,

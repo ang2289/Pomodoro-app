@@ -20,7 +20,7 @@ export default function FinanceGuide2026() {
         <div className="text-right mb-4">
           <Link
             to="/"
-            className="bg-blue-500 !text-white px-4 py-2 rounded-md text-sm hover:bg-blue-600"
+            className="bg-blue-600 !text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition"
           >
             {i18n.language.startsWith("zh") ? "回首頁" : "Homepage"}
           </Link>

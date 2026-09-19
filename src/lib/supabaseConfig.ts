@@ -58,22 +58,8 @@ export const getSupabaseAnonKey = (): string => {
 }
 
 // 獲取 Supabase Service Key（僅用於後端，不應暴露在前端）
-export const getSupabaseServiceKey = (): string | undefined => {
-  if (import.meta.env.VITE_SUPABASE_SERVICE_KEY) {
-    return import.meta.env.VITE_SUPABASE_SERVICE_KEY
-  }
-  
-  if (typeof process !== 'undefined' && process.env.SUPABASE_SERVICE_KEY) {
-    return process.env.SUPABASE_SERVICE_KEY
-  }
-  
-  return undefined
-}
-
 // 匯出配置物件
 export const SUPABASE_CONFIG = {
   url: getSupabaseUrl(),
   anonKey: getSupabaseAnonKey(),
-  serviceKey: getSupabaseServiceKey(),
 }
-

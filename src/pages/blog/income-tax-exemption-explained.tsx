@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import SEO from "../../components/SEO";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function IncomeTaxExemptionExplainedPage() {
   // 獲取今天的日期（格式：YYYY-MM-DD）
@@ -43,6 +44,9 @@ export default function IncomeTaxExemptionExplainedPage() {
               很多人以為「有收入就要繳稅」，其實不是。所得稅有「免稅門檻」，如果你的收入低於這個門檻，就不用繳稅。但這個門檻不是固定金額，而是根據你的「免稅額」和「扣除額」來計算的。
             </p>
 
+            <ArticleCTA placement="start" focus="summary" />
+
+
             <h2 className="text-2xl font-semibold mt-8 mb-4">所得稅不是人人都要繳的原因</h2>
             <p className="mb-4">
               所得稅的設計原則是「有能力的人多繳一點，能力較弱的人少繳或不繳」。所以如果你的收入不高，可能就不用繳稅。
@@ -50,6 +54,9 @@ export default function IncomeTaxExemptionExplainedPage() {
             <p className="mb-4">
               例如，如果你是一個人，年收入 20 萬元，扣除免稅額和扣除額後，可能就不用繳稅。但如果你是一個人，年收入 100 萬元，扣除免稅額和扣除額後，可能就要繳稅。
             </p>
+
+            <ArticleCTA placement="middle" focus="summary" />
+
             <p className="mb-4">
               所以「不用繳稅」不是「不用報稅」，而是「報稅後發現不用繳稅」。
             </p>
@@ -132,6 +139,8 @@ export default function IncomeTaxExemptionExplainedPage() {
             </div>
           </div>
 
+          <ArticleCTA placement="afterFaq" focus="summary" />
+
           {/* 相關文章區塊 */}
           <div className="mt-12 pt-8 border-t border-gray-200">
             <h3 className="text-2xl font-bold text-gray-900 mb-2">
@@ -167,8 +176,6 @@ export default function IncomeTaxExemptionExplainedPage() {
               </Link>
             </div>
           </div>
-
-          {/* 導流區塊：摘要模組 */}
           <div className="mt-12 pt-8 border-t border-gray-200">
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 text-center">
               <h3 className="text-xl font-bold text-gray-900 mb-2">
@@ -179,7 +186,7 @@ export default function IncomeTaxExemptionExplainedPage() {
               </p>
               <Link
                 to="/summary"
-                className="inline-block px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg drop-shadow-md"
+                className="inline-block bg-blue-600 text-white px-5 py-3 rounded-lg text-base font-medium hover:bg-blue-700 transition"
                 style={{ textShadow: '0 1px 2px rgba(0,0,0,0.1)' }}
               >
                 貼上文章，幫我整理
@@ -259,6 +266,7 @@ export default function IncomeTaxExemptionExplainedPage() {
               </li>
             </ul>
           </div>
+          <ArticleCTA placement="bottom" focus="summary" />
 
           <div className="mt-8 pt-6 border-t border-gray-200">
             <Link

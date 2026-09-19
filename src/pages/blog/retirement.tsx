@@ -1,5 +1,6 @@
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function RetirementPage() {
   return (
@@ -37,7 +38,7 @@ export default function RetirementPage() {
         <div className="text-right mb-4">
           <Link
             to="/"
-            className="bg-blue-500 !text-white px-4 py-2 rounded-md text-sm hover:bg-blue-600"
+            className="bg-blue-600 !text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition"
           >
             回首頁
           </Link>
@@ -47,9 +48,13 @@ export default function RetirementPage() {
           本頁將整合勞保、勞退與公保退休金試算工具，
           提供試算公式、申領年齡說明與金額估算方式。
         </p>
+        <ArticleCTA placement="start" focus="tools" />
+        <ArticleCTA placement="middle" focus="summary" />
         <p className="text-gray-500 text-sm">
           試算功能開發中，預計下一版本上線。
         </p>
+        <ArticleCTA placement="afterFaq" focus="tools" />
+        <ArticleCTA placement="bottom" focus="summary" />
       </div>
     </>
   );

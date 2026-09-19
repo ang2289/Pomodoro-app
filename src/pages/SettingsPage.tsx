@@ -141,7 +141,7 @@ export default function SettingsPage() {
             </p>
             <button 
               onClick={() => setOpenDialog(false)}
-              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded"
+              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
             >
               關閉
             </button>
@@ -256,7 +256,7 @@ export default function SettingsPage() {
                 <div className="w-1/3">
                   <button 
                     onClick={backupDataToFile} 
-                    className="w-full !bg-blue-600 hover:!bg-blue-700 !text-white font-semibold py-2 px-4 rounded transition-colors"
+                    className="w-full !bg-blue-600 hover:!bg-blue-700 !text-white font-semibold py-2 px-4 rounded-lg transition-colors"
                   >
                     {t('export_backup')}
                   </button>
@@ -290,7 +290,7 @@ export default function SettingsPage() {
               </h2>
               <div>
                 <Link to="/admin/payments" className="block w-full">
-                  <PrimaryButton fullWidth className="bg-blue-600 hover:bg-blue-700">
+                  <PrimaryButton fullWidth>
                     匯款補點管理
                   </PrimaryButton>
                 </Link>

@@ -18,7 +18,7 @@ export function UpgradePopup({ onClose }: UpgradePopupProps) {
           <li>✓ 更快速度</li>
         </ul>
 
-        <button className="bg-blue-500 text-white w-full py-2 rounded-lg mb-2">
+        <button className="bg-blue-600 text-white w-full py-2 rounded-lg mb-2 hover:bg-blue-700 transition">
           升級 NT$149 / 月
         </button>
 

@@ -106,7 +106,7 @@ const ClickableWoodfish: React.FC<ClickableWoodfishProps> = ({ onWoodfishClick }
               onChange={handleImageUpload}
               className="hidden"
             />
-            <div className="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-center text-sm font-medium transition-colors duration-200">
+            <div className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-center text-sm font-medium transition-colors duration-200">
               {t('upload_custom_woodfish_image')}
             </div>
           </label>

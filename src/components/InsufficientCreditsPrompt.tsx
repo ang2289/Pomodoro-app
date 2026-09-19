@@ -50,7 +50,7 @@ export default function InsufficientCreditsPrompt({
         <Link to="/pricing" onClick={handlePricingClick} className="flex-1">
           <PrimaryButton 
             fullWidth 
-            className="bg-white text-blue-700 border-2 border-blue-300 hover:bg-blue-50"
+            className="border border-blue-200 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-50 bg-white"
           >
             {lang === 'zh-tw' ? `NT$${PLANS.plan99.price} - ${getPlanChars('pack99').toLocaleString()} 字` : `NT$${PLANS.plan99.price} - ${getPlanChars('pack99').toLocaleString()} chars`}
           </PrimaryButton>

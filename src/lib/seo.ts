@@ -3,10 +3,18 @@ interface SEOConfig {
   description: string
   url: string
   image?: string
+  /** Appended to `title` for `<title>` / OG. Default preserves legacy Chinese branding. */
+  titleSuffix?: string
 }
 
-export function buildSEO({ title, description, url, image = '/seo-default.png' }: SEOConfig) {
-  const fullTitle = `${title}｜AI 工具與生活服務中心`
+export function buildSEO({
+  title,
+  description,
+  url,
+  image = '/seo-default.png',
+  titleSuffix = '｜AI 工具與生活服務中心',
+}: SEOConfig) {
+  const fullTitle = `${title}${titleSuffix}`
   const baseUrl = 'https://pomodoro-app-eight-rouge.vercel.app'
   const fullImageUrl = image.startsWith('http') ? image : `${baseUrl}${image}`
 

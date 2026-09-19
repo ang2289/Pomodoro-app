@@ -388,7 +388,7 @@ export default function AdminDashboardPage() {
                   <p className="text-gray-700 mb-4">
                     查看並處理匯款回報，為使用者補點
                   </p>
-                  <PrimaryButton fullWidth className="bg-blue-600 hover:bg-blue-700">
+                  <PrimaryButton fullWidth>
                     前往付款管理
                   </PrimaryButton>
                 </div>

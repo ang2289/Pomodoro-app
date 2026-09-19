@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function GratitudeBreathJournal() {
   return (
@@ -21,6 +22,9 @@ export default function GratitudeBreathJournal() {
           感恩呼吸讓我們從忙碌中停下腳步，
           回望今日的一點微光、一份溫暖。
         </p>
+
+        <ArticleCTA placement="start" focus="tools" />
+
 
         <h2 className="text-2xl font-semibold mt-8 mb-3">🪷 三口感恩呼吸練習</h2>
         <ol className="list-decimal ml-6 space-y-3 mb-4">
@@ -55,12 +59,16 @@ export default function GratitudeBreathJournal() {
           感恩不是事件，而是一種呼吸的節奏。
         </p>
 
+        <ArticleCTA placement="middle" focus="tools" />
+
         <h2 className="text-2xl font-semibold mt-8 mb-3">✨ 結語：平靜的紀錄，會閃光</h2>
         <p className="mb-4">
           當你回頭看這些感恩日記，
           會發現它們像夜空中的星，
           每一顆都在提醒你：「你已經做得很好」。
         </p>
+
+        <ArticleCTA placement="bottom" focus="tools" />
 
         <hr className="my-8 border-gray-300" />
 
@@ -108,6 +116,8 @@ export default function GratitudeBreathJournal() {
           you'll see stars of kindness reminding you—
           you've already done enough, and you are enough.
         </p>
+
+        <ArticleCTA placement="afterFaq" focus="tools" />
 
         <p className="mt-8 text-gray-500 text-center text-sm">
           所有文章由 RxV 夢想創作工作室撰寫 · 保留所有權利

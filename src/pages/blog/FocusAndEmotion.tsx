@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function FocusAndEmotion() {
   return (
@@ -22,6 +23,9 @@ export default function FocusAndEmotion() {
           當焦慮或煩躁升起，大腦的前額葉皮質（掌管專注與決策）會被壓制，
           導致「心亂、效率低」的惡性循環。
         </p>
+
+        <ArticleCTA placement="start" focus="tools" />
+
 
         <h2 className="text-2xl font-semibold mt-8 mb-3">🎯 當情緒影響專注時，大腦發生了什麼？</h2>
         <ul className="list-disc ml-6 space-y-3 mb-4">
@@ -67,11 +71,15 @@ export default function FocusAndEmotion() {
           </li>
         </ol>
 
+        <ArticleCTA placement="middle" focus="tools" />
+
         <h2 className="text-2xl font-semibold mt-8 mb-3">💡 結語：平靜是專注的最佳燃料</h2>
         <p className="mb-4">
           專注與情緒的平衡，不在於壓抑，而在於理解。
           當你願意與情緒共處，大腦會自動進入更高效、更穩定的狀態。
         </p>
+
+        <ArticleCTA placement="bottom" focus="tools" />
 
         <hr className="my-8 border-gray-300" />
 
@@ -114,6 +122,8 @@ export default function FocusAndEmotion() {
           True focus doesn't come from suppressing emotion but from understanding it.
           When you coexist peacefully with your feelings, your mind operates at peak performance.
         </p>
+
+        <ArticleCTA placement="afterFaq" focus="tools" />
 
         <p className="mt-8 text-gray-500 text-center text-sm">
           文章由 RxV 夢想創作工作室撰寫 · 保留所有權利

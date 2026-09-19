@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import SEO from "../../components/SEO";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function PolicyDesignRealityExplainedPage() {
   // 獲取今天的日期（格式：YYYY-MM-DD）
@@ -43,6 +44,9 @@ export default function PolicyDesignRealityExplainedPage() {
               很多人看到政策新聞會覺得「這個政策對我好」，但實際執行後卻發現「沒什麼感覺」。這不是因為「政策沒用」，而是因為「政策設計的現實原因」。政策不可能讓所有人都直接受惠，通常會有取捨和限制。
             </p>
 
+            <ArticleCTA placement="start" focus="summary" />
+
+
             <h2 className="text-2xl font-semibold mt-8 mb-4">政策設計的取捨邏輯</h2>
             <p className="mb-4">
               政策設計時會有取捨，不可能讓所有人都滿意：
@@ -56,6 +60,8 @@ export default function PolicyDesignRealityExplainedPage() {
             <p className="mb-4">
               所以政策設計時會有取捨，不可能讓所有人都直接受惠。
             </p>
+
+            <ArticleCTA placement="middle" focus="summary" />
 
             <h2 className="text-2xl font-semibold mt-8 mb-4">為什麼不可能人人都直接受惠？</h2>
             <p className="mb-4">
@@ -125,6 +131,8 @@ export default function PolicyDesignRealityExplainedPage() {
             </div>
           </div>
 
+          <ArticleCTA placement="afterFaq" focus="summary" />
+
           {/* 相關文章區塊 */}
           <div className="mt-12 pt-8 border-t border-gray-200">
             <h3 className="text-2xl font-bold text-gray-900 mb-2">
@@ -160,8 +168,6 @@ export default function PolicyDesignRealityExplainedPage() {
               </Link>
             </div>
           </div>
-
-          {/* 導流區塊：摘要模組 */}
           <div className="mt-12 pt-8 border-t border-gray-200">
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 text-center">
               <h3 className="text-xl font-bold text-gray-900 mb-2">
@@ -172,7 +178,7 @@ export default function PolicyDesignRealityExplainedPage() {
               </p>
               <Link
                 to="/summary"
-                className="inline-block px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg drop-shadow-md"
+                className="inline-block bg-blue-600 text-white px-5 py-3 rounded-lg text-base font-medium hover:bg-blue-700 transition"
                 style={{ textShadow: '0 1px 2px rgba(0,0,0,0.1)' }}
               >
                 貼上文章，幫我整理
@@ -252,6 +258,7 @@ export default function PolicyDesignRealityExplainedPage() {
               </li>
             </ul>
           </div>
+          <ArticleCTA placement="bottom" focus="summary" />
 
           <div className="mt-8 pt-6 border-t border-gray-200">
             <Link

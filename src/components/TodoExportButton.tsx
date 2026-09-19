@@ -133,7 +133,7 @@ const TodoExportButton: React.FC<TodoExportButtonProps> = ({ todos, categories }
           console.log('觸控開始 - 待辦記錄CSV匯出');
         }}
         variant="primary"
-        className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
+        className="w-full bg-blue-600 text-white hover:bg-blue-700 font-bold py-3 px-4 rounded-lg transition transform hover:scale-105 shadow-lg"
       />
     </div>
   )

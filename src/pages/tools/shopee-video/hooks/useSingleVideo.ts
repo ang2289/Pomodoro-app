@@ -1,7 +1,6 @@
 // src/pages/tools/shopee-video/hooks/useSingleVideo.ts
 
 import { useState } from "react";
-import { generateVideoFromScript } from "@/services/video-api";
 
 export function useSingleVideo() {
   const [title, setTitle] = useState("");
@@ -108,41 +107,6 @@ export function useSingleVideo() {
     setLoading(false);
   };
 
-  // -------------------------
-  //   產生影片 API
-  // -------------------------
-  const generateVideo = async () => {
-    const cleanHighlights = highlights.filter((h) => h.trim());
-
-    if (!title.trim() || cleanHighlights.length === 0 || images.length === 0) {
-      setError("請補齊商品資訊（名稱、賣點、圖片）再產生影片");
-      return;
-    }
-
-    if (!script) {
-      setError("請先產生腳本");
-      return;
-    }
-
-    setLoading(true);
-    setError("");
-
-    try {
-      const outputUrl = await generateVideoFromScript({
-        title,
-        price: price || undefined,
-        images,
-        script,
-      });
-
-      setVideoUrl(outputUrl);
-    } catch (err: any) {
-      setError("影片產生失敗：" + (err.message || "未知錯誤"));
-    }
-
-    setLoading(false);
-  };
-
   return {
     title,
     price,
@@ -167,7 +131,6 @@ export function useSingleVideo() {
     removeImage,
 
     generateScript,
-    generateVideo,
   };
 }
 

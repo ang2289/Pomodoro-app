@@ -1,16 +1,46 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { Helmet } from "react-helmet-async";
 import FAQ from '@/components/FAQ';
 import ShareButtons from '@/components/ShareButtons';
 
 export default function RetirePlan2025() {
   const { i18n } = useTranslation();
   const isEnglish = !i18n.language.startsWith("zh");
+  const faqItems = isEnglish
+    ? [
+        { q: "Is more retirement money always better?", a: "Not necessarily. A configuration that is sustainable long-term, low-stress, and risk-controllable is the most suitable retirement model for yourself." },
+        { q: "What if I don't have much savings?", a: "The key to quality of life is not spending, but rhythm, health, and social support structure." },
+        { q: "Will medical expenses become a retirement burden?", a: "Catastrophic Illness Card, Long-term Care 2.0, and NHI special subsidies can significantly reduce medical expense pressure." },
+        { q: "Will I feel empty after retirement?", a: "You can establish \"anticipatable daily life\": weekly walks, handicrafts, reading, or volunteer activities can stabilize psychological needs." },
+      ]
+    : [
+        { q: "退休金越多越好嗎？", a: "不一定。可長期維持、壓力低、風險可控的配置，才是最適合自己的退休金模式。" },
+        { q: "沒有太多存款怎麼辦？", a: "生活品質的關鍵不在花費，而在節奏、健康與社交支持結構。" },
+        { q: "醫療費會不會造成退休負擔？", a: "重大傷病卡、長照 2.0 與健保特殊補助，可大幅降低醫療支出壓力。" },
+        { q: "退休後會覺得空虛嗎？", a: "可建立「可期待的日常」：每周散步、手作、讀書或志工活動，即能穩定心理需求。" },
+      ];
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqItems.map((item) => ({
+      "@type": "Question",
+      name: item.q,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: item.a,
+      },
+    })),
+  };
 
   return (
-    <main className="max-w-3xl mx-auto px-4 py-8 leading-8">
-      <article className="bg-white p-6 md:p-8 rounded-xl shadow-sm border text-lg">
+    <>
+      <Helmet>
+        <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>
+      </Helmet>
+      <main className="max-w-3xl mx-auto px-4 py-8 leading-8">
+        <article className="bg-white p-6 md:p-8 rounded-xl shadow-sm border text-lg">
 
         <h1 className="text-2xl md:text-3xl font-bold mb-2">
           {isEnglish
@@ -147,19 +177,7 @@ export default function RetirePlan2025() {
 
         <FAQ
           title={isEnglish ? "FAQ Q&A" : "常見問題 Q&A"}
-          items={isEnglish
-            ? [
-                { q: "Is more retirement money always better?", a: "Not necessarily. A configuration that is sustainable long-term, low-stress, and risk-controllable is the most suitable retirement model for yourself." },
-                { q: "What if I don't have much savings?", a: "The key to quality of life is not spending, but rhythm, health, and social support structure." },
-                { q: "Will medical expenses become a retirement burden?", a: "Catastrophic Illness Card, Long-term Care 2.0, and NHI special subsidies can significantly reduce medical expense pressure." },
-                { q: "Will I feel empty after retirement?", a: "You can establish \"anticipatable daily life\": weekly walks, handicrafts, reading, or volunteer activities can stabilize psychological needs." }
-              ]
-            : [
-                { q: "退休金越多越好嗎？", a: "不一定。可長期維持、壓力低、風險可控的配置，才是最適合自己的退休金模式。" },
-                { q: "沒有太多存款怎麼辦？", a: "生活品質的關鍵不在花費，而在節奏、健康與社交支持結構。" },
-                { q: "醫療費會不會造成退休負擔？", a: "重大傷病卡、長照 2.0 與健保特殊補助，可大幅降低醫療支出壓力。" },
-                { q: "退休後會覺得空虛嗎？", a: "可建立「可期待的日常」：每周散步、手作、讀書或志工活動，即能穩定心理需求。" }
-              ]}
+          items={faqItems}
         />
 
         <ShareButtons title={isEnglish
@@ -208,13 +226,14 @@ export default function RetirePlan2025() {
         <div className="mt-10">
           <Link
             to="/finance"
-            className="inline-block bg-blue-600 !text-white font-bold px-5 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            className="inline-block bg-blue-600 !text-white font-bold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
             style={{ color: '#ffffff' }}
           >
             {isEnglish ? "← Back to Health & Finance Column" : "← 回到健康與理財專欄"}
           </Link>
         </div>
-      </article>
-    </main>
+        </article>
+      </main>
+    </>
   );
 }

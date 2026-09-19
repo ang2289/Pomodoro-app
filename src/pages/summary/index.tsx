@@ -2,8 +2,8 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSummaryAction } from '@/hooks/useSummaryAction'
 import SummaryLayout from './SummaryLayout'
-import { supabase } from '@/lib/supabase'
-import { isLoggedIn, getCurrentUserId } from '@/lib/auth'
+import { getCurrentCreditSummary } from '@/lib/accountApi'
+import { isLoggedIn } from '@/lib/auth.ts'
 import { trackEvent } from '@/utils/analytics'
 import { useFreeTrialCheck } from '@/hooks/useFreeTrialCheck'
 import FreeTrialExhaustedPrompt from '@/components/FreeTrialExhaustedPrompt'
@@ -15,10 +15,9 @@ export default function SummaryPage() {
   const [totalPurchasedPoints, setTotalPurchasedPoints] = useState<number>(0)
   const [totalUsedChars, setTotalUsedChars] = useState<number>(0)
 
-  // 獲取用戶點數和購買總額（僅在有 userId 時執行）
+  // 獲取目前登入會員的點數；實際 user id 由後端 session 決定。
   useEffect(() => {
-    const userId = localStorage.getItem('userId')
-    if (!userId) {
+    if (!isLoggedIn()) {
       // 未登入時不執行查詢
       return
     }
@@ -27,11 +26,8 @@ export default function SummaryPage() {
     const fetchUserCredits = async () => {
       try {
         // 1. 查詢剩餘點數
-        const { data: creditsData, error: creditsError } = await supabase
-          .from('user_credits')
-          .select('remaining_chars')
-          .eq('user_id', userId)
-          .maybeSingle()
+        const creditsData = await getCurrentCreditSummary()
+        const creditsError = null
 
         if (creditsError) {
           console.error('[SummaryPage] Fetch credits error:', creditsError)
@@ -46,11 +42,8 @@ export default function SummaryPage() {
         }
 
         // 2. 查詢用戶購買的總點數（從 purchase_logs 累加所有成功購買的 points）
-        const { data: purchaseLogs, error: purchaseError } = await supabase
-          .from('purchase_logs')
-          .select('points')
-          .eq('user_id', userId)
-          .in('status', ['success', 'paid'])
+        const purchaseLogs = [{ points: creditsData.total_purchased_points }]
+        const purchaseError = null
 
         if (purchaseError) {
           console.error('[SummaryPage] Fetch purchase logs error:', purchaseError)
@@ -66,10 +59,8 @@ export default function SummaryPage() {
         setTotalPurchasedPoints(totalPoints)
 
         // 3. 查詢已用點數（從 usage_logs 累加）
-        const { data: usageLogs, error: usageError } = await supabase
-          .from('usage_logs')
-          .select('total_chars')
-          .eq('user_id', userId)
+        const usageLogs = [{ total_chars: creditsData.total_used_chars }]
+        const usageError = null
 
         if (usageError) {
           console.error('[SummaryPage] Fetch usage logs error:', usageError)
@@ -93,20 +84,20 @@ export default function SummaryPage() {
   const [summary, setSummary] = useState<{ content: string; isPreview?: boolean }>({ content: '' })
   const [inputLength, setInputLength] = useState<number>(0)
   const [outputLength, setOutputLength] = useState<number>(0)
-  // 預設示意關鍵字（初次進入頁面時顯示）
-  const defaultKeywords = [
-    '重點摘要',
-    '關鍵事件',
-    '核心人物',
-    '時間脈絡',
-    '後續影響'
+  // 預設示意關鍵字（i18n 鍵，初次進入頁面時顯示；選英文會顯示英文）
+  const DEFAULT_KEYWORD_KEYS = [
+    'summary_keyword_1',
+    'summary_keyword_2',
+    'summary_keyword_3',
+    'summary_keyword_4',
+    'summary_keyword_5'
   ]
   // ============================================
   // 第一組：keywords（內容理解、內文標籤）
   // 用途：內容理解、內文標籤
   // 適用場景：一鍵複製，適合貼到作業、報告或筆記中
   // ============================================
-  const [keywords, setKeywords] = useState<string[]>(defaultKeywords)
+  const [keywords, setKeywords] = useState<string[]>(DEFAULT_KEYWORD_KEYS)
   
   // ============================================
   // 第二組：traffic_keywords（SEO、搜尋流量、內容延伸）
@@ -194,54 +185,28 @@ export default function SummaryPage() {
         })
       }
       // 更新點數（如果 API 有返回）
-      const updateUsageStats = async (userId: string) => {
-        const { data: usageLogs, error: usageError } = await supabase
-          .from('usage_logs')
-          .select('total_chars')
-          .eq('user_id', userId)
- 
-        if (usageError) {
-          console.error('[SummaryPage] Fetch usage logs error:', usageError)
-        } else {
-          const totalUsed = usageLogs
-            ? usageLogs.reduce((sum, log) => sum + (log.total_chars || 0), 0)
-            : 0
-          setTotalUsedChars(totalUsed)
-        }
+      const updateUsageStats = async () => {
+        const usageSummary = await getCurrentCreditSummary()
+        setTotalUsedChars(usageSummary.total_used_chars)
+        setRemainingChars(usageSummary.remaining_chars)
       }
 
-      const currentUserId = getCurrentUserId()
+      const hasSession = isLoggedIn()
       if (typeof result.balance === 'number') {
         setRemainingChars(result.balance)
-        if (currentUserId) {
-          await updateUsageStats(currentUserId)
+        if (hasSession) {
+          await updateUsageStats()
         }
       } else if (typeof result.remaining_chars === 'number') {
         setRemainingChars(result.remaining_chars)
-        if (currentUserId) {
-          await updateUsageStats(currentUserId)
+        if (hasSession) {
+          await updateUsageStats()
         }
-      } else if (currentUserId) {
+      } else if (hasSession) {
         try {
-          const { data: consumeResult, error: consumeError } = await supabase.rpc('consume_credits', {
-            p_user_id: currentUserId,
-            p_feature: 'summary',
-            p_input_chars: input.length,
-            p_output_chars: finalSummary.length,
-          })
-          if (consumeError) {
-            console.warn('[SummaryPage] consume_credits error:', consumeError)
-          } else {
-            const remainingFromRpc = Array.isArray(consumeResult)
-              ? consumeResult[0]?.remaining_chars
-              : (consumeResult as any)?.remaining_chars
-            if (typeof remainingFromRpc === 'number') {
-              setRemainingChars(remainingFromRpc)
-              await updateUsageStats(currentUserId)
-            }
-          }
-        } catch (rpcError) {
-          console.error('[SummaryPage] consume_credits RPC failed:', rpcError)
+          await updateUsageStats()
+        } catch (creditRefreshError) {
+          console.error('[SummaryPage] credit refresh failed:', creditRefreshError)
         }
       }
       // 注意：這裡不更新 usageChars，因為規格中沒有要求
@@ -394,6 +359,7 @@ export default function SummaryPage() {
         usageChars={usageChars}
         usedChars={usedChars}
         keywords={keywords}
+        defaultKeywordKeys={DEFAULT_KEYWORD_KEYS}
         trafficKeywords={trafficKeywords}
         trafficKeywordsReady={trafficKeywordsReady}
         highIntentContent={[]}

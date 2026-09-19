@@ -9,13 +9,17 @@ interface HeaderBarProps {
   title: string
   className?: string
   showHomeButton?: boolean
+  showBackToHomeLink?: boolean
+  backToHomePath?: string
 }
 
 const HeaderBar: React.FC<HeaderBarProps> = ({ 
   icon, 
   title, 
   className = '',
-  showHomeButton = false
+  showHomeButton = false,
+  showBackToHomeLink = false,
+  backToHomePath = '/'
 }) => {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -40,11 +44,19 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
 
     window.addEventListener('storage', handleStorageChange)
 
+    const handleAuthChanged = () => {
+      checkLogin()
+    }
+    window.addEventListener('auth-changed', handleAuthChanged)
+    window.addEventListener('rxv-auth-changed', handleAuthChanged as any)
+
     // 定期檢查（用於同標籤頁更新）
     const interval = setInterval(checkLogin, 1000)
 
     return () => {
       window.removeEventListener('storage', handleStorageChange)
+      window.removeEventListener('auth-changed', handleAuthChanged)
+      window.removeEventListener('rxv-auth-changed', handleAuthChanged as any)
       clearInterval(interval)
     }
   }, [])
@@ -63,8 +75,8 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
         {showHomeButton && (
           <Link 
             to="/" 
-            className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-blue-500 hover:bg-blue-600 text-white rounded-full transition-colors duration-200"
-            title="回首頁"
+            className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-full transition-colors duration-200"
+            title={t('back_to_home')}
           >
             <span className="text-sm sm:text-lg">🏠</span>
           </Link>
@@ -77,30 +89,38 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
         </h1>
       </div>
 
-      {/* 右側區域：根據登入狀態顯示不同內容 */}
-      {userId ? (
-        <div className="flex items-center gap-3">
-          {/* 登出按鈕 */}
-          <button
-            onClick={handleLogout}
-            className="text-sm px-4 py-2 text-gray-700 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+      {/* 右側區域：回首頁 + 登入／登出 */}
+      <div className="flex items-center gap-2 sm:gap-3">
+        {showBackToHomeLink && (
+          <Link
+            to={backToHomePath}
+            className="text-sm px-3 py-2 bg-purple-600 hover:bg-purple-700 !text-white rounded-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
           >
-            登出
+            {t('back_to_home')}
+          </Link>
+        )}
+        {userId ? (
+          <>
+            <button
+            onClick={handleLogout}
+            className="text-sm px-4 py-2 text-blue-600 hover:text-blue-800 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
+          >
+            {t('logout')}
           </button>
-        </div>
-      ) : (
-        <Link to="/login" className="block">
-          <PrimaryButton fullWidth={false} size="sm">
-            登入
-          </PrimaryButton>
-        </Link>
-      )}
+          </>
+        ) : (
+          <Link to="/login" className="block">
+            <PrimaryButton fullWidth={false} size="sm" className="hover:-translate-y-0.5 hover:shadow-md transition-transform duration-200">
+              {t('login')}
+            </PrimaryButton>
+          </Link>
+        )}
+      </div>
     </div>
   )
 }
 
 export default HeaderBar
-
 
 
 

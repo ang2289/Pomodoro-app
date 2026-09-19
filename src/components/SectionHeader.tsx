@@ -33,14 +33,7 @@ export default function SectionHeader({
       {actionLabel && onAction && (
         <button
           onClick={onAction}
-          className={`px-4 py-2 rounded-xl font-bold transition-all duration-200 transform flex items-center justify-center gap-2 cursor-pointer shadow-md hover:shadow-lg hover:scale-105 active:scale-95 ${
-            actionLabel.includes('摘要') || actionLabel.includes('Summary')
-              ? 'bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600'
-              : 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600'
-          }`}
-          style={{
-            color: '#ffffff',
-          }}
+          className="px-4 py-2 rounded-lg font-bold transition flex items-center justify-center gap-2 cursor-pointer bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg hover:scale-105 active:scale-95"
         >
           {actionLabel}
         </button>

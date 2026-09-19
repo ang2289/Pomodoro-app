@@ -1,16 +1,46 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { Helmet } from "react-helmet-async";
 import FAQ from '@/components/FAQ';
 import ShareButtons from '@/components/ShareButtons';
 
 export default function AntiFraud2025() {
   const { i18n } = useTranslation();
   const isEnglish = !i18n.language.startsWith("zh");
+  const faqItems = isEnglish
+    ? [
+        { q: "Do I need to pay fees or deposits first?", a: "No. Any request for \"wire transfer first\" is a scam." },
+        { q: "I received a message link asking me to log in?", a: "Don't click. Please manually enter https://10000.gov.tw/ to access." },
+        { q: "Will the government call me?", a: "They will not proactively call to request ATM operations, account information, or passwords." },
+        { q: "Who can I ask if I'm unsure if it's a scam?", a: "Call the 165 anti-fraud hotline for immediate verification." },
+      ]
+    : [
+        { q: "我需要先繳費或付保證金嗎？", a: "不用。任何要求「先匯款」皆為詐騙。" },
+        { q: "我收到簡訊連結要求登入帳號？", a: "不要點。請自行手動輸入 https://10000.gov.tw/ 進入。" },
+        { q: "政府會打電話通知我嗎？", a: "不會主動致電要求操作 ATM、提供帳戶或密碼。" },
+        { q: "不確定是否為詐騙可以問誰？", a: "撥打 165 反詐騙專線，可立即查證。" },
+      ];
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqItems.map((item) => ({
+      "@type": "Question",
+      name: item.q,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: item.a,
+      },
+    })),
+  };
 
   return (
-    <main className="max-w-3xl mx-auto px-4 py-8 leading-8">
-      <article className="bg-white p-6 md:p-8 rounded-xl shadow-sm border text-lg">
+    <>
+      <Helmet>
+        <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>
+      </Helmet>
+      <main className="max-w-3xl mx-auto px-4 py-8 leading-8">
+        <article className="bg-white p-6 md:p-8 rounded-xl shadow-sm border text-lg">
 
         <h1 className="text-2xl md:text-3xl font-bold mb-2">
           {isEnglish
@@ -139,19 +169,7 @@ export default function AntiFraud2025() {
 
         <FAQ
           title={isEnglish ? "FAQ Q&A" : "常見問題 Q&A"}
-          items={isEnglish
-            ? [
-                { q: "Do I need to pay fees or deposits first?", a: "No. Any request for \"wire transfer first\" is a scam." },
-                { q: "I received a message link asking me to log in?", a: "Don't click. Please manually enter https://10000.gov.tw/ to access." },
-                { q: "Will the government call me?", a: "They will not proactively call to request ATM operations, account information, or passwords." },
-                { q: "Who can I ask if I'm unsure if it's a scam?", a: "Call the 165 anti-fraud hotline for immediate verification." }
-              ]
-            : [
-                { q: "我需要先繳費或付保證金嗎？", a: "不用。任何要求「先匯款」皆為詐騙。" },
-                { q: "我收到簡訊連結要求登入帳號？", a: "不要點。請自行手動輸入 https://10000.gov.tw/ 進入。" },
-                { q: "政府會打電話通知我嗎？", a: "不會主動致電要求操作 ATM、提供帳戶或密碼。" },
-                { q: "不確定是否為詐騙可以問誰？", a: "撥打 165 反詐騙專線，可立即查證。" }
-              ]}
+          items={faqItems}
         />
 
         <ShareButtons title={isEnglish
@@ -200,14 +218,15 @@ export default function AntiFraud2025() {
         <div className="mt-10">
           <Link
             to="/finance"
-            className="inline-block bg-blue-600 !text-white font-bold px-5 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            className="inline-block bg-blue-600 !text-white font-bold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
             style={{ color: '#ffffff' }}
           >
             {isEnglish ? "← Back to Health & Finance Column" : "← 回到健康與理財專欄"}
           </Link>
         </div>
 
-      </article>
-    </main>
+        </article>
+      </main>
+    </>
   );
 }

@@ -1,79 +1,40 @@
-// ============================================
-// Summary 模組：已穩定 ✅
-// 問題排除完成日期：2024-12-19
-// ============================================
-// ⚠️ 重要：此模組已完成重構，請勿回退
-// 
-// 資料來源：Supabase Edge Function (auto-summary)
-// 呼叫方式：fetch（非 invoke）
-// 
-// 備註：不可回退使用 invoke
-// ============================================
-// 摘要服務層：純邏輯，不包含任何 React、state、UI、hook
-// 負責用 fetch 直接呼叫 Supabase Edge Function auto-summary
+import { getCustomSessionToken } from '@/lib/accountApi'
 
 interface CallSummaryParams {
   content: string
   lang: string
 }
 
-export async function callSummaryService(params: CallSummaryParams): Promise<any> {
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+type SummaryServiceResult = {
+  summary?: string
+  result?: string
+  keywords?: string[]
+  traffic_keywords?: string[]
+  remaining_chars?: number
+  balance?: number
+}
 
-  if (!supabaseUrl || !anonKey) {
-    throw new Error("Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY")
-  }
-
-  const url = `${supabaseUrl}/functions/v1/auto-summary`
+/** Session-authenticated summary API wrapper. Never calls Supabase Edge from the browser. */
+export async function callSummaryService(params: CallSummaryParams): Promise<SummaryServiceResult> {
+  const token = getCustomSessionToken()
+  if (!token) throw new Error('AUTH_REQUIRED')
 
   const controller = new AbortController()
-  const timeout = window.setTimeout(() => controller.abort(), 60000) // 60 秒 timeout
-
+  const timeout = window.setTimeout(() => controller.abort(), 60_000)
   try {
-    console.log("[SUMMARY][SERVICE] start")
-
-    const res = await fetch(url, {
-      method: "POST",
+    const response = await fetch('/api/main?action=summary', {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
-        "apikey": anonKey,
-        "Authorization": `Bearer ${anonKey}`,
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        content: params.content,
-        lang: params.lang,
-      }),
+      body: JSON.stringify({ content: params.content, lang: params.lang }),
       signal: controller.signal,
     })
-
-    console.log("[SUMMARY][SERVICE] status", res.status)
-
-    const text = await res.text()
-    console.log("[SUMMARY][SERVICE] rawText", text)
-
-    let json: any = null
-    try {
-      json = text ? JSON.parse(text) : null
-    } catch (e) {
-      // 嘗試 JSON.parse，失敗也不能 throw
-      // keep json null
-    }
-
-    console.log("[SUMMARY][SERVICE] json", json)
-
-    // 若 HTTP status 非 2xx，丟出 Error
-    if (!res.ok) {
-      throw new Error(`auto-summary HTTP ${res.status}: ${text}`)
-    }
-
-    // 確保返回的 JSON 包含 summary 欄位
-    if (!json || !json.summary) {
-      throw new Error('API response missing summary field')
-    }
-
-    // 最後只 return 解析後的 JSON（確保包含 summary）
-    return json
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok) throw new Error(String(data?.error || 'SUMMARY_REQUEST_FAILED'))
+    if (!data?.summary && !data?.result) throw new Error('INVALID_SUMMARY_RESPONSE')
+    return data
   } finally {
     window.clearTimeout(timeout)
   }

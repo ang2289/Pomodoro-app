@@ -24,7 +24,6 @@
     "generate-rss": "tsx scripts/generateRSS.ts",
     "social:affiliate": "node scripts/social_affiliate_automation.mjs",
     "social:facebook:publish": "node scripts/facebook_page_publisher.mjs",
-    "vercel-build": "npm run generate-sitemap && npm run generate-image-sitemap && npm run generate-rss && vite build --config vite.config.ts",
     "clean": "rimraf node_modules/.cache && rimraf .vite && rimraf .next",
     "postinstall": "node scripts/copy-ffmpeg-core.js"
   },
@@ -77,6 +76,7 @@
     "lucide-react": "^0.544.0",
     "onnxruntime-web": "^1.21.0",
     "papaparse": "^5.5.3",
+    "puppeteer-core": "^25.9.0",
     "qrcode": "^1.5.4",
     "qrcode.react": "^4.2.0",
     "react": "^18.2.0",

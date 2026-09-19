@@ -1,18 +1,4 @@
 User-agent: *
 Allow: /
-Disallow: /private/
 
 Sitemap: https://pomodoro-app-eight-rouge.vercel.app/sitemap.xml
-
-# 強化 AdSense 與 SEO
-User-agent: Mediapartners-Google
-Disallow:
-
-User-agent: AdsBot-Google
-Disallow:
-
-User-agent: Googlebot-Image
-Disallow:
-
-User-agent: Googlebot-Mobile
-Disallow:

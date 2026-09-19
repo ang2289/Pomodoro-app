@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>RXV 小包短影音推廣器 v3.8</title>
+<style>
+:root{font-family:Inter,"Microsoft JhengHei",system-ui,sans-serif;color:#102a43;background:#f4f7fb}*{box-sizing:border-box}body{margin:0;background:#f4f7fb}button,input,select,textarea{font:inherit}.wrap{max-width:1180px;margin:auto;padding:22px}.hero{background:linear-gradient(135deg,#0f766e,#0369a1);color:#fff;padding:26px;border-radius:24px;box-shadow:0 16px 40px rgba(3,105,161,.18)}h1{margin:0 0 8px;font-size:31px}.hero p{margin:0;opacity:.94}.section{margin-top:20px}.card{background:#fff;border:1px solid #d9e2ec;border-radius:18px;padding:18px;box-shadow:0 8px 24px rgba(16,42,67,.06)}.grid{display:grid;gap:14px}.g2{grid-template-columns:repeat(2,minmax(0,1fr))}.g3{grid-template-columns:repeat(3,minmax(0,1fr))}.g4{grid-template-columns:repeat(4,minmax(0,1fr))}.label{font-weight:900;font-size:13px;margin-bottom:7px;display:block;color:#334e68}input,select,textarea{width:100%;border:1px solid #bcccdc;border-radius:11px;padding:10px 12px;background:#fff}.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.btn{border:0;border-radius:11px;padding:10px 14px;font-weight:900;cursor:pointer;background:#e6f6ff;color:#0369a1}.btn.primary{background:#0f766e;color:white}.btn.dark{background:#102a43;color:white}.btn.gray{background:#e9eff5;color:#334e68}.btn:disabled{opacity:.5;cursor:not-allowed}.notice{background:#fff7ed;border:1px solid #fdba74;color:#9a3412;border-radius:12px;padding:11px 13px;font-size:13px;font-weight:700}.good{background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46;border-radius:12px;padding:11px 13px;font-size:13px;font-weight:700}.muted{color:#627d98;font-size:13px;line-height:1.6}.file-list{margin:10px 0 0;padding-left:20px;font-size:13px;color:#486581}.status{margin-top:12px;font-weight:900}.status.ok{color:#047857}.status.err{color:#b91c1c}.preview{width:100%;max-width:360px;aspect-ratio:9/16;background:#0b1220;border-radius:16px}.caption-card textarea{min-height:180px;line-height:1.6}.platform-head{display:flex;justify-content:space-between;gap:8px;align-items:center}.chip{display:inline-flex;border-radius:999px;padding:6px 10px;background:#e0f2fe;color:#075985;font-weight:900;font-size:12px}.range-row{display:grid;grid-template-columns:1fr 90px;gap:10px;align-items:center}.hidden{display:none}@media(max-width:900px){.g2,.g3,.g4{grid-template-columns:1fr}.wrap{padding:13px}.hero{padding:19px}h1{font-size:25px}}
+</style>
+</head>
+<body><div class="wrap">
+<section class="hero"><h1>RXV 小包短影音推廣器 v3.8</h1><p>完整實用版｜5 職業即時數量｜CTA 2/3/4 秒｜QR 大小｜淡化轉場｜MP3 音量模式</p></section>
+
+<section class="section card">
+  <div class="grid g4">
+    <div><label class="label">商品</label><select id="product">
+<option value="realEstate">房仲圖片包｜83 張｜NT$99</option>
+<option value="hair">美髮沙龍圖片包｜133 張｜NT$99</option>
+<option value="manicure">美甲圖片包｜133 張｜NT$99</option>
+<option value="spa">美容SPA圖片包｜135 張｜NT$99</option>
+<option value="dental">牙醫圖片包｜104 張｜NT$99</option>
+</select>
+<div id="catalogStatus" class="muted" style="margin-top:8px">正在同步網站最新數量…</div>
+<button id="refreshCatalogBtn" type="button" class="btn gray" style="margin-top:8px">重新同步數量</button></div>
+    <div><label class="label">影片模板</label><select id="template"><option value="pain">找圖痛點版</option><option value="showcase">圖片展示版</option><option value="price">NT$99 價格版</option></select></div>
+    <div><label class="label">影片長度</label><select id="duration"><option value="8">8 秒</option><option value="10" selected>10 秒</option><option value="12">12 秒</option></select></div>
+    <div><label class="label">圖片顯示方式</label><select id="displayMode"><option value="auto" selected>自動判斷（建議）</option><option value="full">全部滿版</option><option value="contain">全部完整顯示＋模糊背景</option></select></div>
+  </div>
+
+  <div class="good" style="margin-top:12px">自動判斷：接近 9:16 的直式圖會直接滿版；橫式、方形或比例差很多的圖片，才使用模糊背景並完整置中。</div>
+
+  <div style="margin-top:14px"><label class="label">選 3～10 張圖片</label><input id="images" type="file" accept="image/jpeg,image/png,image/webp" multiple /></div>
+  <ol id="fileList" class="file-list"></ol>
+
+  <div class="grid g3" style="margin-top:14px">
+    <div><label class="label">背景音樂 MP3（選填）</label><input id="music" type="file" accept="audio/mpeg,.mp3" /><div id="musicName" class="muted" style="margin-top:6px">未選音樂＝輸出無聲影片</div></div>
+    <div><label class="label">背景音樂音量</label>
+      <select id="musicPreset" style="margin-bottom:8px">
+        <option value="20">柔和 20%</option>
+        <option value="40" selected>一般 40%</option>
+        <option value="45">強一點 45%</option>
+        <option value="custom">自訂</option>
+      </select>
+      <div class="range-row"><input id="musicVolume" type="range" min="0" max="60" step="1" value="40" /><input id="musicVolumeNumber" type="number" min="0" max="60" value="40" /></div><div class="muted">預設 40%。無旁白建議 40～45%；未來若加旁白可降到 15～25%。</div></div>
+    <div><label class="label">音樂效果</label><label class="row" style="padding:10px 0"><input id="fadeMusic" type="checkbox" checked style="width:auto" /> 自動淡入／淡出</label><div class="muted">MP3 太短會自動循環；太長自動裁到影片長度。</div></div>
+  </div>
+
+  <div class="grid g3" style="margin-top:14px">
+    <div><label class="label">成交 CTA</label><label class="row" style="padding:10px 0"><input id="enableCta" type="checkbox" checked style="width:auto" /> 最後 2 秒加入成交畫面</label><div class="muted">固定顯示商品數量、NT$99、查看完整圖片包。</div></div>
+    <div><label class="label">CTA 網址</label><input id="ctaUrl" value="pomodoro-app-eight-rouge.vercel.app/images" /></div>
+    <div><label class="label">LINE ID</label><input id="lineId" value="ang22899" /></div>
+  </div>
+  <div class="grid g4" style="margin-top:14px">
+    <div><label class="label">QR Code</label><label class="row" style="padding:10px 0"><input id="enableQr" type="checkbox" checked style="width:auto" /> 最後 CTA 顯示 QR Code</label><div class="muted">取消勾選就只顯示網址與 LINE。</div></div>
+    <div><label class="label">QR Code 網址</label><input id="qrUrl" value="https://pomodoro-app-eight-rouge.vercel.app/images" /><div class="muted">可改成商品頁、LINE 加好友或其他網址。</div></div>
+    <div><label class="label">QR 位置</label><select id="qrPosition"><option value="center" selected>下方中央</option><option value="right">右下</option><option value="left">左下</option></select></div>
+    <div><label class="label">CTA 文字</label><input id="ctaText" value="掃碼立即查看" maxlength="20" /></div>
+  </div>
+  <div class="good" style="margin-top:10px">QR Code 使用專案既有 qrcode 套件在本機產生，不使用外部 API，也不會把 QR 圖檔存進專案。</div>
+  <div class="grid g4" style="margin-top:14px">
+    <div><label class="label">最後 CTA 停留</label><select id="ctaSeconds"><option value="2">2 秒</option><option value="3" selected>3 秒（建議）</option><option value="4">4 秒</option></select></div>
+    <div><label class="label">QR Code 大小</label><select id="qrSize"><option value="300">標準 300px</option><option value="340" selected>加大 340px（建議）</option><option value="380">更大 380px</option></select></div>
+    <div><label class="label">CTA 文案模板</label><select id="ctaTemplate"><option value="scan" selected>掃碼立即查看</option><option value="price">價格強調</option><option value="save">省時間</option><option value="custom">自訂</option></select></div>
+    <div><label class="label">圖片轉場</label><label class="row" style="padding:10px 0"><input id="transition" type="checkbox" checked style="width:auto" /> 輕柔淡化轉場</label><div class="muted">只做輕微淡化，不做花俏特效。</div></div>
+  </div>
+  <div class="notice" style="margin-top:12px">請只使用你有權使用的 MP3。工具不會自動抓網路音樂，也不會把 MP3 複製進專案。</div>
+  <div class="good" style="margin-top:10px">MP4 輸出到 D:\RXV-短影音輸出；暫存圖片與 MP3 使用 Windows TEMP，不會跟 Pomodoro-app 一起備份。</div>
+
+  <div class="row" style="margin-top:14px"><button id="renderBtn" class="btn primary">產生短影音 MP4</button><button id="openOutputBtn" class="btn gray">開啟輸出資料夾</button><span id="health" class="muted"></span></div>
+  <div id="status" class="status"></div>
+</section>
+
+<section id="resultSection" class="section card hidden">
+  <div class="grid g2">
+    <div><h2 style="margin-top:0">影片預覽</h2><video id="video" class="preview" controls playsinline></video><div class="row" style="margin-top:10px"><a id="downloadLink" class="btn dark" download>下載 MP4</a></div></div>
+    <div><h2 style="margin-top:0">輸出資訊</h2><div id="resultInfo" class="muted"></div></div>
+  </div>
+</section>
+
+<section class="section"><h2>各平台文案</h2><div id="captions" class="grid g2"></div></section>
+</div>
+<script>
+(()=>{
+const SALES_URL='https://pomodoro-app-eight-rouge.vercel.app/images';
+const PRODUCTS={
+realEstate:{short:'房仲',name:'RXV 房仲帶看宣傳圖片包',count:'83 張',price:99,pain:'每天發房仲貼文，還在花時間找圖？',uses:'帶看、成交、交屋、公設、生活機能、社群貼文'},
+hair:{short:'美髮',name:'RXV 美髮沙龍職業圖片包',count:'133 張',price:99,pain:'每天發美髮貼文，還在到處找圖片？',uses:'剪髮、染燙、洗護、造型、預約宣傳、沙龍日常'},
+manicure:{short:'美甲',name:'RXV 美甲職業圖片包',count:'133 張',price:99,pain:'每天發美甲貼文，還在花時間找素材？',uses:'凝膠美甲、手部保養、款式展示、色系提案、預約宣傳'},
+spa:{short:'美容SPA',name:'RXV 美容SPA職業圖片包',count:'135 張',price:99,pain:'美容 SPA 每天要發文，還在重新找圖？',uses:'臉部保養、身體按摩、芳療、療程介紹、環境氛圍、預約宣傳'},
+dental:{short:'牙醫',name:'RXV 牙醫職業圖片包',count:'104 張',price:99,pain:'牙醫診所做衛教與宣傳，還在到處找圖片？',uses:'看診情境、牙齒衛教、設備消毒、醫病溝通、診所環境、預約宣傳'}
+};
+const PLATFORMS=[{id:'fb',name:'FB Reels',url:'https://www.facebook.com/reels/create/'},{id:'ig',name:'IG Reels',url:'https://www.instagram.com/'},{id:'tiktok',name:'TikTok',url:'https://www.tiktok.com/upload'},{id:'youtube',name:'YouTube Shorts',url:'https://studio.youtube.com/'},{id:'threads',name:'Threads',url:'https://www.threads.net/'},{id:'pinterest',name:'Pinterest',url:'https://www.pinterest.com/'}];
+const $=id=>document.getElementById(id);function p(){return PRODUCTS[$('product').value]||PRODUCTS.realEstate}function esc(s=''){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function baseCopy(product){return `${product.pain}\n\n${product.uses}，已整理成 ${product.name}。\n${product.count}｜NT$${product.price}\n不用每天重新找素材。\n\n${SALES_URL}`}
+function captionsFor(product){const tags=product.short==='房仲'?'#房仲 #不動產 #房仲行銷 #房仲素材':'#美髮 #髮型設計師 #沙龍 #美髮行銷 #美髮素材';return {fb:`${baseCopy(product)}\n\n${tags}`,ig:`${product.pain}\n${product.count} ${product.short}常用圖片，NT$${product.price} 一次整理好。\n${SALES_URL}\n\n${tags}`,tiktok:`${product.pain} ${product.count} ${product.short}常用圖片 NT$${product.price}，不用每天重新找素材。 ${tags}`,youtube:`標題：${product.short}每天找圖太花時間？${product.count}常用圖片 NT$${product.price}\n\n說明：\n${baseCopy(product)}\n\n${tags}`,threads:`${product.pain}\n我把常用的 ${product.short}情境圖整理成一包：${product.uses}。\n${product.count}｜NT$${product.price}\n${SALES_URL}`,pinterest:`${product.short}社群宣傳素材包｜${product.count}｜NT$${product.price}\n${product.uses}\n${SALES_URL}`}}
+async function syncCatalogStats(){
+  const status=$('catalogStatus');
+  try{
+    status.textContent='正在同步網站最新數量…';
+    const r=await fetch('/api/catalog-stats?t='+Date.now(),{cache:'no-store'});
+    const data=await r.json();
+    if(!r.ok||!data.ok)throw new Error(data.error||'同步失敗');
+    const labelMap={realEstate:'房仲圖片包',hair:'美髮沙龍圖片包',manicure:'美甲圖片包',spa:'美容SPA圖片包',dental:'牙醫圖片包'};
+    for(const [key,raw] of Object.entries(data.counts||{})){
+      const count=Number(raw||0);
+      if(!PRODUCTS[key]||count<=0)continue;
+      PRODUCTS[key].count=count+' 張';
+      const option=$('product').querySelector('option[value="'+key+'"]');
+      if(option)option.textContent=labelMap[key]+'｜'+count+' 張｜NT$99';
+    }
+    status.textContent='網站即時數量：房仲 '+(data.counts?.realEstate||0)+'｜美髮 '+(data.counts?.hair||0)+'｜美甲 '+(data.counts?.manicure||0)+'｜美容SPA '+(data.counts?.spa||0)+'｜牙醫 '+(data.counts?.dental||0);
+    renderCaptions();
+    applyCtaTemplate();
+  }catch(error){
+    status.textContent='網站數量同步失敗，暫用備用數量。';
+    console.warn('[RXV v3.8 catalog]',error);
+  }
+}
+async function copyText(text,button){try{await navigator.clipboard.writeText(text);const old=button.textContent;button.textContent='已複製';setTimeout(()=>button.textContent=old,1200)}catch{alert('複製失敗，請手動複製')}}
+function renderCaptions(){const product=p(),copies=captionsFor(product);$('captions').innerHTML=PLATFORMS.map(pl=>`<article class="card caption-card"><div class="platform-head"><h3>${pl.name}</h3><div class="row"><button class="btn" data-copy="${pl.id}">複製</button><button class="btn gray" data-open="${pl.id}">開啟平台</button></div></div><textarea readonly>${esc(copies[pl.id])}</textarea></article>`).join('');document.querySelectorAll('[data-copy]').forEach(btn=>btn.onclick=()=>copyText(copies[btn.dataset.copy],btn));document.querySelectorAll('[data-open]').forEach(btn=>btn.onclick=()=>{const pl=PLATFORMS.find(x=>x.id===btn.dataset.open);if(pl)window.open(pl.url,'_blank','noopener')})}
+$('refreshCatalogBtn').onclick=syncCatalogStats;
+$('images').onchange=()=>{const files=[...$('images').files];$('fileList').innerHTML=files.map((f,i)=>`<li>${i+1}. ${esc(f.name)}</li>`).join('')};
+$('music').onchange=()=>{$('musicName').textContent=$('music').files[0]?`已選：${$('music').files[0].name}`:'未選音樂＝輸出無聲影片'};
+$('musicVolume').oninput=()=>{$('musicVolumeNumber').value=$('musicVolume').value;$('musicPreset').value='custom'};
+$('musicVolumeNumber').oninput=()=>{const v=Math.max(0,Math.min(60,Number($('musicVolumeNumber').value||0)));$('musicVolume').value=v;$('musicVolumeNumber').value=v;$('musicPreset').value='custom'};
+$('musicPreset').onchange=()=>{if($('musicPreset').value==='custom')return;const v=Number($('musicPreset').value);$('musicVolume').value=v;$('musicVolumeNumber').value=v};
+function applyCtaTemplate(){const product=p();const type=$('ctaTemplate').value;if(type==='custom')return;if(type==='price')$('ctaText').value=`${product.count}只要 NT${product.price}`;else if(type==='save')$('ctaText').value='不用每天重新找圖';else $('ctaText').value='掃碼立即查看'}
+$('ctaTemplate').onchange=applyCtaTemplate;
+$('product').onchange=()=>{renderCaptions();applyCtaTemplate()};
+$('renderBtn').onclick=async()=>{const files=[...$('images').files];if(files.length<3||files.length>10){alert('請選 3～10 張圖片');return}const fd=new FormData();files.forEach(f=>fd.append('images',f));if($('music').files[0])fd.append('music',$('music').files[0]);fd.append('product',$('product').value);fd.append('template',$('template').value);fd.append('duration',$('duration').value);fd.append('displayMode',$('displayMode').value);fd.append('musicVolume',String(Number($('musicVolumeNumber').value||40)/100));fd.append('fadeMusic',$('fadeMusic').checked?'1':'0');fd.append('enableCta',$('enableCta').checked?'1':'0');fd.append('ctaUrl',$('ctaUrl').value.trim());fd.append('lineId',$('lineId').value.trim());fd.append('enableQr',$('enableQr').checked?'1':'0');fd.append('qrUrl',$('qrUrl').value.trim());fd.append('qrPosition',$('qrPosition').value);fd.append('ctaText',$('ctaText').value.trim());fd.append('ctaSeconds',$('ctaSeconds').value);fd.append('qrSize',$('qrSize').value);fd.append('transition',$('transition').checked?'1':'0');$('renderBtn').disabled=true;$('status').className='status';$('status').textContent='正在製作影片，請稍候…';try{const r=await fetch('/api/render',{method:'POST',body:fd});const data=await r.json();if(!r.ok||!data.ok)throw new Error(data.error||'產生失敗');$('video').src=data.videoUrl;$('downloadLink').href=data.videoUrl;$('downloadLink').download=data.fileName;const modeLabel={auto:'自動判斷',full:'全部滿版',contain:'完整顯示＋模糊背景'}[data.displayMode]||data.displayMode;$('resultInfo').innerHTML=`檔案：${esc(data.fileName)}<br>圖片：${data.imageCount} 張<br>長度：${data.duration} 秒<br>顯示方式：${modeLabel}<br>實際滿版：${data.fullCount} 張｜完整置中：${data.containCount} 張<br>背景音樂：${data.music?esc(data.musicName):'未使用'}<br>音量：${Math.round((data.musicVolume||0)*100)}%<br>淡入淡出：${data.fadeMusic?'有':'無'}<br>成交 CTA：${data.enableCta?'最後 2 秒':'關閉'}<br>QR Code：${data.enableQr?'開啟':'關閉'}<br>QR 網址：${esc(data.qrUrl||'')}<br>QR 位置：${esc(data.qrPosition||'')}<br>LINE：${esc(data.lineId||'')}<br>輸出：${esc(data.outputDir)}`;$('resultSection').classList.remove('hidden');$('status').className='status ok';$('status').textContent=`完成：${data.fileName}`;$('resultSection').scrollIntoView({behavior:'smooth'})}catch(e){$('status').className='status err';$('status').textContent=e.message||String(e)}finally{$('renderBtn').disabled=false}};
+$('openOutputBtn').onclick=async()=>{try{const r=await fetch('/api/open-output',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});const d=await r.json();if(!d.ok)throw new Error(d.error||'開啟失敗')}catch(e){alert(e.message||e)}};
+(async()=>{try{const r=await fetch('/api/health');const d=await r.json();$('health').textContent=d.ffmpeg?`FFmpeg 已就緒｜輸出：${d.outputDir}`:'找不到 FFmpeg';if(!d.ffmpeg)$('health').style.color='#b91c1c'}catch{$('health').textContent='無法檢查 FFmpeg'}})();renderCaptions();applyCtaTemplate();syncCatalogStats();
+})();
+</script></body></html>

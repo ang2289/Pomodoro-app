@@ -355,7 +355,7 @@ const FocusItemModal: React.FC<FocusItemModalProps> = ({
                             onEditingFocusItemNameChange(item.name);
                             // 這裡需要觸發編輯模式，但需要從父組件傳入
                           }}
-                          className="flex items-center gap-1 px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-colors duration-200 hover:scale-105"
+                          className="flex items-center gap-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-200 hover:scale-105"
                         >
                           <span>✏️</span>
                           <span>{t('edit')}</span>

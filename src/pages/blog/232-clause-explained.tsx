@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import SEO from "../../components/SEO";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function Clause232ExplainedPage() {
   return (
@@ -39,6 +40,9 @@ export default function Clause232ExplainedPage() {
             <p className="mb-4">
               232 條款是美國貿易法中的一個條款，主要與國家安全和進口關稅有關。近年來，這個條款經常在新聞中被提及，特別是與台灣相關的討論。
             </p>
+
+            <ArticleCTA placement="start" focus="summary" />
+
 
             <h2 className="text-2xl font-semibold mt-8 mb-4">什麼是 232 條款？</h2>
             <p className="mb-4">
@@ -81,6 +85,8 @@ export default function Clause232ExplainedPage() {
                   關稅調整會影響哪些東西？
                 </Link>
               </div>
+            <ArticleCTA placement="middle" focus="summary" />
+
             </div>
 
             <h2 className="text-2xl font-semibold mt-8 mb-4">這跟你有沒有直接關係？</h2>
@@ -113,6 +119,8 @@ export default function Clause232ExplainedPage() {
               </p>
             </div>
           </div>
+
+          <ArticleCTA placement="afterFaq" focus="summary" />
 
           {/* 相關文章區塊 */}
           <div className="mt-12 pt-8 border-t border-gray-200">
@@ -149,8 +157,6 @@ export default function Clause232ExplainedPage() {
               </Link>
             </div>
           </div>
-
-          {/* 導流區塊：摘要模組 */}
           <div className="mt-12 pt-8 border-t border-gray-200">
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 text-center">
               <h3 className="text-xl font-bold text-gray-900 mb-2">
@@ -161,7 +167,7 @@ export default function Clause232ExplainedPage() {
               </p>
               <Link
                 to="/summary"
-                className="inline-block px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg drop-shadow-md"
+                className="inline-block bg-blue-600 text-white px-5 py-3 rounded-lg text-base font-medium hover:bg-blue-700 transition"
               >
                 貼上文章，幫我整理
               </Link>
@@ -256,6 +262,7 @@ export default function Clause232ExplainedPage() {
               </li>
             </ul>
           </div>
+          <ArticleCTA placement="bottom" focus="summary" />
 
           <div className="mt-8 pt-6 border-t border-gray-200">
             <Link

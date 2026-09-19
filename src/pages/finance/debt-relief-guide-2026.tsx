@@ -259,7 +259,7 @@ export default function DebtReliefGuide2026() {
           <div className="mt-10">
             <Link
               to="/finance"
-              className="inline-block bg-blue-600 !text-white font-bold px-5 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              className="inline-block bg-blue-600 !text-white font-bold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
               style={{ color: '#ffffff' }}
             >
               {isEnglish ? "← Back to Health & Finance Column" : "← 回到健康與理財專欄"}

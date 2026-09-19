@@ -1,10 +1,10 @@
 // src/pages/tools/shopee-video/components/BatchTaskCard.tsx
 
+import { useTranslation } from "react-i18next";
 import SectionCard from "./SectionCard";
 import HighlightsEditor from "./HighlightsEditor";
 import ImagesUploader from "./ImagesUploader";
 import ScriptCard from "./ScriptCard";
-import VideoPreview from "./VideoPreview";
 import { BatchTask } from "../hooks/useBatchVideo";
 
 interface BatchTaskCardProps {
@@ -12,7 +12,6 @@ interface BatchTaskCardProps {
   taskIndex: number;
   onUpdate: (taskId: string, updates: Partial<BatchTask>) => void;
   onGenerateScript: (taskId: string) => void;
-  onGenerateVideo: (taskId: string) => void;
   loading?: boolean;
 }
 
@@ -21,16 +20,17 @@ export default function BatchTaskCard({
   taskIndex,
   onUpdate,
   onGenerateScript,
-  onGenerateVideo,
   loading = false,
 }: BatchTaskCardProps) {
+  const { t } = useTranslation();
+
   return (
-    <SectionCard title={`任務 #${taskIndex + 1} - ${task.productUrl}`}>
+    <SectionCard title={`${t("shopee_video_task_title", { index: taskIndex + 1 })} - ${task.productUrl}`}>
       <div className="space-y-6">
         {/* 商品名稱 */}
         <div>
           <label className="block text-gray-700 font-medium mb-2">
-            商品名稱 *
+            {t("shopee_video_label_product_name")}
           </label>
           <input
             type="text"
@@ -44,14 +44,14 @@ export default function BatchTaskCard({
               border: "1px solid #d1d5db",
               boxSizing: "border-box",
             }}
-            placeholder="例如：超值保養品組合"
+            placeholder={t("shopee_video_placeholder_title")}
           />
         </div>
 
         {/* 商品價格 */}
         <div>
           <label className="block text-gray-700 font-medium mb-2">
-            商品價格（選填）
+            {t("shopee_video_label_price_optional")}
           </label>
           <input
             type="text"
@@ -65,14 +65,44 @@ export default function BatchTaskCard({
               border: "1px solid #d1d5db",
               boxSizing: "border-box",
             }}
-            placeholder="例如：299"
+            placeholder={t("shopee_video_placeholder_price")}
           />
+        </div>
+
+        {/* 推廣連結 */}
+        <div>
+          <label className="block text-gray-700 font-medium mb-2">
+            {t("shopee_video_label_promo_required")}
+          </label>
+          <input
+            type="text"
+            value={task.promoUrl}
+            onChange={(e) => onUpdate(task.id, { promoUrl: e.target.value })}
+            className="w-full rounded-xl border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm"
+            placeholder={t("shopee_video_placeholder_url")}
+          />
+          <div className="mt-1 text-xs">
+            {task.promoUrl?.trim() ? (
+              <a
+                href={task.promoUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-indigo-600 hover:underline"
+              >
+                {t("shopee_video_open_promo_link")}
+              </a>
+            ) : (
+              <span className="text-red-500">
+                {t("shopee_video_use_promo_for_commission")}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* 商品賣點 */}
         <div>
           <label className="block text-gray-700 font-medium mb-2">
-            商品賣點 *（可填 1～3 點）
+            {t("shopee_video_label_highlights")}
           </label>
           <HighlightsEditor
             highlights={task.highlights}
@@ -85,7 +115,7 @@ export default function BatchTaskCard({
         {/* 圖片 URL */}
         <div>
           <label className="block text-gray-700 font-medium mb-2">
-            圖片 URL *（至少 1 張）
+            {t("shopee_video_label_images")}
           </label>
           <ImagesUploader
             images={task.images}
@@ -102,35 +132,13 @@ export default function BatchTaskCard({
           />
         </div>
 
-        {/* 操作按鈕 */}
-        <div className="space-y-3">
-          <button
-            onClick={() => onGenerateScript(task.id)}
-            disabled={loading || !task.title.trim()}
-            className="w-full h-[52px] rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{ fontSize: "16px" }}
-          >
-            產生腳本
-          </button>
-          <button
-            onClick={() => onGenerateVideo(task.id)}
-            disabled={loading || !task.script?.trim()}
-            className="w-full h-[52px] rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{ fontSize: "16px" }}
-          >
-            產生影片
-          </button>
-        </div>
-
-        {/* 腳本 / 影片預覽 */}
+        {/* 腳本預覽（若已有腳本才顯示） */}
         {task.script && (
           <ScriptCard
             script={task.script}
             onChange={(newScript) => onUpdate(task.id, { script: newScript })}
           />
         )}
-
-        {task.videoUrl && <VideoPreview videoUrl={task.videoUrl} />}
       </div>
     </SectionCard>
   );

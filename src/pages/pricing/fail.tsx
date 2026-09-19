@@ -40,7 +40,7 @@ export default function PurchaseFailPage() {
           <div className="space-y-3">
             <button
               onClick={() => navigate('/pricing')}
-              className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+              className="w-full bg-blue-600 text-white hover:bg-blue-700 font-medium py-3 px-4 rounded-lg transition shadow-md"
             >
               重新付款
             </button>

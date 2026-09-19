@@ -1,5 +1,6 @@
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function FinancePage() {
   return (
@@ -37,7 +38,7 @@ export default function FinancePage() {
         <div className="text-right mb-4">
           <Link
             to="/"
-            className="bg-blue-500 !text-white px-4 py-2 rounded-md text-sm hover:bg-blue-600"
+            className="bg-blue-600 !text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition"
           >
             回首頁
           </Link>
@@ -80,7 +81,13 @@ export default function FinancePage() {
             >
               閱讀詳情 →
             </Link>
-          </article>
+          
+        <ArticleCTA placement="start" focus="tools" />
+        <ArticleCTA placement="middle" focus="tools" />
+        <ArticleCTA placement="afterFaq" focus="tools" />
+        <ArticleCTA placement="bottom" focus="tools" />
+
+      </article>
         </section>
       </div>
     </>

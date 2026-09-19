@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function MorningAffirmations() {
   return (
@@ -21,6 +22,9 @@ export default function MorningAffirmations() {
           就像為心靈設定了一個溫暖的方向。肯定語不只是話語，更是對自己的承諾與鼓勵，
           能幫助我們建立自信，面對一天的挑戰。
         </p>
+
+        <ArticleCTA placement="start" focus="tools" />
+
 
         <h2 className="text-2xl font-semibold mt-8 mb-3">💫 有效的肯定語三原則</h2>
         <ol className="list-decimal ml-6 space-y-3 mb-4">
@@ -70,6 +74,8 @@ export default function MorningAffirmations() {
           </li>
         </ol>
 
+        <ArticleCTA placement="middle" focus="tools" />
+
         <h2 className="text-2xl font-semibold mt-8 mb-3">✨ 結語：讓肯定語成為你的早晨儀式</h2>
         <p className="mb-4">
           每天早晨，給自己一個溫柔的開始。
@@ -77,6 +83,8 @@ export default function MorningAffirmations() {
           你會發現，簡單的幾句話，
           就能改變你對自己、對生活的看法。
         </p>
+
+        <ArticleCTA placement="bottom" focus="tools" />
 
         <hr className="my-8 border-gray-300" />
 
@@ -145,6 +153,8 @@ export default function MorningAffirmations() {
           You'll discover that simple words
           can change how you see yourself and life.
         </p>
+
+        <ArticleCTA placement="afterFaq" focus="tools" />
 
         <p className="mt-8 text-gray-500 text-center text-sm">
           所有文章由 RxV 夢想創作工作室撰寫 · 保留所有權利

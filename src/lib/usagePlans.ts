@@ -59,12 +59,13 @@ export function getPlanChars(planId: PlanId): number {
  */
 export function getPlanLabel(planId: PlanId): string {
   const plan = PLANS[planId];
+  const planWithPrice = plan as typeof plan & { price?: number };
   
-  if (planId === 'free') {
+  if (planId === 'free' || planWithPrice.price == null) {
     return plan.name;
   }
   
-  return `${plan.name} NT$${plan.price}`;
+  return `${plan.name} NT$${planWithPrice.price}`;
 }
 
 /**
@@ -94,12 +95,13 @@ export function getPlanLimit(planId: PlanId): number {
  */
 export function formatPlanLabel(planId: PlanId, lang: 'zh-tw' | 'en' = 'zh-tw'): string {
   const plan = PLANS[planId];
+  const planWithPrice = plan as typeof plan & { price?: number };
   
   if (lang === 'en') {
-    if (planId === 'free') {
+    if (planId === 'free' || planWithPrice.price == null) {
       return plan.nameEn;
     }
-    return `${plan.nameEn} - NT$${plan.price}`;
+    return `${plan.nameEn} - NT$${planWithPrice.price}`;
   }
   
   return getPlanLabel(planId);
@@ -115,3 +117,14 @@ export function calcRemaining(used: number, limit: number): number {
   return Math.max(0, limit - used);
 }
 
+
+
+/**
+ * 取得公開價格頁顯示的付費方案；免費方案可保留給內部舊邏輯，但不在價格頁顯示。
+ */
+export function getPaidPlans() {
+  return [
+    PLANS.pack99,
+    PLANS.pack199,
+  ];
+}

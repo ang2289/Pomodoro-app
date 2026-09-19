@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import SEO from "../../components/SEO";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function DependentDeductionExplainedPage() {
   // 獲取今天的日期（格式：YYYY-MM-DD）
@@ -43,6 +44,9 @@ export default function DependentDeductionExplainedPage() {
               很多人以為「有給父母錢就可以報扶養」，其實不是。扶養在制度上有很嚴格的條件，不是「有給錢就算」，而是要符合「扶養事實」和「扶養條件」。很多人因為不了解這些條件，所以報錯了。
             </p>
 
+            <ArticleCTA placement="start" focus="summary" />
+
+
             <h2 className="text-2xl font-semibold mt-8 mb-4">扶養在制度上的真正意思</h2>
             <p className="mb-4">
               扶養在制度上的意思是「你實際負擔了這個人的生活費用」，不只是「有給錢」：
@@ -55,6 +59,8 @@ export default function DependentDeductionExplainedPage() {
             <p className="mb-4">
               所以不是「有給錢就算」，而是要「實際負擔生活費用」且「符合扶養條件」。
             </p>
+
+            <ArticleCTA placement="middle" focus="summary" />
 
             <h2 className="text-2xl font-semibold mt-8 mb-4">為什麼不是有給錢就算？</h2>
             <p className="mb-4">
@@ -117,6 +123,8 @@ export default function DependentDeductionExplainedPage() {
             </div>
           </div>
 
+          <ArticleCTA placement="afterFaq" focus="summary" />
+
           {/* 相關文章區塊 */}
           <div className="mt-12 pt-8 border-t border-gray-200">
             <h3 className="text-2xl font-bold text-gray-900 mb-2">
@@ -152,8 +160,6 @@ export default function DependentDeductionExplainedPage() {
               </Link>
             </div>
           </div>
-
-          {/* 導流區塊：摘要模組 */}
           <div className="mt-12 pt-8 border-t border-gray-200">
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 text-center">
               <h3 className="text-xl font-bold text-gray-900 mb-2">
@@ -164,7 +170,7 @@ export default function DependentDeductionExplainedPage() {
               </p>
               <Link
                 to="/summary"
-                className="inline-block px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg drop-shadow-md"
+                className="inline-block bg-blue-600 text-white px-5 py-3 rounded-lg text-base font-medium hover:bg-blue-700 transition"
                 style={{ textShadow: '0 1px 2px rgba(0,0,0,0.1)' }}
               >
                 貼上文章，幫我整理
@@ -244,6 +250,7 @@ export default function DependentDeductionExplainedPage() {
               </li>
             </ul>
           </div>
+          <ArticleCTA placement="bottom" focus="summary" />
 
           <div className="mt-8 pt-6 border-t border-gray-200">
             <Link

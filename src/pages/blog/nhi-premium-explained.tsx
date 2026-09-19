@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import SEO from "../../components/SEO";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function NHIPremiumExplainedPage() {
   // 獲取今天的日期（格式：YYYY-MM-DD）
@@ -43,6 +44,9 @@ export default function NHIPremiumExplainedPage() {
               健保費是根據你的「投保薪資」來計算的，不是固定金額。每個人繳的健保費不一樣，主要是因為投保薪資不同、有沒有眷屬、以及有沒有其他收入需要繳補充保費。
             </p>
 
+            <ArticleCTA placement="start" focus="summary" />
+
+
             <h2 className="text-2xl font-semibold mt-8 mb-4">健保費的計算基礎</h2>
             <p className="mb-4">
               健保費的計算主要看兩個東西：
@@ -54,6 +58,8 @@ export default function NHIPremiumExplainedPage() {
             <p className="mb-4">
               例如，如果你的月薪是 3 萬元，投保薪資可能是 30,300 元（對應到某個級距），然後用這個金額乘以費率，再乘以負擔比例（通常是 30%，雇主負擔 60%，政府負擔 10%），就是你每個月要繳的健保費。
             </p>
+
+            <ArticleCTA placement="middle" focus="summary" />
 
             <h2 className="text-2xl font-semibold mt-8 mb-4">薪資、眷屬與補充保費的差別</h2>
             
@@ -130,6 +136,8 @@ export default function NHIPremiumExplainedPage() {
             </div>
           </div>
 
+          <ArticleCTA placement="afterFaq" focus="summary" />
+
           {/* 相關文章區塊 */}
           <div className="mt-12 pt-8 border-t border-gray-200">
             <h3 className="text-2xl font-bold text-gray-900 mb-2">
@@ -165,8 +173,6 @@ export default function NHIPremiumExplainedPage() {
               </Link>
             </div>
           </div>
-
-          {/* 導流區塊：摘要模組 */}
           <div className="mt-12 pt-8 border-t border-gray-200">
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 text-center">
               <h3 className="text-xl font-bold text-gray-900 mb-2">
@@ -177,7 +183,7 @@ export default function NHIPremiumExplainedPage() {
               </p>
               <Link
                 to="/summary"
-                className="inline-block px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg drop-shadow-md"
+                className="inline-block bg-blue-600 text-white px-5 py-3 rounded-lg text-base font-medium hover:bg-blue-700 transition"
                 style={{ textShadow: '0 1px 2px rgba(0,0,0,0.1)' }}
               >
                 貼上文章，幫我整理
@@ -257,6 +263,7 @@ export default function NHIPremiumExplainedPage() {
               </li>
             </ul>
           </div>
+          <ArticleCTA placement="bottom" focus="summary" />
 
           <div className="mt-8 pt-6 border-t border-gray-200">
             <Link

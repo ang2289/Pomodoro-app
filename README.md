@@ -1,6 +1,6 @@
 ## 專案說明
 
-本專案為番茄鐘應用程式（Pomodoro App）。開發與提交請務必遵循專案規範。
+本專案為 RxV AI 工具與生活服務中心。開發與提交請務必遵循專案規範。
 
 ### 開發規範
 
@@ -17,14 +17,15 @@
    ```bash
    npm run dev
    ```
+3. **API 請求**：本機開發時，`/api/*` 會依 Vite proxy 轉發到設定的後端（見 `vite.config.ts`）。若需呼叫 `/api/commerce` 等介面，請確保後端有啟動，或已設定 proxy 指向可用的 API 服務（例如 Vercel 部署網址或本機 `vercel dev`）。
 
 ### 其他
 
 - 任何新元件、樣式或重構，請在送審 PR 前對照 `project.md` 的核對清單。
 
-# 番茄鐘應用程式
+# RxV AI 工具與生活服務中心
 
-一個使用 Vite + React + TypeScript 建立的番茄鐘應用程式，支援 Capacitor Android 打包。
+一個使用 Vite + React + TypeScript 建立的 AI 工具與效率工具平台，支援 Capacitor Android 打包。
 
 ## 功能特色
 

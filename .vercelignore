@@ -14,6 +14,10 @@ android
 *.apk
 *.aab
 .local-backups/
+backup
+backup/**
+*rxv_backup*/
+backup_v*/
 .local-preview-deploy/
 outputs/
 private-data/

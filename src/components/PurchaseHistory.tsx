@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { getCustomSessionToken, getMyPurchaseLogs } from '@/lib/accountApi'
 
 interface PurchaseLog {
   id: string
-  user_id: string
   order_no: string
   amount: number
   points: number
@@ -19,25 +18,14 @@ export default function PurchaseHistory() {
     const fetchLogs = async () => {
       try {
         // 取得使用者 ID（使用 localStorage，與系統其他頁面保持一致）
-        const userId = localStorage.getItem('userId')
+        const userId = getCustomSessionToken()
         
         if (!userId) {
           setLoading(false)
           return
         }
 
-        const { data, error } = await supabase
-          .from('purchase_logs')
-          .select('*')
-          .eq('user_id', userId)
-          .order('created_at', { ascending: false })
-
-        if (error) {
-          console.error('[PurchaseHistory] Fetch logs error:', error)
-          setLoading(false)
-          return
-        }
-
+        const data = await getMyPurchaseLogs()
         setLogs(data || [])
       } catch (err) {
         console.error('[PurchaseHistory] Fetch logs error:', err)

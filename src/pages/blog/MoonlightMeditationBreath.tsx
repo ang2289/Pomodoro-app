@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function MoonlightMeditationBreath() {
   return (
@@ -22,6 +23,9 @@ export default function MoonlightMeditationBreath() {
           當你在夜裡練習呼吸，想像月光灑落身上，
           所有的焦慮與思緒，會慢慢被光融化。
         </p>
+
+        <ArticleCTA placement="start" focus="tools" />
+
 
         <h2 className="text-2xl font-semibold mt-8 mb-3">🕯️ 三步睡前冥想呼吸法</h2>
         <ol className="list-decimal ml-6 space-y-3 mb-4">
@@ -57,6 +61,8 @@ export default function MoonlightMeditationBreath() {
           <li>深呼吸三次後，再開始閱讀或休息。</li>
         </ul>
 
+        <ArticleCTA placement="middle" focus="tools" />
+
         <h2 className="text-2xl font-semibold mt-8 mb-3">🌕 結語：讓月光帶你回家</h2>
         <p className="mb-4">
           當夜幕低垂，請記得，
@@ -64,6 +70,8 @@ export default function MoonlightMeditationBreath() {
           只要呼吸、感受、放下。
           月光會帶你進入最溫柔的夢。
         </p>
+
+        <ArticleCTA placement="bottom" focus="tools" />
 
         <hr className="my-8 border-gray-300" />
 
@@ -114,6 +122,8 @@ export default function MoonlightMeditationBreath() {
           Just breathe, feel, and let go.
           The moonlight will guide you home.
         </p>
+
+        <ArticleCTA placement="afterFaq" focus="tools" />
 
         <p className="mt-8 text-gray-500 text-center text-sm">
           所有文章由 RxV 夢想創作工作室撰寫 · 保留所有權利

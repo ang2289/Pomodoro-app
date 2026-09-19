@@ -13,7 +13,7 @@ export default function ModeSwitcher({ mode, onModeChange }: ModeSwitcherProps) 
           onClick={() => onModeChange("single")}
           className={`flex-1 h-[52px] rounded-xl font-semibold transition-all ${
             mode === "single"
-              ? "bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-md hover:opacity-90"
+              ? "bg-blue-600 text-white shadow-md hover:bg-blue-700"
               : "bg-gray-200 text-gray-700 hover:bg-gray-300"
           }`}
         >
@@ -23,7 +23,7 @@ export default function ModeSwitcher({ mode, onModeChange }: ModeSwitcherProps) 
           onClick={() => onModeChange("batch")}
           className={`flex-1 h-[52px] rounded-xl font-semibold transition-all ${
             mode === "batch"
-              ? "bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-md hover:opacity-90"
+              ? "bg-blue-600 text-white shadow-md hover:bg-blue-700"
               : "bg-gray-200 text-gray-700 hover:bg-gray-300"
           }`}
         >

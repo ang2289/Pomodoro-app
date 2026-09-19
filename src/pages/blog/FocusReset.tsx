@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function FocusReset() {
   return (
@@ -21,6 +22,9 @@ export default function FocusReset() {
           當我們持續工作超過 45 分鐘，大腦會開始分心、效率下降。
           若不適時重啟，就會出現「假忙碌、真疲倦」的現象。
         </p>
+
+        <ArticleCTA placement="start" focus="tools" />
+
 
         <h2 className="text-2xl font-semibold mt-8 mb-3">🧠 五分鐘重啟法</h2>
         <ol className="list-decimal ml-6 space-y-2 mb-4">
@@ -48,11 +52,15 @@ export default function FocusReset() {
           這能顯著提升長期專注品質與情緒穩定度。
         </p>
 
+        <ArticleCTA placement="middle" focus="tools" />
+
         <h2 className="text-2xl font-semibold mt-8 mb-3">💡 結語：專注不是壓力，而是節奏</h2>
         <p className="mb-4">
           專注力的維持，靠的不是拼命，而是節奏。
           學會休息，就能走得更遠。你的大腦，也值得被溫柔對待。
         </p>
+
+        <ArticleCTA placement="bottom" focus="tools" />
 
         <hr className="my-8 border-gray-300" />
 
@@ -94,6 +102,8 @@ export default function FocusReset() {
           Sustaining focus isn't about force—it's about rhythm.
           Resting wisely lets you go further. Your brain deserves gentle care too.
         </p>
+
+        <ArticleCTA placement="afterFaq" focus="tools" />
 
         <p className="mt-8 text-gray-500 text-center text-sm">
           文章由 RxV 夢想創作工作室撰寫 · 保留所有權利

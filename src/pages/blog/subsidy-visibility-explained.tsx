@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import SEO from "../../components/SEO";
+import ArticleCTA from "@/components/ArticleCTA";
 
 export default function SubsidyVisibilityExplainedPage() {
   // 獲取今天的日期（格式：YYYY-MM-DD）
@@ -43,6 +44,9 @@ export default function SubsidyVisibilityExplainedPage() {
               很多人覺得「政府補助都看不到」，其實不是沒有補助，而是「你不在適用對象內」。政府補助很少是「全民型」的，通常都有特定的適用對象，如果你不符合條件，就看不到或申請不到。
             </p>
 
+            <ArticleCTA placement="start" focus="summary" />
+
+
             <h2 className="text-2xl font-semibold mt-8 mb-4">補助為什麼不是「全民型」？</h2>
             <p className="mb-4">
               補助不是「全民型」的原因主要有幾個：
@@ -56,6 +60,8 @@ export default function SubsidyVisibilityExplainedPage() {
             <p className="mb-4">
               所以補助通常都有「適用對象」，不是所有人都能申請。
             </p>
+
+            <ArticleCTA placement="middle" focus="summary" />
 
             <h2 className="text-2xl font-semibold mt-8 mb-4">常見被排除的幾種身分情境</h2>
             <p className="mb-4">
@@ -125,6 +131,8 @@ export default function SubsidyVisibilityExplainedPage() {
             </div>
           </div>
 
+          <ArticleCTA placement="afterFaq" focus="summary" />
+
           {/* 相關文章區塊 */}
           <div className="mt-12 pt-8 border-t border-gray-200">
             <h3 className="text-2xl font-bold text-gray-900 mb-2">
@@ -160,8 +168,6 @@ export default function SubsidyVisibilityExplainedPage() {
               </Link>
             </div>
           </div>
-
-          {/* 導流區塊：摘要模組 */}
           <div className="mt-12 pt-8 border-t border-gray-200">
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 text-center">
               <h3 className="text-xl font-bold text-gray-900 mb-2">
@@ -172,7 +178,7 @@ export default function SubsidyVisibilityExplainedPage() {
               </p>
               <Link
                 to="/summary"
-                className="inline-block px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg drop-shadow-md"
+                className="inline-block bg-blue-600 text-white px-5 py-3 rounded-lg text-base font-medium hover:bg-blue-700 transition"
                 style={{ textShadow: '0 1px 2px rgba(0,0,0,0.1)' }}
               >
                 貼上文章，幫我整理
@@ -252,6 +258,7 @@ export default function SubsidyVisibilityExplainedPage() {
               </li>
             </ul>
           </div>
+          <ArticleCTA placement="bottom" focus="summary" />
 
           <div className="mt-8 pt-6 border-t border-gray-200">
             <Link
