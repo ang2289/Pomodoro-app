@@ -24,6 +24,8 @@ const FALLBACK_CATEGORIES = [
   ['flower-plant', '花卉／植物'],
   ['background-wallpaper', '背景／桌布'],
   ['pet-animal', '寵物／動物'],
+  ['pet-grooming', '寵物美容'],
+  ['car-detailing', '汽車美容'],
   ['wedding-event', '婚禮／活動'],
   ['travel-hotel', '旅遊／住宿'],
   ['education', '教育／學習'],
@@ -63,6 +65,7 @@ export default function AdminImagesListPage() {
   const [selectedCategoryId, setSelectedCategoryId] = useState('all')
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [targetCategoryId, setTargetCategoryId] = useState('hair-salon')
+  const [targetPriceType, setTargetPriceType] = useState<'free' | 'bundle'>('bundle')
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [loadError, setLoadError] = useState('')
@@ -136,6 +139,25 @@ export default function AdminImagesListPage() {
     } finally { setBusy(false) }
   }
 
+  const updatePriceType = async () => {
+    if (!selectedCount) return window.alert('請先勾選要修改的圖片。')
+    const label = targetPriceType === 'free' ? '✅ 免費下載' : '🔒 鎖住下載'
+    if (!window.confirm(`確定把 ${selectedCount} 張圖片改成「${label}」嗎？\n只修改下載權限，不會刪除圖片。`)) return
+    setBusy(true); setMessage('')
+    try {
+      const response = await fetch('/api/image-admin?action=updateImagePriceType', {
+        method: 'POST', headers: adminHeaders(true),
+        body: JSON.stringify({ image_ids: [...selectedIds], price_type: targetPriceType }),
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok || !data?.ok) throw new Error(data?.error || `HTTP ${response.status}`)
+      setMessage(`已成功把 ${data.updated || selectedCount} 張圖片改成「${label}」。`)
+      await load()
+    } catch (error: any) {
+      window.alert(`修改下載權限失敗：${error?.message || error}`)
+    } finally { setBusy(false) }
+  }
+
   const deleteSelected = async () => {
     if (!selectedCount) return window.alert('請先勾選要刪除的圖片。')
     const ok = window.confirm(`確定永久刪除這 ${selectedCount} 張圖片嗎？\n會從網站 catalog 移除，並嘗試刪除 R2 縮圖與原圖。此動作無法復原。`)
@@ -164,8 +186,8 @@ export default function AdminImagesListPage() {
       </div>
 
       <div className="mb-5 rounded-2xl bg-white p-5 shadow-sm">
-        <h1 className="text-2xl font-black text-gray-900">圖片管理｜修改分類／刪除</h1>
-        <p className="mt-1 text-sm text-gray-600">最新上傳圖片排最前面。這次美髮誤傳到房仲，請勾選美髮圖片後批次改成「美髮／沙龍」。</p>
+        <h1 className="text-2xl font-black text-gray-900">圖片管理｜修改分類／免費鎖住／刪除</h1>
+        <p className="mt-1 text-sm text-gray-600">勾選圖片後，可批次修改分類，或切換「免費下載／鎖住下載」。最新上傳圖片排最前面。</p>
         <p className="mt-1 text-sm font-bold text-blue-700">Public R2 catalog：{allImages.length} 張｜已選 {selectedCount} 張</p>
       </div>
 
@@ -181,6 +203,14 @@ export default function AdminImagesListPage() {
             </select>
           </div>
           <button onClick={updateCategory} disabled={busy || !selectedCount} className="rounded-lg bg-blue-600 px-4 py-2 font-black text-white disabled:opacity-40">批次改分類</button>
+          <div>
+            <label className="mb-1 block text-xs font-black text-slate-500">下載權限</label>
+            <select value={targetPriceType} onChange={(e) => setTargetPriceType(e.target.value as 'free' | 'bundle')} className="min-w-[170px] rounded-lg border border-slate-300 bg-white px-3 py-2 font-bold">
+              <option value="bundle">🔒 鎖住下載</option>
+              <option value="free">✅ 免費下載</option>
+            </select>
+          </div>
+          <button onClick={updatePriceType} disabled={busy || !selectedCount} className="rounded-lg bg-emerald-600 px-4 py-2 font-black text-white disabled:opacity-40">批次改下載權限</button>
           <button onClick={deleteSelected} disabled={busy || !selectedCount} className="rounded-lg bg-red-600 px-4 py-2 font-black text-white disabled:opacity-40">刪除選取</button>
           <button onClick={selectVisible} disabled={busy || !images.length} className="rounded-lg bg-slate-100 px-4 py-2 font-bold">全選目前顯示</button>
           <button onClick={clearSelection} disabled={busy || !selectedCount} className="rounded-lg bg-slate-100 px-4 py-2 font-bold">取消全選</button>
@@ -209,6 +239,9 @@ export default function AdminImagesListPage() {
                 <div className="p-3">
                   <h2 className="line-clamp-2 text-sm font-bold">{image.title}</h2>
                   <p className="mt-1 text-xs font-bold text-blue-700">分類：{image.category_name || image.category_id || '未分類'}</p>
+                  <p className={`mt-1 text-xs font-black ${(image.price_type || image.plan_type) === 'free' ? 'text-emerald-700' : 'text-amber-700'}`}>
+                    {(image.price_type || image.plan_type) === 'free' ? '✅ 免費下載' : '🔒 鎖住下載'}
+                  </p>
                   <p className="mt-1 text-[11px] text-gray-400">{image.created_at ? new Date(image.created_at).toLocaleString('zh-TW') : '既有素材'}</p>
                 </div>
               </label>
