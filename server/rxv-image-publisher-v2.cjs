@@ -185,12 +185,16 @@ function injectTikTokAccountBanner(sourceText) {
 })();
 </script>`;
 
-  const exact = "RXV 圖片自動推廣器 v2</h1>";
-  if (source.includes(exact)) {
-    return source.replace(exact, exact + banner);
+  const exactV3 = "RXV 圖片自動推廣器 v3</h1>";
+  const exactV2 = "RXV 圖片自動推廣器 v2</h1>";
+  if (source.includes(exactV3)) {
+    return source.replace(exactV3, exactV3 + banner);
+  }
+  if (source.includes(exactV2)) {
+    return source.replace(exactV2, exactV2 + banner);
   }
 
-  const h1Pattern = /(RXV 圖片自動推廣器 v2[\s\S]{0,120}?<\/h1>)/;
+  const h1Pattern = /(RXV 圖片自動推廣器 v[23][\s\S]{0,120}?<\/h1>)/;
   if (h1Pattern.test(source)) {
     return source.replace(h1Pattern, "$1" + banner);
   }
