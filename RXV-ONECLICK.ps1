@@ -101,10 +101,21 @@ try {
     try {
       git fetch origin main | Out-Null
       if ($LASTEXITCODE -eq 0) {
-        git reset --hard origin/main | Out-Null
-        if ($LASTEXITCODE -ne 0) { throw "git reset failed" }
+        $ManagedFiles = @(
+          "RXV-ONECLICK.bat",
+          "RXV-ONECLICK.ps1",
+          "server/rxv-image-publisher-v2.cjs",
+          "server/rxv-image-publisher-v2.source.cjs",
+          "server/tiktok-official-api.cjs",
+          "server/rxv-video-builder-v2.cjs",
+          "server/image-to-video-server.cjs"
+        )
+        foreach ($File in $ManagedFiles) {
+          git checkout origin/main -- $File | Out-Null
+          if ($LASTEXITCODE -ne 0) { throw ("git checkout failed: " + $File) }
+        }
         Restore-LocalDatabases $DbBackup
-        Log "GitHub update complete."
+        Log "GitHub update complete (RXV managed files only)."
       }
     } catch {
       Restore-LocalDatabases $DbBackup
