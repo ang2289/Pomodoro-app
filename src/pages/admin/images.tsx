@@ -50,7 +50,9 @@ const FALLBACK_IMAGE_CATEGORIES: ImageCategory[] = [
   { id: 'flower-plant', name: '花卉／植物', sort_order: 7, is_active: true },
   { id: 'background-wallpaper', name: '背景／桌布', sort_order: 8, is_active: true },
   { id: 'pet-animal', name: '寵物／動物', sort_order: 9, is_active: true },
-  { id: 'wedding-event', name: '婚禮／活動', sort_order: 10, is_active: true },
+  { id: 'pet-grooming', name: '寵物美容', sort_order: 10, is_active: true },
+  { id: 'car-detailing', name: '汽車美容', sort_order: 11, is_active: true },
+  { id: 'wedding-event', name: '婚禮／活動', sort_order: 12, is_active: true },
   { id: 'travel-hotel', name: '旅遊／住宿', sort_order: 11, is_active: true },
   { id: 'education', name: '教育／學習', sort_order: 12, is_active: true },
   { id: 'finance', name: '金融／理財', sort_order: 13, is_active: true },
@@ -152,6 +154,7 @@ export default function AdminImagesPage() {
       { id: 'beauty-spa', name: '\u7f8e\u5bb9SPA', sort_order: 3, is_active: true },
       { id: 'dentist', name: '\u7259\u91ab', sort_order: 4, is_active: true },
       { id: 'pet-grooming', name: '\u5bf5\u7269\u7f8e\u5bb9', sort_order: 5, is_active: true },
+      { id: 'car-detailing', name: '\u6c7d\u8eca\u7f8e\u5bb9', sort_order: 6, is_active: true },
     ]
 
     const fixedJobCategoryIds = new Set(
