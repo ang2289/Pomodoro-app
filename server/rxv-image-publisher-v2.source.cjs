@@ -79,7 +79,15 @@ function ensureDbSchema(db) {
     " video_id TEXT NOT NULL, image_id TEXT NOT NULL, title TEXT NOT NULL DEFAULT '', category TEXT NOT NULL DEFAULT ''," +
     " image_url TEXT NOT NULL DEFAULT '', sort_order INTEGER NOT NULL DEFAULT 0," +
     " PRIMARY KEY(video_id, image_id));" +
-    "CREATE INDEX IF NOT EXISTS idx_rxv_video_job_images_image ON rxv_video_job_images(image_id);"
+    "CREATE INDEX IF NOT EXISTS idx_rxv_video_job_images_image ON rxv_video_job_images(image_id);" +
+    "CREATE TABLE IF NOT EXISTS rxv_fb_image_posts (" +
+    " id INTEGER PRIMARY KEY AUTOINCREMENT, image_id TEXT NOT NULL DEFAULT '', image_url TEXT NOT NULL DEFAULT ''," +
+    " image_fingerprint TEXT NOT NULL DEFAULT '', title TEXT NOT NULL DEFAULT '', category_key TEXT NOT NULL DEFAULT ''," +
+    " category_label TEXT NOT NULL DEFAULT '', is_free INTEGER NOT NULL DEFAULT 0, platform TEXT NOT NULL DEFAULT 'facebook'," +
+    " target_type TEXT NOT NULL DEFAULT 'personal', target_name TEXT NOT NULL DEFAULT '', copy_mode TEXT NOT NULL DEFAULT 'strict'," +
+    " allow_link INTEGER NOT NULL DEFAULT 0, post_text TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT 'posted'," +
+    " created_at TEXT NOT NULL, posted_at TEXT, updated_at TEXT NOT NULL);" +
+    "CREATE INDEX IF NOT EXISTS idx_rxv_fb_image_posts_target ON rxv_fb_image_posts(target_type, target_name, status, image_fingerprint);"
   );
 }
 
@@ -340,17 +348,84 @@ function buildCaption(rule, packCount, siteTotal) {
   ].filter(Boolean).join("\n");
 }
 
-function getUsedImageIds(db) {
-  const used = new Set();
+function normalizeImageUrl(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
   try {
-    const oldRows = db.prepare("SELECT image_id FROM rxv_image_publish WHERE platform=? AND status IN ('draft','scheduled','published')").all(PLATFORM);
-    for (const row of oldRows) used.add(String(row.image_id));
+    const u = new URL(raw);
+    u.search = "";
+    u.hash = "";
+    return u.toString().toLowerCase();
+  } catch {
+    return raw.replace(/[?#].*$/, "").toLowerCase();
+  }
+}
+
+function imageFingerprint(img) {
+  const raw = String(img && (img.imageUrl || img.image_url) || "").trim();
+  const clean = normalizeImageUrl(raw);
+  if (!clean) return String(img && (img.id || img.image_id) || "").trim().toLowerCase();
+  try {
+    const u = new URL(clean);
+    const p = decodeURIComponent(u.pathname || "").replace(/\\/g, "/").replace(/\/+/g, "/").toLowerCase();
+    return p || clean;
+  } catch {
+    return clean;
+  }
+}
+
+function emptyImageKeySet() {
+  return { ids: new Set(), urls: new Set(), fingerprints: new Set() };
+}
+
+function addUsedImage(used, img) {
+  const id = String(img && (img.id || img.image_id) || "").trim();
+  const url = normalizeImageUrl(img && (img.imageUrl || img.image_url));
+  const fp = imageFingerprint(img);
+  if (id) used.ids.add(id);
+  if (url) used.urls.add(url);
+  if (fp) used.fingerprints.add(fp);
+}
+
+function isImageUsed(used, img) {
+  const id = String(img && (img.id || img.image_id) || "").trim();
+  const url = normalizeImageUrl(img && (img.imageUrl || img.image_url));
+  const fp = imageFingerprint(img);
+  return Boolean(
+    (id && used.ids.has(id)) ||
+    (url && used.urls.has(url)) ||
+    (fp && used.fingerprints.has(fp))
+  );
+}
+
+function filterUniqueUnused(images, used) {
+  const seen = {
+    ids: new Set(used.ids),
+    urls: new Set(used.urls),
+    fingerprints: new Set(used.fingerprints),
+  };
+  const out = [];
+  for (const img of images) {
+    if (isImageUsed(seen, img)) continue;
+    out.push(img);
+    addUsedImage(seen, img);
+  }
+  return out;
+}
+
+function getUsedImageKeys(db) {
+  const used = emptyImageKeySet();
+  try {
+    const oldRows = db.prepare(
+      "SELECT image_id, image_url FROM rxv_image_publish WHERE platform=? AND status IN ('draft','scheduled','published')"
+    ).all(PLATFORM);
+    for (const row of oldRows) addUsedImage(used, row);
   } catch {}
   const rows = db.prepare(
-    "SELECT i.image_id FROM rxv_video_job_images i JOIN rxv_video_jobs j ON j.video_id=i.video_id " +
-    "WHERE j.platform=? AND j.status IN ('draft','rendering','ready','publishing','scheduled','published')"
+    "SELECT i.image_id, i.image_url FROM rxv_video_job_images i JOIN rxv_video_jobs j ON j.video_id=i.video_id " +
+    "WHERE j.platform=? AND j.status IN ('draft','rendering','ready','publishing','scheduled','published','failed')"
   ).all(PLATFORM);
-  for (const row of rows) used.add(String(row.image_id));
+  for (const row of rows) addUsedImage(used, row);
   return used;
 }
 
@@ -371,7 +446,8 @@ function pickRule(manifest, requestedKey, used, imagesPerVideo) {
     if (exact) return exact;
   }
   for (const rule of CATEGORY_RULES) {
-    const available = manifest.images.filter((img) => categoryMatchesRule(rule, img.category) && !used.has(img.id));
+    const matching = manifest.images.filter((img) => categoryMatchesRule(rule, img.category));
+    const available = filterUniqueUnused(matching, used);
     if (available.length >= imagesPerVideo) return rule;
   }
   return GENERIC_RULE;
@@ -381,16 +457,17 @@ async function generateVideoJobs({ count = 1, categoryKey = "auto", imagesPerVid
   const manifest = await loadManifest();
   const db = requireDb();
   try {
-    const used = getUsedImageIds(db);
+    const used = getUsedImageKeys(db);
     const jobsToCreate = Math.max(1, Math.min(5, Number(count || 1)));
     const perVideo = Math.max(2, Math.min(6, Number(imagesPerVideo || 4)));
     const created = [];
 
     for (let jobIndex = 0; jobIndex < jobsToCreate; jobIndex += 1) {
       const rule = pickRule(manifest, categoryKey, used, perVideo);
-      const available = manifest.images
-        .filter((img) => categoryMatchesRule(rule, img.category) && !used.has(img.id))
-        .sort((a, b) => a.id.localeCompare(b.id, "zh-Hant"));
+      const available = filterUniqueUnused(
+        manifest.images.filter((img) => categoryMatchesRule(rule, img.category)),
+        used
+      ).sort((a, b) => a.id.localeCompare(b.id, "zh-Hant"));
       if (available.length < perVideo) break;
 
       const selected = available.slice(0, perVideo);
@@ -412,7 +489,7 @@ async function generateVideoJobs({ count = 1, categoryKey = "auto", imagesPerVid
       );
       selected.forEach((img, index) => {
         insertImage.run(videoId, img.id, img.title, img.category, img.imageUrl, index + 1);
-        used.add(img.id);
+        addUsedImage(used, img);
       });
       created.push(videoId);
     }
@@ -577,7 +654,8 @@ async function statusPayload() {
     const rows = db.prepare("SELECT status, COUNT(*) AS count FROM rxv_video_jobs WHERE platform=? GROUP BY status").all(PLATFORM);
     const jobs = {};
     for (const row of rows) jobs[String(row.status)] = Number(row.count || 0);
-    const used = getUsedImageIds(db).size;
+    const usedKeys = getUsedImageKeys(db);
+    const used = manifest.images.filter((img) => isImageUsed(usedKeys, img)).length;
     const tk = tiktokOfficial.publicStatus();
     return {
       ok: true,
@@ -604,19 +682,195 @@ async function statusPayload() {
   } finally { db.close(); }
 }
 
+
+function boolOption(value, defaultValue = false) {
+  if (value === undefined || value === null || value === "") return defaultValue;
+  if (typeof value === "boolean") return value;
+  return ["1", "true", "yes", "on"].includes(String(value).toLowerCase());
+}
+
+function normalizeFacebookTarget(targetType, targetName) {
+  const type = ["personal", "page", "group"].includes(String(targetType || "")) ? String(targetType) : "personal";
+  const name = type === "personal" ? "" : String(targetName || "").trim();
+  if (type === "group" && !name) throw new Error("請輸入 Facebook 社團名稱，才能分開記錄防重複。");
+  return { targetType: type, targetName: name };
+}
+
+function facebookAlreadyPosted(db, img, targetType, targetName) {
+  const fp = imageFingerprint(img);
+  const url = String(img && (img.imageUrl || img.image_url) || "").trim();
+  const id = String(img && (img.id || img.image_id) || "").trim();
+  const row = db.prepare(
+    "SELECT id FROM rxv_fb_image_posts WHERE status='posted' AND target_type=? AND target_name=? " +
+    "AND (image_fingerprint=? OR image_url=? OR image_id=?) LIMIT 1"
+  ).get(targetType, targetName, fp, url, id);
+  return Boolean(row);
+}
+
+function buildFacebookShareText(img, options = {}) {
+  const copyMode = String(options.copyMode || "strict") === "general" ? "general" : "strict";
+  const allowLink = boolOption(options.allowLink, false);
+  const rule = ruleForCategory(img.category);
+  const label = rule && rule.label ? rule.label : String(img.category || "圖片");
+  const freePrefix = img.planType === "free" ? "免費分享" : "圖片分享";
+  if (copyMode === "strict") {
+    const lines = [
+      freePrefix + "｜" + label + "社群圖片",
+      "",
+      "適合 " + label + " 日常社群貼文使用，有需要可以先收藏。",
+    ];
+    if (allowLink) {
+      lines.push("", "更多職業圖片素材：", SALES_URL);
+    }
+    return lines.join("\n");
+  }
+  return [
+    freePrefix + "一張 " + label + " 社群圖片，適合日常發文與社群內容使用。",
+    "",
+    "更多房仲、美髮、美甲、美容 SPA、牙醫、寵物等職業圖片：",
+    SALES_URL,
+    "",
+    rule && rule.hashtags ? rule.hashtags : "#圖片素材 #社群素材",
+  ].join("\n");
+}
+
+function categoryRuleByKey(key) {
+  return CATEGORY_RULES.find((rule) => rule.key === key) || null;
+}
+
+async function pickFacebookImage(options = {}) {
+  const manifest = await loadManifest();
+  const categoryKey = String(options.categoryKey || "auto");
+  const freeOnly = boolOption(options.freeOnly, true);
+  const unpostedOnly = boolOption(options.unpostedOnly, true);
+  const copyMode = String(options.copyMode || "strict") === "general" ? "general" : "strict";
+  const allowLink = boolOption(options.allowLink, false);
+  const target = normalizeFacebookTarget(options.targetType, options.targetName);
+  const rule = categoryRuleByKey(categoryKey);
+
+  let pool = manifest.images.filter((img) => !freeOnly || img.planType === "free");
+  if (rule) pool = pool.filter((img) => categoryMatchesRule(rule, img.category));
+  pool = filterUniqueUnused(pool, emptyImageKeySet()).sort((a, b) => a.id.localeCompare(b.id, "zh-Hant"));
+
+  const db = requireDb();
+  try {
+    if (unpostedOnly) {
+      pool = pool.filter((img) => !facebookAlreadyPosted(db, img, target.targetType, target.targetName));
+    }
+    if (!pool.length) {
+      return {
+        ok: true,
+        found: false,
+        message: freeOnly ? "目前沒有符合條件、尚未在此位置發過的免費圖片。" : "目前沒有符合條件、尚未在此位置發過的圖片。",
+        remainingForTarget: 0,
+      };
+    }
+    const img = pool[0];
+    return {
+      ok: true,
+      found: true,
+      image: {
+        id: img.id,
+        title: img.title,
+        category: img.category,
+        categoryKey: ruleForCategory(img.category).key,
+        imageUrl: img.imageUrl,
+        planType: img.planType,
+        isFree: img.planType === "free",
+        fingerprint: imageFingerprint(img),
+      },
+      postText: buildFacebookShareText(img, { copyMode, allowLink }),
+      remainingForTarget: pool.length,
+      targetType: target.targetType,
+      targetName: target.targetName,
+    };
+  } finally {
+    db.close();
+  }
+}
+
+function buildFacebookCopyFromBody(body = {}) {
+  const raw = body.image || {};
+  const img = {
+    id: String(raw.id || raw.image_id || ""),
+    title: String(raw.title || "圖片素材"),
+    category: String(raw.category || "其他素材"),
+    imageUrl: String(raw.imageUrl || raw.image_url || ""),
+    planType: raw.planType === "free" || raw.isFree === true ? "free" : "bundle",
+  };
+  return {
+    ok: true,
+    postText: buildFacebookShareText(img, {
+      copyMode: body.copyMode,
+      allowLink: body.allowLink,
+    }),
+  };
+}
+
+function markFacebookImage(body = {}) {
+  const raw = body.image || {};
+  const imageUrl = String(raw.imageUrl || raw.image_url || "").trim();
+  const imageId = String(raw.id || raw.image_id || "").trim();
+  if (!imageUrl || !imageId) throw new Error("缺少圖片資料，請重新按「抓 1 張」。");
+  const target = normalizeFacebookTarget(body.targetType, body.targetName);
+  const status = String(body.status || "posted") === "skipped" ? "skipped" : "posted";
+  const copyMode = String(body.copyMode || "strict") === "general" ? "general" : "strict";
+  const category = String(raw.category || "其他素材");
+  const rule = ruleForCategory(category);
+  const img = { id: imageId, imageUrl, category, planType: raw.planType === "free" || raw.isFree === true ? "free" : "bundle" };
+  const now = nowIso();
+  const db = requireDb();
+  try {
+    db.prepare(
+      "INSERT INTO rxv_fb_image_posts (" +
+      "image_id,image_url,image_fingerprint,title,category_key,category_label,is_free,platform,target_type,target_name,copy_mode,allow_link,post_text,status,created_at,posted_at,updated_at" +
+      ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+    ).run(
+      imageId,
+      imageUrl,
+      imageFingerprint(img),
+      String(raw.title || ""),
+      String(raw.categoryKey || rule.key || ""),
+      String(category),
+      img.planType === "free" ? 1 : 0,
+      "facebook",
+      target.targetType,
+      target.targetName,
+      copyMode,
+      boolOption(body.allowLink, false) ? 1 : 0,
+      String(body.postText || ""),
+      status,
+      now,
+      status === "posted" ? now : null,
+      now
+    );
+    return { ok: true, status };
+  } finally {
+    db.close();
+  }
+}
+
+function listFacebookPosts(db, limit = 60) {
+  const n = Math.max(1, Math.min(200, Number(limit || 60)));
+  return db.prepare(
+    "SELECT id,image_id,title,category_label,is_free,target_type,target_name,copy_mode,status,created_at,posted_at " +
+    "FROM rxv_fb_image_posts ORDER BY id DESC LIMIT ?"
+  ).all(n);
+}
+
 function dashboardHtml() {
   return `<!doctype html>
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>RXV 圖片自動推廣器 v2</title>
+<title>RXV 圖片自動推廣器 v3</title>
 <style>
 body{font-family:system-ui,-apple-system,"Segoe UI","Microsoft JhengHei",sans-serif;margin:0;background:#f5f7fb;color:#172033}.wrap{max-width:1240px;margin:auto;padding:22px}.hero,.card,.stat,.panel{background:#fff;border:1px solid #e5e7eb;border-radius:18px;box-shadow:0 7px 22px #0000000a}.hero{padding:22px}.muted{color:#64748b}.small{font-size:12px;color:#64748b}.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-top:16px}.field{display:flex;flex-direction:column;gap:5px}.field label{font-size:12px;font-weight:800;color:#475569}.field select{min-width:150px;padding:10px;border:1px solid #cbd5e1;border-radius:10px;background:#fff}.btn{border:0;border-radius:10px;padding:11px 15px;font-weight:850;cursor:pointer;background:#2563eb;color:#fff}.btn.gray{background:#475569}.btn.green{background:#059669}.btn.red{background:#dc2626}.btn.light{background:#e2e8f0;color:#1e293b}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0}.stat{padding:14px}.stat b{display:block;font-size:27px;margin-top:4px}.statusline{margin-top:12px;padding:10px 12px;background:#f8fafc;border-radius:10px}.jobs{display:grid;grid-template-columns:1fr;gap:14px}.card{padding:15px}.row{display:flex;gap:14px}.thumbs{display:flex;gap:5px;flex-wrap:wrap;width:250px}.thumbs img{width:112px;height:150px;object-fit:cover;border-radius:10px;background:#eee}.jobmain{flex:1;min-width:0}.tag{display:inline-block;background:#eef2ff;color:#3730a3;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:800}.status{display:inline-block;margin-left:6px;background:#ecfdf5;color:#047857;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:800}textarea{width:100%;min-height:210px;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:10px;padding:10px;font:inherit;resize:vertical}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.cats{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.cat{background:#f1f5f9;border-radius:999px;padding:5px 9px;font-size:12px}.error{color:#b91c1c;font-size:13px;margin-top:8px}.video{width:220px;max-height:390px;border-radius:12px;background:#111}@media(max-width:800px){.stats{grid-template-columns:repeat(2,1fr)}.row{flex-direction:column}.thumbs{width:100%}.thumbs img{width:92px;height:120px}}
 </style>
 </head>
 <body><div class="wrap">
 <div class="hero">
-<h1 style="margin:0">RXV 圖片自動推廣器 v2</h1>
+<h1 style="margin:0">RXV 圖片自動推廣器 v3</h1>
 <p class="muted">多張圖片 → 痛點字幕 → QR Code → 可選 MP3 → 本機 MP4 → TikTok 官方 API。MP4 只放本機，不送 Vercel。</p>
 <div class="controls">
 <div class="field"><label>要推廣的分類</label><select id="category"><option value="auto">自動選分類</option></select></div>
@@ -755,7 +1009,140 @@ refreshAll();
   async function load(){try{var d=await api('/api/rxv-tiktok-creator-info?force=1');creator=d.creator||{};decorate()}catch(e){creator={privacy_level_options:[]};decorate();console.warn('[RXV TikTok review demo]',e.message)}}
   new MutationObserver(decorate).observe(document.documentElement,{childList:true,subtree:true});load();
 })();
-</script></body></html>`;
+</script> 
+<style>
+.rxvFbPanel{margin-top:22px;padding:18px;background:#fff;border:1px solid #e5e7eb;border-radius:18px;box-shadow:0 7px 22px #0000000a}.rxvFbGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}.rxvFbGrid label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:800;color:#475569}.rxvFbGrid select,.rxvFbGrid input[type=text]{padding:10px;border:1px solid #cbd5e1;border-radius:10px;background:#fff}.rxvFbChecks{display:flex;gap:16px;flex-wrap:wrap;margin:12px 0}.rxvFbPreview{display:grid;grid-template-columns:minmax(220px,340px) 1fr;gap:16px;margin-top:14px}.rxvFbPreview img{width:100%;max-height:520px;object-fit:contain;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0}.rxvFbHistory{width:100%;border-collapse:collapse;margin-top:12px;font-size:12px}.rxvFbHistory th,.rxvFbHistory td{border-bottom:1px solid #e2e8f0;padding:8px;text-align:left}.rxvFbTopNav{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.rxvFbMsg{margin-top:10px;padding:10px 12px;background:#f8fafc;border-radius:10px;font-size:13px}@media(max-width:800px){.rxvFbPreview{grid-template-columns:1fr}}
+</style>
+<section id="rxvFacebookV3" class="rxvFbPanel">
+  <h2 style="margin-top:0">FB 圖片分享模式</h2>
+  <p class="muted">直接挑網站圖片分享 Facebook，Facebook 紀錄與 TikTok 影片紀錄分開。可只抓免費圖片，並依個人／粉專／社團分開防重複。</p>
+  <div class="rxvFbGrid">
+    <label>圖片分類<select id="rxvFbCategory"><option value="auto">全部分類</option></select></label>
+    <label>發布位置<select id="rxvFbTargetType"><option value="personal">個人 FB</option><option value="page">粉專</option><option value="group">社團</option></select></label>
+    <label>粉專／社團名稱<input id="rxvFbTargetName" type="text" placeholder="社團模式請輸入社團名稱"></label>
+    <label>文案模式<select id="rxvFbCopyMode"><option value="strict" selected>嚴格社團版</option><option value="general">一般 FB 導流版</option></select></label>
+  </div>
+  <div class="rxvFbChecks">
+    <label><input type="checkbox" id="rxvFbFreeOnly" checked> 只抓免費圖片</label>
+    <label><input type="checkbox" id="rxvFbUnposted" checked> 只抓此位置尚未發過</label>
+    <label><input type="checkbox" id="rxvFbAllowLink"> 此社團／位置允許放網站連結</label>
+  </div>
+  <div class="actions">
+    <button class="btn" onclick="rxvFbPick()">抓 1 張</button>
+    <button class="btn light" onclick="rxvFbPick()">換一張</button>
+    <button class="btn gray" onclick="rxvFbUpdateCopy()">更新文案</button>
+    <button class="btn light" onclick="rxvFbCopyText()">複製文案</button>
+    <button class="btn light" onclick="rxvFbCopyImage()">複製圖片</button>
+    <button class="btn light" onclick="rxvFbOpenImage()">開啟圖片</button>
+    <button class="btn green" onclick="rxvFbMark('posted')">標記已發布</button>
+    <button class="btn red" onclick="rxvFbMark('skipped')">略過此圖</button>
+  </div>
+  <div id="rxvFbMsg" class="rxvFbMsg">載入中…</div>
+  <div class="rxvFbPreview">
+    <div><img id="rxvFbImage" alt="FB 圖片預覽" style="display:none"></div>
+    <div>
+      <div id="rxvFbMeta" class="small">尚未選圖</div>
+      <textarea id="rxvFbText" placeholder="按「抓 1 張」後會自動產生文案"></textarea>
+    </div>
+  </div>
+  <h3>Facebook 圖片發布紀錄</h3>
+  <div style="overflow:auto"><table class="rxvFbHistory"><thead><tr><th>時間</th><th>圖片</th><th>分類</th><th>位置</th><th>模式</th><th>狀態</th></tr></thead><tbody id="rxvFbHistoryBody"></tbody></table></div>
+</section>
+<script id="rxvFacebookV3Script">
+var rxvFbCurrent=null;
+async function rxvFbApi(url,opts){var r=await fetch(url,opts);var d=await r.json().catch(function(){return {}});if(!r.ok||d.ok===false)throw new Error(d.message||d.error||('HTTP '+r.status));return d}
+function rxvFbMessage(s){document.getElementById('rxvFbMsg').textContent=s||''}
+function rxvFbSettings(){
+  return {
+    categoryKey:document.getElementById('rxvFbCategory').value,
+    targetType:document.getElementById('rxvFbTargetType').value,
+    targetName:document.getElementById('rxvFbTargetName').value.trim(),
+    copyMode:document.getElementById('rxvFbCopyMode').value,
+    freeOnly:document.getElementById('rxvFbFreeOnly').checked,
+    unpostedOnly:document.getElementById('rxvFbUnposted').checked,
+    allowLink:document.getElementById('rxvFbAllowLink').checked
+  };
+}
+async function rxvFbInit(){
+  try{
+    var s=await rxvFbApi('/api/status');
+    var sel=document.getElementById('rxvFbCategory');
+    sel.innerHTML='<option value="auto">全部分類</option>'+(s.categories||[]).map(function(x){return '<option value="'+esc(x.key)+'">'+esc(x.label)+'（'+x.count+' 張）</option>'}).join('');
+    var hero=document.querySelector('.hero');
+    if(hero&&!document.getElementById('rxvFbTopNav')){
+      var nav=document.createElement('div');nav.id='rxvFbTopNav';nav.className='rxvFbTopNav';
+      nav.innerHTML='<button class="btn light" type="button">↓ FB 圖片分享</button>';
+      nav.querySelector('button').onclick=function(){document.getElementById('rxvFacebookV3').scrollIntoView({behavior:'smooth'})};
+      hero.appendChild(nav);
+    }
+    await rxvFbHistory();
+    rxvFbMessage('FB 圖片模式已就緒｜預設只抓免費、此位置未發過的圖片。');
+  }catch(e){rxvFbMessage('載入失敗：'+e.message)}
+}
+async function rxvFbPick(){
+  try{
+    var s=rxvFbSettings();
+    if(s.targetType==='group'&&!s.targetName){rxvFbMessage('請先輸入 Facebook 社團名稱。');return}
+    rxvFbMessage('正在挑選尚未在這個位置發過的圖片…');
+    var q=new URLSearchParams();
+    Object.keys(s).forEach(function(k){q.set(k,String(s[k]))});
+    var d=await rxvFbApi('/api/facebook/pick?'+q.toString());
+    if(!d.found){rxvFbCurrent=null;document.getElementById('rxvFbImage').style.display='none';document.getElementById('rxvFbMeta').textContent='沒有符合條件的圖片';document.getElementById('rxvFbText').value='';rxvFbMessage(d.message||'沒有符合條件的圖片');return}
+    rxvFbCurrent=d.image;
+    var img=document.getElementById('rxvFbImage');img.src=d.image.imageUrl;img.style.display='block';
+    document.getElementById('rxvFbMeta').textContent=d.image.category+'｜'+d.image.title+'｜'+(d.image.isFree?'免費':'素材包')+'｜此位置尚可選 '+d.remainingForTarget+' 張';
+    document.getElementById('rxvFbText').value=d.postText||'';
+    rxvFbMessage('已選到 1 張｜此圖片尚未在目前發布位置標記為已發布。');
+  }catch(e){rxvFbMessage('選圖失敗：'+e.message)}
+}
+async function rxvFbUpdateCopy(){
+  try{
+    if(!rxvFbCurrent){rxvFbMessage('請先按「抓 1 張」。');return}
+    var s=rxvFbSettings();
+    var d=await rxvFbApi('/api/facebook/copy',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:rxvFbCurrent,copyMode:s.copyMode,allowLink:s.allowLink})});
+    document.getElementById('rxvFbText').value=d.postText||'';
+    rxvFbMessage('文案已依目前模式更新。');
+  }catch(e){rxvFbMessage('更新文案失敗：'+e.message)}
+}
+async function rxvFbCopyText(){
+  try{var t=document.getElementById('rxvFbText').value;if(!t){rxvFbMessage('目前沒有文案。');return}await navigator.clipboard.writeText(t);rxvFbMessage('文案已複製。')}catch(e){rxvFbMessage('複製文案失敗：'+e.message)}
+}
+async function rxvFbCopyImage(){
+  try{
+    if(!rxvFbCurrent){rxvFbMessage('請先按「抓 1 張」。');return}
+    var r=await fetch(rxvFbCurrent.imageUrl);if(!r.ok)throw new Error('圖片讀取失敗');
+    var b=await r.blob();
+    if(!navigator.clipboard||!window.ClipboardItem)throw new Error('瀏覽器不支援直接複製圖片');
+    await navigator.clipboard.write([new ClipboardItem({[b.type]:b})]);
+    rxvFbMessage('圖片已複製，可直接到 Facebook 貼上。');
+  }catch(e){rxvFbMessage('無法直接複製圖片，已幫你開啟圖片；可另存或複製後再貼到 Facebook。');rxvFbOpenImage()}
+}
+function rxvFbOpenImage(){if(!rxvFbCurrent){rxvFbMessage('請先按「抓 1 張」。');return}window.open(rxvFbCurrent.imageUrl,'_blank','noopener')}
+async function rxvFbMark(status){
+  try{
+    if(!rxvFbCurrent){rxvFbMessage('請先按「抓 1 張」。');return}
+    var s=rxvFbSettings();
+    if(s.targetType==='group'&&!s.targetName){rxvFbMessage('請先輸入社團名稱。');return}
+    var d=await rxvFbApi('/api/facebook/mark',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:rxvFbCurrent,targetType:s.targetType,targetName:s.targetName,copyMode:s.copyMode,allowLink:s.allowLink,postText:document.getElementById('rxvFbText').value,status:status})});
+    rxvFbMessage(d.status==='posted'?'已記錄為 Facebook 已發布；下次同一位置不會再抓這張。':'已記錄為略過；之後仍可再次抓到。');
+    await rxvFbHistory();
+    if(d.status==='posted')await rxvFbPick();
+  }catch(e){rxvFbMessage('記錄失敗：'+e.message)}
+}
+async function rxvFbHistory(){
+  try{
+    var d=await rxvFbApi('/api/facebook/posts?limit=60');
+    var body=document.getElementById('rxvFbHistoryBody');
+    var rows=d.items||[];
+    body.innerHTML=rows.length?rows.map(function(x){
+      var target=x.target_type==='group'?'社團：'+(x.target_name||'-'):x.target_type==='page'?'粉專：'+(x.target_name||'-'):'個人 FB';
+      return '<tr><td>'+esc((x.posted_at||x.created_at||'').replace('T',' ').slice(0,19))+'</td><td>'+esc(x.title||x.image_id)+'</td><td>'+esc(x.category_label||'-')+'</td><td>'+esc(target)+'</td><td>'+esc(x.copy_mode==='strict'?'嚴格':'一般')+'</td><td>'+esc(x.status)+'</td></tr>';
+    }).join(''):'<tr><td colspan="6" class="muted">尚無 Facebook 圖片發布紀錄</td></tr>';
+  }catch(e){}
+}
+rxvFbInit();
+</script>
+</body></html>`;
 }
 
 async function serveVideo(urlObj, res) {
@@ -804,6 +1191,30 @@ async function requestHandler(req, res) {
       const body = await readJsonBody(req);
       return json(res, 200, cancelJob(String(body.videoId || "").trim()));
     }
+    if (req.method === "GET" && urlObj.pathname === "/api/facebook/pick") {
+      return json(res, 200, await pickFacebookImage({
+        categoryKey: urlObj.searchParams.get("categoryKey"),
+        targetType: urlObj.searchParams.get("targetType"),
+        targetName: urlObj.searchParams.get("targetName"),
+        copyMode: urlObj.searchParams.get("copyMode"),
+        freeOnly: urlObj.searchParams.get("freeOnly"),
+        unpostedOnly: urlObj.searchParams.get("unpostedOnly"),
+        allowLink: urlObj.searchParams.get("allowLink"),
+      }));
+    }
+    if (req.method === "GET" && urlObj.pathname === "/api/facebook/posts") {
+      const db = requireDb();
+      try { return json(res, 200, { ok: true, items: listFacebookPosts(db, urlObj.searchParams.get("limit")) }); }
+      finally { db.close(); }
+    }
+    if (req.method === "POST" && urlObj.pathname === "/api/facebook/copy") {
+      const body = await readJsonBody(req);
+      return json(res, 200, buildFacebookCopyFromBody(body));
+    }
+    if (req.method === "POST" && urlObj.pathname === "/api/facebook/mark") {
+      const body = await readJsonBody(req);
+      return json(res, 200, markFacebookImage(body));
+    }
     if (req.method === "GET" && urlObj.pathname === "/health") return json(res, 200, { ok: true, app: "rxv-image-publisher-v2" });
     return json(res, 404, { ok: false, message: "NOT_FOUND" });
   } catch (error) {
@@ -846,7 +1257,7 @@ async function main() {
   const server = http.createServer((req, res) => { void requestHandler(req, res); });
   server.listen(PORT, HOST, () => {
     const url = `http://${HOST}:${PORT}/`;
-    console.log("RXV 圖片自動推廣器 v2 已啟動：" + url);
+    console.log("RXV 圖片自動推廣器 v3 已啟動：" + url);
     console.log("SQLite：" + DB_PATH);
     console.log("本機 MP4：" + outputRoot());
     console.log("關閉此視窗即可停止。");
