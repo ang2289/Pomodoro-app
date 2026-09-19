@@ -750,6 +750,12 @@ async function pickFacebookImage(options = {}) {
 
   let pool = manifest.images.filter((img) => !freeOnly || img.planType === "free");
   if (rule) pool = pool.filter((img) => categoryMatchesRule(rule, img.category));
+  let excluded = new Set();
+  try {
+    const parsed = JSON.parse(String(options.excludeFingerprints || "[]"));
+    if (Array.isArray(parsed)) excluded = new Set(parsed.map(String).slice(0, 200));
+  } catch {}
+  if (excluded.size) pool = pool.filter((img) => !excluded.has(imageFingerprint(img)));
   pool = filterUniqueUnused(pool, emptyImageKeySet()).sort((a, b) => a.id.localeCompare(b.id, "zh-Hant"));
 
   const db = requireDb();
@@ -1028,12 +1034,13 @@ refreshAll();
     <label><input type="checkbox" id="rxvFbAllowLink"> 此社團／位置允許放網站連結</label>
   </div>
   <div class="actions">
-    <button class="btn" onclick="rxvFbPick()">抓 1 張</button>
-    <button class="btn light" onclick="rxvFbPick()">換一張</button>
+    <button class="btn" onclick="rxvFbPick(false)">抓 1 張</button>
+    <button class="btn light" onclick="rxvFbPick(true)">換一張</button>
     <button class="btn gray" onclick="rxvFbUpdateCopy()">更新文案</button>
     <button class="btn light" onclick="rxvFbCopyText()">複製文案</button>
     <button class="btn light" onclick="rxvFbCopyImage()">複製圖片</button>
     <button class="btn light" onclick="rxvFbOpenImage()">開啟圖片</button>
+    <button class="btn light" onclick="window.open('https://www.facebook.com/','_blank','noopener')">開啟 Facebook</button>
     <button class="btn green" onclick="rxvFbMark('posted')">標記已發布</button>
     <button class="btn red" onclick="rxvFbMark('skipped')">略過此圖</button>
   </div>
@@ -1050,6 +1057,7 @@ refreshAll();
 </section>
 <script id="rxvFacebookV3Script">
 var rxvFbCurrent=null;
+var rxvFbSessionExcluded={};
 async function rxvFbApi(url,opts){var r=await fetch(url,opts);var d=await r.json().catch(function(){return {}});if(!r.ok||d.ok===false)throw new Error(d.message||d.error||('HTTP '+r.status));return d}
 function rxvFbMessage(s){document.getElementById('rxvFbMsg').textContent=s||''}
 function rxvFbSettings(){
@@ -1079,13 +1087,15 @@ async function rxvFbInit(){
     rxvFbMessage('FB 圖片模式已就緒｜預設只抓免費、此位置未發過的圖片。');
   }catch(e){rxvFbMessage('載入失敗：'+e.message)}
 }
-async function rxvFbPick(){
+async function rxvFbPick(nextOne){
   try{
     var s=rxvFbSettings();
+    if(nextOne&&rxvFbCurrent&&rxvFbCurrent.fingerprint)rxvFbSessionExcluded[rxvFbCurrent.fingerprint]=true;
     if(s.targetType==='group'&&!s.targetName){rxvFbMessage('請先輸入 Facebook 社團名稱。');return}
     rxvFbMessage('正在挑選尚未在這個位置發過的圖片…');
     var q=new URLSearchParams();
     Object.keys(s).forEach(function(k){q.set(k,String(s[k]))});
+    q.set('excludeFingerprints',JSON.stringify(Object.keys(rxvFbSessionExcluded)));
     var d=await rxvFbApi('/api/facebook/pick?'+q.toString());
     if(!d.found){rxvFbCurrent=null;document.getElementById('rxvFbImage').style.display='none';document.getElementById('rxvFbMeta').textContent='沒有符合條件的圖片';document.getElementById('rxvFbText').value='';rxvFbMessage(d.message||'沒有符合條件的圖片');return}
     rxvFbCurrent=d.image;
@@ -1200,6 +1210,7 @@ async function requestHandler(req, res) {
         freeOnly: urlObj.searchParams.get("freeOnly"),
         unpostedOnly: urlObj.searchParams.get("unpostedOnly"),
         allowLink: urlObj.searchParams.get("allowLink"),
+        excludeFingerprints: urlObj.searchParams.get("excludeFingerprints"),
       }));
     }
     if (req.method === "GET" && urlObj.pathname === "/api/facebook/posts") {
