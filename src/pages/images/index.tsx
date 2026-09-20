@@ -509,10 +509,17 @@ export default function ImagesPage() {
     try {
       trackEvent("download_free_image", { image_id: image.id, image_plan_type: image.planType });
       let publicBase = "";
-      try {
-        publicBase = new URL(image.downloadUrl || image.previewUrl, window.location.origin).origin;
-      } catch {
-        publicBase = "";
+      for (const candidate of [image.downloadUrl, image.previewUrl]) {
+        if (!candidate) continue;
+        try {
+          const url = new URL(candidate, window.location.origin);
+          if (url.protocol === "https:" && url.hostname.endsWith(".r2.dev")) {
+            publicBase = url.origin;
+            break;
+          }
+        } catch {
+          // Try the next catalog URL.
+        }
       }
       const safeDownloadUrl = `/api/free-image-download?id=${encodeURIComponent(image.id)}&base=${encodeURIComponent(publicBase)}`;
       await forceDownloadImage(safeDownloadUrl, `${image.title || "RxV-免費圖片"}`);
