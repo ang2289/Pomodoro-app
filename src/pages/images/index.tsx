@@ -508,7 +508,8 @@ export default function ImagesPage() {
 
     try {
       trackEvent("download_free_image", { image_id: image.id, image_plan_type: image.planType });
-      await forceDownloadImage(image.downloadUrl, `${image.title || "RxV-免費圖片"}`);
+      const safeDownloadUrl = `/api/image-admin?action=public-free-download&id=${encodeURIComponent(image.id)}`;
+      await forceDownloadImage(safeDownloadUrl, `${image.title || "RxV-免費圖片"}`);
       setDownloadedImageIds((prev) => new Set(prev).add(image.id));
       setDownloadToastId((previous) => previous + 1);
     } catch (e) {
