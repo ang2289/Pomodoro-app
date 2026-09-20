@@ -12,7 +12,45 @@ import {
 } from "@aws-sdk/client-s3";
 
 const MANIFEST_KEY = "catalog/images-public.json";
+const CATEGORY_MANIFEST_KEY = "catalog/image-categories.json";
 const CACHE_TTL_MS = 60_000;
+
+type ManagedCategory = {
+  id: string;
+  name: string;
+  sort_order: number;
+  is_active: boolean;
+};
+
+const DEFAULT_IMAGE_CATEGORIES: ManagedCategory[] = [
+  { id: "real-estate", name: "房仲／房地產", sort_order: 0, is_active: true },
+  { id: "hair-salon", name: "美髮／沙龍", sort_order: 1, is_active: true },
+  { id: "nail-salon", name: "美甲", sort_order: 2, is_active: true },
+  { id: "beauty-spa", name: "美容 SPA", sort_order: 3, is_active: true },
+  { id: "dentist", name: "牙醫", sort_order: 4, is_active: true },
+  { id: "pet-grooming", name: "寵物美容", sort_order: 5, is_active: true },
+  { id: "car-detailing", name: "汽車美容", sort_order: 6, is_active: true },
+  { id: "coloring-page", name: "著色頁", sort_order: 7, is_active: true },
+  { id: "beauty-fashion", name: "美容／時尚", sort_order: 8, is_active: true },
+  { id: "food-drink", name: "食物／飲品", sort_order: 9, is_active: true },
+  { id: "business-office", name: "商業／辦公", sort_order: 10, is_active: true },
+  { id: "product-display", name: "商品展示", sort_order: 11, is_active: true },
+  { id: "home-lifestyle", name: "居家／生活", sort_order: 12, is_active: true },
+  { id: "flower-plant", name: "花卉／植物", sort_order: 13, is_active: true },
+  { id: "background-wallpaper", name: "背景／桌布", sort_order: 14, is_active: true },
+  { id: "pet-animal", name: "寵物／動物", sort_order: 15, is_active: true },
+  { id: "wedding-event", name: "婚禮／活動", sort_order: 16, is_active: true },
+  { id: "travel-hotel", name: "旅遊／住宿", sort_order: 17, is_active: true },
+  { id: "education", name: "教育／學習", sort_order: 18, is_active: true },
+  { id: "finance", name: "金融／理財", sort_order: 19, is_active: true },
+  { id: "professional-service", name: "專業服務", sort_order: 20, is_active: true },
+  { id: "taiwan-local", name: "台灣在地生活", sort_order: 21, is_active: true },
+  { id: "nature-landscape", name: "自然／風景", sort_order: 22, is_active: true },
+  { id: "festival", name: "節慶／節日", sort_order: 23, is_active: true },
+  { id: "religion-healing", name: "宗教／療癒", sort_order: 24, is_active: true },
+  { id: "technology", name: "科技／數位", sort_order: 25, is_active: true },
+  { id: "other", name: "其他素材", sort_order: 26, is_active: true },
+];
 
 type CatalogDocument = {
   root: any;
@@ -177,6 +215,77 @@ async function writeCatalog(doc: CatalogDocument, images: any[]) {
     expiresAt: Date.now() + CACHE_TTL_MS,
     doc: parseCatalog(payload),
   };
+}
+
+function normalizeManagedCategories(value: any): ManagedCategory[] {
+  const rows = Array.isArray(value) ? value : Array.isArray(value?.categories) ? value.categories : [];
+  const seen = new Set<string>();
+  return rows.flatMap((row: any, index: number) => {
+    const id = safeText(row?.id);
+    const name = safeText(row?.name);
+    if (!id || !name || seen.has(id)) return [];
+    seen.add(id);
+    return [{
+      id,
+      name,
+      sort_order: Number.isFinite(Number(row?.sort_order)) ? Number(row.sort_order) : index,
+      is_active: row?.is_active !== false,
+    }];
+  }).sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name, "zh-Hant"));
+}
+
+async function readManagedCategories(doc?: CatalogDocument): Promise<ManagedCategory[]> {
+  const cfg = getRuntimeConfig();
+  try {
+    const result = await getClient().send(new GetObjectCommand({
+      Bucket: cfg.publicBucket,
+      Key: CATEGORY_MANIFEST_KEY,
+    }));
+    const text = await bodyToText(result.Body);
+    const rows = normalizeManagedCategories(JSON.parse(text));
+    if (rows.length) return rows;
+  } catch (error: any) {
+    const status = Number(error?.$metadata?.httpStatusCode || 0);
+    const name = safeText(error?.name || error?.Code || error?.code);
+    if (status !== 404 && !/NoSuchKey|NotFound/i.test(name)) throw error;
+  }
+
+  const catalog = doc || await readCatalog(false);
+  const map = new Map<string, ManagedCategory>();
+  for (const category of DEFAULT_IMAGE_CATEGORIES) map.set(category.id, { ...category });
+  for (const image of catalog.images) {
+    const id = safeText(image?.category_id);
+    const name = safeText(image?.category_name || image?.category || id);
+    if (id && name && !map.has(id)) {
+      map.set(id, { id, name, sort_order: map.size, is_active: true });
+    }
+  }
+  return [...map.values()];
+}
+
+async function writeManagedCategories(categories: ManagedCategory[]) {
+  const cfg = getRuntimeConfig();
+  const rows = categories
+    .map((category, index) => ({
+      id: safeText(category.id),
+      name: safeText(category.name),
+      sort_order: index,
+      is_active: category.is_active !== false,
+    }))
+    .filter((category) => category.id && category.name);
+
+  await getClient().send(new PutObjectCommand({
+    Bucket: cfg.publicBucket,
+    Key: CATEGORY_MANIFEST_KEY,
+    Body: Buffer.from(JSON.stringify({ version: 1, updated_at: new Date().toISOString(), categories: rows }, null, 2), "utf8"),
+    ContentType: "application/json; charset=utf-8",
+    CacheControl: "no-cache",
+  }));
+  return rows;
+}
+
+function imageCountForCategory(doc: CatalogDocument, categoryId: string) {
+  return doc.images.filter((image: any) => safeText(image?.category_id) === categoryId).length;
 }
 
 function inferPublicBase(doc: CatalogDocument) {
@@ -424,19 +533,84 @@ async function handleList(req: any, res: any) {
 async function handleCategories(req: any, res: any) {
   requireAdmin(req);
   const doc = await readCatalog(false);
-  const map = new Map<string, string>();
-  for (const image of doc.images) {
-    const id = safeText(image?.category_id);
-    const name = safeText(image?.category_name || image?.category || id);
-    if (id && name && !map.has(id)) map.set(id, name);
-  }
-  const categories = [...map.entries()].map(([id, name], index) => ({
-    id,
-    name,
-    sort_order: index,
-    is_active: true,
+  const categories = (await readManagedCategories(doc)).map((category) => ({
+    ...category,
+    image_count: imageCountForCategory(doc, category.id),
   }));
   return sendJson(res, 200, { ok: true, success: true, total: categories.length, categories });
+}
+
+async function handleCreateCategory(req: any, res: any, body: any) {
+  requireAdmin(req);
+  const name = safeText(body?.name || body?.category_name);
+  if (!name) return sendJson(res, 400, { ok: false, error: "CATEGORY_NAME_REQUIRED" });
+
+  const doc = await readCatalog(true);
+  const categories = await readManagedCategories(doc);
+  if (categories.some((category) => category.name === name)) {
+    return sendJson(res, 409, { ok: false, error: "CATEGORY_NAME_EXISTS" });
+  }
+
+  let id = safeText(body?.id || body?.category_id);
+  if (!id) id = `custom-${crypto.randomUUID().slice(0, 8)}`;
+  if (!/^[a-z0-9][a-z0-9-]{1,63}$/i.test(id)) {
+    return sendJson(res, 400, { ok: false, error: "CATEGORY_ID_INVALID" });
+  }
+  if (categories.some((category) => category.id === id)) {
+    return sendJson(res, 409, { ok: false, error: "CATEGORY_ID_EXISTS" });
+  }
+
+  const next = await writeManagedCategories([
+    ...categories,
+    { id, name, sort_order: categories.length, is_active: true },
+  ]);
+  return sendJson(res, 200, { ok: true, success: true, action: "createImageCategory", category: next.find((category) => category.id === id), total: next.length });
+}
+
+async function handleRenameCategory(req: any, res: any, body: any) {
+  requireAdmin(req);
+  const id = safeText(body?.id || body?.category_id);
+  const name = safeText(body?.name || body?.category_name);
+  if (!id || !name) return sendJson(res, 400, { ok: false, error: "CATEGORY_ID_AND_NAME_REQUIRED" });
+
+  const doc = await readCatalog(true);
+  const categories = await readManagedCategories(doc);
+  if (!categories.some((category) => category.id === id)) {
+    return sendJson(res, 404, { ok: false, error: "CATEGORY_NOT_FOUND" });
+  }
+  if (categories.some((category) => category.id !== id && category.name === name)) {
+    return sendJson(res, 409, { ok: false, error: "CATEGORY_NAME_EXISTS" });
+  }
+
+  const renamed = categories.map((category) => category.id === id ? { ...category, name } : category);
+  const nextImages = doc.images.map((image: any) => {
+    if (safeText(image?.category_id) !== id) return image;
+    return { ...image, category: name, category_name: name };
+  });
+
+  await writeCatalog(doc, nextImages);
+  await writeManagedCategories(renamed);
+  return sendJson(res, 200, { ok: true, success: true, action: "renameImageCategory", category_id: id, name, updated_images: imageCountForCategory({ ...doc, images: nextImages }, id) });
+}
+
+async function handleDeleteCategory(req: any, res: any, body: any) {
+  requireAdmin(req);
+  const id = safeText(body?.id || body?.category_id);
+  if (!id) return sendJson(res, 400, { ok: false, error: "CATEGORY_ID_REQUIRED" });
+
+  const doc = await readCatalog(true);
+  const imageCount = imageCountForCategory(doc, id);
+  if (imageCount > 0) {
+    return sendJson(res, 409, { ok: false, error: "CATEGORY_NOT_EMPTY", image_count: imageCount });
+  }
+
+  const categories = await readManagedCategories(doc);
+  if (!categories.some((category) => category.id === id)) {
+    return sendJson(res, 404, { ok: false, error: "CATEGORY_NOT_FOUND" });
+  }
+
+  const next = await writeManagedCategories(categories.filter((category) => category.id !== id));
+  return sendJson(res, 200, { ok: true, success: true, action: "deleteImageCategory", deleted_category_id: id, total: next.length });
 }
 
 async function handleUpload(req: any, res: any, body: any) {
@@ -710,6 +884,18 @@ export default async function handler(req: any, res: any) {
     if (action === "admin-list-image-categories") {
       if (req.method !== "GET") return sendJson(res, 405, { ok: false, error: "Method Not Allowed" });
       return await handleCategories(req, res);
+    }
+    if (action === "createImageCategory") {
+      if (req.method !== "POST") return sendJson(res, 405, { ok: false, error: "Method Not Allowed" });
+      return await handleCreateCategory(req, res, normalizeBody(req));
+    }
+    if (action === "renameImageCategory") {
+      if (req.method !== "POST") return sendJson(res, 405, { ok: false, error: "Method Not Allowed" });
+      return await handleRenameCategory(req, res, normalizeBody(req));
+    }
+    if (action === "deleteImageCategory") {
+      if (req.method !== "POST") return sendJson(res, 405, { ok: false, error: "Method Not Allowed" });
+      return await handleDeleteCategory(req, res, normalizeBody(req));
     }
     if (action === "updateImageCategory") {
       if (req.method !== "POST") return sendJson(res, 405, { ok: false, success: false, error: "Method Not Allowed" });
