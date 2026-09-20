@@ -15,6 +15,7 @@ function trackEvent(name: string, params: Record<string, any> = {}) {
 import { Card } from "@/components/ui/card";
 import { isLoggedIn, getCurrentUserId } from "@/lib/auth";
 import { getCurrentCreditSummary } from "@/lib/accountApi";
+import { PROFESSIONAL_IMAGE_PACKS } from "@/data/professionalImagePacks";
 
 // ===== 圖片素材庫：免費試用 + NT$399 完整素材包 =====
 // 免費圖片可直接下載；其餘圖片作為完整版素材庫展示。
@@ -581,43 +582,50 @@ export default function ImagesPage() {
             </div>
             <p className="mt-3 text-sm font-bold text-rose-700">首波限時優惠 NT$199，優惠結束後恢復原價 NT$399。</p>
             <p className="mt-3 text-xs leading-relaxed text-slate-600">網站保留部分圖片免費下載試用；完整版素材不可轉售、轉包或作為素材庫再次販售。</p>
-            <p className="mt-2 text-xs font-bold leading-relaxed text-amber-800">房仲、美髮等「專業職業主題包」為另外整理的商品，不包含在 NT$199 綜合素材庫方案內。</p>
+            <p className="mt-2 text-xs font-bold leading-relaxed text-amber-800">只需要單一行業可選 NT$99 專業小包；需要全部圖片可選 NT$199 完整素材庫。</p>
           </div>
 
           <section className="mb-6 rounded-3xl border border-violet-200 bg-gradient-to-br from-violet-50 via-white to-rose-50 px-5 py-6 text-left shadow-sm">
             <div className="text-center">
               <span className="inline-flex rounded-full bg-violet-600 px-3 py-1 text-sm font-black !text-white" style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}>依行業直接買｜專業主題小包</span>
               <h2 className="mt-3 text-2xl font-black text-slate-950">只買自己行業會用到的圖｜NT$99／包</h2>
-              <p className="mt-2 text-sm leading-relaxed text-slate-600">小包採「用途_圖片名」命名，ZIP 內附商品介紹、使用說明與授權說明；之後可持續增加美甲、SPA、餐飲等主題。</p>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">目前已上架房仲、美髮、美甲、美容 SPA、牙醫與寵物 6 個專業小包；ZIP 採「用途_圖片名」命名並附使用與授權說明。</p>
             </div>
-            <div className="mt-5 grid gap-4 md:grid-cols-2">
-              <article className="rounded-2xl border border-emerald-200 bg-white p-5 shadow-sm">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-black text-emerald-700">房仲／房地產</p>
-                    <h3 className="mt-1 text-lg font-black text-slate-950">房仲帶看宣傳圖片包</h3>
-                    <p className="mt-2 text-sm leading-relaxed text-slate-600">83 張｜住宅帶看、成交交屋、公設社區、驗屋與生活機能。</p>
-                  </div>
-                  <div className="text-2xl font-black text-rose-600">NT$99</div>
-                </div>
-                <a href="/image-packs#pack-products" className="mt-4 inline-flex min-h-[44px] w-full items-center justify-center rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-black !text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-emerald-700" style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}>
-                  查看內容／購買 NT$99
-                </a>
-              </article>
+            <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {PROFESSIONAL_IMAGE_PACKS.map((pack) => {
+                const categoryClass = {
+                  emerald: 'text-emerald-700',
+                  fuchsia: 'text-fuchsia-700',
+                  rose: 'text-rose-700',
+                  violet: 'text-violet-700',
+                  sky: 'text-sky-700',
+                  amber: 'text-amber-700',
+                }[pack.accent]
+                const buttonClass = {
+                  emerald: 'bg-emerald-600 hover:bg-emerald-700',
+                  fuchsia: 'bg-fuchsia-600 hover:bg-fuchsia-700',
+                  rose: 'bg-rose-600 hover:bg-rose-700',
+                  violet: 'bg-violet-600 hover:bg-violet-700',
+                  sky: 'bg-sky-600 hover:bg-sky-700',
+                  amber: 'bg-amber-600 hover:bg-amber-700',
+                }[pack.accent]
 
-              <article className="rounded-2xl border border-fuchsia-200 bg-white p-5 shadow-sm">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-black text-fuchsia-700">美容／時尚</p>
-                    <h3 className="mt-1 text-lg font-black text-slate-950">美髮沙龍職業圖片包</h3>
-                    <p className="mt-2 text-sm leading-relaxed text-slate-600">接待、洗護、剪髮、染燙、完成造型、預約宣傳與專業工具等素材。</p>
-                  </div>
-                  <div className="text-2xl font-black text-rose-600">NT$99</div>
-                </div>
-                <a href="/image-packs#pack-products" className="mt-4 inline-flex min-h-[44px] w-full items-center justify-center rounded-xl bg-fuchsia-600 px-5 py-2.5 text-sm font-black !text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-fuchsia-700" style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}>
-                  查看內容／購買 NT$99
-                </a>
-              </article>
+                return (
+                  <article key={pack.id} className="flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className={`text-xs font-black ${categoryClass}`}>{pack.category}</p>
+                        <h3 className="mt-1 text-lg font-black text-slate-950">{pack.name.replace('RXV ', '')}</h3>
+                        <p className="mt-2 text-sm font-bold text-slate-700">{pack.count} 張｜NT$99</p>
+                        <p className="mt-1 text-sm leading-relaxed text-slate-600">{pack.description}</p>
+                      </div>
+                    </div>
+                    <a href="/image-packs#pack-products" className={`mt-auto inline-flex min-h-[44px] w-full items-center justify-center rounded-xl px-5 py-2.5 text-sm font-black !text-white shadow-sm transition hover:-translate-y-0.5 ${buttonClass}`} style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}>
+                      查看內容／購買 NT$99
+                    </a>
+                  </article>
+                )
+              })}
             </div>
           </section>
 
