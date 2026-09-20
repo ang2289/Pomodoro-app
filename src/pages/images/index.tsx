@@ -585,47 +585,39 @@ export default function ImagesPage() {
             <p className="mt-2 text-xs font-bold leading-relaxed text-amber-800">只需要單一行業可選 NT$99 專業小包；需要全部圖片可選 NT$199 完整素材庫。</p>
           </div>
 
-          <section className="mb-6 rounded-3xl border border-violet-200 bg-gradient-to-br from-violet-50 via-white to-rose-50 px-5 py-6 text-left shadow-sm">
-            <div className="text-center">
-              <span className="inline-flex rounded-full bg-violet-600 px-3 py-1 text-sm font-black !text-white" style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}>依行業直接買｜專業主題小包</span>
-              <h2 className="mt-3 text-2xl font-black text-slate-950">只買自己行業會用到的圖｜NT$99／包</h2>
-              <p className="mt-2 text-sm leading-relaxed text-slate-600">目前已上架房仲、美髮、美甲、美容 SPA、牙醫與寵物 6 個專業小包；ZIP 採「用途_圖片名」命名並附使用與授權說明。</p>
-            </div>
-            <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {PROFESSIONAL_IMAGE_PACKS.map((pack) => {
-                const categoryClass = {
-                  emerald: 'text-emerald-700',
-                  fuchsia: 'text-fuchsia-700',
-                  rose: 'text-rose-700',
-                  violet: 'text-violet-700',
-                  sky: 'text-sky-700',
-                  amber: 'text-amber-700',
-                }[pack.accent]
-                const buttonClass = {
-                  emerald: 'bg-emerald-600 hover:bg-emerald-700',
-                  fuchsia: 'bg-fuchsia-600 hover:bg-fuchsia-700',
-                  rose: 'bg-rose-600 hover:bg-rose-700',
-                  violet: 'bg-violet-600 hover:bg-violet-700',
-                  sky: 'bg-sky-600 hover:bg-sky-700',
-                  amber: 'bg-amber-600 hover:bg-amber-700',
-                }[pack.accent]
-
-                return (
-                  <article key={pack.id} className="flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div>
-                        <p className={`text-xs font-black ${categoryClass}`}>{pack.category}</p>
-                        <h3 className="mt-1 text-lg font-black text-slate-950">{pack.name.replace('RXV ', '')}</h3>
-                        <p className="mt-2 text-sm font-bold text-slate-700">{pack.count} 張｜NT$99</p>
-                        <p className="mt-1 text-sm leading-relaxed text-slate-600">{pack.description}</p>
-                      </div>
-                    </div>
-                    <a href="/image-packs#pack-products" className={`mt-auto inline-flex min-h-[44px] w-full items-center justify-center rounded-xl px-5 py-2.5 text-sm font-black !text-white shadow-sm transition hover:-translate-y-0.5 ${buttonClass}`} style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}>
-                      查看內容／購買 NT$99
-                    </a>
-                  </article>
-                )
-              })}
+          <section className="mb-6 rounded-3xl border border-violet-200 bg-gradient-to-br from-violet-50 via-white to-emerald-50 p-5 text-left shadow-sm sm:p-6">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+              <div className="min-w-0 flex-1">
+                <span className="inline-flex rounded-full bg-violet-100 px-3 py-1.5 text-sm font-black text-violet-800">專業職業主題包｜NT$99／包</span>
+                <h2 className="mt-3 text-2xl font-black text-slate-950">只買自己行業真正會用到的圖</h2>
+                <p className="mt-2 max-w-4xl text-sm leading-7 text-slate-700 sm:text-base">
+                  房仲、美髮、美甲、美容 SPA、牙醫、寵物等職業圖片都已包含在 NT$199 完整素材庫；若只需要單一職業，也可選擇 NT$99 專業小包，檔名直接標示用途。
+                </p>
+                <div className="mt-4 grid gap-2">
+                  {PROFESSIONAL_IMAGE_PACKS.map((pack) => {
+                    const rowClass = {
+                      emerald: 'border-emerald-200 text-emerald-800',
+                      fuchsia: 'border-fuchsia-200 text-fuchsia-800',
+                      rose: 'border-rose-200 text-rose-800',
+                      violet: 'border-violet-200 text-violet-800',
+                      sky: 'border-sky-200 text-sky-800',
+                      amber: 'border-amber-200 text-amber-800',
+                    }[pack.accent]
+                    return (
+                      <span key={pack.id} className={`rounded-xl border bg-white px-3 py-2 text-sm font-black ${rowClass}`}>
+                        {pack.name.replace('RXV ', '')}｜{pack.count} 張｜NT$99
+                      </span>
+                    )
+                  })}
+                </div>
+              </div>
+              <Link
+                to="/image-packs"
+                className="inline-flex min-h-[50px] shrink-0 items-center justify-center rounded-xl bg-violet-600 px-6 py-3 font-black !text-white shadow-md transition hover:-translate-y-0.5 hover:bg-violet-700"
+                style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}
+              >
+                查看 {PROFESSIONAL_IMAGE_PACKS.length} 款 NT$99 專業圖片包
+              </Link>
             </div>
           </section>
 
