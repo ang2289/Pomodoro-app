@@ -1,9 +1,12 @@
 ﻿import fs from "fs";
+import path from "path";
 import crypto from "crypto";
 import sharp from "sharp";
 import {
+  CopyObjectCommand,
   DeleteObjectCommand,
   GetObjectCommand,
+  ListObjectsV2Command,
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
@@ -238,6 +241,76 @@ async function removeObject(bucket: string, key: string) {
   await getClient().send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
 }
 
+function imageExtensionFromKey(key: string) {
+  const match = safeText(key).match(/\.([a-z0-9]+)$/i);
+  const ext = safeText(match?.[1]).toLowerCase();
+  if (!['jpg', 'jpeg', 'png', 'webp'].includes(ext)) throw new Error('IMAGE_ORIGINAL_EXTENSION_INVALID');
+  return ext;
+}
+
+let legacyMasterCache: any[] | null = null;
+function findLegacyMasterOriginalKey(imageId: string) {
+  try {
+    if (!legacyMasterCache) {
+      const masterPath = path.join(process.cwd(), 'private-data', 'images-master.json');
+      if (!fs.existsSync(masterPath)) return '';
+      const parsed = JSON.parse(fs.readFileSync(masterPath, 'utf8'));
+      legacyMasterCache = Array.isArray(parsed?.images) ? parsed.images : [];
+    }
+    const row = legacyMasterCache.find((item: any) => safeText(item?.id) === imageId);
+    return safeText(row?.original_key);
+  } catch {
+    return '';
+  }
+}
+
+async function findPrivateOriginalKey(imageId: string) {
+  const cfg = getRuntimeConfig();
+  const prefix = `originals/by-image-id/${imageId}/`;
+  const listed = await getClient().send(new ListObjectsV2Command({
+    Bucket: cfg.privateBucket,
+    Prefix: prefix,
+    MaxKeys: 10,
+  }));
+  const currentKey = (listed.Contents || [])
+    .map((item: any) => safeText(item?.Key))
+    .find((key: string) => /^original\.(?:jpg|jpeg|png|webp)$/i.test(key.slice(prefix.length)));
+  if (currentKey) return currentKey;
+
+  const legacyKey = findLegacyMasterOriginalKey(imageId);
+  if (legacyKey && /\.(?:jpg|jpeg|png|webp)$/i.test(legacyKey)) return legacyKey;
+  return '';
+}
+
+async function publishFreeOriginal(imageId: string, doc: CatalogDocument) {
+  const cfg = getRuntimeConfig();
+  const sourceKey = await findPrivateOriginalKey(imageId);
+  if (!sourceKey) throw new Error(`FREE_IMAGE_ORIGINAL_NOT_FOUND:${imageId}`);
+  const ext = imageExtensionFromKey(sourceKey);
+  const publicKey = `free/originals/${imageId}.${ext}`;
+  const copySource = `/${cfg.privateBucket}/${sourceKey.split('/').map(encodeURIComponent).join('/')}`;
+
+  await getClient().send(new CopyObjectCommand({
+    Bucket: cfg.publicBucket,
+    Key: publicKey,
+    CopySource: copySource,
+    ContentType: ext === 'jpg' ? 'image/jpeg' : `image/${ext}`,
+    MetadataDirective: 'REPLACE',
+    CacheControl: 'public, max-age=31536000, immutable',
+  }));
+
+  return { publicKey, downloadUrl: publicUrlFor(publicKey, doc) };
+}
+
+async function unpublishFreeOriginal(imageId: string) {
+  const cfg = getRuntimeConfig();
+  await Promise.all(
+    ['jpg', 'jpeg', 'png', 'webp'].map((ext) =>
+      removeObject(cfg.publicBucket, `free/originals/${imageId}.${ext}`)
+    ),
+  );
+}
+
 async function handlePublicCatalog(_req: any, res: any) {
   const doc = await readCatalog(false);
   return sendJson(res, 200, doc.root);
@@ -315,6 +388,14 @@ async function handleUpload(req: any, res: any, body: any) {
     await putObject(cfg.publicBucket, thumbnailKey, thumbResult.data, "image/webp", true);
     uploaded.push({ bucket: cfg.publicBucket, key: thumbnailKey });
 
+    let freeDownloadUrl = "";
+    if (priceType === "free") {
+      const freeKey = `free/originals/${imageId}.${ext}`;
+      await putObject(cfg.publicBucket, freeKey, buffer, mimeType, true);
+      uploaded.push({ bucket: cfg.publicBucket, key: freeKey });
+      freeDownloadUrl = publicUrlFor(freeKey, catalog);
+    }
+
     const thumbnailUrl = publicUrlFor(thumbnailKey, catalog);
     const record = {
       id: imageId,
@@ -328,7 +409,7 @@ async function handleUpload(req: any, res: any, body: any) {
       price_type: priceType,
       is_free: priceType === "free",
       ...(priceType === "free"
-        ? { download_url: `/api/main?action=get-r2-free-image-download&id=${encodeURIComponent(imageId)}` }
+        ? { download_url: freeDownloadUrl }
         : {}),
       created_at: now.toISOString(),
     };
@@ -350,7 +431,7 @@ async function handleUpload(req: any, res: any, body: any) {
       storage: {
         private_original: true,
         public_thumbnail: true,
-        public_original: false,
+        public_original: priceType === "free",
       },
     });
   } catch (error: any) {
@@ -412,40 +493,59 @@ async function handleUpdatePriceType(req: any, res: any, body: any) {
 
   const doc = await readCatalog(true);
   const wanted = new Set(imageIds);
-  let updated = 0;
-  const nextImages = doc.images.map((image: any) => {
-    const id = safeText(image?.id);
-    if (!wanted.has(id)) return image;
-    updated += 1;
+  const targets = doc.images.filter((image: any) => wanted.has(safeText(image?.id)));
+  if (!targets.length) return sendJson(res, 404, { ok: false, error: 'IMAGE_NOT_FOUND' });
 
-    const next = {
-      ...image,
-      plan_type: requestedPriceType,
-      price_type: requestedPriceType,
-      is_free: requestedPriceType === 'free',
-    };
+  const freeUrls = new Map<string, string>();
 
+  try {
     if (requestedPriceType === 'free') {
-      return {
-        ...next,
-        download_url: `/api/main?action=get-r2-free-image-download&id=${encodeURIComponent(id)}`,
-      };
+      for (const image of targets) {
+        const id = safeText(image?.id);
+        const published = await publishFreeOriginal(id, doc);
+        freeUrls.set(id, published.downloadUrl);
+      }
+    } else {
+      for (const image of targets) {
+        await unpublishFreeOriginal(safeText(image?.id));
+      }
     }
 
-    const { download_url: _downloadUrl, ...locked } = next;
-    return locked;
-  });
+    const nextImages = doc.images.map((image: any) => {
+      const id = safeText(image?.id);
+      if (!wanted.has(id)) return image;
 
-  if (!updated) return sendJson(res, 404, { ok: false, error: 'IMAGE_NOT_FOUND' });
-  await writeCatalog(doc, nextImages);
-  return sendJson(res, 200, {
-    ok: true,
-    success: true,
-    action: 'updateImagePriceType',
-    updated,
-    price_type: requestedPriceType,
-    manifest_count: nextImages.length,
-  });
+      const next = {
+        ...image,
+        plan_type: requestedPriceType,
+        price_type: requestedPriceType,
+        is_free: requestedPriceType === 'free',
+      };
+
+      if (requestedPriceType === 'free') {
+        return {
+          ...next,
+          download_url: freeUrls.get(id) || safeText(image?.download_url),
+        };
+      }
+
+      const { download_url: _downloadUrl, ...locked } = next;
+      return locked;
+    });
+
+    await writeCatalog(doc, nextImages);
+    return sendJson(res, 200, {
+      ok: true,
+      success: true,
+      action: 'updateImagePriceType',
+      updated: targets.length,
+      price_type: requestedPriceType,
+      manifest_count: nextImages.length,
+    });
+  } catch (error: any) {
+    const code = safeText(error?.message || 'IMAGE_PRICE_TYPE_UPDATE_FAILED');
+    return sendJson(res, 500, { ok: false, success: false, error: code });
+  }
 }
 
 function publicKeyFromUrl(value: any) {
