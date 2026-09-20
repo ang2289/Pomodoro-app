@@ -238,6 +238,11 @@ async function removeObject(bucket: string, key: string) {
   await getClient().send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
 }
 
+async function handlePublicCatalog(_req: any, res: any) {
+  const doc = await readCatalog(false);
+  return sendJson(res, 200, doc.root);
+}
+
 async function handleList(req: any, res: any) {
   requireAdmin(req);
   const doc = await readCatalog(false);
@@ -505,6 +510,10 @@ export default async function handler(req: any, res: any) {
 
   try {
     const action = safeText(req?.query?.action);
+    if (action === "public-catalog") {
+      if (req.method !== "GET") return sendJson(res, 405, { ok: false, error: "Method Not Allowed" });
+      return await handlePublicCatalog(req, res);
+    }
     if (action === "admin-list-images") {
       if (req.method !== "GET") return sendJson(res, 405, { ok: false, error: "Method Not Allowed" });
       return await handleList(req, res);
