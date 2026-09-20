@@ -52,7 +52,8 @@ const FALLBACK_IMAGE_CATEGORIES: ImageCategory[] = [
   { id: 'pet-animal', name: '寵物／動物', sort_order: 9, is_active: true },
   { id: 'pet-grooming', name: '寵物美容', sort_order: 10, is_active: true },
   { id: 'car-detailing', name: '汽車美容', sort_order: 11, is_active: true },
-  { id: 'wedding-event', name: '婚禮／活動', sort_order: 12, is_active: true },
+  { id: 'coloring-page', name: '著色頁', sort_order: 12, is_active: true },
+  { id: 'wedding-event', name: '婚禮／活動', sort_order: 13, is_active: true },
   { id: 'travel-hotel', name: '旅遊／住宿', sort_order: 11, is_active: true },
   { id: 'education', name: '教育／學習', sort_order: 12, is_active: true },
   { id: 'finance', name: '金融／理財', sort_order: 13, is_active: true },
@@ -132,46 +133,46 @@ export default function AdminImagesPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const refreshCatalog = async () => {
-    const response = await imageAdminFetch('/api/image-admin?action=admin-list-images')
-    const data = await response.json().catch(() => ({}))
-    if (!response.ok || !data?.ok) throw new Error(data?.error || `HTTP ${response.status}`)
-    const uniqueCategories = new Map<string, ImageCategory>()
-    for (const category of FALLBACK_IMAGE_CATEGORIES) {
-      uniqueCategories.set(category.id, category)
-    }
-    for (const image of Array.isArray(data?.images) ? data.images : []) {
-      const id = String(image?.category_id || '').trim()
-      const name = String(image?.category_name || '').trim()
-      if (id && name && !uniqueCategories.has(id)) {
-        uniqueCategories.set(id, { id, name, sort_order: uniqueCategories.size, is_active: true })
+    const imageResponse = await imageAdminFetch('/api/image-admin?action=admin-list-images')
+    const imageData = await imageResponse.json().catch(() => ({}))
+    if (!imageResponse.ok || !imageData?.ok) throw new Error(imageData?.error || `HTTP ${imageResponse.status}`)
+
+    let rows: ImageCategory[] = []
+    try {
+      const categoryResponse = await imageAdminFetch('/api/image-admin?action=admin-list-image-categories')
+      const categoryData = await categoryResponse.json().catch(() => ({}))
+      if (categoryResponse.ok && categoryData?.ok && Array.isArray(categoryData.categories)) {
+        rows = categoryData.categories
+          .map((category: any, index: number) => ({
+            id: String(category?.id || '').trim(),
+            name: String(category?.name || '').trim(),
+            sort_order: Number.isFinite(Number(category?.sort_order)) ? Number(category.sort_order) : index,
+            is_active: category?.is_active !== false,
+          }))
+          .filter((category: ImageCategory) => category.id && category.name && category.is_active)
       }
+    } catch (error) {
+      console.warn('分類管理清單讀取失敗，改用圖片資料與固定分類。', error)
     }
-    
-    const fixedJobCategories: ImageCategory[] = [
-      { id: 'real-estate', name: '\u623f\u4ef2\uff0f\u623f\u5730\u7522', sort_order: 0, is_active: true },
-      { id: 'hair-salon', name: '\u7f8e\u9aee\uff0f\u6c99\u9f8d', sort_order: 1, is_active: true },
-      { id: 'nail-salon', name: '\u7f8e\u7532', sort_order: 2, is_active: true },
-      { id: 'beauty-spa', name: '\u7f8e\u5bb9SPA', sort_order: 3, is_active: true },
-      { id: 'dentist', name: '\u7259\u91ab', sort_order: 4, is_active: true },
-      { id: 'pet-grooming', name: '\u5bf5\u7269\u7f8e\u5bb9', sort_order: 5, is_active: true },
-      { id: 'car-detailing', name: '\u6c7d\u8eca\u7f8e\u5bb9', sort_order: 6, is_active: true },
-    ]
 
-    const fixedJobCategoryIds = new Set(
-      fixedJobCategories.map((category) => category.id)
-    )
+    if (!rows.length) {
+      const uniqueCategories = new Map<string, ImageCategory>()
+      for (const category of FALLBACK_IMAGE_CATEGORIES) uniqueCategories.set(category.id, category)
+      for (const image of Array.isArray(imageData?.images) ? imageData.images : []) {
+        const id = String(image?.category_id || '').trim()
+        const name = String(image?.category_name || '').trim()
+        if (id && name && !uniqueCategories.has(id)) {
+          uniqueCategories.set(id, { id, name, sort_order: uniqueCategories.size, is_active: true })
+        }
+      }
+      rows = [...uniqueCategories.values()]
+    }
 
-    const rows = [
-      ...fixedJobCategories,
-      ...[...uniqueCategories.values()].filter(
-        (category) => !fixedJobCategoryIds.has(category.id)
-      ),
-    ]
-
+    rows.sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name, 'zh-Hant'))
     setCategories(rows)
-    setSelectedCategoryId((current) => current || rows[0]?.id || '')
+    setSelectedCategoryId((current) => rows.some((category) => category.id === current) ? current : rows[0]?.id || '')
     setCatalogWarning('')
-    return Number(data?.total || 0)
+    return Number(imageData?.total || 0)
   }
 
   // 分類由同一次 R2 catalog 圖片清單去重取得，避免額外讀取 manifest。
