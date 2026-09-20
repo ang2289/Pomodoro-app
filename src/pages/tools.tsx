@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import SEO, { getBaseUrl } from "@/components/SEO";
@@ -32,7 +32,7 @@ const BADGE_KEYS: Record<string, string> = {
 };
 
 const DIRECT_BADGE_LABELS: Record<string, string> = {
-  price399: "NT$399",
+  price199: "NT$199",
   partialFree: "部分免費",
 };
 
@@ -44,14 +44,53 @@ export default function ToolsPage() {
   const { t, i18n } = useTranslation();
   const inLang = i18n.language?.startsWith("en") ? "en-US" : "zh-TW";
   const [search, setSearch] = useState("");
+  const [imageLibraryCount, setImageLibraryCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const publicR2Base = String(import.meta.env.VITE_PUBLIC_R2_URL || "").replace(/\/$/, "");
+    const manifestUrl = publicR2Base
+      ? `${publicR2Base}/catalog/images-public.json`
+      : import.meta.env.VITE_IMAGE_MANIFEST_URL || "/data/images-public.json";
+
+    fetch(manifestUrl, { cache: "no-cache" })
+      .then((response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.json();
+      })
+      .then((raw) => {
+        if (cancelled) return;
+        const list = Array.isArray(raw)
+          ? raw
+          : Array.isArray(raw?.images)
+            ? raw.images
+            : Array.isArray(raw?.data)
+              ? raw.data
+              : Array.isArray(raw?.items)
+                ? raw.items
+                : [];
+        if (list.length) setImageLibraryCount(list.length);
+      })
+      .catch(() => {
+        if (!cancelled) setImageLibraryCount(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const imageLibraryCountLabel = imageLibraryCount
+    ? imageLibraryCount.toLocaleString("zh-TW")
+    : "1,500+";
 
   const freeTools: ToolCard[] = [
     {
       title: "高畫質圖片素材庫",
-      desc: "1,583+ 張高畫質圖片完整版 NT$399，涵蓋食物、商業、花卉、社群、桌布等分類；另提供部分圖片免費試用。",
+      desc: `${imageLibraryCountLabel} 張高畫質圖片完整版，限時 NT$199；涵蓋職業主題、食物、商業、花卉、社群、桌布等分類，另提供部分圖片免費試用。`,
       icon: "🖼️",
       to: "/images",
-      badges: ["price399", "partialFree", "hot"],
+      badges: ["price199", "partialFree", "hot"],
     },
     {
       title: "免費資源中心",
