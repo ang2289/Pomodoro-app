@@ -316,6 +316,59 @@ async function handlePublicCatalog(_req: any, res: any) {
   return sendJson(res, 200, doc.root);
 }
 
+async function handlePublicFreeDownload(req: any, res: any) {
+  const imageId = safeText(req?.query?.id);
+  if (!imageId || imageId.length > 160) {
+    return sendJson(res, 400, { ok: false, error: 'INVALID_IMAGE_ID' });
+  }
+
+  const doc = await readCatalog(false);
+  const image = doc.images.find((item: any) => safeText(item?.id) === imageId);
+  const priceType = safeText(image?.price_type || image?.plan_type).toLowerCase();
+  if (!image || priceType !== 'free') {
+    return sendJson(res, 404, { ok: false, error: 'FREE_IMAGE_NOT_FOUND' });
+  }
+
+  const cfg = getRuntimeConfig();
+  const client = getClient();
+  const candidates = new Set<string>();
+
+  const urlKey = publicKeyFromUrl(image?.download_url);
+  if (urlKey && /^free\/originals\/.+\.(?:jpg|jpeg|png|webp)$/i.test(urlKey)) {
+    candidates.add(urlKey);
+  }
+
+  const listed = await client.send(new ListObjectsV2Command({
+    Bucket: cfg.publicBucket,
+    Prefix: `free/originals/${imageId}.`,
+    MaxKeys: 10,
+  }));
+  for (const item of listed.Contents || []) {
+    const key = safeText(item?.Key);
+    if (/^free\/originals\/.+\.(?:jpg|jpeg|png|webp)$/i.test(key)) candidates.add(key);
+  }
+
+  for (const key of candidates) {
+    try {
+      const object = await client.send(new GetObjectCommand({
+        Bucket: cfg.publicBucket,
+        Key: key,
+      }));
+      const ext = imageExtensionFromKey(key);
+      res.status(200);
+      res.setHeader('Content-Type', object.ContentType || (ext === 'jpg' ? 'image/jpeg' : `image/${ext}`));
+      if (object.ContentLength != null) res.setHeader('Content-Length', String(object.ContentLength));
+      res.setHeader('Content-Disposition', `attachment; filename="RXV-${imageId}.${ext}"`);
+      res.setHeader('Cache-Control', 'private, no-store');
+      return (object.Body as any).pipe(res);
+    } catch {
+      // Try the next compatible public free-original key.
+    }
+  }
+
+  return sendJson(res, 404, { ok: false, error: 'FREE_IMAGE_PUBLIC_ORIGINAL_NOT_FOUND' });
+}
+
 async function handleList(req: any, res: any) {
   requireAdmin(req);
   const doc = await readCatalog(false);
@@ -613,6 +666,10 @@ export default async function handler(req: any, res: any) {
     if (action === "public-catalog") {
       if (req.method !== "GET") return sendJson(res, 405, { ok: false, error: "Method Not Allowed" });
       return await handlePublicCatalog(req, res);
+    }
+    if (action === "public-free-download") {
+      if (req.method !== "GET") return sendJson(res, 405, { ok: false, error: "Method Not Allowed" });
+      return await handlePublicFreeDownload(req, res);
     }
     if (action === "admin-list-images") {
       if (req.method !== "GET") return sendJson(res, 405, { ok: false, error: "Method Not Allowed" });
