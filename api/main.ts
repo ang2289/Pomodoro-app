@@ -788,24 +788,106 @@ async function handleGetR2ImageThumbnail(req: any, res: any) {
 
 async function handleGetR2FreeImageDownload(req: any, res: any) {
   if (req.method !== "GET") return jsonResponse(res, 405, { ok: false, error: "Method Not Allowed" });
+
   try {
     const imageId = safeText(req?.query?.id);
-    if (!imageId || imageId.length > 160) return jsonResponse(res, 400, { ok: false, error: "INVALID_IMAGE_ID" });
-    const image = readR2ImageMaster().find((item: any) => safeText(item?.id) === imageId);
-    const originalKey = safeText(image?.original_key);
-    if (!image || safeText(image?.plan_type) !== "free" || !isR2CatalogOriginalKey(originalKey)) {
+    if (!imageId || imageId.length > 160) {
+      return jsonResponse(res, 400, { ok: false, error: "INVALID_IMAGE_ID" });
+    }
+
+    // Download permission must come from the current public R2 catalog, because
+    // the admin page can switch free/bundle without rebuilding the legacy local master.
+    const catalog = await readPublicImageCatalogFromR2();
+    const image = catalog.images.find((item: any) => safeText(item?.id) === imageId);
+    if (!image || catalogPlanType(image) !== "free") {
       return jsonResponse(res, 404, { ok: false, error: "FREE_IMAGE_NOT_FOUND" });
     }
 
-    const object = await getR2Client().send(new GetObjectCommand({ Bucket: R2_BUCKET_NAME, Key: originalKey }));
-    const extension = originalKey.split(".").pop()?.toLowerCase() || "jpg";
-    res.status(200);
-    res.setHeader("Content-Type", object.ContentType || `image/${extension === "jpg" ? "jpeg" : extension}`);
-    if (object.ContentLength != null) res.setHeader("Content-Length", String(object.ContentLength));
-    res.setHeader("Content-Disposition", `attachment; filename="RXV-${imageId}.${extension}"`);
-    res.setHeader("Cache-Control", "private, no-store");
-    return (object.Body as any).pipe(res);
-  } catch {
+    const runtimeConfig = getImageR2RuntimeConfig();
+    const client = getImageCatalogR2Client();
+    const prefix = `originals/by-image-id/${imageId}/`;
+
+    // New image admin uploads keep originals in the private image bucket.
+    const listed = await client.send(
+      new ListObjectsV2Command({
+        Bucket: runtimeConfig.privateBucket,
+        Prefix: prefix,
+        MaxKeys: 10,
+      }),
+    );
+
+    const originalKey = (listed.Contents || [])
+      .map((item: any) => safeText(item?.Key))
+      .find((key: string) =>
+        /^original\.(?:jpg|jpeg|png|webp)$/i.test(key.slice(prefix.length)),
+      );
+
+    if (originalKey) {
+      const object = await client.send(
+        new GetObjectCommand({
+          Bucket: runtimeConfig.privateBucket,
+          Key: originalKey,
+        }),
+      );
+      const extension = originalKey.split(".").pop()?.toLowerCase() || "jpg";
+      res.status(200);
+      res.setHeader(
+        "Content-Type",
+        object.ContentType || `image/${extension === "jpg" ? "jpeg" : extension}`,
+      );
+      if (object.ContentLength != null) {
+        res.setHeader("Content-Length", String(object.ContentLength));
+      }
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="RXV-${imageId}.${extension}"`,
+      );
+      res.setHeader("Cache-Control", "private, no-store");
+      return (object.Body as any).pipe(res);
+    }
+
+    // Compatibility fallback for older catalog entries that still use the
+    // legacy master and bucket layout.
+    try {
+      const legacyImage = readR2ImageMaster().find(
+        (item: any) => safeText(item?.id) === imageId,
+      );
+      const legacyOriginalKey = safeText(legacyImage?.original_key);
+      if (legacyImage && isR2CatalogOriginalKey(legacyOriginalKey)) {
+        const object = await getR2Client().send(
+          new GetObjectCommand({
+            Bucket: R2_BUCKET_NAME,
+            Key: legacyOriginalKey,
+          }),
+        );
+        const extension = legacyOriginalKey.split(".").pop()?.toLowerCase() || "jpg";
+        res.status(200);
+        res.setHeader(
+          "Content-Type",
+          object.ContentType || `image/${extension === "jpg" ? "jpeg" : extension}`,
+        );
+        if (object.ContentLength != null) {
+          res.setHeader("Content-Length", String(object.ContentLength));
+        }
+        res.setHeader(
+          "Content-Disposition",
+          `attachment; filename="RXV-${imageId}.${extension}"`,
+        );
+        res.setHeader("Cache-Control", "private, no-store");
+        return (object.Body as any).pipe(res);
+      }
+    } catch {
+      // Ignore legacy fallback failures; return a clean not-found below.
+    }
+
+    return jsonResponse(res, 404, { ok: false, error: "FREE_IMAGE_ORIGINAL_NOT_FOUND" });
+  } catch (error: any) {
+    console.error("FREE_IMAGE_DOWNLOAD_FAILED", {
+      name: error?.name,
+      code: error?.Code || error?.code,
+      httpStatus: error?.$metadata?.httpStatusCode,
+      message: error?.message,
+    });
     return jsonResponse(res, 500, { ok: false, error: "FREE_IMAGE_DOWNLOAD_UNAVAILABLE" });
   }
 }
