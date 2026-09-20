@@ -366,7 +366,39 @@ async function handlePublicFreeDownload(req: any, res: any) {
     }
   }
 
-  return sendJson(res, 404, { ok: false, error: 'FREE_IMAGE_PUBLIC_ORIGINAL_NOT_FOUND' });
+  // 若是後來批次改成免費的圖片，原圖可能仍只存在原始儲存區。
+  // 前面已確認 catalog 狀態為 free，因此這裡可透過同源 API 串流原圖。
+  try {
+    const prefix = `originals/by-image-id/${imageId}/`;
+    const listedPrivate = await client.send(new ListObjectsV2Command({
+      Bucket: cfg.privateBucket,
+      Prefix: prefix,
+      MaxKeys: 10,
+    }));
+    const privateKey = (listedPrivate.Contents || [])
+      .map((item: any) => safeText(item?.Key))
+      .find((key: string) =>
+        /^original\.(?:jpg|jpeg|png|webp)$/i.test(key.slice(prefix.length)),
+      );
+
+    if (privateKey) {
+      const object = await client.send(new GetObjectCommand({
+        Bucket: cfg.privateBucket,
+        Key: privateKey,
+      }));
+      const ext = imageExtensionFromKey(privateKey);
+      res.status(200);
+      res.setHeader('Content-Type', object.ContentType || (ext === 'jpg' ? 'image/jpeg' : `image/${ext}`));
+      if (object.ContentLength != null) res.setHeader('Content-Length', String(object.ContentLength));
+      res.setHeader('Content-Disposition', `attachment; filename="RXV-${imageId}.${ext}"`);
+      res.setHeader('Cache-Control', 'private, no-store');
+      return (object.Body as any).pipe(res);
+    }
+  } catch {
+    // 無法讀取新式原圖時，再回傳乾淨的 not found。
+  }
+
+  return sendJson(res, 404, { ok: false, error: 'FREE_IMAGE_ORIGINAL_NOT_FOUND' });
 }
 
 async function handleList(req: any, res: any) {
