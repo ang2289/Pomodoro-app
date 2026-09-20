@@ -5,6 +5,7 @@ import { PROFESSIONAL_IMAGE_PACKS, type ProfessionalImagePackId } from '@/data/p
 const PACKS = PROFESSIONAL_IMAGE_PACKS
 
 const CONTACT_EMAIL = 'rxv0227@gmail.com'
+const LINE_ID = 'ang22899'
 const BANK = {
   name: '新光銀行',
   code: '103',
@@ -44,11 +45,11 @@ export default function ImagePacksPage() {
     }
   }
 
-  const reportByEmail = () => {
+  const getReportData = () => {
     if (!selectedPack) {
       window.alert('請先選擇要購買的專業圖片小包。')
       document.getElementById('pack-products')?.scrollIntoView({ behavior: 'smooth' })
-      return
+      return null
     }
 
     const subject = `RXV 圖片小包匯款回報｜${selectedPack.name}`
@@ -64,7 +65,37 @@ export default function ImagePacksPage() {
       '備註：',
     ].join('\n')
 
-    window.location.href = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+    return { subject, body }
+  }
+
+  const reportByGmail = () => {
+    const report = getReportData()
+    if (!report) return
+    const params = new URLSearchParams({
+      view: 'cm',
+      fs: '1',
+      to: CONTACT_EMAIL,
+      su: report.subject,
+      body: report.body,
+    })
+    window.open(`https://mail.google.com/mail/?${params.toString()}`, '_blank', 'noopener,noreferrer')
+  }
+
+  const reportByLine = async () => {
+    const report = getReportData()
+    if (!report) return
+    try {
+      await navigator.clipboard.writeText(report.body)
+    } catch {
+      // 剪貼簿不可用時仍可繼續開 LINE。
+    }
+    window.open(`https://line.me/R/share?text=${encodeURIComponent(report.body)}`, '_blank', 'noopener,noreferrer')
+  }
+
+  const reportByEmail = () => {
+    const report = getReportData()
+    if (!report) return
+    window.location.href = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(report.subject)}&body=${encodeURIComponent(report.body)}`
   }
 
   return (
@@ -85,7 +116,7 @@ export default function ImagePacksPage() {
             每包都是另外整理的職業主題素材，檔名直接標示用途，ZIP 內附授權與使用說明，下載後更容易搜尋與使用。
           </p>
           <div className="mx-auto mt-6 max-w-3xl rounded-2xl border border-amber-300 bg-amber-50 px-4 py-4 text-sm font-bold leading-7 text-amber-900 sm:text-base">
-            只需要單一行業，可選 NT$99 專業小包；需要全部圖片，則可選 NT$199 完整素材庫。<br />
+            房仲、美髮、美甲、美容 SPA、牙醫、寵物等職業圖片皆包含在 NT$199 完整素材庫；若只需要單一職業，也可選 NT$99 專業小包。<br />
             完整素材庫數量會隨網站持續增加，最新數量以圖片素材庫頁面顯示為準。
             <div className="mt-2">
               <Link to="/images" className="text-emerald-700 underline underline-offset-4">查看全部圖片素材庫</Link>
@@ -146,7 +177,7 @@ export default function ImagePacksPage() {
         <section id="pack-payment" className="scroll-mt-28 pb-10">
           <div className="rounded-3xl border border-blue-200 bg-white p-5 shadow-sm sm:p-7">
             <h2 className="text-2xl font-black text-slate-950">付款與交付方式</h2>
-            <p className="mt-2 leading-7 text-slate-600">目前採銀行匯款＋Email 人工確認。確認入帳後，以 Email 回覆私人 ZIP 下載連結。</p>
+            <p className="mt-2 leading-7 text-slate-600">目前採銀行匯款＋Gmail／LINE 人工回報。確認入帳後，以 Email 回覆私人 ZIP 下載連結。</p>
 
             <div className="mt-5 rounded-2xl border border-blue-200 bg-blue-50 p-4 leading-7">
               已選商品：<strong className="text-blue-800">{selectedPack?.name || '尚未選擇'}</strong><br />
@@ -163,18 +194,28 @@ export default function ImagePacksPage() {
             <ol className="mt-6 space-y-3 text-sm leading-7 text-slate-700 sm:text-base">
               <li><strong>1.</strong> 先選擇要購買的圖片小包。</li>
               <li><strong>2.</strong> 依顯示金額完成銀行匯款。</li>
-              <li><strong>3.</strong> 按「匯款完成，寄 Email 回報」，填入匯款日期、帳號末 5 碼、姓名與收件 Email。</li>
+              <li><strong>3.</strong> 按 Gmail 或 LINE 回報，填入匯款日期、帳號末 5 碼、姓名與收件 Email。</li>
               <li><strong>4.</strong> 確認入帳後，以 Email 回覆私人下載連結。</li>
             </ol>
 
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <button type="button" onClick={copyBankInfo} className="min-h-[46px] rounded-xl border border-slate-300 bg-white px-5 py-3 font-black text-slate-800 hover:bg-slate-50">
                 {copied ? '已複製匯款資料' : '複製匯款資料'}
               </button>
-              <button type="button" onClick={reportByEmail} className="min-h-[46px] rounded-xl bg-emerald-600 px-5 py-3 font-black !text-white hover:bg-emerald-700" style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}>
-                匯款完成，寄 Email 回報
+              <button type="button" onClick={reportByGmail} className="min-h-[46px] rounded-xl bg-emerald-600 px-5 py-3 font-black !text-white hover:bg-emerald-700" style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}>
+                用 Gmail 回報
+              </button>
+              <button type="button" onClick={reportByLine} className="min-h-[46px] rounded-xl bg-[#06C755] px-5 py-3 font-black !text-white hover:brightness-95" style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}>
+                用 LINE 回報
+              </button>
+              <button type="button" onClick={reportByEmail} className="min-h-[46px] rounded-xl border border-slate-300 bg-white px-5 py-3 font-black text-slate-800 hover:bg-slate-50">
+                其他 Email 軟體
               </button>
             </div>
+            <p className="mt-3 text-sm font-bold text-slate-600">
+              LINE ID：{LINE_ID}。LINE 回報會預帶商品、金額與回報欄位；若尚未加好友，可先加入。
+              <a href={`https://line.me/ti/p/~${LINE_ID}`} target="_blank" rel="noopener noreferrer" className="ml-2 font-black text-emerald-700 underline">先加 LINE 好友</a>
+            </p>
 
             <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold leading-7 text-amber-900">
               完整 ZIP 不直接公開放在免費圖片庫。網站只提供預覽與部分免費圖；付費包確認付款後再提供私人下載連結。
