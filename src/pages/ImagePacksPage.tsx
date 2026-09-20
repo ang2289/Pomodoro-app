@@ -1,39 +1,8 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { PROFESSIONAL_IMAGE_PACKS, type ProfessionalImagePackId } from '@/data/professionalImagePacks'
 
-type Pack = {
-  id: 'real-estate' | 'hair-salon'
-  category: string
-  name: string
-  amount: number
-  badge: string
-  description: string
-  details: string[]
-  accent: 'emerald' | 'fuchsia'
-}
-
-const PACKS: Pack[] = [
-  {
-    id: 'real-estate',
-    category: '房仲／房地產',
-    name: 'RXV 房仲帶看宣傳圖片包',
-    amount: 99,
-    badge: '83 張｜16:9 高解析',
-    description: '住宅帶看、成交交屋、公設社區、實務看屋驗屋與生活機能等房仲行銷情境。',
-    details: ['檔名採「用途_圖片名」', '附商品介紹、使用說明、授權與使用說明', '可加字、Logo、電話與 CTA 後商用'],
-    accent: 'emerald',
-  },
-  {
-    id: 'hair-salon',
-    category: '美容／時尚',
-    name: 'RXV 美髮沙龍職業圖片包',
-    amount: 99,
-    badge: '多場景職業素材',
-    description: '髮型諮詢、洗護、剪髮、染燙、完成造型、髮廊日常、預約宣傳與專業工具等情境。',
-    details: ['檔名採「用途_圖片名」', '附商品介紹、使用說明、授權與使用說明', '適合髮廊網站、社群、廣告與預約宣傳'],
-    accent: 'fuchsia',
-  },
-]
+const PACKS = PROFESSIONAL_IMAGE_PACKS
 
 const CONTACT_EMAIL = 'rxv0227@gmail.com'
 const BANK = {
@@ -45,11 +14,11 @@ const BANK = {
 }
 
 export default function ImagePacksPage() {
-  const [selectedId, setSelectedId] = useState<Pack['id'] | null>(null)
+  const [selectedId, setSelectedId] = useState<ProfessionalImagePackId | null>(null)
   const [copied, setCopied] = useState(false)
   const selectedPack = useMemo(() => PACKS.find((pack) => pack.id === selectedId) || null, [selectedId])
 
-  const selectPack = (id: Pack['id']) => {
+  const selectPack = (id: ProfessionalImagePackId) => {
     setSelectedId(id)
     window.setTimeout(() => {
       document.getElementById('pack-payment')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -116,24 +85,39 @@ export default function ImagePacksPage() {
             每包都是另外整理的職業主題素材，檔名直接標示用途，ZIP 內附授權與使用說明，下載後更容易搜尋與使用。
           </p>
           <div className="mx-auto mt-6 max-w-3xl rounded-2xl border border-amber-300 bg-amber-50 px-4 py-4 text-sm font-bold leading-7 text-amber-900 sm:text-base">
-            想要大量不同題材？網站另有 1,591 張綜合圖片素材庫完整版，限時 NT$199。<br />
-            房仲、美髮等專業職業包為另外整理的商品，不包含在 NT$199 綜合素材庫方案內。
+            只需要單一行業，可選 NT$99 專業小包；需要全部圖片，則可選 NT$199 完整素材庫。<br />
+            完整素材庫數量會隨網站持續增加，最新數量以圖片素材庫頁面顯示為準。
             <div className="mt-2">
-              <Link to="/images" className="text-emerald-700 underline underline-offset-4">查看 1,591 張綜合素材庫</Link>
+              <Link to="/images" className="text-emerald-700 underline underline-offset-4">查看全部圖片素材庫</Link>
             </div>
           </div>
         </section>
 
         <section id="pack-products" className="scroll-mt-28 py-9 sm:py-12">
           <h2 className="text-2xl font-black text-slate-950 sm:text-3xl">目前可購買的專業小包</h2>
-          <p className="mt-2 text-slate-600">目前先上架房仲與美髮；之後可持續增加美甲、SPA、餐飲等職業主題。</p>
+          <p className="mt-2 text-slate-600">目前已上架房仲、美髮、美甲、美容 SPA、牙醫與寵物 6 個專業主題包，皆為 NT$99／包。</p>
 
           <div className="mt-6 grid gap-5 lg:grid-cols-2">
             {PACKS.map((pack) => {
-              const isEmerald = pack.accent === 'emerald'
+              const accentClass = {
+                emerald: 'bg-gradient-to-br from-slate-700 to-emerald-700',
+                fuchsia: 'bg-gradient-to-br from-violet-600 to-fuchsia-600',
+                rose: 'bg-gradient-to-br from-rose-500 to-pink-600',
+                violet: 'bg-gradient-to-br from-violet-600 to-purple-700',
+                sky: 'bg-gradient-to-br from-sky-600 to-blue-700',
+                amber: 'bg-gradient-to-br from-amber-500 to-orange-600',
+              }[pack.accent]
+              const buttonClass = {
+                emerald: 'bg-emerald-600 hover:bg-emerald-700',
+                fuchsia: 'bg-fuchsia-600 hover:bg-fuchsia-700',
+                rose: 'bg-rose-600 hover:bg-rose-700',
+                violet: 'bg-violet-600 hover:bg-violet-700',
+                sky: 'bg-sky-600 hover:bg-sky-700',
+                amber: 'bg-amber-600 hover:bg-amber-700',
+              }[pack.accent]
               return (
                 <article key={pack.id} className="flex h-full flex-col rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-                  <div className={`rounded-2xl p-6 text-center text-2xl font-black text-white ${isEmerald ? 'bg-gradient-to-br from-slate-700 to-emerald-700' : 'bg-gradient-to-br from-violet-600 to-fuchsia-600'}`}>
+                  <div className={`rounded-2xl p-6 text-center text-2xl font-black text-white ${accentClass}`}>
                     {pack.category}<br />商用圖片包
                   </div>
                   <span className="mt-5 w-fit rounded-full bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-600">{pack.badge}</span>
@@ -147,7 +131,7 @@ export default function ImagePacksPage() {
                     <button
                       type="button"
                       onClick={() => selectPack(pack.id)}
-                      className={`mt-4 inline-flex min-h-[48px] w-full items-center justify-center rounded-xl px-5 py-3 font-black !text-white shadow-sm transition hover:-translate-y-0.5 ${isEmerald ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-fuchsia-600 hover:bg-fuchsia-700'}`}
+                      className={`mt-4 inline-flex min-h-[48px] w-full items-center justify-center rounded-xl px-5 py-3 font-black !text-white shadow-sm transition hover:-translate-y-0.5 ${buttonClass}`}
                       style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}
                     >
                       選這一包｜NT$99
