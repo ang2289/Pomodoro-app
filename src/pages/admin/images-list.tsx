@@ -1,6 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
+type CategoryItem = {
+  id: string
+  name: string
+  sort_order?: number
+  is_active?: boolean
+  image_count?: number
+}
+
 type ImageItem = {
   id: string
   title: string
@@ -16,6 +24,9 @@ type ImageItem = {
 const FALLBACK_CATEGORIES = [
   ['real-estate', '房仲／房地產'],
   ['hair-salon', '美髮／沙龍'],
+  ['nail-salon', '美甲'],
+  ['beauty-spa', '美容 SPA'],
+  ['dentist', '牙醫'],
   ['beauty-fashion', '美容／時尚'],
   ['food-drink', '食物／飲品'],
   ['business-office', '商業／辦公'],
@@ -26,6 +37,7 @@ const FALLBACK_CATEGORIES = [
   ['pet-animal', '寵物／動物'],
   ['pet-grooming', '寵物美容'],
   ['car-detailing', '汽車美容'],
+  ['coloring-page', '著色頁'],
   ['wedding-event', '婚禮／活動'],
   ['travel-hotel', '旅遊／住宿'],
   ['education', '教育／學習'],
@@ -62,10 +74,14 @@ function adminHeaders(json = false) {
 
 export default function AdminImagesListPage() {
   const [allImages, setAllImages] = useState<ImageItem[]>([])
+  const [managedCategories, setManagedCategories] = useState<CategoryItem[]>([])
   const [selectedCategoryId, setSelectedCategoryId] = useState('all')
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [targetCategoryId, setTargetCategoryId] = useState('hair-salon')
   const [targetPriceType, setTargetPriceType] = useState<'free' | 'bundle'>('bundle')
+  const [newCategoryName, setNewCategoryName] = useState('')
+  const [manageCategoryId, setManageCategoryId] = useState('')
+  const [renameCategoryName, setRenameCategoryName] = useState('')
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [loadError, setLoadError] = useState('')
@@ -81,6 +97,19 @@ export default function AdminImagesListPage() {
       const rows = Array.isArray(data.images) ? data.images : []
       rows.sort((a: ImageItem, b: ImageItem) => String(b.created_at || '').localeCompare(String(a.created_at || '')))
       setAllImages(rows)
+
+      try {
+        const categoryResponse = await fetch('/api/image-admin?action=admin-list-image-categories', { headers: adminHeaders(false) })
+        const categoryData = await categoryResponse.json().catch(() => ({}))
+        if (categoryResponse.ok && categoryData?.ok && Array.isArray(categoryData.categories)) {
+          const categoryRows: CategoryItem[] = categoryData.categories
+          setManagedCategories(categoryRows)
+          setManageCategoryId((current) => categoryRows.some((category) => category.id === current) ? current : categoryRows[0]?.id || '')
+        }
+      } catch {
+        // 圖片清單仍可正常使用，分類管理則退回固定分類。
+      }
+
       setSelectedIds(new Set())
     } catch (error: any) {
       setLoadError(error?.message || '圖片清單載入失敗')
@@ -92,12 +121,18 @@ export default function AdminImagesListPage() {
   useEffect(() => { void load() }, [])
 
   const categories = useMemo(() => {
+    if (managedCategories.length) {
+      return managedCategories
+        .filter((category) => category.is_active !== false)
+        .sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0))
+        .map((category) => [category.id, category.name] as [string, string])
+    }
     const map = new Map<string, string>(FALLBACK_CATEGORIES as any)
     allImages.forEach((image) => {
       if (image.category_id && image.category_name) map.set(image.category_id, image.category_name)
     })
     return [...map.entries()]
-  }, [allImages])
+  }, [allImages, managedCategories])
 
   const images = selectedCategoryId === 'all' ? allImages : allImages.filter((image) => image.category_id === selectedCategoryId)
   const selectedCount = selectedIds.size
@@ -120,6 +155,70 @@ export default function AdminImagesListPage() {
   }
 
   const clearSelection = () => setSelectedIds(new Set())
+
+  const createCategory = async () => {
+    const name = newCategoryName.trim()
+    if (!name) return window.alert('請輸入新分類名稱。')
+    setBusy(true); setMessage('')
+    try {
+      const response = await fetch('/api/image-admin?action=createImageCategory', {
+        method: 'POST', headers: adminHeaders(true), body: JSON.stringify({ name }),
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok || !data?.ok) throw new Error(data?.error || `HTTP ${response.status}`)
+      setNewCategoryName('')
+      setMessage(`已新增分類「${name}」。`)
+      await load()
+    } catch (error: any) {
+      window.alert(`新增分類失敗：${error?.message || error}`)
+    } finally { setBusy(false) }
+  }
+
+  const renameCategory = async () => {
+    if (!manageCategoryId) return window.alert('請先選擇分類。')
+    const name = renameCategoryName.trim()
+    if (!name) return window.alert('請輸入新的分類名稱。')
+    const oldName = categories.find(([id]) => id === manageCategoryId)?.[1] || manageCategoryId
+    if (!window.confirm(`確定把「${oldName}」改名為「${name}」嗎？\n此分類內既有圖片名稱也會同步更新。`)) return
+    setBusy(true); setMessage('')
+    try {
+      const response = await fetch('/api/image-admin?action=renameImageCategory', {
+        method: 'POST', headers: adminHeaders(true), body: JSON.stringify({ category_id: manageCategoryId, name }),
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok || !data?.ok) throw new Error(data?.error || `HTTP ${response.status}`)
+      setRenameCategoryName('')
+      setMessage(`已把分類「${oldName}」改名為「${name}」。`)
+      await load()
+    } catch (error: any) {
+      window.alert(`修改分類名稱失敗：${error?.message || error}`)
+    } finally { setBusy(false) }
+  }
+
+  const deleteCategory = async () => {
+    if (!manageCategoryId) return window.alert('請先選擇分類。')
+    const row = managedCategories.find((category) => category.id === manageCategoryId)
+    const name = row?.name || manageCategoryId
+    const count = Number(row?.image_count || 0)
+    if (count > 0) return window.alert(`「${name}」目前還有 ${count} 張圖片。請先把圖片批次移到其他分類後才能刪除分類。`)
+    if (!window.confirm(`確定刪除空分類「${name}」嗎？\n只刪除分類，不會刪除任何圖片。`)) return
+    setBusy(true); setMessage('')
+    try {
+      const response = await fetch('/api/image-admin?action=deleteImageCategory', {
+        method: 'POST', headers: adminHeaders(true), body: JSON.stringify({ category_id: manageCategoryId }),
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok || !data?.ok) {
+        if (data?.error === 'CATEGORY_NOT_EMPTY') throw new Error(`分類內仍有 ${data.image_count || 0} 張圖片`)
+        throw new Error(data?.error || `HTTP ${response.status}`)
+      }
+      setMessage(`已刪除空分類「${name}」。`)
+      setManageCategoryId('')
+      await load()
+    } catch (error: any) {
+      window.alert(`刪除分類失敗：${error?.message || error}`)
+    } finally { setBusy(false) }
+  }
 
   const updateCategory = async () => {
     if (!selectedCount) return window.alert('請先勾選要修改的圖片。')
@@ -193,6 +292,28 @@ export default function AdminImagesListPage() {
 
       {message && <div className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 font-bold text-emerald-800">{message}</div>}
       {loadError && <div className="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">{loadError}</div>}
+
+      {!loading && <div className="mb-5 rounded-2xl border border-violet-200 bg-white p-5 shadow-sm">
+        <h2 className="text-lg font-black text-slate-900">分類管理</h2>
+        <p className="mt-1 text-sm text-slate-600">可新增、改名、刪除空分類。分類內有圖片時不能直接刪除，請先用下方「批次改分類」移走圖片。</p>
+        <div className="mt-4 flex flex-wrap items-end gap-3">
+          <div>
+            <label className="mb-1 block text-xs font-black text-slate-500">新增分類</label>
+            <input value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} placeholder="例如：著色頁" className="min-w-[180px] rounded-lg border border-slate-300 px-3 py-2" />
+          </div>
+          <button onClick={createCategory} disabled={busy || !newCategoryName.trim()} className="rounded-lg bg-violet-600 px-4 py-2 font-black text-white disabled:opacity-40">＋ 新增分類</button>
+
+          <div>
+            <label className="mb-1 block text-xs font-black text-slate-500">管理既有分類</label>
+            <select value={manageCategoryId} onChange={(e) => { setManageCategoryId(e.target.value); setRenameCategoryName('') }} className="min-w-[190px] rounded-lg border border-slate-300 bg-white px-3 py-2 font-bold">
+              {managedCategories.map((category) => <option key={category.id} value={category.id}>{category.name}（{Number(category.image_count || 0)} 張）</option>)}
+            </select>
+          </div>
+          <input value={renameCategoryName} onChange={(e) => setRenameCategoryName(e.target.value)} placeholder="輸入新名稱" className="min-w-[160px] rounded-lg border border-slate-300 px-3 py-2" />
+          <button onClick={renameCategory} disabled={busy || !manageCategoryId || !renameCategoryName.trim()} className="rounded-lg bg-blue-600 px-4 py-2 font-black text-white disabled:opacity-40">修改名稱</button>
+          <button onClick={deleteCategory} disabled={busy || !manageCategoryId} className="rounded-lg bg-red-600 px-4 py-2 font-black text-white disabled:opacity-40">刪除空分類</button>
+        </div>
+      </div>}
 
       {!loading && <div className="sticky top-2 z-20 mb-5 rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-lg backdrop-blur">
         <div className="flex flex-wrap items-end gap-3">
