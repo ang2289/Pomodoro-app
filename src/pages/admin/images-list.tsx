@@ -348,22 +348,23 @@ export default function AdminImagesListPage() {
       {loading && <p className="py-12 text-center text-gray-600">載入中…</p>}
       {!loading && !loadError && <>
         <p className="mb-4 text-sm text-gray-600">顯示 {images.length} / {allImages.length} 張</p>
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8">
           {images.map((image) => {
             const checked = selectedIds.has(image.id)
-            return <article key={image.id} className={checked ? 'overflow-hidden rounded-xl border-4 border-blue-500 bg-white shadow-md' : 'overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm'}>
+            return <article key={image.id} className={checked ? 'overflow-hidden rounded-lg border-2 border-blue-500 bg-white shadow-sm' : 'overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm'}>
               <label className="block cursor-pointer">
                 <div className="relative bg-gray-100">
-                  <img src={image.thumbnail_url || image.public_url} alt={image.title} className="h-44 w-full object-contain" loading="lazy"/>
-                  <input type="checkbox" checked={checked} onChange={() => toggle(image.id)} className="absolute left-3 top-3 h-6 w-6 accent-blue-600"/>
+                  <img src={image.thumbnail_url || image.public_url} alt={image.title} className="h-28 w-full object-contain sm:h-32" loading="lazy"/>
+                  <input type="checkbox" checked={checked} onChange={() => toggle(image.id)} className="absolute left-2 top-2 h-5 w-5 accent-blue-600"/>
                 </div>
-                <div className="p-3">
-                  <h2 className="line-clamp-2 text-sm font-bold">{image.title}</h2>
-                  <p className="mt-1 text-xs font-bold text-blue-700">分類：{image.category_name || image.category_id || '未分類'}</p>
-                  <p className={`mt-1 text-xs font-black ${(image.price_type || image.plan_type) === 'free' ? 'text-emerald-700' : 'text-amber-700'}`}>
-                    {(image.price_type || image.plan_type) === 'free' ? '✅ 免費下載' : '🔒 鎖住下載'}
+                <div className="p-2">
+                  <h2 className="truncate text-xs font-bold leading-5" title={image.title}>{image.title}</h2>
+                  <p className="mt-0.5 truncate text-[11px] font-bold text-blue-700" title={image.category_name || image.category_id || '未分類'}>
+                    {image.category_name || image.category_id || '未分類'}
                   </p>
-                  <p className="mt-1 text-[11px] text-gray-400">{image.created_at ? new Date(image.created_at).toLocaleString('zh-TW') : '既有素材'}</p>
+                  <p className={`mt-0.5 text-[11px] font-black ${(image.price_type || image.plan_type) === 'free' ? 'text-emerald-700' : 'text-amber-700'}`}>
+                    {(image.price_type || image.plan_type) === 'free' ? '✅ 免費' : '🔒 鎖住'}
+                  </p>
                 </div>
               </label>
             </article>
