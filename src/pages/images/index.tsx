@@ -508,7 +508,13 @@ export default function ImagesPage() {
 
     try {
       trackEvent("download_free_image", { image_id: image.id, image_plan_type: image.planType });
-      const safeDownloadUrl = `/api/image-admin?action=public-free-download&id=${encodeURIComponent(image.id)}`;
+      let publicBase = "";
+      try {
+        publicBase = new URL(image.downloadUrl || image.previewUrl, window.location.origin).origin;
+      } catch {
+        publicBase = "";
+      }
+      const safeDownloadUrl = `/api/free-image-download?id=${encodeURIComponent(image.id)}&base=${encodeURIComponent(publicBase)}`;
       await forceDownloadImage(safeDownloadUrl, `${image.title || "RxV-免費圖片"}`);
       setDownloadedImageIds((prev) => new Set(prev).add(image.id));
       setDownloadToastId((previous) => previous + 1);
