@@ -6,18 +6,21 @@ async function getLatest(){try{const r=await fetch("http://localhost:3006/publis
 
 async function refresh(){
   try{
-    const [response,runtime,latest]=await Promise.all([
-      fetch("http://localhost:3006/publisher-extension/status"),
+    const [response,runtime,latest,pinStatus]=await Promise.all([
+      fetch("http://localhost:3006/publisher-extension/status").catch(()=>null),
       getRuntimeState(),
       getLatest(),
+      fetch("http://127.0.0.1:3018/api/status").then(r=>r.ok?r.json():null).catch(()=>null),
     ]);
-    const d=await response.json();
+    const d=response?.ok?await response.json().catch(()=>({})):{};
     const online=Boolean(d?.online);
+    const pinterestOnline=Boolean(pinStatus?.ok);
     const phase=String(runtime?.phase||"");
     const lastError=String(runtime?.lastError||"");
     const c=latest?.candidate;
     el.innerHTML=
-      `<div class="${online?"ok":"bad"}"><strong>${online?"已連線 RxV":"尚未連線 RxV"}</strong></div>`+
+      `<div class="${online?"ok":"bad"}"><strong>3006：${online?"已連線":"尚未啟動"}</strong></div>`+
+      `<div class="${pinterestOnline?"ok":"bad"}"><strong>Pinterest 3018：${pinterestOnline?"已連線":"尚未啟動"}</strong></div>`+
       `<div class="small">擴充版本 ${d?.extension?.version||"未知"}｜待處理 ${d?.pending||0}｜處理中 ${d?.processing||0}｜待人工發佈 ${d?.prepared||0}｜已自動發佈 ${d?.published||0}</div>`+
       `<div class="small">目前狀態：${phaseLabels[phase]||phase||"未知"}${runtime?.activeJobId?`｜Job ${runtime.activeJobId}`:""}</div>`+
       `${runtime?.fileMode?`<div class="small">TikTok 選片模式：${runtime.fileMode}</div>`:""}`+
@@ -26,7 +29,7 @@ async function refresh(){
       `${d?.lastClaim?`<div class="small">最近領取：Publisher #${d.lastClaim.publisherJobId||""}｜${d.lastClaim.platform||""}</div>`:""}`+
       `${lastError?`<div class="small bad">最後錯誤：${lastError}</div>`:""}`+
       `<div class="small">支援：Facebook、TikTok、Pinterest</div>`;
-  }catch{el.innerHTML='<div class="bad"><strong>localhost:3006 尚未啟動</strong></div>';}
+  }catch(e){el.innerHTML='<div class="bad"><strong>狀態讀取失敗：'+String(e?.message||e)+'</strong></div>';}
 }
 
 async function wake(){await chrome.runtime.sendMessage({type:"RXV_PUBLISHER_WAKE",source:"popup"}).catch(()=>{});await refresh();}
