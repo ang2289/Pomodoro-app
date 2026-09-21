@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "RxV Publisher Helper",
-  "version": "39.12.0",
-  "description": "RxV Publisher V39.12：Pinterest 直接整合 3018，一鍵自動填入圖片、標題、說明、連結與圖版，最後發布人工確認。",
+  "version": "39.13.0",
+  "description": "RxV Publisher V39.13：Pinterest 自動上傳圖片、填標題／說明／連結／圖版，並回報每一步錯誤到 3018。",
   "permissions": [
     "tabs",
     "scripting",
