@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "RxV Publisher Helper",
-  "version": "39.15.0",
-  "description": "RxV Publisher V39.15：Pinterest 3018 可在 3006 未啟動時獨立接手工作；自動上傳圖片與填入內容，並在外掛顯示 3018 狀態。",
+  "version": "39.16.0",
+  "description": "RxV Publisher V39.16：修正 Pinterest 標題／說明／連結欄位定位，支援 AI 生成內容自動標示，最後發布人工確認。",
   "permissions": [
     "tabs",
     "scripting",
