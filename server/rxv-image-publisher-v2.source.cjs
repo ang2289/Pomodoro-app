@@ -1030,6 +1030,7 @@ function publicPinterestJob(job) {
     publishText: job.publishDescription,
     destinationUrl: job.destinationUrl,
     boardName: job.boardName,
+    aiDisclosureRequested: Boolean(job.aiDisclosureRequested),
     recordId: Number(job.recordId || 0),
     finalPublishMode: "manual",
     status: job.status,
@@ -1058,6 +1059,7 @@ async function queuePinterestJob(body = {}) {
   const publishDescription = String(body.pinDescription || fallback.description).trim().slice(0, 800);
   const destinationUrl = String(body.destinationUrl || fallback.destinationUrl || SALES_URL).trim();
   const boardName = String(body.boardName || fallback.boardName || "療癒圖片").trim();
+  const aiDisclosureRequested = body.aiDisclosureRequested === true;
   const imagePath = await stagePinterestImage(imageUrl);
   const now = nowIso();
 
@@ -1096,6 +1098,7 @@ async function queuePinterestJob(body = {}) {
     publishDescription,
     destinationUrl,
     boardName,
+    aiDisclosureRequested,
     recordId,
     status: "pending",
     error: "",
@@ -1238,6 +1241,10 @@ body{font-family:system-ui,-apple-system,"Segoe UI","Microsoft JhengHei",sans-se
         <div class="field" style="flex:1;min-width:260px"><label>導流網址</label><input id="rxvPinLink" value="https://pomodoro-app-eight-rouge.vercel.app/images" style="padding:10px;border:1px solid #cbd5e1;border-radius:10px;font:inherit"></div>
         <div class="field" style="min-width:220px"><label>Pinterest 圖版</label><input id="rxvPinBoard" placeholder="例如：療癒圖片" style="padding:10px;border:1px solid #cbd5e1;border-radius:10px;font:inherit"></div>
       </div>
+      <label style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:14px">
+        <input id="rxvPinAi" type="checkbox" checked>
+        此圖片為 AI 生成／AI 修飾（自動開啟 Pinterest AI 標示）
+      </label>
       <div class="actions">
         <button id="rxvPinOpenButton" class="btn red" onclick="rxvPinOpenAndQueue(this)">開啟 Pinterest 並自動填入</button>
         <button class="btn light" onclick="rxvPinCopyAll()">複製全部內容</button>
@@ -1359,7 +1366,8 @@ async function rxvPinOpenAndQueue(button){
       pinTitle:document.getElementById('rxvPinTitle').value,
       pinDescription:document.getElementById('rxvPinDescription').value,
       destinationUrl:document.getElementById('rxvPinLink').value,
-      boardName:board
+      boardName:board,
+      aiDisclosureRequested:document.getElementById('rxvPinAi') ? document.getElementById('rxvPinAi').checked : false
     });
 
     rxvPinRecordId=Number(d.recordId||0);
