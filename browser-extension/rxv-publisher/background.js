@@ -1,6 +1,6 @@
 const RXV_BASE = "http://localhost:3006";
 const RXV_PIN_BASE = "http://127.0.0.1:3018";
-const VERSION = "39.16.0";
+const VERSION = "39.17.0";
 let activeJob = null;
 let lastWakeAt = 0;
 
@@ -292,6 +292,75 @@ async function setFileInput(tabId, filePath) {
       await chrome.debugger.detach({ tabId }).catch(() => {});
     }
   }
+}
+
+async function ensurePinterestFreshDraft(tabId, timeoutMs = 15000) {
+  const started = Date.now();
+
+  while (Date.now() - started < timeoutMs) {
+    const state = await exec(tabId, () => {
+      const visible = (el) => {
+        if (!el) return false;
+        const r = el.getBoundingClientRect();
+        const s = getComputedStyle(el);
+        return r.width > 0 && r.height > 0 && s.display !== "none" && s.visibility !== "hidden";
+      };
+
+      const directFile = Array.from(document.querySelectorAll('input[type="file"]')).find(visible);
+      if (directFile) {
+        return { ready: true, reason: "FILE_INPUT_READY" };
+      }
+
+      const bodyText = String(document.body?.innerText || "");
+      const hasUploadArea =
+        bodyText.includes("上傳媒體") ||
+        bodyText.includes("Upload media") ||
+        bodyText.includes("拖放") ||
+        bodyText.includes("drag and drop");
+
+      if (hasUploadArea) {
+        // Pinterest can keep the real input hidden. The debugger fallback can still see it.
+        return { ready: true, reason: "UPLOAD_AREA_READY" };
+      }
+
+      const buttons = Array.from(
+        document.querySelectorAll('button,[role="button"],a'),
+      ).filter(visible);
+
+      const addLabels = new Set([
+        "新增",
+        "建立 Pin",
+        "建立 pin",
+        "Create Pin",
+        "Create pin",
+        "New",
+      ]);
+
+      const add = buttons.find((el) => {
+        const t = String(el.innerText || el.textContent || "").trim();
+        if (!addLabels.has(t)) return false;
+        if (el.disabled || el.getAttribute("aria-disabled") === "true") return false;
+        return true;
+      });
+
+      if (add) {
+        add.scrollIntoView({ block: "center" });
+        add.click();
+        return { ready: false, clickedAdd: true, text: String(add.innerText || add.textContent || "").trim() };
+      }
+
+      return {
+        ready: false,
+        clickedAdd: false,
+        bodySample: bodyText.slice(0, 500),
+      };
+    }).catch(() => ({ ready: false }));
+
+    if (state?.ready) return state;
+    await sleep(state?.clickedAdd ? 900 : 500);
+  }
+
+  throw new Error("PINTEREST_NEW_DRAFT_NOT_READY");
 }
 
 async function setPinterestFileInputViaBlob(tabId, job) {
@@ -2391,6 +2460,12 @@ async function selectPinterestBoard(tabId, boardName) {
 }
 
 async function preparePinterest(job, tabId) {
+  await setPublisherPhase("PINTEREST_PREPARING_DRAFT", {
+    rxvPublisherLastError: "",
+  });
+
+  await ensurePinterestFreshDraft(tabId, 15000);
+
   await setPublisherPhase("PINTEREST_UPLOADING_IMAGE", {
     rxvPublisherLastError: "",
   });
@@ -2401,8 +2476,25 @@ async function preparePinterest(job, tabId) {
     fileResult = await setPinterestFileInputViaBlob(tabId, job);
   } catch (error) {
     blobError = String(error?.message || error);
-    fileResult = await setPinterestFileInput(tabId, job.imagePath, 30000);
-    fileResult = { ...fileResult, fallbackFromBlob: blobError };
+
+    // If Pinterest reopened an existing draft, create a fresh blank Pin once and retry.
+    if (
+      blobError.includes("PINTEREST_FILE_INPUT_NOT_FOUND") ||
+      blobError.includes("PINTEREST_FILE_INPUT_NOT_FOUND_IN_PAGE")
+    ) {
+      await ensurePinterestFreshDraft(tabId, 12000).catch(() => {});
+      await sleep(600);
+      try {
+        fileResult = await setPinterestFileInputViaBlob(tabId, job);
+      } catch (retryError) {
+        blobError += " | RETRY=" + String(retryError?.message || retryError);
+      }
+    }
+
+    if (!fileResult) {
+      fileResult = await setPinterestFileInput(tabId, job.imagePath, 30000);
+      fileResult = { ...fileResult, fallbackFromBlob: blobError };
+    }
   }
 
   await setPublisherPhase("PINTEREST_WAITING_EDITOR", {
