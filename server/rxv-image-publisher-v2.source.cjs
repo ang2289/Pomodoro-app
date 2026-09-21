@@ -87,7 +87,14 @@ function ensureDbSchema(db) {
     " target_type TEXT NOT NULL DEFAULT 'personal', target_name TEXT NOT NULL DEFAULT '', copy_mode TEXT NOT NULL DEFAULT 'strict'," +
     " allow_link INTEGER NOT NULL DEFAULT 0, post_text TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT 'posted'," +
     " created_at TEXT NOT NULL, posted_at TEXT, updated_at TEXT NOT NULL);" +
-    "CREATE INDEX IF NOT EXISTS idx_rxv_fb_image_posts_target ON rxv_fb_image_posts(target_type, target_name, status, image_fingerprint);"
+    "CREATE INDEX IF NOT EXISTS idx_rxv_fb_image_posts_target ON rxv_fb_image_posts(target_type, target_name, status, image_fingerprint);" +
+    "CREATE TABLE IF NOT EXISTS rxv_pinterest_posts (" +
+    " id INTEGER PRIMARY KEY AUTOINCREMENT, image_id TEXT NOT NULL DEFAULT '', image_url TEXT NOT NULL DEFAULT ''," +
+    " image_fingerprint TEXT NOT NULL DEFAULT '', title TEXT NOT NULL DEFAULT '', category_key TEXT NOT NULL DEFAULT ''," +
+    " category_label TEXT NOT NULL DEFAULT '', pin_title TEXT NOT NULL DEFAULT '', pin_description TEXT NOT NULL DEFAULT ''," +
+    " destination_url TEXT NOT NULL DEFAULT '', board_name TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT 'prepared'," +
+    " created_at TEXT NOT NULL, posted_at TEXT, updated_at TEXT NOT NULL);" +
+    "CREATE INDEX IF NOT EXISTS idx_rxv_pinterest_posts_status ON rxv_pinterest_posts(status, image_fingerprint);"
   );
 }
 
@@ -657,6 +664,9 @@ async function statusPayload() {
     const usedKeys = getUsedImageKeys(db);
     const used = manifest.images.filter((img) => isImageUsed(usedKeys, img)).length;
     const tk = tiktokOfficial.publicStatus();
+    const pinRows = db.prepare("SELECT status, COUNT(*) AS count FROM rxv_pinterest_posts GROUP BY status").all();
+    const pinterest = {};
+    for (const row of pinRows) pinterest[String(row.status)] = Number(row.count || 0);
     return {
       ok: true,
       total: manifest.total,
@@ -665,6 +675,8 @@ async function statusPayload() {
       jobs,
       published: Number(jobs.published || 0),
       draftReady: Number(jobs.draft || 0) + Number(jobs.ready || 0) + Number(jobs.failed || 0),
+      pinterestPrepared: Number(pinterest.prepared || 0),
+      pinterestPublished: Number(pinterest.posted || 0),
       manifestSource: manifest.source.value,
       manifestUpdatedAt: manifest.updatedAt,
       dbPath: DB_PATH,
@@ -864,12 +876,297 @@ function listFacebookPosts(db, limit = 60) {
   ).all(n);
 }
 
+
+const rxvPinterestQueue = [];
+const rxvPinterestJobs = new Map();
+
+function pinterestAlreadyPosted(db, img) {
+  const fp = imageFingerprint(img);
+  const url = String(img && (img.imageUrl || img.image_url) || "").trim();
+  const id = String(img && (img.id || img.image_id) || "").trim();
+  const row = db.prepare(
+    "SELECT id FROM rxv_pinterest_posts WHERE status='posted' " +
+    "AND (image_fingerprint=? OR image_url=? OR image_id=?) LIMIT 1"
+  ).get(fp, url, id);
+  return Boolean(row);
+}
+
+function pinterestBoardForRule(rule) {
+  const key = String(rule && rule.key || "");
+  if (key === "buddha" || key === "pet") return "療癒圖片";
+  if (key === "real-estate") return "房仲素材";
+  if (key === "hair") return "美髮素材";
+  if (key === "nail") return "美甲素材";
+  if (key === "beauty-spa") return "美容 SPA 素材";
+  if (key === "dental") return "牙醫素材";
+  return "療癒圖片";
+}
+
+function buildPinterestCopy(img = {}) {
+  const category = String(img.category || "圖片素材").trim();
+  const title = String(img.title || category || "圖片素材").trim();
+  const rule = ruleForCategory(category);
+  const label = String(rule && rule.label || category || "圖片素材");
+  const isFree = String(img.planType || "") === "free" || img.isFree === true;
+  let pinTitle = "";
+  let description = "";
+
+  if (rule && rule.key === "buddha") {
+    pinTitle = (title + "｜唯美療癒佛像圖片").slice(0, 100);
+    description = [
+      "唯美療癒佛像圖片分享。",
+      "",
+      "溫暖柔和的光影與莊嚴氛圍，適合收藏、靜心欣賞與手機桌布。",
+      "",
+      "想看更多療癒圖片與免費圖片素材，可到 RxV 圖片專區查看。",
+      "",
+      "#佛像 #佛教 #療癒圖片 #靜心 #免費圖片"
+    ].join("\n");
+  } else if (rule && ["real-estate","hair","nail","beauty-spa","dental","pet"].includes(rule.key)) {
+    pinTitle = (label + "圖片素材｜社群發文素材").slice(0, 100);
+    description = [
+      label + "每天發文還在花時間找圖片嗎？",
+      "",
+      "RxV 已整理常用情境圖片，發文時直接挑圖使用，省下重複找素材的時間。",
+      "",
+      isFree ? "這張可作為免費圖片分享與導流素材。" : "另有職業圖片素材小包與完整素材庫可查看。",
+      "",
+      "更多圖片：",
+      SALES_URL,
+      "",
+      String(rule.hashtags || "#圖片素材 #社群素材")
+    ].join("\n");
+  } else {
+    pinTitle = (title + "｜RxV 圖片分享").slice(0, 100);
+    description = [
+      "圖片素材分享。",
+      "",
+      "適合收藏、社群貼文、手機桌布與設計靈感。",
+      "",
+      "更多不同主題圖片可到 RxV 圖片專區查看。",
+      "",
+      "#圖片分享 #圖片素材 #療癒圖片 #RxV"
+    ].join("\n");
+  }
+
+  return {
+    title: pinTitle.slice(0, 100),
+    description: description.slice(0, 800),
+    destinationUrl: SALES_URL,
+    boardName: pinterestBoardForRule(rule),
+  };
+}
+
+async function pickPinterestImage(options = {}) {
+  const manifest = await loadManifest();
+  const categoryKey = String(options.categoryKey || "auto");
+  const rule = categoryRuleByKey(categoryKey);
+  let pool = manifest.images.slice();
+  if (rule) pool = pool.filter((img) => categoryMatchesRule(rule, img.category));
+  pool = filterUniqueUnused(pool, emptyImageKeySet()).sort((a, b) => a.id.localeCompare(b.id, "zh-Hant"));
+
+  const db = requireDb();
+  try {
+    pool = pool.filter((img) => !pinterestAlreadyPosted(db, img));
+    if (!pool.length) {
+      return { ok: true, found: false, message: "目前沒有符合條件、尚未發布到 Pinterest 的圖片。", remaining: 0 };
+    }
+    const img = pool[0];
+    return {
+      ok: true,
+      found: true,
+      image: {
+        id: img.id,
+        title: img.title,
+        category: img.category,
+        categoryKey: ruleForCategory(img.category).key,
+        imageUrl: img.imageUrl,
+        planType: img.planType,
+        isFree: img.planType === "free",
+        fingerprint: imageFingerprint(img),
+      },
+      copy: buildPinterestCopy(img),
+      remaining: pool.length,
+    };
+  } finally {
+    db.close();
+  }
+}
+
+async function stagePinterestImage(imageUrl) {
+  const url = String(imageUrl || "").trim();
+  if (!/^https?:\/\//i.test(url)) throw new Error("Pinterest 圖片網址無效");
+  const response = await fetch(url, { cache: "no-store" });
+  if (!response.ok) throw new Error("Pinterest 圖片下載失敗：HTTP " + response.status);
+  const buffer = Buffer.from(await response.arrayBuffer());
+  if (!buffer.length) throw new Error("Pinterest 圖片檔案是空的");
+  if (buffer.length > 30 * 1024 * 1024) throw new Error("Pinterest 圖片超過 30MB");
+
+  let ext = ".jpg";
+  const contentType = String(response.headers.get("content-type") || "").toLowerCase();
+  if (contentType.includes("png")) ext = ".png";
+  else if (contentType.includes("webp")) ext = ".webp";
+  else if (contentType.includes("gif")) ext = ".gif";
+
+  const dir = path.join(ROOT, "data", "pinterest-staging");
+  fs.mkdirSync(dir, { recursive: true });
+  const filePath = path.join(dir, randomId("pin") + ext);
+  fs.writeFileSync(filePath, buffer);
+  return filePath;
+}
+
+function publicPinterestJob(job) {
+  if (!job) return null;
+  return {
+    id: job.id,
+    queueSource: "pinterest-3018",
+    platform: "pinterest",
+    targetUrl: "https://www.pinterest.com/pin-creation-tool/",
+    imagePath: job.imagePath,
+    imageId: job.imageId,
+    imageUrl: job.imageUrl,
+    publishTitle: job.publishTitle,
+    publishDescription: job.publishDescription,
+    publishText: job.publishDescription,
+    destinationUrl: job.destinationUrl,
+    boardName: job.boardName,
+    recordId: Number(job.recordId || 0),
+    finalPublishMode: "manual",
+    status: job.status,
+    error: job.error || "",
+    debug: job.debug || null,
+    createdAt: job.createdAt,
+    updatedAt: job.updatedAt,
+  };
+}
+
+async function queuePinterestJob(body = {}) {
+  const raw = body.image || {};
+  const imageId = String(raw.id || raw.image_id || "").trim();
+  const imageUrl = String(raw.imageUrl || raw.image_url || "").trim();
+  if (!imageId || !imageUrl) throw new Error("請先按「自動準備 1 張」。");
+
+  const img = {
+    id: imageId,
+    title: String(raw.title || ""),
+    category: String(raw.category || "其他素材"),
+    imageUrl,
+    planType: raw.planType === "free" || raw.isFree === true ? "free" : "bundle",
+  };
+  const fallback = buildPinterestCopy(img);
+  const publishTitle = String(body.pinTitle || fallback.title).trim().slice(0, 100);
+  const publishDescription = String(body.pinDescription || fallback.description).trim().slice(0, 800);
+  const destinationUrl = String(body.destinationUrl || fallback.destinationUrl || SALES_URL).trim();
+  const boardName = String(body.boardName || fallback.boardName || "療癒圖片").trim();
+  const imagePath = await stagePinterestImage(imageUrl);
+  const now = nowIso();
+
+  const db = requireDb();
+  let recordId = 0;
+  try {
+    const result = db.prepare(
+      "INSERT INTO rxv_pinterest_posts (" +
+      "image_id,image_url,image_fingerprint,title,category_key,category_label,pin_title,pin_description,destination_url,board_name,status,created_at,updated_at" +
+      ") VALUES (?,?,?,?,?,?,?,?,?,?,'prepared',?,?)"
+    ).run(
+      imageId,
+      imageUrl,
+      imageFingerprint(img),
+      String(img.title || ""),
+      String(raw.categoryKey || ruleForCategory(img.category).key || ""),
+      String(img.category || ""),
+      publishTitle,
+      publishDescription,
+      destinationUrl,
+      boardName,
+      now,
+      now
+    );
+    recordId = Number(result.lastInsertRowid || 0);
+  } finally {
+    db.close();
+  }
+
+  const job = {
+    id: randomId("pinterest"),
+    imageId,
+    imageUrl,
+    imagePath,
+    publishTitle,
+    publishDescription,
+    destinationUrl,
+    boardName,
+    recordId,
+    status: "pending",
+    error: "",
+    debug: null,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  };
+  rxvPinterestJobs.set(job.id, job);
+  rxvPinterestQueue.push(job.id);
+  return { ok: true, queued: true, recordId, job: publicPinterestJob(job), queueDepth: rxvPinterestQueue.length };
+}
+
+function nextPinterestJob() {
+  while (rxvPinterestQueue.length) {
+    const id = rxvPinterestQueue.shift();
+    const job = rxvPinterestJobs.get(id);
+    if (!job || job.status !== "pending") continue;
+    job.status = "processing";
+    job.updatedAt = Date.now();
+    return { ok: true, job: publicPinterestJob(job) };
+  }
+  return { ok: true, job: null };
+}
+
+function finishPinterestJob(body = {}, failed = false) {
+  const id = String(body.id || "").trim();
+  const job = rxvPinterestJobs.get(id);
+  if (!job) return { ok: false, error: "PINTEREST_JOB_NOT_FOUND" };
+  job.status = failed ? "failed" : (String(body.status || "") === "published" ? "published" : "prepared");
+  job.error = String(body.error || "");
+  job.debug = body.debug || null;
+  job.updatedAt = Date.now();
+  return { ok: true, job: publicPinterestJob(job) };
+}
+
+function markPinterestPosted(body = {}) {
+  const recordId = Number(body.recordId || 0);
+  const now = nowIso();
+  const db = requireDb();
+  try {
+    let result;
+    if (recordId) {
+      result = db.prepare("UPDATE rxv_pinterest_posts SET status='posted', posted_at=?, updated_at=? WHERE id=?").run(now, now, recordId);
+    } else {
+      const raw = body.image || {};
+      const fp = imageFingerprint({ id: raw.id || raw.image_id, imageUrl: raw.imageUrl || raw.image_url });
+      result = db.prepare(
+        "UPDATE rxv_pinterest_posts SET status='posted', posted_at=?, updated_at=? " +
+        "WHERE id=(SELECT id FROM rxv_pinterest_posts WHERE image_fingerprint=? ORDER BY id DESC LIMIT 1)"
+      ).run(now, now, fp);
+    }
+    return { ok: true, updated: Number(result.changes || 0) };
+  } finally {
+    db.close();
+  }
+}
+
+function listPinterestPosts(db, limit = 60) {
+  const n = Math.max(1, Math.min(200, Number(limit || 60)));
+  return db.prepare(
+    "SELECT id,image_id,title,category_label,pin_title,board_name,status,created_at,posted_at " +
+    "FROM rxv_pinterest_posts ORDER BY id DESC LIMIT ?"
+  ).all(n);
+}
+
 function dashboardHtml() {
   return `<!doctype html>
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>RXV 圖片自動推廣器 v3</title>
+<title>RXV 圖片自動推廣器 v3｜Pinterest</title>
 <style>
 body{font-family:system-ui,-apple-system,"Segoe UI","Microsoft JhengHei",sans-serif;margin:0;background:#f5f7fb;color:#172033}.wrap{max-width:1240px;margin:auto;padding:22px}.hero,.card,.stat,.panel{background:#fff;border:1px solid #e5e7eb;border-radius:18px;box-shadow:0 7px 22px #0000000a}.hero{padding:22px}.muted{color:#64748b}.small{font-size:12px;color:#64748b}.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-top:16px}.field{display:flex;flex-direction:column;gap:5px}.field label{font-size:12px;font-weight:800;color:#475569}.field select{min-width:150px;padding:10px;border:1px solid #cbd5e1;border-radius:10px;background:#fff}.btn{border:0;border-radius:10px;padding:11px 15px;font-weight:850;cursor:pointer;background:#2563eb;color:#fff}.btn.gray{background:#475569}.btn.green{background:#059669}.btn.red{background:#dc2626}.btn.light{background:#e2e8f0;color:#1e293b}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0}.stat{padding:14px}.stat b{display:block;font-size:27px;margin-top:4px}.statusline{margin-top:12px;padding:10px 12px;background:#f8fafc;border-radius:10px}.jobs{display:grid;grid-template-columns:1fr;gap:14px}.card{padding:15px}.row{display:flex;gap:14px}.thumbs{display:flex;gap:5px;flex-wrap:wrap;width:250px}.thumbs img{width:112px;height:150px;object-fit:cover;border-radius:10px;background:#eee}.jobmain{flex:1;min-width:0}.tag{display:inline-block;background:#eef2ff;color:#3730a3;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:800}.status{display:inline-block;margin-left:6px;background:#ecfdf5;color:#047857;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:800}textarea{width:100%;min-height:210px;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:10px;padding:10px;font:inherit;resize:vertical}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.cats{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.cat{background:#f1f5f9;border-radius:999px;padding:5px 9px;font-size:12px}.error{color:#b91c1c;font-size:13px;margin-top:8px}.video{width:220px;max-height:390px;border-radius:12px;background:#111}@media(max-width:800px){.stats{grid-template-columns:repeat(2,1fr)}.row{flex-direction:column}.thumbs{width:100%}.thumbs img{width:92px;height:120px}}
 </style>
@@ -890,11 +1187,41 @@ body{font-family:system-ui,-apple-system,"Segoe UI","Microsoft JhengHei",sans-se
 <div id="sys" class="small" style="margin-top:8px"></div>
 <div id="cats" class="cats"></div>
 </div>
+<section id="rxvPinterestPanel" class="card" style="margin-top:16px;border:2px solid #fecaca;background:#fff7f7">
+<h2 style="margin:0 0 6px;color:#b91c1c">📌 Pinterest 一鍵填入</h2>
+<div class="small" style="margin-bottom:12px">選 1 張圖片後，自動準備標題、說明、導流網址與圖版；按一次會開 Pinterest 並自動填入，最後「發布／儲存」由你自己按。</div>
+<div class="controls">
+  <div class="field"><label>分類</label><select id="rxvPinCategory"><option value="auto">自動選分類</option></select></div>
+  <button class="btn red" onclick="rxvPinPick()">自動準備 1 張</button>
+  <button class="btn light" onclick="rxvPinRegenerate()">重新產生文案</button>
+</div>
+<div id="rxvPinBody" style="display:none;margin-top:14px">
+  <div class="row">
+    <div style="width:220px;max-width:100%"><img id="rxvPinImage" alt="Pinterest 圖片" style="width:100%;max-height:330px;object-fit:contain;border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0"></div>
+    <div class="jobmain">
+      <div class="field"><label>標題（最多 100 字）</label><input id="rxvPinTitle" maxlength="100" style="padding:10px;border:1px solid #cbd5e1;border-radius:10px;font:inherit"></div>
+      <div class="field" style="margin-top:8px"><label>說明（最多 800 字）</label><textarea id="rxvPinDescription" maxlength="800" style="min-height:150px"></textarea></div>
+      <div class="controls" style="margin-top:8px">
+        <div class="field" style="flex:1;min-width:260px"><label>導流網址</label><input id="rxvPinLink" value="https://pomodoro-app-eight-rouge.vercel.app/images" style="padding:10px;border:1px solid #cbd5e1;border-radius:10px;font:inherit"></div>
+        <div class="field" style="min-width:220px"><label>Pinterest 圖版</label><input id="rxvPinBoard" placeholder="例如：療癒圖片" style="padding:10px;border:1px solid #cbd5e1;border-radius:10px;font:inherit"></div>
+      </div>
+      <div class="actions">
+        <button class="btn red" onclick="rxvPinQueue()">開啟 Pinterest 並自動填入</button>
+        <button class="btn light" onclick="rxvPinCopyAll()">複製全部內容</button>
+        <button class="btn green" onclick="rxvPinMarkPosted()">我已發布，記錄完成</button>
+      </div>
+      <div id="rxvPinMsg" class="statusline small">尚未選圖片。</div>
+    </div>
+  </div>
+</div>
+</section>
 <div class="stats">
 <div class="stat">網站公開圖片<b id="total">-</b></div>
 <div class="stat">尚未使用<b id="remaining">-</b></div>
 <div class="stat">待處理影片<b id="pending">-</b></div>
 <div class="stat">TikTok 已發布<b id="published">-</b></div>
+<div class="stat">Pinterest 已準備<b id="rxvPinPrepared">-</b></div>
+<div class="stat">Pinterest 已發布<b id="rxvPinPublished">-</b></div>
 </div>
 <h2>影片任務</h2><div id="jobs" class="jobs"></div>
 </div>
@@ -903,11 +1230,84 @@ async function api(url,opts){const r=await fetch(url,opts);const d=await r.json(
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function setMsg(s){document.getElementById('msg').textContent=s||''}
 function actionPost(url,body){return api(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body||{})})}
+let rxvPinCurrent=null;
+let rxvPinRecordId=0;
+function rxvPinMessage(s){const el=document.getElementById('rxvPinMsg');if(el)el.textContent=s||''}
+async function rxvPinPick(){
+  try{
+    rxvPinMessage('⏳ 正在挑選尚未發布到 Pinterest 的圖片…');
+    const key=document.getElementById('rxvPinCategory').value||'auto';
+    const d=await api('/api/pinterest/pick?categoryKey='+encodeURIComponent(key));
+    if(!d.found){rxvPinCurrent=null;document.getElementById('rxvPinBody').style.display='none';rxvPinMessage(d.message||'沒有可用圖片');return}
+    rxvPinCurrent=d.image;rxvPinRecordId=0;
+    document.getElementById('rxvPinBody').style.display='block';
+    document.getElementById('rxvPinImage').src=d.image.imageUrl;
+    document.getElementById('rxvPinTitle').value=d.copy.title||'';
+    document.getElementById('rxvPinDescription').value=d.copy.description||'';
+    document.getElementById('rxvPinLink').value=d.copy.destinationUrl||'https://pomodoro-app-eight-rouge.vercel.app/images';
+    const saved=localStorage.getItem('rxvPinterestBoard');
+    document.getElementById('rxvPinBoard').value=saved||d.copy.boardName||'療癒圖片';
+    rxvPinMessage('✅ 已準備：'+(d.image.title||d.image.category)+'｜此分類尚有 '+d.remaining+' 張可用');
+  }catch(e){rxvPinMessage('❌ 準備失敗：'+e.message)}
+}
+async function rxvPinRegenerate(){
+  try{
+    if(!rxvPinCurrent){rxvPinMessage('請先按「自動準備 1 張」。');return}
+    const d=await actionPost('/api/pinterest/copy',{image:rxvPinCurrent});
+    document.getElementById('rxvPinTitle').value=d.copy.title||'';
+    document.getElementById('rxvPinDescription').value=d.copy.description||'';
+    if(!document.getElementById('rxvPinBoard').value)document.getElementById('rxvPinBoard').value=d.copy.boardName||'療癒圖片';
+    rxvPinMessage('✅ 文案已重新產生');
+  }catch(e){rxvPinMessage('❌ 重新產生失敗：'+e.message)}
+}
+async function rxvPinQueue(){
+  try{
+    if(!rxvPinCurrent){rxvPinMessage('請先按「自動準備 1 張」。');return}
+    const board=document.getElementById('rxvPinBoard').value.trim();
+    if(!board){rxvPinMessage('請先填 Pinterest 圖版名稱。');return}
+    localStorage.setItem('rxvPinterestBoard',board);
+    rxvPinMessage('⏳ 正在準備圖片並送給 Edge 擴充…');
+    const d=await actionPost('/api/pinterest/queue',{
+      image:rxvPinCurrent,
+      pinTitle:document.getElementById('rxvPinTitle').value,
+      pinDescription:document.getElementById('rxvPinDescription').value,
+      destinationUrl:document.getElementById('rxvPinLink').value,
+      boardName:board
+    });
+    rxvPinRecordId=Number(d.recordId||0);
+    rxvPinMessage('✅ 已送出。Edge 會自動開 Pinterest、上傳圖片並填入內容；最後請你自己按「發布／儲存」。');
+    setTimeout(refreshAll,1500);
+  }catch(e){rxvPinMessage('❌ Pinterest 自動填入失敗：'+e.message)}
+}
+async function rxvPinCopyAll(){
+  if(!rxvPinCurrent){rxvPinMessage('請先準備圖片。');return}
+  const txt=[
+    '標題：'+document.getElementById('rxvPinTitle').value,
+    '',
+    '說明：',
+    document.getElementById('rxvPinDescription').value,
+    '',
+    '連結：'+document.getElementById('rxvPinLink').value,
+    '圖版：'+document.getElementById('rxvPinBoard').value
+  ].join('\n');
+  try{await navigator.clipboard.writeText(txt);rxvPinMessage('✅ Pinterest 全部內容已複製')}catch(e){rxvPinMessage('❌ 無法複製：'+e.message)}
+}
+async function rxvPinMarkPosted(){
+  try{
+    if(!rxvPinCurrent){rxvPinMessage('請先準備圖片。');return}
+    await actionPost('/api/pinterest/mark',{recordId:rxvPinRecordId,image:rxvPinCurrent});
+    rxvPinMessage('✅ 已記錄 Pinterest 已發布；下次不會再優先抓這張。');
+    await refreshAll();
+  }catch(e){rxvPinMessage('❌ 記錄失敗：'+e.message)}
+}
+
 function fillStatus(s){
   document.getElementById('total').textContent=s.total;
   document.getElementById('remaining').textContent=s.remaining;
   document.getElementById('pending').textContent=s.draftReady||0;
   document.getElementById('published').textContent=s.published||0;
+  const pinPrepared=document.getElementById('rxvPinPrepared');if(pinPrepared)pinPrepared.textContent=s.pinterestPrepared||0;
+  const pinPublished=document.getElementById('rxvPinPublished');if(pinPublished)pinPublished.textContent=s.pinterestPublished||0;
 
   const catSel=document.getElementById('category');
   const current=catSel.value;
@@ -916,6 +1316,12 @@ function fillStatus(s){
   }).join('');
   catSel.innerHTML='<option value="auto">自動選分類</option>'+catOptions;
   if(Array.from(catSel.options).some(function(o){return o.value===current}))catSel.value=current;
+  const pinCat=document.getElementById('rxvPinCategory');
+  if(pinCat){
+    const pinCurrent=pinCat.value;
+    pinCat.innerHTML='<option value="auto">自動選分類</option>'+catOptions;
+    if(Array.from(pinCat.options).some(function(o){return o.value===pinCurrent}))pinCat.value=pinCurrent;
+  }
 
   const mp=document.getElementById('mp3');
   const mpCur=mp.value;
@@ -1200,6 +1606,37 @@ async function requestHandler(req, res) {
     if (req.method === "POST" && urlObj.pathname === "/api/jobs/cancel") {
       const body = await readJsonBody(req);
       return json(res, 200, cancelJob(String(body.videoId || "").trim()));
+    }
+    if (req.method === "GET" && urlObj.pathname === "/api/pinterest/pick") {
+      return json(res, 200, await pickPinterestImage({ categoryKey: urlObj.searchParams.get("categoryKey") }));
+    }
+    if (req.method === "POST" && urlObj.pathname === "/api/pinterest/copy") {
+      const body = await readJsonBody(req);
+      return json(res, 200, { ok: true, copy: buildPinterestCopy(body.image || {}) });
+    }
+    if (req.method === "POST" && urlObj.pathname === "/api/pinterest/queue") {
+      const body = await readJsonBody(req);
+      return json(res, 200, await queuePinterestJob(body));
+    }
+    if (req.method === "GET" && urlObj.pathname === "/api/pinterest/next") {
+      return json(res, 200, nextPinterestJob());
+    }
+    if (req.method === "POST" && urlObj.pathname === "/api/pinterest/result") {
+      const body = await readJsonBody(req);
+      return json(res, 200, finishPinterestJob(body, false));
+    }
+    if (req.method === "POST" && urlObj.pathname === "/api/pinterest/fail") {
+      const body = await readJsonBody(req);
+      return json(res, 200, finishPinterestJob(body, true));
+    }
+    if (req.method === "POST" && urlObj.pathname === "/api/pinterest/mark") {
+      const body = await readJsonBody(req);
+      return json(res, 200, markPinterestPosted(body));
+    }
+    if (req.method === "GET" && urlObj.pathname === "/api/pinterest/posts") {
+      const db = requireDb();
+      try { return json(res, 200, { ok: true, items: listPinterestPosts(db, urlObj.searchParams.get("limit")) }); }
+      finally { db.close(); }
     }
     if (req.method === "GET" && urlObj.pathname === "/api/facebook/pick") {
       return json(res, 200, await pickFacebookImage({
