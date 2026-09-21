@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "RxV Publisher Helper",
-  "version": "39.14.0",
-  "description": "RxV Publisher V39.14：Pinterest 自動上傳圖片、填標題／說明／連結／圖版；Blob/DataTransfer 優先、debugger 後援，最後發布人工確認。",
+  "version": "39.15.0",
+  "description": "RxV Publisher V39.15：Pinterest 3018 可在 3006 未啟動時獨立接手工作；自動上傳圖片與填入內容，並在外掛顯示 3018 狀態。",
   "permissions": [
     "tabs",
     "scripting",
