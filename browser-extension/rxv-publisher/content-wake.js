@@ -20,6 +20,12 @@
     }
   }
 
+  window.addEventListener("message", (event) => {
+    if (event.source !== window) return;
+    if (!event.data || event.data.type !== "RXV_PIN_WAKE") return;
+    wake();
+  });
+
   wake();
 
   const timer =
