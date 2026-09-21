@@ -1,5 +1,3 @@
-import { Link } from 'react-router-dom';
-
 export default function ToolImageTrafficBanner() {
   return (
     <section className="mx-auto w-full max-w-5xl px-4 pt-3 sm:px-6">
@@ -10,12 +8,12 @@ export default function ToolImageTrafficBanner() {
             可先看免費圖片，也有美髮、房仲、寵物等更多圖片素材。
           </p>
         </div>
-        <Link
-          to="/images"
+        <a
+          href="https://pomodoro-app-eight-rouge.vercel.app/images"
           className="inline-flex shrink-0 items-center justify-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-slate-700"
         >
           查看圖片素材 →
-        </Link>
+        </a>
       </div>
     </section>
   );
