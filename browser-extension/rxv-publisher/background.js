@@ -1,5 +1,5 @@
 const RXV_BASE = "http://localhost:3006";
-const VERSION = "39.10.0";
+const VERSION = "39.11.0";
 let activeJob = null;
 let lastWakeAt = 0;
 
@@ -190,6 +190,7 @@ async function waitTabComplete(tabId, timeoutMs = 45000) {
 function platformDomain(platform) {
   if (platform === "facebook") return "facebook.com";
   if (platform === "tiktok") return "tiktok.com";
+  if (platform === "pinterest") return "pinterest.com";
   return "";
 }
 
@@ -237,6 +238,14 @@ async function detectLoginRequired(tabId, platform) {
           body.includes("log in to tiktok") ||
           body.includes("使用 qr code")
         ))
+      );
+    }
+    if (platform === "pinterest") {
+      return (
+        /\/login(?:\/|\?|$)/.test(url) ||
+        body.includes("登入 pinterest") ||
+        body.includes("log in to pinterest") ||
+        body.includes("sign in to pinterest")
       );
     }
     return false;
@@ -1799,7 +1808,9 @@ async function waitForFinalButton(tabId, platform, timeoutMs = 60000) {
       };
       const wanted = platform === "facebook"
         ? ["發佈", "發布", "Publish", "Share reel", "分享 Reel"]
-        : ["發佈", "發布", "Post", "Publish"];
+        : platform === "pinterest"
+          ? ["發佈", "發布", "儲存", "Save", "Publish"]
+          : ["發佈", "發布", "Post", "Publish"];
       return Array.from(document.querySelectorAll('button,[role="button"]')).some((el) => {
         if (!visible(el)) return false;
         const text = String(el.innerText || el.textContent || "").trim();
@@ -1810,6 +1821,231 @@ async function waitForFinalButton(tabId, platform, timeoutMs = 60000) {
     await sleep(500);
   }
   return false;
+}
+
+
+async function fillPinterestField(tabId, kind, value) {
+  const text = String(value || "").trim();
+  if (!text) return { ok: true, skipped: true, kind };
+
+  return await exec(tabId, (kind, text) => {
+    const visible = (el) => {
+      const r = el.getBoundingClientRect();
+      const s = getComputedStyle(el);
+      return r.width > 0 && r.height > 0 && s.display !== "none" && s.visibility !== "hidden";
+    };
+
+    const candidates = Array.from(
+      document.querySelector('body')
+        ? document.querySelectorAll('input,textarea,[contenteditable="true"],[role="textbox"]')
+        : [],
+    ).filter(visible);
+
+    const wanted = {
+      title: ["標題", "title", "pin title", "新增標題"],
+      description: ["說明", "description", "details", "詳細說明", "pin related"],
+      link: ["連結", "link", "destination", "網址", "website"],
+    };
+
+    let best = null;
+    let bestScore = -999;
+    for (const el of candidates) {
+      if (kind === "link" && !(el instanceof HTMLInputElement)) continue;
+
+      const attrs = [
+        el.getAttribute("aria-label"),
+        el.getAttribute("placeholder"),
+        el.getAttribute("name"),
+        el.getAttribute("id"),
+        el.getAttribute("data-test-id"),
+        el.getAttribute("data-testid"),
+      ].filter(Boolean).join(" ");
+
+      const nearby = String(
+        (el.closest("label") && el.closest("label").innerText) ||
+        (el.parentElement && el.parentElement.parentElement && el.parentElement.parentElement.innerText) ||
+        (el.parentElement && el.parentElement.innerText) ||
+        "",
+      ).slice(0, 240);
+
+      const combined = (attrs + " " + nearby).toLowerCase();
+      let score = 0;
+
+      for (const key of wanted[kind] || []) {
+        if (combined.includes(String(key).toLowerCase())) score += 80;
+      }
+
+      if (kind === "title") {
+        if (el instanceof HTMLInputElement) score += 20;
+        if (combined.includes("100")) score += 10;
+      } else if (kind === "description") {
+        if (el instanceof HTMLTextAreaElement || el.getAttribute("contenteditable") === "true") score += 20;
+        if (combined.includes("800")) score += 10;
+      } else if (kind === "link") {
+        if ((el.getAttribute("type") || "").toLowerCase() === "url") score += 40;
+      }
+
+      if (
+        combined.includes("search") ||
+        combined.includes("搜尋") ||
+        combined.includes("comment") ||
+        combined.includes("評論")
+      ) {
+        score -= 200;
+      }
+
+      if (score > bestScore) {
+        bestScore = score;
+        best = el;
+      }
+    }
+
+    if (!best || bestScore < 20) {
+      return { ok: false, kind, reason: "FIELD_NOT_FOUND", bestScore };
+    }
+
+    best.scrollIntoView({ block: "center" });
+    best.focus();
+
+    if (best instanceof HTMLInputElement || best instanceof HTMLTextAreaElement) {
+      const proto = Object.getPrototypeOf(best);
+      const descriptor = Object.getOwnPropertyDescriptor(proto, "value");
+      if (descriptor && descriptor.set) descriptor.set.call(best, text);
+      else best.value = text;
+    } else {
+      best.textContent = "";
+      try {
+        document.execCommand("insertText", false, text);
+      } catch (_) {
+        best.textContent = text;
+      }
+    }
+
+    best.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: text }));
+    best.dispatchEvent(new Event("change", { bubbles: true }));
+    best.dispatchEvent(new Event("blur", { bubbles: true }));
+    return { ok: true, kind, score: bestScore };
+  }, [kind, text]);
+}
+
+async function selectPinterestBoard(tabId, boardName) {
+  const wantedBoard = String(boardName || "").trim();
+  if (!wantedBoard) {
+    return { ok: false, skipped: true, reason: "BOARD_NAME_EMPTY" };
+  }
+
+  const opened = await exec(tabId, (wantedBoard) => {
+    const visible = (el) => {
+      const r = el.getBoundingClientRect();
+      const s = getComputedStyle(el);
+      return r.width > 0 && r.height > 0 && s.display !== "none" && s.visibility !== "hidden";
+    };
+    const nodes = Array.from(document.querySelectorAll('button,[role="button"],[aria-haspopup="listbox"]'));
+    let best = null;
+    let bestScore = -999;
+
+    for (const el of nodes) {
+      if (!visible(el)) continue;
+      const nodeText = String(el.innerText || el.textContent || "").trim();
+      const aria = String(el.getAttribute("aria-label") || "");
+      const combined = (nodeText + " " + aria).toLowerCase();
+      let score = 0;
+
+      if (combined.includes("選擇圖版") || combined.includes("選擇看板")) score += 120;
+      if (combined.includes("choose board") || combined.includes("select board")) score += 120;
+      if (combined.includes("圖版") || combined.includes("board")) score += 30;
+      if (nodeText === wantedBoard) score += 80;
+      if (combined.includes("發佈") || combined.includes("發布") || combined.includes("publish")) score -= 300;
+
+      if (score > bestScore) {
+        bestScore = score;
+        best = el;
+      }
+    }
+
+    if (!best || bestScore < 30) return { ok: false, reason: "BOARD_PICKER_NOT_FOUND", bestScore };
+    best.scrollIntoView({ block: "center" });
+    best.click();
+    return { ok: true, score: bestScore };
+  }, [wantedBoard]);
+
+  if (!opened || !opened.ok) return opened;
+  await sleep(700);
+
+  const selected = await exec(tabId, (wantedBoard) => {
+    const visible = (el) => {
+      const r = el.getBoundingClientRect();
+      const s = getComputedStyle(el);
+      return r.width > 0 && r.height > 0 && s.display !== "none" && s.visibility !== "hidden";
+    };
+    const exact = String(wantedBoard || "").trim().toLowerCase();
+    const nodes = Array.from(
+      document.querySelectorAll('[role="option"],[role="menuitem"],button,[role="button"],li,div'),
+    );
+
+    for (const el of nodes) {
+      if (!visible(el)) continue;
+      const nodeText = String(el.innerText || el.textContent || "").trim();
+      if (!nodeText || nodeText.length > 120) continue;
+      if (nodeText.toLowerCase() !== exact) continue;
+      el.scrollIntoView({ block: "center" });
+      el.click();
+      return { ok: true, selected: nodeText };
+    }
+
+    return { ok: false, reason: "BOARD_NOT_FOUND", boardName: wantedBoard };
+  }, [wantedBoard]);
+
+  return selected;
+}
+
+async function preparePinterest(job, tabId) {
+  await setPublisherPhase("PINTEREST_UPLOADING_IMAGE", {
+    rxvPublisherLastError: "",
+  });
+
+  await setFileInput(tabId, job.imagePath);
+  await sleep(1800);
+
+  await setPublisherPhase("PINTEREST_FILLING_FIELDS", {
+    rxvPublisherLastError: "",
+  });
+
+  const title = await fillPinterestField(tabId, "title", job.publishTitle);
+  if (!title || !title.ok) throw new Error("PINTEREST_TITLE_NOT_FILLED");
+
+  const description = await fillPinterestField(
+    tabId,
+    "description",
+    job.publishDescription || job.publishText,
+  );
+  if (!description || !description.ok) throw new Error("PINTEREST_DESCRIPTION_NOT_FILLED");
+
+  const link = await fillPinterestField(tabId, "link", job.destinationUrl);
+  if ((!link || !link.ok) && String(job.destinationUrl || "").trim()) {
+    throw new Error("PINTEREST_LINK_NOT_FILLED");
+  }
+
+  await setPublisherPhase("PINTEREST_SELECTING_BOARD", {
+    rxvPublisherLastError: "",
+  });
+
+  const board = await selectPinterestBoard(tabId, job.boardName);
+  const warning = board && board.ok ? "" : String((board && board.reason) || "PINTEREST_BOARD_REVIEW_REQUIRED");
+
+  const finalReady = await waitForFinalButton(tabId, "pinterest", 15000);
+
+  return {
+    prepared: true,
+    published: false,
+    titleFilled: Boolean(title && title.ok),
+    descriptionFilled: Boolean(description && description.ok),
+    linkFilled: Boolean((link && link.ok) || !String(job.destinationUrl || "").trim()),
+    boardSelected: Boolean(board && board.ok),
+    boardName: String(job.boardName || ""),
+    finalReady: Boolean(finalReady),
+    warning,
+  };
 }
 
 async function prepareFacebook(job, tabId) {
@@ -2307,6 +2543,15 @@ async function handleJob(job) {
       );
       debug =
         await prepareTikTok(
+          job,
+          tab.id,
+        );
+    } else if (job.platform === "pinterest") {
+      await setPublisherPhase(
+        "PINTEREST_PREPARING",
+      );
+      debug =
+        await preparePinterest(
           job,
           tab.id,
         );
