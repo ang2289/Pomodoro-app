@@ -1108,6 +1108,31 @@ async function queuePinterestJob(body = {}) {
   return { ok: true, queued: true, recordId, job: publicPinterestJob(job), queueDepth: rxvPinterestQueue.length };
 }
 
+function servePinterestJobFile(res, id) {
+  const jobId = String(id || "").trim();
+  const job = rxvPinterestJobs.get(jobId);
+  if (!job) return json(res, 404, { ok: false, error: "PINTEREST_JOB_NOT_FOUND" });
+
+  const filePath = String(job.imagePath || "");
+  if (!filePath || !fs.existsSync(filePath)) {
+    return json(res, 404, { ok: false, error: "PINTEREST_IMAGE_FILE_NOT_FOUND" });
+  }
+
+  const ext = path.extname(filePath).toLowerCase();
+  const type =
+    ext === ".png" ? "image/png" :
+    ext === ".webp" ? "image/webp" :
+    ext === ".gif" ? "image/gif" :
+    "image/jpeg";
+
+  res.statusCode = 200;
+  res.setHeader("Content-Type", type);
+  res.setHeader("Content-Length", String(fs.statSync(filePath).size));
+  res.setHeader("X-RXV-Filename", path.basename(filePath));
+  res.setHeader("Cache-Control", "no-store");
+  fs.createReadStream(filePath).pipe(res);
+}
+
 function getPinterestJobStatus(id) {
   const jobId = String(id || "").trim();
   if (!jobId) return { ok: false, error: "PINTEREST_JOB_ID_REQUIRED" };
@@ -1722,6 +1747,9 @@ async function requestHandler(req, res) {
     if (req.method === "POST" && urlObj.pathname === "/api/pinterest/queue") {
       const body = await readJsonBody(req);
       return json(res, 200, await queuePinterestJob(body));
+    }
+    if (req.method === "GET" && urlObj.pathname === "/api/pinterest/file") {
+      return servePinterestJobFile(res, urlObj.searchParams.get("id"));
     }
     if (req.method === "GET" && urlObj.pathname === "/api/pinterest/job") {
       return json(res, 200, getPinterestJobStatus(urlObj.searchParams.get("id")));
