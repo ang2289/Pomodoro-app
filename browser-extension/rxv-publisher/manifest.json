@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "RxV Publisher Helper",
-  "version": "39.10.0",
-  "description": "RxV Publisher V39.10：TikTok 自動選片改用本機 MP4 Blob/DataTransfer 橋接，不再對 TikTok 使用 CDP DOM.setFileInputFiles；保留出錯後手動選片續填說明。",
+  "version": "39.11.0",
+  "description": "RxV Publisher V39.11：新增 Pinterest 一鍵填入；自動上傳圖片、填標題、說明、連結與圖版，最後發布保留人工確認。",
   "permissions": [
     "tabs",
     "scripting",
@@ -14,7 +14,9 @@
     "http://localhost:3006/*",
     "http://127.0.0.1:3006/*",
     "https://www.facebook.com/*",
+        "https://www.pinterest.com/*",
     "https://www.tiktok.com/*",
+    "https://www.pinterest.com/*",
     "http://localhost:3005/*",
     "http://127.0.0.1:3005/*"
   ],
