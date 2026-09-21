@@ -1206,7 +1206,7 @@ body{font-family:system-ui,-apple-system,"Segoe UI","Microsoft JhengHei",sans-se
         <div class="field" style="min-width:220px"><label>Pinterest 圖版</label><input id="rxvPinBoard" placeholder="例如：療癒圖片" style="padding:10px;border:1px solid #cbd5e1;border-radius:10px;font:inherit"></div>
       </div>
       <div class="actions">
-        <button class="btn red" onclick="rxvPinQueue()">開啟 Pinterest 並自動填入</button>
+        <button id="rxvPinOpenButton" class="btn red" onclick="rxvPinOpenAndQueue(this)">開啟 Pinterest 並自動填入</button>
         <button class="btn light" onclick="rxvPinCopyAll()">複製全部內容</button>
         <button class="btn green" onclick="rxvPinMarkPosted()">我已發布，記錄完成</button>
       </div>
@@ -1260,13 +1260,33 @@ async function rxvPinRegenerate(){
     rxvPinMessage('✅ 文案已重新產生');
   }catch(e){rxvPinMessage('❌ 重新產生失敗：'+e.message)}
 }
-async function rxvPinQueue(){
+async function rxvPinOpenAndQueue(button){
+  if(!rxvPinCurrent){
+    rxvPinMessage('請先按「自動準備 1 張」。');
+    return;
+  }
+
+  const board=document.getElementById('rxvPinBoard').value.trim();
+  if(!board){
+    rxvPinMessage('請先填 Pinterest 圖版名稱。');
+    return;
+  }
+
+  const oldText=button?button.textContent:'';
+  if(button){
+    button.disabled=true;
+    button.textContent='處理中…';
+  }
+
+  // Open Pinterest synchronously from the user's click so Edge will not block it as a popup.
+  const pinWindow=window.open('https://www.pinterest.com/pin-creation-tool/','_blank');
+
   try{
-    if(!rxvPinCurrent){rxvPinMessage('請先按「自動準備 1 張」。');return}
-    const board=document.getElementById('rxvPinBoard').value.trim();
-    if(!board){rxvPinMessage('請先填 Pinterest 圖版名稱。');return}
     localStorage.setItem('rxvPinterestBoard',board);
-    rxvPinMessage('⏳ 正在準備圖片並送給 Edge 擴充…');
+    rxvPinMessage(pinWindow
+      ? '⏳ Pinterest 已開啟，正在把圖片與文案送給自動填入擴充…'
+      : '⚠️ Edge 阻擋了 Pinterest 新分頁；請允許此網站開啟彈出式視窗。');
+
     const d=await actionPost('/api/pinterest/queue',{
       image:rxvPinCurrent,
       pinTitle:document.getElementById('rxvPinTitle').value,
@@ -1274,10 +1294,27 @@ async function rxvPinQueue(){
       destinationUrl:document.getElementById('rxvPinLink').value,
       boardName:board
     });
+
     rxvPinRecordId=Number(d.recordId||0);
-    rxvPinMessage('✅ 已送出。Edge 會自動開 Pinterest、上傳圖片並填入內容；最後請你自己按「發布／儲存」。');
+
+    // Wake the RxV extension immediately instead of waiting for its periodic heartbeat.
+    window.postMessage({type:'RXV_PIN_WAKE',source:'3018'}, location.origin);
+
+    rxvPinMessage('✅ Pinterest 已開啟，工作已送出。正在自動上傳圖片與填入內容；最後「發布／儲存」請你自己按。');
     setTimeout(refreshAll,1500);
-  }catch(e){rxvPinMessage('❌ Pinterest 自動填入失敗：'+e.message)}
+  }catch(e){
+    rxvPinMessage('❌ Pinterest 自動填入失敗：'+e.message);
+  }finally{
+    if(button){
+      button.disabled=false;
+      button.textContent=oldText||'開啟 Pinterest 並自動填入';
+    }
+  }
+}
+
+// Backward-compatible alias for any cached onclick.
+async function rxvPinQueue(){
+  return rxvPinOpenAndQueue(document.getElementById('rxvPinOpenButton'));
 }
 async function rxvPinCopyAll(){
   if(!rxvPinCurrent){rxvPinMessage('請先準備圖片。');return}
