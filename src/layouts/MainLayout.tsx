@@ -1,12 +1,27 @@
-import { Outlet, Link } from 'react-router-dom';
+import { Outlet, Link, useLocation } from 'react-router-dom';
 import SiteFooter from '../components/SiteFooter';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import DesktopNav from '../components/DesktopNav';
 import MobileBottomNav from '../components/MobileBottomNav';
+import ToolImageTrafficBanner from '../components/ToolImageTrafficBanner';
 import { useTranslation } from 'react-i18next';
+
+const IMAGE_TRAFFIC_PATHS = [
+  '/tools',
+  '/tools/line-sticker',
+  '/tools/line-sticker-guide',
+  '/tools/sticker-prompt',
+  '/tools/emotional-value-sticker-prompt',
+  '/tools/sticker-showcase',
+  '/tools/animated-sticker-prompt',
+  '/tools/animated-line-sticker',
+  '/tools/sticker-splitter',
+];
 
 export default function MainLayout() {
   const { t } = useTranslation();
+  const location = useLocation();
+  const showImageTrafficBanner = IMAGE_TRAFFIC_PATHS.includes(location.pathname);
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-white to-blue-50">
@@ -31,6 +46,8 @@ export default function MainLayout() {
           <DesktopNav />
         </div>
       </header>
+
+      {showImageTrafficBanner && <ToolImageTrafficBanner />}
 
       <main className="app-main-reading flex-grow pb-20">
         <Outlet />
