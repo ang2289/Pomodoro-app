@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "RxV Publisher Helper",
-  "version": "39.16.0",
-  "description": "RxV Publisher V39.16：修正 Pinterest 標題／說明／連結欄位定位，支援 AI 生成內容自動標示，最後發布人工確認。",
+  "version": "39.17.0",
+  "description": "RxV Publisher V39.17：Pinterest 自動建立新草稿後再上傳圖片，修正既有草稿造成 PINTEREST_FILE_INPUT_NOT_FOUND；保留欄位與 AI 標示自動化。",
   "permissions": [
     "tabs",
     "scripting",
