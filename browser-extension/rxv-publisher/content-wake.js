@@ -1,20 +1,32 @@
 (() => {
   let busy = false;
 
-  async function wake() {
+  async function wake(sourceOverride = "") {
     if (busy) return;
 
     busy = true;
 
     try {
-      await chrome.runtime
+      const result = await chrome.runtime
         .sendMessage({
           type:
             "RXV_PUBLISHER_WAKE",
           source:
-            `content:${location.host}`,
+            sourceOverride || `content:${location.host}`,
         })
-        .catch(() => {});
+        .catch((error) => ({
+          ok: false,
+          error: String(error?.message || error),
+        }));
+
+      if (location.port === "3018") {
+        window.postMessage({
+          type: "RXV_PIN_WAKE_RESULT",
+          result: result || null,
+        }, location.origin);
+      }
+
+      return result;
     } finally {
       busy = false;
     }
@@ -23,7 +35,7 @@
   window.addEventListener("message", (event) => {
     if (event.source !== window) return;
     if (!event.data || event.data.type !== "RXV_PIN_WAKE") return;
-    wake();
+    wake("pinterest-button");
   });
 
   wake();
