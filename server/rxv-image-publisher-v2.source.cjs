@@ -1289,7 +1289,7 @@ async function rxvPinCopyAll(){
     '',
     '連結：'+document.getElementById('rxvPinLink').value,
     '圖版：'+document.getElementById('rxvPinBoard').value
-  ].join('\n');
+  ].join('\\n');
   try{await navigator.clipboard.writeText(txt);rxvPinMessage('✅ Pinterest 全部內容已複製')}catch(e){rxvPinMessage('❌ 無法複製：'+e.message)}
 }
 async function rxvPinMarkPosted(){
@@ -1312,7 +1312,7 @@ function fillStatus(s){
   const catSel=document.getElementById('category');
   const current=catSel.value;
   const catOptions=(s.categories||[]).map(function(x){
-    return '<option value="'+esc(x.key)+'">'+esc(x.label)+'（'+x.count+' 張）</option>';
+    return '<option value="'+rxvFbEsc(x.key)+'">'+rxvFbEsc(x.label)+'（'+x.count+' 張）</option>';
   }).join('');
   catSel.innerHTML='<option value="auto">自動選分類</option>'+catOptions;
   if(Array.from(catSel.options).some(function(o){return o.value===current}))catSel.value=current;
@@ -1326,13 +1326,13 @@ function fillStatus(s){
   const mp=document.getElementById('mp3');
   const mpCur=mp.value;
   const mpOptions=(s.mp3||[]).map(function(x){
-    return '<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>';
+    return '<option value="'+rxvFbEsc(x.id)+'">'+rxvFbEsc(x.name)+'</option>';
   }).join('');
   mp.innerHTML='<option value="auto">自動選第一首</option><option value="none">不加音樂</option>'+mpOptions;
   if(Array.from(mp.options).some(function(o){return o.value===mpCur}))mp.value=mpCur;
 
   document.getElementById('cats').innerHTML=(s.categories||[]).map(function(x){
-    return '<span class="cat">'+esc(x.label)+' '+x.count+' 張</span>';
+    return '<span class="cat">'+rxvFbEsc(x.label)+' '+x.count+' 張</span>';
   }).join('');
 
   const tk=s.tiktok||{};
@@ -1341,7 +1341,7 @@ function fillStatus(s){
 }
 async function refreshAll(){try{setMsg('同步網站最新數量中…');const s=await api('/api/status');fillStatus(s);const j=await api('/api/jobs?limit=30');renderJobs(j.items||[]);setMsg('已同步｜網站公開圖片 '+s.total+' 張｜來源：'+s.manifestSource)}catch(e){setMsg('錯誤：'+e.message)}}
 async function createJobs(n){try{setMsg('正在挑選未使用圖片並建立影片任務…');const d=await actionPost('/api/jobs/generate',{count:n,categoryKey:document.getElementById('category').value,imagesPerVideo:Number(document.getElementById('imageCount').value),mp3Choice:document.getElementById('mp3').value});setMsg('已建立 '+d.created+' 支待發影片');await refreshAll()}catch(e){setMsg('建立失敗：'+e.message)}}
-function renderJobs(items){const box=document.getElementById('jobs');if(!items.length){box.innerHTML='<div class="muted">目前沒有影片任務。按「自動建立 1 支」。</div>';return}box.innerHTML=items.map(j=>{const imgs=(j.images||[]).map(i=>'<img src="'+esc(i.image_url)+'" title="'+esc(i.title)+'">').join('');const vid=j.video_path&&['ready','publishing','scheduled','published'].includes(j.status)?'<video class="video" controls preload="metadata" src="/api/video?videoId='+encodeURIComponent(j.video_id)+'"></video>':'';return '<div class="card"><div class="row"><div><div class="thumbs">'+imgs+'</div>'+vid+'</div><div class="jobmain"><span class="tag">'+esc(j.category_label)+'</span><span class="status">'+esc(j.status)+'</span><h3>'+esc(j.pack_label)+'｜'+j.pack_count+' 張 NT$99｜全部 '+j.site_total+' 張 NT$199</h3><textarea id="cap_'+esc(j.video_id)+'">'+esc(j.caption||'')+'</textarea><div class="small">圖片 '+j.image_count+' 張｜MP3：'+esc(j.mp3_path||j.mp3_choice||'auto')+(j.video_path?'｜本機：'+esc(j.video_path):'')+'</div>'+((j.error_message&&!/Direct Post 尚未通過 Audit[，,]工具已改用 Upload Draft/.test(j.error_message))?'<div class="error">'+esc(j.error_message)+'</div>':'')+'<div class="actions"><button class="btn green" data-a="render" data-id="'+encodeURIComponent(j.video_id)+'">產生 MP4</button><button class="btn" data-a="publish" data-id="'+encodeURIComponent(j.video_id)+'">確認並發布 TikTok</button>'+(j.publish_id?'<button class="btn gray" data-a="check" data-id="'+encodeURIComponent(j.video_id)+'">查 TikTok 狀態</button>':'')+'<button class="btn light" data-a="copy" data-id="'+encodeURIComponent(j.video_id)+'">複製文案</button><button class="btn red" data-a="cancel" data-id="'+encodeURIComponent(j.video_id)+'">取消任務</button></div></div></div></div>'}).join('');box.querySelectorAll('[data-a]').forEach(btn=>btn.addEventListener('click',()=>handleAction(btn.dataset.a,decodeURIComponent(btn.dataset.id||''))))}
+function renderJobs(items){const box=document.getElementById('jobs');if(!items.length){box.innerHTML='<div class="muted">目前沒有影片任務。按「自動建立 1 支」。</div>';return}box.innerHTML=items.map(j=>{const imgs=(j.images||[]).map(i=>'<img src="'+rxvFbEsc(i.image_url)+'" title="'+rxvFbEsc(i.title)+'">').join('');const vid=j.video_path&&['ready','publishing','scheduled','published'].includes(j.status)?'<video class="video" controls preload="metadata" src="/api/video?videoId='+encodeURIComponent(j.video_id)+'"></video>':'';return '<div class="card"><div class="row"><div><div class="thumbs">'+imgs+'</div>'+vid+'</div><div class="jobmain"><span class="tag">'+rxvFbEsc(j.category_label)+'</span><span class="status">'+rxvFbEsc(j.status)+'</span><h3>'+rxvFbEsc(j.pack_label)+'｜'+j.pack_count+' 張 NT$99｜全部 '+j.site_total+' 張 NT$199</h3><textarea id="cap_'+rxvFbEsc(j.video_id)+'">'+rxvFbEsc(j.caption||'')+'</textarea><div class="small">圖片 '+j.image_count+' 張｜MP3：'+rxvFbEsc(j.mp3_path||j.mp3_choice||'auto')+(j.video_path?'｜本機：'+rxvFbEsc(j.video_path):'')+'</div>'+((j.error_message&&!/Direct Post 尚未通過 Audit[，,]工具已改用 Upload Draft/.test(j.error_message))?'<div class="error">'+rxvFbEsc(j.error_message)+'</div>':'')+'<div class="actions"><button class="btn green" data-a="render" data-id="'+encodeURIComponent(j.video_id)+'">產生 MP4</button><button class="btn" data-a="publish" data-id="'+encodeURIComponent(j.video_id)+'">確認並發布 TikTok</button>'+(j.publish_id?'<button class="btn gray" data-a="check" data-id="'+encodeURIComponent(j.video_id)+'">查 TikTok 狀態</button>':'')+'<button class="btn light" data-a="copy" data-id="'+encodeURIComponent(j.video_id)+'">複製文案</button><button class="btn red" data-a="cancel" data-id="'+encodeURIComponent(j.video_id)+'">取消任務</button></div></div></div></div>'}).join('');box.querySelectorAll('[data-a]').forEach(btn=>btn.addEventListener('click',()=>handleAction(btn.dataset.a,decodeURIComponent(btn.dataset.id||''))))}
 async function handleAction(a,id){try{if(a==='copy'){const el=document.getElementById('cap_'+id);await navigator.clipboard.writeText(el.value);setMsg('文案已複製');return}if(a==='render'){setMsg('正在本機產生 MP4，約需數十秒…');await actionPost('/api/jobs/render',{videoId:id,mp3Choice:document.getElementById('mp3').value});setMsg('MP4 已完成');await refreshAll();return}if(a==='publish'){const el=document.getElementById('cap_'+id);if(!confirm('確認將這支本機 MP4 送到 TikTok 官方 API？'))return;setMsg('正在送到 TikTok，請勿關閉頁面…');const d=await actionPost('/api/jobs/publish',{videoId:id,caption:el?el.value:''});setMsg(d.published?'TikTok 已發布完成':(d.needsManualAction?'影片已傳到 TikTok 草稿／收件匣，請在 App 完成最後發布':'TikTok 正在處理'));await refreshAll();return}if(a==='check'){const d=await actionPost('/api/jobs/check',{videoId:id});setMsg('TikTok 狀態：'+d.providerStatus);await refreshAll();return}if(a==='cancel'){if(!confirm('取消這支影片任務？選到的圖片之後可再使用。'))return;await actionPost('/api/jobs/cancel',{videoId:id});await refreshAll();return}}catch(e){setMsg('錯誤：'+e.message)}}
 refreshAll();
 </script>
@@ -1364,11 +1364,11 @@ refreshAll();
     var options=Array.isArray(c.privacy_level_options)?c.privacy_level_options.map(String):[];
     var selfOnly=!!c.direct_self_only_test||(options.length===1&&options[0]==='SELF_ONLY');
     if(selfOnly){options=options.filter(function(x){return x==='SELF_ONLY'});if(!options.length)options=['SELF_ONLY']}
-    var privacy='<option value="">請主動選擇誰可以觀看</option>'+options.map(function(x){return '<option value="'+esc(x)+'">'+esc(x)+'</option>'}).join('');
+    var privacy='<option value="">請主動選擇誰可以觀看</option>'+options.map(function(x){return '<option value="'+rxvFbEsc(x)+'">'+rxvFbEsc(x)+'</option>'}).join('');
     var panel=document.createElement('section');
     panel.className='rxvTikTokReviewDemo';
     panel.innerHTML='<b>TikTok Production Review 發布確認</b>'+
-      '<div class="notice">已授權帳號：'+esc(c.creator_username?'@'+c.creator_username:'查詢中')+'｜發布前請確認 MP4 預覽、文案與下列選項。</div>'+
+      '<div class="notice">已授權帳號：'+rxvFbEsc(c.creator_username?'@'+c.creator_username:'查詢中')+'｜發布前請確認 MP4 預覽、文案與下列選項。</div>'+
       (selfOnly?'<div class="notice"><b>Sandbox 測試：</b>目前只能選 SELF_ONLY，但仍需由使用者親自選擇。</div>':'')+
       (video?'':'<div class="error">尚未產生可預覽 MP4，不能發布。</div>')+
       '<label>誰可以觀看<select data-rxv="privacy">'+privacy+'</select></label>'+
@@ -1432,7 +1432,7 @@ refreshAll();
     <label>圖片分類<select id="rxvFbCategory"><option value="auto">全部分類</option></select></label>
     <label>發布位置<select id="rxvFbTargetType"><option value="personal">個人 FB</option><option value="page">粉專</option><option value="group">社團</option></select></label>
     <label>粉專／社團名稱<input id="rxvFbTargetName" type="text" placeholder="社團模式請輸入社團名稱"></label>
-    <label>文案模式<select id="rxvFbCopyMode"><option value="strict" selected>嚴格社團版</option><option value="general">一般 FB 導流版</option></select></label>
+    <label>文案輸出<input type="text" value="一次產生 2 個版本" readonly></label>
   </div>
   <div class="rxvFbChecks">
     <label><input type="checkbox" id="rxvFbFreeOnly" checked> 只抓免費圖片</label>
@@ -1442,8 +1442,7 @@ refreshAll();
   <div class="actions">
     <button class="btn" onclick="rxvFbPick(false)">抓 1 張</button>
     <button class="btn light" onclick="rxvFbPick(true)">換一張</button>
-    <button class="btn gray" onclick="rxvFbUpdateCopy()">更新文案</button>
-    <button class="btn light" onclick="rxvFbCopyText()">複製文案</button>
+    <button class="btn gray" onclick="rxvFbUpdateCopy()">更新兩版文案</button>
     <button class="btn light" onclick="rxvFbCopyImage()">複製圖片</button>
     <button class="btn light" onclick="rxvFbOpenImage()">開啟圖片</button>
     <button class="btn light" onclick="window.open('https://www.facebook.com/','_blank','noopener')">開啟 Facebook</button>
@@ -1455,7 +1454,22 @@ refreshAll();
     <div><img id="rxvFbImage" alt="FB 圖片預覽" style="display:none"></div>
     <div>
       <div id="rxvFbMeta" class="small">尚未選圖</div>
-      <textarea id="rxvFbText" placeholder="按「抓 1 張」後會自動產生文案"></textarea>
+      <div style="display:grid;grid-template-columns:1fr;gap:12px;margin-top:8px">
+        <div style="border:1px solid #cbd5e1;border-radius:12px;padding:12px;background:#fff">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px">
+            <b>版本 1｜嚴格社團版（不放連結）</b>
+            <button class="btn light" type="button" onclick="rxvFbCopyText('strict')">一鍵複製此版</button>
+          </div>
+          <textarea id="rxvFbStrictText" placeholder="抓圖後會自動產生嚴格社團版文案"></textarea>
+        </div>
+        <div style="border:1px solid #cbd5e1;border-radius:12px;padding:12px;background:#fff">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px">
+            <b>版本 2｜一般 FB 導流版</b>
+            <button class="btn light" type="button" onclick="rxvFbCopyText('link')">一鍵複製此版</button>
+          </div>
+          <textarea id="rxvFbLinkText" placeholder="抓圖後會自動產生一般 FB 導流版文案"></textarea>
+        </div>
+      </div>
     </div>
   </div>
   <h3>Facebook 圖片發布紀錄</h3>
@@ -1466,12 +1480,13 @@ var rxvFbCurrent=null;
 var rxvFbSessionExcluded={};
 async function rxvFbApi(url,opts){var r=await fetch(url,opts);var d=await r.json().catch(function(){return {}});if(!r.ok||d.ok===false)throw new Error(d.message||d.error||('HTTP '+r.status));return d}
 function rxvFbMessage(s){document.getElementById('rxvFbMsg').textContent=s||''}
+function rxvFbEsc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})}
 function rxvFbSettings(){
   return {
     categoryKey:document.getElementById('rxvFbCategory').value,
     targetType:document.getElementById('rxvFbTargetType').value,
     targetName:document.getElementById('rxvFbTargetName').value.trim(),
-    copyMode:document.getElementById('rxvFbCopyMode').value,
+    copyMode:'strict',
     freeOnly:document.getElementById('rxvFbFreeOnly').checked,
     unpostedOnly:document.getElementById('rxvFbUnposted').checked,
     allowLink:document.getElementById('rxvFbAllowLink').checked
@@ -1481,7 +1496,7 @@ async function rxvFbInit(){
   try{
     var s=await rxvFbApi('/api/status');
     var sel=document.getElementById('rxvFbCategory');
-    sel.innerHTML='<option value="auto">全部分類</option>'+(s.categories||[]).map(function(x){return '<option value="'+esc(x.key)+'">'+esc(x.label)+'（'+x.count+' 張）</option>'}).join('');
+    sel.innerHTML='<option value="auto">全部分類</option>'+(s.categories||[]).map(function(x){return '<option value="'+rxvFbEsc(x.key)+'">'+rxvFbEsc(x.label)+'（'+x.count+' 張）</option>'}).join('');
     var hero=document.querySelector('.hero');
     if(hero&&!document.getElementById('rxvFbTopNav')){
       var nav=document.createElement('div');nav.id='rxvFbTopNav';nav.className='rxvFbTopNav';
@@ -1503,25 +1518,36 @@ async function rxvFbPick(nextOne){
     Object.keys(s).forEach(function(k){q.set(k,String(s[k]))});
     q.set('excludeFingerprints',JSON.stringify(Object.keys(rxvFbSessionExcluded)));
     var d=await rxvFbApi('/api/facebook/pick?'+q.toString());
-    if(!d.found){rxvFbCurrent=null;document.getElementById('rxvFbImage').style.display='none';document.getElementById('rxvFbMeta').textContent='沒有符合條件的圖片';document.getElementById('rxvFbText').value='';rxvFbMessage(d.message||'沒有符合條件的圖片');return}
+    if(!d.found){rxvFbCurrent=null;document.getElementById('rxvFbImage').style.display='none';document.getElementById('rxvFbMeta').textContent='沒有符合條件的圖片';document.getElementById('rxvFbStrictText').value='';document.getElementById('rxvFbLinkText').value='';rxvFbMessage(d.message||'沒有符合條件的圖片');return}
     rxvFbCurrent=d.image;
     var img=document.getElementById('rxvFbImage');img.src=d.image.imageUrl;img.style.display='block';
     document.getElementById('rxvFbMeta').textContent=d.image.category+'｜'+d.image.title+'｜'+(d.image.isFree?'免費':'素材包')+'｜此位置尚可選 '+d.remainingForTarget+' 張';
-    document.getElementById('rxvFbText').value=d.postText||'';
-    rxvFbMessage('已選到 1 張｜此圖片尚未在目前發布位置標記為已發布。');
+    await rxvFbUpdateCopy();
+    rxvFbMessage('已選到 1 張｜兩個 FB 文案版本已同時產生，可分別一鍵複製。');
   }catch(e){rxvFbMessage('選圖失敗：'+e.message)}
 }
 async function rxvFbUpdateCopy(){
   try{
     if(!rxvFbCurrent){rxvFbMessage('請先按「抓 1 張」。');return}
     var s=rxvFbSettings();
-    var d=await rxvFbApi('/api/facebook/copy',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:rxvFbCurrent,copyMode:s.copyMode,allowLink:s.allowLink})});
-    document.getElementById('rxvFbText').value=d.postText||'';
-    rxvFbMessage('文案已依目前模式更新。');
+    rxvFbMessage('正在產生兩個 FB 文案版本…');
+    var pair=await Promise.all([
+      rxvFbApi('/api/facebook/copy',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:rxvFbCurrent,copyMode:'strict',allowLink:false})}),
+      rxvFbApi('/api/facebook/copy',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:rxvFbCurrent,copyMode:'general',allowLink:s.allowLink})})
+    ]);
+    document.getElementById('rxvFbStrictText').value=pair[0].postText||'';
+    document.getElementById('rxvFbLinkText').value=pair[1].postText||'';
+    rxvFbMessage('兩個文案版本已更新，可各別一鍵複製。');
   }catch(e){rxvFbMessage('更新文案失敗：'+e.message)}
 }
-async function rxvFbCopyText(){
-  try{var t=document.getElementById('rxvFbText').value;if(!t){rxvFbMessage('目前沒有文案。');return}await navigator.clipboard.writeText(t);rxvFbMessage('文案已複製。')}catch(e){rxvFbMessage('複製文案失敗：'+e.message)}
+async function rxvFbCopyText(kind){
+  try{
+    var id=kind==='link'?'rxvFbLinkText':'rxvFbStrictText';
+    var t=document.getElementById(id).value;
+    if(!t){rxvFbMessage('目前沒有文案。');return}
+    await navigator.clipboard.writeText(t);
+    rxvFbMessage(kind==='link'?'一般 FB 導流版已複製。':'嚴格社團版已複製。');
+  }catch(e){rxvFbMessage('複製文案失敗：'+e.message)}
 }
 async function rxvFbCopyImage(){
   try{
@@ -1539,7 +1565,7 @@ async function rxvFbMark(status){
     if(!rxvFbCurrent){rxvFbMessage('請先按「抓 1 張」。');return}
     var s=rxvFbSettings();
     if(s.targetType==='group'&&!s.targetName){rxvFbMessage('請先輸入社團名稱。');return}
-    var d=await rxvFbApi('/api/facebook/mark',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:rxvFbCurrent,targetType:s.targetType,targetName:s.targetName,copyMode:s.copyMode,allowLink:s.allowLink,postText:document.getElementById('rxvFbText').value,status:status})});
+    var d=await rxvFbApi('/api/facebook/mark',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:rxvFbCurrent,targetType:s.targetType,targetName:s.targetName,copyMode:(s.targetType==='group'?'strict':'general'),allowLink:s.allowLink,postText:document.getElementById(s.targetType==='group'?'rxvFbStrictText':'rxvFbLinkText').value,status:status})});
     rxvFbMessage(d.status==='posted'?'已記錄為 Facebook 已發布；下次同一位置不會再抓這張。':'已記錄為略過；之後仍可再次抓到。');
     await rxvFbHistory();
     if(d.status==='posted')await rxvFbPick();
@@ -1552,7 +1578,7 @@ async function rxvFbHistory(){
     var rows=d.items||[];
     body.innerHTML=rows.length?rows.map(function(x){
       var target=x.target_type==='group'?'社團：'+(x.target_name||'-'):x.target_type==='page'?'粉專：'+(x.target_name||'-'):'個人 FB';
-      return '<tr><td>'+esc((x.posted_at||x.created_at||'').replace('T',' ').slice(0,19))+'</td><td>'+esc(x.title||x.image_id)+'</td><td>'+esc(x.category_label||'-')+'</td><td>'+esc(target)+'</td><td>'+esc(x.copy_mode==='strict'?'嚴格':'一般')+'</td><td>'+esc(x.status)+'</td></tr>';
+      return '<tr><td>'+rxvFbEsc((x.posted_at||x.created_at||'').replace('T',' ').slice(0,19))+'</td><td>'+rxvFbEsc(x.title||x.image_id)+'</td><td>'+rxvFbEsc(x.category_label||'-')+'</td><td>'+rxvFbEsc(target)+'</td><td>'+rxvFbEsc(x.copy_mode==='strict'?'嚴格':'一般')+'</td><td>'+rxvFbEsc(x.status)+'</td></tr>';
     }).join(''):'<tr><td colspan="6" class="muted">尚無 Facebook 圖片發布紀錄</td></tr>';
   }catch(e){}
 }
