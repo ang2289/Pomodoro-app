@@ -1,6 +1,6 @@
 const RXV_BASE = "http://localhost:3006";
 const RXV_PIN_BASE = "http://127.0.0.1:3018";
-const VERSION = "39.14.0";
+const VERSION = "39.16.0";
 let activeJob = null;
 let lastWakeAt = 0;
 
@@ -2026,28 +2026,118 @@ async function fillPinterestField(tabId, kind, value) {
   const text = String(value || "").trim();
   if (!text) return { ok: true, skipped: true, kind };
 
-  return await exec(tabId, (kind, text) => {
+  const result = await exec(tabId, (kind, text) => {
     const visible = (el) => {
+      if (!el) return false;
       const r = el.getBoundingClientRect();
       const s = getComputedStyle(el);
       return r.width > 0 && r.height > 0 && s.display !== "none" && s.visibility !== "hidden";
     };
 
-    const candidates = Array.from(
-      document.querySelector('body')
-        ? document.querySelectorAll('input,textarea,[contenteditable="true"],[role="textbox"]')
-        : [],
-    ).filter(visible);
-
-    const wanted = {
-      title: ["標題", "title", "pin title", "新增標題"],
-      description: ["說明", "description", "details", "詳細說明", "pin related"],
-      link: ["連結", "link", "destination", "網址", "website"],
+    const readValue = (el) => {
+      if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
+        return String(el.value || "").trim();
+      }
+      return String(el.innerText || el.textContent || "").trim();
     };
 
-    let best = null;
-    let bestScore = -999;
-    for (const el of candidates) {
+    const setNativeValue = (el, next) => {
+      el.focus();
+
+      if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
+        const proto = el instanceof HTMLTextAreaElement
+          ? HTMLTextAreaElement.prototype
+          : HTMLInputElement.prototype;
+        const descriptor = Object.getOwnPropertyDescriptor(proto, "value");
+        if (descriptor?.set) descriptor.set.call(el, next);
+        else el.value = next;
+
+        el.dispatchEvent(new InputEvent("beforeinput", {
+          bubbles: true,
+          inputType: "insertText",
+          data: next,
+        }));
+        el.dispatchEvent(new InputEvent("input", {
+          bubbles: true,
+          inputType: "insertText",
+          data: next,
+        }));
+        el.dispatchEvent(new Event("change", { bubbles: true }));
+        el.dispatchEvent(new Event("blur", { bubbles: true }));
+        return;
+      }
+
+      // Pinterest title/description can be a contenteditable React/Lexical field.
+      try {
+        const sel = window.getSelection();
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        sel.removeAllRanges();
+        sel.addRange(range);
+        document.execCommand("insertText", false, next);
+      } catch (_) {
+        el.textContent = next;
+      }
+
+      if (!readValue(el)) el.textContent = next;
+
+      el.dispatchEvent(new InputEvent("beforeinput", {
+        bubbles: true,
+        inputType: "insertText",
+        data: next,
+      }));
+      el.dispatchEvent(new InputEvent("input", {
+        bubbles: true,
+        inputType: "insertText",
+        data: next,
+      }));
+      el.dispatchEvent(new Event("change", { bubbles: true }));
+      el.dispatchEvent(new Event("blur", { bubbles: true }));
+    };
+
+    const exactHints = {
+      title: [
+        "讓所有人知道你的 pin 主題",
+        "新增標題",
+        "add a title",
+        "title",
+        "標題",
+      ],
+      description: [
+        "請提供 pin 的相關說明",
+        "新增說明",
+        "tell everyone what your pin is about",
+        "description",
+        "說明",
+        "詳細說明",
+      ],
+      link: [
+        "新增連結",
+        "add a link",
+        "destination link",
+        "destination",
+        "website",
+        "網址",
+        "連結",
+      ],
+    };
+
+    const forbidden = [
+      "搜尋標籤",
+      "搜尋",
+      "search",
+      "comment",
+      "評論",
+      "圖版",
+      "board",
+    ];
+
+    const editables = Array.from(
+      document.querySelectorAll('input,textarea,[contenteditable="true"],[role="textbox"]'),
+    ).filter(visible);
+
+    const candidates = [];
+    for (const el of editables) {
       if (kind === "link" && !(el instanceof HTMLInputElement)) continue;
 
       const attrs = [
@@ -2059,71 +2149,174 @@ async function fillPinterestField(tabId, kind, value) {
         el.getAttribute("data-testid"),
       ].filter(Boolean).join(" ");
 
-      const nearby = String(
-        (el.closest("label") && el.closest("label").innerText) ||
-        (el.parentElement && el.parentElement.parentElement && el.parentElement.parentElement.innerText) ||
-        (el.parentElement && el.parentElement.innerText) ||
-        "",
-      ).slice(0, 240);
+      let nearby = "";
+      let p = el;
+      for (let i = 0; i < 5 && p; i += 1, p = p.parentElement) {
+        nearby += " " + String(p.innerText || "");
+        if (nearby.length > 700) break;
+      }
 
       const combined = (attrs + " " + nearby).toLowerCase();
       let score = 0;
 
-      for (const key of wanted[kind] || []) {
-        if (combined.includes(String(key).toLowerCase())) score += 80;
+      for (const hint of exactHints[kind] || []) {
+        const h = hint.toLowerCase();
+        if (attrs.toLowerCase().includes(h)) score += 250;
+        else if (combined.includes(h)) score += 90;
       }
 
       if (kind === "title") {
-        if (el instanceof HTMLInputElement) score += 20;
-        if (combined.includes("100")) score += 10;
-      } else if (kind === "description") {
-        if (el instanceof HTMLTextAreaElement || el.getAttribute("contenteditable") === "true") score += 20;
-        if (combined.includes("800")) score += 10;
-      } else if (kind === "link") {
-        if ((el.getAttribute("type") || "").toLowerCase() === "url") score += 40;
+        if (el instanceof HTMLInputElement) score += 35;
+        if (combined.includes("100")) score += 15;
+        if (el instanceof HTMLTextAreaElement) score -= 20;
       }
 
-      if (
-        combined.includes("search") ||
-        combined.includes("搜尋") ||
-        combined.includes("comment") ||
-        combined.includes("評論")
-      ) {
-        score -= 200;
+      if (kind === "description") {
+        if (el instanceof HTMLTextAreaElement) score += 45;
+        if (el.getAttribute("contenteditable") === "true") score += 30;
+        if (combined.includes("800")) score += 15;
       }
 
-      if (score > bestScore) {
-        bestScore = score;
-        best = el;
+      if (kind === "link") {
+        const type = String(el.getAttribute("type") || "").toLowerCase();
+        if (type === "url") score += 80;
+        if (combined.includes("http")) score += 20;
+      }
+
+      for (const bad of forbidden) {
+        if (combined.includes(bad.toLowerCase())) score -= 180;
+      }
+
+      candidates.push({ el, score, attrs, combined });
+    }
+
+    // Pinterest's current zh-TW editor renders visible labels/placeholders in wrapper nodes.
+    // Search those labels and boost the editable field inside/near the same container.
+    const labelHints = {
+      title: ["標題", "讓所有人知道你的 Pin 主題"],
+      description: ["說明", "請提供 Pin 的相關說明"],
+      link: ["連結", "新增連結"],
+    };
+
+    for (const hint of labelHints[kind] || []) {
+      const labels = Array.from(document.querySelectorAll("label,span,div,p"))
+        .filter((el) => visible(el) && String(el.innerText || el.textContent || "").trim() === hint);
+
+      for (const label of labels) {
+        let container = label.parentElement;
+        for (let depth = 0; depth < 5 && container; depth += 1, container = container.parentElement) {
+          const local = Array.from(
+            container.querySelectorAll('input,textarea,[contenteditable="true"],[role="textbox"]'),
+          ).filter(visible);
+          for (const editable of local) {
+            const found = candidates.find((x) => x.el === editable);
+            if (found) found.score += 220 - depth * 20;
+          }
+          if (local.length) break;
+        }
       }
     }
 
-    if (!best || bestScore < 20) {
-      return { ok: false, kind, reason: "FIELD_NOT_FOUND", bestScore };
-    }
+    candidates.sort((a, b) => b.score - a.score);
 
-    best.scrollIntoView({ block: "center" });
-    best.focus();
-
-    if (best instanceof HTMLInputElement || best instanceof HTMLTextAreaElement) {
-      const proto = Object.getPrototypeOf(best);
-      const descriptor = Object.getOwnPropertyDescriptor(proto, "value");
-      if (descriptor && descriptor.set) descriptor.set.call(best, text);
-      else best.value = text;
-    } else {
-      best.textContent = "";
+    const attempts = [];
+    for (const item of candidates.slice(0, 8)) {
+      if (item.score < 10) continue;
       try {
-        document.execCommand("insertText", false, text);
-      } catch (_) {
-        best.textContent = text;
+        item.el.scrollIntoView({ block: "center" });
+        setNativeValue(item.el, text);
+        const actual = readValue(item.el);
+        const ok = actual === text || actual.includes(text.slice(0, Math.min(30, text.length)));
+        attempts.push({
+          score: item.score,
+          ok,
+          actual: actual.slice(0, 80),
+          placeholder: String(item.el.getAttribute("placeholder") || ""),
+        });
+        if (ok) {
+          return {
+            ok: true,
+            kind,
+            score: item.score,
+            actualLength: actual.length,
+            placeholder: String(item.el.getAttribute("placeholder") || ""),
+          };
+        }
+      } catch (error) {
+        attempts.push({ score: item.score, ok: false, error: String(error?.message || error) });
       }
     }
 
-    best.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: text }));
-    best.dispatchEvent(new Event("change", { bubbles: true }));
-    best.dispatchEvent(new Event("blur", { bubbles: true }));
-    return { ok: true, kind, score: bestScore };
+    return {
+      ok: false,
+      kind,
+      reason: "FIELD_NOT_FOUND_OR_NOT_ACCEPTED",
+      candidates: candidates.slice(0, 6).map((x) => ({
+        score: x.score,
+        placeholder: String(x.el.getAttribute("placeholder") || ""),
+        aria: String(x.el.getAttribute("aria-label") || ""),
+        tag: x.el.tagName,
+      })),
+      attempts,
+    };
   }, [kind, text]);
+
+  return result || { ok: false, kind, reason: "PINTEREST_FIELD_EXEC_EMPTY" };
+}
+
+async function ensurePinterestAiLabel(tabId, shouldEnable = true) {
+  if (!shouldEnable) return { found: false, on: false, skipped: true };
+
+  return await exec(tabId, () => {
+    const visible = (el) => {
+      if (!el) return false;
+      const r = el.getBoundingClientRect();
+      const s = getComputedStyle(el);
+      return r.width > 0 && r.height > 0 && s.display !== "none" && s.visibility !== "hidden";
+    };
+
+    const phrases = [
+      "標示為經 AI 修飾",
+      "內容完全或部分由 AI 生成",
+      "AI generated",
+      "AI-generated",
+      "AI modified",
+      "AI altered",
+    ];
+
+    const nodes = Array.from(document.querySelectorAll("label,div,span,p"));
+    const label = nodes.find((el) => {
+      if (!visible(el)) return false;
+      const text = String(el.innerText || el.textContent || "").trim();
+      if (!text || text.length > 220) return false;
+      return phrases.some((p) => text.toLowerCase().includes(p.toLowerCase()));
+    });
+
+    if (!label) return { found: false, on: false, reason: "AI_LABEL_NOT_FOUND" };
+
+    let container = label;
+    for (let depth = 0; depth < 6 && container; depth += 1, container = container.parentElement) {
+      const toggles = Array.from(
+        container.querySelectorAll('[role="switch"],input[type="checkbox"],button[aria-pressed]'),
+      ).filter(visible);
+
+      for (const toggle of toggles) {
+        const on = toggle.matches('input[type="checkbox"]')
+          ? Boolean(toggle.checked)
+          : toggle.getAttribute("aria-checked") === "true" || toggle.getAttribute("aria-pressed") === "true";
+
+        if (!on) toggle.click();
+
+        const after = toggle.matches('input[type="checkbox"]')
+          ? Boolean(toggle.checked)
+          : toggle.getAttribute("aria-checked") === "true" || toggle.getAttribute("aria-pressed") === "true";
+
+        return { found: true, on: after, clicked: !on };
+      }
+    }
+
+    return { found: true, on: false, reason: "AI_TOGGLE_NOT_FOUND" };
+  });
 }
 
 async function selectPinterestBoard(tabId, boardName) {
@@ -2247,6 +2440,8 @@ async function preparePinterest(job, tabId) {
   const board = await selectPinterestBoard(tabId, job.boardName);
   const warning = board && board.ok ? "" : String((board && board.reason) || "PINTEREST_BOARD_REVIEW_REQUIRED");
 
+  const ai = await ensurePinterestAiLabel(tabId, Boolean(job.aiDisclosureRequested));
+
   const finalReady = await waitForFinalButton(tabId, "pinterest", 15000);
 
   return {
@@ -2258,6 +2453,9 @@ async function preparePinterest(job, tabId) {
     linkFilled: Boolean((link && link.ok) || !String(job.destinationUrl || "").trim()),
     boardSelected: Boolean(board && board.ok),
     boardName: String(job.boardName || ""),
+    aiDisclosureRequested: Boolean(job.aiDisclosureRequested),
+    aiLabelFound: Boolean(ai && ai.found),
+    aiLabelOn: Boolean(ai && ai.on),
     finalReady: Boolean(finalReady),
     warning,
   };
