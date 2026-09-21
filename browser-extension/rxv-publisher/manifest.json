@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "RxV Publisher Helper",
-  "version": "39.11.0",
-  "description": "RxV Publisher V39.11：新增 Pinterest 一鍵填入；自動上傳圖片、填標題、說明、連結與圖版，最後發布保留人工確認。",
+  "version": "39.12.0",
+  "description": "RxV Publisher V39.12：Pinterest 直接整合 3018，一鍵自動填入圖片、標題、說明、連結與圖版，最後發布人工確認。",
   "permissions": [
     "tabs",
     "scripting",
@@ -17,7 +17,9 @@
     "https://www.tiktok.com/*",
     "https://www.pinterest.com/*",
     "http://localhost:3005/*",
-    "http://127.0.0.1:3005/*"
+    "http://127.0.0.1:3005/*",
+    "http://localhost:3018/*",
+    "http://127.0.0.1:3018/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -33,7 +35,9 @@
         "http://127.0.0.1:3005/*",
         "https://www.tiktok.com/*",
         "https://www.facebook.com/*",
-        "https://www.pinterest.com/*"
+        "https://www.pinterest.com/*",
+        "http://localhost:3018/*",
+        "http://127.0.0.1:3018/*"
       ],
       "js": [
         "content-wake.js"
