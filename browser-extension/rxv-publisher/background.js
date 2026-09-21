@@ -96,8 +96,22 @@ async function pollAndRunNextJob(
     };
   }
 
-  const data =
+  let data =
     await res.json().catch(() => ({}));
+
+  if (!data?.job) {
+    const pinterestRes = await fetch(
+      RXV_BASE + "/pinterest-helper/next",
+    ).catch(() => null);
+
+    if (pinterestRes?.ok) {
+      const pinterestData =
+        await pinterestRes.json().catch(() => ({}));
+      if (pinterestData?.job) {
+        data = pinterestData;
+      }
+    }
+  }
 
   if (!data?.job) {
     await setPublisherPhase(
@@ -2463,7 +2477,12 @@ async function prepareTikTok(job, tabId) {
 }
 
 async function reportResult(job, status, debug = {}, error = "") {
-  await fetch(`${RXV_BASE}/publisher-extension/result`, {
+  const route =
+    String(job?.queueSource || "") === "pinterest-helper"
+      ? "/pinterest-helper/result"
+      : "/publisher-extension/result";
+
+  await fetch(RXV_BASE + route, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ id: job.id, status, debug, error }),
@@ -2471,7 +2490,12 @@ async function reportResult(job, status, debug = {}, error = "") {
 }
 
 async function reportFail(job, error, debug = {}) {
-  await fetch(`${RXV_BASE}/publisher-extension/fail`, {
+  const route =
+    String(job?.queueSource || "") === "pinterest-helper"
+      ? "/pinterest-helper/fail"
+      : "/publisher-extension/fail";
+
+  await fetch(RXV_BASE + route, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ id: job.id, error, debug }),
