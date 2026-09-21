@@ -1142,6 +1142,17 @@ const HomePage: React.FC = () => {
       ),
     },
     {
+      id: "auto-video-publisher",
+      titleKey: "RXV 自動短影音發布器",
+      descriptionKey: "3 張圖片自動做 15 秒 MP4，加入 Facebook、TikTok、IG、YouTube Shorts 等發布佇列。",
+      icon: "🚀",
+      href: "/tools/auto-video-publisher",
+      categoryKey: "home_category_design",
+      ringColor: "ring-violet-100",
+      hoverColor: "hover:bg-violet-50",
+      badgeColor: "text-violet-700",
+    },
+    {
       id: "image-to-video",
       titleKey: "home_tool_image_to_video_title",
       descriptionKey: "home_tool_image_to_video_desc",

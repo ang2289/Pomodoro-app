@@ -1087,7 +1087,21 @@ function rxvBuildPublishPayload({
 
 function materializePlatformCopy(script, affiliateUrl, title = "") {
   const grounded = rxvBuildGroundedPublishProfile(title, affiliateUrl);
-  const hashtags = rxvBuildGroundedHashtags(title);
+  const hashtags = rxvNormalizeHashtagText(
+    firstNonEmpty(script?.hashtags, rxvBuildGroundedHashtags(title)),
+  );
+  const facebookHashtags = rxvNormalizeHashtagText(
+    firstNonEmpty(script?.facebookHashtags, hashtags),
+  );
+  const instagramHashtags = rxvNormalizeHashtagText(
+    firstNonEmpty(script?.instagramHashtags, hashtags),
+  );
+  const tiktokHashtags = rxvNormalizeHashtagText(
+    firstNonEmpty(script?.tiktokHashtags, hashtags),
+  );
+  const youtubeHashtags = rxvNormalizeHashtagText(
+    firstNonEmpty(script?.youtubeHashtags, hashtags),
+  );
 
   if (grounded) {
     return {
@@ -1139,10 +1153,10 @@ function materializePlatformCopy(script, affiliateUrl, title = "") {
         title,
         affiliateUrl,
       ),
-      facebookHashtags: hashtags,
-      instagramHashtags: hashtags,
-      tiktokHashtags: hashtags,
-      youtubeHashtags: hashtags,
+      facebookHashtags,
+      instagramHashtags,
+      tiktokHashtags,
+      youtubeHashtags,
       genericHashtags: hashtags,
       copySource: "grounded-title-profile",
     };
@@ -1216,10 +1230,10 @@ function materializePlatformCopy(script, affiliateUrl, title = "") {
       title,
       affiliateUrl,
     ),
-    facebookHashtags: hashtags,
-    instagramHashtags: hashtags,
-    tiktokHashtags: hashtags,
-    youtubeHashtags: hashtags,
+    facebookHashtags,
+    instagramHashtags,
+    tiktokHashtags,
+    youtubeHashtags,
     genericHashtags: hashtags,
     copySource: "ai-final-guarded",
   };
@@ -8354,6 +8368,20 @@ function mergeScript(item, aiScript, title) {
   const manualTitleWithKeywords = String(item.titleWithKeywords || "").trim();
   const manualShortDescription = String(item.shortDescription || "").trim();
   const manualFullPost = String(item.fullPost || "").trim();
+  const manualFacebookPost = String(item.facebookPost || manualFullPost).trim();
+  const manualInstagramCaption = String(item.instagramCaption || manualShortDescription).trim();
+  const manualTiktokCaption = String(item.tiktokCaption || manualShortDescription).trim();
+  const manualYoutubeShortsTitle = String(item.youtubeShortsTitle || manualShortTitle).trim();
+  const manualYoutubeShortsDescription = String(item.youtubeShortsDescription || manualShortDescription).trim();
+  const manualYoutubeVideoTitle = String(item.youtubeVideoTitle || manualShortTitle).trim();
+  const manualYoutubeVideoDescription = String(item.youtubeVideoDescription || manualFullPost).trim();
+  const manualThreadsPost = String(item.threadsPost || manualFullPost).trim();
+  const manualXPost = String(item.xPost || manualFullPost).trim();
+  const manualHashtags = String(item.hashtags || "").trim();
+  const manualFacebookHashtags = String(item.facebookHashtags || manualHashtags).trim();
+  const manualInstagramHashtags = String(item.instagramHashtags || manualHashtags).trim();
+  const manualTiktokHashtags = String(item.tiktokHashtags || manualHashtags).trim();
+  const manualYoutubeHashtags = String(item.youtubeHashtags || manualHashtags).trim();
 
   const merged = {
     source: aiScript?.source || "fallback",
@@ -8398,56 +8426,100 @@ function mergeScript(item, aiScript, title) {
     benefit: firstNonEmpty(aiScript?.benefit, fallback.benefit),
     proof: firstNonEmpty(aiScript?.proof, fallback.proof),
     cta: firstNonEmpty(aiScript?.cta, fallback.cta),
-    hashtags: firstNonEmpty(aiScript?.hashtags, aiScript?.keywords, ""),
+    hashtags: firstNonEmpty(
+      manualHashtags,
+      aiScript?.hashtags,
+      manualKeywords,
+      aiScript?.keywords,
+      "",
+    ),
     facebookPost: firstNonEmpty(
+      manualFacebookPost,
       aiScript?.facebookPost,
+      manualFullPost,
       aiScript?.fullPost,
       "",
     ),
     instagramCaption: firstNonEmpty(
+      manualInstagramCaption,
       aiScript?.instagramCaption,
+      manualShortDescription,
       aiScript?.shortDescription,
       "",
     ),
     tiktokCaption: firstNonEmpty(
+      manualTiktokCaption,
       aiScript?.tiktokCaption,
+      manualShortDescription,
       aiScript?.shortDescription,
       "",
     ),
     youtubeShortsTitle: firstNonEmpty(
+      manualYoutubeShortsTitle,
       aiScript?.youtubeShortsTitle,
+      manualShortTitle,
       aiScript?.shortTitle,
       "",
     ),
     youtubeShortsDescription: firstNonEmpty(
+      manualYoutubeShortsDescription,
       aiScript?.youtubeShortsDescription,
+      manualShortDescription,
       aiScript?.shortDescription,
       "",
     ),
     youtubeVideoTitle: firstNonEmpty(
+      manualYoutubeVideoTitle,
       aiScript?.youtubeVideoTitle,
+      manualShortTitle,
       aiScript?.shortTitle,
       "",
     ),
     youtubeVideoDescription: firstNonEmpty(
+      manualYoutubeVideoDescription,
       aiScript?.youtubeVideoDescription,
+      manualFullPost,
       aiScript?.fullPost,
       "",
     ),
     threadsPost: firstNonEmpty(
+      manualThreadsPost,
       aiScript?.threadsPost,
+      manualFullPost,
       aiScript?.fullPost,
       "",
     ),
     xPost: firstNonEmpty(
+      manualXPost,
       aiScript?.xPost,
+      manualFullPost,
       aiScript?.fullPost,
       "",
     ),
-    facebookHashtags: firstNonEmpty(aiScript?.facebookHashtags, ""),
-    instagramHashtags: firstNonEmpty(aiScript?.instagramHashtags, ""),
-    tiktokHashtags: firstNonEmpty(aiScript?.tiktokHashtags, ""),
-    youtubeHashtags: firstNonEmpty(aiScript?.youtubeHashtags, ""),
+    facebookHashtags: firstNonEmpty(
+      manualFacebookHashtags,
+      aiScript?.facebookHashtags,
+      manualHashtags,
+      "",
+    ),
+    instagramHashtags: firstNonEmpty(
+      manualInstagramHashtags,
+      aiScript?.instagramHashtags,
+      manualHashtags,
+      "",
+    ),
+    tiktokHashtags: firstNonEmpty(
+      manualTiktokHashtags,
+      aiScript?.tiktokHashtags,
+      manualHashtags,
+      "",
+    ),
+    youtubeHashtags: firstNonEmpty(
+      manualYoutubeHashtags,
+      aiScript?.youtubeHashtags,
+      manualHashtags,
+      "",
+    ),
     aiUsage: aiScript?.usage || null,
   };
 

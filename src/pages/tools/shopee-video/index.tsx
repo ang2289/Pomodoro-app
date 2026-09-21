@@ -2610,14 +2610,14 @@ if (selectedPlatforms.length === 0) {
       <SEO
         title="Shopee 批次短影音工具｜Gemini 3.5 Flash-Lite＋發布佇列 - RxV AI工具中心"
         description="匯入 TSV、CSV 或 Excel，批量產生本機 MP4 測試影片；目前不呼叫 Gemini、不上傳、不建立公開分享頁、不寫入資料庫，適合先測影片效果。"
-        keywords="Shopee 批次短影音工具, AI 生成標題, 關鍵字優化, 行銷內容, 批量影片, MP4 產生"
+        keywords="RXV 自動短影音, Facebook Reels, TikTok, Instagram Reels, YouTube Shorts, Shopee 批次影片, MP4"
         path="/tools/shopee-video"
       />
 
       <div className="w-full max-w-none px-2 py-4 sm:px-3 lg:px-4 xl:px-6">
         <div className="mb-10 text-center">
           <h1 className="mb-2 text-3xl font-bold">
-            Shopee 批次短影音工具＋V39.5 快速輪播發布中心
+            RXV 自動短影音與多平台發布中心｜Shopee 批次模式
           </h1>
           <p className="text-gray-600">
             現在流程固定為：匯入 TSV / CSV / Excel → 自動抓三張商品圖 → 小龍蝦產痛點文案 →

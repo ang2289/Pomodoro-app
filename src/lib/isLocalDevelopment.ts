@@ -13,6 +13,7 @@ export function isLocalDevelopment(): boolean {
 /** 正式站要隱藏、僅本機開放的「轉影音／腳本產影片」相關路由（不含尾隨 slash 比對） */
 const VIDEO_TOOL_PATHS = [
   "/tools/image-to-video",
+  "/tools/auto-video-publisher",
   "/tools/shopee-video",
   "/tools/shopee-single-video",
   "/tools/shopee-csv",

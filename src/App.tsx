@@ -155,6 +155,7 @@ import ToolsPage from './pages/tools'
 import AISummaryGuide from './pages/tools/ai-summary'
 import ShopeeSingleVideoPage from './pages/tools/ShopeeSingleVideoPage'
 import ShopeeVideoPage from './pages/tools/shopee-video/index.tsx'
+import AutoVideoPublisherPage from './pages/tools/AutoVideoPublisherPage'
 import ImageToVideo from "./pages/tools/ImageToVideo";
 import ShopeeCsvPage from './pages/tools/shopee-csv'
 import ShopeeDealsPage from './pages/tools/shopee-deals'
@@ -701,6 +702,7 @@ function App() {
             <Route path="tools/shopee-single-video" element={<ShopeeSingleVideoPage />} />
             {/* Shopee 自動短影音工具（已啟用入口） */}
             <Route path="tools/shopee-video" element={<ShopeeVideoPage />} />
+            <Route path="tools/auto-video-publisher" element={<AutoVideoPublisherPage />} />
             <Route path="tools/shopee-csv" element={<ShopeeCsvPage />} />
             <Route path="tools/shopee-deals" element={<ShopeeDealsPage />} />
             <Route path="tools/image-resize" element={<ImageResizePage />} />
