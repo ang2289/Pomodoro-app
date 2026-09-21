@@ -14,7 +14,6 @@
     "http://localhost:3006/*",
     "http://127.0.0.1:3006/*",
     "https://www.facebook.com/*",
-        "https://www.pinterest.com/*",
     "https://www.tiktok.com/*",
     "https://www.pinterest.com/*",
     "http://localhost:3005/*",
@@ -33,7 +32,8 @@
         "http://localhost:3005/*",
         "http://127.0.0.1:3005/*",
         "https://www.tiktok.com/*",
-        "https://www.facebook.com/*"
+        "https://www.facebook.com/*",
+        "https://www.pinterest.com/*"
       ],
       "js": [
         "content-wake.js"
