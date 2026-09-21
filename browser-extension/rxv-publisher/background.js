@@ -1,5 +1,6 @@
 const RXV_BASE = "http://localhost:3006";
-const VERSION = "39.11.0";
+const RXV_PIN_BASE = "http://127.0.0.1:3018";
+const VERSION = "39.12.0";
 let activeJob = null;
 let lastWakeAt = 0;
 
@@ -101,7 +102,7 @@ async function pollAndRunNextJob(
 
   if (!data?.job) {
     const pinterestRes = await fetch(
-      RXV_BASE + "/pinterest-helper/next",
+      RXV_PIN_BASE + "/api/pinterest/next",
     ).catch(() => null);
 
     if (pinterestRes?.ok) {
@@ -2477,29 +2478,35 @@ async function prepareTikTok(job, tabId) {
 }
 
 async function reportResult(job, status, debug = {}, error = "") {
-  const route =
-    String(job?.queueSource || "") === "pinterest-helper"
-      ? "/pinterest-helper/result"
-      : "/publisher-extension/result";
+  const isPinterest =
+    String(job?.queueSource || "") === "pinterest-3018";
 
-  await fetch(RXV_BASE + route, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ id: job.id, status, debug, error }),
-  });
+  await fetch(
+    isPinterest
+      ? RXV_PIN_BASE + "/api/pinterest/result"
+      : RXV_BASE + "/publisher-extension/result",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: job.id, status, debug, error }),
+    },
+  );
 }
 
 async function reportFail(job, error, debug = {}) {
-  const route =
-    String(job?.queueSource || "") === "pinterest-helper"
-      ? "/pinterest-helper/fail"
-      : "/publisher-extension/fail";
+  const isPinterest =
+    String(job?.queueSource || "") === "pinterest-3018";
 
-  await fetch(RXV_BASE + route, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ id: job.id, error, debug }),
-  }).catch(() => {});
+  await fetch(
+    isPinterest
+      ? RXV_PIN_BASE + "/api/pinterest/fail"
+      : RXV_BASE + "/publisher-extension/fail",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: job.id, error, debug }),
+    },
+  ).catch(() => {});
 }
 
 async function handleJob(job) {
