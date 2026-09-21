@@ -81,24 +81,10 @@ async function pollAndRunNextJob(
     `${RXV_BASE}/publisher-extension/next`,
   ).catch(() => null);
 
-  if (!res?.ok) {
-    await setPublisherPhase(
-      "QUEUE_FETCH_FAILED",
-      {
-        rxvPublisherLastError:
-          "PUBLISHER_EXTENSION_NEXT_FAILED",
-      },
-    );
-
-    return {
-      ok: false,
-      error:
-        "PUBLISHER_EXTENSION_NEXT_FAILED",
-    };
+  let data = {};
+  if (res?.ok) {
+    data = await res.json().catch(() => ({}));
   }
-
-  let data =
-    await res.json().catch(() => ({}));
 
   if (!data?.job) {
     const pinterestRes = await fetch(
@@ -111,6 +97,12 @@ async function pollAndRunNextJob(
       if (pinterestData?.job) {
         data = pinterestData;
       }
+    } else if (!res?.ok) {
+      await setPublisherPhase(
+        "QUEUE_FETCH_FAILED",
+        { rxvPublisherLastError: "RXV_QUEUES_UNAVAILABLE" },
+      );
+      return { ok: false, error: "RXV_QUEUES_UNAVAILABLE" };
     }
   }
 
@@ -146,14 +138,14 @@ async function pollAndRunNextJob(
   // Await the entire browser job here. In MV3, starting handleJob()
   // without awaiting it lets Edge suspend the service worker while the
   // upload task is still running.
-  await handleJob(data.job);
+  const jobResult = await handleJob(data.job);
 
   return {
-    ok: true,
+    ok: Boolean(jobResult?.ok !== false),
     handled: true,
-    jobId:
-      String(data.job.id || ""),
+    jobId: String(data.job.id || ""),
     source,
+    jobResult: jobResult || null,
   };
 }
 
@@ -300,6 +292,123 @@ async function setFileInput(tabId, filePath) {
       await chrome.debugger.detach({ tabId }).catch(() => {});
     }
   }
+}
+
+async function setPinterestFileInput(tabId, filePath, timeoutMs = 30000) {
+  let attached = false;
+  const started = Date.now();
+
+  try {
+    await chrome.debugger.attach({ tabId }, "1.3");
+    attached = true;
+    await chrome.debugger.sendCommand({ tabId }, "DOM.enable").catch(() => {});
+
+    while (Date.now() - started < timeoutMs) {
+      // Pinterest may place its upload input inside a shadow root or nested frame.
+      const flat = await chrome.debugger.sendCommand(
+        { tabId },
+        "DOM.getFlattenedDocument",
+        { depth: -1, pierce: true },
+      ).catch(() => null);
+
+      const nodes = Array.isArray(flat?.nodes) ? flat.nodes : [];
+      let backendNodeId = 0;
+
+      for (const node of nodes) {
+        if (String(node?.nodeName || "").toUpperCase() !== "INPUT") continue;
+        const attrs = Array.isArray(node?.attributes) ? node.attributes : [];
+        let type = "";
+        for (let i = 0; i < attrs.length - 1; i += 2) {
+          if (String(attrs[i] || "").toLowerCase() === "type") {
+            type = String(attrs[i + 1] || "").toLowerCase();
+            break;
+          }
+        }
+        if (type === "file") {
+          backendNodeId = Number(node.backendNodeId || 0);
+          if (backendNodeId) break;
+        }
+      }
+
+      if (backendNodeId) {
+        await chrome.debugger.sendCommand(
+          { tabId },
+          "DOM.setFileInputFiles",
+          { backendNodeId, files: [filePath] },
+        );
+        return { ok: true, mode: "flattened", backendNodeId };
+      }
+
+      // Fallback for ordinary DOM.
+      const doc = await chrome.debugger.sendCommand(
+        { tabId },
+        "DOM.getDocument",
+        { depth: -1, pierce: true },
+      ).catch(() => null);
+
+      if (doc?.root?.nodeId) {
+        const result = await chrome.debugger.sendCommand(
+          { tabId },
+          "DOM.querySelectorAll",
+          { nodeId: doc.root.nodeId, selector: 'input[type="file"]' },
+        ).catch(() => null);
+
+        const nodeId = Array.isArray(result?.nodeIds) ? Number(result.nodeIds[0] || 0) : 0;
+        if (nodeId) {
+          await chrome.debugger.sendCommand(
+            { tabId },
+            "DOM.setFileInputFiles",
+            { nodeId, files: [filePath] },
+          );
+          return { ok: true, mode: "querySelector", nodeId };
+        }
+      }
+
+      await sleep(500);
+    }
+
+    throw new Error("PINTEREST_FILE_INPUT_NOT_FOUND");
+  } finally {
+    if (attached) {
+      await chrome.debugger.detach({ tabId }).catch(() => {});
+    }
+  }
+}
+
+async function waitForPinterestEditorFields(tabId, timeoutMs = 30000) {
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    const ready = await exec(tabId, () => {
+      const visible = (el) => {
+        const r = el.getBoundingClientRect();
+        const s = getComputedStyle(el);
+        return r.width > 0 && r.height > 0 && s.display !== "none" && s.visibility !== "hidden";
+      };
+
+      const fields = Array.from(
+        document.querySelectorAll('input,textarea,[contenteditable="true"],[role="textbox"]'),
+      ).filter(visible);
+
+      const text = (document.body?.innerText || "").toLowerCase();
+      const hasTitleHint =
+        text.includes("新增標題") ||
+        text.includes("title") ||
+        fields.some((el) => {
+          const a = [
+            el.getAttribute("aria-label"),
+            el.getAttribute("placeholder"),
+            el.getAttribute("name"),
+          ].filter(Boolean).join(" ").toLowerCase();
+          return a.includes("標題") || a.includes("title");
+        });
+
+      return hasTitleHint && fields.length >= 2;
+    }).catch(() => false);
+
+    if (ready) return true;
+    await sleep(500);
+  }
+  return false;
 }
 
 async function clickVisibleText(tabId, texts, timeoutMs = 60000) {
@@ -2019,8 +2128,16 @@ async function preparePinterest(job, tabId) {
     rxvPublisherLastError: "",
   });
 
-  await setFileInput(tabId, job.imagePath);
-  await sleep(1800);
+  const fileResult = await setPinterestFileInput(tabId, job.imagePath, 30000);
+
+  await setPublisherPhase("PINTEREST_WAITING_EDITOR", {
+    rxvPublisherLastError: "",
+  });
+
+  const editorReady = await waitForPinterestEditorFields(tabId, 30000);
+  if (!editorReady) {
+    throw new Error("PINTEREST_EDITOR_FIELDS_NOT_READY");
+  }
 
   await setPublisherPhase("PINTEREST_FILLING_FIELDS", {
     rxvPublisherLastError: "",
@@ -2053,6 +2170,7 @@ async function preparePinterest(job, tabId) {
   return {
     prepared: true,
     published: false,
+    fileInput: fileResult,
     titleFilled: Boolean(title && title.ok),
     descriptionFilled: Boolean(description && description.ok),
     linkFilled: Boolean((link && link.ok) || !String(job.destinationUrl || "").trim()),
