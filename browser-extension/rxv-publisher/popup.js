@@ -25,7 +25,7 @@ async function refresh(){
       `${d?.lastEnqueue?`<div class="small">最近送入 Queue：Publisher #${d.lastEnqueue.publisherJobId||""}｜${d.lastEnqueue.status||""}｜${d.lastEnqueue.reused?"沿用":"新建"}${d.lastEnqueue.repairedQueue?"＋已修復 Queue":""}</div>`:""}`+
       `${d?.lastClaim?`<div class="small">最近領取：Publisher #${d.lastClaim.publisherJobId||""}｜${d.lastClaim.platform||""}</div>`:""}`+
       `${lastError?`<div class="small bad">最後錯誤：${lastError}</div>`:""}`+
-      `<div class="small">支援：Facebook、TikTok</div>`;
+      `<div class="small">支援：Facebook、TikTok、Pinterest</div>`;
   }catch{el.innerHTML='<div class="bad"><strong>localhost:3006 尚未啟動</strong></div>';}
 }
 
