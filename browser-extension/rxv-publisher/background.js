@@ -1,6 +1,6 @@
 const RXV_BASE = "http://localhost:3006";
 const RXV_PIN_BASE = "http://127.0.0.1:3018";
-const VERSION = "39.17.0";
+const VERSION = "39.18.0";
 let activeJob = null;
 let lastWakeAt = 0;
 
@@ -361,6 +361,187 @@ async function ensurePinterestFreshDraft(tabId, timeoutMs = 15000) {
   }
 
   throw new Error("PINTEREST_NEW_DRAFT_NOT_READY");
+}
+
+async function clickPinterestUploadArea(tabId) {
+  return await exec(tabId, () => {
+    const visible = (el) => {
+      if (!el) return false;
+      const r = el.getBoundingClientRect();
+      const s = getComputedStyle(el);
+      return r.width > 0 && r.height > 0 && s.display !== "none" && s.visibility !== "hidden";
+    };
+
+    const phrases = [
+      "上傳媒體",
+      "Upload media",
+      "選擇檔案",
+      "Choose a file",
+      "拖放",
+      "drag and drop",
+    ];
+
+    const nodes = Array.from(
+      document.querySelectorAll('button,[role="button"],label,div,span'),
+    ).filter(visible);
+
+    let best = null;
+    let bestScore = -1;
+
+    for (const el of nodes) {
+      const text = String(el.innerText || el.textContent || "").trim();
+      if (!text || text.length > 400) continue;
+
+      let score = 0;
+      const lower = text.toLowerCase();
+      for (const phrase of phrases) {
+        const p = phrase.toLowerCase();
+        if (lower === p) score += 300;
+        else if (lower.includes(p)) score += 120;
+      }
+
+      if (el.matches('button,[role="button"],label')) score += 40;
+      const r = el.getBoundingClientRect();
+      if (r.width > 180 && r.height > 120) score += 35;
+
+      if (score > bestScore) {
+        best = el;
+        bestScore = score;
+      }
+    }
+
+    if (!best || bestScore < 100) {
+      return { ok: false, reason: "PINTEREST_UPLOAD_AREA_NOT_FOUND" };
+    }
+
+    const clickable =
+      best.closest('button,[role="button"],label') ||
+      best.parentElement ||
+      best;
+
+    const r = clickable.getBoundingClientRect();
+    clickable.scrollIntoView({ block: "center" });
+
+    try {
+      clickable.click();
+    } catch (_) {}
+
+    return {
+      ok: true,
+      score: bestScore,
+      x: Math.max(1, Math.round(r.left + r.width / 2)),
+      y: Math.max(1, Math.round(r.top + r.height / 2)),
+      text: String(best.innerText || best.textContent || "").trim().slice(0, 120),
+    };
+  });
+}
+
+async function setPinterestFileInputViaChooser(tabId, filePath, timeoutMs = 20000) {
+  let attached = false;
+  let listener = null;
+
+  try {
+    await chrome.debugger.attach({ tabId }, "1.3");
+    attached = true;
+
+    await chrome.debugger.sendCommand({ tabId }, "Page.enable").catch(() => {});
+    await chrome.debugger.sendCommand({ tabId }, "DOM.enable").catch(() => {});
+    await chrome.debugger.sendCommand(
+      { tabId },
+      "Page.setInterceptFileChooserDialog",
+      { enabled: true },
+    );
+
+    let resolveChooser;
+    const chooserPromise = new Promise((resolve) => {
+      resolveChooser = resolve;
+    });
+
+    listener = (source, method, params) => {
+      if (Number(source?.tabId || 0) !== Number(tabId)) return;
+      if (method !== "Page.fileChooserOpened") return;
+      resolveChooser(params || {});
+    };
+
+    chrome.debugger.onEvent.addListener(listener);
+
+    const clicked = await clickPinterestUploadArea(tabId);
+    if (!clicked?.ok) {
+      throw new Error(clicked?.reason || "PINTEREST_UPLOAD_AREA_NOT_FOUND");
+    }
+
+    const waitForChooser = async (ms) =>
+      await Promise.race([
+        chooserPromise,
+        sleep(ms).then(() => null),
+      ]);
+
+    let chooser = await waitForChooser(2500);
+
+    // Some Pinterest builds ignore HTMLElement.click() but respond to a real mouse event.
+    if (!chooser && Number(clicked.x) > 0 && Number(clicked.y) > 0) {
+      await chrome.debugger.sendCommand(
+        { tabId },
+        "Input.dispatchMouseEvent",
+        {
+          type: "mousePressed",
+          x: Number(clicked.x),
+          y: Number(clicked.y),
+          button: "left",
+          clickCount: 1,
+        },
+      ).catch(() => {});
+      await chrome.debugger.sendCommand(
+        { tabId },
+        "Input.dispatchMouseEvent",
+        {
+          type: "mouseReleased",
+          x: Number(clicked.x),
+          y: Number(clicked.y),
+          button: "left",
+          clickCount: 1,
+        },
+      ).catch(() => {});
+
+      chooser = await waitForChooser(Math.max(1000, timeoutMs - 2500));
+    }
+
+    const backendNodeId = Number(chooser?.backendNodeId || 0);
+    if (!backendNodeId) {
+      throw new Error("PINTEREST_FILE_CHOOSER_NOT_OPENED");
+    }
+
+    await chrome.debugger.sendCommand(
+      { tabId },
+      "DOM.setFileInputFiles",
+      {
+        backendNodeId,
+        files: [filePath],
+      },
+    );
+
+    return {
+      ok: true,
+      mode: "native-file-chooser",
+      backendNodeId,
+      uploadText: String(clicked.text || ""),
+    };
+  } finally {
+    if (listener) {
+      try {
+        chrome.debugger.onEvent.removeListener(listener);
+      } catch (_) {}
+    }
+
+    if (attached) {
+      await chrome.debugger.sendCommand(
+        { tabId },
+        "Page.setInterceptFileChooserDialog",
+        { enabled: false },
+      ).catch(() => {});
+      await chrome.debugger.detach({ tabId }).catch(() => {});
+    }
+  }
 }
 
 async function setPinterestFileInputViaBlob(tabId, job) {
@@ -2471,30 +2652,38 @@ async function preparePinterest(job, tabId) {
   });
 
   let fileResult = null;
+  let chooserError = "";
   let blobError = "";
+
   try {
-    fileResult = await setPinterestFileInputViaBlob(tabId, job);
+    fileResult = await setPinterestFileInputViaChooser(
+      tabId,
+      job.imagePath,
+      20000,
+    );
   } catch (error) {
-    blobError = String(error?.message || error);
+    chooserError = String(error?.message || error);
+  }
 
-    // If Pinterest reopened an existing draft, create a fresh blank Pin once and retry.
-    if (
-      blobError.includes("PINTEREST_FILE_INPUT_NOT_FOUND") ||
-      blobError.includes("PINTEREST_FILE_INPUT_NOT_FOUND_IN_PAGE")
-    ) {
-      await ensurePinterestFreshDraft(tabId, 12000).catch(() => {});
-      await sleep(600);
-      try {
-        fileResult = await setPinterestFileInputViaBlob(tabId, job);
-      } catch (retryError) {
-        blobError += " | RETRY=" + String(retryError?.message || retryError);
-      }
+  if (!fileResult) {
+    try {
+      fileResult = await setPinterestFileInputViaBlob(tabId, job);
+    } catch (error) {
+      blobError = String(error?.message || error);
     }
+  }
 
-    if (!fileResult) {
-      fileResult = await setPinterestFileInput(tabId, job.imagePath, 30000);
-      fileResult = { ...fileResult, fallbackFromBlob: blobError };
-    }
+  if (!fileResult) {
+    fileResult = await setPinterestFileInput(
+      tabId,
+      job.imagePath,
+      30000,
+    );
+    fileResult = {
+      ...fileResult,
+      fallbackFromChooser: chooserError,
+      fallbackFromBlob: blobError,
+    };
   }
 
   await setPublisherPhase("PINTEREST_WAITING_EDITOR", {
