@@ -1,6 +1,6 @@
 const RXV_BASE = "http://localhost:3006";
 const RXV_PIN_BASE = "http://127.0.0.1:3018";
-const VERSION = "39.26.0";
+const VERSION = "39.27.0";
 let activeJob = null;
 let pollInFlight = false;
 let lastWakeAt = 0;
@@ -2223,6 +2223,438 @@ async function selectPinterestBoard(tabId, boardName) {
   return created;
 }
 
+async function ensureLabeledToggle(
+  tabId,
+  wantedOn,
+  labels,
+) {
+  const wanted =
+    Boolean(wantedOn);
+
+  const result =
+    await exec(
+      tabId,
+      (wanted, labels) => {
+        const visible = (el) => {
+          if (!el) return false;
+
+          const r =
+            el.getBoundingClientRect();
+
+          const s =
+            getComputedStyle(el);
+
+          return (
+            r.width > 0 &&
+            r.height > 0 &&
+            s.display !== "none" &&
+            s.visibility !== "hidden"
+          );
+        };
+
+        const normalizedLabels =
+          (labels || [])
+            .map((x) =>
+              String(x || "")
+                .trim()
+                .toLowerCase(),
+            )
+            .filter(Boolean);
+
+        const nodes =
+          Array.from(
+            document.querySelectorAll(
+              'label,span,div,p,button,[role="switch"],input[type="checkbox"]',
+            ),
+          ).filter(visible);
+
+        let textNode = null;
+
+        for (const el of nodes) {
+          const text =
+            String(
+              el.innerText ||
+              el.textContent ||
+              el.getAttribute?.("aria-label") ||
+              "",
+            )
+              .trim()
+              .toLowerCase();
+
+          if (
+            normalizedLabels.some(
+              (label) =>
+                text === label ||
+                text.includes(label),
+            )
+          ) {
+            textNode = el;
+            break;
+          }
+        }
+
+        if (!textNode) {
+          return {
+            found: false,
+            on: false,
+            changed: false,
+          };
+        }
+
+        let container =
+          textNode;
+
+        let control = null;
+
+        for (
+          let depth = 0;
+          depth < 6 &&
+          container;
+          depth += 1,
+            container =
+              container.parentElement
+        ) {
+          if (
+            container.matches?.(
+              '[role="switch"],input[type="checkbox"]',
+            )
+          ) {
+            control = container;
+            break;
+          }
+
+          control =
+            container.querySelector?.(
+              '[role="switch"],input[type="checkbox"],button[aria-checked],button[role="switch"]',
+            ) || null;
+
+          if (control) break;
+        }
+
+        if (!control) {
+          const nearby =
+            Array.from(
+              document.querySelectorAll(
+                '[role="switch"],input[type="checkbox"],button[aria-checked],button[role="switch"]',
+              ),
+            )
+              .filter(visible)
+              .map((el) => {
+                const a =
+                  el.getBoundingClientRect();
+
+                const b =
+                  textNode.getBoundingClientRect();
+
+                const dy =
+                  Math.abs(
+                    (a.top + a.bottom) / 2 -
+                    (b.top + b.bottom) / 2,
+                  );
+
+                const dx =
+                  Math.abs(
+                    a.left - b.left,
+                  );
+
+                return {
+                  el,
+                  score:
+                    dy * 4 + dx,
+                };
+              })
+              .sort(
+                (a, b) =>
+                  a.score - b.score,
+              );
+
+          control =
+            nearby[0]?.el || null;
+        }
+
+        if (!control) {
+          return {
+            found: true,
+            on: false,
+            changed: false,
+            reason:
+              "TOGGLE_CONTROL_NOT_FOUND",
+          };
+        }
+
+        const readOn = (el) => {
+          if (
+            el instanceof HTMLInputElement &&
+            el.type === "checkbox"
+          ) {
+            return Boolean(
+              el.checked,
+            );
+          }
+
+          const aria =
+            String(
+              el.getAttribute(
+                "aria-checked",
+              ) || "",
+            )
+              .toLowerCase();
+
+          if (aria === "true") {
+            return true;
+          }
+
+          if (aria === "false") {
+            return false;
+          }
+
+          return Boolean(
+            el.classList?.contains(
+              "checked",
+            ),
+          );
+        };
+
+        const before =
+          readOn(control);
+
+        if (before !== wanted) {
+          control.scrollIntoView({
+            block: "center",
+            inline: "nearest",
+          });
+
+          control.click();
+
+          if (
+            control instanceof HTMLInputElement
+          ) {
+            control.dispatchEvent(
+              new Event(
+                "change",
+                {
+                  bubbles: true,
+                },
+              ),
+            );
+          }
+        }
+
+        return {
+          found: true,
+          before,
+          requested: wanted,
+          changed:
+            before !== wanted,
+        };
+      },
+      [wanted, labels],
+    ).catch(() => ({
+      found: false,
+      on: false,
+      changed: false,
+    }));
+
+  if (!result?.found) {
+    return {
+      found: false,
+      on: false,
+      changed: false,
+    };
+  }
+
+  if (result.changed) {
+    await sleep(500);
+  }
+
+  const verified =
+    await exec(
+      tabId,
+      (labels) => {
+        const visible = (el) => {
+          if (!el) return false;
+
+          const r =
+            el.getBoundingClientRect();
+
+          const s =
+            getComputedStyle(el);
+
+          return (
+            r.width > 0 &&
+            r.height > 0 &&
+            s.display !== "none" &&
+            s.visibility !== "hidden"
+          );
+        };
+
+        const normalizedLabels =
+          (labels || [])
+            .map((x) =>
+              String(x || "")
+                .trim()
+                .toLowerCase(),
+            )
+            .filter(Boolean);
+
+        const nodes =
+          Array.from(
+            document.querySelectorAll(
+              'label,span,div,p',
+            ),
+          ).filter(visible);
+
+        const textNode =
+          nodes.find((el) => {
+            const text =
+              String(
+                el.innerText ||
+                el.textContent ||
+                "",
+              )
+                .trim()
+                .toLowerCase();
+
+            return normalizedLabels.some(
+              (label) =>
+                text === label ||
+                text.includes(label),
+            );
+          });
+
+        if (!textNode) {
+          return {
+            found: false,
+            on: false,
+          };
+        }
+
+        let container =
+          textNode;
+
+        let control = null;
+
+        for (
+          let depth = 0;
+          depth < 6 &&
+          container;
+          depth += 1,
+            container =
+              container.parentElement
+        ) {
+          control =
+            container.matches?.(
+              '[role="switch"],input[type="checkbox"]',
+            )
+              ? container
+              : (
+                  container.querySelector?.(
+                    '[role="switch"],input[type="checkbox"],button[aria-checked],button[role="switch"]',
+                  ) || null
+                );
+
+          if (control) break;
+        }
+
+        if (!control) {
+          return {
+            found: true,
+            on: false,
+          };
+        }
+
+        let on = false;
+
+        if (
+          control instanceof HTMLInputElement &&
+          control.type === "checkbox"
+        ) {
+          on =
+            Boolean(
+              control.checked,
+            );
+        } else {
+          on =
+            String(
+              control.getAttribute(
+                "aria-checked",
+              ) || "",
+            )
+              .toLowerCase() ===
+            "true";
+        }
+
+        return {
+          found: true,
+          on,
+        };
+      },
+      [labels],
+    ).catch(() => ({
+      found: false,
+      on: false,
+    }));
+
+  return {
+    found:
+      Boolean(
+        verified?.found ||
+        result?.found,
+      ),
+    on:
+      wanted
+        ? Boolean(
+            verified?.on,
+          )
+        : false,
+    changed:
+      Boolean(
+        result?.changed,
+      ),
+  };
+}
+
+async function ensurePinterestAiLabel(
+  tabId,
+  wantedOn = true,
+) {
+  if (!wantedOn) {
+    return {
+      found: false,
+      on: false,
+      changed: false,
+      skipped: true,
+    };
+  }
+
+  return ensureLabeledToggle(
+    tabId,
+    true,
+    [
+      "標示為經 AI 修飾",
+      "標示為經 ai 修飾",
+      "AI 修飾",
+      "Label as AI modified",
+      "AI modified",
+    ],
+  );
+}
+
+async function ensureFacebookAiLabel(
+  tabId,
+) {
+  return ensureLabeledToggle(
+    tabId,
+    true,
+    [
+      "AI 資訊",
+      "AI 生成",
+      "Made with AI",
+      "AI label",
+    ],
+  );
+}
+
 async function preparePinterest(job, tabId) {
 
   await setPublisherPhase("PINTEREST_PREPARING_DRAFT", {
@@ -2325,9 +2757,34 @@ async function preparePinterest(job, tabId) {
   });
 
   const board = await selectPinterestBoard(tabId, job.boardName);
-  const warning = board && board.ok ? "" : String((board && board.reason) || "PINTEREST_BOARD_REVIEW_REQUIRED");
 
-  const ai = await ensurePinterestAiLabel(tabId, Boolean(job.aiDisclosureRequested));
+  const ai = await ensurePinterestAiLabel(
+    tabId,
+    Boolean(job.aiDisclosureRequested),
+  );
+
+  const warnings = [];
+
+  if (!board?.ok) {
+    warnings.push(
+      String(
+        board?.reason ||
+        "PINTEREST_BOARD_REVIEW_REQUIRED",
+      ),
+    );
+  }
+
+  if (
+    Boolean(job.aiDisclosureRequested) &&
+    !ai?.on
+  ) {
+    warnings.push(
+      "PINTEREST_AI_LABEL_REVIEW_REQUIRED",
+    );
+  }
+
+  const warning =
+    warnings.join(";");
 
   const finalReady = await waitForFinalButton(tabId, "pinterest", 15000);
 
