@@ -4,6 +4,8 @@ const fs = require("node:fs");
 const path = require("node:path");
 const http = require("node:http");
 const { spawn } = require("node:child_process");
+let sharpForPinterest = null;
+try { sharpForPinterest = require("sharp"); } catch {}
 
 let DatabaseSync = null;
 try { ({ DatabaseSync } = require("node:sqlite")); } catch {}
@@ -996,22 +998,54 @@ async function pickPinterestImage(options = {}) {
 async function stagePinterestImage(imageUrl) {
   const url = String(imageUrl || "").trim();
   if (!/^https?:\/\//i.test(url)) throw new Error("Pinterest 圖片網址無效");
+
   const response = await fetch(url, { cache: "no-store" });
   if (!response.ok) throw new Error("Pinterest 圖片下載失敗：HTTP " + response.status);
+
   const buffer = Buffer.from(await response.arrayBuffer());
   if (!buffer.length) throw new Error("Pinterest 圖片檔案是空的");
   if (buffer.length > 30 * 1024 * 1024) throw new Error("Pinterest 圖片超過 30MB");
-
-  let ext = ".jpg";
-  const contentType = String(response.headers.get("content-type") || "").toLowerCase();
-  if (contentType.includes("png")) ext = ".png";
-  else if (contentType.includes("webp")) ext = ".webp";
-  else if (contentType.includes("gif")) ext = ".gif";
+  if (!sharpForPinterest) throw new Error("PINTEREST_IMAGE_RESIZE_UNAVAILABLE");
 
   const dir = path.join(ROOT, "data", "pinterest-staging");
   fs.mkdirSync(dir, { recursive: true });
-  const filePath = path.join(dir, randomId("pin") + ext);
-  fs.writeFileSync(filePath, buffer);
+
+  const metadata = await sharpForPinterest(buffer, { failOn: "none" }).metadata();
+  let width = Number(metadata.width || 0);
+  let height = Number(metadata.height || 0);
+
+  // EXIF orientation 5-8 swaps display width/height after auto-rotation.
+  const orientation = Number(metadata.orientation || 1);
+  if (orientation >= 5 && orientation <= 8) {
+    const t = width; width = height; height = t;
+  }
+
+  if (!width || !height) throw new Error("PINTEREST_IMAGE_DIMENSIONS_UNKNOWN");
+
+  // Pinterest rejects images smaller than 200x300.
+  // Use a safer 400x600 floor while preserving aspect ratio.
+  const scale = Math.max(1, 400 / width, 600 / height);
+  const safeWidth = Math.max(400, Math.round(width * scale));
+  const safeHeight = Math.max(600, Math.round(height * scale));
+
+  const filePath = path.join(dir, randomId("pin-safe") + ".jpg");
+
+  await sharpForPinterest(buffer, { failOn: "none" })
+    .rotate()
+    .resize({
+      width: safeWidth,
+      height: safeHeight,
+      fit: "fill",
+      withoutEnlargement: false,
+    })
+    .flatten({ background: "#ffffff" })
+    .jpeg({ quality: 92, chromaSubsampling: "4:4:4" })
+    .toFile(filePath);
+
+  const outStat = fs.statSync(filePath);
+  if (!outStat.size) throw new Error("PINTEREST_SAFE_IMAGE_EMPTY");
+  if (outStat.size > 20 * 1024 * 1024) throw new Error("PINTEREST_SAFE_IMAGE_OVER_20MB");
+
   return filePath;
 }
 
@@ -1087,6 +1121,16 @@ async function queuePinterestJob(body = {}) {
     recordId = Number(result.lastInsertRowid || 0);
   } finally {
     db.close();
+  }
+
+  while (rxvPinterestQueue.length) {
+    const oldId = rxvPinterestQueue.shift();
+    const oldJob = rxvPinterestJobs.get(oldId);
+    if (oldJob && oldJob.status === "pending") {
+      oldJob.status = "failed";
+      oldJob.error = "REPLACED_BY_NEW_PINTEREST_JOB";
+      oldJob.updatedAt = Date.now();
+    }
   }
 
   const job = {
@@ -1225,7 +1269,7 @@ body{font-family:system-ui,-apple-system,"Segoe UI","Microsoft JhengHei",sans-se
 </div>
 <section id="rxvPinterestPanel" class="card" style="margin-top:16px;border:2px solid #fecaca;background:#fff7f7">
 <h2 style="margin:0 0 6px;color:#b91c1c">📌 Pinterest 一鍵填入</h2>
-<div class="small" style="margin-bottom:12px">選 1 張圖片後，自動準備標題、說明、導流網址與圖版；按一次會開 Pinterest 並自動填入，最後「發布／儲存」由你自己按。</div>
+<div class="small" style="margin-bottom:12px">選 1 張圖片後，自動準備標題、說明、導流網址與圖版；按一次由 Edge 擴充開啟或重用唯一一個 Pinterest 分頁並自動填入。低於 Pinterest 安全尺寸的圖片會先建立本機放大副本，不修改網站原圖；最後「發布／儲存」由你自己按。</div>
 <div class="controls">
   <div class="field"><label>分類</label><select id="rxvPinCategory"><option value="auto">自動選分類</option></select></div>
   <button class="btn red" onclick="rxvPinPick()">自動準備 1 張</button>
