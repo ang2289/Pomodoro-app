@@ -1,6 +1,6 @@
 const RXV_BASE =
   "http://localhost:3006";
-const VERSION = "39.17.0";
+const VERSION = "39.18.0";
 let busy = false;
 let lastPing = 0;
 
