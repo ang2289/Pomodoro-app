@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "RxV Publisher Helper",
-  "version": "39.19.0",
-  "description": "RxV Publisher V39.19：Pinterest 單一分頁穩定版；避免一鍵開兩頁，圖片上傳前自動建立安全尺寸副本，並保留欄位與 AI 標示自動化。",
+  "version": "39.20.0",
+  "description": "RxV Publisher V39.20：修正 Pinterest 已顯示標題／說明／連結欄位卻誤判未就緒；改為持續填入並加入鍵盤級後援。",
   "permissions": [
     "tabs",
     "scripting",
