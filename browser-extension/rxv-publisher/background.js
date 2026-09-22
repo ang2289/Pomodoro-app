@@ -1,7 +1,8 @@
 const RXV_BASE = "http://localhost:3006";
 const RXV_PIN_BASE = "http://127.0.0.1:3018";
-const VERSION = "39.23.0";
+const VERSION = "39.24.0";
 let activeJob = null;
+let pollInFlight = false;
 let lastWakeAt = 0;
 
 async function setPublisherPhase(
@@ -65,101 +66,132 @@ async function pollAndRunNextJob(
 ) {
   lastWakeAt = Date.now();
 
-  await pingPublisher();
-
-  if (activeJob) {
+  if (pollInFlight) {
     return {
       ok: true,
       busy: true,
-      activeJobId:
-        activeJob?.id || "",
       source,
+      reason: "POLL_ALREADY_RUNNING",
+      activeJobId: activeJob?.id || "",
     };
   }
 
-  const res = await fetch(
-    `${RXV_BASE}/publisher-extension/next`,
-  ).catch(() => null);
+  pollInFlight = true;
 
-  let data = {};
-  if (res?.ok) {
-    data = await res.json().catch(() => ({}));
-  }
+  try {
+    await pingPublisher();
 
-  const explicitPinterestWake =
-    source === "pinterest-button" ||
-    source === "popup-pinterest";
+    if (activeJob) {
+      return {
+        ok: true,
+        busy: true,
+        activeJobId:
+          activeJob?.id || "",
+        source,
+      };
+    }
 
-  if (!data?.job && explicitPinterestWake) {
-    const pinterestRes = await fetch(
-      RXV_PIN_BASE + "/api/pinterest/next",
+    const res = await fetch(
+      `${RXV_BASE}/publisher-extension/next`,
     ).catch(() => null);
 
-    if (pinterestRes?.ok) {
-      const pinterestData =
-        await pinterestRes.json().catch(() => ({}));
+    let data = {};
 
-      if (pinterestData?.job) {
-        data = pinterestData;
-      }
-    } else if (!res?.ok) {
-      await setPublisherPhase(
-        "QUEUE_FETCH_FAILED",
-        {
-          rxvPublisherLastError:
+    if (res?.ok) {
+      data =
+        await res
+          .json()
+          .catch(() => ({}));
+    }
+
+    const explicitPinterestWake =
+      source === "pinterest-button" ||
+      source === "popup-pinterest";
+
+    if (
+      !data?.job &&
+      explicitPinterestWake
+    ) {
+      const pinterestRes =
+        await fetch(
+          RXV_PIN_BASE +
+            "/api/pinterest/next",
+        ).catch(() => null);
+
+      if (pinterestRes?.ok) {
+        const pinterestData =
+          await pinterestRes
+            .json()
+            .catch(() => ({}));
+
+        if (pinterestData?.job) {
+          data = pinterestData;
+        }
+      } else if (!res?.ok) {
+        await setPublisherPhase(
+          "QUEUE_FETCH_FAILED",
+          {
+            rxvPublisherLastError:
+              "RXV_QUEUES_UNAVAILABLE",
+          },
+        );
+
+        return {
+          ok: false,
+          error:
             "RXV_QUEUES_UNAVAILABLE",
+        };
+      }
+    }
+
+    if (!data?.job) {
+      await setPublisherPhase(
+        "IDLE",
+        {
+          rxvPublisherLastError: "",
         },
       );
 
       return {
-        ok: false,
-        error:
-          "RXV_QUEUES_UNAVAILABLE",
+        ok: true,
+        idle: true,
+        source,
       };
     }
-  }
 
-  if (!data?.job) {
     await setPublisherPhase(
-      "IDLE",
+      "JOB_RECEIVED",
       {
+        rxvPublisherLastJobId:
+          String(data.job.id || ""),
+        rxvPublisherLastPlatform:
+          String(
+            data.job.platform || "",
+          ),
         rxvPublisherLastError: "",
       },
     );
 
+    const jobResult =
+      await handleJob(data.job);
+
     return {
-      ok: true,
-      idle: true,
-      source,
-    };
-  }
-
-  await setPublisherPhase(
-    "JOB_RECEIVED",
-    {
-      rxvPublisherLastJobId:
-        String(data.job.id || ""),
-      rxvPublisherLastPlatform:
-        String(
-          data.job.platform || "",
+      ok:
+        Boolean(
+          jobResult?.ok !== false,
         ),
-      rxvPublisherLastError: "",
-    },
-  );
-
-  // IMPORTANT:
-  // Await the entire browser job here. In MV3, starting handleJob()
-  // without awaiting it lets Edge suspend the service worker while the
-  // upload task is still running.
-  const jobResult = await handleJob(data.job);
-
-  return {
-    ok: Boolean(jobResult?.ok !== false),
-    handled: true,
-    jobId: String(data.job.id || ""),
-    source,
-    jobResult: jobResult || null,
-  };
+      handled: true,
+      jobId:
+        String(
+          data.job.id || "",
+        ),
+      source,
+      jobResult:
+        jobResult || null,
+    };
+  } finally {
+    pollInFlight = false;
+  }
 }
 
 
@@ -240,97 +272,128 @@ async function assertCurrentPinterestJob(job) {
 }
 
 async function getOrCreatePlatformTab(job) {
-  const domain = platformDomain(job.platform);
-  const tabs = await chrome.tabs.query({});
+  const domain =
+    platformDomain(job.platform);
 
-  if (job.platform === "pinterest") {
-    await assertCurrentPinterestJob(job);
+  const tabs =
+    await chrome.tabs.query({});
 
-    const pinterestTabs = tabs
-      .filter((item) =>
-        String(item.url || "").includes("pinterest.com"),
-      )
-      .sort((a, b) => {
-        const aCreate = String(a.url || "").includes("/pin-creation-tool/") ? 1 : 0;
-        const bCreate = String(b.url || "").includes("/pin-creation-tool/") ? 1 : 0;
+  if (
+    job.platform ===
+    "pinterest"
+  ) {
+    await assertCurrentPinterestJob(
+      job,
+    );
 
-        if (aCreate !== bCreate) return bCreate - aCreate;
-        if (Boolean(a.active) !== Boolean(b.active)) {
-          return Number(b.active) - Number(a.active);
-        }
+    // Always start this RxV job in exactly one NEW creator tab.
+    // Reusing Pinterest creator tabs can restore an older draft/image.
+    const oldCreatorTabs =
+      tabs.filter((item) =>
+        String(item.url || "")
+          .includes(
+            "pinterest.com/pin-creation-tool",
+          ),
+      );
 
-        return Number(b.lastAccessed || 0) - Number(a.lastAccessed || 0);
-      });
-
-    let tab = pinterestTabs[0] || null;
-
-    // RxV Pinterest first-version workflow uses only one Pinterest tab while a
-    // job is running. Close other Pinterest tabs so an older draft cannot keep
-    // processing in parallel.
-    for (const extra of pinterestTabs.slice(1)) {
-      await chrome.tabs.remove(extra.id).catch(() => {});
+    for (
+      const oldTab of oldCreatorTabs
+    ) {
+      await chrome.tabs
+        .remove(oldTab.id)
+        .catch(() => {});
     }
+
+    await sleep(250);
 
     const freshUrl =
       "https://www.pinterest.com/pin-creation-tool/?rxv_job=" +
-      encodeURIComponent(String(job.id || "")) +
+      encodeURIComponent(
+        String(job.id || ""),
+      ) +
       "&rxv_seq=" +
-      encodeURIComponent(String(job.sequence || "")) +
+      encodeURIComponent(
+        String(
+          job.sequence || "",
+        ),
+      ) +
       "&rxv_t=" +
       Date.now();
 
-    if (!tab) {
-      tab = await chrome.tabs.create({
+    const tab =
+      await chrome.tabs.create({
         url: freshUrl,
         active: true,
       });
-    } else {
-      await chrome.tabs.update(tab.id, {
-        url: freshUrl,
-        active: true,
-      });
-    }
 
-    await waitTabComplete(tab.id, 45000);
+    await waitTabComplete(
+      tab.id,
+      45000,
+    );
+
     await sleep(900);
 
-    // One more cleanup after navigation in case an old extension/run created
-    // another Pinterest tab during the page load.
-    const afterTabs = await chrome.tabs.query({});
-    for (const extra of afterTabs) {
+    // If Pinterest itself spawned another creator tab, keep only this job tab.
+    const afterTabs =
+      await chrome.tabs.query({});
+
+    for (
+      const extra of afterTabs
+    ) {
       if (
         extra.id !== tab.id &&
-        String(extra.url || "").includes("pinterest.com")
+        String(extra.url || "")
+          .includes(
+            "pinterest.com/pin-creation-tool",
+          )
       ) {
-        await chrome.tabs.remove(extra.id).catch(() => {});
+        await chrome.tabs
+          .remove(extra.id)
+          .catch(() => {});
       }
     }
 
-    await assertCurrentPinterestJob(job);
+    await assertCurrentPinterestJob(
+      job,
+    );
 
-    return chrome.tabs.get(tab.id);
+    return chrome.tabs.get(
+      tab.id,
+    );
   }
 
-  let tab = tabs.find((item) =>
-    String(item.url || "").includes(domain),
-  );
+  let tab =
+    tabs.find((item) =>
+      String(item.url || "")
+        .includes(domain),
+    );
 
   if (!tab) {
-    tab = await chrome.tabs.create({
-      url: job.targetUrl,
-      active: true,
-    });
+    tab =
+      await chrome.tabs.create({
+        url: job.targetUrl,
+        active: true,
+      });
   } else {
-    await chrome.tabs.update(tab.id, {
-      url: job.targetUrl,
-      active: true,
-    });
+    await chrome.tabs.update(
+      tab.id,
+      {
+        url: job.targetUrl,
+        active: true,
+      },
+    );
   }
 
-  await waitTabComplete(tab.id, 45000);
+  await waitTabComplete(
+    tab.id,
+    45000,
+  );
+
   await sleep(1200);
 
-  return chrome.tabs.get(tab.id);
+  return chrome.tabs.get(
+    tab.id,
+  );
 }
 
 async function detectLoginRequired(tabId, platform) {
@@ -402,102 +465,176 @@ async function setFileInput(tabId, filePath) {
   }
 }
 
-async function ensurePinterestFreshDraft(tabId, timeoutMs = 30000) {
-  const started = Date.now();
+async function ensurePinterestFreshDraft(
+  tabId,
+  timeoutMs = 30000,
+) {
+  const started =
+    Date.now();
 
-  while (Date.now() - started < timeoutMs) {
-    const state = await exec(tabId, () => {
-      const visible = (el) => {
-        if (!el) return false;
-        const r = el.getBoundingClientRect();
-        const s = getComputedStyle(el);
+  let clickedNew = false;
 
-        return (
-          r.width > 0 &&
-          r.height > 0 &&
-          s.display !== "none" &&
-          s.visibility !== "hidden"
-        );
-      };
+  while (
+    Date.now() - started <
+    timeoutMs
+  ) {
+    const state =
+      await exec(
+        tabId,
+        () => {
+          const visible = (el) => {
+            if (!el) return false;
 
-      const fileInputs =
-        Array.from(
-          document.querySelectorAll('input[type="file"]'),
-        );
+            const r =
+              el.getBoundingClientRect();
 
-      if (fileInputs.length) {
-        return {
-          ready: true,
-          reason: "FILE_INPUT_PRESENT",
-          fileInputs: fileInputs.length,
-        };
-      }
-
-      const bodyText =
-        String(
-          document.body?.innerText || "",
-        );
-
-      const hasUploadArea =
-        bodyText.includes("上傳媒體") ||
-        bodyText.includes("Upload media") ||
-        bodyText.includes("選擇檔案") ||
-        bodyText.includes("Choose a file") ||
-        bodyText.includes("拖放") ||
-        bodyText.toLowerCase().includes("drag and drop");
-
-      if (hasUploadArea) {
-        return {
-          ready: true,
-          reason: "UPLOAD_AREA_READY",
-        };
-      }
-
-      const uploadNodes =
-        Array.from(
-          document.querySelectorAll(
-            'button,[role="button"],label,div,span',
-          ),
-        )
-          .filter(visible)
-          .filter((el) => {
-            const text =
-              String(
-                el.innerText ||
-                el.textContent ||
-                "",
-              ).trim();
+            const s =
+              getComputedStyle(el);
 
             return (
-              text === "上傳媒體" ||
-              text === "Upload media"
+              r.width > 0 &&
+              r.height > 0 &&
+              s.display !== "none" &&
+              s.visibility !== "hidden"
             );
-          });
+          };
 
-      if (uploadNodes.length) {
-        return {
-          ready: true,
-          reason: "UPLOAD_NODE_READY",
-        };
-      }
+          const bodyText =
+            String(
+              document.body?.innerText ||
+              "",
+            );
 
-      return {
+          const fileInputs =
+            Array.from(
+              document.querySelectorAll(
+                'input[type="file"]',
+              ),
+            );
+
+          const hasUploadArea =
+            bodyText.includes(
+              "上傳媒體",
+            ) ||
+            bodyText.includes(
+              "Upload media",
+            ) ||
+            bodyText.includes(
+              "選擇檔案",
+            ) ||
+            bodyText.includes(
+              "Choose a file",
+            ) ||
+            bodyText.includes(
+              "拖放",
+            ) ||
+            bodyText
+              .toLowerCase()
+              .includes(
+                "drag and drop",
+              );
+
+          if (
+            fileInputs.length ||
+            hasUploadArea
+          ) {
+            return {
+              ready: true,
+              reason:
+                fileInputs.length
+                  ? "FILE_INPUT_PRESENT"
+                  : "UPLOAD_AREA_READY",
+            };
+          }
+
+          // Pinterest often restores the previous draft.
+          // In that state the left panel shows "Pin 草稿" and a visible "新增".
+          const nodes =
+            Array.from(
+              document.querySelectorAll(
+                'button,[role="button"],a,div,span',
+              ),
+            ).filter(visible);
+
+          const newButton =
+            nodes.find((el) => {
+              const text =
+                String(
+                  el.innerText ||
+                  el.textContent ||
+                  "",
+                ).trim();
+
+              if (
+                text !== "新增" &&
+                text !== "New"
+              ) {
+                return false;
+              }
+
+              const r =
+                el.getBoundingClientRect();
+
+              // The intended button is in the left draft rail.
+              return (
+                r.left < 420 &&
+                r.top < 430 &&
+                r.width > 80 &&
+                r.height > 24
+              );
+            });
+
+          if (newButton) {
+            const clickable =
+              newButton.closest(
+                'button,[role="button"],a',
+              ) ||
+              newButton;
+
+            clickable.click();
+
+            return {
+              ready: false,
+              clickedNew: true,
+              reason:
+                "CLICKED_NEW_DRAFT",
+            };
+          }
+
+          return {
+            ready: false,
+            clickedNew: false,
+            bodySample:
+              bodyText.slice(
+                0,
+                500,
+              ),
+          };
+        },
+      ).catch(() => ({
         ready: false,
-        bodySample:
-          bodyText.slice(0, 400),
-      };
-    }).catch(() => ({
-      ready: false,
-    }));
+      }));
 
     if (state?.ready) {
-      return state;
+      return {
+        ...state,
+        clickedNew,
+      };
     }
 
-    await sleep(500);
+    if (
+      state?.clickedNew
+    ) {
+      clickedNew = true;
+      await sleep(900);
+    } else {
+      await sleep(400);
+    }
   }
 
-  throw new Error("PINTEREST_NEW_DRAFT_NOT_READY");
+  throw new Error(
+    "PINTEREST_NEW_DRAFT_NOT_READY",
+  );
 }
 
 
