@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "RxV Publisher Helper",
-  "version": "39.22.0",
-  "description": "RxV Publisher V39.22：Pinterest 圖版優先精準／模糊比對既有分類，避免重複建立；真的不存在才自動建立圖版。",
+  "version": "39.23.0",
+  "description": "RxV Publisher V39.23：Pinterest 強制單一新鮮分頁、舊工作立即失效、避免帶入上一張圖片；保留圖版相似匹配與文字自動填入。",
   "permissions": [
     "tabs",
     "scripting",
