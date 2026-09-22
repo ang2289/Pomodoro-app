@@ -1,6 +1,6 @@
 const RXV_BASE = "http://localhost:3006";
 const RXV_PIN_BASE = "http://127.0.0.1:3018";
-const VERSION = "39.21.0";
+const VERSION = "39.22.0";
 let activeJob = null;
 let lastWakeAt = 0;
 
@@ -1500,73 +1500,525 @@ async function fillPinterestFieldReliable(
 
 async function selectPinterestBoard(tabId, boardName) {
   const wantedBoard = String(boardName || "").trim();
+
   if (!wantedBoard) {
-    return { ok: false, skipped: true, reason: "BOARD_NAME_EMPTY" };
+    return {
+      ok: false,
+      skipped: true,
+      reason: "BOARD_NAME_EMPTY",
+    };
   }
 
-  const opened = await exec(tabId, (wantedBoard) => {
-    const visible = (el) => {
-      const r = el.getBoundingClientRect();
-      const s = getComputedStyle(el);
-      return r.width > 0 && r.height > 0 && s.display !== "none" && s.visibility !== "hidden";
-    };
-    const nodes = Array.from(document.querySelectorAll('button,[role="button"],[aria-haspopup="listbox"]'));
-    let best = null;
-    let bestScore = -999;
+  const opened = await exec(
+    tabId,
+    (wantedBoard) => {
+      const visible = (el) => {
+        const r = el.getBoundingClientRect();
+        const s = getComputedStyle(el);
+        return (
+          r.width > 0 &&
+          r.height > 0 &&
+          s.display !== "none" &&
+          s.visibility !== "hidden"
+        );
+      };
 
-    for (const el of nodes) {
-      if (!visible(el)) continue;
-      const nodeText = String(el.innerText || el.textContent || "").trim();
-      const aria = String(el.getAttribute("aria-label") || "");
-      const combined = (nodeText + " " + aria).toLowerCase();
-      let score = 0;
+      const nodes = Array.from(
+        document.querySelectorAll(
+          'button,[role="button"],[aria-haspopup="listbox"],[aria-haspopup="menu"]',
+        ),
+      );
 
-      if (combined.includes("選擇圖版") || combined.includes("選擇看板")) score += 120;
-      if (combined.includes("choose board") || combined.includes("select board")) score += 120;
-      if (combined.includes("圖版") || combined.includes("board")) score += 30;
-      if (nodeText === wantedBoard) score += 80;
-      if (combined.includes("發佈") || combined.includes("發布") || combined.includes("publish")) score -= 300;
+      let best = null;
+      let bestScore = -999;
 
-      if (score > bestScore) {
-        bestScore = score;
-        best = el;
+      for (const el of nodes) {
+        if (!visible(el)) continue;
+
+        const nodeText =
+          String(
+            el.innerText ||
+            el.textContent ||
+            "",
+          ).trim();
+
+        const aria =
+          String(
+            el.getAttribute("aria-label") ||
+            "",
+          );
+
+        const combined =
+          (nodeText + " " + aria)
+            .toLowerCase();
+
+        let score = 0;
+
+        if (
+          combined.includes("選擇圖版") ||
+          combined.includes("選擇看板")
+        ) score += 180;
+
+        if (
+          combined.includes("choose board") ||
+          combined.includes("select board")
+        ) score += 180;
+
+        if (
+          combined.includes("圖版") ||
+          combined.includes("board")
+        ) score += 45;
+
+        if (
+          nodeText === wantedBoard
+        ) score += 100;
+
+        if (
+          combined.includes("發佈") ||
+          combined.includes("發布") ||
+          combined.includes("publish")
+        ) score -= 300;
+
+        if (score > bestScore) {
+          bestScore = score;
+          best = el;
+        }
       }
-    }
 
-    if (!best || bestScore < 30) return { ok: false, reason: "BOARD_PICKER_NOT_FOUND", bestScore };
-    best.scrollIntoView({ block: "center" });
-    best.click();
-    return { ok: true, score: bestScore };
-  }, [wantedBoard]);
+      if (
+        !best ||
+        bestScore < 30
+      ) {
+        return {
+          ok: false,
+          reason:
+            "BOARD_PICKER_NOT_FOUND",
+          bestScore,
+        };
+      }
 
-  if (!opened || !opened.ok) return opened;
-  await sleep(700);
+      best.scrollIntoView({
+        block: "center",
+      });
 
-  const selected = await exec(tabId, (wantedBoard) => {
-    const visible = (el) => {
-      const r = el.getBoundingClientRect();
-      const s = getComputedStyle(el);
-      return r.width > 0 && r.height > 0 && s.display !== "none" && s.visibility !== "hidden";
-    };
-    const exact = String(wantedBoard || "").trim().toLowerCase();
-    const nodes = Array.from(
-      document.querySelectorAll('[role="option"],[role="menuitem"],button,[role="button"],li,div'),
-    );
+      best.click();
 
-    for (const el of nodes) {
-      if (!visible(el)) continue;
-      const nodeText = String(el.innerText || el.textContent || "").trim();
-      if (!nodeText || nodeText.length > 120) continue;
-      if (nodeText.toLowerCase() !== exact) continue;
-      el.scrollIntoView({ block: "center" });
-      el.click();
-      return { ok: true, selected: nodeText };
-    }
+      return {
+        ok: true,
+        score: bestScore,
+      };
+    },
+    [wantedBoard],
+  );
 
-    return { ok: false, reason: "BOARD_NOT_FOUND", boardName: wantedBoard };
-  }, [wantedBoard]);
+  if (!opened?.ok) {
+    return opened;
+  }
 
-  return selected;
+  await sleep(650);
+
+  const picked = await exec(
+    tabId,
+    (wantedBoard) => {
+      const visible = (el) => {
+        const r = el.getBoundingClientRect();
+        const s = getComputedStyle(el);
+
+        return (
+          r.width > 0 &&
+          r.height > 0 &&
+          s.display !== "none" &&
+          s.visibility !== "hidden"
+        );
+      };
+
+      const normalize = (value) =>
+        String(value || "")
+          .toLowerCase()
+          .replace(
+            /[\s·•・\-—_｜|\/\\()（）\[\]【】「」『』:：]/g,
+            "",
+          )
+          .replace(
+            /(素材|圖片|圖版|看板|board)$/g,
+            "",
+          );
+
+      const wanted =
+        String(wantedBoard || "")
+          .trim();
+
+      const wantedNorm =
+        normalize(wanted);
+
+      const nodes = Array.from(
+        document.querySelectorAll(
+          '[role="option"],[role="menuitem"],button,[role="button"],li,div,span',
+        ),
+      );
+
+      let best = null;
+      let bestScore = -1;
+
+      for (const el of nodes) {
+        if (!visible(el)) continue;
+
+        const nodeText =
+          String(
+            el.innerText ||
+            el.textContent ||
+            "",
+          ).trim();
+
+        if (
+          !nodeText ||
+          nodeText.length > 140
+        ) continue;
+
+        const lower =
+          nodeText.toLowerCase();
+
+        if (
+          lower === "建立圖版" ||
+          lower === "create board" ||
+          lower === "建立看板"
+        ) {
+          continue;
+        }
+
+        const norm =
+          normalize(nodeText);
+
+        let score = 0;
+
+        if (
+          lower ===
+          wanted.toLowerCase()
+        ) {
+          score = 1000;
+        } else if (
+          norm &&
+          norm === wantedNorm
+        ) {
+          score = 900;
+        } else if (
+          norm &&
+          wantedNorm &&
+          (
+            norm.includes(wantedNorm) ||
+            wantedNorm.includes(norm)
+          )
+        ) {
+          score = 780;
+        } else {
+          const tokens =
+            wanted
+              .split(
+                /[\s·•・\-—_｜|\/\\()（）]+/,
+              )
+              .map(normalize)
+              .filter(Boolean);
+
+          const matched =
+            tokens.filter(
+              (token) =>
+                token &&
+                norm.includes(token),
+            ).length;
+
+          if (matched) {
+            score =
+              400 +
+              matched * 80;
+          }
+        }
+
+        // Prefer normal-sized option rows over giant wrapper divs.
+        const r =
+          el.getBoundingClientRect();
+
+        if (
+          r.height > 90 ||
+          r.width > 900
+        ) {
+          score -= 140;
+        }
+
+        if (
+          score > bestScore
+        ) {
+          bestScore = score;
+          best = el;
+        }
+      }
+
+      if (
+        best &&
+        bestScore >= 500
+      ) {
+        best.scrollIntoView({
+          block: "center",
+        });
+
+        const clickable =
+          best.closest(
+            'button,[role="button"],[role="option"],[role="menuitem"],li',
+          ) || best;
+
+        clickable.click();
+
+        return {
+          ok: true,
+          selected:
+            String(
+              best.innerText ||
+              best.textContent ||
+              "",
+            ).trim(),
+          matchedBy:
+            bestScore >= 900
+              ? "exact-or-normalized"
+              : "fuzzy",
+          score: bestScore,
+        };
+      }
+
+      const createNodes =
+        Array.from(
+          document.querySelectorAll(
+            'button,[role="button"],[role="menuitem"],div,span',
+          ),
+        ).filter(visible);
+
+      const create =
+        createNodes.find((el) => {
+          const text =
+            String(
+              el.innerText ||
+              el.textContent ||
+              "",
+            )
+              .trim()
+              .toLowerCase();
+
+          return (
+            text === "建立圖版" ||
+            text === "建立看板" ||
+            text === "create board"
+          );
+        });
+
+      if (!create) {
+        return {
+          ok: false,
+          reason:
+            "BOARD_NOT_FOUND_AND_CREATE_NOT_AVAILABLE",
+          boardName:
+            wantedBoard,
+          bestScore,
+        };
+      }
+
+      const clickable =
+        create.closest(
+          'button,[role="button"],[role="menuitem"]',
+        ) || create;
+
+      clickable.click();
+
+      return {
+        ok: false,
+        createStarted: true,
+        reason:
+          "BOARD_CREATE_STARTED",
+        boardName:
+          wantedBoard,
+      };
+    },
+    [wantedBoard],
+  );
+
+  if (picked?.ok) {
+    await sleep(350);
+    return picked;
+  }
+
+  if (!picked?.createStarted) {
+    return picked;
+  }
+
+  await sleep(650);
+
+  const created = await exec(
+    tabId,
+    (wantedBoard) => {
+      const visible = (el) => {
+        const r = el.getBoundingClientRect();
+        const s = getComputedStyle(el);
+
+        return (
+          r.width > 0 &&
+          r.height > 0 &&
+          s.display !== "none" &&
+          s.visibility !== "hidden"
+        );
+      };
+
+      const fields =
+        Array.from(
+          document.querySelectorAll(
+            'input,textarea,[contenteditable="true"],[role="textbox"]',
+          ),
+        ).filter(visible);
+
+      let input = null;
+      let bestScore = -1;
+
+      for (const el of fields) {
+        const attrs = [
+          el.getAttribute("placeholder"),
+          el.getAttribute("aria-label"),
+          el.getAttribute("name"),
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+
+        let score = 0;
+
+        if (
+          attrs.includes("圖版") ||
+          attrs.includes("看板") ||
+          attrs.includes("board")
+        ) score += 180;
+
+        if (
+          attrs.includes("名稱") ||
+          attrs.includes("name")
+        ) score += 80;
+
+        if (
+          el instanceof HTMLInputElement
+        ) score += 40;
+
+        if (score > bestScore) {
+          bestScore = score;
+          input = el;
+        }
+      }
+
+      if (!input) {
+        return {
+          ok: false,
+          reason:
+            "BOARD_CREATE_NAME_FIELD_NOT_FOUND",
+        };
+      }
+
+      input.focus();
+
+      if (
+        input instanceof HTMLInputElement ||
+        input instanceof HTMLTextAreaElement
+      ) {
+        const proto =
+          input instanceof HTMLTextAreaElement
+            ? HTMLTextAreaElement.prototype
+            : HTMLInputElement.prototype;
+
+        const descriptor =
+          Object.getOwnPropertyDescriptor(
+            proto,
+            "value",
+          );
+
+        if (descriptor?.set) {
+          descriptor.set.call(
+            input,
+            wantedBoard,
+          );
+        } else {
+          input.value =
+            wantedBoard;
+        }
+      } else {
+        input.textContent =
+          wantedBoard;
+      }
+
+      input.dispatchEvent(
+        new InputEvent(
+          "input",
+          {
+            bubbles: true,
+            inputType:
+              "insertText",
+            data:
+              wantedBoard,
+          },
+        ),
+      );
+
+      input.dispatchEvent(
+        new Event(
+          "change",
+          {
+            bubbles: true,
+          },
+        ),
+      );
+
+      const buttons =
+        Array.from(
+          document.querySelectorAll(
+            'button,[role="button"]',
+          ),
+        ).filter(visible);
+
+      const createButton =
+        buttons.find((el) => {
+          const text =
+            String(
+              el.innerText ||
+              el.textContent ||
+              "",
+            )
+              .trim()
+              .toLowerCase();
+
+          return (
+            text === "建立" ||
+            text === "建立圖版" ||
+            text === "建立看板" ||
+            text === "create"
+          );
+        });
+
+      if (!createButton) {
+        return {
+          ok: false,
+          reason:
+            "BOARD_CREATE_CONFIRM_NOT_FOUND",
+        };
+      }
+
+      createButton.click();
+
+      return {
+        ok: true,
+        selected:
+          wantedBoard,
+        created: true,
+      };
+    },
+    [wantedBoard],
+  );
+
+  if (created?.ok) {
+    await sleep(800);
+  }
+
+  return created;
 }
 
 async function preparePinterest(job, tabId) {
