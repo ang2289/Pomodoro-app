@@ -2224,14 +2224,12 @@ async function selectPinterestBoard(tabId, boardName) {
 }
 
 async function preparePinterest(job, tabId) {
-  await assertCurrentPinterestJob(job);
 
   await setPublisherPhase("PINTEREST_PREPARING_DRAFT", {
     rxvPublisherLastError: "",
   });
 
   await ensurePinterestFreshDraft(tabId, 30000);
-  await assertCurrentPinterestJob(job);
 
   await setPublisherPhase("PINTEREST_UPLOADING_IMAGE", {
     rxvPublisherLastError: "",
@@ -2281,8 +2279,6 @@ async function preparePinterest(job, tabId) {
       tabId,
       8000,
     );
-
-  await assertCurrentPinterestJob(job);
 
   await setPublisherPhase(
     "PINTEREST_FILLING_FIELDS",
@@ -2828,7 +2824,7 @@ async function handleJob(job) {
 
   try {
     if (job.platform === "pinterest") {
-      await assertCurrentPinterestJob(job);
+
     }
 
     const tab =
