@@ -1,6 +1,6 @@
 const RXV_BASE = "http://localhost:3006";
 const RXV_PIN_BASE = "http://127.0.0.1:3018";
-const VERSION = "39.18.0";
+const VERSION = "39.19.0";
 let activeJob = null;
 let lastWakeAt = 0;
 
@@ -204,6 +204,42 @@ function platformDomain(platform) {
 async function getOrCreatePlatformTab(job) {
   const domain = platformDomain(job.platform);
   const tabs = await chrome.tabs.query({});
+
+  if (job.platform === "pinterest") {
+    const pinterestTabs = tabs
+      .filter((item) => String(item.url || "").includes("pinterest.com"))
+      .sort((a, b) => {
+        const aCreate = String(a.url || "").includes("/pin-creation-tool/") ? 1 : 0;
+        const bCreate = String(b.url || "").includes("/pin-creation-tool/") ? 1 : 0;
+        if (aCreate !== bCreate) return bCreate - aCreate;
+        if (Boolean(a.active) !== Boolean(b.active)) return Number(b.active) - Number(a.active);
+        return Number(b.lastAccessed || 0) - Number(a.lastAccessed || 0);
+      });
+
+    let tab = pinterestTabs[0] || null;
+
+    if (!tab) {
+      tab = await chrome.tabs.create({
+        url: job.targetUrl,
+        active: true,
+      });
+    } else {
+      const current = String(tab.url || "");
+      if (!current.includes("/pin-creation-tool/")) {
+        await chrome.tabs.update(tab.id, {
+          url: job.targetUrl,
+          active: true,
+        });
+      } else {
+        await chrome.tabs.update(tab.id, { active: true });
+      }
+    }
+
+    await waitTabComplete(tab.id, 45000);
+    await sleep(900);
+    return chrome.tabs.get(tab.id);
+  }
+
   let tab = tabs.find((item) =>
     String(item.url || "").includes(domain),
   );
