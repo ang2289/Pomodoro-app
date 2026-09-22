@@ -1,6 +1,6 @@
 const RXV_BASE = "http://localhost:3006";
 const RXV_PIN_BASE = "http://127.0.0.1:3018";
-const VERSION = "39.25.0";
+const VERSION = "39.26.0";
 let activeJob = null;
 let pollInFlight = false;
 let lastWakeAt = 0;
@@ -282,9 +282,6 @@ async function getOrCreatePlatformTab(job) {
     job.platform ===
     "pinterest"
   ) {
-    await assertCurrentPinterestJob(
-      job,
-    );
 
     // Always start this RxV job in exactly one NEW creator tab.
     // Reusing Pinterest creator tabs can restore an older draft/image.
@@ -352,10 +349,6 @@ async function getOrCreatePlatformTab(job) {
           .catch(() => {});
       }
     }
-
-    await assertCurrentPinterestJob(
-      job,
-    );
 
     return chrome.tabs.get(
       tab.id,
