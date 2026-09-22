@@ -881,6 +881,8 @@ function listFacebookPosts(db, limit = 60) {
 
 const rxvPinterestQueue = [];
 const rxvPinterestJobs = new Map();
+let rxvPinterestActiveJobId = "";
+let rxvPinterestSequence = 0;
 
 function pinterestAlreadyPosted(db, img) {
   const fp = imageFingerprint(img);
@@ -1072,6 +1074,8 @@ function publicPinterestJob(job) {
     debug: job.debug || null,
     createdAt: job.createdAt,
     updatedAt: job.updatedAt,
+    sequence: Number(job.sequence || 0),
+    isCurrent: String(job.id || "") === rxvPinterestActiveJobId,
   };
 }
 
@@ -1094,6 +1098,21 @@ async function queuePinterestJob(body = {}) {
   const destinationUrl = String(body.destinationUrl || fallback.destinationUrl || SALES_URL).trim();
   const boardName = String(body.boardName || fallback.boardName || "療癒圖片").trim();
   const aiDisclosureRequested = body.aiDisclosureRequested === true;
+
+  // A new user click supersedes every older Pinterest attempt, including one
+  // that was already claimed by an extension. This prevents an older image
+  // from continuing to fill a newly opened Pinterest draft.
+  for (const oldJob of rxvPinterestJobs.values()) {
+    if (!oldJob) continue;
+    if (oldJob.status === "pending" || oldJob.status === "processing") {
+      oldJob.status = "failed";
+      oldJob.error = "SUPERSEDED_BY_NEW_PINTEREST_JOB";
+      oldJob.updatedAt = Date.now();
+    }
+  }
+  rxvPinterestQueue.length = 0;
+  rxvPinterestActiveJobId = "";
+
   const imagePath = await stagePinterestImage(imageUrl);
   const now = nowIso();
 
@@ -1123,18 +1142,9 @@ async function queuePinterestJob(body = {}) {
     db.close();
   }
 
-  while (rxvPinterestQueue.length) {
-    const oldId = rxvPinterestQueue.shift();
-    const oldJob = rxvPinterestJobs.get(oldId);
-    if (oldJob && oldJob.status === "pending") {
-      oldJob.status = "failed";
-      oldJob.error = "REPLACED_BY_NEW_PINTEREST_JOB";
-      oldJob.updatedAt = Date.now();
-    }
-  }
-
   const job = {
     id: randomId("pinterest"),
+    sequence: ++rxvPinterestSequence,
     imageId,
     imageUrl,
     imagePath,
@@ -1151,6 +1161,7 @@ async function queuePinterestJob(body = {}) {
     updatedAt: Date.now(),
   };
   rxvPinterestJobs.set(job.id, job);
+  rxvPinterestActiveJobId = job.id;
   rxvPinterestQueue.push(job.id);
   return { ok: true, queued: true, recordId, job: publicPinterestJob(job), queueDepth: rxvPinterestQueue.length };
 }
@@ -1192,23 +1203,68 @@ function nextPinterestJob() {
   while (rxvPinterestQueue.length) {
     const id = rxvPinterestQueue.shift();
     const job = rxvPinterestJobs.get(id);
-    if (!job || job.status !== "pending") continue;
+
+    if (!job) continue;
+    if (id !== rxvPinterestActiveJobId) continue;
+    if (job.status !== "pending") continue;
+
     job.status = "processing";
     job.updatedAt = Date.now();
-    return { ok: true, job: publicPinterestJob(job) };
+
+    return {
+      ok: true,
+      job: publicPinterestJob(job),
+    };
   }
-  return { ok: true, job: null };
+
+  return {
+    ok: true,
+    job: null,
+  };
 }
 
 function finishPinterestJob(body = {}, failed = false) {
   const id = String(body.id || "").trim();
   const job = rxvPinterestJobs.get(id);
-  if (!job) return { ok: false, error: "PINTEREST_JOB_NOT_FOUND" };
-  job.status = failed ? "failed" : (String(body.status || "") === "published" ? "published" : "prepared");
+
+  if (!job) {
+    return {
+      ok: false,
+      error: "PINTEREST_JOB_NOT_FOUND",
+    };
+  }
+
+  if (id !== rxvPinterestActiveJobId) {
+    if (job.status === "pending" || job.status === "processing") {
+      job.status = "failed";
+      job.error = "SUPERSEDED_BY_NEW_PINTEREST_JOB";
+      job.updatedAt = Date.now();
+    }
+
+    return {
+      ok: true,
+      ignored: true,
+      job: publicPinterestJob(job),
+    };
+  }
+
+  job.status =
+    failed
+      ? "failed"
+      : (
+          String(body.status || "") === "published"
+            ? "published"
+            : "prepared"
+        );
+
   job.error = String(body.error || "");
   job.debug = body.debug || null;
   job.updatedAt = Date.now();
-  return { ok: true, job: publicPinterestJob(job) };
+
+  return {
+    ok: true,
+    job: publicPinterestJob(job),
+  };
 }
 
 function markPinterestPosted(body = {}) {
