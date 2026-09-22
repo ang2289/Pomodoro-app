@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "RxV Publisher Helper",
-  "version": "39.24.0",
-  "description": "RxV Publisher V39.24：Pinterest 每次只建立一個全新建立 Pin 分頁，防止舊草稿／舊圖片復原；加入佇列互斥避免重複開頁。",
+  "version": "39.25.0",
+  "description": "RxV Publisher V39.25：修正 Pinterest 單頁新草稿版缺少 assertCurrentPinterestJob 導致立即失敗。",
   "permissions": [
     "tabs",
     "scripting",
