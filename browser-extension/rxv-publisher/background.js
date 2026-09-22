@@ -1,6 +1,6 @@
 const RXV_BASE = "http://localhost:3006";
 const RXV_PIN_BASE = "http://127.0.0.1:3018";
-const VERSION = "39.24.0";
+const VERSION = "39.25.0";
 let activeJob = null;
 let pollInFlight = false;
 let lastWakeAt = 0;
