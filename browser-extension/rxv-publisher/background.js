@@ -1,6 +1,6 @@
 const RXV_BASE = "http://localhost:3006";
 const RXV_PIN_BASE = "http://127.0.0.1:3018";
-const VERSION = "39.19.0";
+const VERSION = "39.20.0";
 let activeJob = null;
 let lastWakeAt = 0;
 
@@ -735,41 +735,335 @@ async function setPinterestFileInput(tabId, filePath, timeoutMs = 30000) {
   }
 }
 
-async function waitForPinterestEditorFields(tabId, timeoutMs = 30000) {
+async function waitForPinterestEditorFields(tabId, timeoutMs = 90000) {
   const started = Date.now();
+
   while (Date.now() - started < timeoutMs) {
-    const ready = await exec(tabId, () => {
+    const state = await exec(tabId, () => {
       const visible = (el) => {
+        if (!el) return false;
         const r = el.getBoundingClientRect();
         const s = getComputedStyle(el);
         return r.width > 0 && r.height > 0 && s.display !== "none" && s.visibility !== "hidden";
       };
 
+      const bodyText = String(document.body?.innerText || "");
+      const lower = bodyText.toLowerCase();
+
+      const titleVisible =
+        bodyText.includes("讓所有人知道你的 Pin 主題") ||
+        bodyText.includes("讓所有人知道你的 pin 主題") ||
+        bodyText.includes("標題") ||
+        lower.includes("add a title");
+
+      const descriptionVisible =
+        bodyText.includes("請提供 Pin 的相關說明") ||
+        bodyText.includes("請提供 pin 的相關說明") ||
+        bodyText.includes("說明") ||
+        lower.includes("description") ||
+        lower.includes("tell everyone what your pin is about");
+
+      const linkVisible =
+        bodyText.includes("新增連結") ||
+        bodyText.includes("連結") ||
+        lower.includes("add a link") ||
+        lower.includes("destination link");
+
       const fields = Array.from(
-        document.querySelectorAll('input,textarea,[contenteditable="true"],[role="textbox"]'),
+        document.querySelectorAll(
+          'input,textarea,[contenteditable="true"],[role="textbox"],[data-lexical-editor="true"]',
+        ),
       ).filter(visible);
 
-      const text = (document.body?.innerText || "").toLowerCase();
-      const hasTitleHint =
-        text.includes("新增標題") ||
-        text.includes("title") ||
-        fields.some((el) => {
-          const a = [
-            el.getAttribute("aria-label"),
-            el.getAttribute("placeholder"),
-            el.getAttribute("name"),
-          ].filter(Boolean).join(" ").toLowerCase();
-          return a.includes("標題") || a.includes("title");
-        });
+      const attrs = fields.map((el) => [
+        el.getAttribute("aria-label"),
+        el.getAttribute("placeholder"),
+        el.getAttribute("name"),
+        el.getAttribute("data-test-id"),
+        el.getAttribute("data-testid"),
+      ].filter(Boolean).join(" ").toLowerCase());
 
-      return hasTitleHint && fields.length >= 2;
-    }).catch(() => false);
+      const attrTitle = attrs.some((a) => a.includes("標題") || a.includes("title"));
+      const attrDesc = attrs.some((a) => a.includes("說明") || a.includes("description"));
+      const attrLink = attrs.some((a) => a.includes("連結") || a.includes("link") || a.includes("destination"));
 
-    if (ready) return true;
+      return {
+        ready:
+          (titleVisible && descriptionVisible && linkVisible) ||
+          ((titleVisible || attrTitle) && (descriptionVisible || attrDesc)) ||
+          fields.length >= 3,
+        titleVisible,
+        descriptionVisible,
+        linkVisible,
+        fieldCount: fields.length,
+        attrTitle,
+        attrDesc,
+        attrLink,
+      };
+    }).catch(() => ({ ready: false }));
+
+    if (state?.ready) return state;
     await sleep(500);
   }
-  return false;
+
+  return {
+    ready: false,
+    reason: "PINTEREST_EDITOR_DETECT_TIMEOUT",
+  };
 }
+
+async function fillPinterestFieldByKeyboard(tabId, kind, value) {
+  const text = String(value || "").trim();
+  if (!text) return { ok: true, skipped: true, kind };
+
+  let attached = false;
+
+  try {
+    await chrome.debugger.attach({ tabId }, "1.3");
+    attached = true;
+
+    const target = await exec(tabId, (kind) => {
+      const visible = (el) => {
+        if (!el) return false;
+        const r = el.getBoundingClientRect();
+        const s = getComputedStyle(el);
+        return r.width > 0 && r.height > 0 && s.display !== "none" && s.visibility !== "hidden";
+      };
+
+      const hints = {
+        title: [
+          "讓所有人知道你的 Pin 主題",
+          "讓所有人知道你的 pin 主題",
+          "新增標題",
+          "標題",
+          "Add a title",
+        ],
+        description: [
+          "請提供 Pin 的相關說明",
+          "請提供 pin 的相關說明",
+          "說明",
+          "Description",
+          "Tell everyone what your Pin is about",
+        ],
+        link: [
+          "新增連結",
+          "連結",
+          "Add a link",
+          "Destination link",
+        ],
+      };
+
+      const wanted = (hints[kind] || []).map((x) => x.toLowerCase());
+
+      const nodes = Array.from(
+        document.querySelectorAll(
+          'input,textarea,[contenteditable="true"],[role="textbox"],[data-lexical-editor="true"],label,div,span,p',
+        ),
+      ).filter(visible);
+
+      let best = null;
+      let bestScore = -1;
+
+      for (const el of nodes) {
+        const attrs = [
+          el.getAttribute?.("aria-label"),
+          el.getAttribute?.("placeholder"),
+          el.getAttribute?.("name"),
+        ].filter(Boolean).join(" ");
+
+        const ownText = String(el.innerText || el.textContent || "");
+        const combined = (attrs + " " + ownText).trim().toLowerCase();
+
+        let score = 0;
+        for (const hint of wanted) {
+          if (!hint) continue;
+          if (combined === hint) score += 400;
+          else if (combined.includes(hint)) score += 180;
+        }
+
+        if (
+          el.matches?.(
+            'input,textarea,[contenteditable="true"],[role="textbox"],[data-lexical-editor="true"]',
+          )
+        ) {
+          score += 120;
+        }
+
+        if (score > bestScore) {
+          best = el;
+          bestScore = score;
+        }
+      }
+
+      if (!best || bestScore < 100) {
+        return {
+          ok: false,
+          reason: "PINTEREST_FIELD_TARGET_NOT_FOUND",
+          kind,
+        };
+      }
+
+      let clickable = best;
+
+      if (
+        !clickable.matches?.(
+          'input,textarea,[contenteditable="true"],[role="textbox"],[data-lexical-editor="true"]',
+        )
+      ) {
+        let container = best.parentElement;
+        let found = null;
+
+        for (let depth = 0; depth < 5 && container; depth += 1, container = container.parentElement) {
+          found = Array.from(
+            container.querySelectorAll(
+              'input,textarea,[contenteditable="true"],[role="textbox"],[data-lexical-editor="true"]',
+            ),
+          ).find(visible);
+
+          if (found) break;
+        }
+
+        clickable = found || best.parentElement || best;
+      }
+
+      const r = clickable.getBoundingClientRect();
+      clickable.scrollIntoView({ block: "center" });
+
+      return {
+        ok: true,
+        x: Math.max(1, Math.round(r.left + Math.min(r.width * 0.35, 180))),
+        y: Math.max(1, Math.round(r.top + r.height / 2)),
+        kind,
+      };
+    }, [kind]);
+
+    if (!target?.ok) return target;
+
+    await chrome.debugger.sendCommand(
+      { tabId },
+      "Input.dispatchMouseEvent",
+      {
+        type: "mousePressed",
+        x: Number(target.x),
+        y: Number(target.y),
+        button: "left",
+        clickCount: 1,
+      },
+    );
+
+    await chrome.debugger.sendCommand(
+      { tabId },
+      "Input.dispatchMouseEvent",
+      {
+        type: "mouseReleased",
+        x: Number(target.x),
+        y: Number(target.y),
+        button: "left",
+        clickCount: 1,
+      },
+    );
+
+    await sleep(120);
+
+    await chrome.debugger.sendCommand(
+      { tabId },
+      "Input.dispatchKeyEvent",
+      {
+        type: "keyDown",
+        key: "a",
+        code: "KeyA",
+        modifiers: 2,
+      },
+    ).catch(() => {});
+
+    await chrome.debugger.sendCommand(
+      { tabId },
+      "Input.dispatchKeyEvent",
+      {
+        type: "keyUp",
+        key: "a",
+        code: "KeyA",
+        modifiers: 2,
+      },
+    ).catch(() => {});
+
+    await chrome.debugger.sendCommand(
+      { tabId },
+      "Input.insertText",
+      { text },
+    );
+
+    await sleep(200);
+
+    const verified = await exec(tabId, (kind, text) => {
+      const body = String(document.body?.innerText || "");
+      if (body.includes(text)) return true;
+
+      const fields = Array.from(
+        document.querySelectorAll(
+          'input,textarea,[contenteditable="true"],[role="textbox"],[data-lexical-editor="true"]',
+        ),
+      );
+
+      return fields.some((el) => {
+        const value =
+          el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement
+            ? String(el.value || "")
+            : String(el.innerText || el.textContent || "");
+        return value.includes(text.slice(0, Math.min(30, text.length)));
+      });
+    }, [kind, text]).catch(() => false);
+
+    return {
+      ok: Boolean(verified),
+      kind,
+      mode: "debugger-keyboard",
+    };
+  } finally {
+    if (attached) {
+      await chrome.debugger.detach({ tabId }).catch(() => {});
+    }
+  }
+}
+
+async function fillPinterestFieldReliable(tabId, kind, value, timeoutMs = 45000) {
+  const text = String(value || "").trim();
+  if (!text) return { ok: true, skipped: true, kind };
+
+  const started = Date.now();
+  let last = null;
+
+  while (Date.now() - started < timeoutMs) {
+    last = await fillPinterestField(tabId, kind, text).catch((error) => ({
+      ok: false,
+      reason: String(error?.message || error),
+    }));
+
+    if (last?.ok) return { ...last, mode: last.mode || "dom" };
+
+    const keyboard = await fillPinterestFieldByKeyboard(tabId, kind, text).catch((error) => ({
+      ok: false,
+      reason: String(error?.message || error),
+    }));
+
+    if (keyboard?.ok) return keyboard;
+
+    last = {
+      dom: last,
+      keyboard,
+    };
+
+    await sleep(700);
+  }
+
+  return {
+    ok: false,
+    kind,
+    reason: "PINTEREST_FIELD_FILL_TIMEOUT",
+    last,
+  };
+}
+
 
 async function clickVisibleText(tabId, texts, timeoutMs = 60000) {
   const started = Date.now();
@@ -2726,26 +3020,40 @@ async function preparePinterest(job, tabId) {
     rxvPublisherLastError: "",
   });
 
-  const editorReady = await waitForPinterestEditorFields(tabId, 30000);
-  if (!editorReady) {
-    throw new Error("PINTEREST_EDITOR_FIELDS_NOT_READY");
-  }
+  const editorState = await waitForPinterestEditorFields(tabId, 90000);
 
   await setPublisherPhase("PINTEREST_FILLING_FIELDS", {
-    rxvPublisherLastError: "",
+    rxvPublisherLastError: editorState?.ready
+      ? ""
+      : "Pinterest 編輯欄位偵測逾時，但欄位填入會繼續嘗試，不中止工作。",
   });
 
-  const title = await fillPinterestField(tabId, "title", job.publishTitle);
-  if (!title || !title.ok) throw new Error("PINTEREST_TITLE_NOT_FILLED");
+  const title = await fillPinterestFieldReliable(
+    tabId,
+    "title",
+    job.publishTitle,
+    45000,
+  );
+  if (!title || !title.ok) {
+    throw new Error("PINTEREST_TITLE_NOT_FILLED");
+  }
 
-  const description = await fillPinterestField(
+  const description = await fillPinterestFieldReliable(
     tabId,
     "description",
     job.publishDescription || job.publishText,
+    45000,
   );
-  if (!description || !description.ok) throw new Error("PINTEREST_DESCRIPTION_NOT_FILLED");
+  if (!description || !description.ok) {
+    throw new Error("PINTEREST_DESCRIPTION_NOT_FILLED");
+  }
 
-  const link = await fillPinterestField(tabId, "link", job.destinationUrl);
+  const link = await fillPinterestFieldReliable(
+    tabId,
+    "link",
+    job.destinationUrl,
+    30000,
+  );
   if ((!link || !link.ok) && String(job.destinationUrl || "").trim()) {
     throw new Error("PINTEREST_LINK_NOT_FILLED");
   }
