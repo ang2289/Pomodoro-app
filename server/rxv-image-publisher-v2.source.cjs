@@ -1025,47 +1025,63 @@ async function stagePinterestImage(imageUrl) {
 
   if (!width || !height) throw new Error("PINTEREST_IMAGE_DIMENSIONS_UNKNOWN");
 
-  // Always create one exact Pinterest-safe file.
-  // Pinterest recommends 2:3; 1000x1500 also guarantees we are far above
-  // the creator's minimum-size rejection threshold.
-  const targetWidth = 1000;
-  const targetHeight = 1500;
-  const filePath = path.join(dir, randomId("pin-safe") + ".jpg");
+  // 原圖優先：只要實際像素已達 Pinterest 建立 Pin 頁的最低門檻，
+  // 就保持原比例、原構圖、原尺寸，不裁切、不補白邊、不強制轉成 2:3。
+  const minWidth = 200;
+  const minHeight = 300;
+  const needsUpscale = width < minWidth || height < minHeight;
 
-  await sharpForPinterest(buffer, { failOn: "none" })
-    .rotate()
-    .resize({
+  let targetWidth = width;
+  let targetHeight = height;
+
+  if (needsUpscale) {
+    const scale = Math.max(
+      minWidth / width,
+      minHeight / height,
+    );
+
+    targetWidth = Math.max(
+      minWidth,
+      Math.ceil(width * scale),
+    );
+
+    targetHeight = Math.max(
+      minHeight,
+      Math.ceil(height * scale),
+    );
+  }
+
+  const filePath = path.join(dir, randomId("pin-original") + ".jpg");
+
+  let pipeline = sharpForPinterest(buffer, { failOn: "none" })
+    .rotate();
+
+  if (needsUpscale) {
+    pipeline = pipeline.resize({
       width: targetWidth,
       height: targetHeight,
-      fit: "contain",
-      position: "centre",
-      background: { r: 255, g: 255, b: 255, alpha: 1 },
+      fit: "fill",
       withoutEnlargement: false,
-    })
+    });
+  }
+
+  await pipeline
     .flatten({ background: "#ffffff" })
-    .jpeg({ quality: 92, chromaSubsampling: "4:4:4" })
+    .jpeg({ quality: 94, chromaSubsampling: "4:4:4" })
     .toFile(filePath);
 
   const outStat = fs.statSync(filePath);
   if (!outStat.size) throw new Error("PINTEREST_SAFE_IMAGE_EMPTY");
   if (outStat.size > 20 * 1024 * 1024) throw new Error("PINTEREST_SAFE_IMAGE_OVER_20MB");
 
-  // Re-open the ACTUAL file that will be uploaded to Pinterest.
-  // Do not trust only the calculated target size.
+  // 最後一定重新讀取「真正要上傳」的檔案尺寸。
   const safeMeta = await sharpForPinterest(filePath, { failOn: "none" }).metadata();
   const safeWidth = Number(safeMeta.width || 0);
   const safeHeight = Number(safeMeta.height || 0);
 
-  if (safeWidth < 200 || safeHeight < 300) {
+  if (safeWidth < minWidth || safeHeight < minHeight) {
     throw new Error(
       "PINTEREST_SAFE_IMAGE_VERIFY_FAILED_" +
-      safeWidth + "x" + safeHeight
-    );
-  }
-
-  if (safeWidth !== targetWidth || safeHeight !== targetHeight) {
-    throw new Error(
-      "PINTEREST_SAFE_IMAGE_NOT_1000x1500_" +
       safeWidth + "x" + safeHeight
     );
   }
@@ -1078,6 +1094,7 @@ async function stagePinterestImage(imageUrl) {
     safeWidth,
     safeHeight,
     safeBytes: outStat.size,
+    resized: needsUpscale,
   };
 }
 
@@ -1510,7 +1527,7 @@ async function rxvPinWatchStatus(jobId,button,oldText){
 
         if(job.status==='prepared'){
           const sizeText=(job.imageOriginalWidth&&job.imageOriginalHeight&&job.imageSafeWidth&&job.imageSafeHeight)
-            ? ('｜原圖 '+job.imageOriginalWidth+'×'+job.imageOriginalHeight+' → Pinterest 安全圖 '+job.imageSafeWidth+'×'+job.imageSafeHeight)
+            ? ('｜原圖 '+job.imageOriginalWidth+'×'+job.imageOriginalHeight+' → 實際送出 '+job.imageSafeWidth+'×'+job.imageSafeHeight)
             : '';
           rxvPinMessage('✅ 圖片、標題、說明、連結、圖版已自動準備完成'+sizeText+'。請檢查 AI 標示後手動按「發布」。');
           return;
@@ -1587,7 +1604,7 @@ async function rxvPinOpenAndQueue(button){
     },location.origin);
 
     const pinSafe=(d.job&&d.job.imageSafeWidth&&d.job.imageSafeHeight)
-      ? ('｜Pinterest 安全圖 '+d.job.imageSafeWidth+'×'+d.job.imageSafeHeight)
+      ? ('｜實際送出 '+d.job.imageSafeWidth+'×'+d.job.imageSafeHeight)
       : '';
     rxvPinMessage('✅ 工作已送出'+pinSafe+'；Edge 擴充只會處理這 1 筆工作。');
 
