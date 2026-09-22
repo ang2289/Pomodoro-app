@@ -273,7 +273,7 @@ async function loadManifest() {
         "其他素材"
       ).trim();
       const title = String(img && img.title || category || "圖片素材").trim();
-      const imageUrl = String(img && (img.preview_url || img.thumbnail_url || img.download_url) || "").trim();
+      const imageUrl = String(img && (img.download_url || img.preview_url || img.thumbnail_url) || "").trim();
       const rawPlan = String(img && (img.price_type || img.plan_type) || "bundle").toLowerCase();
       const planType = rawPlan === "free" ? "free" : "bundle";
       return { id, title, categoryId, category, imageUrl, planType };
