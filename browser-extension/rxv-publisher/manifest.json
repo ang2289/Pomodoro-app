@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "RxV Publisher Helper",
-  "version": "39.18.0",
-  "description": "RxV Publisher V39.18：Pinterest 改用原生檔案選擇器事件上傳圖片，不再依賴預先存在的 input[type=file]；保留欄位與 AI 標示自動化。",
+  "version": "39.19.0",
+  "description": "RxV Publisher V39.19：Pinterest 單一分頁穩定版；避免一鍵開兩頁，圖片上傳前自動建立安全尺寸副本，並保留欄位與 AI 標示自動化。",
   "permissions": [
     "tabs",
     "scripting",
