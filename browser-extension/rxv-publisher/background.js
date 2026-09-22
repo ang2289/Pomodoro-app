@@ -1,6 +1,6 @@
 const RXV_BASE = "http://localhost:3006";
 const RXV_PIN_BASE = "http://127.0.0.1:3018";
-const VERSION = "39.27.0";
+const VERSION = "39.26.3";
 let activeJob = null;
 let pollInFlight = false;
 let lastWakeAt = 0;
@@ -815,75 +815,262 @@ async function setPinterestFileInputViaChooser(tabId, filePath, timeoutMs = 2000
 async function setPinterestFileInputViaBlob(tabId, job) {
   const response = await fetch(
     RXV_PIN_BASE + "/api/pinterest/file?id=" + encodeURIComponent(String(job.id || "")),
+    { cache: "no-store" },
   );
 
   if (!response.ok) {
     throw new Error("PINTEREST_LOCAL_IMAGE_HTTP_" + response.status);
   }
 
-  const contentType = String(response.headers.get("content-type") || "image/jpeg").split(";")[0];
+  const contentType = String(
+    response.headers.get("content-type") || "image/jpeg",
+  ).split(";")[0].trim().toLowerCase();
+
   const fileName = String(
     response.headers.get("x-rxv-filename") ||
-    ("rxv-pinterest-" + Date.now() + (contentType.includes("png") ? ".png" : contentType.includes("webp") ? ".webp" : ".jpg")),
+    ("rxv-pinterest-" + Date.now() + (contentType.includes("png") ? ".png" : ".jpg")),
   );
 
-  const bytes = new Uint8Array(await response.arrayBuffer());
-  if (!bytes.length) throw new Error("PINTEREST_LOCAL_IMAGE_EMPTY");
+  if (!["image/jpeg", "image/jpg", "image/png"].includes(contentType)) {
+    throw new Error("PINTEREST_IMAGE_MIME_UNSUPPORTED_" + contentType);
+  }
 
-  // Chunk size is divisible by 3 so Base64 chunks can be concatenated safely.
+  const bytes = new Uint8Array(await response.arrayBuffer());
+
+  if (!bytes.length) {
+    throw new Error("PINTEREST_LOCAL_IMAGE_EMPTY");
+  }
+
+  if (bytes.length > 20 * 1024 * 1024) {
+    throw new Error("PINTEREST_LOCAL_IMAGE_OVER_20MB");
+  }
+
   const chunkSize = 24576;
   let base64 = "";
+
   for (let i = 0; i < bytes.length; i += chunkSize) {
-    const chunk = bytes.subarray(i, Math.min(bytes.length, i + chunkSize));
+    const chunk = bytes.subarray(
+      i,
+      Math.min(bytes.length, i + chunkSize),
+    );
+
     let binary = "";
-    for (let j = 0; j < chunk.length; j += 1) binary += String.fromCharCode(chunk[j]);
+
+    for (let j = 0; j < chunk.length; j += 1) {
+      binary += String.fromCharCode(chunk[j]);
+    }
+
     base64 += btoa(binary);
   }
 
-  const result = await exec(tabId, (base64, fileName, contentType) => {
-    function findFileInput(root) {
-      if (!root) return null;
-      const direct = root.querySelector?.('input[type="file"]');
-      if (direct) return direct;
+  const result = await exec(
+    tabId,
+    (base64, fileName, contentType) => {
+      function collectFileInputs(root, out = []) {
+        if (!root) return out;
 
-      const all = root.querySelectorAll?.("*") || [];
-      for (const el of all) {
-        if (el.shadowRoot) {
-          const found = findFileInput(el.shadowRoot);
-          if (found) return found;
+        const direct =
+          root.querySelectorAll?.('input[type="file"]') || [];
+
+        for (const input of direct) {
+          out.push(input);
         }
+
+        const all =
+          root.querySelectorAll?.("*") || [];
+
+        for (const el of all) {
+          if (el.shadowRoot) {
+            collectFileInputs(el.shadowRoot, out);
+          }
+        }
+
+        return out;
       }
-      return null;
-    }
 
-    const input = findFileInput(document);
-    if (!input) return { ok: false, reason: "PINTEREST_FILE_INPUT_NOT_FOUND_IN_PAGE" };
+      const inputs =
+        collectFileInputs(document, []);
 
-    const binary = atob(base64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+      if (!inputs.length) {
+        return {
+          ok: false,
+          reason: "PINTEREST_FILE_INPUT_NOT_FOUND_IN_PAGE",
+        };
+      }
 
-    const blob = new Blob([bytes], { type: contentType });
-    const file = new File([blob], fileName, { type: contentType, lastModified: Date.now() });
-    const dt = new DataTransfer();
-    dt.items.add(file);
+      const scored = inputs
+        .map((input, index) => {
+          const accept =
+            String(
+              input.getAttribute("accept") || "",
+            ).toLowerCase();
 
-    input.files = dt.files;
-    input.dispatchEvent(new Event("input", { bubbles: true }));
-    input.dispatchEvent(new Event("change", { bubbles: true }));
+          let score = 0;
 
-    return {
-      ok: Boolean(input.files && input.files.length),
-      fileCount: input.files ? input.files.length : 0,
-      fileName: input.files?.[0]?.name || "",
-    };
-  }, [base64, fileName, contentType]);
+          if (
+            accept.includes("image/") ||
+            accept.includes(".jpg") ||
+            accept.includes(".jpeg") ||
+            accept.includes(".png")
+          ) {
+            score += 500;
+          }
+
+          if (!accept) {
+            score += 100;
+          }
+
+          if (
+            accept.includes("video/") &&
+            !accept.includes("image/")
+          ) {
+            score -= 600;
+          }
+
+          if (
+            input.multiple
+          ) {
+            score += 10;
+          }
+
+          return {
+            input,
+            index,
+            accept,
+            score,
+          };
+        })
+        .sort(
+          (a, b) =>
+            b.score - a.score,
+        );
+
+      const chosen =
+        scored[0];
+
+      if (
+        !chosen ||
+        chosen.score < 0
+      ) {
+        return {
+          ok: false,
+          reason: "PINTEREST_IMAGE_FILE_INPUT_NOT_FOUND",
+          candidates: scored.map((x) => ({
+            index: x.index,
+            accept: x.accept,
+            score: x.score,
+          })),
+        };
+      }
+
+      const binary =
+        atob(base64);
+
+      const bytes =
+        new Uint8Array(
+          binary.length,
+        );
+
+      for (
+        let i = 0;
+        i < binary.length;
+        i += 1
+      ) {
+        bytes[i] =
+          binary.charCodeAt(i);
+      }
+
+      const blob =
+        new Blob(
+          [bytes],
+          {
+            type: contentType,
+          },
+        );
+
+      const file =
+        new File(
+          [blob],
+          fileName,
+          {
+            type: contentType,
+            lastModified: Date.now(),
+          },
+        );
+
+      const dt =
+        new DataTransfer();
+
+      dt.items.add(file);
+
+      const input =
+        chosen.input;
+
+      input.files =
+        dt.files;
+
+      input.dispatchEvent(
+        new Event(
+          "input",
+          {
+            bubbles: true,
+            composed: true,
+          },
+        ),
+      );
+
+      input.dispatchEvent(
+        new Event(
+          "change",
+          {
+            bubbles: true,
+            composed: true,
+          },
+        ),
+      );
+
+      const selected =
+        input.files?.[0];
+
+      return {
+        ok: Boolean(
+          selected &&
+          input.files.length === 1 &&
+          selected.size === file.size,
+        ),
+        fileCount:
+          input.files?.length || 0,
+        fileName:
+          selected?.name || "",
+        fileType:
+          selected?.type || "",
+        fileSize:
+          selected?.size || 0,
+        inputAccept:
+          chosen.accept,
+        inputScore:
+          chosen.score,
+      };
+    },
+    [
+      base64,
+      fileName,
+      contentType,
+    ],
+  );
 
   if (!result?.ok) {
-    throw new Error(result?.reason || "PINTEREST_BLOB_FILE_SET_FAILED");
+    throw new Error(
+      result?.reason ||
+      "PINTEREST_BLOB_FILE_SET_FAILED",
+    );
   }
 
-  return { ok: true, mode: "blob-datatransfer", ...result };
+  return {
+    ok: true,
+    mode: "blob-image-input",
+    ...result,
+  };
 }
 
 async function setPinterestFileInput(tabId, filePath, timeoutMs = 30000) {
@@ -2668,24 +2855,36 @@ async function preparePinterest(job, tabId) {
   });
 
   let fileResult = null;
-  let chooserError = "";
   let blobError = "";
+  let chooserError = "";
 
+  // Use a real in-page File object first.
+  // This gives Pinterest an explicit image MIME type and avoids the browser
+  // misclassifying a local-path upload as video/unknown media.
   try {
-    fileResult = await setPinterestFileInputViaChooser(
+    fileResult = await setPinterestFileInputViaBlob(
       tabId,
-      job.imagePath,
-      20000,
+      job,
     );
   } catch (error) {
-    chooserError = String(error?.message || error);
+    blobError =
+      String(
+        error?.message || error,
+      );
   }
 
   if (!fileResult) {
     try {
-      fileResult = await setPinterestFileInputViaBlob(tabId, job);
+      fileResult = await setPinterestFileInputViaChooser(
+        tabId,
+        job.imagePath,
+        20000,
+      );
     } catch (error) {
-      blobError = String(error?.message || error);
+      chooserError =
+        String(
+          error?.message || error,
+        );
     }
   }
 
@@ -2695,10 +2894,13 @@ async function preparePinterest(job, tabId) {
       job.imagePath,
       30000,
     );
+
     fileResult = {
       ...fileResult,
-      fallbackFromChooser: chooserError,
-      fallbackFromBlob: blobError,
+      fallbackFromBlob:
+        blobError,
+      fallbackFromChooser:
+        chooserError,
     };
   }
 
