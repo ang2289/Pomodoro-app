@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "RxV Publisher Helper",
-  "version": "39.25.0",
-  "description": "RxV Publisher V39.25：修正 Pinterest 單頁新草稿版缺少 assertCurrentPinterestJob 導致立即失敗。",
+  "version": "39.26.0",
+  "description": "RxV Publisher V39.26：移除 Pinterest 目前工作誤判 superseded；相同一鍵工作重複送出時直接重用，不再取消自己。",
   "permissions": [
     "tabs",
     "scripting",
