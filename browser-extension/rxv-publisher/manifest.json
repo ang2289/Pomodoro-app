@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "RxV Publisher Helper",
-  "version": "39.21.0",
-  "description": "RxV Publisher V39.21：Pinterest 單一工作／單一分頁模式；移除社群頁 heartbeat，直接依可見欄位輸入標題、說明、連結。",
+  "version": "39.22.0",
+  "description": "RxV Publisher V39.22：Pinterest 圖版優先精準／模糊比對既有分類，避免重複建立；真的不存在才自動建立圖版。",
   "permissions": [
     "tabs",
     "scripting",
