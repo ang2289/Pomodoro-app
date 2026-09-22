@@ -1355,28 +1355,43 @@ window.addEventListener('message',function(event){
   }
 });
 
-async function rxvPinWatchStatus(jobId){
+async function rxvPinWatchStatus(jobId,button,oldText){
   const started=Date.now();
-  while(Date.now()-started<45000){
-    try{
-      const d=await api('/api/pinterest/job?id='+encodeURIComponent(jobId));
-      const job=d.job||{};
-      if(job.status==='failed'){
-        rxvPinMessage('❌ Pinterest 自動填入失敗：'+(job.error||'未知錯誤'));
-        return;
-      }
-      if(job.status==='prepared'){
-        rxvPinMessage('✅ 圖片、標題、說明與連結已自動填入 Pinterest。請檢查圖版後手動按「發布／儲存」。');
-        return;
-      }
-      if(job.status==='processing'){
-        rxvPinMessage('⏳ Edge 擴充已接手，正在上傳圖片並填入 Pinterest…');
-      }
-    }catch(e){}
-    await new Promise(function(resolve){setTimeout(resolve,1000)});
+  try{
+    while(Date.now()-started<180000){
+      try{
+        const d=await api('/api/pinterest/job?id='+encodeURIComponent(jobId));
+        const job=d.job||{};
+
+        if(job.status==='failed'){
+          rxvPinMessage('❌ Pinterest 自動填入失敗：'+(job.error||'未知錯誤'));
+          return;
+        }
+
+        if(job.status==='prepared'){
+          rxvPinMessage('✅ 圖片、標題、說明、連結、圖版已自動準備完成。請檢查 AI 標示後手動按「發布」。');
+          return;
+        }
+
+        if(job.status==='processing'){
+          rxvPinMessage('⏳ Edge 擴充處理中：正在上傳圖片並填入 Pinterest，請勿重複按按鈕…');
+        }else if(job.status==='pending'){
+          rxvPinMessage('⏳ Pinterest 工作已排入，正在等待 Edge 擴充接手…');
+        }
+      }catch(e){}
+
+      await new Promise(function(resolve){setTimeout(resolve,1000)});
+    }
+
+    rxvPinMessage('⚠️ 3 分鐘內尚未完成。請查看外掛「最後錯誤」，不要再次連按 Pinterest 按鈕。');
+  }finally{
+    if(button){
+      button.disabled=false;
+      button.textContent=oldText||'開啟 Pinterest 並自動填入';
+    }
   }
-  rxvPinMessage('⚠️ Pinterest 已開啟，但 45 秒內沒有完成。請查看 Pinterest 或 Edge 擴充錯誤。');
 }
+
 
 async function rxvPinOpenAndQueue(button){
   if(!rxvPinCurrent){
@@ -1384,21 +1399,26 @@ async function rxvPinOpenAndQueue(button){
     return;
   }
 
+  if(button&&button.disabled)return;
+
   const board=document.getElementById('rxvPinBoard').value.trim();
+
   if(!board){
     rxvPinMessage('請先填 Pinterest 圖版名稱。');
     return;
   }
 
   const oldText=button?button.textContent:'';
+
   if(button){
     button.disabled=true;
-    button.textContent='處理中…';
+    button.textContent='Pinterest 處理中…';
   }
 
   try{
     localStorage.setItem('rxvPinterestBoard',board);
-    rxvPinMessage('⏳ 正在送出 Pinterest 工作；Edge 擴充會開啟或重用唯一一個 Pinterest 分頁…');
+
+    rxvPinMessage('⏳ 正在送出 1 筆 Pinterest 工作；處理完成前按鈕會保持鎖定…');
 
     const d=await actionPost('/api/pinterest/queue',{
       image:rxvPinCurrent,
@@ -1406,18 +1426,35 @@ async function rxvPinOpenAndQueue(button){
       pinDescription:document.getElementById('rxvPinDescription').value,
       destinationUrl:document.getElementById('rxvPinLink').value,
       boardName:board,
-      aiDisclosureRequested:document.getElementById('rxvPinAi') ? document.getElementById('rxvPinAi').checked : false
+      aiDisclosureRequested:document.getElementById('rxvPinAi')
+        ? document.getElementById('rxvPinAi').checked
+        : false
     });
 
     rxvPinRecordId=Number(d.recordId||0);
+    rxvPinJobId=String((d.job&&d.job.id)||'');
 
-    window.postMessage({type:'RXV_PIN_WAKE',source:'3018'}, location.origin);
+    if(!rxvPinJobId){
+      throw new Error('PINTEREST_JOB_ID_MISSING');
+    }
 
-    rxvPinMessage('✅ 工作已送出；Edge 擴充正在開啟或重用 Pinterest 分頁並自動填入。最後「發布／儲存」請你自己按。');
+    window.postMessage({
+      type:'RXV_PIN_WAKE',
+      source:'3018'
+    },location.origin);
+
+    rxvPinMessage('✅ 工作已送出；Edge 擴充只會處理這 1 筆工作並重用單一 Pinterest 分頁。');
+
     setTimeout(refreshAll,1500);
+
+    await rxvPinWatchStatus(
+      rxvPinJobId,
+      button,
+      oldText
+    );
   }catch(e){
     rxvPinMessage('❌ Pinterest 自動填入失敗：'+e.message);
-  }finally{
+
     if(button){
       button.disabled=false;
       button.textContent=oldText||'開啟 Pinterest 並自動填入';
