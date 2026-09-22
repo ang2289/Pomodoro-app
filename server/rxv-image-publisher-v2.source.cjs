@@ -1013,10 +1013,12 @@ async function stagePinterestImage(imageUrl) {
   fs.mkdirSync(dir, { recursive: true });
 
   const metadata = await sharpForPinterest(buffer, { failOn: "none" }).metadata();
+  const sourceFormat = String(metadata.format || "").toLowerCase();
+
   let width = Number(metadata.width || 0);
   let height = Number(metadata.height || 0);
-
   const orientation = Number(metadata.orientation || 1);
+
   if (orientation >= 5 && orientation <= 8) {
     const t = width;
     width = height;
@@ -1025,11 +1027,12 @@ async function stagePinterestImage(imageUrl) {
 
   if (!width || !height) throw new Error("PINTEREST_IMAGE_DIMENSIONS_UNKNOWN");
 
-  // 原圖優先：只要實際像素已達 Pinterest 建立 Pin 頁的最低門檻，
-  // 就保持原比例、原構圖、原尺寸，不裁切、不補白邊、不強制轉成 2:3。
   const minWidth = 200;
   const minHeight = 300;
   const needsUpscale = width < minWidth || height < minHeight;
+  const sourceAlreadySupported =
+    (sourceFormat === "jpeg" || sourceFormat === "jpg" || sourceFormat === "png") &&
+    buffer.length <= 20 * 1024 * 1024;
 
   let targetWidth = width;
   let targetHeight = height;
@@ -1051,10 +1054,54 @@ async function stagePinterestImage(imageUrl) {
     );
   }
 
-  const filePath = path.join(dir, randomId("pin-original") + ".jpg");
+  // If the source is already Pinterest-supported AND already large enough,
+  // preserve the exact original bytes. No crop, no padding, no re-encode.
+  if (sourceAlreadySupported && !needsUpscale) {
+    const ext = sourceFormat === "png" ? ".png" : ".jpg";
+    const filePath = path.join(dir, randomId("pin-original") + ext);
+    fs.writeFileSync(filePath, buffer);
+
+    const verify = await sharpForPinterest(filePath, { failOn: "none" }).metadata();
+    const verifyFormat = String(verify.format || "").toLowerCase();
+    const verifyWidth = Number(verify.width || 0);
+    const verifyHeight = Number(verify.height || 0);
+    const stat = fs.statSync(filePath);
+
+    if (
+      !["jpeg", "jpg", "png"].includes(verifyFormat) ||
+      verifyWidth < minWidth ||
+      verifyHeight < minHeight ||
+      !stat.size
+    ) {
+      throw new Error(
+        "PINTEREST_ORIGINAL_VERIFY_FAILED_" +
+        verifyFormat + "_" + verifyWidth + "x" + verifyHeight
+      );
+    }
+
+    return {
+      filePath,
+      sourceWidth: width,
+      sourceHeight: height,
+      sourceBytes: buffer.length,
+      safeWidth: verifyWidth,
+      safeHeight: verifyHeight,
+      safeBytes: stat.size,
+      resized: false,
+      sourceFormat,
+      outputFormat: verifyFormat,
+      preservedOriginal: true,
+    };
+  }
+
+  // Unsupported sources (webp/avif/etc.) or genuinely-small images
+  // are decoded once and written as a clean 8-bit sRGB PNG.
+  // Aspect ratio and composition are preserved exactly.
+  const filePath = path.join(dir, randomId("pin-safe") + ".png");
 
   let pipeline = sharpForPinterest(buffer, { failOn: "none" })
-    .rotate();
+    .rotate()
+    .toColourspace("srgb");
 
   if (needsUpscale) {
     pipeline = pipeline.resize({
@@ -1066,18 +1113,60 @@ async function stagePinterestImage(imageUrl) {
   }
 
   await pipeline
-    .flatten({ background: "#ffffff" })
-    .jpeg({ quality: 94, chromaSubsampling: "4:4:4" })
+    .png({
+      compressionLevel: 9,
+      palette: false,
+      bitdepth: 8,
+    })
     .toFile(filePath);
 
-  const outStat = fs.statSync(filePath);
-  if (!outStat.size) throw new Error("PINTEREST_SAFE_IMAGE_EMPTY");
-  if (outStat.size > 20 * 1024 * 1024) throw new Error("PINTEREST_SAFE_IMAGE_OVER_20MB");
+  let stat = fs.statSync(filePath);
 
-  // 最後一定重新讀取「真正要上傳」的檔案尺寸。
-  const safeMeta = await sharpForPinterest(filePath, { failOn: "none" }).metadata();
+  // Photo PNG can occasionally exceed Pinterest's 20MB limit.
+  // In that rare case, use a clean sRGB JPEG instead, still same ratio/composition.
+  let finalPath = filePath;
+  let outputFormat = "png";
+
+  if (stat.size > 20 * 1024 * 1024) {
+    finalPath = path.join(dir, randomId("pin-safe") + ".jpg");
+
+    let jpg = sharpForPinterest(buffer, { failOn: "none" })
+      .rotate()
+      .toColourspace("srgb");
+
+    if (needsUpscale) {
+      jpg = jpg.resize({
+        width: targetWidth,
+        height: targetHeight,
+        fit: "fill",
+        withoutEnlargement: false,
+      });
+    }
+
+    await jpg
+      .flatten({ background: "#ffffff" })
+      .jpeg({
+        quality: 94,
+        chromaSubsampling: "4:4:4",
+        progressive: false,
+      })
+      .toFile(finalPath);
+
+    stat = fs.statSync(finalPath);
+    outputFormat = "jpeg";
+  }
+
+  if (!stat.size) throw new Error("PINTEREST_SAFE_IMAGE_EMPTY");
+  if (stat.size > 20 * 1024 * 1024) throw new Error("PINTEREST_SAFE_IMAGE_OVER_20MB");
+
+  const safeMeta = await sharpForPinterest(finalPath, { failOn: "none" }).metadata();
+  const safeFormat = String(safeMeta.format || "").toLowerCase();
   const safeWidth = Number(safeMeta.width || 0);
   const safeHeight = Number(safeMeta.height || 0);
+
+  if (!["jpeg", "jpg", "png"].includes(safeFormat)) {
+    throw new Error("PINTEREST_SAFE_IMAGE_FORMAT_INVALID_" + safeFormat);
+  }
 
   if (safeWidth < minWidth || safeHeight < minHeight) {
     throw new Error(
@@ -1087,14 +1176,17 @@ async function stagePinterestImage(imageUrl) {
   }
 
   return {
-    filePath,
+    filePath: finalPath,
     sourceWidth: width,
     sourceHeight: height,
     sourceBytes: buffer.length,
     safeWidth,
     safeHeight,
-    safeBytes: outStat.size,
+    safeBytes: stat.size,
     resized: needsUpscale,
+    sourceFormat,
+    outputFormat: safeFormat || outputFormat,
+    preservedOriginal: false,
   };
 }
 
@@ -1113,6 +1205,9 @@ function publicPinterestJob(job) {
     imageSafeWidth: Number(job.imageSafeWidth || 0),
     imageSafeHeight: Number(job.imageSafeHeight || 0),
     imageSafeBytes: Number(job.imageSafeBytes || 0),
+    imageSourceFormat: String(job.imageSourceFormat || ""),
+    imageOutputFormat: String(job.imageOutputFormat || ""),
+    imagePreservedOriginal: Boolean(job.imagePreservedOriginal),
     publishTitle: job.publishTitle,
     publishDescription: job.publishDescription,
     publishText: job.publishDescription,
@@ -1247,6 +1342,9 @@ async function queuePinterestJob(body = {}) {
     imageSafeWidth: Number(stagedImage.safeWidth || 0),
     imageSafeHeight: Number(stagedImage.safeHeight || 0),
     imageSafeBytes: Number(stagedImage.safeBytes || 0),
+    imageSourceFormat: String(stagedImage.sourceFormat || ""),
+    imageOutputFormat: String(stagedImage.outputFormat || ""),
+    imagePreservedOriginal: Boolean(stagedImage.preservedOriginal),
     publishTitle,
     publishDescription,
     destinationUrl,
@@ -1604,7 +1702,7 @@ async function rxvPinOpenAndQueue(button){
     },location.origin);
 
     const pinSafe=(d.job&&d.job.imageSafeWidth&&d.job.imageSafeHeight)
-      ? ('｜實際送出 '+d.job.imageSafeWidth+'×'+d.job.imageSafeHeight)
+      ? ('｜實際送出 '+String(d.job.imageOutputFormat||'').toUpperCase()+' '+d.job.imageSafeWidth+'×'+d.job.imageSafeHeight+(d.job.imagePreservedOriginal?'（原圖）':''))
       : '';
     rxvPinMessage('✅ 工作已送出'+pinSafe+'；Edge 擴充只會處理這 1 筆工作。');
 
