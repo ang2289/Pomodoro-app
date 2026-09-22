@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "RxV Publisher Helper",
-  "version": "39.26.0",
-  "description": "RxV Publisher V39.26：移除 Pinterest 目前工作誤判 superseded；相同一鍵工作重複送出時直接重用，不再取消自己。",
+  "version": "39.27.0",
+  "description": "RxV Publisher V39.27：補齊 Pinterest AI 標示 helper；圖片、標題、說明、連結、圖版成功後不再因 undefined 中止。",
   "permissions": [
     "tabs",
     "scripting",
