@@ -1396,14 +1396,9 @@ async function rxvPinOpenAndQueue(button){
     button.textContent='處理中…';
   }
 
-  // Open Pinterest synchronously from the user's click so Edge will not block it as a popup.
-  const pinWindow=window.open('https://www.pinterest.com/pin-creation-tool/','_blank');
-
   try{
     localStorage.setItem('rxvPinterestBoard',board);
-    rxvPinMessage(pinWindow
-      ? '⏳ Pinterest 已開啟，正在把圖片與文案送給自動填入擴充…'
-      : '⚠️ Edge 阻擋了 Pinterest 新分頁；請允許此網站開啟彈出式視窗。');
+    rxvPinMessage('⏳ 正在送出 Pinterest 工作；Edge 擴充會開啟或重用唯一一個 Pinterest 分頁…');
 
     const d=await actionPost('/api/pinterest/queue',{
       image:rxvPinCurrent,
@@ -1416,10 +1411,9 @@ async function rxvPinOpenAndQueue(button){
 
     rxvPinRecordId=Number(d.recordId||0);
 
-    // Wake the RxV extension immediately instead of waiting for its periodic heartbeat.
     window.postMessage({type:'RXV_PIN_WAKE',source:'3018'}, location.origin);
 
-    rxvPinMessage('✅ Pinterest 已開啟，工作已送出。正在自動上傳圖片與填入內容；最後「發布／儲存」請你自己按。');
+    rxvPinMessage('✅ 工作已送出；Edge 擴充正在開啟或重用 Pinterest 分頁並自動填入。最後「發布／儲存」請你自己按。');
     setTimeout(refreshAll,1500);
   }catch(e){
     rxvPinMessage('❌ Pinterest 自動填入失敗：'+e.message);
