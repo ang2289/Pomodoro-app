@@ -1099,6 +1099,47 @@ async function queuePinterestJob(body = {}) {
   const boardName = String(body.boardName || fallback.boardName || "療癒圖片").trim();
   const aiDisclosureRequested = body.aiDisclosureRequested === true;
 
+  // Duplicate click protection: if the same image + same copy is already pending
+  // or processing, reuse that job instead of creating a second Pinterest job.
+  const activePinterestJob =
+    rxvPinterestJobs.get(
+      rxvPinterestActiveJobId,
+    );
+
+  if (
+    activePinterestJob &&
+    (
+      activePinterestJob.status === "pending" ||
+      activePinterestJob.status === "processing"
+    )
+  ) {
+    const sameRequest =
+      String(activePinterestJob.imageId || "") === imageId &&
+      String(activePinterestJob.publishTitle || "") === publishTitle &&
+      String(activePinterestJob.publishDescription || "") === publishDescription &&
+      String(activePinterestJob.destinationUrl || "") === destinationUrl &&
+      String(activePinterestJob.boardName || "") === boardName &&
+      Boolean(activePinterestJob.aiDisclosureRequested) === aiDisclosureRequested;
+
+    if (sameRequest) {
+      activePinterestJob.debug = {
+        ...(activePinterestJob.debug || {}),
+        duplicateQueueReusedAt: Date.now(),
+        code: "PINTEREST_DUPLICATE_QUEUE_REUSED",
+      };
+      activePinterestJob.updatedAt = Date.now();
+
+      return {
+        ok: true,
+        queued: true,
+        deduped: true,
+        recordId: Number(activePinterestJob.recordId || 0),
+        job: publicPinterestJob(activePinterestJob),
+        queueDepth: rxvPinterestQueue.length,
+      };
+    }
+  }
+
   // A new user click supersedes every older Pinterest attempt, including one
   // that was already claimed by an extension. This prevents an older image
   // from continuing to fill a newly opened Pinterest draft.
