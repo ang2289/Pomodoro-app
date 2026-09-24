@@ -134,6 +134,8 @@ import HomePage from './pages/index'
 import FreeResourcesPage from './pages/free'
 import GuideIndexPage from './pages/guide/index'
 import GuideArticlePage from './pages/guide/[slug]'
+import LineStickerGuidesIndexPage from './pages/guides'
+import LineStickerSeoGuidePage from './pages/guides/LineStickerSeoGuidePage'
 import AidsPage from './pages/blog/aids'
 import FinancePage from './pages/finance/index'
 import SummaryPage from './pages/summary/index'
@@ -779,6 +781,8 @@ function App() {
             <Route path="blog/:slug" element={<QrArticlePage />} />
             <Route path="guide" element={<GuideIndexPage />} />
             <Route path="guide/:slug" element={<GuideArticlePage />} />
+            <Route path="guides" element={<LineStickerGuidesIndexPage />} />
+            <Route path="guides/:slug" element={<LineStickerSeoGuidePage />} />
           </Route>
           
           {/* 客戶公開商品頁：獨立於 MainLayout，避免顯示 RxV 工具站的頁首與長頁尾 */}

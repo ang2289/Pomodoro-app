@@ -4,6 +4,7 @@ import path from "path";
 import { comparisonRoutePaths } from "../src/data/comparisonSeoContent";
 import { searchSeoIndexablePaths } from "../src/data/searchSeoPages";
 import { seoPagesToolRoutePaths } from "../src/data/seoPages";
+import { lineStickerSeoGuideRoutePaths } from "../src/data/lineStickerSeoGuides";
 import {
   guideRoutePaths,
   toolCategoryRoutePaths,
@@ -73,6 +74,7 @@ const staticPages = [
   ...seoPagesToolRoutePaths,
   ...comparisonRoutePaths,
   ...guideRoutePaths,
+  ...lineStickerSeoGuideRoutePaths,
   ...searchSeoIndexablePaths,
 ];
 
