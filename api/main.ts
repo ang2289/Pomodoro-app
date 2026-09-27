@@ -7936,6 +7936,75 @@ async function handleGetPublicImages(req: any, res: any) {
   }
 }
 
+
+async function handleGetPublicR2ImageCatalog(req: any, res: any) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Cache-Control", "no-store");
+
+  if (req.method === "OPTIONS") return res.status(204).end();
+  if (req.method !== "GET") {
+    return jsonResponse(res, 405, { ok: false, error: "Method Not Allowed" });
+  }
+
+  try {
+    const catalog = await readPublicImageCatalogFromR2();
+    const images = catalog.images
+      .map((image: any) => {
+        const categoryName = catalogCategoryName(image);
+        const categoryId = safeText(image?.category_id) || categoryName;
+        const thumbnailUrl = safeText(
+          image?.thumbnail_url || image?.preview_url || image?.public_url,
+        );
+
+        return {
+          id: safeText(image?.id),
+          title: safeText(image?.title) || null,
+          category: categoryId,
+          category_id: categoryId,
+          category_name: categoryName,
+          thumbnail_url: thumbnailUrl || null,
+          created_at: safeText(image?.created_at) || null,
+        };
+      })
+      .filter((image: any) => image.id && image.thumbnail_url);
+
+    const categoryMap = new Map<string, { id: string; name: string; image_count: number }>();
+    for (const image of images) {
+      const id = safeText(image.category_id || image.category);
+      const name = safeText(image.category_name || image.category || id);
+      if (!id || !name) continue;
+      const current = categoryMap.get(id);
+      categoryMap.set(id, {
+        id,
+        name,
+        image_count: (current?.image_count || 0) + 1,
+      });
+    }
+
+    const root =
+      !Array.isArray(catalog.root) && catalog.root && typeof catalog.root === "object"
+        ? catalog.root
+        : {};
+
+    return jsonResponse(res, 200, {
+      ok: true,
+      source: "r2-public-catalog",
+      updated_at: safeText(root?.updated_at) || null,
+      total: images.length,
+      categories: Array.from(categoryMap.values()),
+      images,
+    });
+  } catch (error: any) {
+    console.error("PUBLIC_R2_IMAGE_CATALOG_READ_FAILED", error);
+    return jsonResponse(res, 500, {
+      ok: false,
+      error: "圖片目錄暫時無法載入。",
+    });
+  }
+}
+
 async function handleGetPublicDeals(_req: any, res: any) {
   try {
     const deals = await readContentRows(
@@ -8220,6 +8289,8 @@ export default async function handler(req: any, res: any) {
       return handleGetPublicImageCategories(req, res);
     case "get-public-images":
       return handleGetPublicImages(req, res);
+    case "get-public-r2-image-catalog":
+      return handleGetPublicR2ImageCatalog(req, res);
     case "get-public-deals":
       return handleGetPublicDeals(req, res);
     case "admin-list-image-categories":
