@@ -3,6 +3,7 @@ import path from "path";
 import { spawn } from "child_process";
 import crypto from "crypto";
 import sharp from "sharp";
+import { google } from "googleapis";
 import {
   DeleteObjectCommand,
   GetObjectCommand,
@@ -904,6 +905,178 @@ async function handleDownloadImage(req: any, res: any, body: any) {
       success: false,
       error: error?.message || "Download failed",
     });
+  }
+}
+
+const PAID_PACK_PRODUCT_ID = "rxv_all_images_pack";
+const PAID_PACK_PACKAGE_NAME = "com.rxv.healingimages";
+const PAID_PACK_LATEST_KEY = "packs/all-images/latest.json";
+const PAID_PACK_KEY_PREFIX = "packs/all-images/";
+const PAID_PACK_SIGNED_URL_TTL_SECONDS = 3600;
+
+class PaidPackRequestError extends Error {
+  constructor(
+    readonly code: string,
+    readonly status: number,
+  ) {
+    super(code);
+  }
+}
+
+function applyPaidPackCors(req: any, res: any) {
+  const origin = safeText(req?.headers?.origin);
+  if (origin === "https://localhost") {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Vary", "Origin");
+  }
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+}
+
+function privatePaidR2DownloadClient() {
+  const accountId = safeText(process.env.PAID_R2_ACCOUNT_ID);
+  const accessKeyId = safeText(process.env.PAID_R2_ACCESS_KEY_ID);
+  const secretAccessKey = safeText(process.env.PAID_R2_SECRET_ACCESS_KEY);
+  const bucket = safeText(process.env.PAID_R2_BUCKET_NAME);
+
+  if (!accountId || !accessKeyId || !secretAccessKey || !bucket) {
+    throw new PaidPackRequestError("PAID_R2_CONFIG_MISSING", 503);
+  }
+  if (bucket !== "rxv-paid-downloads") {
+    throw new PaidPackRequestError("PAID_R2_BUCKET_INVALID", 503);
+  }
+
+  return {
+    bucket,
+    client: new S3Client({
+      region: "auto",
+      endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+      forcePathStyle: true,
+      credentials: { accessKeyId, secretAccessKey },
+    }),
+  };
+}
+
+function googlePlayServiceAccountCredentials() {
+  const raw = safeText(process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON);
+  const packageName = safeText(process.env.GOOGLE_PLAY_PACKAGE_NAME);
+  if (!raw || packageName !== PAID_PACK_PACKAGE_NAME) {
+    throw new PaidPackRequestError("GOOGLE_PLAY_CONFIG_MISSING", 503);
+  }
+
+  try {
+    const credentials = JSON.parse(raw);
+    if (
+      credentials?.type !== "service_account" ||
+      !safeText(credentials?.client_email) ||
+      !safeText(credentials?.private_key)
+    ) {
+      throw new Error("INVALID_SERVICE_ACCOUNT");
+    }
+    return { credentials, packageName };
+  } catch {
+    throw new PaidPackRequestError("GOOGLE_PLAY_CONFIG_INVALID", 503);
+  }
+}
+
+async function verifyPaidPackPurchase(productId: unknown, purchaseToken: unknown) {
+  if (productId !== PAID_PACK_PRODUCT_ID) {
+    throw new PaidPackRequestError("INVALID_PRODUCT", 400);
+  }
+  const token = safeText(purchaseToken);
+  if (!token || token.length > 4096) {
+    throw new PaidPackRequestError("PURCHASE_TOKEN_REQUIRED", 400);
+  }
+
+  const { credentials, packageName } = googlePlayServiceAccountCredentials();
+  try {
+    const auth = new google.auth.GoogleAuth({
+      credentials,
+      scopes: ["https://www.googleapis.com/auth/androidpublisher"],
+    });
+    const publisher = google.androidpublisher({ version: "v3", auth });
+    const result = await publisher.purchases.products.get({
+      packageName,
+      productId: PAID_PACK_PRODUCT_ID,
+      token,
+    });
+    if (Number(result.data.purchaseState) !== 0) {
+      throw new PaidPackRequestError("PURCHASE_NOT_COMPLETED", 403);
+    }
+  } catch (error) {
+    if (error instanceof PaidPackRequestError) throw error;
+    console.warn("PAID_PACK_PURCHASE_VERIFICATION_FAILED", {
+      code: (error as any)?.code || null,
+      status: (error as any)?.response?.status || null,
+    });
+    throw new PaidPackRequestError("PURCHASE_VERIFICATION_FAILED", 403);
+  }
+}
+
+function validatedPaidPackZipKey(value: unknown): string {
+  const key = safeText(value);
+  if (
+    !key.startsWith(PAID_PACK_KEY_PREFIX) ||
+    key.includes("..") ||
+    key.includes("\\") ||
+    !key.endsWith(".zip")
+  ) {
+    throw new PaidPackRequestError("PAID_PACK_ZIP_KEY_INVALID", 500);
+  }
+  return key;
+}
+
+async function handlePaidPackDownload(req: any, res: any, body: any) {
+  applyPaidPackCors(req, res);
+  if (req.method === "OPTIONS") return res.status(204).end();
+  if (req.method !== "POST") {
+    return jsonResponse(res, 405, { success: false, code: "METHOD_NOT_ALLOWED" });
+  }
+
+  let paidR2: ReturnType<typeof privatePaidR2DownloadClient> | null = null;
+  try {
+    await verifyPaidPackPurchase(body?.productId, body?.purchaseToken);
+    paidR2 = privatePaidR2DownloadClient();
+
+    const latestObject = await paidR2.client.send(
+      new GetObjectCommand({ Bucket: paidR2.bucket, Key: PAID_PACK_LATEST_KEY }),
+    );
+    const latestText = await (latestObject.Body as any).transformToString();
+    const latest = JSON.parse(latestText);
+    const zipKey = validatedPaidPackZipKey(latest?.zip_object_key);
+    const zipObject = await paidR2.client.send(
+      new HeadObjectCommand({ Bucket: paidR2.bucket, Key: zipKey }),
+    );
+    const zipSizeBytes = Number(zipObject.ContentLength || 0);
+    if (!Number.isFinite(zipSizeBytes) || zipSizeBytes <= 0) {
+      throw new PaidPackRequestError("PAID_PACK_ZIP_NOT_FOUND", 404);
+    }
+
+    const downloadUrl = await getSignedUrl(
+      paidR2.client,
+      new GetObjectCommand({ Bucket: paidR2.bucket, Key: zipKey }),
+      { expiresIn: PAID_PACK_SIGNED_URL_TTL_SECONDS },
+    );
+    return jsonResponse(res, 200, {
+      success: true,
+      downloadUrl,
+      expiresIn: PAID_PACK_SIGNED_URL_TTL_SECONDS,
+      imageCount: Number(latest?.image_count || 0),
+      zipSizeBytes,
+      ...(safeText(latest?.updated_at || latest?.updatedAt)
+        ? { updatedAt: safeText(latest?.updated_at || latest?.updatedAt) }
+        : {}),
+      fileName: path.posix.basename(zipKey),
+    });
+  } catch (error) {
+    const known = error instanceof PaidPackRequestError;
+    if (!known) console.error("PAID_PACK_DOWNLOAD_FAILED", error);
+    return jsonResponse(res, known ? error.status : 500, {
+      success: false,
+      code: known ? error.code : "PAID_PACK_DOWNLOAD_UNAVAILABLE",
+    });
+  } finally {
+    paidR2?.client.destroy();
   }
 }
 
@@ -8415,6 +8588,8 @@ export default async function handler(req: any, res: any) {
       return handleAdminRejectStorefrontTrialRequest(req, res, body);
     case "download-image":
       return handleDownloadImage(req, res, body);
+    case "paid-pack-download":
+      return handlePaidPackDownload(req, res, body);
     case "uploadimage":
     case "upload-image":
       return handleUploadImage(req, res, body);
