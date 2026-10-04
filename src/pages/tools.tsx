@@ -191,37 +191,17 @@ export default function ToolsPage() {
     },
   ];
 
-  const aiTools: ToolCard[] = [
-    {
-      titleKey: "tool_ai_summary",
-      descKey: "home_tool_ai_summary_desc",
-      icon: "🤖",
-      to: "/summary",
-      badges: ["ai", "hot"],
-    },
-    {
-      titleKey: "homework_helper",
-      descKey: "home_tool_homework_desc",
-      icon: "📘",
-      to: "/tools/homework-helper",
-      badges: ["ai"],
-    },
-    {
-      titleKey: "home_tool_image_to_video_title",
-      descKey: "home_tool_image_to_video_desc",
-      icon: "🎞️",
-      to: "/tools/image-to-video",
-      badges: ["ai"],
-      psKey: "home_tool_video_ps",
-    },
-    {
-      titleKey: "home_tool_video_title",
-      descKey: "home_tool_video_desc",
-      icon: "🎬",
-      to: "/tools/shopee-video",
-      badges: ["ai"],
-    },
-  ];
+  const aiTools: ToolCard[] = isLocalDevelopment()
+    ? [
+        {
+          title: "本機圖轉影片工具",
+          desc: "只在本機使用。支援圖片轉 MP4、MP3／BGM、字幕、口白、多圖輪播、縮放平移、星光特效與多種影片比例。",
+          icon: "🎞️",
+          to: "/tools/image-to-video",
+          badges: ["free"],
+        },
+      ]
+    : [];
 
   const lifeTools: ToolCard[] = [
     {
@@ -264,7 +244,6 @@ export default function ToolsPage() {
   const maintenanceToolPaths = new Set([
     "/tools/product-image-generator",
     "/pricing",
-    "/tools/image-to-video",
   ]);
 
   const allTools = [

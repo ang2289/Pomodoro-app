@@ -253,10 +253,15 @@ import RelationshipAiPage from './pages/relationship-ai'
 import ImageBundleDownloadPage from './pages/download/image-bundle'
 import { featureFlags } from './config/featureFlags'
 import SupabaseMaintenancePage from './components/SupabaseMaintenancePage'
+import { isLocalDevelopment } from './lib/isLocalDevelopment'
 
 // TODO: 為了上線摘要與作業功能，暫時隱藏 chant 模組
 // 日後可透過環境變數 VITE_ENABLE_CHANT=true 或 NEXT_PUBLIC_ENABLE_CHANT=true 再次開啟
 const isChantEnabled = import.meta.env.VITE_ENABLE_CHANT === 'true' || import.meta.env.NEXT_PUBLIC_ENABLE_CHANT === 'true';
+
+function LocalOnlyImageToVideoRoute() {
+  return isLocalDevelopment() ? <ImageToVideo /> : <Navigate to="/tools" replace />;
+}
 
 function PausedAiToolPage() {
   return (
@@ -882,7 +887,7 @@ function App() {
           <Route path="/blog/three-minute-meditation" element={<ThreeMinuteMeditation />} />
           <Route path="/blog/about-spiritual-growth" element={<AboutSpiritualGrowth />} />
           {/*自動短影音 */}
-          <Route path="/tools/image-to-video" element={<ImageToVideo />} />
+          <Route path="/tools/image-to-video" element={<LocalOnlyImageToVideoRoute />} />
           
           {/* 404 - 必須放在最後 */}
           <Route path="*" element={<NotFoundPage />} />
