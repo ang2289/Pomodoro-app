@@ -42,10 +42,14 @@ export default function CoupangDynamicAd({
 
   return (
     <aside
-      className={`my-6 flex w-full justify-center overflow-hidden ${className}`}
+      className={`my-6 w-full overflow-hidden ${className}`}
       aria-label="Coupang Partners 動態商品推薦"
       data-coupang-dynamic-sub-id={subId}
     >
+      <div className="mb-1 text-center text-[11px] font-semibold text-slate-400">
+        Coupang 推薦
+      </div>
+      <div className="flex w-full justify-center overflow-hidden">
       <iframe
         title="Coupang Partners 動態商品推薦"
         src={src}
@@ -54,10 +58,11 @@ export default function CoupangDynamicAd({
         frameBorder="0"
         scrolling="no"
         referrerPolicy="unsafe-url"
-        loading="lazy"
+        loading="eager"
         className="block max-w-full border-0"
         style={{ width: `${width}px`, height: `${height}px`, maxWidth: "100%" }}
       />
+      </div>
     </aside>
   );
 }

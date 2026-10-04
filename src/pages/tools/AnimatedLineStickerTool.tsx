@@ -1189,7 +1189,10 @@ const AnimatedLineStickerTool: React.FC = () => {
   const [loopCount, setLoopCount] = useState(2);
   const [autoMotionPreset, setAutoMotionPreset] = useState<AutoMotionPreset>("auto");
   const [autoGenerating, setAutoGenerating] = useState(false);
+  const [autoPreviewGenerating, setAutoPreviewGenerating] = useState(false);
+  const [autoSourceFile, setAutoSourceFile] = useState<File | null>(null);
   const [autoSourceName, setAutoSourceName] = useState("");
+  const [autoPreviewFrames, setAutoPreviewFrames] = useState<FrameItem[]>([]);
   const [previewIndex, setPreviewIndex] = useState(0);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -1200,14 +1203,20 @@ const AnimatedLineStickerTool: React.FC = () => {
   const autoInputRef = useRef<HTMLInputElement | null>(null);
   const framesRef = useRef<FrameItem[]>([]);
   const linePreviewUrlsRef = useRef<string[]>([]);
+  const autoPreviewFramesRef = useRef<FrameItem[]>([]);
 
   useEffect(() => {
     framesRef.current = frames;
   }, [frames]);
 
   useEffect(() => {
+    autoPreviewFramesRef.current = autoPreviewFrames;
+  }, [autoPreviewFrames]);
+
+  useEffect(() => {
     return () => {
       framesRef.current.forEach((frame) => URL.revokeObjectURL(frame.url));
+      autoPreviewFramesRef.current.forEach((frame) => URL.revokeObjectURL(frame.url));
       linePreviewUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
     };
   }, []);
@@ -1247,13 +1256,51 @@ const AnimatedLineStickerTool: React.FC = () => {
   }, [frames, t]);
 
   useEffect(() => {
-    if (frames.length === 0) return undefined;
-    const delay = Math.max(80, Math.round((durationSec * 1000) / Math.max(frames.length, 1)));
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      autoPreviewFramesRef.current.forEach((frame) => URL.revokeObjectURL(frame.url));
+      autoPreviewFramesRef.current = [];
+      setAutoPreviewFrames([]);
+
+      if (!autoSourceFile) {
+        setAutoPreviewGenerating(false);
+        return;
+      }
+
+      setAutoPreviewGenerating(true);
+      try {
+        const generatedFiles = await generateAutoAnimationFrameFiles(autoSourceFile, autoMotionPreset);
+        const loaded = await Promise.all(generatedFiles.map((file) => readImageFile(file, t)));
+        if (cancelled) {
+          loaded.forEach((frame) => URL.revokeObjectURL(frame.url));
+          return;
+        }
+        autoPreviewFramesRef.current = loaded;
+        setAutoPreviewFrames(loaded);
+        setPreviewIndex(0);
+      } catch {
+        if (!cancelled) setAutoPreviewFrames([]);
+      } finally {
+        if (!cancelled) setAutoPreviewGenerating(false);
+      }
+    }, 120);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [autoSourceFile, autoMotionPreset, t]);
+
+  const activePreviewCount = autoPreviewFrames.length || frames.length;
+
+  useEffect(() => {
+    if (activePreviewCount === 0) return undefined;
+    const delay = Math.max(80, Math.round((durationSec * 1000) / Math.max(activePreviewCount, 1)));
     const timer = window.setInterval(() => {
-      setPreviewIndex((current) => (current + 1) % frames.length);
+      setPreviewIndex((current) => (current + 1) % activePreviewCount);
     }, delay);
     return () => window.clearInterval(timer);
-  }, [frames.length, durationSec]);
+  }, [activePreviewCount, durationSec]);
 
   const totalFileSize = useMemo(() => frames.reduce((sum, frame) => sum + frame.file.size, 0), [frames]);
   const linePreviewMap = useMemo(() => new Map(linePreviewFrames.map((frame) => [frame.id, frame.url])), [linePreviewFrames]);
@@ -1326,7 +1373,7 @@ const AnimatedLineStickerTool: React.FC = () => {
     }
   };
 
-  const handleAutoSource = async (fileList: FileList | null) => {
+  const handleAutoSource = (fileList: FileList | null) => {
     const sourceFile = fileList?.[0];
     if (!sourceFile || autoGenerating) {
       if (autoInputRef.current) autoInputRef.current.value = "";
@@ -1338,12 +1385,21 @@ const AnimatedLineStickerTool: React.FC = () => {
       return;
     }
 
+    setMessage("");
+    setAutoSourceFile(sourceFile);
+    setAutoSourceName(sourceFile.name);
+    setPreviewIndex(0);
+    if (autoInputRef.current) autoInputRef.current.value = "";
+  };
+
+  const applyAutoMotion = async () => {
+    if (!autoSourceFile || autoGenerating) return;
     setAutoGenerating(true);
     setMessage("");
     setExportStatus(t("animated_line_sticker.auto_status_generating"));
     try {
       await new Promise((resolve) => window.setTimeout(resolve, 30));
-      const generatedFiles = await generateAutoAnimationFrameFiles(sourceFile, autoMotionPreset);
+      const generatedFiles = await generateAutoAnimationFrameFiles(autoSourceFile, autoMotionPreset);
       const loaded = await Promise.all(generatedFiles.map((file) => readImageFile(file, t)));
       setFrames((previous) => {
         previous.forEach((frame) => URL.revokeObjectURL(frame.url));
@@ -1352,14 +1408,12 @@ const AnimatedLineStickerTool: React.FC = () => {
       setDurationSec(2);
       setLoopCount(2);
       setPreviewIndex(0);
-      setAutoSourceName(sourceFile.name);
       setMessage(t("animated_line_sticker.auto_success"));
     } catch (error: any) {
       setMessage(error?.message || t("animated_line_sticker.auto_error_failed"));
     } finally {
       setAutoGenerating(false);
       setExportStatus("");
-      if (autoInputRef.current) autoInputRef.current.value = "";
     }
   };
 
@@ -1602,11 +1656,9 @@ const AnimatedLineStickerTool: React.FC = () => {
                 type="button"
                 disabled={autoGenerating}
                 onClick={() => autoInputRef.current?.click()}
-                className="mt-3 inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-violet-600 px-4 py-3 text-sm font-black !text-white shadow-md transition hover:bg-violet-700 disabled:cursor-wait disabled:bg-slate-300"
+                className="mt-3 inline-flex min-h-12 w-full items-center justify-center rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm font-black text-violet-700 shadow-sm transition hover:bg-violet-100 disabled:cursor-wait disabled:bg-slate-100"
               >
-                {autoGenerating
-                  ? t("animated_line_sticker.auto_generating_button")
-                  : t("animated_line_sticker.auto_upload_button")}
+                {t("animated_line_sticker.auto_choose_source_button")}
               </button>
               <input
                 ref={autoInputRef}
@@ -1615,8 +1667,20 @@ const AnimatedLineStickerTool: React.FC = () => {
                 className="hidden"
                 onChange={(event) => handleAutoSource(event.target.files)}
               />
+              <button
+                type="button"
+                disabled={!autoSourceFile || autoGenerating || autoPreviewGenerating}
+                onClick={applyAutoMotion}
+                className="mt-3 inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-violet-600 px-4 py-3 text-sm font-black !text-white shadow-md transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+              >
+                {autoGenerating
+                  ? t("animated_line_sticker.auto_generating_button")
+                  : autoPreviewGenerating
+                    ? t("animated_line_sticker.auto_preview_generating")
+                    : t("animated_line_sticker.auto_apply_button")}
+              </button>
               <p className="mt-2 text-center text-xs leading-5 text-slate-500">
-                {t("animated_line_sticker.auto_replace_notice")}
+                {t("animated_line_sticker.auto_preview_notice")}
               </p>
             </div>
           </div>
@@ -1686,10 +1750,29 @@ const AnimatedLineStickerTool: React.FC = () => {
 
           <div className="space-y-5">
             <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-              <h2 className="text-xl font-black text-slate-900">{t("animated_line_sticker.preview_title")}</h2>
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-xl font-black text-slate-900">{t("animated_line_sticker.preview_title")}</h2>
+                {autoSourceFile ? (
+                  <span className="rounded-full bg-violet-100 px-2.5 py-1 text-xs font-black text-violet-700">
+                    {t("animated_line_sticker.auto_live_preview_badge")}
+                  </span>
+                ) : null}
+              </div>
               <div className="mt-4 flex h-[270px] items-center justify-center rounded-2xl border border-slate-200 bg-[linear-gradient(45deg,#f8fafc_25%,transparent_25%),linear-gradient(-45deg,#f8fafc_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#f8fafc_75%),linear-gradient(-45deg,transparent_75%,#f8fafc_75%)] bg-[length:20px_20px] bg-[position:0_0,0_10px,10px_-10px,-10px_0]">
-                {frames.length ? (
-                  <img src={linePreviewFrames[previewIndex % linePreviewFrames.length]?.url ?? frames[previewIndex % frames.length]?.url} alt={t("animated_line_sticker.preview_alt")} className="max-h-full max-w-full object-contain" />
+                {autoPreviewFrames.length ? (
+                  <img
+                    src={autoPreviewFrames[previewIndex % autoPreviewFrames.length]?.url}
+                    alt={t("animated_line_sticker.preview_alt")}
+                    className="max-h-full max-w-full object-contain"
+                  />
+                ) : frames.length ? (
+                  <img
+                    src={linePreviewFrames[previewIndex % linePreviewFrames.length]?.url ?? frames[previewIndex % frames.length]?.url}
+                    alt={t("animated_line_sticker.preview_alt")}
+                    className="max-h-full max-w-full object-contain"
+                  />
+                ) : autoPreviewGenerating ? (
+                  <p className="text-sm font-bold text-violet-600">{t("animated_line_sticker.auto_preview_generating")}</p>
                 ) : (
                   <p className="text-sm font-bold text-slate-500">{t("animated_line_sticker.preview_empty")}</p>
                 )}

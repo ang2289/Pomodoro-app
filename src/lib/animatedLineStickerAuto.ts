@@ -5,7 +5,15 @@ export type AutoMotionPreset =
   | "shake"
   | "nod"
   | "textPop"
-  | "sparkle";
+  | "sparkle"
+  | "pulse"
+  | "sway"
+  | "pop"
+  | "alert"
+  | "spin"
+  | "slideLeft"
+  | "slideRight"
+  | "breathe";
 
 export const AUTO_MOTION_PRESETS: { value: AutoMotionPreset; labelKey: string }[] = [
   { value: "auto", labelKey: "animated_line_sticker.auto_motion_auto" },
@@ -15,6 +23,14 @@ export const AUTO_MOTION_PRESETS: { value: AutoMotionPreset; labelKey: string }[
   { value: "nod", labelKey: "animated_line_sticker.auto_motion_nod" },
   { value: "textPop", labelKey: "animated_line_sticker.auto_motion_text_pop" },
   { value: "sparkle", labelKey: "animated_line_sticker.auto_motion_sparkle" },
+  { value: "pulse", labelKey: "animated_line_sticker.auto_motion_pulse" },
+  { value: "sway", labelKey: "animated_line_sticker.auto_motion_sway" },
+  { value: "pop", labelKey: "animated_line_sticker.auto_motion_pop" },
+  { value: "alert", labelKey: "animated_line_sticker.auto_motion_alert" },
+  { value: "spin", labelKey: "animated_line_sticker.auto_motion_spin" },
+  { value: "slideLeft", labelKey: "animated_line_sticker.auto_motion_slide_left" },
+  { value: "slideRight", labelKey: "animated_line_sticker.auto_motion_slide_right" },
+  { value: "breathe", labelKey: "animated_line_sticker.auto_motion_breathe" },
 ];
 
 const OUTPUT_WIDTH = 320;
@@ -321,6 +337,49 @@ function getTransforms(preset: AutoMotionPreset, frameIndex: number) {
   if (preset === "sparkle") {
     text.scaleX = [1, 1.01, 1.025, 1.01, 1, 1.015, 1, 1][frameIndex];
     text.scaleY = text.scaleX;
+  }
+  if (preset === "pulse") {
+    const s = [1, 1.04, 1.08, 1.03, 1, 1.035, 1.015, 1][frameIndex];
+    text.scaleX = s;
+    text.scaleY = s;
+    character.scaleX = s;
+    character.scaleY = s;
+  }
+  if (preset === "sway") {
+    character.rotation = [0, -4, 3.5, -2.5, 2, -1.2, 0.6, 0][frameIndex];
+    character.dx = [0, -3, 3, -2, 2, -1, 1, 0][frameIndex];
+  }
+  if (preset === "pop") {
+    const s = [0.88, 1.08, 0.97, 1.04, 1, 1.02, 0.99, 1][frameIndex];
+    character.scaleX = s;
+    character.scaleY = s;
+    character.dy = [8, -5, 2, -2, 0, -1, 0, 0][frameIndex];
+  }
+  if (preset === "alert") {
+    text.scaleX = [1, 1.08, 0.98, 1.06, 1, 1.04, 1, 1][frameIndex];
+    text.scaleY = text.scaleX;
+    character.rotation = [0, -2.5, 2.5, -2, 2, -1, 0.5, 0][frameIndex];
+    character.dx = [0, -3, 3, -2, 2, -1, 1, 0][frameIndex];
+  }
+  if (preset === "spin") {
+    character.rotation = [0, -7, 9, -6, 4, -2, 1, 0][frameIndex];
+    character.scaleX = [1, 0.98, 1.02, 1, 1.01, 1, 1, 1][frameIndex];
+    character.scaleY = character.scaleX;
+  }
+  if (preset === "slideLeft") {
+    character.dx = [18, 10, 3, -2, 1, 0, 0, 0][frameIndex];
+    text.dx = [8, 4, 1, 0, 0, 0, 0, 0][frameIndex];
+  }
+  if (preset === "slideRight") {
+    character.dx = [-18, -10, -3, 2, -1, 0, 0, 0][frameIndex];
+    text.dx = [-8, -4, -1, 0, 0, 0, 0, 0][frameIndex];
+  }
+  if (preset === "breathe") {
+    const sx = [1, 1.01, 1.02, 1.025, 1.02, 1.01, 1, 1][frameIndex];
+    const sy = [1, 1.018, 1.035, 1.045, 1.035, 1.018, 1, 1][frameIndex];
+    character.scaleX = sx;
+    character.scaleY = sy;
+    character.dy = [0, -1, -2, -2, -1, 0, 0, 0][frameIndex];
   }
   return { text, character, accents };
 }
