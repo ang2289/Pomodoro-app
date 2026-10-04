@@ -6,7 +6,6 @@ import { isLoggedIn } from "@/lib/auth";
 import { trackEvent } from "@/utils/analytics";
 import SEO, { getBaseUrl } from "@/components/SEO";
 import LineStickerAuthorCard from "@/components/LineStickerAuthorCard";
-import CoupangDynamicAd from "@/components/CoupangDynamicAd";
 import {
   isLocalDevelopment,
   isVideoToolPublicPath,
@@ -1425,7 +1424,6 @@ const HomePage: React.FC = () => {
       <div className="min-h-screen bg-gradient-to-b from-sky-50 via-white to-indigo-50">
         {/* 商品圖工具帳號入口＋商品展示頁加贈推廣。 */}
         <div className="mx-auto w-full max-w-6xl px-4 pt-5 sm:px-6 lg:px-8">
-          <CoupangDynamicAd subId="rxv_tools_dynamic" className="mb-6" />
           <div className="overflow-hidden rounded-[1.5rem] border border-emerald-100 bg-white shadow-sm">
             {/* 改為直式版面，避免管理按鈕過寬時把左側文字擠成逐字換行。 */}
             <div className="p-5 sm:p-6">
