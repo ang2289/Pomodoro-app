@@ -6,6 +6,7 @@ import { isLoggedIn } from "@/lib/auth";
 import { trackEvent } from "@/utils/analytics";
 import SEO, { getBaseUrl } from "@/components/SEO";
 import LineStickerAuthorCard from "@/components/LineStickerAuthorCard";
+import CoupangDynamicAd from "@/components/CoupangDynamicAd";
 import {
   isLocalDevelopment,
   isVideoToolPublicPath,
@@ -1893,6 +1894,8 @@ const HomePage: React.FC = () => {
               ))}
             </div>
           </section>
+
+          <CoupangDynamicAd subId="rxv_home_dynamic" className="order-2 mb-8" />
 
           <LineStickerAuthorCard compact className="order-4 md:order-3" />
 

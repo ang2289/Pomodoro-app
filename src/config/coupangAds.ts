@@ -7,6 +7,16 @@ export const COUPANG_PARTNERS_CAMPAIGN = {
   startAt: "2026-10-01T00:00:00+08:00", endAt: "2026-10-10T23:59:59+08:00",
 } as const;
 
+export const COUPANG_DYNAMIC_WIDGET = {
+  id: 1887,
+  template: "carousel",
+  trackingCode: "AF4011605",
+  desktopWidth: 680,
+  desktopHeight: 140,
+  mobileWidth: 320,
+  mobileHeight: 140,
+} as const;
+
 export const COUPANG_ADS: Record<CoupangAdPlacement, CoupangAdConfig> = {
   home: { subId: "rxv_home", alt: "Coupang Partners 廣告" },
   imagesTop: { subId: "rxv_images_top", alt: "Coupang Partners 圖片素材推薦" },

@@ -13,6 +13,7 @@ function trackEvent(name: string, params: Record<string, any> = {}) {
 // === GA4 Tracking End ===
 
 import { Card } from "@/components/ui/card";
+import CoupangDynamicAd from "@/components/CoupangDynamicAd";
 import { isLoggedIn, getCurrentUserId } from "@/lib/auth";
 import { getCurrentCreditSummary } from "@/lib/accountApi";
 
@@ -634,6 +635,8 @@ export default function ImagesPage() {
             </Link>
           </div>
         </section>
+
+        <CoupangDynamicAd subId="rxv_images_dynamic" />
 
         {/* 分類篩選：手機版改成橫向滑動，避免按鈕全部擠在一起。 */}        {/* 分類篩選：手機版改成橫向滑動，避免按鈕全部擠在一起。 */}
         {!loadingCategories && categories.length > 0 && (
