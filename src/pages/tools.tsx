@@ -212,6 +212,13 @@ export default function ToolsPage() {
 
   const lifeTools: ToolCard[] = [
     {
+      title: "大型垃圾怎麼丟？",
+      desc: "選縣市、輸入沙發、床墊、馬桶、家電或裝修廢棄物，先判斷該找清潔隊、回收或合法清運。",
+      icon: "♻️",
+      to: "/tools/bulky-waste",
+      badges: ["life", "free", "hot"],
+    },
+    {
       title: "吃不胖星球",
       desc: "點美食、餵角色、累積快樂值，解鎖可愛食物圖鑑的療癒小遊戲。",
       icon: "🍰",
