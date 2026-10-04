@@ -5,6 +5,7 @@ import DesktopNav from '../components/DesktopNav';
 import MobileBottomNav from '../components/MobileBottomNav';
 import ToolCoupangAd from '../components/ToolCoupangAd';
 import CoupangContentAd from '../components/CoupangContentAd';
+import HealingImagesAppPromo from '../components/HealingImagesAppPromo';
 import { useTranslation } from 'react-i18next';
 
 export default function MainLayout() {
@@ -36,6 +37,7 @@ export default function MainLayout() {
 
       <main className="app-main-reading flex-grow pb-20">
         <CoupangContentAd />
+        <HealingImagesAppPromo />
         <Outlet />
       </main>
       <ToolCoupangAd />

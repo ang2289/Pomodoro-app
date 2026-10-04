@@ -47,6 +47,13 @@ export default function ToolsPage() {
 
   const freeTools: ToolCard[] = [
     {
+      title: "免費圖片轉 MP4",
+      desc: "圖片直接在瀏覽器本機轉成 MP4，可加 MP3／BGM、縮放與淡入淡出效果；不上傳影片伺服器。",
+      icon: "🎬",
+      to: "/tools/image-to-mp4",
+      badges: ["free", "hot"],
+    },
+    {
       title: "高畫質圖片素材庫",
       desc: "1,583+ 張高畫質圖片完整版 NT$399，涵蓋食物、商業、花卉、社群、桌布等分類；另提供部分圖片免費試用。",
       icon: "🖼️",

@@ -156,6 +156,7 @@ import AISummaryGuide from './pages/tools/ai-summary'
 import ShopeeSingleVideoPage from './pages/tools/ShopeeSingleVideoPage'
 import ShopeeVideoPage from './pages/tools/shopee-video/index.tsx'
 import ImageToVideo from "./pages/tools/ImageToVideo";
+import BrowserImageToMp4 from "./pages/tools/BrowserImageToMp4";
 import ShopeeCsvPage from './pages/tools/shopee-csv'
 import ShopeeDealsPage from './pages/tools/shopee-deals'
 import ImageResizePage from './pages/tools/ImageResize'
@@ -708,6 +709,7 @@ function App() {
             <Route path="tools/shopee-video" element={<ShopeeVideoPage />} />
             <Route path="tools/shopee-csv" element={<ShopeeCsvPage />} />
             <Route path="tools/shopee-deals" element={<ShopeeDealsPage />} />
+            <Route path="tools/image-to-mp4" element={<BrowserImageToMp4 />} />
             <Route path="tools/image-resize" element={<ImageResizePage />} />
             <Route path="tools/image-compress" element={<ImageCompressPage />} />
             <Route path="tools/image-convert" element={<ImageConvertPage />} />
