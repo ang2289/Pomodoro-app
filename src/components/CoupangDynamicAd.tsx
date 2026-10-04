@@ -4,11 +4,19 @@ import { COUPANG_DYNAMIC_WIDGET } from "@/config/coupangAds";
 type CoupangDynamicAdProps = {
   subId: string;
   className?: string;
+  desktopWidth?: number;
+  desktopHeight?: number;
+  mobileWidth?: number;
+  mobileHeight?: number;
 };
 
 export default function CoupangDynamicAd({
   subId,
   className = "",
+  desktopWidth = COUPANG_DYNAMIC_WIDGET.desktopWidth,
+  desktopHeight = COUPANG_DYNAMIC_WIDGET.desktopHeight,
+  mobileWidth = COUPANG_DYNAMIC_WIDGET.mobileWidth,
+  mobileHeight = COUPANG_DYNAMIC_WIDGET.mobileHeight,
 }: CoupangDynamicAdProps) {
   const [isMobile, setIsMobile] = useState(() =>
     typeof window !== "undefined" ? window.innerWidth < 768 : false,
@@ -22,12 +30,8 @@ export default function CoupangDynamicAd({
     return () => mediaQuery.removeEventListener("change", updateViewport);
   }, []);
 
-  const width = isMobile
-    ? COUPANG_DYNAMIC_WIDGET.mobileWidth
-    : COUPANG_DYNAMIC_WIDGET.desktopWidth;
-  const height = isMobile
-    ? COUPANG_DYNAMIC_WIDGET.mobileHeight
-    : COUPANG_DYNAMIC_WIDGET.desktopHeight;
+  const width = isMobile ? mobileWidth : desktopWidth;
+  const height = isMobile ? mobileHeight : desktopHeight;
 
   const src =
     `https://ads-partners.tw.coupang.com/widgets.html?id=${COUPANG_DYNAMIC_WIDGET.id}` +

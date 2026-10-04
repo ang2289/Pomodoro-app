@@ -636,7 +636,7 @@ export default function ImagesPage() {
           </div>
         </section>
 
-        <CoupangDynamicAd subId="rxv_images_dynamic" />
+        <CoupangDynamicAd subId="rxv_images_dynamic" desktopWidth={1000} desktopHeight={180} />
 
         {/* 分類篩選：手機版改成橫向滑動，避免按鈕全部擠在一起。 */}        {/* 分類篩選：手機版改成橫向滑動，避免按鈕全部擠在一起。 */}
         {!loadingCategories && categories.length > 0 && (

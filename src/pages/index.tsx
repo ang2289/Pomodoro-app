@@ -1868,6 +1868,8 @@ const HomePage: React.FC = () => {
           </section>
 
 
+          <CoupangDynamicAd subId="rxv_home_dynamic" className="order-1 mb-6" />
+
           <section className="mb-8 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm order-1 sm:p-6">
             <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
               <div>
@@ -1894,8 +1896,6 @@ const HomePage: React.FC = () => {
               ))}
             </div>
           </section>
-
-          <CoupangDynamicAd subId="rxv_home_dynamic" className="order-2 mb-8" />
 
           <LineStickerAuthorCard compact className="order-4 md:order-3" />
 

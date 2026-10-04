@@ -4,6 +4,7 @@ import LanguageSwitcher from '../components/LanguageSwitcher';
 import DesktopNav from '../components/DesktopNav';
 import MobileBottomNav from '../components/MobileBottomNav';
 import ToolCoupangAd from '../components/ToolCoupangAd';
+import CoupangContentAd from '../components/CoupangContentAd';
 import { useTranslation } from 'react-i18next';
 
 export default function MainLayout() {
@@ -34,6 +35,7 @@ export default function MainLayout() {
       </header>
 
       <main className="app-main-reading flex-grow pb-20">
+        <CoupangContentAd />
         <Outlet />
       </main>
       <ToolCoupangAd />
