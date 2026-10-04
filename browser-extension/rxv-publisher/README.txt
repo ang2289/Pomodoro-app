@@ -1,12 +1,16 @@
-RxV Publisher Helper V39.10
+RxV Publisher Helper V39.14
 
-本版只修改 TikTok 自動選 MP4 的事件流程與錯誤復原。
+用途：
+- 在一般 Microsoft Edge 已登入的狀態下協助填寫 Facebook／TikTok／Pinterest 發布內容。
+- Pinterest：從 127.0.0.1:3018 讀取工作，開啟 Pinterest、上傳圖片、填標題／說明／連結／圖版。
+- Pinterest 最後的「發布／儲存」保留人工確認。
+- 不儲存 Pinterest 密碼。
 
-重點：
-- DOM.setFileInputFiles 後先讓 TikTok 自己處理，不再立即同時 dispatch input + change。
-- 只有 TikTok 完全沒有反應時，才補送一次 change，而且只送一次。
-- 若自動選片後 TikTok Studio 進入「出錯了／請再試一次」，Extension 會按一次重試。
-- 重試後不再重複自動注入，改等待你手動選 MP4；選好後會自動續填說明、蝦皮分潤連結與 Hashtag。
-- 不修改 V37.14 影片核心、Backend、SQLite schema、Shopee Helper。
+安裝：
+1. 將整個 rxv-publisher 資料夾放在固定位置。
+2. Edge 開啟 edge://extensions
+3. 開啟「開發人員模式」。
+4. 按「載入解壓縮」。
+5. 選擇「manifest.json 直接位於其中」的 rxv-publisher 資料夾。
 
-安裝後請到 edge://extensions/ 重新載入 RxV Publisher Helper，確認 39.10.0。
+正確版本：39.14.0

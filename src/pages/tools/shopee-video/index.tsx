@@ -3840,6 +3840,13 @@ if (selectedPlatforms.length === 0) {
                       className="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700">
                       安裝／重載 Publisher 擴充
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => window.open("http://127.0.0.1:3006/pinterest-helper", "_blank", "noopener,noreferrer")}
+                      className="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700"
+                    >
+                      Pinterest 一鍵填入
+                    </button>
                     <button type="button" onClick={() => handleBrowserOpen("threads")} disabled={browserActionLoading || !browserStatus?.dependencyAvailable}
                       className="rounded-lg border border-emerald-300 bg-white px-3 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-50 disabled:opacity-50">
                       專用 Edge：Threads
@@ -3862,7 +3869,7 @@ if (selectedPlatforms.length === 0) {
                         ? `已連線｜${publisherExtensionStatus?.extension?.browser || "正常 Edge"}｜V${publisherExtensionStatus?.extension?.version || "39"}`
                         : "尚未連線；請按上方『安裝／重載 Publisher 擴充』"}
                     </div>
-                    <div className="mt-1 text-[11px] text-slate-500">Facebook 最後人工發佈｜TikTok 驗證文案後自動發佈</div>
+                    <div className="mt-1 text-[11px] text-slate-500">Facebook／Pinterest 最後人工發佈｜TikTok 驗證文案後自動發佈</div>
                   </div>
                   <div className={`rounded-lg border p-3 ${browserStatus?.dependencyAvailable ? "border-slate-200 bg-white" : "border-red-200 bg-red-50"}`}>
                     <div className="text-sm font-semibold text-slate-900">Playwright 備援</div>
@@ -3870,7 +3877,7 @@ if (selectedPlatforms.length === 0) {
                   </div>
                   <div className="rounded-lg border border-emerald-200 bg-white p-3">
                     <div className="text-sm font-semibold text-slate-900">成本</div>
-                    <div className="mt-1 text-xs text-emerald-700">Facebook／TikTok 擴充：API NT$0、R2 NT$0；YouTube Shorts 維持官方 API。</div>
+                    <div className="mt-1 text-xs text-emerald-700">Facebook／Pinterest 擴充：API NT$0；TikTok／YouTube Shorts 維持既有官方 API 流程。</div>
                   </div>
                 </div>
                 <div className="mt-3 rounded-xl border-2 border-indigo-300 bg-indigo-50 p-4 text-sm leading-relaxed text-indigo-950">

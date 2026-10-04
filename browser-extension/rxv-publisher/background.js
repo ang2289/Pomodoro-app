@@ -1,6 +1,8 @@
 const RXV_BASE = "http://localhost:3006";
-const VERSION = "39.10.0";
+const RXV_PIN_BASE = "http://127.0.0.1:3018";
+const VERSION = "39.26.3";
 let activeJob = null;
+let pollInFlight = false;
 let lastWakeAt = 0;
 
 async function setPublisherPhase(
@@ -64,82 +66,132 @@ async function pollAndRunNextJob(
 ) {
   lastWakeAt = Date.now();
 
-  await pingPublisher();
-
-  if (activeJob) {
+  if (pollInFlight) {
     return {
       ok: true,
       busy: true,
-      activeJobId:
-        activeJob?.id || "",
       source,
+      reason: "POLL_ALREADY_RUNNING",
+      activeJobId: activeJob?.id || "",
     };
   }
 
-  const res = await fetch(
-    `${RXV_BASE}/publisher-extension/next`,
-  ).catch(() => null);
+  pollInFlight = true;
 
-  if (!res?.ok) {
+  try {
+    await pingPublisher();
+
+    if (activeJob) {
+      return {
+        ok: true,
+        busy: true,
+        activeJobId:
+          activeJob?.id || "",
+        source,
+      };
+    }
+
+    const res = await fetch(
+      `${RXV_BASE}/publisher-extension/next`,
+    ).catch(() => null);
+
+    let data = {};
+
+    if (res?.ok) {
+      data =
+        await res
+          .json()
+          .catch(() => ({}));
+    }
+
+    const explicitPinterestWake =
+      source === "pinterest-button" ||
+      source === "popup-pinterest";
+
+    if (
+      !data?.job &&
+      explicitPinterestWake
+    ) {
+      const pinterestRes =
+        await fetch(
+          RXV_PIN_BASE +
+            "/api/pinterest/next",
+        ).catch(() => null);
+
+      if (pinterestRes?.ok) {
+        const pinterestData =
+          await pinterestRes
+            .json()
+            .catch(() => ({}));
+
+        if (pinterestData?.job) {
+          data = pinterestData;
+        }
+      } else if (!res?.ok) {
+        await setPublisherPhase(
+          "QUEUE_FETCH_FAILED",
+          {
+            rxvPublisherLastError:
+              "RXV_QUEUES_UNAVAILABLE",
+          },
+        );
+
+        return {
+          ok: false,
+          error:
+            "RXV_QUEUES_UNAVAILABLE",
+        };
+      }
+    }
+
+    if (!data?.job) {
+      await setPublisherPhase(
+        "IDLE",
+        {
+          rxvPublisherLastError: "",
+        },
+      );
+
+      return {
+        ok: true,
+        idle: true,
+        source,
+      };
+    }
+
     await setPublisherPhase(
-      "QUEUE_FETCH_FAILED",
+      "JOB_RECEIVED",
       {
-        rxvPublisherLastError:
-          "PUBLISHER_EXTENSION_NEXT_FAILED",
-      },
-    );
-
-    return {
-      ok: false,
-      error:
-        "PUBLISHER_EXTENSION_NEXT_FAILED",
-    };
-  }
-
-  const data =
-    await res.json().catch(() => ({}));
-
-  if (!data?.job) {
-    await setPublisherPhase(
-      "IDLE",
-      {
+        rxvPublisherLastJobId:
+          String(data.job.id || ""),
+        rxvPublisherLastPlatform:
+          String(
+            data.job.platform || "",
+          ),
         rxvPublisherLastError: "",
       },
     );
 
+    const jobResult =
+      await handleJob(data.job);
+
     return {
-      ok: true,
-      idle: true,
-      source,
-    };
-  }
-
-  await setPublisherPhase(
-    "JOB_RECEIVED",
-    {
-      rxvPublisherLastJobId:
-        String(data.job.id || ""),
-      rxvPublisherLastPlatform:
-        String(
-          data.job.platform || "",
+      ok:
+        Boolean(
+          jobResult?.ok !== false,
         ),
-      rxvPublisherLastError: "",
-    },
-  );
-
-  // IMPORTANT:
-  // Await the entire browser job here. In MV3, starting handleJob()
-  // without awaiting it lets Edge suspend the service worker while the
-  // upload task is still running.
-  await handleJob(data.job);
-
-  return {
-    ok: true,
-    handled: true,
-    jobId:
-      String(data.job.id || ""),
-    source,
-  };
+      handled: true,
+      jobId:
+        String(
+          data.job.id || "",
+        ),
+      source,
+      jobResult:
+        jobResult || null,
+    };
+  } finally {
+    pollInFlight = false;
+  }
 }
 
 
@@ -190,31 +242,151 @@ async function waitTabComplete(tabId, timeoutMs = 45000) {
 function platformDomain(platform) {
   if (platform === "facebook") return "facebook.com";
   if (platform === "tiktok") return "tiktok.com";
+  if (platform === "pinterest") return "pinterest.com";
   return "";
 }
 
-async function getOrCreatePlatformTab(job) {
-  const domain = platformDomain(job.platform);
-  const tabs = await chrome.tabs.query({});
-  let tab = tabs.find((item) =>
-    String(item.url || "").includes(domain),
-  );
+async function assertCurrentPinterestJob(job) {
+  if (job?.platform !== "pinterest") return true;
 
-  if (!tab) {
-    tab = await chrome.tabs.create({
-      url: job.targetUrl,
-      active: true,
-    });
-  } else {
-    await chrome.tabs.update(tab.id, {
-      url: job.targetUrl,
-      active: true,
-    });
+  const id = String(job?.id || "").trim();
+  if (!id) throw new Error("PINTEREST_JOB_ID_MISSING");
+
+  const response = await fetch(
+    RXV_PIN_BASE + "/api/pinterest/job?id=" + encodeURIComponent(id),
+    { cache: "no-store" },
+  ).catch(() => null);
+
+  if (!response?.ok) {
+    throw new Error("PINTEREST_JOB_STATUS_UNAVAILABLE");
   }
 
-  await waitTabComplete(tab.id, 45000);
+  const data = await response.json().catch(() => ({}));
+  const current = data?.job || {};
+
+  if (!current?.isCurrent || String(current?.status || "") !== "processing") {
+    throw new Error("PINTEREST_JOB_SUPERSEDED");
+  }
+
+  return true;
+}
+
+async function getOrCreatePlatformTab(job) {
+  const domain =
+    platformDomain(job.platform);
+
+  const tabs =
+    await chrome.tabs.query({});
+
+  if (
+    job.platform ===
+    "pinterest"
+  ) {
+
+    // Always start this RxV job in exactly one NEW creator tab.
+    // Reusing Pinterest creator tabs can restore an older draft/image.
+    const oldCreatorTabs =
+      tabs.filter((item) =>
+        String(item.url || "")
+          .includes(
+            "pinterest.com/pin-creation-tool",
+          ),
+      );
+
+    for (
+      const oldTab of oldCreatorTabs
+    ) {
+      await chrome.tabs
+        .remove(oldTab.id)
+        .catch(() => {});
+    }
+
+    await sleep(250);
+
+    const freshUrl =
+      "https://www.pinterest.com/pin-creation-tool/?rxv_job=" +
+      encodeURIComponent(
+        String(job.id || ""),
+      ) +
+      "&rxv_seq=" +
+      encodeURIComponent(
+        String(
+          job.sequence || "",
+        ),
+      ) +
+      "&rxv_t=" +
+      Date.now();
+
+    const tab =
+      await chrome.tabs.create({
+        url: freshUrl,
+        active: true,
+      });
+
+    await waitTabComplete(
+      tab.id,
+      45000,
+    );
+
+    await sleep(900);
+
+    // If Pinterest itself spawned another creator tab, keep only this job tab.
+    const afterTabs =
+      await chrome.tabs.query({});
+
+    for (
+      const extra of afterTabs
+    ) {
+      if (
+        extra.id !== tab.id &&
+        String(extra.url || "")
+          .includes(
+            "pinterest.com/pin-creation-tool",
+          )
+      ) {
+        await chrome.tabs
+          .remove(extra.id)
+          .catch(() => {});
+      }
+    }
+
+    return chrome.tabs.get(
+      tab.id,
+    );
+  }
+
+  let tab =
+    tabs.find((item) =>
+      String(item.url || "")
+        .includes(domain),
+    );
+
+  if (!tab) {
+    tab =
+      await chrome.tabs.create({
+        url: job.targetUrl,
+        active: true,
+      });
+  } else {
+    await chrome.tabs.update(
+      tab.id,
+      {
+        url: job.targetUrl,
+        active: true,
+      },
+    );
+  }
+
+  await waitTabComplete(
+    tab.id,
+    45000,
+  );
+
   await sleep(1200);
-  return chrome.tabs.get(tab.id);
+
+  return chrome.tabs.get(
+    tab.id,
+  );
 }
 
 async function detectLoginRequired(tabId, platform) {
@@ -237,6 +409,14 @@ async function detectLoginRequired(tabId, platform) {
           body.includes("log in to tiktok") ||
           body.includes("使用 qr code")
         ))
+      );
+    }
+    if (platform === "pinterest") {
+      return (
+        /\/login(?:\/|\?|$)/.test(url) ||
+        body.includes("登入 pinterest") ||
+        body.includes("log in to pinterest") ||
+        body.includes("sign in to pinterest")
       );
     }
     return false;
@@ -278,1033 +458,1002 @@ async function setFileInput(tabId, filePath) {
   }
 }
 
-async function clickVisibleText(tabId, texts, timeoutMs = 60000) {
-  const started = Date.now();
-  while (Date.now() - started < timeoutMs) {
-    const clicked = await exec(tabId, (texts) => {
-      const visible = (el) => {
-        const r = el.getBoundingClientRect();
-        const s = getComputedStyle(el);
-        return r.width > 0 && r.height > 0 && s.display !== "none" && s.visibility !== "hidden";
-      };
-      const nodes = Array.from(document.querySelectorAll('button,[role="button"]'));
-      for (const el of nodes) {
-        if (!visible(el)) continue;
-        const text = String(el.innerText || el.textContent || "").trim();
-        if (!texts.includes(text)) continue;
-        if (el.disabled || el.getAttribute("aria-disabled") === "true") continue;
-        el.click();
-        return text;
-      }
-      return "";
-    }, [texts]);
-    if (clicked) return clicked;
-    await sleep(450);
-  }
-  return "";
-}
-
-async function fillCaption(tabId, text) {
-  return Boolean(await exec(tabId, (text) => {
-    const visible = (el) => {
-      const r = el.getBoundingClientRect();
-      const s = getComputedStyle(el);
-      return r.width > 0 && r.height > 0 && s.display !== "none" && s.visibility !== "hidden";
-    };
-    const selectors = [
-      '[aria-label*="介紹你的 Reel"]',
-      '[aria-label*="介紹你的Reel"]',
-      '[placeholder*="介紹你的 Reel"]',
-      '[placeholder*="說明"]',
-      '[contenteditable="true"][role="textbox"]',
-      'div[data-lexical-editor="true"][contenteditable="true"]',
-      '[contenteditable="true"]',
-      'textarea',
-    ];
-    for (const selector of selectors) {
-      const list = Array.from(document.querySelectorAll(selector));
-      for (const el of list) {
-        if (!visible(el)) continue;
-        el.focus();
-        if (el instanceof HTMLTextAreaElement || el instanceof HTMLInputElement) {
-          const proto = Object.getPrototypeOf(el);
-          const descriptor = Object.getOwnPropertyDescriptor(proto, "value");
-          descriptor?.set?.call(el, text);
-        } else {
-          el.textContent = "";
-          try {
-            document.execCommand("insertText", false, text);
-          } catch (_) {
-            el.textContent = text;
-          }
-        }
-        el.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: text }));
-        el.dispatchEvent(new Event("change", { bubbles: true }));
-        return true;
-      }
-    }
-    return false;
-  }, [text]));
-}
-
-
-
-async function getTikTokStaleDraftState(tabId) {
-  return await exec(tabId, () => {
-    const body =
-      String(
-        document.body?.innerText || "",
-      );
-
-    const hasPrompt =
-      /有一段編輯中的影片尚未儲存|尚未儲存.*繼續編輯|unfinished.*video|continue editing|unsaved.*video/i.test(
-        body,
-      );
-
-    const buttons =
-      Array.from(
-        document.querySelectorAll(
-          'button,[role="button"]',
-        ),
-      )
-        .map((el) => {
-          const r =
-            el.getBoundingClientRect();
-          const s =
-            getComputedStyle(el);
-
-          const visible =
-            r.width > 0 &&
-            r.height > 0 &&
-            s.display !== "none" &&
-            s.visibility !== "hidden";
-
-          return {
-            text:
-              String(
-                el.innerText ||
-                el.textContent ||
-                "",
-              ).trim(),
-            visible,
-          };
-        })
-        .filter(
-          (item) => item.visible,
-        );
-
-    return {
-      hasPrompt,
-      buttons,
-    };
-  });
-}
-
-async function resolveTikTokStaleDraft(
+async function ensurePinterestFreshDraft(
   tabId,
-  timeoutMs = 20000,
+  timeoutMs = 30000,
 ) {
-  const started = Date.now();
+  const started =
+    Date.now();
+
+  let clickedNew = false;
 
   while (
     Date.now() - started <
     timeoutMs
   ) {
     const state =
-      await getTikTokStaleDraftState(
+      await exec(
         tabId,
-      );
+        () => {
+          const visible = (el) => {
+            if (!el) return false;
 
-    if (!state?.hasPrompt) {
-      return {
-        ok: true,
-        handled: false,
-      };
-    }
+            const r =
+              el.getBoundingClientRect();
 
-    const clicked =
-      await exec(tabId, () => {
-        const visible = (el) => {
-          const r =
-            el.getBoundingClientRect();
-          const s =
-            getComputedStyle(el);
+            const s =
+              getComputedStyle(el);
 
-          return (
-            r.width > 0 &&
-            r.height > 0 &&
-            s.display !== "none" &&
-            s.visibility !== "hidden"
-          );
-        };
+            return (
+              r.width > 0 &&
+              r.height > 0 &&
+              s.display !== "none" &&
+              s.visibility !== "hidden"
+            );
+          };
 
-        const discardLabels =
-          new Set([
-            "捨棄",
-            "舍棄",
-            "Discard",
-            "Discard draft",
-          ]);
-
-        const nodes =
-          Array.from(
-            document.querySelectorAll(
-              'button,[role="button"]',
-            ),
-          );
-
-        for (const el of nodes) {
-          if (!visible(el)) continue;
-
-          const text =
+          const bodyText =
             String(
-              el.innerText ||
-              el.textContent ||
+              document.body?.innerText ||
               "",
-            ).trim();
+            );
+
+          const fileInputs =
+            Array.from(
+              document.querySelectorAll(
+                'input[type="file"]',
+              ),
+            );
+
+          const hasUploadArea =
+            bodyText.includes(
+              "上傳媒體",
+            ) ||
+            bodyText.includes(
+              "Upload media",
+            ) ||
+            bodyText.includes(
+              "選擇檔案",
+            ) ||
+            bodyText.includes(
+              "Choose a file",
+            ) ||
+            bodyText.includes(
+              "拖放",
+            ) ||
+            bodyText
+              .toLowerCase()
+              .includes(
+                "drag and drop",
+              );
 
           if (
-            !discardLabels.has(text)
+            fileInputs.length ||
+            hasUploadArea
           ) {
-            continue;
+            return {
+              ready: true,
+              reason:
+                fileInputs.length
+                  ? "FILE_INPUT_PRESENT"
+                  : "UPLOAD_AREA_READY",
+            };
           }
 
-          if (
-            el.disabled ||
-            el.getAttribute(
-              "aria-disabled",
-            ) === "true"
-          ) {
-            continue;
+          // Pinterest often restores the previous draft.
+          // In that state the left panel shows "Pin 草稿" and a visible "新增".
+          const nodes =
+            Array.from(
+              document.querySelectorAll(
+                'button,[role="button"],a,div,span',
+              ),
+            ).filter(visible);
+
+          const newButton =
+            nodes.find((el) => {
+              const text =
+                String(
+                  el.innerText ||
+                  el.textContent ||
+                  "",
+                ).trim();
+
+              if (
+                text !== "新增" &&
+                text !== "New"
+              ) {
+                return false;
+              }
+
+              const r =
+                el.getBoundingClientRect();
+
+              // The intended button is in the left draft rail.
+              return (
+                r.left < 420 &&
+                r.top < 430 &&
+                r.width > 80 &&
+                r.height > 24
+              );
+            });
+
+          if (newButton) {
+            const clickable =
+              newButton.closest(
+                'button,[role="button"],a',
+              ) ||
+              newButton;
+
+            clickable.click();
+
+            return {
+              ready: false,
+              clickedNew: true,
+              reason:
+                "CLICKED_NEW_DRAFT",
+            };
           }
-
-          el.scrollIntoView({
-            block: "center",
-          });
-
-          el.click();
 
           return {
-            ok: true,
-            text,
+            ready: false,
+            clickedNew: false,
+            bodySample:
+              bodyText.slice(
+                0,
+                500,
+              ),
           };
-        }
+        },
+      ).catch(() => ({
+        ready: false,
+      }));
 
-        return {
-          ok: false,
-        };
-      });
-
-    if (!clicked?.ok) {
-      await sleep(500);
-      continue;
-    }
-
-    // TikTok replaces part of the Studio DOM after discarding the stale draft.
-    await sleep(1200);
-
-    const after =
-      await getTikTokStaleDraftState(
-        tabId,
-      );
-
-    if (!after?.hasPrompt) {
+    if (state?.ready) {
       return {
-        ok: true,
-        handled: true,
-        clicked:
-          clicked.text || "捨棄",
+        ...state,
+        clickedNew,
       };
     }
-  }
-
-  return {
-    ok: false,
-    handled: false,
-    reason:
-      "TIKTOK_STALE_DRAFT_BLOCKED",
-  };
-}
-
-async function inspectTikTokFileInputs(tabId) {
-  return await exec(tabId, () => {
-    const inputs = Array.from(
-      document.querySelectorAll('input[type="file"]'),
-    );
-
-    const details = inputs.map((el, index) => {
-      const accept = String(
-        el.getAttribute("accept") || "",
-      ).toLowerCase();
-      const nearby = String(
-        el.parentElement?.parentElement?.innerText ||
-        el.parentElement?.innerText ||
-        "",
-      ).slice(0, 240).toLowerCase();
-
-      let score = 0;
-
-      if (
-        accept.includes("video") ||
-        accept.includes(".mp4") ||
-        accept.includes("mp4")
-      ) {
-        score += 1000;
-      }
-
-      if (!accept) {
-        // TikTok sometimes uses a generic file input for the selected Video tab.
-        score += 120;
-      }
-
-      if (
-        accept.includes("image") &&
-        !accept.includes("video")
-      ) {
-        score -= 1000;
-      }
-
-      if (
-        nearby.includes("影片") ||
-        nearby.includes("video")
-      ) {
-        score += 180;
-      }
-
-      if (
-        (nearby.includes("照片") ||
-          nearby.includes("photo") ||
-          nearby.includes("image")) &&
-        !nearby.includes("影片") &&
-        !nearby.includes("video")
-      ) {
-        score -= 220;
-      }
-
-      return {
-        index,
-        accept,
-        score,
-        files: Number(el.files?.length || 0),
-        multiple: Boolean(el.multiple),
-      };
-    });
-
-    details.sort((a, b) => b.score - a.score);
-
-    return {
-      count: inputs.length,
-      best: details[0] || null,
-      details,
-    };
-  });
-}
-
-async function markTikTokVideoInputCandidate(tabId) {
-  return await exec(tabId, () => {
-    const marker = "data-rxv-publisher-video-input";
-    const inputs = Array.from(
-      document.querySelectorAll('input[type="file"]'),
-    );
-
-    for (const el of inputs) {
-      el.removeAttribute(marker);
-    }
-
-    const ranked = inputs.map((el, index) => {
-      const accept = String(
-        el.getAttribute("accept") || "",
-      ).toLowerCase();
-      const nearby = String(
-        el.parentElement?.parentElement?.innerText ||
-        el.parentElement?.innerText ||
-        "",
-      ).slice(0, 240).toLowerCase();
-
-      let score = 0;
-
-      if (
-        accept.includes("video") ||
-        accept.includes(".mp4") ||
-        accept.includes("mp4")
-      ) {
-        score += 1000;
-      }
-
-      if (!accept) score += 120;
-
-      if (
-        accept.includes("image") &&
-        !accept.includes("video")
-      ) {
-        score -= 1000;
-      }
-
-      if (
-        nearby.includes("影片") ||
-        nearby.includes("video")
-      ) {
-        score += 180;
-      }
-
-      if (
-        (nearby.includes("照片") ||
-          nearby.includes("photo") ||
-          nearby.includes("image")) &&
-        !nearby.includes("影片") &&
-        !nearby.includes("video")
-      ) {
-        score -= 220;
-      }
-
-      return { el, index, accept, score };
-    }).sort((a, b) => b.score - a.score);
-
-    const best = ranked[0];
-
-    if (!best || best.score <= -500) {
-      return {
-        ok: false,
-        count: inputs.length,
-        details: ranked.map((item) => ({
-          index: item.index,
-          accept: item.accept,
-          score: item.score,
-        })),
-      };
-    }
-
-    best.el.setAttribute(marker, "1");
-
-    return {
-      ok: true,
-      index: best.index,
-      accept: best.accept,
-      score: best.score,
-      count: inputs.length,
-      details: ranked.map((item) => ({
-        index: item.index,
-        accept: item.accept,
-        score: item.score,
-      })),
-    };
-  });
-}
-
-async function waitForTikTokFileInput(
-  tabId,
-  timeoutMs = 30000,
-) {
-  const started = Date.now();
-  let lastState = null;
-
-  while (
-    Date.now() - started <
-    timeoutMs
-  ) {
-    lastState =
-      await inspectTikTokFileInputs(
-        tabId,
-      );
 
     if (
-      Number(lastState?.count || 0) > 0 &&
-      Number(lastState?.best?.score ?? -999) > -500
+      state?.clickedNew
     ) {
-      return lastState;
+      clickedNew = true;
+      await sleep(900);
+    } else {
+      await sleep(400);
     }
-
-    await sleep(500);
   }
 
-  return lastState;
-}
-
-async function setTikTokVideoFileInput(
-  tabId,
-  filePath,
-  helperJobId,
-) {
-  const chosen =
-    await markTikTokVideoInputCandidate(
-      tabId,
-    );
-
-  if (!chosen?.ok) {
-    throw new Error(
-      `TIKTOK_VIDEO_FILE_INPUT_NOT_FOUND:${JSON.stringify(chosen || {})}`,
-    );
-  }
-
-  const fileName =
-    String(filePath || "")
-      .split(/[\\/]/)
-      .pop() ||
-    "rxv-video.mp4";
-
-  const videoUrl =
-    `${RXV_BASE}/publisher-extension/video-file/${encodeURIComponent(String(helperJobId || ""))}?v=${Date.now()}`;
-
-  // V39.10: do NOT use DOM.setFileInputFiles for TikTok Studio.
-  // The current Studio build accepts the file briefly but then its own
-  // AmazingEngine/VECodec pipeline can crash (preview flashes, then the
-  // generic error page). Instead, fetch the local MP4 from the RxV backend,
-  // construct a real File object inside the TikTok tab, assign it through a
-  // DataTransfer FileList, and emit exactly ONE change event.
-  const injected = await exec(
-    tabId,
-    async (videoUrl, fileName) => {
-      const input =
-        document.querySelector(
-          'input[data-rxv-publisher-video-input="1"]',
-        );
-
-      if (!input) {
-        return {
-          ok: false,
-          reason:
-            "TIKTOK_MARKED_VIDEO_INPUT_NOT_FOUND",
-        };
-      }
-
-      try {
-        const response = await fetch(
-          videoUrl,
-          {
-            method: "GET",
-            cache: "no-store",
-            credentials: "omit",
-          },
-        );
-
-        if (!response.ok) {
-          return {
-            ok: false,
-            reason:
-              `TIKTOK_LOCAL_VIDEO_FETCH_HTTP_${response.status}`,
-          };
-        }
-
-        const blob =
-          await response.blob();
-
-        if (!blob || !blob.size) {
-          return {
-            ok: false,
-            reason:
-              "TIKTOK_LOCAL_VIDEO_FETCH_EMPTY",
-          };
-        }
-
-        const file = new File(
-          [blob],
-          fileName || "rxv-video.mp4",
-          {
-            type:
-              blob.type ||
-              "video/mp4",
-            lastModified:
-              Date.now(),
-          },
-        );
-
-        const transfer =
-          new DataTransfer();
-        transfer.items.add(file);
-
-        input.files =
-          transfer.files;
-
-        const assigned =
-          Number(
-            input.files?.length || 0,
-          ) > 0;
-
-        if (!assigned) {
-          return {
-            ok: false,
-            reason:
-              "TIKTOK_DATATRANSFER_ASSIGN_FAILED",
-          };
-        }
-
-        input.setAttribute(
-          "data-rxv-publisher-file-mode",
-          "local-blob",
-        );
-
-        // Native file selection fires input/change, but firing both manually
-        // caused instability on this TikTok build. TikTok listens to change;
-        // send exactly one change event and leave the rest to Studio.
-        input.dispatchEvent(
-          new Event(
-            "change",
-            {
-              bubbles: true,
-              composed: true,
-            },
-          ),
-        );
-
-        return {
-          ok: true,
-          fileName:
-            String(
-              input.files?.[0]?.name ||
-              "",
-            ),
-          fileSize:
-            Number(
-              input.files?.[0]?.size ||
-              0,
-            ),
-          fileType:
-            String(
-              input.files?.[0]?.type ||
-              "",
-            ),
-          blobSize:
-            Number(blob.size || 0),
-          mode: "local-blob",
-        };
-      } catch (error) {
-        return {
-          ok: false,
-          reason:
-            String(
-              error?.message ||
-              error ||
-              "TIKTOK_LOCAL_BLOB_INJECT_FAILED",
-            ),
-        };
-      }
-    },
-    [videoUrl, fileName],
+  throw new Error(
+    "PINTEREST_NEW_DRAFT_NOT_READY",
   );
-
-  if (!injected?.ok) {
-    throw new Error(
-      `TIKTOK_LOCAL_BLOB_INJECT_FAILED:${JSON.stringify({ chosen, injected })}`,
-    );
-  }
-
-  await sleep(1600);
-
-  const verification =
-    await exec(tabId, () => {
-      const input =
-        document.querySelector(
-          'input[data-rxv-publisher-video-input="1"]',
-        );
-
-      const body =
-        String(
-          document.body?.innerText ||
-          "",
-        );
-
-      const lower =
-        body.toLowerCase();
-
-      const visible = (el) => {
-        const r =
-          el.getBoundingClientRect();
-        const s =
-          getComputedStyle(el);
-        return (
-          r.width > 0 &&
-          r.height > 0 &&
-          s.display !== "none" &&
-          s.visibility !== "hidden"
-        );
-      };
-
-      const hasEditor =
-        Array.from(
-          document.querySelectorAll(
-            'textarea,[contenteditable="true"],[role="textbox"],.ProseMirror,[data-lexical-editor="true"]',
-          ),
-        )
-          .filter(visible)
-          .some((el) => {
-            const aria =
-              String(
-                el.getAttribute("aria-label") ||
-                "",
-              ).toLowerCase();
-            const placeholder =
-              String(
-                el.getAttribute("placeholder") ||
-                "",
-              ).toLowerCase();
-            const nearby =
-              String(
-                el.parentElement?.parentElement?.innerText ||
-                el.parentElement?.innerText ||
-                "",
-              )
-                .slice(0, 300)
-                .toLowerCase();
-            const combined =
-              `${aria} ${placeholder} ${nearby}`;
-            return (
-              combined.includes("說明") ||
-              combined.includes("description") ||
-              combined.includes("caption")
-            );
-          });
-
-      const initialPrompt =
-        /選擇要上傳的影片|選取影片|select video|choose a video|drag.*drop/i.test(
-          body,
-        );
-
-      const fatalStudioError =
-        (/出錯了|something went wrong/i.test(body) &&
-          /請再試一次|try again|retry/i.test(body)) ||
-        /頁面發生錯誤|page error/i.test(lower);
-
-      const file =
-        input?.files?.[0] || null;
-
-      return {
-        found: Boolean(input),
-        files: Number(
-          input?.files?.length ||
-          0,
-        ),
-        name: String(
-          file?.name || "",
-        ),
-        size: Number(
-          file?.size || 0,
-        ),
-        type: String(
-          file?.type || "",
-        ),
-        fileMode:
-          String(
-            input?.getAttribute(
-              "data-rxv-publisher-file-mode",
-            ) || "",
-          ),
-        hasEditor,
-        initialPrompt,
-        fatalStudioError,
-      };
-    });
-
-  if (
-    verification?.found &&
-    Number(
-      verification?.files || 0,
-    ) < 1
-  ) {
-    throw new Error(
-      `TIKTOK_VIDEO_FILE_ASSIGN_NOT_CONFIRMED:${JSON.stringify({ chosen, injected, verification })}`,
-    );
-  }
-
-  return {
-    chosen,
-    injected,
-    verification,
-    eventMode:
-      "local-blob-datatransfer-change-once",
-  };
 }
 
-async function getTikTokDescriptionState(tabId) {
+
+async function clickPinterestUploadArea(tabId) {
   return await exec(tabId, () => {
     const visible = (el) => {
+      if (!el) return false;
       const r = el.getBoundingClientRect();
       const s = getComputedStyle(el);
-      return (
-        r.width > 0 &&
-        r.height > 0 &&
-        s.display !== "none" &&
-        s.visibility !== "hidden"
-      );
+      return r.width > 0 && r.height > 0 && s.display !== "none" && s.visibility !== "hidden";
     };
 
-    const candidates = Array.from(
-      document.querySelectorAll(
-        'textarea,[contenteditable="true"],[role="textbox"],.ProseMirror,[data-lexical-editor="true"]',
-      ),
+    const phrases = [
+      "上傳媒體",
+      "Upload media",
+      "選擇檔案",
+      "Choose a file",
+      "拖放",
+      "drag and drop",
+    ];
+
+    const nodes = Array.from(
+      document.querySelectorAll('button,[role="button"],label,div,span'),
     ).filter(visible);
 
     let best = null;
-    let bestScore = -999;
+    let bestScore = -1;
 
-    for (const el of candidates) {
-      const aria =
-        String(el.getAttribute("aria-label") || "");
-      const placeholder =
-        String(el.getAttribute("placeholder") || "");
-      const nearby =
-        String(
-          el.parentElement?.parentElement?.innerText ||
-          el.parentElement?.innerText ||
-          "",
-        ).slice(0, 350);
-
-      const combined =
-        `${aria} ${placeholder} ${nearby}`.toLowerCase();
+    for (const el of nodes) {
+      const text = String(el.innerText || el.textContent || "").trim();
+      if (!text || text.length > 400) continue;
 
       let score = 0;
-
-      if (
-        combined.includes("說明") ||
-        combined.includes("description") ||
-        combined.includes("caption")
-      ) {
-        score += 120;
+      const lower = text.toLowerCase();
+      for (const phrase of phrases) {
+        const p = phrase.toLowerCase();
+        if (lower === p) score += 300;
+        else if (lower.includes(p)) score += 120;
       }
 
-      if (
-        el.getAttribute("contenteditable") === "true"
-      ) {
-        score += 25;
-      }
-
-      if (
-        el.getAttribute("role") === "textbox"
-      ) {
-        score += 20;
-      }
-
-      const rect =
-        el.getBoundingClientRect();
-
-      if (rect.width > 300) score += 20;
-      if (rect.height > 35) score += 10;
-      if (rect.left < innerWidth * 0.8) score += 5;
-
-      if (
-        combined.includes("搜尋") ||
-        combined.includes("search") ||
-        combined.includes("評論") ||
-        combined.includes("comment")
-      ) {
-        score -= 150;
-      }
+      if (el.matches('button,[role="button"],label')) score += 40;
+      const r = el.getBoundingClientRect();
+      if (r.width > 180 && r.height > 120) score += 35;
 
       if (score > bestScore) {
-        bestScore = score;
         best = el;
+        bestScore = score;
       }
     }
 
-    if (!best) {
-      return {
-        found: false,
-        text: "",
-        score: -1,
-      };
+    if (!best || bestScore < 100) {
+      return { ok: false, reason: "PINTEREST_UPLOAD_AREA_NOT_FOUND" };
     }
 
-    const text =
-      best instanceof HTMLTextAreaElement ||
-      best instanceof HTMLInputElement
-        ? String(best.value || "")
-        : String(
-            best.innerText ||
-            best.textContent ||
-            "",
-          );
+    const clickable =
+      best.closest('button,[role="button"],label') ||
+      best.parentElement ||
+      best;
+
+    const r = clickable.getBoundingClientRect();
+    clickable.scrollIntoView({ block: "center" });
+
+    try {
+      clickable.click();
+    } catch (_) {}
 
     return {
-      found: true,
-      text,
+      ok: true,
       score: bestScore,
-      tagName: best.tagName,
-      aria:
-        String(
-          best.getAttribute("aria-label") || "",
-        ),
-      placeholder:
-        String(
-          best.getAttribute("placeholder") || "",
-        ),
+      x: Math.max(1, Math.round(r.left + r.width / 2)),
+      y: Math.max(1, Math.round(r.top + r.height / 2)),
+      text: String(best.innerText || best.textContent || "").trim().slice(0, 120),
     };
   });
 }
 
-async function focusAndClearTikTokDescription(tabId) {
-  return Boolean(
-    await exec(tabId, () => {
+async function setPinterestFileInputViaChooser(tabId, filePath, timeoutMs = 20000) {
+  let attached = false;
+  let listener = null;
+
+  try {
+    await chrome.debugger.attach({ tabId }, "1.3");
+    attached = true;
+
+    await chrome.debugger.sendCommand({ tabId }, "Page.enable").catch(() => {});
+    await chrome.debugger.sendCommand({ tabId }, "DOM.enable").catch(() => {});
+    await chrome.debugger.sendCommand(
+      { tabId },
+      "Page.setInterceptFileChooserDialog",
+      { enabled: true },
+    );
+
+    let resolveChooser;
+    const chooserPromise = new Promise((resolve) => {
+      resolveChooser = resolve;
+    });
+
+    listener = (source, method, params) => {
+      if (Number(source?.tabId || 0) !== Number(tabId)) return;
+      if (method !== "Page.fileChooserOpened") return;
+      resolveChooser(params || {});
+    };
+
+    chrome.debugger.onEvent.addListener(listener);
+
+    const clicked = await clickPinterestUploadArea(tabId);
+    if (!clicked?.ok) {
+      throw new Error(clicked?.reason || "PINTEREST_UPLOAD_AREA_NOT_FOUND");
+    }
+
+    const waitForChooser = async (ms) =>
+      await Promise.race([
+        chooserPromise,
+        sleep(ms).then(() => null),
+      ]);
+
+    let chooser = await waitForChooser(2500);
+
+    // Some Pinterest builds ignore HTMLElement.click() but respond to a real mouse event.
+    if (!chooser && Number(clicked.x) > 0 && Number(clicked.y) > 0) {
+      await chrome.debugger.sendCommand(
+        { tabId },
+        "Input.dispatchMouseEvent",
+        {
+          type: "mousePressed",
+          x: Number(clicked.x),
+          y: Number(clicked.y),
+          button: "left",
+          clickCount: 1,
+        },
+      ).catch(() => {});
+      await chrome.debugger.sendCommand(
+        { tabId },
+        "Input.dispatchMouseEvent",
+        {
+          type: "mouseReleased",
+          x: Number(clicked.x),
+          y: Number(clicked.y),
+          button: "left",
+          clickCount: 1,
+        },
+      ).catch(() => {});
+
+      chooser = await waitForChooser(Math.max(1000, timeoutMs - 2500));
+    }
+
+    const backendNodeId = Number(chooser?.backendNodeId || 0);
+    if (!backendNodeId) {
+      throw new Error("PINTEREST_FILE_CHOOSER_NOT_OPENED");
+    }
+
+    await chrome.debugger.sendCommand(
+      { tabId },
+      "DOM.setFileInputFiles",
+      {
+        backendNodeId,
+        files: [filePath],
+      },
+    );
+
+    return {
+      ok: true,
+      mode: "native-file-chooser",
+      backendNodeId,
+      uploadText: String(clicked.text || ""),
+    };
+  } finally {
+    if (listener) {
+      try {
+        chrome.debugger.onEvent.removeListener(listener);
+      } catch (_) {}
+    }
+
+    if (attached) {
+      await chrome.debugger.sendCommand(
+        { tabId },
+        "Page.setInterceptFileChooserDialog",
+        { enabled: false },
+      ).catch(() => {});
+      await chrome.debugger.detach({ tabId }).catch(() => {});
+    }
+  }
+}
+
+async function setPinterestFileInputViaBlob(tabId, job) {
+  const response = await fetch(
+    RXV_PIN_BASE + "/api/pinterest/file?id=" + encodeURIComponent(String(job.id || "")),
+    { cache: "no-store" },
+  );
+
+  if (!response.ok) {
+    throw new Error("PINTEREST_LOCAL_IMAGE_HTTP_" + response.status);
+  }
+
+  const contentType = String(
+    response.headers.get("content-type") || "image/jpeg",
+  ).split(";")[0].trim().toLowerCase();
+
+  const fileName = String(
+    response.headers.get("x-rxv-filename") ||
+    ("rxv-pinterest-" + Date.now() + (contentType.includes("png") ? ".png" : ".jpg")),
+  );
+
+  if (!["image/jpeg", "image/jpg", "image/png"].includes(contentType)) {
+    throw new Error("PINTEREST_IMAGE_MIME_UNSUPPORTED_" + contentType);
+  }
+
+  const bytes = new Uint8Array(await response.arrayBuffer());
+
+  if (!bytes.length) {
+    throw new Error("PINTEREST_LOCAL_IMAGE_EMPTY");
+  }
+
+  if (bytes.length > 20 * 1024 * 1024) {
+    throw new Error("PINTEREST_LOCAL_IMAGE_OVER_20MB");
+  }
+
+  const chunkSize = 24576;
+  let base64 = "";
+
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(
+      i,
+      Math.min(bytes.length, i + chunkSize),
+    );
+
+    let binary = "";
+
+    for (let j = 0; j < chunk.length; j += 1) {
+      binary += String.fromCharCode(chunk[j]);
+    }
+
+    base64 += btoa(binary);
+  }
+
+  const result = await exec(
+    tabId,
+    (base64, fileName, contentType) => {
+      function collectFileInputs(root, out = []) {
+        if (!root) return out;
+
+        const direct =
+          root.querySelectorAll?.('input[type="file"]') || [];
+
+        for (const input of direct) {
+          out.push(input);
+        }
+
+        const all =
+          root.querySelectorAll?.("*") || [];
+
+        for (const el of all) {
+          if (el.shadowRoot) {
+            collectFileInputs(el.shadowRoot, out);
+          }
+        }
+
+        return out;
+      }
+
+      const inputs =
+        collectFileInputs(document, []);
+
+      if (!inputs.length) {
+        return {
+          ok: false,
+          reason: "PINTEREST_FILE_INPUT_NOT_FOUND_IN_PAGE",
+        };
+      }
+
+      const scored = inputs
+        .map((input, index) => {
+          const accept =
+            String(
+              input.getAttribute("accept") || "",
+            ).toLowerCase();
+
+          let score = 0;
+
+          if (
+            accept.includes("image/") ||
+            accept.includes(".jpg") ||
+            accept.includes(".jpeg") ||
+            accept.includes(".png")
+          ) {
+            score += 500;
+          }
+
+          if (!accept) {
+            score += 100;
+          }
+
+          if (
+            accept.includes("video/") &&
+            !accept.includes("image/")
+          ) {
+            score -= 600;
+          }
+
+          if (
+            input.multiple
+          ) {
+            score += 10;
+          }
+
+          return {
+            input,
+            index,
+            accept,
+            score,
+          };
+        })
+        .sort(
+          (a, b) =>
+            b.score - a.score,
+        );
+
+      const chosen =
+        scored[0];
+
+      if (
+        !chosen ||
+        chosen.score < 0
+      ) {
+        return {
+          ok: false,
+          reason: "PINTEREST_IMAGE_FILE_INPUT_NOT_FOUND",
+          candidates: scored.map((x) => ({
+            index: x.index,
+            accept: x.accept,
+            score: x.score,
+          })),
+        };
+      }
+
+      const binary =
+        atob(base64);
+
+      const bytes =
+        new Uint8Array(
+          binary.length,
+        );
+
+      for (
+        let i = 0;
+        i < binary.length;
+        i += 1
+      ) {
+        bytes[i] =
+          binary.charCodeAt(i);
+      }
+
+      const blob =
+        new Blob(
+          [bytes],
+          {
+            type: contentType,
+          },
+        );
+
+      const file =
+        new File(
+          [blob],
+          fileName,
+          {
+            type: contentType,
+            lastModified: Date.now(),
+          },
+        );
+
+      const dt =
+        new DataTransfer();
+
+      dt.items.add(file);
+
+      const input =
+        chosen.input;
+
+      input.files =
+        dt.files;
+
+      input.dispatchEvent(
+        new Event(
+          "input",
+          {
+            bubbles: true,
+            composed: true,
+          },
+        ),
+      );
+
+      input.dispatchEvent(
+        new Event(
+          "change",
+          {
+            bubbles: true,
+            composed: true,
+          },
+        ),
+      );
+
+      const selected =
+        input.files?.[0];
+
+      return {
+        ok: Boolean(
+          selected &&
+          input.files.length === 1 &&
+          selected.size === file.size,
+        ),
+        fileCount:
+          input.files?.length || 0,
+        fileName:
+          selected?.name || "",
+        fileType:
+          selected?.type || "",
+        fileSize:
+          selected?.size || 0,
+        inputAccept:
+          chosen.accept,
+        inputScore:
+          chosen.score,
+      };
+    },
+    [
+      base64,
+      fileName,
+      contentType,
+    ],
+  );
+
+  if (!result?.ok) {
+    throw new Error(
+      result?.reason ||
+      "PINTEREST_BLOB_FILE_SET_FAILED",
+    );
+  }
+
+  return {
+    ok: true,
+    mode: "blob-image-input",
+    ...result,
+  };
+}
+
+async function setPinterestFileInput(tabId, filePath, timeoutMs = 30000) {
+  let attached = false;
+  const started = Date.now();
+
+  try {
+    await chrome.debugger.attach({ tabId }, "1.3");
+    attached = true;
+    await chrome.debugger.sendCommand({ tabId }, "DOM.enable").catch(() => {});
+
+    while (Date.now() - started < timeoutMs) {
+      // Pinterest may place its upload input inside a shadow root or nested frame.
+      const flat = await chrome.debugger.sendCommand(
+        { tabId },
+        "DOM.getFlattenedDocument",
+        { depth: -1, pierce: true },
+      ).catch(() => null);
+
+      const nodes = Array.isArray(flat?.nodes) ? flat.nodes : [];
+      let backendNodeId = 0;
+
+      for (const node of nodes) {
+        if (String(node?.nodeName || "").toUpperCase() !== "INPUT") continue;
+        const attrs = Array.isArray(node?.attributes) ? node.attributes : [];
+        let type = "";
+        for (let i = 0; i < attrs.length - 1; i += 2) {
+          if (String(attrs[i] || "").toLowerCase() === "type") {
+            type = String(attrs[i + 1] || "").toLowerCase();
+            break;
+          }
+        }
+        if (type === "file") {
+          backendNodeId = Number(node.backendNodeId || 0);
+          if (backendNodeId) break;
+        }
+      }
+
+      if (backendNodeId) {
+        await chrome.debugger.sendCommand(
+          { tabId },
+          "DOM.setFileInputFiles",
+          { backendNodeId, files: [filePath] },
+        );
+        return { ok: true, mode: "flattened", backendNodeId };
+      }
+
+      // Fallback for ordinary DOM.
+      const doc = await chrome.debugger.sendCommand(
+        { tabId },
+        "DOM.getDocument",
+        { depth: -1, pierce: true },
+      ).catch(() => null);
+
+      if (doc?.root?.nodeId) {
+        const result = await chrome.debugger.sendCommand(
+          { tabId },
+          "DOM.querySelectorAll",
+          { nodeId: doc.root.nodeId, selector: 'input[type="file"]' },
+        ).catch(() => null);
+
+        const nodeId = Array.isArray(result?.nodeIds) ? Number(result.nodeIds[0] || 0) : 0;
+        if (nodeId) {
+          await chrome.debugger.sendCommand(
+            { tabId },
+            "DOM.setFileInputFiles",
+            { nodeId, files: [filePath] },
+          );
+          return { ok: true, mode: "querySelector", nodeId };
+        }
+      }
+
+      await sleep(500);
+    }
+
+    throw new Error("PINTEREST_FILE_INPUT_NOT_FOUND");
+  } finally {
+    if (attached) {
+      await chrome.debugger.detach({ tabId }).catch(() => {});
+    }
+  }
+}
+
+async function waitForPinterestEditorFields(tabId, timeoutMs = 90000) {
+  const started = Date.now();
+
+  while (Date.now() - started < timeoutMs) {
+    const state = await exec(tabId, () => {
       const visible = (el) => {
+        if (!el) return false;
         const r = el.getBoundingClientRect();
         const s = getComputedStyle(el);
-        return (
-          r.width > 0 &&
-          r.height > 0 &&
-          s.display !== "none" &&
-          s.visibility !== "hidden"
-        );
+        return r.width > 0 && r.height > 0 && s.display !== "none" && s.visibility !== "hidden";
       };
 
-      const candidates = Array.from(
+      const bodyText = String(document.body?.innerText || "");
+      const lower = bodyText.toLowerCase();
+
+      const titleVisible =
+        bodyText.includes("讓所有人知道你的 Pin 主題") ||
+        bodyText.includes("讓所有人知道你的 pin 主題") ||
+        bodyText.includes("標題") ||
+        lower.includes("add a title");
+
+      const descriptionVisible =
+        bodyText.includes("請提供 Pin 的相關說明") ||
+        bodyText.includes("請提供 pin 的相關說明") ||
+        bodyText.includes("說明") ||
+        lower.includes("description") ||
+        lower.includes("tell everyone what your pin is about");
+
+      const linkVisible =
+        bodyText.includes("新增連結") ||
+        bodyText.includes("連結") ||
+        lower.includes("add a link") ||
+        lower.includes("destination link");
+
+      const fields = Array.from(
         document.querySelectorAll(
-          'textarea,[contenteditable="true"],[role="textbox"],.ProseMirror,[data-lexical-editor="true"]',
+          'input,textarea,[contenteditable="true"],[role="textbox"],[data-lexical-editor="true"]',
+        ),
+      ).filter(visible);
+
+      const attrs = fields.map((el) => [
+        el.getAttribute("aria-label"),
+        el.getAttribute("placeholder"),
+        el.getAttribute("name"),
+        el.getAttribute("data-test-id"),
+        el.getAttribute("data-testid"),
+      ].filter(Boolean).join(" ").toLowerCase());
+
+      const attrTitle = attrs.some((a) => a.includes("標題") || a.includes("title"));
+      const attrDesc = attrs.some((a) => a.includes("說明") || a.includes("description"));
+      const attrLink = attrs.some((a) => a.includes("連結") || a.includes("link") || a.includes("destination"));
+
+      return {
+        ready:
+          (titleVisible && descriptionVisible && linkVisible) ||
+          ((titleVisible || attrTitle) && (descriptionVisible || attrDesc)) ||
+          fields.length >= 3,
+        titleVisible,
+        descriptionVisible,
+        linkVisible,
+        fieldCount: fields.length,
+        attrTitle,
+        attrDesc,
+        attrLink,
+      };
+    }).catch(() => ({ ready: false }));
+
+    if (state?.ready) return state;
+    await sleep(500);
+  }
+
+  return {
+    ready: false,
+    reason: "PINTEREST_EDITOR_DETECT_TIMEOUT",
+  };
+}
+
+async function fillPinterestFieldByKeyboard(tabId, kind, value) {
+  const text = String(value || "").trim();
+  if (!text) return { ok: true, skipped: true, kind };
+
+  let attached = false;
+
+  try {
+    await chrome.debugger.attach({ tabId }, "1.3");
+    attached = true;
+
+    const target = await exec(tabId, (kind) => {
+      const visible = (el) => {
+        if (!el) return false;
+        const r = el.getBoundingClientRect();
+        const s = getComputedStyle(el);
+        return r.width > 0 && r.height > 0 && s.display !== "none" && s.visibility !== "hidden";
+      };
+
+      const hints = {
+        title: [
+          "讓所有人知道你的 Pin 主題",
+          "讓所有人知道你的 pin 主題",
+          "新增標題",
+          "標題",
+          "Add a title",
+        ],
+        description: [
+          "請提供 Pin 的相關說明",
+          "請提供 pin 的相關說明",
+          "說明",
+          "Description",
+          "Tell everyone what your Pin is about",
+        ],
+        link: [
+          "新增連結",
+          "連結",
+          "Add a link",
+          "Destination link",
+        ],
+      };
+
+      const wanted = (hints[kind] || []).map((x) => x.toLowerCase());
+
+      const nodes = Array.from(
+        document.querySelectorAll(
+          'input,textarea,[contenteditable="true"],[role="textbox"],[data-lexical-editor="true"],label,div,span,p',
         ),
       ).filter(visible);
 
       let best = null;
-      let bestScore = -999;
+      let bestScore = -1;
 
-      for (const el of candidates) {
-        const aria =
-          String(el.getAttribute("aria-label") || "");
-        const placeholder =
-          String(el.getAttribute("placeholder") || "");
-        const nearby =
-          String(
-            el.parentElement?.parentElement?.innerText ||
-            el.parentElement?.innerText ||
-            "",
-          ).slice(0, 350);
+      for (const el of nodes) {
+        const attrs = [
+          el.getAttribute?.("aria-label"),
+          el.getAttribute?.("placeholder"),
+          el.getAttribute?.("name"),
+        ].filter(Boolean).join(" ");
 
-        const combined =
-          `${aria} ${placeholder} ${nearby}`.toLowerCase();
+        const ownText = String(el.innerText || el.textContent || "");
+        const combined = (attrs + " " + ownText).trim().toLowerCase();
 
         let score = 0;
+        for (const hint of wanted) {
+          if (!hint) continue;
+          if (combined === hint) score += 400;
+          else if (combined.includes(hint)) score += 180;
+        }
 
         if (
-          combined.includes("說明") ||
-          combined.includes("description") ||
-          combined.includes("caption")
+          el.matches?.(
+            'input,textarea,[contenteditable="true"],[role="textbox"],[data-lexical-editor="true"]',
+          )
         ) {
           score += 120;
         }
 
-        if (
-          el.getAttribute("contenteditable") === "true"
-        ) {
-          score += 25;
-        }
-
-        if (
-          el.getAttribute("role") === "textbox"
-        ) {
-          score += 20;
-        }
-
-        const rect =
-          el.getBoundingClientRect();
-
-        if (rect.width > 300) score += 20;
-        if (rect.height > 35) score += 10;
-        if (rect.left < innerWidth * 0.8) score += 5;
-
-        if (
-          combined.includes("搜尋") ||
-          combined.includes("search") ||
-          combined.includes("評論") ||
-          combined.includes("comment")
-        ) {
-          score -= 150;
-        }
-
         if (score > bestScore) {
-          bestScore = score;
           best = el;
+          bestScore = score;
         }
       }
 
-      if (!best) return false;
+      if (!best || bestScore < 100) {
+        return {
+          ok: false,
+          reason: "PINTEREST_FIELD_TARGET_NOT_FOUND",
+          kind,
+        };
+      }
 
-      best.scrollIntoView({
-        block: "center",
-      });
-      best.focus();
+      let clickable = best;
 
       if (
-        best instanceof HTMLTextAreaElement ||
-        best instanceof HTMLInputElement
+        !clickable.matches?.(
+          'input,textarea,[contenteditable="true"],[role="textbox"],[data-lexical-editor="true"]',
+        )
       ) {
-        const proto =
-          Object.getPrototypeOf(best);
-        const descriptor =
-          Object.getOwnPropertyDescriptor(
-            proto,
-            "value",
-          );
+        let container = best.parentElement;
+        let found = null;
 
-        descriptor?.set?.call(
-          best,
-          "",
-        );
+        for (let depth = 0; depth < 5 && container; depth += 1, container = container.parentElement) {
+          found = Array.from(
+            container.querySelectorAll(
+              'input,textarea,[contenteditable="true"],[role="textbox"],[data-lexical-editor="true"]',
+            ),
+          ).find(visible);
 
-        best.dispatchEvent(
-          new InputEvent("input", {
-            bubbles: true,
-            inputType:
-              "deleteContentBackward",
-          }),
-        );
-      } else {
-        const selection =
-          window.getSelection();
-
-        if (selection) {
-          const range =
-            document.createRange();
-          range.selectNodeContents(best);
-          selection.removeAllRanges();
-          selection.addRange(range);
+          if (found) break;
         }
 
-        try {
-          document.execCommand(
-            "delete",
-            false,
-          );
-        } catch {}
-
-        if (
-          String(
-            best.innerText ||
-            best.textContent ||
-            "",
-          ).trim()
-        ) {
-          best.textContent = "";
-        }
-
-        best.dispatchEvent(
-          new InputEvent("input", {
-            bubbles: true,
-            inputType:
-              "deleteContentBackward",
-          }),
-        );
+        clickable = found || best.parentElement || best;
       }
 
-      best.dispatchEvent(
-        new Event("change", {
-          bubbles: true,
-        }),
+      const r = clickable.getBoundingClientRect();
+      clickable.scrollIntoView({ block: "center" });
+
+      return {
+        ok: true,
+        x: Math.max(1, Math.round(r.left + Math.min(r.width * 0.35, 180))),
+        y: Math.max(1, Math.round(r.top + r.height / 2)),
+        kind,
+      };
+    }, [kind]);
+
+    if (!target?.ok) return target;
+
+    await chrome.debugger.sendCommand(
+      { tabId },
+      "Input.dispatchMouseEvent",
+      {
+        type: "mousePressed",
+        x: Number(target.x),
+        y: Number(target.y),
+        button: "left",
+        clickCount: 1,
+      },
+    );
+
+    await chrome.debugger.sendCommand(
+      { tabId },
+      "Input.dispatchMouseEvent",
+      {
+        type: "mouseReleased",
+        x: Number(target.x),
+        y: Number(target.y),
+        button: "left",
+        clickCount: 1,
+      },
+    );
+
+    await sleep(120);
+
+    await chrome.debugger.sendCommand(
+      { tabId },
+      "Input.dispatchKeyEvent",
+      {
+        type: "keyDown",
+        key: "a",
+        code: "KeyA",
+        modifiers: 2,
+      },
+    ).catch(() => {});
+
+    await chrome.debugger.sendCommand(
+      { tabId },
+      "Input.dispatchKeyEvent",
+      {
+        type: "keyUp",
+        key: "a",
+        code: "KeyA",
+        modifiers: 2,
+      },
+    ).catch(() => {});
+
+    await chrome.debugger.sendCommand(
+      { tabId },
+      "Input.insertText",
+      { text },
+    );
+
+    await sleep(200);
+
+    const verified = await exec(tabId, (kind, text) => {
+      const body = String(document.body?.innerText || "");
+      if (body.includes(text)) return true;
+
+      const fields = Array.from(
+        document.querySelectorAll(
+          'input,textarea,[contenteditable="true"],[role="textbox"],[data-lexical-editor="true"]',
+        ),
       );
 
-      return true;
-    }),
-  );
+      return fields.some((el) => {
+        const value =
+          el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement
+            ? String(el.value || "")
+            : String(el.innerText || el.textContent || "");
+        return value.includes(text.slice(0, Math.min(30, text.length)));
+      });
+    }, [kind, text]).catch(() => false);
+
+    return {
+      ok: Boolean(verified),
+      kind,
+      mode: "debugger-keyboard",
+    };
+  } finally {
+    if (attached) {
+      await chrome.debugger.detach({ tabId }).catch(() => {});
+    }
+  }
 }
 
-async function insertTikTokDescriptionNative(
-  tabId,
-  text,
-) {
-  const focused =
-    await focusAndClearTikTokDescription(
-      tabId,
-    );
+async function fillPinterestFieldVisual(tabId, kind, value) {
+  const text = String(value || "").trim();
 
-  if (!focused) {
-    throw new Error(
-      "TIKTOK_DESCRIPTION_EDITOR_NOT_FOUND",
-    );
+  if (!text) {
+    return {
+      ok: true,
+      skipped: true,
+      kind,
+    };
   }
 
   let attached = false;
@@ -1314,292 +1463,18 @@ async function insertTikTokDescriptionNative(
       { tabId },
       "1.3",
     );
+
     attached = true;
 
-    await chrome.debugger.sendCommand(
-      { tabId },
-      "Input.insertText",
-      {
-        text: String(text || ""),
-      },
-    );
-  } finally {
-    if (attached) {
-      await chrome.debugger
-        .detach({ tabId })
-        .catch(() => {});
-    }
-  }
-
-  await sleep(700);
-
-  await exec(tabId, () => {
-    const active =
-      document.activeElement;
-
-    if (!active) return;
-
-    active.dispatchEvent(
-      new InputEvent("input", {
-        bubbles: true,
-        inputType: "insertText",
-      }),
-    );
-
-    active.dispatchEvent(
-      new Event("change", {
-        bubbles: true,
-      }),
-    );
-  });
-
-  return true;
-}
-
-async function verifyTikTokDescription(
-  tabId,
-  publishText,
-  affiliateUrl,
-) {
-  const state =
-    await getTikTokDescriptionState(
+    const target = await exec(
       tabId,
-    );
-
-  if (!state?.found) {
-    return {
-      ok: false,
-      reason:
-        "TIKTOK_DESCRIPTION_EDITOR_NOT_FOUND",
-      state,
-    };
-  }
-
-  const actual =
-    String(state.text || "").trim();
-
-  const expected =
-    String(publishText || "").trim();
-
-  const link =
-    String(affiliateUrl || "").trim();
-
-  const hashtags =
-    expected.match(/#[^\s#]+/g) ||
-    [];
-
-  const hasLink =
-    !link ||
-    actual.includes(link);
-
-  const hasKeywords =
-    hashtags.length === 0 ||
-    hashtags
-      .slice(0, 3)
-      .every((tag) =>
-        actual.includes(tag),
-      );
-
-  const enoughText =
-    actual.length >=
-    Math.min(
-      40,
-      Math.max(
-        10,
-        Math.floor(
-          expected.length * 0.25,
-        ),
-      ),
-    );
-
-  return {
-    ok:
-      hasLink &&
-      hasKeywords &&
-      enoughText,
-    hasLink,
-    hasKeywords,
-    enoughText,
-    actualLength:
-      actual.length,
-    expectedLength:
-      expected.length,
-    state,
-  };
-}
-
-async function waitTikTokUploadReady(
-  tabId,
-  timeoutMs = 90000,
-) {
-  const started = Date.now();
-  let lastState = null;
-
-  while (
-    Date.now() - started <
-    timeoutMs
-  ) {
-    lastState =
-      await exec(tabId, () => {
-        const body =
-          String(
-            document.body?.innerText ||
-            "",
-          );
-        const lower = body.toLowerCase();
-
+      (kind) => {
         const visible = (el) => {
-          const r = el.getBoundingClientRect();
-          const s = getComputedStyle(el);
-          return (
-            r.width > 0 &&
-            r.height > 0 &&
-            s.display !== "none" &&
-            s.visibility !== "hidden"
-          );
-        };
+          if (!el) return false;
 
-        const fileInputs = Array.from(
-          document.querySelectorAll('input[type="file"]'),
-        );
-        const fileAssigned = fileInputs.some(
-          (el) => Number(el.files?.length || 0) > 0,
-        );
-
-        const editors = Array.from(
-          document.querySelectorAll(
-            'textarea,[contenteditable="true"],[role="textbox"],.ProseMirror,[data-lexical-editor="true"]',
-          ),
-        ).filter(visible);
-
-        const hasDescriptionEditor =
-          editors.some((el) => {
-            const aria = String(
-              el.getAttribute("aria-label") || "",
-            ).toLowerCase();
-            const placeholder = String(
-              el.getAttribute("placeholder") || "",
-            ).toLowerCase();
-            const nearby = String(
-              el.parentElement?.parentElement?.innerText ||
-              el.parentElement?.innerText ||
-              "",
-            ).slice(0, 300).toLowerCase();
-            const combined = `${aria} ${placeholder} ${nearby}`;
-            return (
-              combined.includes("說明") ||
-              combined.includes("description") ||
-              combined.includes("caption")
-            );
-          });
-
-        const publishButtonReady =
-          Array.from(
-            document.querySelectorAll('button,[role="button"]'),
-          ).some((el) => {
-            if (!visible(el)) return false;
-            const text = String(
-              el.innerText ||
-              el.textContent ||
-              "",
-            ).trim();
-            if (![
-              "發佈",
-              "發布",
-              "Post",
-              "Publish",
-            ].includes(text)) {
-              return false;
-            }
-            return (
-              !el.disabled &&
-              el.getAttribute("aria-disabled") !== "true"
-            );
-          });
-
-        const initialUploadPrompt =
-          /選擇要上傳的影片|選取影片|select video|choose a video|drag.*drop/i.test(
-            body,
-          );
-
-        const uploadError =
-          /上傳失敗|upload failed|failed to upload|couldn.?t upload/i.test(
-            lower,
-          );
-
-        const fatalStudioError =
-          (/出錯了|something went wrong/i.test(body) &&
-            /請再試一次|try again|retry/i.test(body)) ||
-          /頁面發生錯誤|page error/i.test(lower);
-
-        const uploadedText =
-          /已上傳|uploaded/i.test(body);
-
-        const hasEditorSignals =
-          hasDescriptionEditor ||
-          /說明|description|封面|cover|可見度|visibility/i.test(
-            body,
-          );
-
-        return {
-          fileAssigned,
-          hasDescriptionEditor,
-          publishButtonReady,
-          initialUploadPrompt,
-          uploadError,
-          fatalStudioError,
-          uploadedText,
-          hasEditorSignals,
-          url: String(location.href || "").split("?")[0],
-        };
-      });
-
-    if (lastState?.uploadError) {
-      throw new Error(
-        `TIKTOK_UPLOAD_FAILED_VISIBLE:${JSON.stringify(lastState)}`,
-      );
-    }
-
-    if (lastState?.fatalStudioError) {
-      return lastState;
-    }
-
-    if (
-      lastState?.hasDescriptionEditor ||
-      lastState?.publishButtonReady ||
-      (
-        lastState?.hasEditorSignals &&
-        !lastState?.initialUploadPrompt
-      ) ||
-      (
-        lastState?.uploadedText &&
-        lastState?.hasEditorSignals
-      )
-    ) {
-      return lastState;
-    }
-
-    await sleep(700);
-  }
-
-  return null;
-}
-
-async function clickTikTokPublish(
-  tabId,
-  timeoutMs = 60000,
-) {
-  const started = Date.now();
-
-  while (
-    Date.now() - started <
-    timeoutMs
-  ) {
-    const clicked =
-      await exec(tabId, () => {
-        const visible = (el) => {
           const r =
             el.getBoundingClientRect();
+
           const s =
             getComputedStyle(el);
 
@@ -1611,205 +1486,1525 @@ async function clickTikTokPublish(
           );
         };
 
-        const wanted =
-          new Set([
-            "發佈",
-            "發布",
-            "Post",
-            "Publish",
-          ]);
+        const phrases = {
+          title: [
+            "讓所有人知道你的 Pin 主題",
+            "讓所有人知道你的 pin 主題",
+            "新增標題",
+            "Add a title",
+          ],
+          description: [
+            "請提供 Pin 的相關說明",
+            "請提供 pin 的相關說明",
+            "Tell everyone what your Pin is about",
+          ],
+          link: [
+            "新增連結",
+            "Add a link",
+            "Destination link",
+          ],
+        };
 
-        const nodes =
+        const wanted =
+          phrases[kind] || [];
+
+        const all =
           Array.from(
             document.querySelectorAll(
-              'button,[role="button"]',
+              "input,textarea,[contenteditable='true'],[role='textbox'],[data-lexical-editor='true'],div,span,p",
             ),
           );
 
-        for (const el of nodes) {
+        let best = null;
+        let bestScore = -1;
+
+        for (const el of all) {
           if (!visible(el)) continue;
 
-          const text =
+          const attrs = [
+            el.getAttribute?.(
+              "placeholder",
+            ),
+            el.getAttribute?.(
+              "aria-label",
+            ),
+          ]
+            .filter(Boolean)
+            .join(" ");
+
+          const own =
             String(
               el.innerText ||
               el.textContent ||
               "",
-            ).trim();
+            )
+              .trim();
 
-          if (!wanted.has(text)) {
-            continue;
+          const combined =
+            (attrs + " " + own)
+              .trim()
+              .toLowerCase();
+
+          let score = 0;
+
+          for (const phrase of wanted) {
+            const p =
+              phrase.toLowerCase();
+
+            if (
+              attrs
+                .toLowerCase()
+                .includes(p)
+            ) {
+              score += 600;
+            }
+
+            if (
+              own
+                .toLowerCase() === p
+            ) {
+              score += 500;
+            } else if (
+              combined.includes(p)
+            ) {
+              score += 220;
+            }
           }
 
           if (
-            el.disabled ||
-            el.getAttribute(
-              "aria-disabled",
-            ) === "true"
+            el.matches?.(
+              "input,textarea,[contenteditable='true'],[role='textbox'],[data-lexical-editor='true']",
+            )
           ) {
-            continue;
+            score += 160;
           }
 
-          el.scrollIntoView({
-            block: "center",
-          });
+          // Avoid giant wrapper containers that include the whole form.
+          const r =
+            el.getBoundingClientRect();
 
-          el.click();
+          if (
+            r.width > 650 ||
+            r.height > 220
+          ) {
+            score -= 180;
+          }
 
+          if (score > bestScore) {
+            best = el;
+            bestScore = score;
+          }
+        }
+
+        if (
+          !best ||
+          bestScore < 180
+        ) {
           return {
-            ok: true,
-            text,
+            ok: false,
+            reason:
+              "PINTEREST_VISUAL_TARGET_NOT_FOUND",
+            kind,
+            score: bestScore,
           };
         }
 
-        return {
-          ok: false,
-        };
-      });
+        best.scrollIntoView({
+          block: "center",
+          inline: "nearest",
+          behavior: "instant",
+        });
 
-    if (clicked?.ok) {
-      return clicked;
+        const r =
+          best.getBoundingClientRect();
+
+        return {
+          ok: true,
+          kind,
+          score: bestScore,
+          // Click slightly inside the placeholder / editor, not on the border.
+          x: Math.max(
+            1,
+            Math.round(
+              r.left +
+              Math.min(
+                Math.max(
+                  28,
+                  r.width * 0.25,
+                ),
+                180,
+              ),
+            ),
+          ),
+          y: Math.max(
+            1,
+            Math.round(
+              r.top +
+              r.height / 2,
+            ),
+          ),
+        };
+      },
+      [kind],
+    );
+
+    if (!target?.ok) {
+      return target;
     }
 
-    await sleep(500);
-  }
+    // Real browser-level click.
+    await chrome.debugger.sendCommand(
+      { tabId },
+      "Input.dispatchMouseEvent",
+      {
+        type: "mousePressed",
+        x: Number(target.x),
+        y: Number(target.y),
+        button: "left",
+        clickCount: 1,
+      },
+    );
 
-  return {
-    ok: false,
-  };
+    await chrome.debugger.sendCommand(
+      { tabId },
+      "Input.dispatchMouseEvent",
+      {
+        type: "mouseReleased",
+        x: Number(target.x),
+        y: Number(target.y),
+        button: "left",
+        clickCount: 1,
+      },
+    );
+
+    await sleep(160);
+
+    // Select existing content, clear, then type Unicode directly.
+    await chrome.debugger.sendCommand(
+      { tabId },
+      "Input.dispatchKeyEvent",
+      {
+        type: "keyDown",
+        key: "a",
+        code: "KeyA",
+        modifiers: 2,
+      },
+    ).catch(() => {});
+
+    await chrome.debugger.sendCommand(
+      { tabId },
+      "Input.dispatchKeyEvent",
+      {
+        type: "keyUp",
+        key: "a",
+        code: "KeyA",
+        modifiers: 2,
+      },
+    ).catch(() => {});
+
+    await chrome.debugger.sendCommand(
+      { tabId },
+      "Input.insertText",
+      { text },
+    );
+
+    await sleep(300);
+
+    const verified = await exec(
+      tabId,
+      (text) => {
+        const prefix =
+          text.slice(
+            0,
+            Math.min(
+              24,
+              text.length,
+            ),
+          );
+
+        if (
+          String(
+            document.body?.innerText ||
+            "",
+          ).includes(prefix)
+        ) {
+          return true;
+        }
+
+        return Array.from(
+          document.querySelectorAll(
+            "input,textarea,[contenteditable='true'],[role='textbox'],[data-lexical-editor='true']",
+          ),
+        ).some((el) => {
+          const v =
+            el instanceof HTMLInputElement ||
+            el instanceof HTMLTextAreaElement
+              ? String(
+                  el.value || "",
+                )
+              : String(
+                  el.innerText ||
+                  el.textContent ||
+                  "",
+                );
+
+          return v.includes(prefix);
+        });
+      },
+      [text],
+    ).catch(() => false);
+
+    return {
+      ok:
+        Boolean(
+          verified,
+        ),
+      kind,
+      mode:
+        "visual-placeholder-keyboard",
+      score:
+        target.score,
+    };
+  } finally {
+    if (attached) {
+      await chrome.debugger
+        .detach({ tabId })
+        .catch(() => {});
+    }
+  }
 }
 
-async function waitTikTokPublished(
+async function fillPinterestFieldReliable(
   tabId,
-  timeoutMs = 90000,
+  kind,
+  value,
+  timeoutMs = 30000,
 ) {
-  const started = Date.now();
+  const text =
+    String(value || "")
+      .trim();
+
+  if (!text) {
+    return {
+      ok: true,
+      skipped: true,
+      kind,
+    };
+  }
+
+  const started =
+    Date.now();
+
+  let last = null;
 
   while (
     Date.now() - started <
     timeoutMs
   ) {
-    const state =
-      await exec(tabId, () => {
-        const url =
-          String(location.href || "");
+    // Pinterest's current editor exposes visible placeholders more reliably
+    // than stable input selectors, so try the visual target first.
+    const visual =
+      await fillPinterestFieldVisual(
+        tabId,
+        kind,
+        text,
+      ).catch(
+        (error) => ({
+          ok: false,
+          reason:
+            String(
+              error?.message ||
+              error,
+            ),
+        }),
+      );
 
-        const body =
-          String(
-            document.body?.innerText ||
-            "",
-          );
+    if (visual?.ok) {
+      return visual;
+    }
 
-        const successText =
-          [
-            "發佈成功",
-            "發布成功",
-            "影片已發佈",
-            "影片已發布",
-            "已發佈",
-            "已發布",
-            "posted successfully",
-            "published successfully",
-            "your video has been published",
-            "your video is being uploaded",
-          ].some((marker) =>
-            body
-              .toLowerCase()
-              .includes(
-                marker.toLowerCase(),
-              ),
-          );
+    const dom =
+      await fillPinterestField(
+        tabId,
+        kind,
+        text,
+      ).catch(
+        (error) => ({
+          ok: false,
+          reason:
+            String(
+              error?.message ||
+              error,
+            ),
+        }),
+      );
 
-        const leftUploadPage =
-          !/\/tiktokstudio\/upload/i.test(
-            url,
-          ) &&
-          !/\/upload/i.test(url);
-
-        return {
-          successText,
-          leftUploadPage,
-          url:
-            url.split("?")[0],
-        };
-      });
-
-    if (
-      state?.successText ||
-      state?.leftUploadPage
-    ) {
+    if (dom?.ok) {
       return {
-        ok: true,
-        publishedUrl:
-          String(
-            state.url || "",
-          ),
+        ...dom,
+        mode:
+          dom.mode ||
+          "dom",
       };
     }
 
-    await sleep(700);
+    const keyboard =
+      await fillPinterestFieldByKeyboard(
+        tabId,
+        kind,
+        text,
+      ).catch(
+        (error) => ({
+          ok: false,
+          reason:
+            String(
+              error?.message ||
+              error,
+            ),
+        }),
+      );
+
+    if (keyboard?.ok) {
+      return keyboard;
+    }
+
+    last = {
+      visual,
+      dom,
+      keyboard,
+    };
+
+    await sleep(500);
   }
 
   return {
     ok: false,
-    publishedUrl: "",
+    kind,
+    reason:
+      "PINTEREST_FIELD_FILL_TIMEOUT",
+    last,
   };
 }
 
-async function ensureFacebookAiLabel(tabId) {
-  return await exec(tabId, () => {
-    const body = document.body;
-    if (!body) return { found: false, on: false };
-    const walker = document.createTreeWalker(body, NodeFilter.SHOW_ELEMENT);
-    let label = null;
-    while (walker.nextNode()) {
-      const el = walker.currentNode;
-      const text = String(el.innerText || "").trim();
-      if (text === "新增 AI 標籤" || text === "Add AI label" || text === "新增 AI 标签") {
-        label = el;
-        break;
-      }
-    }
-    if (!label) return { found: false, on: false };
-    const container = label.closest('div')?.parentElement || label.parentElement || document.body;
-    const candidates = Array.from(container.querySelectorAll('[role="switch"],input[type="checkbox"]'));
-    const toggle = candidates.find((el) => {
-      const r = el.getBoundingClientRect();
-      return r.width > 0 && r.height > 0;
-    });
-    if (!toggle) return { found: true, on: false };
-    const isOn = toggle.matches('input')
-      ? Boolean(toggle.checked)
-      : toggle.getAttribute('aria-checked') === 'true';
-    if (!isOn) toggle.click();
-    const nowOn = toggle.matches('input')
-      ? Boolean(toggle.checked)
-      : toggle.getAttribute('aria-checked') === 'true';
-    return { found: true, on: nowOn };
-  });
-}
 
-async function waitForFinalButton(tabId, platform, timeoutMs = 60000) {
-  const started = Date.now();
-  while (Date.now() - started < timeoutMs) {
-    const ready = await exec(tabId, (platform) => {
+async function selectPinterestBoard(tabId, boardName) {
+  const wantedBoard = String(boardName || "").trim();
+
+  if (!wantedBoard) {
+    return {
+      ok: false,
+      skipped: true,
+      reason: "BOARD_NAME_EMPTY",
+    };
+  }
+
+  const opened = await exec(
+    tabId,
+    (wantedBoard) => {
       const visible = (el) => {
         const r = el.getBoundingClientRect();
         const s = getComputedStyle(el);
-        return r.width > 0 && r.height > 0 && s.display !== "none" && s.visibility !== "hidden";
+        return (
+          r.width > 0 &&
+          r.height > 0 &&
+          s.display !== "none" &&
+          s.visibility !== "hidden"
+        );
       };
-      const wanted = platform === "facebook"
-        ? ["發佈", "發布", "Publish", "Share reel", "分享 Reel"]
-        : ["發佈", "發布", "Post", "Publish"];
-      return Array.from(document.querySelectorAll('button,[role="button"]')).some((el) => {
-        if (!visible(el)) return false;
-        const text = String(el.innerText || el.textContent || "").trim();
-        return wanted.includes(text) && !el.disabled && el.getAttribute('aria-disabled') !== 'true';
+
+      const nodes = Array.from(
+        document.querySelectorAll(
+          'button,[role="button"],[aria-haspopup="listbox"],[aria-haspopup="menu"]',
+        ),
+      );
+
+      let best = null;
+      let bestScore = -999;
+
+      for (const el of nodes) {
+        if (!visible(el)) continue;
+
+        const nodeText =
+          String(
+            el.innerText ||
+            el.textContent ||
+            "",
+          ).trim();
+
+        const aria =
+          String(
+            el.getAttribute("aria-label") ||
+            "",
+          );
+
+        const combined =
+          (nodeText + " " + aria)
+            .toLowerCase();
+
+        let score = 0;
+
+        if (
+          combined.includes("選擇圖版") ||
+          combined.includes("選擇看板")
+        ) score += 180;
+
+        if (
+          combined.includes("choose board") ||
+          combined.includes("select board")
+        ) score += 180;
+
+        if (
+          combined.includes("圖版") ||
+          combined.includes("board")
+        ) score += 45;
+
+        if (
+          nodeText === wantedBoard
+        ) score += 100;
+
+        if (
+          combined.includes("發佈") ||
+          combined.includes("發布") ||
+          combined.includes("publish")
+        ) score -= 300;
+
+        if (score > bestScore) {
+          bestScore = score;
+          best = el;
+        }
+      }
+
+      if (
+        !best ||
+        bestScore < 30
+      ) {
+        return {
+          ok: false,
+          reason:
+            "BOARD_PICKER_NOT_FOUND",
+          bestScore,
+        };
+      }
+
+      best.scrollIntoView({
+        block: "center",
       });
-    }, [platform]);
-    if (ready) return true;
+
+      best.click();
+
+      return {
+        ok: true,
+        score: bestScore,
+      };
+    },
+    [wantedBoard],
+  );
+
+  if (!opened?.ok) {
+    return opened;
+  }
+
+  await sleep(650);
+
+  const picked = await exec(
+    tabId,
+    (wantedBoard) => {
+      const visible = (el) => {
+        const r = el.getBoundingClientRect();
+        const s = getComputedStyle(el);
+
+        return (
+          r.width > 0 &&
+          r.height > 0 &&
+          s.display !== "none" &&
+          s.visibility !== "hidden"
+        );
+      };
+
+      const normalize = (value) =>
+        String(value || "")
+          .toLowerCase()
+          .replace(
+            /[\s·•・\-—_｜|\/\\()（）\[\]【】「」『』:：]/g,
+            "",
+          )
+          .replace(
+            /(素材|圖片|圖版|看板|board)$/g,
+            "",
+          );
+
+      const wanted =
+        String(wantedBoard || "")
+          .trim();
+
+      const wantedNorm =
+        normalize(wanted);
+
+      const nodes = Array.from(
+        document.querySelectorAll(
+          '[role="option"],[role="menuitem"],button,[role="button"],li,div,span',
+        ),
+      );
+
+      let best = null;
+      let bestScore = -1;
+
+      for (const el of nodes) {
+        if (!visible(el)) continue;
+
+        const nodeText =
+          String(
+            el.innerText ||
+            el.textContent ||
+            "",
+          ).trim();
+
+        if (
+          !nodeText ||
+          nodeText.length > 140
+        ) continue;
+
+        const lower =
+          nodeText.toLowerCase();
+
+        if (
+          lower === "建立圖版" ||
+          lower === "create board" ||
+          lower === "建立看板"
+        ) {
+          continue;
+        }
+
+        const norm =
+          normalize(nodeText);
+
+        let score = 0;
+
+        if (
+          lower ===
+          wanted.toLowerCase()
+        ) {
+          score = 1000;
+        } else if (
+          norm &&
+          norm === wantedNorm
+        ) {
+          score = 900;
+        } else if (
+          norm &&
+          wantedNorm &&
+          (
+            norm.includes(wantedNorm) ||
+            wantedNorm.includes(norm)
+          )
+        ) {
+          score = 780;
+        } else {
+          const tokens =
+            wanted
+              .split(
+                /[\s·•・\-—_｜|\/\\()（）]+/,
+              )
+              .map(normalize)
+              .filter(Boolean);
+
+          const matched =
+            tokens.filter(
+              (token) =>
+                token &&
+                norm.includes(token),
+            ).length;
+
+          if (matched) {
+            score =
+              400 +
+              matched * 80;
+          }
+        }
+
+        // Prefer normal-sized option rows over giant wrapper divs.
+        const r =
+          el.getBoundingClientRect();
+
+        if (
+          r.height > 90 ||
+          r.width > 900
+        ) {
+          score -= 140;
+        }
+
+        if (
+          score > bestScore
+        ) {
+          bestScore = score;
+          best = el;
+        }
+      }
+
+      if (
+        best &&
+        bestScore >= 500
+      ) {
+        best.scrollIntoView({
+          block: "center",
+        });
+
+        const clickable =
+          best.closest(
+            'button,[role="button"],[role="option"],[role="menuitem"],li',
+          ) || best;
+
+        clickable.click();
+
+        return {
+          ok: true,
+          selected:
+            String(
+              best.innerText ||
+              best.textContent ||
+              "",
+            ).trim(),
+          matchedBy:
+            bestScore >= 900
+              ? "exact-or-normalized"
+              : "fuzzy",
+          score: bestScore,
+        };
+      }
+
+      const createNodes =
+        Array.from(
+          document.querySelectorAll(
+            'button,[role="button"],[role="menuitem"],div,span',
+          ),
+        ).filter(visible);
+
+      const create =
+        createNodes.find((el) => {
+          const text =
+            String(
+              el.innerText ||
+              el.textContent ||
+              "",
+            )
+              .trim()
+              .toLowerCase();
+
+          return (
+            text === "建立圖版" ||
+            text === "建立看板" ||
+            text === "create board"
+          );
+        });
+
+      if (!create) {
+        return {
+          ok: false,
+          reason:
+            "BOARD_NOT_FOUND_AND_CREATE_NOT_AVAILABLE",
+          boardName:
+            wantedBoard,
+          bestScore,
+        };
+      }
+
+      const clickable =
+        create.closest(
+          'button,[role="button"],[role="menuitem"]',
+        ) || create;
+
+      clickable.click();
+
+      return {
+        ok: false,
+        createStarted: true,
+        reason:
+          "BOARD_CREATE_STARTED",
+        boardName:
+          wantedBoard,
+      };
+    },
+    [wantedBoard],
+  );
+
+  if (picked?.ok) {
+    await sleep(350);
+    return picked;
+  }
+
+  if (!picked?.createStarted) {
+    return picked;
+  }
+
+  await sleep(650);
+
+  const created = await exec(
+    tabId,
+    (wantedBoard) => {
+      const visible = (el) => {
+        const r = el.getBoundingClientRect();
+        const s = getComputedStyle(el);
+
+        return (
+          r.width > 0 &&
+          r.height > 0 &&
+          s.display !== "none" &&
+          s.visibility !== "hidden"
+        );
+      };
+
+      const fields =
+        Array.from(
+          document.querySelectorAll(
+            'input,textarea,[contenteditable="true"],[role="textbox"]',
+          ),
+        ).filter(visible);
+
+      let input = null;
+      let bestScore = -1;
+
+      for (const el of fields) {
+        const attrs = [
+          el.getAttribute("placeholder"),
+          el.getAttribute("aria-label"),
+          el.getAttribute("name"),
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+
+        let score = 0;
+
+        if (
+          attrs.includes("圖版") ||
+          attrs.includes("看板") ||
+          attrs.includes("board")
+        ) score += 180;
+
+        if (
+          attrs.includes("名稱") ||
+          attrs.includes("name")
+        ) score += 80;
+
+        if (
+          el instanceof HTMLInputElement
+        ) score += 40;
+
+        if (score > bestScore) {
+          bestScore = score;
+          input = el;
+        }
+      }
+
+      if (!input) {
+        return {
+          ok: false,
+          reason:
+            "BOARD_CREATE_NAME_FIELD_NOT_FOUND",
+        };
+      }
+
+      input.focus();
+
+      if (
+        input instanceof HTMLInputElement ||
+        input instanceof HTMLTextAreaElement
+      ) {
+        const proto =
+          input instanceof HTMLTextAreaElement
+            ? HTMLTextAreaElement.prototype
+            : HTMLInputElement.prototype;
+
+        const descriptor =
+          Object.getOwnPropertyDescriptor(
+            proto,
+            "value",
+          );
+
+        if (descriptor?.set) {
+          descriptor.set.call(
+            input,
+            wantedBoard,
+          );
+        } else {
+          input.value =
+            wantedBoard;
+        }
+      } else {
+        input.textContent =
+          wantedBoard;
+      }
+
+      input.dispatchEvent(
+        new InputEvent(
+          "input",
+          {
+            bubbles: true,
+            inputType:
+              "insertText",
+            data:
+              wantedBoard,
+          },
+        ),
+      );
+
+      input.dispatchEvent(
+        new Event(
+          "change",
+          {
+            bubbles: true,
+          },
+        ),
+      );
+
+      const buttons =
+        Array.from(
+          document.querySelectorAll(
+            'button,[role="button"]',
+          ),
+        ).filter(visible);
+
+      const createButton =
+        buttons.find((el) => {
+          const text =
+            String(
+              el.innerText ||
+              el.textContent ||
+              "",
+            )
+              .trim()
+              .toLowerCase();
+
+          return (
+            text === "建立" ||
+            text === "建立圖版" ||
+            text === "建立看板" ||
+            text === "create"
+          );
+        });
+
+      if (!createButton) {
+        return {
+          ok: false,
+          reason:
+            "BOARD_CREATE_CONFIRM_NOT_FOUND",
+        };
+      }
+
+      createButton.click();
+
+      return {
+        ok: true,
+        selected:
+          wantedBoard,
+        created: true,
+      };
+    },
+    [wantedBoard],
+  );
+
+  if (created?.ok) {
+    await sleep(800);
+  }
+
+  return created;
+}
+
+async function ensureLabeledToggle(
+  tabId,
+  wantedOn,
+  labels,
+) {
+  const wanted =
+    Boolean(wantedOn);
+
+  const result =
+    await exec(
+      tabId,
+      (wanted, labels) => {
+        const visible = (el) => {
+          if (!el) return false;
+
+          const r =
+            el.getBoundingClientRect();
+
+          const s =
+            getComputedStyle(el);
+
+          return (
+            r.width > 0 &&
+            r.height > 0 &&
+            s.display !== "none" &&
+            s.visibility !== "hidden"
+          );
+        };
+
+        const normalizedLabels =
+          (labels || [])
+            .map((x) =>
+              String(x || "")
+                .trim()
+                .toLowerCase(),
+            )
+            .filter(Boolean);
+
+        const nodes =
+          Array.from(
+            document.querySelectorAll(
+              'label,span,div,p,button,[role="switch"],input[type="checkbox"]',
+            ),
+          ).filter(visible);
+
+        let textNode = null;
+
+        for (const el of nodes) {
+          const text =
+            String(
+              el.innerText ||
+              el.textContent ||
+              el.getAttribute?.("aria-label") ||
+              "",
+            )
+              .trim()
+              .toLowerCase();
+
+          if (
+            normalizedLabels.some(
+              (label) =>
+                text === label ||
+                text.includes(label),
+            )
+          ) {
+            textNode = el;
+            break;
+          }
+        }
+
+        if (!textNode) {
+          return {
+            found: false,
+            on: false,
+            changed: false,
+          };
+        }
+
+        let container =
+          textNode;
+
+        let control = null;
+
+        for (
+          let depth = 0;
+          depth < 6 &&
+          container;
+          depth += 1,
+            container =
+              container.parentElement
+        ) {
+          if (
+            container.matches?.(
+              '[role="switch"],input[type="checkbox"]',
+            )
+          ) {
+            control = container;
+            break;
+          }
+
+          control =
+            container.querySelector?.(
+              '[role="switch"],input[type="checkbox"],button[aria-checked],button[role="switch"]',
+            ) || null;
+
+          if (control) break;
+        }
+
+        if (!control) {
+          const nearby =
+            Array.from(
+              document.querySelectorAll(
+                '[role="switch"],input[type="checkbox"],button[aria-checked],button[role="switch"]',
+              ),
+            )
+              .filter(visible)
+              .map((el) => {
+                const a =
+                  el.getBoundingClientRect();
+
+                const b =
+                  textNode.getBoundingClientRect();
+
+                const dy =
+                  Math.abs(
+                    (a.top + a.bottom) / 2 -
+                    (b.top + b.bottom) / 2,
+                  );
+
+                const dx =
+                  Math.abs(
+                    a.left - b.left,
+                  );
+
+                return {
+                  el,
+                  score:
+                    dy * 4 + dx,
+                };
+              })
+              .sort(
+                (a, b) =>
+                  a.score - b.score,
+              );
+
+          control =
+            nearby[0]?.el || null;
+        }
+
+        if (!control) {
+          return {
+            found: true,
+            on: false,
+            changed: false,
+            reason:
+              "TOGGLE_CONTROL_NOT_FOUND",
+          };
+        }
+
+        const readOn = (el) => {
+          if (
+            el instanceof HTMLInputElement &&
+            el.type === "checkbox"
+          ) {
+            return Boolean(
+              el.checked,
+            );
+          }
+
+          const aria =
+            String(
+              el.getAttribute(
+                "aria-checked",
+              ) || "",
+            )
+              .toLowerCase();
+
+          if (aria === "true") {
+            return true;
+          }
+
+          if (aria === "false") {
+            return false;
+          }
+
+          return Boolean(
+            el.classList?.contains(
+              "checked",
+            ),
+          );
+        };
+
+        const before =
+          readOn(control);
+
+        if (before !== wanted) {
+          control.scrollIntoView({
+            block: "center",
+            inline: "nearest",
+          });
+
+          control.click();
+
+          if (
+            control instanceof HTMLInputElement
+          ) {
+            control.dispatchEvent(
+              new Event(
+                "change",
+                {
+                  bubbles: true,
+                },
+              ),
+            );
+          }
+        }
+
+        return {
+          found: true,
+          before,
+          requested: wanted,
+          changed:
+            before !== wanted,
+        };
+      },
+      [wanted, labels],
+    ).catch(() => ({
+      found: false,
+      on: false,
+      changed: false,
+    }));
+
+  if (!result?.found) {
+    return {
+      found: false,
+      on: false,
+      changed: false,
+    };
+  }
+
+  if (result.changed) {
     await sleep(500);
   }
-  return false;
+
+  const verified =
+    await exec(
+      tabId,
+      (labels) => {
+        const visible = (el) => {
+          if (!el) return false;
+
+          const r =
+            el.getBoundingClientRect();
+
+          const s =
+            getComputedStyle(el);
+
+          return (
+            r.width > 0 &&
+            r.height > 0 &&
+            s.display !== "none" &&
+            s.visibility !== "hidden"
+          );
+        };
+
+        const normalizedLabels =
+          (labels || [])
+            .map((x) =>
+              String(x || "")
+                .trim()
+                .toLowerCase(),
+            )
+            .filter(Boolean);
+
+        const nodes =
+          Array.from(
+            document.querySelectorAll(
+              'label,span,div,p',
+            ),
+          ).filter(visible);
+
+        const textNode =
+          nodes.find((el) => {
+            const text =
+              String(
+                el.innerText ||
+                el.textContent ||
+                "",
+              )
+                .trim()
+                .toLowerCase();
+
+            return normalizedLabels.some(
+              (label) =>
+                text === label ||
+                text.includes(label),
+            );
+          });
+
+        if (!textNode) {
+          return {
+            found: false,
+            on: false,
+          };
+        }
+
+        let container =
+          textNode;
+
+        let control = null;
+
+        for (
+          let depth = 0;
+          depth < 6 &&
+          container;
+          depth += 1,
+            container =
+              container.parentElement
+        ) {
+          control =
+            container.matches?.(
+              '[role="switch"],input[type="checkbox"]',
+            )
+              ? container
+              : (
+                  container.querySelector?.(
+                    '[role="switch"],input[type="checkbox"],button[aria-checked],button[role="switch"]',
+                  ) || null
+                );
+
+          if (control) break;
+        }
+
+        if (!control) {
+          return {
+            found: true,
+            on: false,
+          };
+        }
+
+        let on = false;
+
+        if (
+          control instanceof HTMLInputElement &&
+          control.type === "checkbox"
+        ) {
+          on =
+            Boolean(
+              control.checked,
+            );
+        } else {
+          on =
+            String(
+              control.getAttribute(
+                "aria-checked",
+              ) || "",
+            )
+              .toLowerCase() ===
+            "true";
+        }
+
+        return {
+          found: true,
+          on,
+        };
+      },
+      [labels],
+    ).catch(() => ({
+      found: false,
+      on: false,
+    }));
+
+  return {
+    found:
+      Boolean(
+        verified?.found ||
+        result?.found,
+      ),
+    on:
+      wanted
+        ? Boolean(
+            verified?.on,
+          )
+        : false,
+    changed:
+      Boolean(
+        result?.changed,
+      ),
+  };
+}
+
+async function ensurePinterestAiLabel(
+  tabId,
+  wantedOn = true,
+) {
+  if (!wantedOn) {
+    return {
+      found: false,
+      on: false,
+      changed: false,
+      skipped: true,
+    };
+  }
+
+  return ensureLabeledToggle(
+    tabId,
+    true,
+    [
+      "標示為經 AI 修飾",
+      "標示為經 ai 修飾",
+      "AI 修飾",
+      "Label as AI modified",
+      "AI modified",
+    ],
+  );
+}
+
+async function ensureFacebookAiLabel(
+  tabId,
+) {
+  return ensureLabeledToggle(
+    tabId,
+    true,
+    [
+      "AI 資訊",
+      "AI 生成",
+      "Made with AI",
+      "AI label",
+    ],
+  );
+}
+
+async function preparePinterest(job, tabId) {
+
+  await setPublisherPhase("PINTEREST_PREPARING_DRAFT", {
+    rxvPublisherLastError: "",
+  });
+
+  await ensurePinterestFreshDraft(tabId, 30000);
+
+  await setPublisherPhase("PINTEREST_UPLOADING_IMAGE", {
+    rxvPublisherLastError: "",
+  });
+
+  let fileResult = null;
+  let blobError = "";
+  let chooserError = "";
+
+  // Use a real in-page File object first.
+  // This gives Pinterest an explicit image MIME type and avoids the browser
+  // misclassifying a local-path upload as video/unknown media.
+  try {
+    fileResult = await setPinterestFileInputViaBlob(
+      tabId,
+      job,
+    );
+  } catch (error) {
+    blobError =
+      String(
+        error?.message || error,
+      );
+  }
+
+  if (!fileResult) {
+    try {
+      fileResult = await setPinterestFileInputViaChooser(
+        tabId,
+        job.imagePath,
+        20000,
+      );
+    } catch (error) {
+      chooserError =
+        String(
+          error?.message || error,
+        );
+    }
+  }
+
+  if (!fileResult) {
+    fileResult = await setPinterestFileInput(
+      tabId,
+      job.imagePath,
+      30000,
+    );
+
+    fileResult = {
+      ...fileResult,
+      fallbackFromBlob:
+        blobError,
+      fallbackFromChooser:
+        chooserError,
+    };
+  }
+
+  await setPublisherPhase("PINTEREST_WAITING_EDITOR", {
+    rxvPublisherLastError: "",
+  });
+
+  const editorState =
+    await waitForPinterestEditorFields(
+      tabId,
+      8000,
+    );
+
+  await setPublisherPhase(
+    "PINTEREST_FILLING_FIELDS",
+    {
+      rxvPublisherLastError:
+        editorState?.ready
+          ? ""
+          : "Pinterest 欄位尚在建立，RxV 已直接開始依畫面位置填入。",
+    },
+  );
+
+  const title = await fillPinterestFieldReliable(
+    tabId,
+    "title",
+    job.publishTitle,
+    45000,
+  );
+  if (!title || !title.ok) {
+    throw new Error("PINTEREST_TITLE_NOT_FILLED");
+  }
+
+  const description = await fillPinterestFieldReliable(
+    tabId,
+    "description",
+    job.publishDescription || job.publishText,
+    45000,
+  );
+  if (!description || !description.ok) {
+    throw new Error("PINTEREST_DESCRIPTION_NOT_FILLED");
+  }
+
+  const link = await fillPinterestFieldReliable(
+    tabId,
+    "link",
+    job.destinationUrl,
+    30000,
+  );
+  if ((!link || !link.ok) && String(job.destinationUrl || "").trim()) {
+    throw new Error("PINTEREST_LINK_NOT_FILLED");
+  }
+
+  await setPublisherPhase("PINTEREST_SELECTING_BOARD", {
+    rxvPublisherLastError: "",
+  });
+
+  const board = await selectPinterestBoard(tabId, job.boardName);
+
+  const ai = await ensurePinterestAiLabel(
+    tabId,
+    Boolean(job.aiDisclosureRequested),
+  );
+
+  const warnings = [];
+
+  if (!board?.ok) {
+    warnings.push(
+      String(
+        board?.reason ||
+        "PINTEREST_BOARD_REVIEW_REQUIRED",
+      ),
+    );
+  }
+
+  if (
+    Boolean(job.aiDisclosureRequested) &&
+    !ai?.on
+  ) {
+    warnings.push(
+      "PINTEREST_AI_LABEL_REVIEW_REQUIRED",
+    );
+  }
+
+  const warning =
+    warnings.join(";");
+
+  const finalReady = await waitForFinalButton(tabId, "pinterest", 15000);
+
+  return {
+    prepared: true,
+    published: false,
+    fileInput: fileResult,
+    titleFilled: Boolean(title && title.ok),
+    descriptionFilled: Boolean(description && description.ok),
+    linkFilled: Boolean((link && link.ok) || !String(job.destinationUrl || "").trim()),
+    boardSelected: Boolean(board && board.ok),
+    boardName: String(job.boardName || ""),
+    aiDisclosureRequested: Boolean(job.aiDisclosureRequested),
+    aiLabelFound: Boolean(ai && ai.found),
+    aiLabelOn: Boolean(ai && ai.on),
+    finalReady: Boolean(finalReady),
+    warning,
+  };
 }
 
 async function prepareFacebook(job, tabId) {
@@ -2227,19 +3422,35 @@ async function prepareTikTok(job, tabId) {
 }
 
 async function reportResult(job, status, debug = {}, error = "") {
-  await fetch(`${RXV_BASE}/publisher-extension/result`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ id: job.id, status, debug, error }),
-  });
+  const isPinterest =
+    String(job?.queueSource || "") === "pinterest-3018";
+
+  await fetch(
+    isPinterest
+      ? RXV_PIN_BASE + "/api/pinterest/result"
+      : RXV_BASE + "/publisher-extension/result",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: job.id, status, debug, error }),
+    },
+  );
 }
 
 async function reportFail(job, error, debug = {}) {
-  await fetch(`${RXV_BASE}/publisher-extension/fail`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ id: job.id, error, debug }),
-  }).catch(() => {});
+  const isPinterest =
+    String(job?.queueSource || "") === "pinterest-3018";
+
+  await fetch(
+    isPinterest
+      ? RXV_PIN_BASE + "/api/pinterest/fail"
+      : RXV_BASE + "/publisher-extension/fail",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: job.id, error, debug }),
+    },
+  ).catch(() => {});
 }
 
 async function handleJob(job) {
@@ -2271,6 +3482,10 @@ async function handleJob(job) {
   );
 
   try {
+    if (job.platform === "pinterest") {
+
+    }
+
     const tab =
       await getOrCreatePlatformTab(job);
 
@@ -2307,6 +3522,15 @@ async function handleJob(job) {
       );
       debug =
         await prepareTikTok(
+          job,
+          tab.id,
+        );
+    } else if (job.platform === "pinterest") {
+      await setPublisherPhase(
+        "PINTEREST_PREPARING",
+      );
+      debug =
+        await preparePinterest(
           job,
           tab.id,
         );
