@@ -6,7 +6,6 @@ import { isLoggedIn } from "@/lib/auth";
 import { trackEvent } from "@/utils/analytics";
 import SEO, { getBaseUrl } from "@/components/SEO";
 import LineStickerAuthorCard from "@/components/LineStickerAuthorCard";
-import CoupangDynamicAd from "@/components/CoupangDynamicAd";
 import {
   isLocalDevelopment,
   isVideoToolPublicPath,
@@ -1867,8 +1866,6 @@ const HomePage: React.FC = () => {
             </div>
           </section>
 
-
-          <CoupangDynamicAd subId="rxv_home_dynamic" className="order-1 mb-6" />
 
           <section className="mb-8 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm order-1 sm:p-6">
             <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
