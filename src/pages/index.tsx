@@ -1278,6 +1278,7 @@ const HomePage: React.FC = () => {
 
   const homeQuickToolButtons = publicToolCards
     .filter((card) => !pausedAiToolIds.has(card.id))
+    .filter((card) => !["admin-images-upload", "admin-images-list"].includes(card.id))
     .filter(
       (card) => !["video-tool", "image-to-video"].includes(card.id) || canShowAdminTools,
     )
