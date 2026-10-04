@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import SEO from "@/components/SEO";
+import ToolAdSlot from "@/components/ToolAdSlot";
 import { RelatedTools } from "@/components/seo/RelatedTools";
 import { RelatedGuides } from "@/components/seo/RelatedGuides";
 import {
@@ -1547,6 +1548,8 @@ export default function ImageResize() {
             <div>{operationsPanel}</div>
             <div className="sticky top-24 self-start">{previewPanel}</div>
           </div>
+
+          <ToolAdSlot />
 
           {/* 圖片尺寸對照（卡片式） */}
           <section className="mt-10 md:mt-12">

@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import SEO from "@/components/SEO";
 import LineStickerAuthorCard from "@/components/LineStickerAuthorCard";
+import ToolAdSlot from "@/components/ToolAdSlot";
 
 const LINE_STICKER_STORE_URL = "https://store.line.me/stickershop/product/33968282/zh-Hant";
 const SUPPORT_TW_URL = "https://p.ecpay.com.tw/FD7CD6D";
@@ -1388,6 +1389,9 @@ export default function ImagePromptGenerator() {
             </div>
           </div>
         </section>
+
+        <ToolAdSlot />
+
         <section id="guide" className="mt-10">
           <div className="mb-4">
             <p className="text-sm font-bold text-violet-700">說明與示範</p>

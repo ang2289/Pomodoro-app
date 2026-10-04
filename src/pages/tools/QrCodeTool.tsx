@@ -11,6 +11,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { QRCodeCanvas, QRCodeSVG } from "qrcode.react";
 import SEO, { getBaseUrl } from "@/components/SEO";
+import ToolAdSlot from "@/components/ToolAdSlot";
 import { RelatedTools } from "@/components/seo/RelatedTools";
 import { RelatedGuides } from "@/components/seo/RelatedGuides";
 import {
@@ -1362,6 +1363,8 @@ export default function QrCodeTool() {
               imageSettings={imageSettings}
             />
           </div>
+
+          <ToolAdSlot />
 
           <section className="mt-10">
             <h2 className="text-xl font-semibold mb-4">{t("qr.how.title")}</h2>

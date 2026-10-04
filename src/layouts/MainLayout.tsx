@@ -3,6 +3,7 @@ import SiteFooter from '../components/SiteFooter';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import DesktopNav from '../components/DesktopNav';
 import MobileBottomNav from '../components/MobileBottomNav';
+import ToolCoupangAd from '../components/ToolCoupangAd';
 import { useTranslation } from 'react-i18next';
 
 export default function MainLayout() {
@@ -35,6 +36,7 @@ export default function MainLayout() {
       <main className="app-main-reading flex-grow pb-20">
         <Outlet />
       </main>
+      <ToolCoupangAd />
       <MobileBottomNav />
       <SiteFooter />
     </div>

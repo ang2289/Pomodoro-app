@@ -10,6 +10,7 @@ import {
 import JSZip from "jszip";
 import { useTranslation } from "react-i18next";
 import SEO, { getBaseUrl } from "@/components/SEO";
+import ToolAdSlot from "@/components/ToolAdSlot";
 import { RelatedTools } from "@/components/seo/RelatedTools";
 import { RelatedGuides } from "@/components/seo/RelatedGuides";
 import {
@@ -726,6 +727,8 @@ export default function ImageConvert() {
       ) : null}
 
       <DonationLite />
+
+      <ToolAdSlot />
 
       <section className="mt-10 rounded-2xl border border-slate-200 bg-white p-5">
         <h2 className="text-lg font-semibold text-slate-900">

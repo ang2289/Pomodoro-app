@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type ChangeEvent } from 'reac
 import type { Area } from 'react-easy-crop';
 import { useTranslation } from 'react-i18next';
 import SEO, { getBaseUrl } from '@/components/SEO';
+import ToolAdSlot from '@/components/ToolAdSlot';
 import { RelatedTools } from '@/components/seo/RelatedTools';
 import { RelatedGuides } from '@/components/seo/RelatedGuides';
 import { getRelatedGuideItems, getRelatedToolsItems } from '@/data/internalLinks';
@@ -431,6 +432,8 @@ export default function ImageCropPage() {
 
         {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
       </section>
+
+      <ToolAdSlot />
 
       <section className="mt-10 rounded-2xl border border-slate-200 bg-white p-5">
         <h2 className="text-lg font-semibold text-slate-900">{t('imageCrop.faq_title')}</h2>

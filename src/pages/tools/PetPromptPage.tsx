@@ -1,5 +1,6 @@
 import React, { ChangeEvent, useMemo, useState } from 'react';
 import { defaultPetPromptForm, petOptions, petPromptModes, petStickerPhrases, PetPromptForm } from '../../data/petPromptOptions';
+import ToolAdSlot from '@/components/ToolAdSlot';
 
 type PhotoReferenceMode = 'original' | 'realPhoto';
 
@@ -219,6 +220,7 @@ export default function PetPromptPage() {
             </div>
           </aside>
         </div>
+        <ToolAdSlot />
       </section>
     </main>
   );

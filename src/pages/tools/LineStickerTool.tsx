@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import SEO from "@/components/SEO";
 import LineStickerAuthorCard from "@/components/LineStickerAuthorCard";
+import CoupangAd from "@/components/CoupangAd";
 import { RelatedTools } from "@/components/seo/RelatedTools";
 import { RelatedGuides } from "@/components/seo/RelatedGuides";
 import {
@@ -1763,6 +1764,7 @@ export default function LineStickerTool() {
               </Link>
             </div>
           </section>
+          <CoupangAd placement="sticker" />
         </div>
 
         <footer className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white/85 px-3 py-2 backdrop-blur-xl sm:p-4">
