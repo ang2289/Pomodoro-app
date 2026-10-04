@@ -128,6 +128,7 @@ import AIFreeTools2026Page from './pages/blog/ai-free-tools-2026'
 import LineDeletePhotosVideosSafePage from './pages/blog/line-delete-photos-videos-safe'
 import LineStickerOutsourcingGuidePage from './pages/blog/line-sticker-outsourcing-guide'
 import ShopeeTrashBagRecommendation2026Page from './pages/blog/shopee-trash-bag-recommendation-2026'
+import BulkyWasteWaterFeeGuidePage from './pages/blog/bulky-waste-water-fee-guide'
 import LanguageGuide from './pages/language-guide'
 import LazyHome from './pages/blog/LazyHome'
 import HomePage from './pages/index'
@@ -177,6 +178,7 @@ import ScamCheckPage from './pages/tools/ScamCheckPage'
 import QrCodeTool from './pages/tools/QrCodeTool'
 import EatNoFatGame from './pages/tools/EatNoFatGame'
 import TrafficAccidentSelfProtectionPage from './pages/tools/TrafficAccidentSelfProtectionPage'
+import BulkyWasteToolPage from './pages/tools/BulkyWasteToolPage'
 import ProductImageUpgradeService from './pages/services/ProductImageUpgradeService'
 import DesignCommissionPage from './pages/services/DesignCommissionPage'
 import ProductImageGeneratorPage from './pages/tools/ProductImageGeneratorPage'
@@ -702,6 +704,7 @@ function App() {
             <Route path="tools" element={<ToolsPage />} />
             <Route path="tools/eat-no-fat-game" element={<EatNoFatGame />} />
             <Route path="tools/traffic-accident" element={<TrafficAccidentSelfProtectionPage />} />
+            <Route path="tools/bulky-waste" element={<BulkyWasteToolPage />} />
             <Route path="tools/ai-summary" element={<PausedAiToolPage />} />
             <Route path="tools/summary" element={<PausedAiToolPage />} />
             <Route path="tools/shopee-single-video" element={<ShopeeSingleVideoPage />} />
@@ -888,6 +891,7 @@ function App() {
           <Route path="/blog/power-of-silence" element={<PowerOfSilence />} />
           <Route path="/blog/three-minute-meditation" element={<ThreeMinuteMeditation />} />
           <Route path="/blog/about-spiritual-growth" element={<AboutSpiritualGrowth />} />
+          <Route path="/blog/bulky-waste-water-fee-guide" element={<BulkyWasteWaterFeeGuidePage />} />
           {/*自動短影音 */}
           <Route path="/tools/image-to-video" element={<LocalOnlyImageToVideoRoute />} />
           
