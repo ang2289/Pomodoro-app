@@ -8,6 +8,8 @@ import {
   type AutoMotionPreset,
 } from "@/lib/animatedLineStickerAuto";
 
+type WorkflowMode = "single" | "manual" | "batch";
+
 type FrameItem = {
   id: string;
   file: File;
@@ -1193,6 +1195,13 @@ const AnimatedLineStickerTool: React.FC = () => {
   const [autoSourceFile, setAutoSourceFile] = useState<File | null>(null);
   const [autoSourceName, setAutoSourceName] = useState("");
   const [autoPreviewFrames, setAutoPreviewFrames] = useState<FrameItem[]>([]);
+  const [workflowMode, setWorkflowMode] = useState<WorkflowMode>("single");
+  const [batchSources, setBatchSources] = useState<FrameItem[]>([]);
+  const [batchMotionPreset, setBatchMotionPreset] = useState<AutoMotionPreset>("auto");
+  const [batchBusy, setBatchBusy] = useState(false);
+  const [batchProgress, setBatchProgress] = useState(0);
+  const [batchStatus, setBatchStatus] = useState("");
+  const [batchMessage, setBatchMessage] = useState("");
   const [previewIndex, setPreviewIndex] = useState(0);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -1201,9 +1210,11 @@ const AnimatedLineStickerTool: React.FC = () => {
   const [lineOutputSummary, setLineOutputSummary] = useState<LineOutputSummary | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const autoInputRef = useRef<HTMLInputElement | null>(null);
+  const batchInputRef = useRef<HTMLInputElement | null>(null);
   const framesRef = useRef<FrameItem[]>([]);
   const linePreviewUrlsRef = useRef<string[]>([]);
   const autoPreviewFramesRef = useRef<FrameItem[]>([]);
+  const batchSourcesRef = useRef<FrameItem[]>([]);
 
   useEffect(() => {
     framesRef.current = frames;
@@ -1214,9 +1225,14 @@ const AnimatedLineStickerTool: React.FC = () => {
   }, [autoPreviewFrames]);
 
   useEffect(() => {
+    batchSourcesRef.current = batchSources;
+  }, [batchSources]);
+
+  useEffect(() => {
     return () => {
       framesRef.current.forEach((frame) => URL.revokeObjectURL(frame.url));
       autoPreviewFramesRef.current.forEach((frame) => URL.revokeObjectURL(frame.url));
+      batchSourcesRef.current.forEach((frame) => URL.revokeObjectURL(frame.url));
       linePreviewUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
     };
   }, []);
@@ -1417,6 +1433,177 @@ const AnimatedLineStickerTool: React.FC = () => {
     }
   };
 
+  const handleBatchSources = async (fileList: FileList | null) => {
+    if (!fileList || fileList.length === 0 || batchBusy) {
+      if (batchInputRef.current) batchInputRef.current.value = "";
+      return;
+    }
+
+    const imageFiles = Array.from(fileList)
+      .filter((file) => file.type.startsWith("image/") || file.name.toLowerCase().endsWith(".png"))
+      .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" }))
+      .slice(0, 16);
+
+    setBatchMessage("");
+    setBatchStatus("");
+    setBatchProgress(0);
+
+    try {
+      const loaded = await Promise.all(imageFiles.map((file) => readImageFile(file, t)));
+      setBatchSources((previous) => {
+        previous.forEach((frame) => URL.revokeObjectURL(frame.url));
+        return loaded;
+      });
+      if (![8, 16].includes(loaded.length)) {
+        setBatchMessage(t("animated_line_sticker.batch_count_warning", { count: loaded.length }));
+      }
+    } catch (error: any) {
+      setBatchMessage(error?.message || t("animated_line_sticker.error_read_images_failed"));
+    } finally {
+      if (batchInputRef.current) batchInputRef.current.value = "";
+    }
+  };
+
+  const clearBatchSources = () => {
+    setBatchSources((previous) => {
+      previous.forEach((frame) => URL.revokeObjectURL(frame.url));
+      return [];
+    });
+    setBatchProgress(0);
+    setBatchStatus("");
+    setBatchMessage("");
+    if (batchInputRef.current) batchInputRef.current.value = "";
+  };
+
+  const exportBatchUploadPack = async () => {
+    if (batchBusy || ![8, 16].includes(batchSources.length)) return;
+
+    setBatchBusy(true);
+    setBatchProgress(0);
+    setBatchMessage("");
+    const files: { name: string; data: Uint8Array }[] = [];
+    const sizeReport: string[] = [];
+    let mainData: Uint8Array | null = null;
+    let tabData: Uint8Array | null = null;
+
+    try {
+      for (let i = 0; i < batchSources.length; i += 1) {
+        const item = batchSources[i];
+        setBatchStatus(
+          t("animated_line_sticker.batch_status_item", {
+            current: i + 1,
+            total: batchSources.length,
+            name: item.name,
+          }),
+        );
+        setBatchProgress(Math.round((i / batchSources.length) * 90));
+        await waitMs(40);
+
+        const generatedFiles = await generateAutoAnimationFrameFiles(item.file, batchMotionPreset);
+        const generatedFrames = await Promise.all(
+          generatedFiles.map((file) => readImageFile(file, t)),
+        );
+
+        try {
+          const apng = await createLineSafeApngBlob(
+            generatedFrames,
+            2,
+            2,
+            t,
+            (status) =>
+              setBatchStatus(
+                `[${i + 1}/${batchSources.length}] ${status}`,
+              ),
+          );
+          const stickerName = `${String(i + 1).padStart(2, "0")}.png`;
+          files.push({
+            name: stickerName,
+            data: new Uint8Array(await apng.arrayBuffer()),
+          });
+          sizeReport.push(
+            `${stickerName}\t${Math.round(apng.size / 1024)}KB\t${
+              apng.size <= LINE_APNG_MAX_BYTES ? "OK" : "超過1MB，請最後人工檢查"
+            }`,
+          );
+
+          if (i === 0) {
+            const mainBlob = await createLineMainImageApngBlob(
+              generatedFrames,
+              2,
+              2,
+              t,
+            );
+            const tabBlob = await createLineStaticSmallImageBlob(
+              generatedFrames,
+              t,
+              LINE_TAB_ICON_WIDTH,
+              LINE_TAB_ICON_HEIGHT,
+              2,
+            );
+            mainData = new Uint8Array(await mainBlob.arrayBuffer());
+            tabData = new Uint8Array(await tabBlob.arrayBuffer());
+          }
+        } finally {
+          generatedFrames.forEach((frame) => URL.revokeObjectURL(frame.url));
+        }
+      }
+
+      if (mainData) files.push({ name: "main.png", data: mainData });
+      if (tabData) files.push({ name: "tab.png", data: tabData });
+
+      const readme = [
+        "RxV LINE 動態貼圖一鍵整套整理包",
+        `貼圖數量：${batchSources.length}`,
+        "每張來源圖：自動產生 8 禎 / 2 秒 / 2 次循環",
+        `動畫模板：${batchMotionPreset}`,
+        "",
+        "檔案：",
+        "01.png ～ 08.png / 16.png：各貼圖 APNG",
+        "main.png：整套主要圖片（由第 1 張來源自動產生）",
+        "tab.png：聊天室標籤圖片（由第 1 張來源自動產生）",
+        "size-report.txt：每張 APNG 大小檢查結果",
+        "",
+        "重要：本工具會自動整理尺寸、命名與 ZIP，但 LINE Creators Market 的規格可能更新，送審前仍請在官方後台做最後規格檢查。",
+      ].join("\n");
+
+      files.push({
+        name: "README.txt",
+        data: new TextEncoder().encode(readme),
+      });
+      files.push({
+        name: "size-report.txt",
+        data: new TextEncoder().encode(sizeReport.join("\n")),
+      });
+
+      setBatchStatus(t("animated_line_sticker.batch_status_zip"));
+      setBatchProgress(96);
+      await waitMs(40);
+
+      const zip = makeZip(files);
+      downloadBlob(
+        zip,
+        `rxv-line-animated-sticker-upload-pack-${batchSources.length}.zip`,
+      );
+
+      setBatchProgress(100);
+      setBatchStatus(t("animated_line_sticker.batch_status_done"));
+      const overLimit = sizeReport.filter((line) => line.includes("超過1MB")).length;
+      setBatchMessage(
+        overLimit > 0
+          ? t("animated_line_sticker.batch_done_with_warning", { count: overLimit })
+          : t("animated_line_sticker.batch_done_ok"),
+      );
+    } catch (error: any) {
+      setBatchProgress(0);
+      setBatchStatus("");
+      setBatchMessage(
+        error?.message || t("animated_line_sticker.batch_error_failed"),
+      );
+    } finally {
+      setBatchBusy(false);
+    }
+  };
+
   const moveFrame = (index: number, direction: -1 | 1) => {
     setFrames((prev) => {
       const next = [...prev];
@@ -1582,20 +1769,16 @@ const AnimatedLineStickerTool: React.FC = () => {
             <span className="font-black">{t("animated_line_sticker.recommended_timing_value")}</span>
             {t("animated_line_sticker.recommended_timing_after")}
           </div>
-          <div className="mt-5 flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={() => inputRef.current?.click()}
-              className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-full bg-fuchsia-600 px-5 py-3 text-sm font-black leading-none !text-white shadow-md transition hover:-translate-y-0.5 hover:bg-fuchsia-700 hover:shadow-lg"
-            >
-              {t("animated_line_sticker.upload_frames_button")}
-            </button>
+          <div className="mt-5 flex flex-wrap items-center gap-3">
             <a
               href="/tools/animated-sticker-prompt"
               className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-full bg-sky-600 px-5 py-3 text-sm font-black leading-none !text-white shadow-md transition hover:-translate-y-0.5 hover:bg-sky-700 hover:shadow-lg"
             >
               {t("animated_line_sticker.prompt_storyboard_button")}
             </a>
+            <span className="text-xs font-bold text-slate-500">
+              {t("animated_line_sticker.choose_mode_hint")}
+            </span>
           </div>
           <input
             ref={inputRef}
@@ -1607,6 +1790,41 @@ const AnimatedLineStickerTool: React.FC = () => {
           />
         </section>
 
+        <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
+          <div className="mb-4">
+            <p className="text-sm font-black text-slate-900">{t("animated_line_sticker.mode_title")}</p>
+            <p className="mt-1 text-xs leading-5 text-slate-500">{t("animated_line_sticker.mode_desc")}</p>
+          </div>
+          <div className="grid gap-3 md:grid-cols-3">
+            {([
+              ["single", "✨", t("animated_line_sticker.mode_single_title"), t("animated_line_sticker.mode_single_desc")],
+              ["manual", "🧩", t("animated_line_sticker.mode_manual_title"), t("animated_line_sticker.mode_manual_desc")],
+              ["batch", "📦", t("animated_line_sticker.mode_batch_title"), t("animated_line_sticker.mode_batch_desc")],
+            ] as const).map(([mode, icon, title, desc]) => {
+              const active = workflowMode === mode;
+              return (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => setWorkflowMode(mode)}
+                  className={`rounded-2xl border p-4 text-left transition ${
+                    active
+                      ? "border-violet-500 bg-violet-50 ring-2 ring-violet-100"
+                      : "border-slate-200 bg-slate-50 hover:border-violet-200 hover:bg-white"
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">{icon}</span>
+                    <span className="text-sm font-black text-slate-900">{title}</span>
+                  </div>
+                  <p className="mt-2 text-xs leading-5 text-slate-600">{desc}</p>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        {workflowMode === "single" ? (
         <section className="mt-6 rounded-3xl border border-violet-200 bg-gradient-to-br from-violet-50 via-white to-fuchsia-50 p-5 shadow-sm md:p-7">
           <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(280px,0.72fr)] lg:items-end">
             <div>
@@ -1618,7 +1836,10 @@ const AnimatedLineStickerTool: React.FC = () => {
                   {t("animated_line_sticker.auto_timing_badge")}
                 </span>
               </div>
-              <h2 className="mt-3 text-xl font-black text-slate-900 md:text-2xl">
+              <p className="mt-4 text-xs font-black uppercase tracking-wide text-violet-600">
+                {t("animated_line_sticker.step_1")}
+              </p>
+              <h2 className="mt-1 text-xl font-black text-slate-900 md:text-2xl">
                 {t("animated_line_sticker.auto_title")}
               </h2>
               <p className="mt-2 max-w-3xl text-sm leading-7 text-slate-700">
@@ -1632,10 +1853,28 @@ const AnimatedLineStickerTool: React.FC = () => {
                   {t("animated_line_sticker.auto_current_source", { name: autoSourceName })}
                 </p>
               ) : null}
+              <button
+                type="button"
+                disabled={autoGenerating}
+                onClick={() => autoInputRef.current?.click()}
+                className="mt-3 inline-flex min-h-11 items-center justify-center rounded-xl border border-violet-200 bg-white px-4 py-2.5 text-sm font-black text-violet-700 shadow-sm transition hover:bg-violet-50 disabled:bg-slate-100"
+              >
+                {t("animated_line_sticker.auto_choose_source_button")}
+              </button>
+              <input
+                ref={autoInputRef}
+                type="file"
+                accept="image/png,image/*"
+                className="hidden"
+                onChange={(event) => handleAutoSource(event.target.files)}
+              />
             </div>
 
             <div className="rounded-2xl border border-violet-100 bg-white p-4 shadow-sm">
-              <label className="block">
+              <p className="text-xs font-black uppercase tracking-wide text-violet-600">
+                {t("animated_line_sticker.step_2")}
+              </p>
+              <label className="mt-1 block">
                 <span className="text-sm font-black text-slate-800">
                   {t("animated_line_sticker.auto_motion_label")}
                 </span>
@@ -1652,26 +1891,38 @@ const AnimatedLineStickerTool: React.FC = () => {
                   ))}
                 </select>
               </label>
-              <button
-                type="button"
-                disabled={autoGenerating}
-                onClick={() => autoInputRef.current?.click()}
-                className="mt-3 inline-flex min-h-12 w-full items-center justify-center rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm font-black text-violet-700 shadow-sm transition hover:bg-violet-100 disabled:cursor-wait disabled:bg-slate-100"
-              >
-                {t("animated_line_sticker.auto_choose_source_button")}
-              </button>
-              <input
-                ref={autoInputRef}
-                type="file"
-                accept="image/png,image/*"
-                className="hidden"
-                onChange={(event) => handleAutoSource(event.target.files)}
-              />
+
+              <div className="mt-3">
+                <p className="mb-2 text-xs font-black text-slate-700">
+                  {t("animated_line_sticker.auto_live_preview_badge")}
+                </p>
+                <div className="flex h-[190px] items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-[linear-gradient(45deg,#f8fafc_25%,transparent_25%),linear-gradient(-45deg,#f8fafc_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#f8fafc_75%),linear-gradient(-45deg,transparent_75%,#f8fafc_75%)] bg-[length:18px_18px] bg-[position:0_0,0_9px,9px_-9px,-9px_0]">
+                  {autoPreviewFrames.length ? (
+                    <img
+                      src={autoPreviewFrames[previewIndex % autoPreviewFrames.length]?.url}
+                      alt={t("animated_line_sticker.preview_alt")}
+                      className="max-h-full max-w-full object-contain"
+                    />
+                  ) : autoPreviewGenerating ? (
+                    <p className="px-4 text-center text-xs font-bold text-violet-600">
+                      {t("animated_line_sticker.auto_preview_generating")}
+                    </p>
+                  ) : (
+                    <p className="px-4 text-center text-xs font-bold text-slate-500">
+                      {t("animated_line_sticker.auto_preview_empty")}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <p className="mt-4 text-xs font-black uppercase tracking-wide text-violet-600">
+                {t("animated_line_sticker.step_3")}
+              </p>
               <button
                 type="button"
                 disabled={!autoSourceFile || autoGenerating || autoPreviewGenerating}
                 onClick={applyAutoMotion}
-                className="mt-3 inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-violet-600 px-4 py-3 text-sm font-black !text-white shadow-md transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                className="mt-2 inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-violet-600 px-4 py-3 text-sm font-black !text-white shadow-md transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-slate-300"
               >
                 {autoGenerating
                   ? t("animated_line_sticker.auto_generating_button")
@@ -1685,9 +1936,165 @@ const AnimatedLineStickerTool: React.FC = () => {
             </div>
           </div>
         </section>
+        ) : null}
 
+        {workflowMode === "batch" ? (
+          <section className="mt-6 rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-sky-50 p-5 shadow-sm md:p-7">
+            <div className="flex flex-col gap-2">
+              <span className="w-fit rounded-full bg-emerald-600 px-3 py-1 text-xs font-black !text-white">
+                {t("animated_line_sticker.batch_badge")}
+              </span>
+              <h2 className="text-2xl font-black text-slate-900">
+                {t("animated_line_sticker.batch_title")}
+              </h2>
+              <p className="max-w-4xl text-sm leading-7 text-slate-600">
+                {t("animated_line_sticker.batch_desc")}
+              </p>
+            </div>
+
+            <div className="mt-5 grid gap-3 md:grid-cols-3">
+              {[
+                [t("animated_line_sticker.step_1"), t("animated_line_sticker.batch_step1")],
+                [t("animated_line_sticker.step_2"), t("animated_line_sticker.batch_step2")],
+                [t("animated_line_sticker.step_3"), t("animated_line_sticker.batch_step3")],
+              ].map(([label, desc]) => (
+                <div key={label} className="rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm">
+                  <p className="text-xs font-black uppercase tracking-wide text-emerald-600">{label}</p>
+                  <p className="mt-2 text-sm font-bold leading-6 text-slate-800">{desc}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_0.8fr]">
+              <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-black text-slate-900">
+                      {t("animated_line_sticker.batch_selected", { count: batchSources.length })}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {t("animated_line_sticker.batch_count_hint")}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      disabled={batchBusy}
+                      onClick={() => batchInputRef.current?.click()}
+                      className="rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-black !text-white shadow disabled:bg-slate-300"
+                    >
+                      {t("animated_line_sticker.batch_choose_button")}
+                    </button>
+                    {batchSources.length ? (
+                      <button
+                        type="button"
+                        disabled={batchBusy}
+                        onClick={clearBatchSources}
+                        className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-black text-slate-600"
+                      >
+                        {t("animated_line_sticker.clear_button")}
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+                <input
+                  ref={batchInputRef}
+                  type="file"
+                  accept="image/png,image/*"
+                  multiple
+                  className="hidden"
+                  onChange={(event) => handleBatchSources(event.target.files)}
+                />
+
+                {batchSources.length ? (
+                  <div className="mt-4 grid grid-cols-4 gap-2 sm:grid-cols-8">
+                    {batchSources.map((item, index) => (
+                      <div key={item.id} className="rounded-xl border border-slate-100 bg-slate-50 p-1.5">
+                        <div className="aspect-square overflow-hidden rounded-lg bg-white">
+                          <img src={item.url} alt={item.name} className="h-full w-full object-contain" />
+                        </div>
+                        <p className="mt-1 text-center text-[10px] font-black text-slate-500">
+                          {String(index + 1).padStart(2, "0")}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => batchInputRef.current?.click()}
+                    className="mt-4 flex min-h-[180px] w-full flex-col items-center justify-center rounded-2xl border-2 border-dashed border-emerald-200 bg-emerald-50/50 p-5 text-center"
+                  >
+                    <span className="text-3xl">📁</span>
+                    <span className="mt-2 text-sm font-black text-slate-800">
+                      {t("animated_line_sticker.batch_dropzone")}
+                    </span>
+                  </button>
+                )}
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                <label className="block">
+                  <span className="text-sm font-black text-slate-800">
+                    {t("animated_line_sticker.batch_motion_label")}
+                  </span>
+                  <select
+                    value={batchMotionPreset}
+                    onChange={(event) => setBatchMotionPreset(event.target.value as AutoMotionPreset)}
+                    disabled={batchBusy}
+                    className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-bold"
+                  >
+                    {AUTO_MOTION_PRESETS.map((preset) => (
+                      <option key={preset.value} value={preset.value}>
+                        {t(preset.labelKey)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <div className="mt-4 rounded-2xl bg-sky-50 p-3 text-xs leading-6 text-sky-900">
+                  {t("animated_line_sticker.batch_output_summary")}
+                </div>
+
+                <button
+                  type="button"
+                  disabled={batchBusy || ![8, 16].includes(batchSources.length)}
+                  onClick={exportBatchUploadPack}
+                  className="mt-4 inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-black !text-white shadow-md transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                >
+                  {batchBusy
+                    ? t("animated_line_sticker.batch_generating_button")
+                    : t("animated_line_sticker.batch_generate_button")}
+                </button>
+
+                <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-200">
+                  <div
+                    className="h-full rounded-full bg-emerald-600 transition-all"
+                    style={{ width: `${batchProgress}%` }}
+                  />
+                </div>
+                {batchStatus ? (
+                  <p className="mt-2 text-xs font-bold leading-5 text-emerald-800">{batchStatus}</p>
+                ) : null}
+                {batchMessage ? (
+                  <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-xs font-bold leading-5 text-amber-800">
+                    {batchMessage}
+                  </p>
+                ) : null}
+              </div>
+            </div>
+          </section>
+        ) : null}
+
+        {workflowMode !== "batch" ? (
         <section className="mt-6 grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(330px,0.85fr)]">
           <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+            {workflowMode === "manual" ? (
+              <div className="mb-5 rounded-2xl border border-sky-100 bg-sky-50 p-4">
+                <p className="text-sm font-black text-sky-900">{t("animated_line_sticker.manual_title")}</p>
+                <p className="mt-1 text-xs leading-6 text-sky-800">{t("animated_line_sticker.manual_steps")}</p>
+              </div>
+            ) : null}
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <h2 className="text-xl font-black text-slate-900">{t("animated_line_sticker.frame_order_title")}</h2>
@@ -1703,9 +2110,10 @@ const AnimatedLineStickerTool: React.FC = () => {
             </div>
 
             {frames.length === 0 ? (
+              workflowMode === "manual" ? (
               <button
                 type="button"
-                onClick={() => inputRef.current?.click()}
+                onClick={() => inputRef.current?.click()
                 onDrop={(event) => {
                   event.preventDefault();
                   handleFiles(event.dataTransfer.files);
@@ -1717,6 +2125,13 @@ const AnimatedLineStickerTool: React.FC = () => {
                 <span className="mt-3 text-base font-black text-slate-900">{t("animated_line_sticker.dropzone_title")}</span>
                 <span className="mt-2 text-sm text-slate-600">{t("animated_line_sticker.dropzone_desc")}</span>
               </button>
+              ) : (
+                <div className="mt-5 flex min-h-[180px] flex-col items-center justify-center rounded-2xl border border-violet-100 bg-violet-50/60 p-5 text-center">
+                  <span className="text-3xl">✨</span>
+                  <p className="mt-2 text-sm font-black text-slate-800">{t("animated_line_sticker.single_wait_title")}</p>
+                  <p className="mt-1 max-w-md text-xs leading-5 text-slate-600">{t("animated_line_sticker.single_wait_desc")}</p>
+                </div>
+              )
             ) : (
               <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {frames.map((frame, index) => (
@@ -1759,20 +2174,12 @@ const AnimatedLineStickerTool: React.FC = () => {
                 ) : null}
               </div>
               <div className="mt-4 flex h-[270px] items-center justify-center rounded-2xl border border-slate-200 bg-[linear-gradient(45deg,#f8fafc_25%,transparent_25%),linear-gradient(-45deg,#f8fafc_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#f8fafc_75%),linear-gradient(-45deg,transparent_75%,#f8fafc_75%)] bg-[length:20px_20px] bg-[position:0_0,0_10px,10px_-10px,-10px_0]">
-                {autoPreviewFrames.length ? (
+                {frames.length ? (
                   <img
-                    src={autoPreviewFrames[previewIndex % autoPreviewFrames.length]?.url}
+                    src={linePreviewFrames[previewIndex % Math.max(linePreviewFrames.length, 1)]?.url ?? frames[previewIndex % frames.length]?.url}
                     alt={t("animated_line_sticker.preview_alt")}
                     className="max-h-full max-w-full object-contain"
                   />
-                ) : frames.length ? (
-                  <img
-                    src={linePreviewFrames[previewIndex % linePreviewFrames.length]?.url ?? frames[previewIndex % frames.length]?.url}
-                    alt={t("animated_line_sticker.preview_alt")}
-                    className="max-h-full max-w-full object-contain"
-                  />
-                ) : autoPreviewGenerating ? (
-                  <p className="text-sm font-bold text-violet-600">{t("animated_line_sticker.auto_preview_generating")}</p>
                 ) : (
                   <p className="text-sm font-bold text-slate-500">{t("animated_line_sticker.preview_empty")}</p>
                 )}
@@ -1894,6 +2301,7 @@ const AnimatedLineStickerTool: React.FC = () => {
             </div>
           </div>
         </section>
+        ) : null}
         </div>
       </main>
     </>
