@@ -1,10 +1,19 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import type { ChangeEvent, PointerEvent } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import SEO from "@/components/SEO";
 import LineStickerAuthorCard from "@/components/LineStickerAuthorCard";
+import LineStickerFlowSteps from "@/components/LineStickerFlowSteps";
 import CoupangAd from "@/components/CoupangAd";
+import {
+  getMotherSheetPlan,
+  readLineStickerProject,
+  saveAnimatedStickerHandoff,
+  updateLineStickerProject,
+  type LineStickerProject,
+  type MotherSheetGrid,
+} from "@/lib/lineStickerFlow";
 import { RelatedTools } from "@/components/seo/RelatedTools";
 import { RelatedGuides } from "@/components/seo/RelatedGuides";
 import {
@@ -579,15 +588,87 @@ function canvasToBlob(
   });
 }
 
+function detectMotherSheetGrid(
+  width: number,
+  height: number,
+): MotherSheetGrid {
+  const ratio = width / Math.max(1, height);
+  if (ratio >= 1.35) return "4x2";
+  if (ratio <= 0.9) return "4x5";
+  return "4x4";
+}
+
+function removeConnectedWhiteBackground(
+  canvas: HTMLCanvasElement,
+  threshold = 238,
+) {
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  if (!context) return;
+  const { width, height } = canvas;
+  const imageData = context.getImageData(0, 0, width, height);
+  const data = imageData.data;
+  const total = width * height;
+  const visited = new Uint8Array(total);
+  const queue = new Int32Array(total);
+  let head = 0;
+  let tail = 0;
+
+  const isBackground = (index: number) => {
+    const p = index * 4;
+    if (data[p + 3] === 0) return true;
+    const r = data[p];
+    const g = data[p + 1];
+    const b = data[p + 2];
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    return r >= threshold && g >= threshold && b >= threshold && max - min <= 28;
+  };
+
+  const push = (index: number) => {
+    if (index < 0 || index >= total || visited[index] || !isBackground(index)) return;
+    visited[index] = 1;
+    queue[tail++] = index;
+  };
+
+  for (let x = 0; x < width; x += 1) {
+    push(x);
+    push((height - 1) * width + x);
+  }
+  for (let y = 0; y < height; y += 1) {
+    push(y * width);
+    push(y * width + width - 1);
+  }
+
+  while (head < tail) {
+    const index = queue[head++];
+    const x = index % width;
+    const y = Math.floor(index / width);
+    if (x > 0) push(index - 1);
+    if (x + 1 < width) push(index + 1);
+    if (y > 0) push(index - width);
+    if (y + 1 < height) push(index + width);
+  }
+
+  for (let i = 0; i < total; i += 1) {
+    if (visited[i]) data[i * 4 + 3] = 0;
+  }
+  context.putImageData(imageData, 0, 0);
+}
+
 async function splitMotherSheet(
   file: File,
-  rows: number,
-  columns: number,
+  grid: "auto" | MotherSheetGrid,
   t: (key: string) => string,
+  removeWhiteBackground: boolean,
 ): Promise<File[]> {
   const image = await loadImage(file, t);
   const sourceWidth = image.naturalWidth || image.width;
   const sourceHeight = image.naturalHeight || image.height;
+  const detectedGrid =
+    grid === "auto"
+      ? detectMotherSheetGrid(sourceWidth, sourceHeight)
+      : grid;
+  const [columns, rows] = detectedGrid.split("x").map(Number);
   const results: File[] = [];
 
   for (let row = 0; row < rows; row += 1) {
@@ -613,6 +694,7 @@ async function splitMotherSheet(
         canvas.width,
         canvas.height,
       );
+      if (removeWhiteBackground) removeConnectedWhiteBackground(canvas);
       const blob = await canvasToBlob(canvas, t);
       results.push(
         new File(
@@ -791,6 +873,12 @@ function PreviewCard({
 
 export default function LineStickerTool() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const [flowProject] = useState<LineStickerProject | null>(() => {
+    if (typeof window === "undefined") return null;
+    const enabled = new URLSearchParams(window.location.search).get("flow") === "1";
+    return enabled ? readLineStickerProject() : null;
+  });
   const faqJsonLd = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -804,14 +892,17 @@ export default function LineStickerTool() {
     })),
   };
   const [files, setFiles] = useState<ImagePreview[]>([]);
-  const [stickerCount, setStickerCount] = useState<8 | 16 | 24 | 32 | 40>(8);
+  const [stickerCount, setStickerCount] = useState<8 | 16 | 24 | 32 | 40>(
+    () => flowProject?.count ?? 8,
+  );
   const [mainImageIndex, setMainImageIndex] = useState<number>(0);
   const [cropMode, setCropMode] = useState<LineStickerCropMode>("smart-safe");
   const [cropScale, setCropScale] = useState<number>(100);
   const [itemScales, setItemScales] = useState<Record<number, number>>({});
   const [itemOffsets, setItemOffsets] = useState<Record<number, ItemOffset>>({});
   const [reviewedWarnings, setReviewedWarnings] = useState<Record<number, boolean>>({});
-  const [motherSheetGrid, setMotherSheetGrid] = useState<"4x4" | "4x5">("4x4");
+  const [motherSheetGrid, setMotherSheetGrid] = useState<"auto" | MotherSheetGrid>("auto");
+  const [autoRemoveWhiteBg, setAutoRemoveWhiteBg] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -907,20 +998,27 @@ export default function LineStickerTool() {
       setLoading(true);
       setError(null);
       try {
-        const [columns, rows] = motherSheetGrid.split("x").map(Number);
         const splitFiles: File[] = [];
         for (const file of selected) {
           if (!ACCEPT_TYPES.includes(file.type)) continue;
-          splitFiles.push(...(await splitMotherSheet(file, rows, columns, t)));
+          splitFiles.push(
+            ...(await splitMotherSheet(
+              file,
+              motherSheetGrid,
+              t,
+              autoRemoveWhiteBg,
+            )),
+          );
         }
         await validateAndAddFiles(splitFiles);
+        if (flowProject) updateLineStickerProject({ stage: 4 });
       } catch (cause) {
         setError(cause instanceof Error ? cause.message : "母圖自動切割失敗");
       } finally {
         setLoading(false);
       }
     },
-    [motherSheetGrid, t, validateAndAddFiles],
+    [motherSheetGrid, autoRemoveWhiteBg, flowProject, t, validateAndAddFiles],
   );
 
   const clearAll = useCallback(() => {
@@ -1067,6 +1165,58 @@ export default function LineStickerTool() {
     t,
   ]);
 
+  const continueToAnimated = useCallback(async () => {
+    if (!canDownload || loading) return;
+    if (qualityErrorCount > 0) {
+      setError(`尚有 ${qualityErrorCount} 張需要修正，請先處理紅色提示的貼圖。`);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const prepared: File[] = [];
+      for (let i = 0; i < stickerCount; i += 1) {
+        const canvas = resizeImageToCanvas(
+          files[i].img,
+          STICKER_BODY.width,
+          STICKER_BODY.height,
+          cropMode,
+          getScaleForIndex(i),
+          getOffsetForIndex(i),
+        );
+        if (!canvasHasTransparency(canvas)) {
+          throw new Error(`第 ${i + 1} 張背景仍不是透明，請先確認去背結果。`);
+        }
+        const blob = await canvasToBlob(canvas, t);
+        prepared.push(
+          new File([blob], `${String(i + 1).padStart(2, "0")}.png`, {
+            type: "image/png",
+          }),
+        );
+      }
+      await saveAnimatedStickerHandoff(prepared);
+      updateLineStickerProject({ stage: 5 });
+      navigate("/tools/animated-line-sticker?from=line-sticker");
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : "無法送到動態貼圖製作，請再試一次。",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [
+    canDownload,
+    loading,
+    qualityErrorCount,
+    stickerCount,
+    files,
+    cropMode,
+    getScaleForIndex,
+    getOffsetForIndex,
+    navigate,
+    t,
+  ]);
+
   return (
     <>
       <SEO
@@ -1079,30 +1229,62 @@ export default function LineStickerTool() {
 
       <div className="min-h-screen bg-slate-50 px-4 py-8 pb-24 sm:pb-32">
         <div className="mx-auto max-w-5xl">
-          <Link
-            to="/"
-            className="text-xs text-slate-400 hover:text-blue-500 mb-4 inline-block"
-          >
-            {t("line_sticker_back_home")}
-          </Link>
+          <LineStickerFlowSteps
+            activeStep={files.length >= stickerCount ? 4 : 3}
+            mode={flowProject?.mode ?? "static"}
+          />
 
           <header className="mb-6">
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-              LINE 貼圖整理打包工具｜把貼圖圖片整理成上架素材包
+              第 3～4 步｜上傳母圖，自動整理貼圖
             </h1>
             <p className="text-slate-500 text-sm mt-1">
-              已經有貼圖圖片了嗎？把圖片上傳後，本工具會協助整理 LINE
-              貼圖尺寸、主圖、標籤圖與 ZIP
-              打包，適合新手、創作者、店家品牌與客製貼圖接案使用。
+              把剛才從 ChatGPT 下載的母圖直接傳上來。系統會自動切成單張、移除白色背景、整理尺寸並檢查。正常的圖片不用另外設定。
             </p>
             <p className="text-slate-500 text-sm mt-2">
               {t("line_sticker_hero_desc")}
             </p>
           </header>
 
-          <LineStickerGuideEntry />
-          <StickerWorkflowAssist />
-          <LineStickerAuthorCard />
+          {flowProject ? (
+            <section className="mb-6 rounded-3xl border border-blue-200 bg-blue-50 p-5">
+              <p className="text-xs font-black text-blue-600">已接續第 1～2 步</p>
+              <h2 className="mt-1 text-lg font-black text-slate-900">
+                {flowProject.theme}｜{flowProject.mode === "animated" ? "動態" : "靜態"}貼圖｜{flowProject.count} 張
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                請上傳 {getMotherSheetPlan(flowProject.count).length} 張母圖：
+                {getMotherSheetPlan(flowProject.count)
+                  .map((item) => item.grid.replace("x", "×"))
+                  .join(" ＋ ")}
+                。上傳後會自動依順序裁切。
+              </p>
+            </section>
+          ) : (
+            <section className="mb-6 rounded-2xl border border-violet-100 bg-violet-50 p-4">
+              <p className="text-sm font-black text-slate-900">還沒有貼圖母圖？</p>
+              <p className="mt-1 text-xs leading-5 text-slate-600">
+                建議先從第 1 步開始，系統會幫你準備 ChatGPT 生圖指令。
+              </p>
+              <Link
+                to="/tools/sticker-prompt"
+                className="mt-3 inline-flex rounded-xl bg-violet-600 px-4 py-2.5 text-xs font-black !text-white"
+              >
+                回到第 1 步
+              </Link>
+            </section>
+          )}
+
+          <details className="mb-6 rounded-2xl border border-slate-200 bg-white">
+            <summary className="cursor-pointer px-4 py-3 text-sm font-black text-slate-700">
+              需要教學或其他整理方式
+            </summary>
+            <div className="border-t border-slate-200 p-4">
+              <LineStickerGuideEntry />
+              <StickerWorkflowAssist />
+              <LineStickerAuthorCard />
+            </div>
+          </details>
 
           {files.length > 0 && (
             <div className="mb-6 flex flex-wrap items-center gap-3 bg-blue-600 text-white p-4 rounded-2xl shadow-lg">
@@ -1138,7 +1320,7 @@ export default function LineStickerTool() {
                 ⚠ 有 {noTransparencyCount} 張可能尚未去背
               </p>
               <p className="mt-1 text-xs leading-relaxed">
-                LINE 貼圖建議使用透明背景 PNG / WebP；白底或 JPG 請先去背後再打包。
+                若這些圖片是從下方「母圖上傳」進來，請確認已開啟自動去白底；單張直接上傳則仍需透明 PNG / WebP。
               </p>
             </div>
           )}
@@ -1152,19 +1334,22 @@ export default function LineStickerTool() {
                       一鍵母圖切割
                     </span>
                     <span className="text-xs font-bold text-violet-700">
-                      可一次選擇多張母圖
+                      自動判斷 4×2／4×4／4×5
                     </span>
                   </div>
-                  <h2 className="mt-2 text-base font-black text-slate-900">
-                    上傳母圖，自動切成單張並立即檢查
+                  <p className="mt-3 text-xs font-black uppercase tracking-wide text-violet-600">
+                    步驟 3
+                  </p>
+                  <h2 className="mt-1 text-base font-black text-slate-900">
+                    上傳母圖，後面交給系統自動整理
                   </h2>
                   <p className="mt-1 text-xs leading-relaxed text-slate-500">
-                    兩張 4×4 母圖可直接切成 32 張；切割順序為由左到右、由上到下。
+                    直接選擇 ChatGPT 產生的母圖即可。24 張可一次選 4×4＋4×2；系統會由左到右、由上到下自動排序。
                   </p>
                 </div>
                 <div className="flex shrink-0 flex-col gap-2 sm:min-w-[220px]">
                   <div className="grid grid-cols-2 gap-2">
-                    {(["4x4", "4x5"] as const).map((grid) => (
+                    {(["auto", "4x2", "4x4", "4x5"] as const).map((grid) => (
                       <button
                         key={grid}
                         type="button"
@@ -1175,10 +1360,19 @@ export default function LineStickerTool() {
                             : "bg-white text-slate-600 shadow-sm"
                         }`}
                       >
-                        {grid.replace("x", "×")}
+                        {grid === "auto" ? "自動判斷" : grid.replace("x", "×")}
                       </button>
                     ))}
                   </div>
+                  <label className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800">
+                    <input
+                      type="checkbox"
+                      checked={autoRemoveWhiteBg}
+                      onChange={(event) => setAutoRemoveWhiteBg(event.target.checked)}
+                      className="h-4 w-4 accent-emerald-600"
+                    />
+                    自動移除白色背景（推薦）
+                  </label>
                   <input
                     ref={motherSheetInputRef}
                     type="file"
@@ -1193,7 +1387,7 @@ export default function LineStickerTool() {
                     onClick={() => motherSheetInputRef.current?.click()}
                     className="rounded-xl bg-violet-600 px-4 py-3 text-sm font-black text-white shadow-md transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {loading ? "處理中…" : "選擇母圖並自動切割"}
+                    {loading ? "正在自動整理…" : "選擇母圖 → 自動裁切與去背"}
                   </button>
                 </div>
               </div>
@@ -1782,17 +1976,48 @@ export default function LineStickerTool() {
               </p>
             </div>
 
-            <button
-              onClick={generateZip}
-              disabled={!canDownload || loading}
-              className={`h-12 min-h-12 flex-1 whitespace-nowrap rounded-2xl px-3 py-0 text-[15px] font-black leading-none tracking-tight shadow-lg transition-all active:scale-[0.97] sm:h-auto sm:min-h-[52px] sm:py-3.5 sm:text-sm ${!canDownload || loading ? "cursor-not-allowed bg-slate-200 text-slate-400 shadow-none" : "bg-blue-600 text-white hover:bg-blue-700 shadow-lg"}`}
-            >
-              {loading
-                ? t("line_sticker_processing")
-                : canDownload
-                  ? t("line_sticker_pack_download", { count: stickerCount })
-                  : t("line_sticker_need_more_to_pack", { count: needMore })}
-            </button>
+            {flowProject?.mode === "animated" ? (
+              <>
+                <button
+                  onClick={generateZip}
+                  disabled={!canDownload || loading}
+                  className={`hidden min-h-[52px] rounded-2xl px-4 py-3 text-xs font-black sm:inline-flex sm:items-center sm:justify-center ${
+                    !canDownload || loading
+                      ? "cursor-not-allowed bg-slate-100 text-slate-400"
+                      : "border border-blue-200 bg-white text-blue-700 hover:bg-blue-50"
+                  }`}
+                >
+                  下載靜態備份 ZIP
+                </button>
+                <button
+                  onClick={continueToAnimated}
+                  disabled={!canDownload || loading}
+                  className={`h-12 min-h-12 flex-1 whitespace-nowrap rounded-2xl px-3 text-[15px] font-black shadow-lg transition active:scale-[0.97] sm:min-h-[52px] sm:text-sm ${
+                    !canDownload || loading
+                      ? "cursor-not-allowed bg-slate-200 text-slate-400 shadow-none"
+                      : "bg-violet-600 text-white hover:bg-violet-700"
+                  }`}
+                >
+                  {loading
+                    ? "正在準備下一步…"
+                    : canDownload
+                      ? "下一步：自動製作動態貼圖"
+                      : `還差 ${needMore} 張`}
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={generateZip}
+                disabled={!canDownload || loading}
+                className={`h-12 min-h-12 flex-1 whitespace-nowrap rounded-2xl px-3 py-0 text-[15px] font-black leading-none tracking-tight shadow-lg transition-all active:scale-[0.97] sm:h-auto sm:min-h-[52px] sm:py-3.5 sm:text-sm ${!canDownload || loading ? "cursor-not-allowed bg-slate-200 text-slate-400 shadow-none" : "bg-blue-600 text-white hover:bg-blue-700 shadow-lg"}`}
+              >
+                {loading
+                  ? t("line_sticker_processing")
+                  : canDownload
+                    ? `步驟 5｜下載 ${stickerCount} 張 LINE 上架 ZIP`
+                    : t("line_sticker_need_more_to_pack", { count: needMore })}
+              </button>
+            )}
           </div>
         </footer>
       </div>
