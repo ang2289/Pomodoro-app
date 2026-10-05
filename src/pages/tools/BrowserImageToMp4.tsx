@@ -5,7 +5,7 @@ import { QRCodeCanvas } from "qrcode.react";
 import SEO from "@/components/SEO";
 
 type Ratio = "9:16" | "16:9" | "1:1" | "4:5";
-type Quality = "720p" | "1080p";
+type Quality = "540p" | "720p" | "1080p";
 type Effect =
   | "static"
   | "zoom_in"
@@ -20,10 +20,26 @@ type QrPosition = "top-left" | "top-right" | "bottom-left" | "bottom-right";
 type CaptionPosition = "top" | "bottom";
 
 const RATIO_SIZE: Record<Ratio, Record<Quality, [number, number]>> = {
-  "9:16": { "720p": [720, 1280], "1080p": [1080, 1920] },
-  "16:9": { "720p": [1280, 720], "1080p": [1920, 1080] },
-  "1:1": { "720p": [720, 720], "1080p": [1080, 1080] },
-  "4:5": { "720p": [720, 900], "1080p": [1080, 1350] },
+  "9:16": {
+    "540p": [540, 960],
+    "720p": [720, 1280],
+    "1080p": [1080, 1920],
+  },
+  "16:9": {
+    "540p": [960, 540],
+    "720p": [1280, 720],
+    "1080p": [1920, 1080],
+  },
+  "1:1": {
+    "540p": [540, 540],
+    "720p": [720, 720],
+    "1080p": [1080, 1080],
+  },
+  "4:5": {
+    "540p": [540, 675],
+    "720p": [720, 900],
+    "1080p": [1080, 1350],
+  },
 };
 
 function getExtension(name: string) {
@@ -221,33 +237,35 @@ function effectFilter(
   width: number,
   height: number,
   seconds: number,
+  fps: number,
 ) {
-  const frames = Math.max(1, Math.round(seconds * 30));
+  const frames = Math.max(1, Math.round(seconds * fps));
   const denom = Math.max(1, frames - 1);
+  const zoomStep = Math.max(0.0005, 0.14 / frames).toFixed(6);
 
   if (effect === "zoom_in") {
-    return `zoompan=z='min(zoom+0.0018,1.14)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=${frames}:s=${width}x${height}:fps=30`;
+    return `zoompan=z='min(zoom+${zoomStep},1.14)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=${frames}:s=${width}x${height}:fps=${fps}`;
   }
   if (effect === "zoom_out") {
-    return `zoompan=z='if(lte(on,1),1.14,max(1.0,zoom-0.0018))':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=${frames}:s=${width}x${height}:fps=30`;
+    return `zoompan=z='if(lte(on,1),1.14,max(1.0,zoom-${zoomStep}))':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=${frames}:s=${width}x${height}:fps=${fps}`;
   }
   if (effect === "pan_left") {
-    return `zoompan=z=1.10:x='(iw-iw/zoom)*(1-on/${denom})':y='(ih-ih/zoom)/2':d=${frames}:s=${width}x${height}:fps=30`;
+    return `zoompan=z=1.10:x='(iw-iw/zoom)*(1-on/${denom})':y='(ih-ih/zoom)/2':d=${frames}:s=${width}x${height}:fps=${fps}`;
   }
   if (effect === "pan_right") {
-    return `zoompan=z=1.10:x='(iw-iw/zoom)*(on/${denom})':y='(ih-ih/zoom)/2':d=${frames}:s=${width}x${height}:fps=30`;
+    return `zoompan=z=1.10:x='(iw-iw/zoom)*(on/${denom})':y='(ih-ih/zoom)/2':d=${frames}:s=${width}x${height}:fps=${fps}`;
   }
   if (effect === "pan_up") {
-    return `zoompan=z=1.10:x='(iw-iw/zoom)/2':y='(ih-ih/zoom)*(1-on/${denom})':d=${frames}:s=${width}x${height}:fps=30`;
+    return `zoompan=z=1.10:x='(iw-iw/zoom)/2':y='(ih-ih/zoom)*(1-on/${denom})':d=${frames}:s=${width}x${height}:fps=${fps}`;
   }
   if (effect === "pan_down") {
-    return `zoompan=z=1.10:x='(iw-iw/zoom)/2':y='(ih-ih/zoom)*(on/${denom})':d=${frames}:s=${width}x${height}:fps=30`;
+    return `zoompan=z=1.10:x='(iw-iw/zoom)/2':y='(ih-ih/zoom)*(on/${denom})':d=${frames}:s=${width}x${height}:fps=${fps}`;
   }
   if (effect === "fade") {
     const outStart = Math.max(0, seconds - 0.45).toFixed(2);
-    return `fps=30,fade=t=in:st=0:d=0.45,fade=t=out:st=${outStart}:d=0.45`;
+    return `fps=${fps},fade=t=in:st=0:d=0.35,fade=t=out:st=${outStart}:d=0.35`;
   }
-  return "fps=30";
+  return `fps=${fps}`;
 }
 
 function wait(ms: number) {
@@ -259,7 +277,7 @@ export default function BrowserImageToMp4() {
   const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
   const [audio, setAudio] = useState<File | null>(null);
   const [ratio, setRatio] = useState<Ratio>("9:16");
-  const [quality, setQuality] = useState<Quality>("720p");
+  const [quality, setQuality] = useState<Quality>("540p");
   const [fitMode, setFitMode] = useState<FitMode>("contain");
   const [background, setBackground] = useState<"#000000" | "#ffffff">("#000000");
   const [effect, setEffect] = useState<Effect>("zoom_in");
@@ -288,6 +306,9 @@ export default function BrowserImageToMp4() {
   const loadedRef = useRef(false);
 
   const [width, height] = RATIO_SIZE[ratio][quality];
+  const outputFps = quality === "540p" ? 15 : quality === "720p" ? 18 : 20;
+  const encodeTimeoutMs =
+    quality === "540p" ? 180_000 : quality === "720p" ? 240_000 : 300_000;
 
   const totalSeconds = useMemo(
     () => images.length * secondsPerImage,
@@ -403,7 +424,7 @@ export default function BrowserImageToMp4() {
         const normalized = Number.isFinite(value)
           ? Math.max(0, Math.min(1, value))
           : 0;
-        setProgress(Math.max(18, Math.round(18 + normalized * 78)));
+        setProgress(Math.max(18, Math.min(90, Math.round(18 + normalized * 72))));
       });
 
       ffmpeg.on("log", ({ message }) => {
@@ -645,11 +666,12 @@ export default function BrowserImageToMp4() {
       const filters: string[] = [];
       for (let i = 0; i < images.length; i += 1) {
         filters.push(
-          `[${i}:v]scale=${width}:${height},setsar=1,${effectFilter(
+          `[${i}:v]setsar=1,${effectFilter(
             effect,
             width,
             height,
             secondsPerImage,
+            outputFps,
           )},trim=duration=${secondsPerImage},setpts=PTS-STARTPTS[v${i}]`,
         );
       }
@@ -692,27 +714,37 @@ export default function BrowserImageToMp4() {
         "-preset",
         "ultrafast",
         "-crf",
-        quality === "1080p" ? "24" : "25",
+        quality === "1080p" ? "26" : quality === "720p" ? "27" : "28",
         "-pix_fmt",
         "yuv420p",
         "-r",
-        "30",
+        String(outputFps),
+        "-threads",
+        "1",
         "-movflags",
         "+faststart",
         "rxv-output.mp4",
       );
 
       setStatus(
-        `正在產生 MP4（約 ${totalSeconds.toFixed(1)} 秒影片），請不要關閉頁面…`,
+        `正在產生 MP4（${quality}・${outputFps}fps・約 ${totalSeconds.toFixed(1)} 秒），請不要關閉頁面…`,
       );
       setProgress(Math.max(30, progress));
 
-      const exitCode = await ffmpeg.exec(args);
+      const exitCode = await ffmpeg.exec(args, encodeTimeoutMs);
       if (exitCode !== 0) {
-        throw new Error(`影片引擎回傳錯誤代碼 ${exitCode}`);
+        const minutes = Math.round(encodeTimeoutMs / 60_000);
+        throw new Error(
+          `轉檔超過 ${minutes} 分鐘已自動停止。建議改用「540p 快速」或減少圖片張數後再試。`,
+        );
       }
 
+      setProgress(94);
+      setStatus("影片已編碼完成，正在最後封裝 MP4…");
+      await wait(30);
+
       const file = await ffmpeg.readFile("rxv-output.mp4");
+      setProgress(98);
       const bytes = file as Uint8Array;
       const copy = new Uint8Array(bytes.length);
       copy.set(bytes);
@@ -736,7 +768,7 @@ export default function BrowserImageToMp4() {
       setError(
         err instanceof Error
           ? err.message
-          : "影片產生失敗。可先改用 720p、減少圖片數量後再試。",
+          : "影片產生失敗。可先改用 540p 快速模式、減少圖片數量後再試。",
       );
     } finally {
       if (ffmpeg) {
@@ -838,7 +870,7 @@ export default function BrowserImageToMp4() {
                 <p className="mt-3 break-words text-sm font-bold text-slate-700">
                   已選 {images.length} 張
                   {images.length
-                    ? `｜預估影片 ${totalSeconds.toFixed(1)} 秒`
+                    ? `｜預估影片 ${totalSeconds.toFixed(1)} 秒｜${outputFps} fps`
                     : ""}
                 </p>
 
@@ -1004,11 +1036,12 @@ export default function BrowserImageToMp4() {
                     onChange={(e) => setQuality(e.target.value as Quality)}
                     className="mt-2 min-h-12 w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-3 pr-10 text-base font-semibold text-slate-800"
                   >
-                    <option value="720p">720p</option>
-                    <option value="1080p">1080p</option>
+                    <option value="540p">540p｜快速（建議）</option>
+                    <option value="720p">720p｜標準</option>
+                    <option value="1080p">1080p｜較慢</option>
                   </select>
                   <span className="mt-1 block break-words text-xs font-medium leading-5 text-slate-500">
-                    720p 較省記憶體；1080p 畫質較高、轉檔較久。
+                    540p 最適合瀏覽器快速產生；720p 較清晰；1080p 最吃效能、可能需要較久。
                   </span>
                 </label>
 
@@ -1239,7 +1272,7 @@ export default function BrowserImageToMp4() {
                   產生 MP4
                 </h2>
                 <p className="mt-1 break-words text-xs leading-5 text-slate-600">
-                  第一次使用要載入本站 FFmpeg 影片引擎。現在改成直接從本站載入，不再依賴外部 CDN；若超過 45 秒會顯示錯誤，不會無限卡住。
+                  第一次使用要載入本站 FFmpeg 影片引擎。轉檔已改成較低幀率的瀏覽器快速模式；540p 最多 3 分鐘、720p 最多 4 分鐘、1080p 最多 5 分鐘，超時會自動停止，不會一直卡在 96%。
                 </p>
               </div>
             </div>
