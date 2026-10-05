@@ -4198,6 +4198,27 @@ function buildFlowTexts(
   return unique.slice(0, targetCount);
 }
 
+function getDefaultFlowTexts(
+  type: TemplateKey,
+  targetCount: number,
+  nameMode: NameMode,
+  customName: string,
+) {
+  const source = [
+    ...templates[type].texts,
+    ...EXTRA_STICKER_TEXTS,
+  ].map((line) => applyNameToLine(line, nameMode, customName));
+  const unique: string[] = [];
+  const seen = new Set<string>();
+  source.forEach((line) => {
+    const value = line.trim();
+    if (!value || seen.has(value)) return;
+    seen.add(value);
+    unique.push(value);
+  });
+  return unique.slice(0, targetCount).join("\n");
+}
+
 function buildFlowPrompt(
   label: string,
   role: string,
@@ -4760,7 +4781,9 @@ export default function StickerPromptGenerator() {
     setType(nextType);
     setRole(templates[nextType].role);
     setStyle(templates[nextType].style);
-    setTexts(getDefaultTextWithName(nextType, grid, nameMode, customName));
+    setTexts(
+      getDefaultFlowTexts(nextType, targetCount, nameMode, customName),
+    );
     setCopied(false);
     setCopiedStable(false);
   }
@@ -4774,14 +4797,14 @@ export default function StickerPromptGenerator() {
 
   function handleNameModeChange(nextMode: NameMode) {
     setNameMode(nextMode);
-    setTexts(getDefaultTextWithName(type, grid, nextMode, customName));
+    setTexts(getDefaultFlowTexts(type, targetCount, nextMode, customName));
     setCopied(false);
     setCopiedStable(false);
   }
 
   function handleCustomNameChange(nextName: string) {
     setCustomName(nextName);
-    setTexts(getDefaultTextWithName(type, grid, nameMode, nextName));
+    setTexts(getDefaultFlowTexts(type, targetCount, nameMode, nextName));
     setCopied(false);
     setCopiedStable(false);
   }
@@ -4827,13 +4850,22 @@ export default function StickerPromptGenerator() {
         : targetCount;
     setTargetCount(nextCount as LineStickerCount);
     const firstGrid = getMotherSheetPlan(nextCount as LineStickerCount)[0]?.grid;
-    if (firstGrid) handleGridChange(firstGrid);
+    if (firstGrid) setGrid(firstGrid);
+    setTexts(
+      getDefaultFlowTexts(
+        type,
+        nextCount as LineStickerCount,
+        nameMode,
+        customName,
+      ),
+    );
   }
 
   function handleTargetCount(nextCount: LineStickerCount) {
     setTargetCount(nextCount);
     const firstGrid = getMotherSheetPlan(nextCount)[0]?.grid;
-    if (firstGrid) handleGridChange(firstGrid);
+    if (firstGrid) setGrid(firstGrid);
+    setTexts(getDefaultFlowTexts(type, nextCount, nameMode, customName));
   }
 
   return (
