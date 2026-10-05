@@ -999,12 +999,21 @@ export default function LineStickerTool() {
       setError(null);
       try {
         const splitFiles: File[] = [];
-        for (const file of selected) {
+        const plannedSheets = flowProject
+          ? getMotherSheetPlan(flowProject.count)
+          : null;
+
+        for (let sourceIndex = 0; sourceIndex < selected.length; sourceIndex += 1) {
+          const file = selected[sourceIndex];
           if (!ACCEPT_TYPES.includes(file.type)) continue;
+
+          const plannedGrid = plannedSheets?.[sourceIndex]?.grid;
+          const gridForFile = plannedGrid ?? motherSheetGrid;
+
           splitFiles.push(
             ...(await splitMotherSheet(
               file,
-              motherSheetGrid,
+              gridForFile,
               t,
               autoRemoveWhiteBg,
             )),
@@ -1348,22 +1357,32 @@ export default function LineStickerTool() {
                   </p>
                 </div>
                 <div className="flex shrink-0 flex-col gap-2 sm:min-w-[220px]">
-                  <div className="grid grid-cols-2 gap-2">
-                    {(["auto", "4x2", "4x4", "4x5"] as const).map((grid) => (
-                      <button
-                        key={grid}
-                        type="button"
-                        onClick={() => setMotherSheetGrid(grid)}
-                        className={`rounded-xl px-3 py-2 text-xs font-black ${
-                          motherSheetGrid === grid
-                            ? "bg-violet-600 text-white"
-                            : "bg-white text-slate-600 shadow-sm"
-                        }`}
-                      >
-                        {grid === "auto" ? "自動判斷" : grid.replace("x", "×")}
-                      </button>
-                    ))}
-                  </div>
+                  {flowProject ? (
+                    <div className="rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-xs font-black leading-5 text-violet-800">
+                      已依第 1 步設定自動辨識順序：
+                      {getMotherSheetPlan(flowProject.count)
+                        .map((item) => item.grid.replace("x", "×"))
+                        .join(" ＋ ")}
+                      ，不用再選格數。
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2">
+                      {(["auto", "4x2", "4x4", "4x5"] as const).map((grid) => (
+                        <button
+                          key={grid}
+                          type="button"
+                          onClick={() => setMotherSheetGrid(grid)}
+                          className={`rounded-xl px-3 py-2 text-xs font-black ${
+                            motherSheetGrid === grid
+                              ? "bg-violet-600 text-white"
+                              : "bg-white text-slate-600 shadow-sm"
+                          }`}
+                        >
+                          {grid === "auto" ? "自動判斷" : grid.replace("x", "×")}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                   <label className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800">
                     <input
                       type="checkbox"
