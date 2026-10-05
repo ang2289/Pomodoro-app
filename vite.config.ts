@@ -1,6 +1,7 @@
 ﻿import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
+import fs from 'fs'
 
 // https://vitejs.dev/config/
 // 注意：必須用 loadEnv 讀取 .env / .env.local 的 VITE_VERCEL_URL，否則 proxy 會拿不到你在檔案裡設的本機 API 位址
@@ -31,6 +32,25 @@ export default defineConfig(({ mode }) => {
       },
     },
     react(),
+    {
+      name: 'rxv-copy-ffmpeg-core-to-dist',
+      apply: 'build' as const,
+      closeBundle() {
+        const srcDir = path.resolve(__dirname, 'node_modules/@ffmpeg/core/dist/umd')
+        const destDir = path.resolve(__dirname, 'dist/ffmpeg-core')
+        fs.mkdirSync(destDir, { recursive: true })
+
+        for (const file of ['ffmpeg-core.js', 'ffmpeg-core.wasm']) {
+          const src = path.join(srcDir, file)
+          const dest = path.join(destDir, file)
+          if (!fs.existsSync(src)) {
+            throw new Error(`FFmpeg build asset missing: ${src}`)
+          }
+          fs.copyFileSync(src, dest)
+          console.log(`[rxv-copy-ffmpeg-core-to-dist] copied ${file}`)
+        }
+      },
+    },
     {
       name: 'local-group-buy-api',
       apply: 'serve' as const,

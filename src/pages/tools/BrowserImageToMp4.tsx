@@ -316,45 +316,191 @@ export default function BrowserImageToMp4() {
       setProgress(Math.max(18, Math.round(18 + normalized * 78)));
     });
 
-    const coreURL = new URL(
-      "/ffmpeg-core/ffmpeg-core.js",
-      window.location.origin,
-    ).href;
-    const wasmURL = new URL(
-      "/ffmpeg-core/ffmpeg-core.wasm",
-      window.location.origin,
-    ).href;
+    const localBase = new URL("/ffmpeg-core/", window.location.origin).href;
+    const sources = [
+      {
+        label: "本站影片引擎",
+        coreURL: `${localBase}ffmpeg-core.js?v=0.12.10`,
+        wasmURL: `${localBase}ffmpeg-core.wasm?v=0.12.10`,
+      },
+      {
+        label: "備援影片引擎 1",
+        coreURL:
+          "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd/ffmpeg-core.js",
+        wasmURL:
+          "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd/ffmpeg-core.wasm",
+      },
+      {
+        label: "備援影片引擎 2",
+        coreURL:
+          "https://unpkg.com/@ffmpeg/core@0.12.10/dist/umd/ffmpeg-core.js",
+        wasmURL:
+          "https://unpkg.com/@ffmpeg/core@0.12.10/dist/umd/ffmpeg-core.wasm",
+      },
+    ];
 
-    setStatus("正在載入本站影片引擎，第一次使用會比較久…");
-    setProgress(5);
-
-    try {
-      const timeout = new Promise<never>((_, reject) => {
-        window.setTimeout(
-          () => reject(new Error("影片引擎載入超過 45 秒，請重新整理後再試。")),
-          45000,
-        );
+    const fetchEngineAsset = async (
+      url: string,
+      kind: "core" | "wasm",
+      label: string,
+    ) => {
+      const response = await fetch(url, {
+        method: "GET",
+        cache: "no-store",
       });
 
-      await Promise.race([
-        ffmpeg.load({ coreURL, wasmURL }),
-        timeout,
-      ]);
+      if (!response.ok) {
+        throw new Error(
+          `${label}下載失敗：HTTP ${response.status}`,
+        );
+      }
 
-      loadedRef.current = true;
-      setEngineReady(true);
-      setStatus("影片引擎已就緒");
-      setProgress(15);
-      return ffmpeg;
-    } catch (err) {
+      const buffer = await response.arrayBuffer();
+      const bytes = new Uint8Array(buffer);
+
+      if (kind === "core") {
+        const head = new TextDecoder()
+          .decode(bytes.slice(0, Math.min(bytes.length, 160)))
+          .trim()
+          .toLowerCase();
+
+        if (
+          bytes.length < 100_000 ||
+          head.startsWith("<!doctype") ||
+          head.startsWith("<html")
+        ) {
+          throw new Error(
+            `${label}不是有效的 FFmpeg JavaScript（可能被網站路由取代）`,
+          );
+        }
+
+        return URL.createObjectURL(
+          new Blob([buffer], { type: "text/javascript" }),
+        );
+      }
+
+      const isWasm =
+        bytes.length > 1_000_000 &&
+        bytes[0] === 0x00 &&
+        bytes[1] === 0x61 &&
+        bytes[2] === 0x73 &&
+        bytes[3] === 0x6d;
+
+      if (!isWasm) {
+        throw new Error(
+          `${label}不是有效的 WebAssembly 檔案`,
+        );
+      }
+
+      return URL.createObjectURL(
+        new Blob([buffer], { type: "application/wasm" }),
+      );
+    };
+
+    setStatus("正在檢查影片引擎檔案…");
+    setProgress(4);
+
+    let lastError: unknown = null;
+
+    for (let index = 0; index < sources.length; index += 1) {
+      const source = sources[index];
+      let coreBlobURL = "";
+      let wasmBlobURL = "";
+
       try {
-        ffmpeg.terminate();
-      } catch {}
-      ffmpegRef.current = null;
-      loadedRef.current = false;
-      setEngineReady(false);
-      throw err;
+        setStatus(
+          index === 0
+            ? "正在載入本站影片引擎，第一次使用會比較久…"
+            : `本站引擎無法使用，正在嘗試${source.label}…`,
+        );
+        setProgress(5 + index * 3);
+
+        coreBlobURL = await fetchEngineAsset(
+          source.coreURL,
+          "core",
+          source.label,
+        );
+        wasmBlobURL = await fetchEngineAsset(
+          source.wasmURL,
+          "wasm",
+          source.label,
+        );
+
+        const timeout = new Promise<never>((_, reject) => {
+          window.setTimeout(
+            () =>
+              reject(
+                new Error(
+                  `${source.label}初始化超過 45 秒`,
+                ),
+              ),
+            45000,
+          );
+        });
+
+        await Promise.race([
+          ffmpeg.load({
+            coreURL: coreBlobURL,
+            wasmURL: wasmBlobURL,
+          }),
+          timeout,
+        ]);
+
+        loadedRef.current = true;
+        setEngineReady(true);
+        setStatus(
+          index === 0
+            ? "影片引擎已就緒（本站）"
+            : `影片引擎已就緒（${source.label}）`,
+        );
+        setProgress(15);
+
+        window.setTimeout(() => {
+          if (coreBlobURL) URL.revokeObjectURL(coreBlobURL);
+          if (wasmBlobURL) URL.revokeObjectURL(wasmBlobURL);
+        }, 5000);
+
+        return ffmpeg;
+      } catch (err) {
+        lastError = err;
+
+        if (coreBlobURL) URL.revokeObjectURL(coreBlobURL);
+        if (wasmBlobURL) URL.revokeObjectURL(wasmBlobURL);
+
+        try {
+          ffmpeg.terminate();
+        } catch {}
+
+        if (index < sources.length - 1) {
+          ffmpegRef.current = new FFmpeg();
+          const replacement = ffmpegRef.current;
+          replacement.on("progress", ({ progress: value }) => {
+            const normalized = Number.isFinite(value)
+              ? Math.max(0, Math.min(1, value))
+              : 0;
+            setProgress(
+              Math.max(18, Math.round(18 + normalized * 78)),
+            );
+          });
+          // The next loop iteration must use the replacement instance.
+          // Reassign through a small local bridge below.
+          (ffmpeg as unknown as { load: FFmpeg["load"] }).load =
+            replacement.load.bind(replacement);
+          (ffmpeg as unknown as { terminate: FFmpeg["terminate"] }).terminate =
+            replacement.terminate.bind(replacement);
+        }
+      }
     }
+
+    ffmpegRef.current = null;
+    loadedRef.current = false;
+    setEngineReady(false);
+
+    const detail =
+      lastError instanceof Error ? lastError.message : "未知錯誤";
+    throw new Error(
+      `三個影片引擎來源都無法載入：${detail}。請先按 Ctrl+F5 強制重新整理；若仍失敗，請把這段錯誤文字截圖給我。`,
+    );
   };
 
   const preloadEngine = async () => {
