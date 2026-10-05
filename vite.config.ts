@@ -33,21 +33,35 @@ export default defineConfig(({ mode }) => {
     },
     react(),
     {
-      name: 'rxv-copy-ffmpeg-core-to-dist',
+      name: 'rxv-copy-ffmpeg-runtime-to-dist',
       apply: 'build' as const,
       closeBundle() {
-        const srcDir = path.resolve(__dirname, 'node_modules/@ffmpeg/core/dist/umd')
-        const destDir = path.resolve(__dirname, 'dist/ffmpeg-core')
-        fs.mkdirSync(destDir, { recursive: true })
+        const coreSrcDir = path.resolve(__dirname, 'node_modules/@ffmpeg/core/dist/umd')
+        const coreDestDir = path.resolve(__dirname, 'dist/ffmpeg-core')
+        fs.mkdirSync(coreDestDir, { recursive: true })
 
         for (const file of ['ffmpeg-core.js', 'ffmpeg-core.wasm']) {
-          const src = path.join(srcDir, file)
-          const dest = path.join(destDir, file)
+          const src = path.join(coreSrcDir, file)
+          const dest = path.join(coreDestDir, file)
           if (!fs.existsSync(src)) {
-            throw new Error(`FFmpeg build asset missing: ${src}`)
+            throw new Error(`FFmpeg core build asset missing: ${src}`)
           }
           fs.copyFileSync(src, dest)
-          console.log(`[rxv-copy-ffmpeg-core-to-dist] copied ${file}`)
+          console.log(`[rxv-copy-ffmpeg-runtime-to-dist] copied core/${file}`)
+        }
+
+        const workerSrcDir = path.resolve(__dirname, 'node_modules/@ffmpeg/ffmpeg/dist/esm')
+        const workerDestDir = path.resolve(__dirname, 'dist/ffmpeg-worker')
+        fs.mkdirSync(workerDestDir, { recursive: true })
+
+        for (const file of ['worker.js', 'const.js', 'errors.js']) {
+          const src = path.join(workerSrcDir, file)
+          const dest = path.join(workerDestDir, file)
+          if (!fs.existsSync(src)) {
+            throw new Error(`FFmpeg worker build asset missing: ${src}`)
+          }
+          fs.copyFileSync(src, dest)
+          console.log(`[rxv-copy-ffmpeg-runtime-to-dist] copied worker/${file}`)
         }
       },
     },
