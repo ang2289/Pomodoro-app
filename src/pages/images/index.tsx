@@ -234,8 +234,10 @@ export default function ImagesPage() {
   const [images, setImages] = useState<ImageAsset[]>([]);
   const [allImages, setAllImages] = useState<ImageAsset[]>([]);
   // 完整素材庫張數統一由 manifest 實際圖片數量產生，避免頁面各處數字不一致。
-  const libraryTotalCount = allImages.length > 0 ? allImages.length : 1584;
-  const libraryTotalLabel = libraryTotalCount.toLocaleString("zh-TW");
+  const libraryTotalLabel =
+    allImages.length > 0
+      ? allImages.length.toLocaleString("zh-TW")
+      : "2,858+";
   const sharePageText = `RxV 圖片素材庫：${libraryTotalLabel} 張完整版素材包，適合社群、網站、影片與商業設計。`;
   const [manifestLoaded, setManifestLoaded] = useState(false);
   const [previewImage, setPreviewImage] = useState<ImageAsset | null>(null);

@@ -185,7 +185,7 @@ export default function PaymentReportPage() {
 
   const plan = useMemo<Plan | null>(() => {
     if (isImageBundleMode && bundleData?.product) {
-      return { id: 'image-bundle-full', amount: bundleData.product.amountNtd, points: 0, maxItems: 0, grantedMonths: 0, productType: 'image_bundle', displayName: '1,584+ 高畫質圖片素材庫完整版' }
+      return { id: 'image-bundle-full', amount: bundleData.product.amountNtd, points: 0, maxItems: 0, grantedMonths: 0, productType: 'image_bundle', displayName: '高畫質圖片素材庫完整版（圖片持續增加）' }
     }
     return planId && plans ? plans[planId] || null : null
   }, [planId, plans, bundleData, isImageBundleMode])

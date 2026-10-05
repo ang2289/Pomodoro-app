@@ -16,7 +16,7 @@ const IMAGE_BUNDLE_PAYMENT = {
   },
   product: {
     code: 'image-bundle-full' as const,
-    displayName: '1,584+ 高畫質圖片素材庫完整版',
+    displayName: '高畫質圖片素材庫完整版（圖片持續增加）',
     amountNtd: 199,
     originalAmountNtd: 399,
   },
@@ -306,7 +306,7 @@ export default function BankTransferPage() {
         <header className="mb-6 text-center">
           <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-sm font-black text-emerald-800">銀行轉帳／人工核對</span>
           <h1 className="mt-3 text-3xl font-black text-slate-950">
-            {isImageBundleMode ? '圖片素材包 NT$199 匯款付款' : '完成匯款後再送出回報'}
+            {isImageBundleMode ? '圖片素材包｜新台幣 NT$199｜銀行轉帳' : '完成匯款後再送出回報'}
           </h1>
           <p className="mt-2 text-slate-600">
             {isImageBundleMode
