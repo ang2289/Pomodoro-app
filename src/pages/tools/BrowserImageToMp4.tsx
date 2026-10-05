@@ -17,6 +17,8 @@ type Effect =
   | "pan_down";
 type FitMode = "contain" | "cover";
 type QrPosition = "top-left" | "top-right" | "bottom-left" | "bottom-right";
+type QrDisplayMode = "final" | "all";
+type FinalQrPosition = "top" | "middle" | "bottom";
 type CaptionPosition = "top" | "bottom";
 
 const RATIO_SIZE: Record<Ratio, Record<Quality, [number, number]>> = {
@@ -152,6 +154,147 @@ function drawQrOverlay(
     size,
   );
   ctx.restore();
+}
+
+function drawFinalQrPage(
+  ctx: CanvasRenderingContext2D,
+  qrCanvas: HTMLCanvasElement | null,
+  width: number,
+  height: number,
+  position: FinalQrPosition,
+  title: string,
+  subtitle: string,
+  qrPercent: number,
+) {
+  ctx.save();
+  ctx.globalAlpha = 1;
+
+  const gradient = ctx.createLinearGradient(0, 0, width, height);
+  gradient.addColorStop(0, "#f0fdf4");
+  gradient.addColorStop(0.52, "#ffffff");
+  gradient.addColorStop(1, "#eff6ff");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, width, height);
+
+  const safeX = Math.round(width * 0.08);
+  const qrSize = Math.round(
+    Math.min(width, height) * Math.max(0.22, Math.min(0.34, (qrPercent + 8) / 100)),
+  );
+  const qrPadding = Math.max(12, Math.round(qrSize * 0.08));
+  const qrBox = qrSize + qrPadding * 2;
+
+  const titleSize = Math.max(26, Math.round(width * 0.062));
+  const subtitleSize = Math.max(18, Math.round(width * 0.038));
+  const titleLineHeight = Math.round(titleSize * 1.25);
+  const subtitleLineHeight = Math.round(subtitleSize * 1.35);
+  const titleMaxWidth = width - safeX * 2;
+  const subtitleMaxWidth = width - safeX * 2;
+
+  ctx.font = `800 ${titleSize}px system-ui, -apple-system, "Segoe UI", sans-serif`;
+  const titleLines = wrapCanvasText(ctx, title, titleMaxWidth).slice(0, 2);
+  ctx.font = `600 ${subtitleSize}px system-ui, -apple-system, "Segoe UI", sans-serif`;
+  const subtitleLines = wrapCanvasText(ctx, subtitle, subtitleMaxWidth).slice(0, 3);
+
+  const titleHeight = Math.max(1, titleLines.length) * titleLineHeight;
+  const subtitleHeight = Math.max(1, subtitleLines.length) * subtitleLineHeight;
+  const groupHeight =
+    titleHeight +
+    Math.round(height * 0.025) +
+    qrBox +
+    Math.round(height * 0.025) +
+    subtitleHeight;
+
+  const edge = Math.round(height * 0.07);
+  let groupTop = edge;
+  if (position === "middle") groupTop = Math.round((height - groupHeight) / 2);
+  if (position === "bottom") groupTop = Math.max(edge, height - edge - groupHeight);
+
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = "#0f172a";
+  ctx.font = `800 ${titleSize}px system-ui, -apple-system, "Segoe UI", sans-serif`;
+  titleLines.forEach((line, index) => {
+    ctx.fillText(
+      line,
+      width / 2,
+      groupTop + titleLineHeight * index + titleLineHeight / 2,
+      titleMaxWidth,
+    );
+  });
+
+  const qrY =
+    groupTop + titleHeight + Math.round(height * 0.025);
+  const qrX = Math.round((width - qrBox) / 2);
+
+  ctx.fillStyle = "rgba(255,255,255,0.98)";
+  ctx.shadowColor = "rgba(15,23,42,0.16)";
+  ctx.shadowBlur = Math.round(Math.min(width, height) * 0.02);
+  ctx.fillRect(qrX, qrY, qrBox, qrBox);
+  ctx.shadowColor = "transparent";
+  ctx.shadowBlur = 0;
+
+  if (qrCanvas) {
+    ctx.drawImage(
+      qrCanvas,
+      qrX + qrPadding,
+      qrY + qrPadding,
+      qrSize,
+      qrSize,
+    );
+  }
+
+  const subtitleTop =
+    qrY + qrBox + Math.round(height * 0.025);
+  ctx.fillStyle = "#475569";
+  ctx.font = `600 ${subtitleSize}px system-ui, -apple-system, "Segoe UI", sans-serif`;
+  subtitleLines.forEach((line, index) => {
+    ctx.fillText(
+      line,
+      width / 2,
+      subtitleTop + subtitleLineHeight * index + subtitleLineHeight / 2,
+      subtitleMaxWidth,
+    );
+  });
+
+  ctx.restore();
+}
+
+async function createFinalQrPageJpeg(
+  width: number,
+  height: number,
+  qrCanvas: HTMLCanvasElement | null,
+  position: FinalQrPosition,
+  title: string,
+  subtitle: string,
+  qrPercent: number,
+) {
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d", { alpha: false });
+  if (!ctx) throw new Error("瀏覽器無法建立 QR Code 結尾頁");
+
+  drawFinalQrPage(
+    ctx,
+    qrCanvas,
+    width,
+    height,
+    position,
+    title,
+    subtitle,
+    qrPercent,
+  );
+
+  const blob = await new Promise<Blob>((resolve, reject) =>
+    canvas.toBlob(
+      (value) =>
+        value ? resolve(value) : reject(new Error("QRCode 結尾頁產生失敗")),
+      "image/jpeg",
+      0.94,
+    ),
+  );
+
+  return new Uint8Array(await blob.arrayBuffer());
 }
 
 async function imageToJpeg(
@@ -402,8 +545,17 @@ export default function BrowserImageToMp4() {
   const [captionFontSize, setCaptionFontSize] = useState(54);
   const [qrEnabled, setQrEnabled] = useState(false);
   const [qrText, setQrText] = useState("");
+  const [qrDisplayMode, setQrDisplayMode] =
+    useState<QrDisplayMode>("final");
   const [qrPosition, setQrPosition] =
     useState<QrPosition>("bottom-right");
+  const [finalQrPosition, setFinalQrPosition] =
+    useState<FinalQrPosition>("middle");
+  const [finalPageDuration, setFinalPageDuration] = useState(3);
+  const [finalPageTitle, setFinalPageTitle] =
+    useState("喜歡這組圖片嗎？");
+  const [finalPageSubtitle, setFinalPageSubtitle] =
+    useState("掃描 QR Code，查看更多免費圖片");
   const [qrPercent, setQrPercent] = useState(18);
   const [busy, setBusy] = useState(false);
   const [engineReady, setEngineReady] = useState(false);
@@ -429,9 +581,21 @@ export default function BrowserImageToMp4() {
   const encodeTimeoutMs =
     quality === "540p" ? 180_000 : quality === "720p" ? 240_000 : 300_000;
 
-  const totalSeconds = useMemo(
+  const imageSequenceSeconds = useMemo(
     () => images.length * secondsPerImage,
     [images.length, secondsPerImage],
+  );
+
+  const totalSeconds = useMemo(
+    () =>
+      imageSequenceSeconds +
+      (qrEnabled && qrDisplayMode === "final" ? finalPageDuration : 0),
+    [
+      imageSequenceSeconds,
+      qrEnabled,
+      qrDisplayMode,
+      finalPageDuration,
+    ],
   );
 
   useEffect(() => {
@@ -779,33 +943,53 @@ export default function BrowserImageToMp4() {
 
       for (let frameIndex = 0; frameIndex < totalFrames; frameIndex += 1) {
         const videoTimeSec = frameIndex / outputFps;
-        const imageIndex = Math.min(
-          images.length - 1,
-          Math.floor(videoTimeSec / secondsPerImage),
-        );
-        const imageTime =
-          videoTimeSec - imageIndex * secondsPerImage;
-        const imageProgress = Math.max(
-          0,
-          Math.min(1, imageTime / secondsPerImage),
-        );
+        const showingFinalQrPage =
+          qrEnabled &&
+          qrDisplayMode === "final" &&
+          videoTimeSec >= imageSequenceSeconds;
 
-        drawNativeVideoFrame(
-          ctx,
-          loadedImages[imageIndex],
-          width,
-          height,
-          fitMode,
-          background,
-          effect,
-          imageProgress,
-          caption,
-          captionPosition,
-          captionFontSize,
-          qrEnabled ? qrCanvasRef.current : null,
-          qrPosition,
-          qrPercent,
-        );
+        if (showingFinalQrPage) {
+          drawFinalQrPage(
+            ctx,
+            qrCanvasRef.current,
+            width,
+            height,
+            finalQrPosition,
+            finalPageTitle,
+            finalPageSubtitle,
+            qrPercent,
+          );
+        } else {
+          const imageIndex = Math.min(
+            images.length - 1,
+            Math.floor(videoTimeSec / secondsPerImage),
+          );
+          const imageTime =
+            videoTimeSec - imageIndex * secondsPerImage;
+          const imageProgress = Math.max(
+            0,
+            Math.min(1, imageTime / secondsPerImage),
+          );
+
+          drawNativeVideoFrame(
+            ctx,
+            loadedImages[imageIndex],
+            width,
+            height,
+            fitMode,
+            background,
+            effect,
+            imageProgress,
+            caption,
+            captionPosition,
+            captionFontSize,
+            qrEnabled && qrDisplayMode === "all"
+              ? qrCanvasRef.current
+              : null,
+            qrPosition,
+            qrPercent,
+          );
+        }
 
         const targetElapsed = (frameIndex + 1) * frameInterval;
         const actualElapsed = performance.now() - startedAt;
@@ -921,13 +1105,35 @@ export default function BrowserImageToMp4() {
           caption,
           captionPosition,
           captionFontSize,
-          qrEnabled ? qrCanvasRef.current : null,
+          qrEnabled && qrDisplayMode === "all"
+            ? qrCanvasRef.current
+            : null,
           qrPosition,
           qrPercent,
         );
         const name = `rxv-img-${i}.jpg`;
         await ffmpeg.writeFile(name, data);
         created.push(name);
+      }
+
+      const includeFinalQrPage =
+        qrEnabled && qrDisplayMode === "final";
+      let visualInputCount = images.length;
+
+      if (includeFinalQrPage) {
+        setStatus("建立 QR Code 最後一頁…");
+        const finalPageData = await createFinalQrPageJpeg(
+          width,
+          height,
+          qrCanvasRef.current,
+          finalQrPosition,
+          finalPageTitle,
+          finalPageSubtitle,
+          qrPercent,
+        );
+        await ffmpeg.writeFile("rxv-final-qr.jpg", finalPageData);
+        created.push("rxv-final-qr.jpg");
+        visualInputCount += 1;
       }
 
       let audioName = "";
@@ -951,6 +1157,17 @@ export default function BrowserImageToMp4() {
         );
       });
 
+      if (includeFinalQrPage) {
+        args.push(
+          "-loop",
+          "1",
+          "-t",
+          String(finalPageDuration),
+          "-i",
+          "rxv-final-qr.jpg",
+        );
+      }
+
       if (audioName) {
         args.push("-stream_loop", "-1", "-i", audioName);
       }
@@ -968,14 +1185,20 @@ export default function BrowserImageToMp4() {
         );
       }
 
+      if (includeFinalQrPage) {
+        filters.push(
+          `[${images.length}:v]fps=${outputFps},trim=duration=${finalPageDuration},setpts=PTS-STARTPTS[v${images.length}]`,
+        );
+      }
+
       filters.push(
-        images.map((_, i) => `[v${i}]`).join("") +
-          `concat=n=${images.length}:v=1:a=0[vout]`,
+        Array.from({ length: visualInputCount }, (_, i) => `[v${i}]`).join("") +
+          `concat=n=${visualInputCount}:v=1:a=0[vout]`,
       );
 
       if (audioName) {
         filters.push(
-          `[${images.length}:a]volume=${audioVolume.toFixed(2)}[aout]`,
+          `[${visualInputCount}:a]volume=${audioVolume.toFixed(2)}[aout]`,
         );
       }
 
@@ -1124,7 +1347,7 @@ export default function BrowserImageToMp4() {
               圖片轉 MP4｜音樂・字幕・QR Code・動畫效果
             </h1>
             <p className="mt-2 max-w-4xl break-words leading-7 text-slate-600">
-              圖片、音樂與影片都留在你的裝置。先選圖片，再設定每張秒數、畫面比例、特效、字幕與 QR Code，最後由瀏覽器直接產生 MP4。
+              圖片、音樂與影片都留在你的裝置。先選圖片，再設定秒數、特效、字幕與 QR Code；QRCode 可改成只在最後一頁顯示，影片畫面更乾淨。
             </p>
           </div>
 
@@ -1486,34 +1709,50 @@ export default function BrowserImageToMp4() {
                     className="h-5 w-5"
                   />
                   <span className="text-sm font-black text-emerald-900">
-                    加入 QR Code
+                    加入 QR Code 導流
                   </span>
                 </label>
 
-                {qrEnabled ? (
-                  <div className="mt-3 grid gap-4 lg:grid-cols-[1fr_auto]">
-                    <div className="min-w-0 space-y-3">
-                      <label className="block text-xs font-black text-slate-700">
-                        QR Code 網址／文字
-                        <input
-                          value={qrText}
-                          onChange={(e) => setQrText(e.target.value)}
-                          placeholder="https://..."
-                          className="mt-1 w-full min-w-0 rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-sm"
-                        />
-                      </label>
+                <p className="mt-2 text-xs leading-5 text-emerald-800">
+                  建議使用「只在最後一頁顯示」，前面圖片不會被 QR Code 擋住。
+                </p>
 
+                {qrEnabled ? (
+                  <div className="mt-4 space-y-4">
+                    <label className="block text-xs font-black text-slate-700">
+                      QR Code 網址／文字
+                      <input
+                        value={qrText}
+                        onChange={(e) => setQrText(e.target.value)}
+                        placeholder="https://..."
+                        className="mt-1 w-full min-w-0 rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-sm"
+                      />
+                    </label>
+
+                    <label className="block text-xs font-black text-slate-700">
+                      QR Code 顯示方式
+                      <select
+                        value={qrDisplayMode}
+                        onChange={(e) =>
+                          setQrDisplayMode(e.target.value as QrDisplayMode)
+                        }
+                        className="mt-1 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-bold"
+                      >
+                        <option value="final">只在最後一頁顯示（推薦）</option>
+                        <option value="all">每張圖片都顯示</option>
+                      </select>
+                    </label>
+
+                    {qrDisplayMode === "all" ? (
                       <div className="grid gap-3 lg:grid-cols-2">
                         <label className="text-xs font-black text-slate-700">
-                          QR 位置
+                          每張圖片 QR 位置
                           <select
                             value={qrPosition}
                             onChange={(e) =>
-                              setQrPosition(
-                                e.target.value as QrPosition,
-                              )
+                              setQrPosition(e.target.value as QrPosition)
                             }
-                            className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2 py-2"
+                            className="mt-1 min-h-11 w-full rounded-lg border border-slate-300 bg-white px-2 py-2"
                           >
                             <option value="bottom-right">右下</option>
                             <option value="bottom-left">左下</option>
@@ -1536,23 +1775,133 @@ export default function BrowserImageToMp4() {
                           />
                         </label>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="rounded-2xl border border-emerald-200 bg-white p-4">
+                        <div className="grid gap-4 lg:grid-cols-2">
+                          <label className="text-xs font-black text-slate-700">
+                            最後一頁 QR 位置
+                            <select
+                              value={finalQrPosition}
+                              onChange={(e) =>
+                                setFinalQrPosition(
+                                  e.target.value as FinalQrPosition,
+                                )
+                              }
+                              className="mt-1 min-h-11 w-full rounded-lg border border-slate-300 bg-white px-2 py-2"
+                            >
+                              <option value="top">上</option>
+                              <option value="middle">中</option>
+                              <option value="bottom">下</option>
+                            </select>
+                          </label>
 
-                    <div className="flex items-center justify-center rounded-xl bg-white p-3 shadow-sm">
-                      <QRCodeCanvas
-                        ref={qrCanvasRef}
-                        value={qrText.trim() || "https://example.com"}
-                        size={128}
-                        level="M"
-                        marginSize={1}
-                      />
-                    </div>
+                          <label className="text-xs font-black text-slate-700">
+                            最後一頁停留秒數
+                            <select
+                              value={finalPageDuration}
+                              onChange={(e) =>
+                                setFinalPageDuration(
+                                  Number(e.target.value),
+                                )
+                              }
+                              className="mt-1 min-h-11 w-full rounded-lg border border-slate-300 bg-white px-2 py-2"
+                            >
+                              <option value={1}>1 秒</option>
+                              <option value={2}>2 秒</option>
+                              <option value={3}>3 秒（建議）</option>
+                              <option value={5}>5 秒</option>
+                            </select>
+                          </label>
+                        </div>
+
+                        <label className="mt-3 block text-xs font-black text-slate-700">
+                          最後一頁標題
+                          <input
+                            value={finalPageTitle}
+                            onChange={(e) => setFinalPageTitle(e.target.value)}
+                            maxLength={40}
+                            className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"
+                          />
+                        </label>
+
+                        <label className="mt-3 block text-xs font-black text-slate-700">
+                          最後一頁說明
+                          <textarea
+                            value={finalPageSubtitle}
+                            onChange={(e) =>
+                              setFinalPageSubtitle(e.target.value)
+                            }
+                            maxLength={80}
+                            rows={2}
+                            className="mt-1 w-full resize-y rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm leading-6"
+                          />
+                        </label>
+
+                        <label className="mt-3 block text-xs font-black text-slate-700">
+                          QR 大小：{qrPercent}%
+                          <input
+                            className="mt-2 w-full"
+                            type="range"
+                            min="12"
+                            max="28"
+                            step="1"
+                            value={qrPercent}
+                            onChange={(e) =>
+                              setQrPercent(Number(e.target.value))
+                            }
+                          />
+                        </label>
+
+                        <div className="mt-4">
+                          <p className="mb-2 text-xs font-black text-slate-700">
+                            最後一頁預覽
+                          </p>
+                          <div
+                            className={`mx-auto flex w-full max-w-[260px] flex-col items-center rounded-2xl border border-slate-200 bg-gradient-to-br from-emerald-50 via-white to-blue-50 p-4 shadow-sm ${
+                              finalQrPosition === "top"
+                                ? "justify-start"
+                                : finalQrPosition === "bottom"
+                                  ? "justify-end"
+                                  : "justify-center"
+                            }`}
+                            style={{
+                              aspectRatio: `${width} / ${height}`,
+                            }}
+                          >
+                            <p className="text-center text-sm font-black text-slate-900">
+                              {finalPageTitle || "喜歡這組圖片嗎？"}
+                            </p>
+                            <div className="my-3 rounded-xl bg-white p-2 shadow">
+                              <QRCodeCanvas
+                                value={qrText.trim() || "https://example.com"}
+                                size={112}
+                                level="M"
+                                marginSize={1}
+                              />
+                            </div>
+                            <p className="text-center text-xs leading-5 text-slate-600">
+                              {finalPageSubtitle ||
+                                "掃描 QR Code，查看更多免費圖片"}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <QRCodeCanvas
+                      ref={qrCanvasRef}
+                      value={qrText.trim() || "https://example.com"}
+                      size={256}
+                      level="M"
+                      marginSize={1}
+                      className="hidden"
+                    />
                   </div>
                 ) : (
                   <QRCodeCanvas
                     ref={qrCanvasRef}
                     value="https://example.com"
-                    size={128}
+                    size={256}
                     className="hidden"
                   />
                 )}
