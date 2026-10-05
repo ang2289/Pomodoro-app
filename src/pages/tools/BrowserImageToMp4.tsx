@@ -321,16 +321,16 @@ export default function BrowserImageToMp4() {
       {
         label: "備援影片引擎 1",
         coreURL:
-          "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd/ffmpeg-core.js",
+          "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/esm/ffmpeg-core.js",
         wasmURL:
-          "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd/ffmpeg-core.wasm",
+          "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/esm/ffmpeg-core.wasm",
       },
       {
         label: "備援影片引擎 2",
         coreURL:
-          "https://unpkg.com/@ffmpeg/core@0.12.10/dist/umd/ffmpeg-core.js",
+          "https://unpkg.com/@ffmpeg/core@0.12.10/dist/esm/ffmpeg-core.js",
         wasmURL:
-          "https://unpkg.com/@ffmpeg/core@0.12.10/dist/umd/ffmpeg-core.wasm",
+          "https://unpkg.com/@ffmpeg/core@0.12.10/dist/esm/ffmpeg-core.wasm",
       },
     ];
 
@@ -510,7 +510,7 @@ export default function BrowserImageToMp4() {
     setEngineReady(false);
 
     throw new Error(
-      `影片引擎仍無法載入。診斷：${errors.join("｜")}。請把這段診斷文字截圖給我。`,
+      `影片引擎仍無法載入。診斷：${errors.join("｜")}。目前使用 ESM 版 FFmpeg Core；請把這段診斷文字截圖給我。`,
     );
   };
 

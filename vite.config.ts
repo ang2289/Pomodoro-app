@@ -36,7 +36,7 @@ export default defineConfig(({ mode }) => {
       name: 'rxv-copy-ffmpeg-runtime-to-dist',
       apply: 'build' as const,
       closeBundle() {
-        const coreSrcDir = path.resolve(__dirname, 'node_modules/@ffmpeg/core/dist/umd')
+        const coreSrcDir = path.resolve(__dirname, 'node_modules/@ffmpeg/core/dist/esm')
         const coreDestDir = path.resolve(__dirname, 'dist/ffmpeg-core')
         fs.mkdirSync(coreDestDir, { recursive: true })
 
