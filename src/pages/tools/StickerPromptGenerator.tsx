@@ -5216,7 +5216,7 @@ export default function StickerPromptGenerator() {
               </div>
 
               <Link
-                to="/tools/line-sticker"
+                to="/tools/line-sticker?flow=1"
                 onClick={() => persistFlowProject(3)}
                 className="mt-5 inline-flex min-h-[52px] w-full items-center justify-center rounded-2xl bg-blue-600 px-5 py-3 text-center text-sm font-black !text-white shadow-lg transition hover:bg-blue-700"
               >
