@@ -1420,17 +1420,23 @@ export default function LineStickerTool() {
                 <p className="text-[11px] font-black text-slate-400 uppercase mb-3">
                   {t("line_sticker_step_count")}
                 </p>
-                <div className="flex flex-wrap gap-2">
-                  {STICKER_SIZES.map((n) => (
-                    <button
-                      key={n}
-                      onClick={() => setStickerCount(n)}
-                      className={`flex-1 min-w-[46px] whitespace-nowrap rounded-lg px-2 py-2 text-xs font-bold transition-all ${stickerCount === n ? "bg-blue-600 text-white shadow-md" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}
-                    >
-                      {n}
-                    </button>
-                  ))}
-                </div>
+                {flowProject ? (
+                  <div className="rounded-xl bg-blue-50 px-4 py-3 text-sm font-black text-blue-800">
+                    已從第 1 步帶入：{stickerCount} 張，不需要再選一次
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {STICKER_SIZES.map((n) => (
+                      <button
+                        key={n}
+                        onClick={() => setStickerCount(n)}
+                        className={`flex-1 min-w-[46px] whitespace-nowrap rounded-lg px-2 py-2 text-xs font-bold transition-all ${stickerCount === n ? "bg-blue-600 text-white shadow-md" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}
+                      >
+                        {n}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="bg-white p-5 rounded-2xl border border-slate-200">
