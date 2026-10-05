@@ -2113,7 +2113,7 @@ const AnimatedLineStickerTool: React.FC = () => {
               workflowMode === "manual" ? (
               <button
                 type="button"
-                onClick={() => inputRef.current?.click()
+                onClick={() => inputRef.current?.click()}
                 onDrop={(event) => {
                   event.preventDefault();
                   handleFiles(event.dataTransfer.files);
