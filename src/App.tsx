@@ -168,7 +168,6 @@ import LineStickerGuide from './pages/tools/LineStickerGuide'
 import StickerPromptGenerator from './pages/tools/StickerPromptGenerator'
 import EmotionalValueStickerPrompt from './pages/tools/EmotionalValueStickerPrompt'
 import StickerShowcaseGallery from './pages/tools/StickerShowcaseGallery'
-import AnimatedStickerPromptGenerator from './pages/tools/AnimatedStickerPromptGenerator'
 import AnimatedLineStickerTool from './pages/tools/AnimatedLineStickerTool'
 import ImagePromptGenerator from './pages/tools/ImagePromptGenerator'
 import PetPromptPage from './pages/tools/PetPromptPage'
@@ -719,7 +718,7 @@ function App() {
             <Route path="tools/sticker-prompt" element={<StickerPromptGenerator />} />
             <Route path="tools/emotional-value-sticker-prompt" element={<EmotionalValueStickerPrompt />} />
             <Route path="tools/sticker-showcase" element={<StickerShowcaseGallery />} />
-            <Route path="tools/animated-sticker-prompt" element={<AnimatedStickerPromptGenerator />} />
+            <Route path="tools/animated-sticker-prompt" element={<Navigate to="/tools/sticker-prompt?mode=animated" replace />} />
             <Route path="tools/animated-line-sticker" element={<AdminOnlyAnimatedLineStickerRoute />} />
             <Route path="tools/image-prompt" element={<ImagePromptGenerator />} />
             <Route path="tools/pet-prompt" element={<PetPromptPage />} />
