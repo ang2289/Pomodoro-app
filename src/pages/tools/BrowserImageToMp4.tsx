@@ -1,15 +1,23 @@
 import { useMemo, useRef, useState } from "react";
 import { FFmpeg } from "@ffmpeg/ffmpeg";
-import { fetchFile, toBlobURL } from "@ffmpeg/util";
+import { fetchFile } from "@ffmpeg/util";
+import { QRCodeCanvas } from "qrcode.react";
 import SEO from "@/components/SEO";
 
 type Ratio = "9:16" | "16:9" | "1:1" | "4:5";
 type Quality = "720p" | "1080p";
-type Effect = "static" | "zoom_in" | "zoom_out" | "fade";
+type Effect =
+  | "static"
+  | "zoom_in"
+  | "zoom_out"
+  | "fade"
+  | "pan_left"
+  | "pan_right"
+  | "pan_up"
+  | "pan_down";
 type FitMode = "contain" | "cover";
-
-const CORE_BASE =
-  "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd";
+type QrPosition = "top-left" | "top-right" | "bottom-left" | "bottom-right";
+type CaptionPosition = "top" | "bottom";
 
 const RATIO_SIZE: Record<Ratio, Record<Quality, [number, number]>> = {
   "9:16": { "720p": [720, 1280], "1080p": [1080, 1920] },
@@ -23,18 +31,133 @@ function getExtension(name: string) {
   return match?.[1] || "mp3";
 }
 
+function wrapCanvasText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number,
+) {
+  const chars = Array.from(text.trim());
+  const lines: string[] = [];
+  let current = "";
+
+  chars.forEach((char) => {
+    const candidate = current + char;
+    if (current && ctx.measureText(candidate).width > maxWidth) {
+      lines.push(current);
+      current = char;
+    } else {
+      current = candidate;
+    }
+  });
+
+  if (current) lines.push(current);
+  return lines.slice(0, 3);
+}
+
+function drawCaption(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  width: number,
+  height: number,
+  position: CaptionPosition,
+  fontSize: number,
+) {
+  if (!text.trim()) return;
+
+  const scaledFont = Math.max(18, Math.round((fontSize / 1080) * width));
+  const paddingX = Math.round(width * 0.055);
+  const paddingY = Math.round(height * 0.025);
+  const lineHeight = Math.round(scaledFont * 1.3);
+
+  ctx.save();
+  ctx.font = `700 ${scaledFont}px system-ui, -apple-system, "Segoe UI", sans-serif`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  const lines = wrapCanvasText(ctx, text, width - paddingX * 2);
+  const boxHeight = lines.length * lineHeight + paddingY * 2;
+  const boxY =
+    position === "top"
+      ? Math.round(height * 0.035)
+      : height - boxHeight - Math.round(height * 0.035);
+
+  ctx.fillStyle = "rgba(0, 0, 0, 0.58)";
+  ctx.fillRect(
+    Math.round(width * 0.035),
+    boxY,
+    Math.round(width * 0.93),
+    boxHeight,
+  );
+
+  ctx.fillStyle = "#ffffff";
+  lines.forEach((line, index) => {
+    ctx.fillText(
+      line,
+      width / 2,
+      boxY + paddingY + lineHeight * index + lineHeight / 2,
+      width - paddingX * 2,
+    );
+  });
+  ctx.restore();
+}
+
+function drawQrOverlay(
+  ctx: CanvasRenderingContext2D,
+  qrCanvas: HTMLCanvasElement | null,
+  width: number,
+  height: number,
+  position: QrPosition,
+  percent: number,
+) {
+  if (!qrCanvas) return;
+
+  const size = Math.round(Math.min(width, height) * (percent / 100));
+  const outerPadding = Math.max(10, Math.round(size * 0.08));
+  const edge = Math.max(14, Math.round(Math.min(width, height) * 0.025));
+  const boxSize = size + outerPadding * 2;
+
+  const x =
+    position.endsWith("right")
+      ? width - boxSize - edge
+      : edge;
+  const y =
+    position.startsWith("bottom")
+      ? height - boxSize - edge
+      : edge;
+
+  ctx.save();
+  ctx.fillStyle = "rgba(255,255,255,0.96)";
+  ctx.fillRect(x, y, boxSize, boxSize);
+  ctx.drawImage(
+    qrCanvas,
+    x + outerPadding,
+    y + outerPadding,
+    size,
+    size,
+  );
+  ctx.restore();
+}
+
 async function imageToJpeg(
   file: File,
   width: number,
   height: number,
   fitMode: FitMode,
+  background: "#000000" | "#ffffff",
+  caption: string,
+  captionPosition: CaptionPosition,
+  captionFontSize: number,
+  qrCanvas: HTMLCanvasElement | null,
+  qrPosition: QrPosition,
+  qrPercent: number,
 ) {
   const url = URL.createObjectURL(file);
+
   try {
     const img = await new Promise<HTMLImageElement>((resolve, reject) => {
       const image = new Image();
       image.onload = () => resolve(image);
-      image.onerror = () => reject(new Error("圖片讀取失敗"));
+      image.onerror = () => reject(new Error(`圖片讀取失敗：${file.name}`));
       image.src = url;
     });
 
@@ -44,7 +167,7 @@ async function imageToJpeg(
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("瀏覽器無法建立圖片畫布");
 
-    ctx.fillStyle = "#000";
+    ctx.fillStyle = background;
     ctx.fillRect(0, 0, width, height);
 
     const scale =
@@ -57,11 +180,31 @@ async function imageToJpeg(
     const x = Math.round((width - drawWidth) / 2);
     const y = Math.round((height - drawHeight) / 2);
 
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
     ctx.drawImage(img, x, y, drawWidth, drawHeight);
+
+    drawCaption(
+      ctx,
+      caption,
+      width,
+      height,
+      captionPosition,
+      captionFontSize,
+    );
+    drawQrOverlay(
+      ctx,
+      qrCanvas,
+      width,
+      height,
+      qrPosition,
+      qrPercent,
+    );
 
     const blob = await new Promise<Blob>((resolve, reject) =>
       canvas.toBlob(
-        (value) => (value ? resolve(value) : reject(new Error("圖片轉換失敗"))),
+        (value) =>
+          value ? resolve(value) : reject(new Error("圖片轉換失敗")),
         "image/jpeg",
         0.92,
       ),
@@ -73,13 +216,32 @@ async function imageToJpeg(
   }
 }
 
-function effectFilter(effect: Effect, width: number, height: number, seconds: number) {
+function effectFilter(
+  effect: Effect,
+  width: number,
+  height: number,
+  seconds: number,
+) {
   const frames = Math.max(1, Math.round(seconds * 30));
+  const denom = Math.max(1, frames - 1);
+
   if (effect === "zoom_in") {
-    return `zoompan=z='min(zoom+0.0015,1.12)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=${frames}:s=${width}x${height}:fps=30`;
+    return `zoompan=z='min(zoom+0.0018,1.14)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=${frames}:s=${width}x${height}:fps=30`;
   }
   if (effect === "zoom_out") {
-    return `zoompan=z='if(lte(on,1),1.12,max(1.0,zoom-0.0015))':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=${frames}:s=${width}x${height}:fps=30`;
+    return `zoompan=z='if(lte(on,1),1.14,max(1.0,zoom-0.0018))':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=${frames}:s=${width}x${height}:fps=30`;
+  }
+  if (effect === "pan_left") {
+    return `zoompan=z=1.10:x='(iw-iw/zoom)*(1-on/${denom})':y='(ih-ih/zoom)/2':d=${frames}:s=${width}x${height}:fps=30`;
+  }
+  if (effect === "pan_right") {
+    return `zoompan=z=1.10:x='(iw-iw/zoom)*(on/${denom})':y='(ih-ih/zoom)/2':d=${frames}:s=${width}x${height}:fps=30`;
+  }
+  if (effect === "pan_up") {
+    return `zoompan=z=1.10:x='(iw-iw/zoom)/2':y='(ih-ih/zoom)*(1-on/${denom})':d=${frames}:s=${width}x${height}:fps=30`;
+  }
+  if (effect === "pan_down") {
+    return `zoompan=z=1.10:x='(iw-iw/zoom)/2':y='(ih-ih/zoom)*(on/${denom})':d=${frames}:s=${width}x${height}:fps=30`;
   }
   if (effect === "fade") {
     const outStart = Math.max(0, seconds - 0.45).toFixed(2);
@@ -88,71 +250,169 @@ function effectFilter(effect: Effect, width: number, height: number, seconds: nu
   return "fps=30";
 }
 
+function wait(ms: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
 export default function BrowserImageToMp4() {
   const [images, setImages] = useState<File[]>([]);
   const [audio, setAudio] = useState<File | null>(null);
   const [ratio, setRatio] = useState<Ratio>("9:16");
   const [quality, setQuality] = useState<Quality>("720p");
   const [fitMode, setFitMode] = useState<FitMode>("contain");
+  const [background, setBackground] = useState<"#000000" | "#ffffff">("#000000");
   const [effect, setEffect] = useState<Effect>("zoom_in");
   const [secondsPerImage, setSecondsPerImage] = useState(2.5);
+  const [audioVolume, setAudioVolume] = useState(0.7);
+  const [caption, setCaption] = useState("");
+  const [captionPosition, setCaptionPosition] =
+    useState<CaptionPosition>("bottom");
+  const [captionFontSize, setCaptionFontSize] = useState(54);
+  const [qrEnabled, setQrEnabled] = useState(false);
+  const [qrText, setQrText] = useState("");
+  const [qrPosition, setQrPosition] =
+    useState<QrPosition>("bottom-right");
+  const [qrPercent, setQrPercent] = useState(18);
   const [busy, setBusy] = useState(false);
+  const [engineReady, setEngineReady] = useState(false);
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState("尚未開始");
   const [error, setError] = useState("");
   const [resultUrl, setResultUrl] = useState("");
+
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
+  const audioInputRef = useRef<HTMLInputElement | null>(null);
+  const qrCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const ffmpegRef = useRef<FFmpeg | null>(null);
   const loadedRef = useRef(false);
 
   const [width, height] = RATIO_SIZE[ratio][quality];
+
   const totalSeconds = useMemo(
-    () => Math.max(1, images.length) * secondsPerImage,
+    () => images.length * secondsPerImage,
     [images.length, secondsPerImage],
   );
 
   const loadFfmpeg = async () => {
-    if (!ffmpegRef.current) {
-      const ffmpeg = new FFmpeg();
-      ffmpeg.on("progress", ({ progress: value }) => {
-        const normalized = Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0;
-        setProgress(Math.max(12, Math.round(12 + normalized * 84)));
+    if (loadedRef.current && ffmpegRef.current) return ffmpegRef.current;
+
+    const ffmpeg = new FFmpeg();
+    ffmpegRef.current = ffmpeg;
+
+    ffmpeg.on("progress", ({ progress: value }) => {
+      const normalized = Number.isFinite(value)
+        ? Math.max(0, Math.min(1, value))
+        : 0;
+      setProgress(Math.max(18, Math.round(18 + normalized * 78)));
+    });
+
+    const coreURL = new URL(
+      "/ffmpeg-core/ffmpeg-core.js",
+      window.location.origin,
+    ).href;
+    const wasmURL = new URL(
+      "/ffmpeg-core/ffmpeg-core.wasm",
+      window.location.origin,
+    ).href;
+
+    setStatus("正在載入本站影片引擎，第一次使用會比較久…");
+    setProgress(5);
+
+    try {
+      const timeout = new Promise<never>((_, reject) => {
+        window.setTimeout(
+          () => reject(new Error("影片引擎載入超過 45 秒，請重新整理後再試。")),
+          45000,
+        );
       });
-      ffmpegRef.current = ffmpeg;
-    }
 
-    if (!loadedRef.current) {
-      setStatus("第一次載入影片引擎，請稍候…");
-      setProgress(4);
-      const coreURL = await toBlobURL(
-        `${CORE_BASE}/ffmpeg-core.js`,
-        "text/javascript",
-      );
-      const wasmURL = await toBlobURL(
-        `${CORE_BASE}/ffmpeg-core.wasm`,
-        "application/wasm",
-      );
-      await ffmpegRef.current.load({ coreURL, wasmURL });
+      await Promise.race([
+        ffmpeg.load({ coreURL, wasmURL }),
+        timeout,
+      ]);
+
       loadedRef.current = true;
-      setProgress(10);
+      setEngineReady(true);
+      setStatus("影片引擎已就緒");
+      setProgress(15);
+      return ffmpeg;
+    } catch (err) {
+      try {
+        ffmpeg.terminate();
+      } catch {}
+      ffmpegRef.current = null;
+      loadedRef.current = false;
+      setEngineReady(false);
+      throw err;
     }
+  };
 
-    return ffmpegRef.current;
+  const preloadEngine = async () => {
+    if (busy || engineReady) return;
+
+    setBusy(true);
+    setError("");
+
+    try {
+      await loadFfmpeg();
+    } catch (err) {
+      setProgress(0);
+      setStatus("影片引擎載入失敗");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "無法載入影片引擎，請重新整理後再試。",
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const moveImage = (index: number, direction: -1 | 1) => {
+    setImages((current) => {
+      const target = index + direction;
+      if (target < 0 || target >= current.length) return current;
+      const next = [...current];
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  };
+
+  const removeImage = (index: number) => {
+    setImages((current) => current.filter((_, itemIndex) => itemIndex !== index));
+  };
+
+  const cancelGeneration = () => {
+    try {
+      ffmpegRef.current?.terminate();
+    } catch {}
+    ffmpegRef.current = null;
+    loadedRef.current = false;
+    setEngineReady(false);
+    setBusy(false);
+    setProgress(0);
+    setStatus("已取消。下次產生時會重新載入影片引擎。");
   };
 
   const generate = async () => {
     if (busy) return;
+
     if (!images.length) {
       setError("請先選擇至少 1 張圖片。");
       return;
     }
     if (images.length > 12) {
-      setError("公開版一次最多 12 張圖片，避免手機或瀏覽器記憶體不足。");
+      setError("一次最多 12 張圖片，避免手機或瀏覽器記憶體不足。");
+      return;
+    }
+    if (qrEnabled && !qrText.trim()) {
+      setError("已開啟 QR Code，請輸入網址或文字。");
       return;
     }
 
     setBusy(true);
     setError("");
-    setStatus("準備圖片…");
+    setStatus("準備開始…");
     setProgress(1);
 
     if (resultUrl) {
@@ -160,13 +420,31 @@ export default function BrowserImageToMp4() {
       setResultUrl("");
     }
 
-    const ffmpeg = await loadFfmpeg();
+    let ffmpeg: FFmpeg | null = null;
     const created: string[] = [];
 
     try {
+      ffmpeg = await loadFfmpeg();
+
       for (let i = 0; i < images.length; i += 1) {
         setStatus(`處理圖片 ${i + 1} / ${images.length}…`);
-        const data = await imageToJpeg(images[i], width, height, fitMode);
+        setProgress(
+          Math.max(16, Math.round(16 + ((i + 1) / images.length) * 12)),
+        );
+
+        const data = await imageToJpeg(
+          images[i],
+          width,
+          height,
+          fitMode,
+          background,
+          caption,
+          captionPosition,
+          captionFontSize,
+          qrEnabled ? qrCanvasRef.current : null,
+          qrPosition,
+          qrPercent,
+        );
         const name = `rxv-img-${i}.jpg`;
         await ffmpeg.writeFile(name, data);
         created.push(name);
@@ -174,6 +452,7 @@ export default function BrowserImageToMp4() {
 
       let audioName = "";
       if (audio) {
+        setStatus("加入背景音樂…");
         const ext = getExtension(audio.name);
         audioName = `rxv-bgm.${ext}`;
         await ffmpeg.writeFile(audioName, await fetchFile(audio));
@@ -182,7 +461,14 @@ export default function BrowserImageToMp4() {
 
       const args: string[] = [];
       images.forEach((_, i) => {
-        args.push("-loop", "1", "-t", String(secondsPerImage), "-i", `rxv-img-${i}.jpg`);
+        args.push(
+          "-loop",
+          "1",
+          "-t",
+          String(secondsPerImage),
+          "-i",
+          `rxv-img-${i}.jpg`,
+        );
       });
 
       if (audioName) {
@@ -192,13 +478,25 @@ export default function BrowserImageToMp4() {
       const filters: string[] = [];
       for (let i = 0; i < images.length; i += 1) {
         filters.push(
-          `[${i}:v]scale=${width}:${height},setsar=1,${effectFilter(effect, width, height, secondsPerImage)},trim=duration=${secondsPerImage},setpts=PTS-STARTPTS[v${i}]`,
+          `[${i}:v]scale=${width}:${height},setsar=1,${effectFilter(
+            effect,
+            width,
+            height,
+            secondsPerImage,
+          )},trim=duration=${secondsPerImage},setpts=PTS-STARTPTS[v${i}]`,
         );
       }
+
       filters.push(
         images.map((_, i) => `[v${i}]`).join("") +
           `concat=n=${images.length}:v=1:a=0[vout]`,
       );
+
+      if (audioName) {
+        filters.push(
+          `[${images.length}:a]volume=${audioVolume.toFixed(2)}[aout]`,
+        );
+      }
 
       args.push(
         "-filter_complex",
@@ -210,7 +508,7 @@ export default function BrowserImageToMp4() {
       if (audioName) {
         args.push(
           "-map",
-          `${images.length}:a:0`,
+          "[aout]",
           "-c:a",
           "aac",
           "-b:a",
@@ -237,19 +535,30 @@ export default function BrowserImageToMp4() {
         "rxv-output.mp4",
       );
 
-      setStatus("瀏覽器正在產生 MP4，請不要關閉頁面…");
-      setProgress(Math.max(progress, 12));
-      await ffmpeg.exec(args);
+      setStatus(
+        `正在產生 MP4（約 ${totalSeconds.toFixed(1)} 秒影片），請不要關閉頁面…`,
+      );
+      setProgress(Math.max(30, progress));
+
+      const exitCode = await ffmpeg.exec(args);
+      if (exitCode !== 0) {
+        throw new Error(`影片引擎回傳錯誤代碼 ${exitCode}`);
+      }
 
       const file = await ffmpeg.readFile("rxv-output.mp4");
       const bytes = file as Uint8Array;
       const copy = new Uint8Array(bytes.length);
       copy.set(bytes);
+
       const blob = new Blob([copy], { type: "video/mp4" });
+      if (blob.size === 0) throw new Error("產生的影片是 0KB，請重新再試。");
+
       const url = URL.createObjectURL(blob);
       setResultUrl(url);
       setProgress(100);
-      setStatus("完成，影片只在你的裝置中產生。");
+      setStatus(
+        `完成！影片大小約 ${(blob.size / 1024 / 1024).toFixed(1)} MB。`,
+      );
 
       try {
         await ffmpeg.deleteFile("rxv-output.mp4");
@@ -263,10 +572,12 @@ export default function BrowserImageToMp4() {
           : "影片產生失敗。可先改用 720p、減少圖片數量後再試。",
       );
     } finally {
-      for (const name of created) {
-        try {
-          await ffmpeg.deleteFile(name);
-        } catch {}
+      if (ffmpeg) {
+        for (const name of created) {
+          try {
+            await ffmpeg.deleteFile(name);
+          } catch {}
+        }
       }
       setBusy(false);
     }
@@ -282,187 +593,549 @@ export default function BrowserImageToMp4() {
     a.remove();
   };
 
+  const pickerButtonClass =
+    "inline-flex min-h-12 w-full items-center justify-center rounded-2xl border border-blue-200 bg-white px-4 py-3 text-sm font-black text-blue-700 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-blue-400 hover:bg-blue-50 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-300";
+
   return (
     <>
       <SEO
-        title="免費圖片轉 MP4｜瀏覽器本機製作短影片｜RxV"
-        description="圖片直接在你的瀏覽器轉成 MP4，可加 MP3/BGM、縮放與淡入淡出效果；不上傳伺服器。"
-        keywords="圖片轉MP4, 圖片轉影片, JPG轉MP4, PNG轉MP4, 免費影片工具"
+        title="免費圖片轉 MP4｜加音樂、字幕、QR Code｜RxV"
+        description="圖片直接在你的瀏覽器轉成 MP4，可設定秒數、MP3/BGM、字幕、QR Code、縮放與平移效果；不上傳伺服器。"
+        keywords="圖片轉MP4, 圖片轉影片, JPG轉MP4, PNG轉MP4, QR Code影片, 免費影片工具"
         path="/tools/image-to-mp4"
       />
 
-      <div className="mx-auto w-full max-w-5xl px-4 py-8">
+      <div className="mx-auto w-full max-w-6xl px-4 py-8">
         <div className="rounded-3xl border border-sky-200 bg-white p-5 shadow-sm sm:p-7">
-          <div className="mb-5">
-            <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">
-              免費・本機處理・不用上傳
-            </span>
-            <h1 className="mt-3 text-2xl font-black text-slate-900 sm:text-3xl">
-              圖片轉 MP4
+          <div className="mb-6">
+            <div className="flex flex-wrap gap-2">
+              <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">
+                免費・本機處理・不用上傳
+              </span>
+              <span
+                className={`inline-flex rounded-full px-3 py-1 text-xs font-black ${
+                  engineReady
+                    ? "bg-emerald-100 text-emerald-800"
+                    : "bg-slate-100 text-slate-600"
+                }`}
+              >
+                {engineReady ? "✓ 影片引擎已載入" : "影片引擎尚未載入"}
+              </span>
+            </div>
+
+            <h1 className="mt-3 break-words text-2xl font-black leading-tight text-slate-900 sm:text-3xl">
+              圖片轉 MP4｜音樂・字幕・QR Code・動畫效果
             </h1>
-            <p className="mt-2 leading-relaxed text-slate-600">
-              選圖片後直接使用你自己的電腦或手機瀏覽器產生 MP4。圖片、MP3 與輸出影片不會上傳到 RxV 伺服器。
+            <p className="mt-2 max-w-4xl break-words leading-7 text-slate-600">
+              圖片、音樂與影片都留在你的裝置。先選圖片，再設定每張秒數、畫面比例、特效、字幕與 QR Code，最後由瀏覽器直接產生 MP4。
             </p>
           </div>
 
-          <div className="grid gap-5 lg:grid-cols-2">
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <label className="block text-sm font-black text-slate-800">
-                1. 選擇圖片（最多 12 張）
-              </label>
-              <input
-                className="mt-3 block w-full text-sm"
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={(e) => setImages(Array.from(e.target.files || []).slice(0, 12))}
-              />
-              <p className="mt-2 text-xs text-slate-500">
-                已選 {images.length} 張；總長約 {totalSeconds.toFixed(1)} 秒。
-              </p>
+          <div className="grid gap-6 xl:grid-cols-[1fr_1.15fr]">
+            <section className="space-y-5">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
+                <div className="flex items-start gap-3">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-black text-white">
+                    1
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <h2 className="break-words text-base font-black text-slate-900">
+                      選擇圖片（最多 12 張）
+                    </h2>
+                    <p className="mt-1 break-words text-xs leading-5 text-slate-500">
+                      上傳順序就是播放順序；下面可以再調整。
+                    </p>
+                  </div>
+                </div>
 
-              <label className="mt-5 block text-sm font-black text-slate-800">
-                2. 背景音樂（可不選）
-              </label>
-              <input
-                className="mt-3 block w-full text-sm"
-                type="file"
-                accept="audio/mpeg,audio/mp3,audio/wav,audio/x-wav,audio/mp4,audio/aac"
-                onChange={(e) => setAudio(e.target.files?.[0] || null)}
-              />
-              <p className="mt-2 text-xs text-slate-500">
-                支援 MP3／WAV／M4A 等常見音訊；音樂會依影片長度自動截斷。
-              </p>
-            </div>
+                <button
+                  type="button"
+                  onClick={() => imageInputRef.current?.click()}
+                  className={`${pickerButtonClass} mt-4`}
+                >
+                  🖼️ 選擇圖片
+                </button>
+                <input
+                  ref={imageInputRef}
+                  className="hidden"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) =>
+                    setImages(
+                      Array.from(e.target.files || []).slice(0, 12),
+                    )
+                  }
+                />
 
-            <div className="rounded-2xl border border-slate-200 bg-white p-4">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="text-sm font-black text-slate-800">
+                <p className="mt-3 break-words text-sm font-bold text-slate-700">
+                  已選 {images.length} 張
+                  {images.length
+                    ? `｜預估影片 ${totalSeconds.toFixed(1)} 秒`
+                    : ""}
+                </p>
+
+                {images.length ? (
+                  <div className="mt-3 space-y-2">
+                    {images.map((file, index) => (
+                      <div
+                        key={`${file.name}-${file.lastModified}-${index}`}
+                        className="flex min-w-0 items-center gap-2 rounded-xl border border-slate-200 bg-white p-2.5"
+                      >
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-xs font-black text-blue-700">
+                          {index + 1}
+                        </span>
+                        <span
+                          className="min-w-0 flex-1 break-all text-xs font-semibold leading-5 text-slate-700"
+                          title={file.name}
+                        >
+                          {file.name}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => moveImage(index, -1)}
+                          disabled={index === 0 || busy}
+                          className="rounded-lg border border-slate-200 px-2 py-1 text-xs font-black disabled:opacity-30"
+                        >
+                          ↑
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => moveImage(index, 1)}
+                          disabled={index === images.length - 1 || busy}
+                          className="rounded-lg border border-slate-200 px-2 py-1 text-xs font-black disabled:opacity-30"
+                        >
+                          ↓
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index)}
+                          disabled={busy}
+                          className="rounded-lg border border-rose-200 px-2 py-1 text-xs font-black text-rose-600 disabled:opacity-30"
+                        >
+                          刪
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+                <div className="flex items-start gap-3">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-600 text-sm font-black text-white">
+                    2
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <h2 className="break-words text-base font-black text-slate-900">
+                      背景音樂（可不選）
+                    </h2>
+                    <p className="mt-1 break-words text-xs leading-5 text-slate-500">
+                      支援 MP3／WAV／M4A 等常見音訊，會依影片長度自動截斷。
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => audioInputRef.current?.click()}
+                  className={`${pickerButtonClass} mt-4`}
+                >
+                  🎵 {audio ? "更換背景音樂" : "選擇 MP3 / 音樂檔"}
+                </button>
+                <input
+                  ref={audioInputRef}
+                  className="hidden"
+                  type="file"
+                  accept="audio/mpeg,audio/mp3,audio/wav,audio/x-wav,audio/mp4,audio/aac"
+                  onChange={(e) => setAudio(e.target.files?.[0] || null)}
+                />
+
+                {audio ? (
+                  <div className="mt-3 rounded-xl bg-slate-50 p-3">
+                    <p className="break-all text-xs font-bold text-slate-700">
+                      {audio.name}
+                    </p>
+                    <label className="mt-3 block text-xs font-black text-slate-700">
+                      音樂音量：{Math.round(audioVolume * 100)}%
+                      <input
+                        className="mt-2 w-full"
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.05"
+                        value={audioVolume}
+                        onChange={(e) =>
+                          setAudioVolume(Number(e.target.value))
+                        }
+                      />
+                    </label>
+                  </div>
+                ) : null}
+              </div>
+            </section>
+
+            <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+              <div className="flex items-start gap-3">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-500 text-sm font-black text-white">
+                  3
+                </span>
+                <div className="min-w-0 flex-1">
+                  <h2 className="break-words text-base font-black text-slate-900">
+                    設定影片效果
+                  </h2>
+                  <p className="mt-1 break-words text-xs leading-5 text-slate-500">
+                    秒數、畫質、動畫、字幕與 QR Code 都在這裡設定。
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                <label className="min-w-0 text-sm font-black text-slate-800">
                   影片比例
                   <select
                     value={ratio}
                     onChange={(e) => setRatio(e.target.value as Ratio)}
-                    className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2"
+                    className="mt-2 w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"
                   >
-                    <option value="9:16">9:16 Shorts／Reels</option>
-                    <option value="16:9">16:9 YouTube</option>
-                    <option value="1:1">1:1 方形</option>
-                    <option value="4:5">4:5 IG 貼文</option>
+                    <option value="9:16">9:16｜Shorts／Reels</option>
+                    <option value="16:9">16:9｜YouTube</option>
+                    <option value="1:1">1:1｜方形</option>
+                    <option value="4:5">4:5｜IG 貼文</option>
                   </select>
                 </label>
 
-                <label className="text-sm font-black text-slate-800">
+                <label className="min-w-0 text-sm font-black text-slate-800">
                   畫質
                   <select
                     value={quality}
                     onChange={(e) => setQuality(e.target.value as Quality)}
-                    className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2"
+                    className="mt-2 w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"
                   >
-                    <option value="720p">720p（手機建議）</option>
-                    <option value="1080p">1080p（電腦建議）</option>
+                    <option value="720p">720p｜手機較穩定</option>
+                    <option value="1080p">1080p｜電腦建議</option>
                   </select>
                 </label>
 
-                <label className="text-sm font-black text-slate-800">
-                  圖片效果
+                <label className="min-w-0 text-sm font-black text-slate-800">
+                  圖片動畫
                   <select
                     value={effect}
                     onChange={(e) => setEffect(e.target.value as Effect)}
-                    className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2"
+                    className="mt-2 w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"
                   >
                     <option value="static">靜態</option>
                     <option value="zoom_in">慢慢放大</option>
                     <option value="zoom_out">慢慢縮小</option>
                     <option value="fade">淡入淡出</option>
+                    <option value="pan_left">向左平移</option>
+                    <option value="pan_right">向右平移</option>
+                    <option value="pan_up">向上平移</option>
+                    <option value="pan_down">向下平移</option>
                   </select>
                 </label>
 
-                <label className="text-sm font-black text-slate-800">
-                  圖片填滿方式
+                <label className="min-w-0 text-sm font-black text-slate-800">
+                  圖片顯示
                   <select
                     value={fitMode}
                     onChange={(e) => setFitMode(e.target.value as FitMode)}
-                    className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2"
+                    className="mt-2 w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"
                   >
-                    <option value="contain">完整顯示（可能留黑邊）</option>
+                    <option value="contain">完整顯示</option>
                     <option value="cover">裁切填滿</option>
                   </select>
                 </label>
+
+                <label className="min-w-0 text-sm font-black text-slate-800">
+                  留白背景
+                  <select
+                    value={background}
+                    onChange={(e) =>
+                      setBackground(
+                        e.target.value as "#000000" | "#ffffff",
+                      )
+                    }
+                    className="mt-2 w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"
+                  >
+                    <option value="#000000">黑色</option>
+                    <option value="#ffffff">白色</option>
+                  </select>
+                </label>
+
+                <div className="min-w-0">
+                  <p className="text-sm font-black text-slate-800">
+                    每張圖片停留秒數
+                  </p>
+                  <div className="mt-2 grid grid-cols-4 gap-2">
+                    {[1, 2, 3, 5].map((seconds) => (
+                      <button
+                        key={seconds}
+                        type="button"
+                        onClick={() => setSecondsPerImage(seconds)}
+                        className={`rounded-xl border px-2 py-2 text-xs font-black transition hover:-translate-y-0.5 ${
+                          secondsPerImage === seconds
+                            ? "border-blue-500 bg-blue-50 text-blue-700"
+                            : "border-slate-200 bg-white text-slate-600 hover:border-blue-300"
+                        }`}
+                      >
+                        {seconds} 秒
+                      </button>
+                    ))}
+                  </div>
+                  <label className="mt-2 flex items-center gap-2 text-xs font-bold text-slate-600">
+                    自訂
+                    <input
+                      type="number"
+                      min="0.5"
+                      max="10"
+                      step="0.5"
+                      value={secondsPerImage}
+                      onChange={(e) =>
+                        setSecondsPerImage(
+                          Math.max(
+                            0.5,
+                            Math.min(10, Number(e.target.value) || 0.5),
+                          ),
+                        )
+                      }
+                      className="w-24 rounded-lg border border-slate-300 px-2 py-1.5"
+                    />
+                    秒
+                  </label>
+                </div>
               </div>
 
-              <label className="mt-4 block text-sm font-black text-slate-800">
-                每張停留秒數：{secondsPerImage.toFixed(1)} 秒
-                <input
-                  className="mt-2 w-full"
-                  type="range"
-                  min="1"
-                  max="8"
-                  step="0.5"
-                  value={secondsPerImage}
-                  onChange={(e) => setSecondsPerImage(Number(e.target.value))}
+              <div className="mt-5 rounded-2xl border border-violet-100 bg-violet-50/50 p-4">
+                <p className="text-sm font-black text-violet-900">
+                  字幕／宣傳文字（可不填）
+                </p>
+                <textarea
+                  value={caption}
+                  onChange={(e) => setCaption(e.target.value)}
+                  rows={3}
+                  maxLength={90}
+                  placeholder="例如：更多免費圖片請到 RxV 圖片庫"
+                  className="mt-2 w-full resize-y rounded-xl border border-violet-200 bg-white px-3 py-2.5 text-sm leading-6"
                 />
-              </label>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  <label className="text-xs font-black text-slate-700">
+                    文字位置
+                    <select
+                      value={captionPosition}
+                      onChange={(e) =>
+                        setCaptionPosition(
+                          e.target.value as CaptionPosition,
+                        )
+                      }
+                      className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2 py-2"
+                    >
+                      <option value="bottom">下方</option>
+                      <option value="top">上方</option>
+                    </select>
+                  </label>
+                  <label className="text-xs font-black text-slate-700">
+                    字體大小：{captionFontSize}
+                    <input
+                      className="mt-2 w-full"
+                      type="range"
+                      min="36"
+                      max="86"
+                      step="2"
+                      value={captionFontSize}
+                      onChange={(e) =>
+                        setCaptionFontSize(Number(e.target.value))
+                      }
+                    />
+                  </label>
+                </div>
+              </div>
 
-              <p className="mt-3 text-xs leading-relaxed text-amber-700">
-                第一次使用會下載瀏覽器影片引擎，可能需要一些時間。手機若轉檔失敗，請改用 720p 或減少圖片張數。
-              </p>
-            </div>
+              <div className="mt-5 rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4">
+                <label className="flex cursor-pointer items-center gap-3">
+                  <input
+                    type="checkbox"
+                    checked={qrEnabled}
+                    onChange={(e) => setQrEnabled(e.target.checked)}
+                    className="h-5 w-5"
+                  />
+                  <span className="text-sm font-black text-emerald-900">
+                    加入 QR Code
+                  </span>
+                </label>
+
+                {qrEnabled ? (
+                  <div className="mt-3 grid gap-4 sm:grid-cols-[1fr_auto]">
+                    <div className="min-w-0 space-y-3">
+                      <label className="block text-xs font-black text-slate-700">
+                        QR Code 網址／文字
+                        <input
+                          value={qrText}
+                          onChange={(e) => setQrText(e.target.value)}
+                          placeholder="https://..."
+                          className="mt-1 w-full min-w-0 rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-sm"
+                        />
+                      </label>
+
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <label className="text-xs font-black text-slate-700">
+                          QR 位置
+                          <select
+                            value={qrPosition}
+                            onChange={(e) =>
+                              setQrPosition(
+                                e.target.value as QrPosition,
+                              )
+                            }
+                            className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2 py-2"
+                          >
+                            <option value="bottom-right">右下</option>
+                            <option value="bottom-left">左下</option>
+                            <option value="top-right">右上</option>
+                            <option value="top-left">左上</option>
+                          </select>
+                        </label>
+                        <label className="text-xs font-black text-slate-700">
+                          QR 大小：{qrPercent}%
+                          <input
+                            className="mt-2 w-full"
+                            type="range"
+                            min="12"
+                            max="28"
+                            step="1"
+                            value={qrPercent}
+                            onChange={(e) =>
+                              setQrPercent(Number(e.target.value))
+                            }
+                          />
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-center rounded-xl bg-white p-3 shadow-sm">
+                      <QRCodeCanvas
+                        ref={qrCanvasRef}
+                        value={qrText.trim() || "https://example.com"}
+                        size={128}
+                        level="M"
+                        marginSize={1}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <QRCodeCanvas
+                    ref={qrCanvasRef}
+                    value="https://example.com"
+                    size={128}
+                    className="hidden"
+                  />
+                )}
+              </div>
+            </section>
           </div>
 
-          <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <div className="flex flex-wrap items-center gap-3">
+          <section className="mt-6 rounded-2xl border border-blue-200 bg-blue-50/40 p-4 sm:p-5">
+            <div className="flex items-start gap-3">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-sm font-black text-white">
+                4
+              </span>
+              <div className="min-w-0 flex-1">
+                <h2 className="break-words text-base font-black text-slate-900">
+                  產生 MP4
+                </h2>
+                <p className="mt-1 break-words text-xs leading-5 text-slate-600">
+                  第一次使用要載入本站 FFmpeg 影片引擎。現在改成直接從本站載入，不再依賴外部 CDN；若超過 45 秒會顯示錯誤，不會無限卡住。
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              {!engineReady ? (
+                <button
+                  type="button"
+                  onClick={preloadEngine}
+                  disabled={busy}
+                  className="rounded-xl border border-blue-300 bg-white px-4 py-3 text-sm font-black text-blue-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-blue-50 hover:shadow-md disabled:opacity-50"
+                >
+                  先載入影片引擎
+                </button>
+              ) : null}
+
               <button
                 type="button"
                 onClick={generate}
                 disabled={busy || images.length === 0}
-                className="rounded-xl bg-blue-600 px-5 py-3 font-black text-white shadow disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-black text-white shadow transition hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {busy ? "正在產生…" : "開始產生 MP4"}
+                {busy ? "正在處理…" : "開始產生 MP4"}
               </button>
+
+              {busy ? (
+                <button
+                  type="button"
+                  onClick={cancelGeneration}
+                  className="rounded-xl border border-rose-300 bg-white px-4 py-3 text-sm font-black text-rose-600 transition hover:bg-rose-50"
+                >
+                  取消
+                </button>
+              ) : null}
+
               {resultUrl ? (
                 <button
                   type="button"
                   onClick={download}
-                  className="rounded-xl bg-emerald-600 px-5 py-3 font-black text-white shadow"
+                  className="rounded-xl bg-emerald-600 px-5 py-3 text-sm font-black text-white shadow transition hover:-translate-y-0.5 hover:bg-emerald-700 hover:shadow-lg"
                 >
                   下載 MP4
                 </button>
               ) : null}
-              <span className="text-sm font-semibold text-slate-600">{status}</span>
             </div>
 
-            <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-200">
-              <div
-                className="h-full rounded-full bg-blue-600 transition-all"
-                style={{ width: `${progress}%` }}
-              />
+            <div className="mt-4 rounded-xl bg-white p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="break-words text-sm font-bold text-slate-700">
+                  {status}
+                </span>
+                <span className="text-xs font-black text-blue-700">
+                  {progress}%
+                </span>
+              </div>
+              <div className="mt-2 h-3 overflow-hidden rounded-full bg-slate-200">
+                <div
+                  className="h-full rounded-full bg-blue-600 transition-all"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
             </div>
 
             {error ? (
-              <p className="mt-3 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm font-semibold text-rose-700">
+              <p className="mt-3 break-words rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm font-semibold leading-6 text-rose-700">
                 {error}
               </p>
             ) : null}
 
             {resultUrl ? (
               <video
-                className="mt-5 max-h-[560px] w-full rounded-2xl bg-black"
+                className="mt-5 max-h-[620px] w-full rounded-2xl bg-black"
                 src={resultUrl}
                 controls
                 playsInline
               />
             ) : null}
-          </div>
+          </section>
 
           <div className="mt-6 grid gap-3 text-sm text-slate-600 sm:grid-cols-3">
-            <div className="rounded-xl bg-emerald-50 p-3">
-              <strong className="text-emerald-800">隱私：</strong>圖片與音樂留在你的裝置。
+            <div className="break-words rounded-xl bg-emerald-50 p-3">
+              <strong className="text-emerald-800">隱私：</strong>
+              圖片、音樂與輸出影片留在你的裝置。
             </div>
-            <div className="rounded-xl bg-sky-50 p-3">
-              <strong className="text-sky-800">成本：</strong>影片由使用者瀏覽器運算，不使用 RxV 轉檔伺服器。
+            <div className="break-words rounded-xl bg-sky-50 p-3">
+              <strong className="text-sky-800">成本：</strong>
+              影片由使用者瀏覽器運算，不使用 RxV 轉檔伺服器。
             </div>
-            <div className="rounded-xl bg-violet-50 p-3">
-              <strong className="text-violet-800">用途：</strong>適合 Shorts、Reels、社群宣傳與商品影片。
+            <div className="break-words rounded-xl bg-violet-50 p-3">
+              <strong className="text-violet-800">用途：</strong>
+              適合 Shorts、Reels、TikTok、商品與社群宣傳影片。
             </div>
           </div>
         </div>
