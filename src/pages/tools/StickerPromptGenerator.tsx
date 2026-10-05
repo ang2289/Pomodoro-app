@@ -2,6 +2,15 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import SEO from "@/components/SEO";
 import LineStickerAuthorCard from "@/components/LineStickerAuthorCard";
+import LineStickerFlowSteps from "@/components/LineStickerFlowSteps";
+import {
+  createLineStickerProject,
+  getAllowedCounts,
+  getMotherSheetPlan,
+  saveLineStickerProject,
+  type LineStickerCount,
+  type LineStickerMode,
+} from "@/lib/lineStickerFlow";
 
 type TemplateKey =
   | "couple"
@@ -124,7 +133,7 @@ type TemplateKey =
   | "festivalMothersDay"
   | "festivalFathersDay"
   | "festivalHalloween";
-type GridType = "4x4" | "5x4";
+type GridType = "4x2" | "4x4" | "5x4";
 type NameMode = "none" | "person" | "shop";
 type TextSize = "small" | "medium" | "large";
 type TextColor =
@@ -3061,6 +3070,11 @@ const gridOptions: Record<
   GridType,
   { label: string; count: number; layoutText: string }
 > = {
+  "4x2": {
+    label: "4×2，共 8 張",
+    count: 8,
+    layoutText: "4x2 排列，共 8 張貼圖",
+  },
   "4x4": {
     label: "4×4，共 16 張",
     count: 16,
@@ -4109,6 +4123,117 @@ ${rolePrompt}
 }
 
 
+const EXTRA_STICKER_TEXTS = [
+  "好的",
+  "沒問題",
+  "謝謝",
+  "辛苦了",
+  "請稍等",
+  "馬上處理",
+  "收到囉",
+  "等等回覆",
+  "已完成",
+  "再確認一下",
+  "今天加油",
+  "晚點聊",
+  "早安",
+  "午安",
+  "晚安",
+  "路上小心",
+  "記得休息",
+  "歡迎光臨",
+  "感謝支持",
+  "下次見",
+  "有需要找我",
+  "可以喔",
+  "了解",
+  "太好了",
+  "加油加油",
+  "交給我",
+  "正在處理",
+  "等等我",
+  "祝你順心",
+  "祝你開心",
+  "回覆中",
+  "確認完成",
+  "準備好了",
+  "謝謝您的耐心",
+  "期待再見",
+  "保持聯絡",
+  "今天也很棒",
+  "慢慢來",
+  "先休息一下",
+  "一切順利",
+];
+
+function buildFlowTexts(
+  type: TemplateKey,
+  textArea: string,
+  targetCount: number,
+  nameMode: NameMode,
+  customName: string,
+) {
+  const source = [
+    ...normalizeLines(textArea, 999),
+    ...templates[type].texts.map((line) =>
+      applyNameToLine(line, nameMode, customName),
+    ),
+    ...EXTRA_STICKER_TEXTS.map((line) =>
+      applyNameToLine(line, nameMode, customName),
+    ),
+  ];
+  const unique: string[] = [];
+  const seen = new Set<string>();
+  source.forEach((line) => {
+    const value = line.trim();
+    if (!value || seen.has(value)) return;
+    seen.add(value);
+    unique.push(value);
+  });
+  return unique.slice(0, targetCount);
+}
+
+function buildFlowPrompt(
+  label: string,
+  role: string,
+  style: string,
+  grid: GridType,
+  batchTexts: string[],
+  textSize: TextSize,
+  textColor: TextColor,
+  textPosition: TextPosition,
+  stickerStyle: StickerStylePreset,
+  photoMode: PhotoMode,
+  batchNumber: number,
+) {
+  const base = buildPrompt(
+    label,
+    role,
+    style,
+    grid,
+    batchTexts.join("\n"),
+    textSize,
+    textColor,
+    textPosition,
+    stickerStyle,
+    photoMode,
+  );
+  return `請直接生成圖片，不要先提供企劃、說明或提示詞。
+
+這是 LINE 貼圖母圖第 ${batchNumber} 張。請嚴格依指定格數排列，這次只生成一張完整母圖。
+
+${base}
+
+重要規則：
+- 只輸出一張完整母圖。
+- 嚴格按照指定 4×2、4×4 或 4×5 格數。
+- 每格只能是一張獨立貼圖，人物與文字不可跨格。
+- 格與格之間保留明顯白色空間，不要畫格線。
+- 背景使用純白色，方便下一步自動去背與裁切。
+- 不要做成海報、漫畫分鏡或額外拼貼。
+- 不要在圖片外再加標題、編號、說明文字或浮水印。`;
+}
+
 function SupportSection() {
   return (
     <section className="mt-6 rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-amber-50 p-5 shadow-sm sm:p-6">
@@ -4370,6 +4495,14 @@ function RecommendedToolsSection() {
 }
 
 export default function StickerPromptGenerator() {
+  const initialMode: LineStickerMode =
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("mode") === "animated"
+      ? "animated"
+      : "static";
+  const [stickerMode, setStickerMode] = useState<LineStickerMode>(initialMode);
+  const [targetCount, setTargetCount] = useState<LineStickerCount>(16);
+  const [copiedBatchIndex, setCopiedBatchIndex] = useState<number | null>(null);
   const [type, setType] = useState<TemplateKey>("businessPersonal");
   const [grid, setGrid] = useState<GridType>("4x4");
   const [nameMode, setNameMode] = useState<NameMode>("none");
@@ -4532,8 +4665,52 @@ export default function StickerPromptGenerator() {
     handleTypeChange(filteredTemplateEntries[0][0]);
   }, [filteredTemplateEntries, type]);
 
-  const requiredCount = gridOptions[grid].count;
-  const currentCount = normalizeLines(texts, 999).length;
+  const allowedCounts = getAllowedCounts(stickerMode);
+  const flowTexts = useMemo(
+    () => buildFlowTexts(type, texts, targetCount, nameMode, customName),
+    [type, texts, targetCount, nameMode, customName],
+  );
+  const motherSheetPlan = useMemo(
+    () => getMotherSheetPlan(targetCount),
+    [targetCount],
+  );
+  const flowPrompts = useMemo(
+    () =>
+      motherSheetPlan.map((item, index) => {
+        const batchTexts = flowTexts.slice(item.startIndex, item.endIndex);
+        return {
+          ...item,
+          prompt: buildFlowPrompt(
+            templates[type].label,
+            role,
+            style,
+            item.grid,
+            batchTexts,
+            textSize,
+            textColor,
+            textPosition,
+            stickerStylePreset,
+            photoMode,
+            index + 1,
+          ),
+        };
+      }),
+    [
+      motherSheetPlan,
+      flowTexts,
+      type,
+      role,
+      style,
+      textSize,
+      textColor,
+      textPosition,
+      stickerStylePreset,
+      photoMode,
+    ],
+  );
+
+  const requiredCount = targetCount;
+  const currentCount = flowTexts.length;
   const prompt = useMemo(
     () =>
       buildPrompt(
@@ -4616,6 +4793,44 @@ export default function StickerPromptGenerator() {
     window.setTimeout(() => setCopiedStable(false), 1800);
   }
 
+  function persistFlowProject(stage: 1 | 2 | 3 = 2) {
+    const project = createLineStickerProject({
+      mode: stickerMode,
+      count: targetCount,
+      theme: templates[type].label,
+      texts: flowTexts,
+    });
+    saveLineStickerProject({ ...project, stage });
+  }
+
+  async function copyFlowPrompt(index: number) {
+    const item = flowPrompts[index];
+    if (!item) return;
+    await navigator.clipboard.writeText(item.prompt);
+    persistFlowProject(2);
+    setCopiedBatchIndex(index);
+    window.setTimeout(() => setCopiedBatchIndex(null), 1800);
+  }
+
+  function handleStickerMode(nextMode: LineStickerMode) {
+    setStickerMode(nextMode);
+    const nextAllowed = getAllowedCounts(nextMode);
+    const nextCount = nextAllowed.includes(targetCount)
+      ? targetCount
+      : nextMode === "animated"
+        ? 16
+        : targetCount;
+    setTargetCount(nextCount as LineStickerCount);
+    const firstGrid = getMotherSheetPlan(nextCount as LineStickerCount)[0]?.grid;
+    if (firstGrid) handleGridChange(firstGrid);
+  }
+
+  function handleTargetCount(nextCount: LineStickerCount) {
+    setTargetCount(nextCount);
+    const firstGrid = getMotherSheetPlan(nextCount)[0]?.grid;
+    if (firstGrid) handleGridChange(firstGrid);
+  }
+
   return (
     <>
       <SEO
@@ -4627,12 +4842,7 @@ export default function StickerPromptGenerator() {
 
       <main className="min-h-screen bg-gradient-to-b from-violet-50 via-white to-blue-50 px-4 py-8">
         <div className="mx-auto max-w-6xl">
-          <Link
-            to="/tools/line-sticker"
-            className="mb-4 inline-block text-xs font-bold text-violet-600 hover:text-violet-700"
-          >
-            ← 回到 LINE 貼圖整理工具
-          </Link>
+          <LineStickerFlowSteps activeStep={1} mode={stickerMode} />
 
           <section className="rounded-3xl border border-violet-100 bg-white p-6 shadow-sm sm:p-8">
             <div className="flex flex-wrap gap-2">
@@ -4643,27 +4853,80 @@ export default function StickerPromptGenerator() {
                 一鍵複製
               </span>
               <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-black text-amber-700">
-                4×4／5×4 可用
+                4×2／4×4／4×5
               </span>
             </div>
             <h1 className="mt-5 text-3xl font-black leading-tight text-slate-900 sm:text-4xl">
-              LINE 貼圖提示詞產生器
+              LINE 貼圖一鍵製作｜第 1 步
             </h1>
             <p className="mt-4 text-sm leading-relaxed text-slate-600 sm:text-base">
-              選擇貼圖類型、角色與風格，自動產生 4×4 或 5×4
-              貼圖大圖提示詞。可選原創角色、真人照片轉似顏繪 Q
-              版，或真人照片轉純 Q
-              版可愛風格。適合業務個人品牌貼圖、小店家客服貼圖、品牌店家貼圖、職業專用貼圖、情侶貼圖、遊戲隊友貼圖、寵物貼圖、婚禮貼圖、親子家人貼圖與朋友閨蜜貼圖。
+              先選擇「靜態」或「動態」貼圖，再選主題與張數。系統會自動準備要貼到 ChatGPT 的生圖指令；完成後照著第 2、3、4、5 步一路做完，不需要自己找下一個工具。
             </p>
             <p className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold leading-7 text-amber-800">
-              小提醒：Gemini、豆包等 AI 生圖工具有時無法穩定產生完整
-              4×4／5×4，若排版跑掉或文字不清楚，建議改用「穩定無文字版」先產生角色草稿，再回本站切割、加字與打包。
+              操作方式：① 選貼圖類型與張數 → ② 複製生圖指令到 ChatGPT → ③ 下載母圖並傳回本站 → ④ 系統自動裁切、去背與檢查 → ⑤ 下載靜態貼圖，或繼續一鍵製作動態貼圖。
             </p>
           </section>
 
           <section className="mt-6 grid gap-6 xl:grid-cols-[0.82fr_1.18fr]">
             <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-              <h2 className="text-xl font-black text-slate-900">選擇設定</h2>
+              <h2 className="text-xl font-black text-slate-900">
+                步驟 1｜選擇要做的貼圖
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                先選靜態或動態，再選張數。動態貼圖可選 8、16、24 張。
+              </p>
+
+              <div className="mt-5 grid grid-cols-2 gap-3">
+                {([
+                  ["static", "靜態 LINE 貼圖", "完成後直接下載上架 ZIP"],
+                  ["animated", "動態 LINE 貼圖", "完成裁切後自動接到動態製作"],
+                ] as const).map(([mode, title, desc]) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => handleStickerMode(mode)}
+                    className={`rounded-2xl border p-4 text-left transition ${
+                      stickerMode === mode
+                        ? "border-violet-500 bg-violet-50 ring-2 ring-violet-100"
+                        : "border-slate-200 bg-slate-50 hover:border-violet-200"
+                    }`}
+                  >
+                    <span className="block text-sm font-black text-slate-900">{title}</span>
+                    <span className="mt-1 block text-xs leading-5 text-slate-500">{desc}</span>
+                  </button>
+                ))}
+              </div>
+
+              <label className="mt-5 block text-xs font-black text-slate-500">
+                貼圖張數
+              </label>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {allowedCounts.map((count) => (
+                  <button
+                    key={count}
+                    type="button"
+                    onClick={() => handleTargetCount(count)}
+                    className={`min-w-[64px] rounded-xl px-4 py-3 text-sm font-black transition ${
+                      targetCount === count
+                        ? "bg-violet-600 text-white shadow"
+                        : "bg-slate-100 text-slate-600 hover:bg-violet-100"
+                    }`}
+                  >
+                    {count} 張
+                  </button>
+                ))}
+              </div>
+              <p className="mt-2 text-xs font-bold leading-5 text-violet-700">
+                {targetCount === 8
+                  ? "系統會準備 1 張 4×2 母圖。"
+                  : targetCount === 16
+                    ? "系統會準備 1 張 4×4 母圖。"
+                    : targetCount === 24
+                      ? "系統會準備 1 張 4×4＋1 張 4×2，共 24 張。"
+                      : targetCount === 32
+                        ? "系統會準備 2 張 4×4，共 32 張。"
+                        : "系統會準備 2 張 4×5，共 40 張。"}
+              </p>
 
               <div className="mt-5 flex items-center justify-between gap-3">
                 <label className="block text-xs font-black text-slate-500">
@@ -4857,23 +5120,6 @@ export default function StickerPromptGenerator() {
                 </div>
               </div>
 
-              <label className="mt-5 block text-xs font-black text-slate-500">
-                貼圖數量
-              </label>
-              <div className="mt-2 grid grid-cols-2 gap-2">
-                {(Object.keys(gridOptions) as GridType[]).map((key) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => handleGridChange(key)}
-                    className={`min-h-[48px] rounded-2xl px-2 py-3 text-center text-sm font-black leading-none shadow-sm transition duration-200 ease-out sm:text-base active:scale-[0.98] hover:-translate-y-0.5 hover:shadow-lg ${grid === key ? "bg-violet-600 !text-white shadow-md hover:bg-violet-700 hover:brightness-110" : "bg-slate-100 text-slate-600 hover:bg-violet-100 hover:text-violet-700 hover:brightness-105"}`}
-                  >
-                    <span className="block whitespace-nowrap">
-                      {key === "4x4" ? "4×4｜16張" : "5×4｜20張"}
-                    </span>
-                  </button>
-                ))}
-              </div>
 
               <label className="mt-5 block text-xs font-black text-slate-500">
                 角色設定
@@ -4921,51 +5167,83 @@ export default function StickerPromptGenerator() {
             <div className="rounded-3xl border border-violet-100 bg-white p-5 shadow-sm">
               <div className="flex flex-col gap-3">
                 <div>
-                  <h2 className="text-xl font-black text-slate-900">
-                    產生結果
+                  <p className="text-xs font-black tracking-wide text-violet-600">步驟 2</p>
+                  <h2 className="mt-1 text-xl font-black text-slate-900">
+                    複製到 ChatGPT 生圖
                   </h2>
-                  <p className="mt-1 text-xs font-bold text-slate-500">
-                    可直接複製到 AI 生圖工具使用
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    按順序複製下方指令到 ChatGPT。每個按鈕會產生一張母圖，完成後把圖片下載到電腦或手機。
                   </p>
                 </div>
               </div>
 
-              <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold leading-7 text-amber-800">
-                AI 生圖結果會因工具不同而有差異。若
-                Gemini／豆包無法穩定產生完整格數，請先複製「穩定無文字版」，產生角色草稿後再用站內工具整理。
-              </div>
-              <div className="mt-3 grid w-full gap-2 sm:grid-cols-2">
-                <button
-                  onClick={copyPrompt}
-                  type="button"
-                  className="min-h-[48px] rounded-2xl bg-violet-600 px-4 py-3 text-center text-sm font-black leading-snug !text-white shadow-md transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-violet-700 hover:shadow-xl hover:brightness-110 active:scale-[0.98]"
-                  style={{ color: "#ffffff" }}
-                >
-                  {copied ? "已複製" : "複製完整提示詞"}
-                </button>
-                <button
-                  onClick={copyStablePrompt}
-                  type="button"
-                  className="min-h-[48px] rounded-2xl bg-emerald-600 px-4 py-3 text-center text-sm font-black leading-snug !text-white shadow-md transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-emerald-700 hover:shadow-xl hover:brightness-110 active:scale-[0.98]"
-                  style={{ color: "#ffffff" }}
-                >
-                  {copiedStable ? "已複製" : "複製無字穩定版"}
-                </button>
+              <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold leading-7 text-emerald-800">
+                這次需要產生 {motherSheetPlan.length} 張母圖，共 {targetCount} 張貼圖。請一張一張產生，不要把不同母圖再合成一張。
               </div>
 
-              <div className="mt-4 rounded-3xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white p-3 shadow-inner">
-                <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-2">
-                  <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-black text-violet-700">
-                    {gridOptions[grid].label}
-                  </span>
-                  <span className="text-xs font-bold text-slate-500">
-                    文字會自動依張數限制輸出
-                  </span>
-                </div>
-                <pre className="min-h-[980px] max-h-[1280px] overflow-auto whitespace-pre-wrap rounded-2xl bg-white p-6 text-base leading-8 text-slate-800 shadow-sm">
-                  {prompt}
-                </pre>
+              <div className="mt-4 space-y-4">
+                {flowPrompts.map((item, index) => (
+                  <div key={`${item.grid}-${index}`} className="rounded-3xl border border-violet-100 bg-violet-50/50 p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <p className="text-sm font-black text-slate-900">
+                          第 {index + 1} 張母圖｜{item.grid.replace("x", "×")}
+                        </p>
+                        <p className="mt-1 text-xs font-bold text-slate-500">
+                          貼圖 {item.startIndex + 1}～{item.endIndex}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => copyFlowPrompt(index)}
+                        className="rounded-2xl bg-violet-600 px-4 py-3 text-sm font-black !text-white shadow hover:bg-violet-700"
+                      >
+                        {copiedBatchIndex === index
+                          ? "已複製"
+                          : `複製第 ${index + 1} 張 ChatGPT 生圖指令`}
+                      </button>
+                    </div>
+                    <details className="mt-3 rounded-2xl border border-violet-100 bg-white">
+                      <summary className="cursor-pointer px-4 py-3 text-xs font-black text-violet-700">
+                        查看這張生圖指令
+                      </summary>
+                      <pre className="max-h-[460px] overflow-auto whitespace-pre-wrap border-t border-violet-100 p-4 text-xs leading-6 text-slate-700">
+                        {item.prompt}
+                      </pre>
+                    </details>
+                  </div>
+                ))}
               </div>
+
+              <Link
+                to="/tools/line-sticker"
+                onClick={() => persistFlowProject(3)}
+                className="mt-5 inline-flex min-h-[52px] w-full items-center justify-center rounded-2xl bg-blue-600 px-5 py-3 text-center text-sm font-black !text-white shadow-lg transition hover:bg-blue-700"
+              >
+                我已經產生圖片 → 下一步上傳母圖
+              </Link>
+
+              <details className="mt-4 rounded-2xl border border-slate-200 bg-slate-50">
+                <summary className="cursor-pointer px-4 py-3 text-sm font-black text-slate-700">
+                  進階功能
+                </summary>
+                <div className="grid gap-2 border-t border-slate-200 p-4 sm:grid-cols-2">
+                  <button
+                    onClick={copyPrompt}
+                    type="button"
+                    className="rounded-xl bg-slate-800 px-4 py-3 text-sm font-black !text-white"
+                  >
+                    {copied ? "已複製" : "複製目前單張完整提示詞"}
+                  </button>
+                  <button
+                    onClick={copyStablePrompt}
+                    type="button"
+                    className="rounded-xl bg-emerald-600 px-4 py-3 text-sm font-black !text-white"
+                  >
+                    {copiedStable ? "已複製" : "複製無字穩定版"}
+                  </button>
+                </div>
+              </details>
 
               <div className="mt-5 rounded-3xl border border-orange-200 bg-orange-50 p-5">
                 <h3 className="text-lg font-black text-slate-900">
@@ -5005,14 +5283,14 @@ export default function StickerPromptGenerator() {
                   className="inline-flex min-h-[48px] items-center justify-center whitespace-nowrap rounded-2xl bg-violet-600 px-4 py-3 text-sm font-black leading-none !text-white shadow-md transition hover:bg-violet-700 hover:!text-white active:scale-[0.98] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-xl hover:brightness-110"
                   style={{ color: "#ffffff" }}
                 >
-                  前往站內分割工具
+                  需要時使用進階分割工具
                 </Link>
                 <Link
                   to="/tools/line-sticker"
                   className="inline-flex min-h-[48px] items-center justify-center whitespace-nowrap rounded-2xl bg-blue-600 px-4 py-3 text-sm font-black leading-none !text-white shadow-md transition hover:bg-blue-700 hover:!text-white active:scale-[0.98] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-xl hover:brightness-110"
                   style={{ color: "#ffffff" }}
                 >
-                  切好後回來整理 ZIP
+                  直接前往第 3 步
                 </Link>
               </div>
             </div>
