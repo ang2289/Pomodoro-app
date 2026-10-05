@@ -268,6 +268,119 @@ function effectFilter(
   return `fps=${fps}`;
 }
 
+function getNativeMp4MimeType() {
+  if (typeof MediaRecorder === "undefined") return "";
+
+  const candidates = [
+    'video/mp4;codecs="avc1.42E01E,mp4a.40.2"',
+    'video/mp4;codecs="avc1.42E01E"',
+    "video/mp4",
+  ];
+
+  return candidates.find((type) => MediaRecorder.isTypeSupported(type)) || "";
+}
+
+async function loadImageElement(file: File) {
+  const url = URL.createObjectURL(file);
+  try {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const element = new Image();
+      element.onload = () => resolve(element);
+      element.onerror = () => reject(new Error(`圖片讀取失敗：${file.name}`));
+      element.src = url;
+    });
+    return image;
+  } finally {
+    // Delay revocation until the element has decoded the image data.
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+}
+
+function drawNativeVideoFrame(
+  ctx: CanvasRenderingContext2D,
+  image: HTMLImageElement,
+  width: number,
+  height: number,
+  fitMode: FitMode,
+  background: "#000000" | "#ffffff",
+  effect: Effect,
+  progress: number,
+  caption: string,
+  captionPosition: CaptionPosition,
+  captionFontSize: number,
+  qrCanvas: HTMLCanvasElement | null,
+  qrPosition: QrPosition,
+  qrPercent: number,
+) {
+  ctx.save();
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = background;
+  ctx.fillRect(0, 0, width, height);
+
+  const baseScale =
+    fitMode === "cover"
+      ? Math.max(width / image.naturalWidth, height / image.naturalHeight)
+      : Math.min(width / image.naturalWidth, height / image.naturalHeight);
+
+  let motionScale = 1;
+  let offsetX = 0;
+  let offsetY = 0;
+
+  if (effect === "zoom_in") motionScale = 1 + progress * 0.12;
+  if (effect === "zoom_out") motionScale = 1.12 - progress * 0.12;
+
+  if (
+    effect === "pan_left" ||
+    effect === "pan_right" ||
+    effect === "pan_up" ||
+    effect === "pan_down"
+  ) {
+    motionScale = 1.08;
+    const shiftX = width * 0.055;
+    const shiftY = height * 0.04;
+
+    if (effect === "pan_left") offsetX = shiftX - progress * shiftX * 2;
+    if (effect === "pan_right") offsetX = -shiftX + progress * shiftX * 2;
+    if (effect === "pan_up") offsetY = shiftY - progress * shiftY * 2;
+    if (effect === "pan_down") offsetY = -shiftY + progress * shiftY * 2;
+  }
+
+  if (effect === "fade") {
+    const fadePart = 0.16;
+    if (progress < fadePart) ctx.globalAlpha = progress / fadePart;
+    else if (progress > 1 - fadePart) {
+      ctx.globalAlpha = (1 - progress) / fadePart;
+    }
+  }
+
+  const drawWidth = image.naturalWidth * baseScale * motionScale;
+  const drawHeight = image.naturalHeight * baseScale * motionScale;
+  const x = (width - drawWidth) / 2 + offsetX;
+  const y = (height - drawHeight) / 2 + offsetY;
+
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(image, x, y, drawWidth, drawHeight);
+  ctx.restore();
+
+  drawCaption(
+    ctx,
+    caption,
+    width,
+    height,
+    captionPosition,
+    captionFontSize,
+  );
+  drawQrOverlay(
+    ctx,
+    qrCanvas,
+    width,
+    height,
+    qrPosition,
+    qrPercent,
+  );
+}
+
 function wait(ms: number) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
@@ -298,6 +411,7 @@ export default function BrowserImageToMp4() {
   const [status, setStatus] = useState("尚未開始");
   const [error, setError] = useState("");
   const [resultUrl, setResultUrl] = useState("");
+  const [renderMode, setRenderMode] = useState<"native" | "ffmpeg" | "">("");
 
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const audioInputRef = useRef<HTMLInputElement | null>(null);
@@ -306,6 +420,11 @@ export default function BrowserImageToMp4() {
   const loadedRef = useRef(false);
 
   const [width, height] = RATIO_SIZE[ratio][quality];
+  const nativeMp4MimeType = getNativeMp4MimeType();
+  const nativeMp4Available =
+    Boolean(nativeMp4MimeType) &&
+    typeof HTMLCanvasElement !== "undefined" &&
+    "captureStream" in HTMLCanvasElement.prototype;
   const outputFps = quality === "540p" ? 15 : quality === "720p" ? 18 : 20;
   const encodeTimeoutMs =
     quality === "540p" ? 180_000 : quality === "720p" ? 240_000 : 300_000;
@@ -579,7 +698,168 @@ export default function BrowserImageToMp4() {
     setEngineReady(false);
     setBusy(false);
     setProgress(0);
-    setStatus("已取消。下次產生時會重新載入影片引擎。");
+    setRenderMode("");
+    setStatus("已取消。下次可重新產生。");
+  };
+
+  const generateWithNativeRecorder = async () => {
+    if (!nativeMp4Available || !nativeMp4MimeType) {
+      throw new Error("此瀏覽器沒有原生 MP4 錄製能力");
+    }
+
+    setRenderMode("native");
+    setStatus("⚡ 使用瀏覽器原生編碼器，正在準備圖片…");
+    setProgress(6);
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+
+    const ctx = canvas.getContext("2d", { alpha: false });
+    if (!ctx) throw new Error("瀏覽器無法建立影片畫布");
+
+    const loadedImages = await Promise.all(images.map(loadImageElement));
+    const videoStream = canvas.captureStream(outputFps);
+    const combinedStream = new MediaStream(videoStream.getVideoTracks());
+
+    let audioContext: AudioContext | null = null;
+    let audioSource: AudioBufferSourceNode | null = null;
+
+    if (audio) {
+      setStatus("⚡ 正在準備背景音樂…");
+      audioContext = new AudioContext();
+      await audioContext.resume();
+
+      const audioBuffer = await audioContext.decodeAudioData(
+        await audio.arrayBuffer(),
+      );
+      const destination = audioContext.createMediaStreamDestination();
+      const gain = audioContext.createGain();
+      gain.gain.value = audioVolume;
+      audioSource = audioContext.createBufferSource();
+      audioSource.buffer = audioBuffer;
+      audioSource.loop = true;
+      audioSource.connect(gain);
+      gain.connect(destination);
+
+      destination.stream.getAudioTracks().forEach((track) => {
+        combinedStream.addTrack(track);
+      });
+    }
+
+    const chunks: BlobPart[] = [];
+    const recorder = new MediaRecorder(combinedStream, {
+      mimeType: nativeMp4MimeType,
+      videoBitsPerSecond:
+        quality === "1080p"
+          ? 5_000_000
+          : quality === "720p"
+            ? 3_200_000
+            : 2_000_000,
+      audioBitsPerSecond: 128_000,
+    });
+
+    const stopped = new Promise<void>((resolve, reject) => {
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) chunks.push(event.data);
+      };
+      recorder.onerror = () => {
+        reject(new Error("瀏覽器原生影片編碼失敗"));
+      };
+      recorder.onstop = () => resolve();
+    });
+
+    try {
+      recorder.start(1000);
+      audioSource?.start();
+
+      const frameInterval = 1000 / outputFps;
+      const totalFrames = Math.max(1, Math.ceil(totalSeconds * outputFps));
+      const startedAt = performance.now();
+
+      for (let frameIndex = 0; frameIndex < totalFrames; frameIndex += 1) {
+        const videoTimeSec = frameIndex / outputFps;
+        const imageIndex = Math.min(
+          images.length - 1,
+          Math.floor(videoTimeSec / secondsPerImage),
+        );
+        const imageTime =
+          videoTimeSec - imageIndex * secondsPerImage;
+        const imageProgress = Math.max(
+          0,
+          Math.min(1, imageTime / secondsPerImage),
+        );
+
+        drawNativeVideoFrame(
+          ctx,
+          loadedImages[imageIndex],
+          width,
+          height,
+          fitMode,
+          background,
+          effect,
+          imageProgress,
+          caption,
+          captionPosition,
+          captionFontSize,
+          qrEnabled ? qrCanvasRef.current : null,
+          qrPosition,
+          qrPercent,
+        );
+
+        const targetElapsed = (frameIndex + 1) * frameInterval;
+        const actualElapsed = performance.now() - startedAt;
+        const delay = targetElapsed - actualElapsed;
+        if (delay > 0) await wait(delay);
+
+        const pct = Math.min(
+          92,
+          10 + Math.round(((frameIndex + 1) / totalFrames) * 82),
+        );
+        setProgress(pct);
+        setStatus(
+          `⚡ 快速模式正在產生 MP4：${Math.min(
+            totalSeconds,
+            (frameIndex + 1) / outputFps,
+          ).toFixed(1)} / ${totalSeconds.toFixed(1)} 秒`,
+        );
+      }
+
+      setProgress(94);
+      setStatus("⚡ 影片畫面完成，正在封裝 MP4…");
+      await wait(250);
+      recorder.stop();
+      await stopped;
+
+      const blob = new Blob(chunks, {
+        type: recorder.mimeType || nativeMp4MimeType || "video/mp4",
+      });
+      if (!blob.size) throw new Error("瀏覽器產生的 MP4 是 0KB");
+
+      const url = URL.createObjectURL(blob);
+      setResultUrl(url);
+      setProgress(100);
+      setStatus(
+        `完成！⚡ 原生快速模式，影片大小約 ${(
+          blob.size /
+          1024 /
+          1024
+        ).toFixed(1)} MB。`,
+      );
+      return true;
+    } finally {
+      try {
+        if (recorder.state !== "inactive") recorder.stop();
+      } catch {}
+      try {
+        audioSource?.stop();
+      } catch {}
+      try {
+        await audioContext?.close();
+      } catch {}
+      combinedStream.getTracks().forEach((track) => track.stop());
+      videoStream.getTracks().forEach((track) => track.stop());
+    }
   };
 
   const generate = async () => {
@@ -612,6 +892,18 @@ export default function BrowserImageToMp4() {
     const created: string[] = [];
 
     try {
+      if (nativeMp4Available) {
+        try {
+          const completed = await generateWithNativeRecorder();
+          if (completed) return;
+        } catch (nativeError) {
+          setStatus("⚠️ 原生快速模式失敗，改用 FFmpeg 相容模式…");
+          setProgress(3);
+          console.warn("[RxV native MP4 fallback]", nativeError);
+        }
+      }
+
+      setRenderMode("ffmpeg");
       ffmpeg = await loadFfmpeg();
 
       for (let i = 0; i < images.length; i += 1) {
@@ -727,7 +1019,7 @@ export default function BrowserImageToMp4() {
       );
 
       setStatus(
-        `正在產生 MP4（${quality}・${outputFps}fps・約 ${totalSeconds.toFixed(1)} 秒），請不要關閉頁面…`,
+        `相容模式正在產生 MP4（${quality}・${outputFps}fps・約 ${totalSeconds.toFixed(1)} 秒），此模式會比較慢…`,
       );
       setProgress(Math.max(30, progress));
 
@@ -768,7 +1060,7 @@ export default function BrowserImageToMp4() {
       setError(
         err instanceof Error
           ? err.message
-          : "影片產生失敗。可先改用 540p 快速模式、減少圖片數量後再試。",
+          : "影片產生失敗。建議使用最新版 Chrome／Edge，或先改用 540p、減少圖片張數後再試。",
       );
     } finally {
       if (ffmpeg) {
@@ -813,12 +1105,18 @@ export default function BrowserImageToMp4() {
               </span>
               <span
                 className={`inline-flex rounded-full px-3 py-1 text-xs font-black ${
-                  engineReady
-                    ? "bg-emerald-100 text-emerald-800"
-                    : "bg-slate-100 text-slate-600"
+                  nativeMp4Available
+                    ? "bg-blue-100 text-blue-800"
+                    : engineReady
+                      ? "bg-emerald-100 text-emerald-800"
+                      : "bg-slate-100 text-slate-600"
                 }`}
               >
-                {engineReady ? "✓ 影片引擎已載入" : "影片引擎尚未載入"}
+                {nativeMp4Available
+                  ? "⚡ 原生快速 MP4 可用"
+                  : engineReady
+                    ? "✓ FFmpeg 相容引擎已載入"
+                    : "FFmpeg 相容引擎尚未載入"}
               </span>
             </div>
 
@@ -1272,20 +1570,20 @@ export default function BrowserImageToMp4() {
                   產生 MP4
                 </h2>
                 <p className="mt-1 break-words text-xs leading-5 text-slate-600">
-                  第一次使用要載入本站 FFmpeg 影片引擎。轉檔已改成較低幀率的瀏覽器快速模式；540p 最多 3 分鐘、720p 最多 4 分鐘、1080p 最多 5 分鐘，超時會自動停止，不會一直卡在 96%。
+                  如果你的瀏覽器支援原生 MP4，會優先使用「⚡ 快速模式」，10 秒影片通常接近影片實際秒數即可完成；只有不支援時才使用較慢的 FFmpeg 相容模式。
                 </p>
               </div>
             </div>
 
             <div className="mt-4 flex flex-wrap items-center gap-3">
-              {!engineReady ? (
+              {!nativeMp4Available && !engineReady ? (
                 <button
                   type="button"
                   onClick={preloadEngine}
                   disabled={busy}
                   className="rounded-xl border border-blue-300 bg-white px-4 py-3 text-sm font-black text-blue-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-blue-50 hover:shadow-md disabled:opacity-50"
                 >
-                  先載入影片引擎
+                  載入 FFmpeg 相容引擎
                 </button>
               ) : null}
 
@@ -1295,7 +1593,13 @@ export default function BrowserImageToMp4() {
                 disabled={busy || images.length === 0}
                 className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-black text-white shadow transition hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {busy ? "正在處理…" : "開始產生 MP4"}
+                {busy
+                  ? renderMode === "native"
+                    ? "⚡ 快速產生中…"
+                    : "正在處理…"
+                  : nativeMp4Available
+                    ? "⚡ 快速產生 MP4"
+                    : "開始產生 MP4"}
               </button>
 
               {busy ? (
