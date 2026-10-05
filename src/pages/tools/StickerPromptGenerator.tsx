@@ -133,7 +133,7 @@ type TemplateKey =
   | "festivalMothersDay"
   | "festivalFathersDay"
   | "festivalHalloween";
-type GridType = "4x2" | "4x4" | "5x4";
+type GridType = "4x2" | "4x4" | "4x5" | "5x4";
 type NameMode = "none" | "person" | "shop";
 type TextSize = "small" | "medium" | "large";
 type TextColor =
@@ -3079,6 +3079,11 @@ const gridOptions: Record<
     label: "4×4，共 16 張",
     count: 16,
     layoutText: "4x4 排列，共 16 張貼圖",
+  },
+  "4x5": {
+    label: "4×5，共 20 張",
+    count: 20,
+    layoutText: "4x5 排列，共 20 張貼圖",
   },
   "5x4": {
     label: "5×4，共 20 張",
