@@ -2,6 +2,12 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { useTranslation } from "react-i18next";
 import SEO, { getBaseUrl } from "@/components/SEO";
+import LineStickerFlowSteps from "@/components/LineStickerFlowSteps";
+import {
+  loadAnimatedStickerHandoff,
+  readLineStickerProject,
+  updateLineStickerProject,
+} from "@/lib/lineStickerFlow";
 import {
   AUTO_MOTION_PRESETS,
   generateAutoAnimationFrameFiles,
@@ -1202,6 +1208,8 @@ const AnimatedLineStickerTool: React.FC = () => {
   const [batchProgress, setBatchProgress] = useState(0);
   const [batchStatus, setBatchStatus] = useState("");
   const [batchMessage, setBatchMessage] = useState("");
+  const [handoffLoaded, setHandoffLoaded] = useState(false);
+  const [handoffTheme, setHandoffTheme] = useState("");
   const [previewIndex, setPreviewIndex] = useState(0);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -1227,6 +1235,59 @@ const AnimatedLineStickerTool: React.FC = () => {
   useEffect(() => {
     batchSourcesRef.current = batchSources;
   }, [batchSources]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const fromPreviousStep =
+      new URLSearchParams(window.location.search).get("from") === "line-sticker";
+    if (!fromPreviousStep) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const storedFiles = await loadAnimatedStickerHandoff();
+        if (cancelled || ![8, 16, 24].includes(storedFiles.length)) {
+          if (!cancelled) {
+            setBatchMessage(
+              storedFiles.length
+                ? `已收到 ${storedFiles.length} 張；動態整套需 8、16 或 24 張，請回上一步確認。`
+                : "沒有讀到上一步的貼圖，請回到貼圖整理頁重新按「下一步」。",
+            );
+          }
+          return;
+        }
+        const loaded = await Promise.all(
+          storedFiles.map((file) => readImageFile(file, t)),
+        );
+        if (cancelled) {
+          loaded.forEach((item) => URL.revokeObjectURL(item.url));
+          return;
+        }
+        setBatchSources((previous) => {
+          previous.forEach((item) => URL.revokeObjectURL(item.url));
+          return loaded;
+        });
+        const project = readLineStickerProject();
+        setHandoffTheme(project?.theme ?? "");
+        setWorkflowMode("batch");
+        setHandoffLoaded(true);
+        setBatchMessage(
+          `已從上一步自動帶入 ${loaded.length} 張貼圖，不需要重新上傳。確認動畫效果後，直接按「一鍵產生整套上架 ZIP」。`,
+        );
+        updateLineStickerProject({ stage: 5 });
+      } catch (error: any) {
+        if (!cancelled) {
+          setBatchMessage(
+            error?.message || "讀取上一步貼圖失敗，請回上一步重新操作。",
+          );
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [t]);
 
   useEffect(() => {
     return () => {
@@ -1442,7 +1503,7 @@ const AnimatedLineStickerTool: React.FC = () => {
     const imageFiles = Array.from(fileList)
       .filter((file) => file.type.startsWith("image/") || file.name.toLowerCase().endsWith(".png"))
       .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" }))
-      .slice(0, 16);
+      .slice(0, 24);
 
     setBatchMessage("");
     setBatchStatus("");
@@ -1454,7 +1515,7 @@ const AnimatedLineStickerTool: React.FC = () => {
         previous.forEach((frame) => URL.revokeObjectURL(frame.url));
         return loaded;
       });
-      if (![8, 16].includes(loaded.length)) {
+      if (![8, 16, 24].includes(loaded.length)) {
         setBatchMessage(t("animated_line_sticker.batch_count_warning", { count: loaded.length }));
       }
     } catch (error: any) {
@@ -1476,7 +1537,7 @@ const AnimatedLineStickerTool: React.FC = () => {
   };
 
   const exportBatchUploadPack = async () => {
-    if (batchBusy || ![8, 16].includes(batchSources.length)) return;
+    if (batchBusy || ![8, 16, 24].includes(batchSources.length)) return;
 
     setBatchBusy(true);
     setBatchProgress(0);
@@ -1558,7 +1619,7 @@ const AnimatedLineStickerTool: React.FC = () => {
         `動畫模板：${batchMotionPreset}`,
         "",
         "檔案：",
-        "01.png ～ 08.png / 16.png：各貼圖 APNG",
+        "01.png ～ 08.png / 16.png / 24.png：各貼圖 APNG",
         "main.png：整套主要圖片（由第 1 張來源自動產生）",
         "tab.png：聊天室標籤圖片（由第 1 張來源自動產生）",
         "size-report.txt：每張 APNG 大小檢查結果",
@@ -1754,6 +1815,7 @@ const AnimatedLineStickerTool: React.FC = () => {
 
       <main className="relative left-1/2 w-screen -translate-x-1/2 px-4 py-8 md:px-6 md:py-10">
         <div className="mx-auto max-w-6xl">
+        <LineStickerFlowSteps activeStep={5} mode="animated" />
         <section className="rounded-3xl border border-fuchsia-100 bg-gradient-to-br from-fuchsia-50 via-white to-sky-50 p-5 shadow-sm md:p-8">
           <p className="text-sm font-bold text-fuchsia-700">{t("animated_line_sticker.eyebrow")}</p>
           <h1 className="mt-2 text-2xl font-black tracking-tight text-slate-900 md:text-4xl">
@@ -1771,10 +1833,10 @@ const AnimatedLineStickerTool: React.FC = () => {
           </div>
           <div className="mt-5 flex flex-wrap items-center gap-3">
             <a
-              href="/tools/animated-sticker-prompt"
+              href="/tools/sticker-prompt?mode=animated"
               className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-full bg-sky-600 px-5 py-3 text-sm font-black leading-none !text-white shadow-md transition hover:-translate-y-0.5 hover:bg-sky-700 hover:shadow-lg"
             >
-              {t("animated_line_sticker.prompt_storyboard_button")}
+              從第 1 步重新製作
             </a>
             <span className="text-xs font-bold text-slate-500">
               {t("animated_line_sticker.choose_mode_hint")}
@@ -1790,39 +1852,55 @@ const AnimatedLineStickerTool: React.FC = () => {
           />
         </section>
 
-        <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
-          <div className="mb-4">
-            <p className="text-sm font-black text-slate-900">{t("animated_line_sticker.mode_title")}</p>
-            <p className="mt-1 text-xs leading-5 text-slate-500">{t("animated_line_sticker.mode_desc")}</p>
-          </div>
-          <div className="grid gap-3 md:grid-cols-3">
-            {([
-              ["single", "✨", t("animated_line_sticker.mode_single_title"), t("animated_line_sticker.mode_single_desc")],
-              ["manual", "🧩", t("animated_line_sticker.mode_manual_title"), t("animated_line_sticker.mode_manual_desc")],
-              ["batch", "📦", t("animated_line_sticker.mode_batch_title"), t("animated_line_sticker.mode_batch_desc")],
-            ] as const).map(([mode, icon, title, desc]) => {
-              const active = workflowMode === mode;
-              return (
-                <button
-                  key={mode}
-                  type="button"
-                  onClick={() => setWorkflowMode(mode)}
-                  className={`rounded-2xl border p-4 text-left transition ${
-                    active
-                      ? "border-violet-500 bg-violet-50 ring-2 ring-violet-100"
-                      : "border-slate-200 bg-slate-50 hover:border-violet-200 hover:bg-white"
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl">{icon}</span>
-                    <span className="text-sm font-black text-slate-900">{title}</span>
-                  </div>
-                  <p className="mt-2 text-xs leading-5 text-slate-600">{desc}</p>
-                </button>
-              );
-            })}
-          </div>
-        </section>
+        {handoffLoaded ? (
+          <section className="mt-6 rounded-3xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm">
+            <p className="text-xs font-black uppercase tracking-wide text-emerald-700">
+              已自動接續第 4 步
+            </p>
+            <h2 className="mt-1 text-xl font-black text-slate-900">
+              {handoffTheme ? `${handoffTheme}｜` : ""}{batchSources.length} 張貼圖已準備完成
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              不需要重新上傳圖片。下面確認動畫效果後，按一次按鈕就會逐張產生動態貼圖並整理成 ZIP。
+            </p>
+          </section>
+        ) : (
+          <details className="mt-6 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm md:p-5" open>
+            <summary className="cursor-pointer text-sm font-black text-slate-900">
+              其他製作方式
+            </summary>
+            <p className="mt-2 text-xs leading-5 text-slate-500">
+              如果不是從前面的貼圖流程進來，可在這裡選擇單張、自備影格或整套製作。
+            </p>
+            <div className="mt-4 grid gap-3 md:grid-cols-3">
+              {([
+                ["single", "✨", t("animated_line_sticker.mode_single_title"), t("animated_line_sticker.mode_single_desc")],
+                ["manual", "🧩", t("animated_line_sticker.mode_manual_title"), t("animated_line_sticker.mode_manual_desc")],
+                ["batch", "📦", t("animated_line_sticker.mode_batch_title"), t("animated_line_sticker.mode_batch_desc")],
+              ] as const).map(([mode, icon, title, desc]) => {
+                const active = workflowMode === mode;
+                return (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => setWorkflowMode(mode)}
+                    className={`rounded-2xl border p-4 text-left transition ${
+                      active
+                        ? "border-violet-500 bg-violet-50 ring-2 ring-violet-100"
+                        : "border-slate-200 bg-slate-50 hover:border-violet-200 hover:bg-white"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl">{icon}</span>
+                      <span className="text-sm font-black text-slate-900">{title}</span>
+                    </div>
+                    <p className="mt-2 text-xs leading-5 text-slate-600">{desc}</p>
+                  </button>
+                );
+              })}
+            </div>
+          </details>
+        )}
 
         {workflowMode === "single" ? (
         <section className="mt-6 rounded-3xl border border-violet-200 bg-gradient-to-br from-violet-50 via-white to-fuchsia-50 p-5 shadow-sm md:p-7">
@@ -1942,7 +2020,7 @@ const AnimatedLineStickerTool: React.FC = () => {
           <section className="mt-6 rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-sky-50 p-5 shadow-sm md:p-7">
             <div className="flex flex-col gap-2">
               <span className="w-fit rounded-full bg-emerald-600 px-3 py-1 text-xs font-black !text-white">
-                {t("animated_line_sticker.batch_badge")}
+                步驟 5｜{t("animated_line_sticker.batch_badge")}
               </span>
               <h2 className="text-2xl font-black text-slate-900">
                 {t("animated_line_sticker.batch_title")}
@@ -1983,7 +2061,7 @@ const AnimatedLineStickerTool: React.FC = () => {
                       onClick={() => batchInputRef.current?.click()}
                       className="rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-black !text-white shadow disabled:bg-slate-300"
                     >
-                      {t("animated_line_sticker.batch_choose_button")}
+                      {handoffLoaded ? "重新選擇圖片" : t("animated_line_sticker.batch_choose_button")}
                     </button>
                     {batchSources.length ? (
                       <button
@@ -2058,7 +2136,7 @@ const AnimatedLineStickerTool: React.FC = () => {
 
                 <button
                   type="button"
-                  disabled={batchBusy || ![8, 16].includes(batchSources.length)}
+                  disabled={batchBusy || ![8, 16, 24].includes(batchSources.length)}
                   onClick={exportBatchUploadPack}
                   className="mt-4 inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-black !text-white shadow-md transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
                 >
