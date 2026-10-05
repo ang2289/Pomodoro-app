@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { fetchFile } from "@ffmpeg/util";
 import { QRCodeCanvas } from "qrcode.react";
@@ -256,6 +256,7 @@ function wait(ms: number) {
 
 export default function BrowserImageToMp4() {
   const [images, setImages] = useState<File[]>([]);
+  const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
   const [audio, setAudio] = useState<File | null>(null);
   const [ratio, setRatio] = useState<Ratio>("9:16");
   const [quality, setQuality] = useState<Quality>("720p");
@@ -292,6 +293,15 @@ export default function BrowserImageToMp4() {
     () => images.length * secondsPerImage,
     [images.length, secondsPerImage],
   );
+
+  useEffect(() => {
+    const urls = images.map((file) => URL.createObjectURL(file));
+    setImagePreviewUrls(urls);
+
+    return () => {
+      urls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [images]);
 
   const loadFfmpeg = async () => {
     if (loadedRef.current && ffmpegRef.current) return ffmpegRef.current;
@@ -605,8 +615,8 @@ export default function BrowserImageToMp4() {
         path="/tools/image-to-mp4"
       />
 
-      <div className="mx-auto w-full max-w-6xl px-4 py-8">
-        <div className="rounded-3xl border border-sky-200 bg-white p-5 shadow-sm sm:p-7">
+      <div className="mx-auto w-full max-w-7xl px-4 py-8">
+        <div className="rounded-3xl border border-sky-200 bg-white p-5 shadow-sm [overflow-wrap:anywhere] sm:p-7">
           <div className="mb-6">
             <div className="flex flex-wrap gap-2">
               <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">
@@ -631,7 +641,7 @@ export default function BrowserImageToMp4() {
             </p>
           </div>
 
-          <div className="grid gap-6 xl:grid-cols-[1fr_1.15fr]">
+          <div className="grid gap-6 2xl:grid-cols-[0.95fr_1.05fr]">
             <section className="space-y-5">
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
                 <div className="flex items-start gap-3">
@@ -680,41 +690,63 @@ export default function BrowserImageToMp4() {
                     {images.map((file, index) => (
                       <div
                         key={`${file.name}-${file.lastModified}-${index}`}
-                        className="flex min-w-0 items-center gap-2 rounded-xl border border-slate-200 bg-white p-2.5"
+                        className="grid min-w-0 grid-cols-[88px_minmax(0,1fr)] gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:grid-cols-[104px_minmax(0,1fr)]"
                       >
-                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-xs font-black text-blue-700">
-                          {index + 1}
-                        </span>
-                        <span
-                          className="min-w-0 flex-1 break-all text-xs font-semibold leading-5 text-slate-700"
-                          title={file.name}
-                        >
-                          {file.name}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => moveImage(index, -1)}
-                          disabled={index === 0 || busy}
-                          className="rounded-lg border border-slate-200 px-2 py-1 text-xs font-black disabled:opacity-30"
-                        >
-                          ↑
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => moveImage(index, 1)}
-                          disabled={index === images.length - 1 || busy}
-                          className="rounded-lg border border-slate-200 px-2 py-1 text-xs font-black disabled:opacity-30"
-                        >
-                          ↓
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => removeImage(index)}
-                          disabled={busy}
-                          className="rounded-lg border border-rose-200 px-2 py-1 text-xs font-black text-rose-600 disabled:opacity-30"
-                        >
-                          刪
-                        </button>
+                        <div className="relative aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
+                          {imagePreviewUrls[index] ? (
+                            <img
+                              src={imagePreviewUrls[index]}
+                              alt={`第 ${index + 1} 張預覽：${file.name}`}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center text-xs font-bold text-slate-400">
+                              載入中
+                            </div>
+                          )}
+                          <span className="absolute left-1.5 top-1.5 flex h-6 min-w-6 items-center justify-center rounded-full bg-blue-600 px-1.5 text-[11px] font-black text-white shadow">
+                            {index + 1}
+                          </span>
+                        </div>
+
+                        <div className="min-w-0">
+                          <p
+                            className="line-clamp-2 break-all text-sm font-bold leading-5 text-slate-800"
+                            title={file.name}
+                          >
+                            {file.name}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            {(file.size / 1024 / 1024).toFixed(2)} MB
+                          </p>
+
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={() => moveImage(index, -1)}
+                              disabled={index === 0 || busy}
+                              className="min-h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-black transition hover:border-blue-300 hover:bg-blue-50 disabled:opacity-30"
+                            >
+                              ↑ 上移
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => moveImage(index, 1)}
+                              disabled={index === images.length - 1 || busy}
+                              className="min-h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-black transition hover:border-blue-300 hover:bg-blue-50 disabled:opacity-30"
+                            >
+                              ↓ 下移
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => removeImage(index)}
+                              disabled={busy}
+                              className="min-h-9 rounded-lg border border-rose-200 bg-white px-3 text-xs font-black text-rose-600 transition hover:bg-rose-50 disabled:opacity-30"
+                            >
+                              刪除
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -790,19 +822,22 @@ export default function BrowserImageToMp4() {
                 </div>
               </div>
 
-              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <div className="mt-5 grid gap-4 lg:grid-cols-2">
                 <label className="min-w-0 text-sm font-black text-slate-800">
                   影片比例
                   <select
                     value={ratio}
                     onChange={(e) => setRatio(e.target.value as Ratio)}
-                    className="mt-2 w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"
+                    className="mt-2 min-h-12 w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-3 pr-10 text-base font-semibold text-slate-800"
                   >
-                    <option value="9:16">9:16｜Shorts／Reels</option>
-                    <option value="16:9">16:9｜YouTube</option>
-                    <option value="1:1">1:1｜方形</option>
-                    <option value="4:5">4:5｜IG 貼文</option>
+                    <option value="9:16">9:16 直式</option>
+                    <option value="16:9">16:9 橫式</option>
+                    <option value="1:1">1:1 方形</option>
+                    <option value="4:5">4:5 直式貼文</option>
                   </select>
+                  <span className="mt-1 block break-words text-xs font-medium leading-5 text-slate-500">
+                    9:16 適合 Shorts／Reels／TikTok；16:9 適合 YouTube。
+                  </span>
                 </label>
 
                 <label className="min-w-0 text-sm font-black text-slate-800">
@@ -810,11 +845,14 @@ export default function BrowserImageToMp4() {
                   <select
                     value={quality}
                     onChange={(e) => setQuality(e.target.value as Quality)}
-                    className="mt-2 w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"
+                    className="mt-2 min-h-12 w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-3 pr-10 text-base font-semibold text-slate-800"
                   >
-                    <option value="720p">720p｜手機較穩定</option>
-                    <option value="1080p">1080p｜電腦建議</option>
+                    <option value="720p">720p</option>
+                    <option value="1080p">1080p</option>
                   </select>
+                  <span className="mt-1 block break-words text-xs font-medium leading-5 text-slate-500">
+                    720p 較省記憶體；1080p 畫質較高、轉檔較久。
+                  </span>
                 </label>
 
                 <label className="min-w-0 text-sm font-black text-slate-800">
@@ -822,7 +860,7 @@ export default function BrowserImageToMp4() {
                   <select
                     value={effect}
                     onChange={(e) => setEffect(e.target.value as Effect)}
-                    className="mt-2 w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"
+                    className="mt-2 min-h-12 w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-3 pr-10 text-base font-semibold text-slate-800"
                   >
                     <option value="static">靜態</option>
                     <option value="zoom_in">慢慢放大</option>
@@ -840,7 +878,7 @@ export default function BrowserImageToMp4() {
                   <select
                     value={fitMode}
                     onChange={(e) => setFitMode(e.target.value as FitMode)}
-                    className="mt-2 w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"
+                    className="mt-2 min-h-12 w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-3 pr-10 text-base font-semibold text-slate-800"
                   >
                     <option value="contain">完整顯示</option>
                     <option value="cover">裁切填滿</option>
@@ -856,7 +894,7 @@ export default function BrowserImageToMp4() {
                         e.target.value as "#000000" | "#ffffff",
                       )
                     }
-                    className="mt-2 w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"
+                    className="mt-2 min-h-12 w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-3 pr-10 text-base font-semibold text-slate-800"
                   >
                     <option value="#000000">黑色</option>
                     <option value="#ffffff">白色</option>
@@ -867,13 +905,13 @@ export default function BrowserImageToMp4() {
                   <p className="text-sm font-black text-slate-800">
                     每張圖片停留秒數
                   </p>
-                  <div className="mt-2 grid grid-cols-4 gap-2">
+                  <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
                     {[1, 2, 3, 5].map((seconds) => (
                       <button
                         key={seconds}
                         type="button"
                         onClick={() => setSecondsPerImage(seconds)}
-                        className={`rounded-xl border px-2 py-2 text-xs font-black transition hover:-translate-y-0.5 ${
+                        className={`min-h-11 rounded-xl border px-3 py-2 text-sm font-black transition hover:-translate-y-0.5 ${
                           secondsPerImage === seconds
                             ? "border-blue-500 bg-blue-50 text-blue-700"
                             : "border-slate-200 bg-white text-slate-600 hover:border-blue-300"
@@ -918,7 +956,7 @@ export default function BrowserImageToMp4() {
                   placeholder="例如：更多免費圖片請到 RxV 圖片庫"
                   className="mt-2 w-full resize-y rounded-xl border border-violet-200 bg-white px-3 py-2.5 text-sm leading-6"
                 />
-                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <div className="mt-3 grid gap-3 lg:grid-cols-2">
                   <label className="text-xs font-black text-slate-700">
                     文字位置
                     <select
@@ -965,7 +1003,7 @@ export default function BrowserImageToMp4() {
                 </label>
 
                 {qrEnabled ? (
-                  <div className="mt-3 grid gap-4 sm:grid-cols-[1fr_auto]">
+                  <div className="mt-3 grid gap-4 lg:grid-cols-[1fr_auto]">
                     <div className="min-w-0 space-y-3">
                       <label className="block text-xs font-black text-slate-700">
                         QR Code 網址／文字
@@ -977,7 +1015,7 @@ export default function BrowserImageToMp4() {
                         />
                       </label>
 
-                      <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="grid gap-3 lg:grid-cols-2">
                         <label className="text-xs font-black text-slate-700">
                           QR 位置
                           <select
