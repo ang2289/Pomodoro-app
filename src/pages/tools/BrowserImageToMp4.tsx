@@ -2198,7 +2198,7 @@ export default function BrowserImageToMp4() {
                             {(file.size / 1024 / 1024).toFixed(2)} MB
                           </p>
 
-                          <div className="mt-3 flex flex-wrap gap-2">
+                          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
                             <button
                               type="button"
                               onClick={() => moveImage(index, -1)}
@@ -2387,7 +2387,7 @@ export default function BrowserImageToMp4() {
                       <button
                         type="button"
                         onClick={() => setVisualEffect("none")}
-                        className="rounded-lg border border-amber-200 bg-white px-3 py-2 text-xs font-black text-amber-800 transition hover:bg-amber-100"
+                        className="inline-flex w-auto items-center justify-center rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-black text-amber-800 transition hover:bg-amber-100"
                       >
                         清除特效
                       </button>
@@ -2483,10 +2483,10 @@ export default function BrowserImageToMp4() {
                         key={value}
                         type="button"
                         onClick={() => setVisualEffect(value)}
-                        className={`rounded-full border px-3 py-2 text-xs font-black transition hover:-translate-y-0.5 ${
+                        className={`min-h-11 w-full whitespace-nowrap rounded-xl border px-3 py-2 text-xs font-black transition hover:-translate-y-0.5 ${
                           visualEffect === value
                             ? "border-amber-500 bg-amber-100 text-amber-900"
-                            : "border-amber-200 bg-white text-slate-700 hover:bg-amber-50"
+                            : "border-amber-200 bg-amber-50/70 text-slate-700 hover:bg-amber-100"
                         }`}
                       >
                         {label}
