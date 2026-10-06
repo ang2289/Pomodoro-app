@@ -524,6 +524,50 @@ function drawNativeVideoFrame(
   );
 }
 
+const TEXT_HISTORY_PREFIX = "rxv:image-to-mp4:text-history:";
+const TEXT_HISTORY_LIMIT = 12;
+
+function readTextHistory(key: string) {
+  if (typeof window === "undefined") return [] as string[];
+
+  try {
+    const raw = window.localStorage.getItem(TEXT_HISTORY_PREFIX + key);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed)
+      ? parsed
+          .filter((item): item is string => typeof item === "string")
+          .map((item) => item.trim())
+          .filter(Boolean)
+          .slice(0, TEXT_HISTORY_LIMIT)
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function storeTextHistory(
+  key: string,
+  value: string,
+  setter: (items: string[]) => void,
+) {
+  const normalized = value.trim();
+  if (!normalized || typeof window === "undefined") return;
+
+  const next = [
+    normalized,
+    ...readTextHistory(key).filter((item) => item !== normalized),
+  ].slice(0, TEXT_HISTORY_LIMIT);
+
+  try {
+    window.localStorage.setItem(
+      TEXT_HISTORY_PREFIX + key,
+      JSON.stringify(next),
+    );
+  } catch {}
+
+  setter(next);
+}
+
 function wait(ms: number) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
@@ -564,6 +608,10 @@ export default function BrowserImageToMp4() {
   const [error, setError] = useState("");
   const [resultUrl, setResultUrl] = useState("");
   const [renderMode, setRenderMode] = useState<"native" | "ffmpeg" | "">("");
+  const [captionHistory, setCaptionHistory] = useState<string[]>([]);
+  const [qrTextHistory, setQrTextHistory] = useState<string[]>([]);
+  const [finalTitleHistory, setFinalTitleHistory] = useState<string[]>([]);
+  const [finalSubtitleHistory, setFinalSubtitleHistory] = useState<string[]>([]);
 
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const audioInputRef = useRef<HTMLInputElement | null>(null);
@@ -606,6 +654,13 @@ export default function BrowserImageToMp4() {
       urls.forEach((url) => URL.revokeObjectURL(url));
     };
   }, [images]);
+
+  useEffect(() => {
+    setCaptionHistory(readTextHistory("caption"));
+    setQrTextHistory(readTextHistory("qr-text"));
+    setFinalTitleHistory(readTextHistory("final-title"));
+    setFinalSubtitleHistory(readTextHistory("final-subtitle"));
+  }, []);
 
   const loadFfmpeg = async () => {
     if (loadedRef.current && ffmpegRef.current) return ffmpegRef.current;
@@ -1046,6 +1101,23 @@ export default function BrowserImageToMp4() {
     }
   };
 
+  const rememberCaption = () =>
+    storeTextHistory("caption", caption, setCaptionHistory);
+  const rememberQrText = () =>
+    storeTextHistory("qr-text", qrText, setQrTextHistory);
+  const rememberFinalTitle = () =>
+    storeTextHistory(
+      "final-title",
+      finalPageTitle,
+      setFinalTitleHistory,
+    );
+  const rememberFinalSubtitle = () =>
+    storeTextHistory(
+      "final-subtitle",
+      finalPageSubtitle,
+      setFinalSubtitleHistory,
+    );
+
   const generate = async () => {
     if (busy) return;
 
@@ -1060,6 +1132,13 @@ export default function BrowserImageToMp4() {
     if (qrEnabled && !qrText.trim()) {
       setError("已開啟 QR Code，請輸入網址或文字。");
       return;
+    }
+
+    rememberCaption();
+    if (qrEnabled) rememberQrText();
+    if (qrEnabled && qrDisplayMode === "final") {
+      rememberFinalTitle();
+      rememberFinalSubtitle();
     }
 
     setBusy(true);
@@ -1529,6 +1608,9 @@ export default function BrowserImageToMp4() {
                   <p className="mt-1 break-words text-xs leading-5 text-slate-500">
                     秒數、畫質、動畫、字幕與 QR Code 都在這裡設定。
                   </p>
+                  <p className="mt-1 break-words text-xs leading-5 text-slate-400">
+                    文字欄位會記住這台瀏覽器最近輸入過的內容，下次可直接從下拉選單選用。
+                  </p>
                 </div>
               </div>
 
@@ -1662,11 +1744,29 @@ export default function BrowserImageToMp4() {
                 <textarea
                   value={caption}
                   onChange={(e) => setCaption(e.target.value)}
+                  onBlur={rememberCaption}
                   rows={3}
                   maxLength={90}
                   placeholder="例如：更多免費圖片請到 RxV 圖片庫"
                   className="mt-2 w-full resize-y rounded-xl border border-violet-200 bg-white px-3 py-2.5 text-sm leading-6"
                 />
+                {captionHistory.length ? (
+                  <select
+                    value=""
+                    onChange={(e) => {
+                      if (e.target.value) setCaption(e.target.value);
+                    }}
+                    className="mt-2 min-h-10 w-full rounded-lg border border-violet-200 bg-white px-2 py-2 text-sm font-semibold text-slate-700"
+                    aria-label="曾輸入過的字幕"
+                  >
+                    <option value="">選擇以前輸入的字幕…</option>
+                    {captionHistory.map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))}
+                  </select>
+                ) : null}
                 <div className="mt-3 grid gap-3 lg:grid-cols-2">
                   <label className="text-xs font-black text-slate-700">
                     文字位置
@@ -1724,9 +1824,27 @@ export default function BrowserImageToMp4() {
                       <input
                         value={qrText}
                         onChange={(e) => setQrText(e.target.value)}
+                        onBlur={rememberQrText}
                         placeholder="https://..."
                         className="mt-1 w-full min-w-0 rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-sm"
                       />
+                      {qrTextHistory.length ? (
+                        <select
+                          value=""
+                          onChange={(e) => {
+                            if (e.target.value) setQrText(e.target.value);
+                          }}
+                          className="mt-2 min-h-10 w-full rounded-lg border border-emerald-200 bg-white px-2 py-2 text-sm font-semibold text-slate-700"
+                          aria-label="曾輸入過的 QR Code 網址或文字"
+                        >
+                          <option value="">選擇以前輸入的網址／文字…</option>
+                          {qrTextHistory.map((item) => (
+                            <option key={item} value={item}>
+                              {item}
+                            </option>
+                          ))}
+                        </select>
+                      ) : null}
                     </label>
 
                     <label className="block text-xs font-black text-slate-700">
@@ -1819,9 +1937,28 @@ export default function BrowserImageToMp4() {
                           <input
                             value={finalPageTitle}
                             onChange={(e) => setFinalPageTitle(e.target.value)}
+                            onBlur={rememberFinalTitle}
                             maxLength={40}
                             className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"
                           />
+                          {finalTitleHistory.length ? (
+                            <select
+                              value=""
+                              onChange={(e) => {
+                                if (e.target.value) {
+                                  setFinalPageTitle(e.target.value);
+                                }
+                              }}
+                              className="mt-2 min-h-10 w-full rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm font-semibold text-slate-700"
+                            >
+                              <option value="">選擇以前輸入的標題…</option>
+                              {finalTitleHistory.map((item) => (
+                                <option key={item} value={item}>
+                                  {item}
+                                </option>
+                              ))}
+                            </select>
+                          ) : null}
                         </label>
 
                         <label className="mt-3 block text-xs font-black text-slate-700">
@@ -1831,10 +1968,29 @@ export default function BrowserImageToMp4() {
                             onChange={(e) =>
                               setFinalPageSubtitle(e.target.value)
                             }
+                            onBlur={rememberFinalSubtitle}
                             maxLength={80}
                             rows={2}
                             className="mt-1 w-full resize-y rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm leading-6"
                           />
+                          {finalSubtitleHistory.length ? (
+                            <select
+                              value=""
+                              onChange={(e) => {
+                                if (e.target.value) {
+                                  setFinalPageSubtitle(e.target.value);
+                                }
+                              }}
+                              className="mt-2 min-h-10 w-full rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm font-semibold text-slate-700"
+                            >
+                              <option value="">選擇以前輸入的說明…</option>
+                              {finalSubtitleHistory.map((item) => (
+                                <option key={item} value={item}>
+                                  {item}
+                                </option>
+                              ))}
+                            </select>
+                          ) : null}
                         </label>
 
                         <label className="mt-3 block text-xs font-black text-slate-700">
