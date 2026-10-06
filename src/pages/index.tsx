@@ -1125,22 +1125,7 @@ const HomePage: React.FC = () => {
       hoverColor: "hover:bg-amber-50",
       badgeColor: "text-amber-700",
     },
-    // 好物推薦／比價入口：測試階段先關閉，避免導流與分潤功能過早曝光。
-    {
-      id: "video-tool",
-      titleKey: "home_tool_video_title",
-      descriptionKey: "home_tool_video_desc",
-      icon: "🎬",
-      href: "/tools/shopee-video",
-      disabled: false,
-      categoryKey: "home_category_design",
-      ringColor: "ring-teal-100",
-      hoverColor: "hover:bg-teal-50",
-      badgeColor: "text-teal-700",
-      extraContent: (
-        <p className="mt-2 text-xs text-gray-500">{t("home_tool_video_ps")}</p>
-      ),
-    },
+    // AI 短影音工具目前仍在開發，先不顯示入口卡；保留路由供內部測試。
     {
       id: "image-to-video",
       titleKey: "home_tool_image_to_video_title",
@@ -1451,17 +1436,6 @@ const HomePage: React.FC = () => {
       descKey: "home_featured_image_crop_desc",
       href: "/tools/image-crop",
     },
-    ...(canShowAdminTools
-      ? [
-          {
-            id: "video-tool",
-            icon: "🎬",
-            titleKey: "home_tool_video_title",
-            descKey: "home_tool_video_desc",
-            href: "/tools/shopee-video",
-          },
-        ]
-      : []),
   ];
 
   const publicFeaturedTools = featuredTools.filter((tool) =>
