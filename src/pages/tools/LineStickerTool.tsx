@@ -7,6 +7,8 @@ import LineStickerAuthorCard from "@/components/LineStickerAuthorCard";
 import LineStickerFlowSteps from "@/components/LineStickerFlowSteps";
 import CoupangAd from "@/components/CoupangAd";
 import {
+  clearAnimatedStickerHandoff,
+  clearLineStickerProject,
   getMotherSheetPlan,
   readLineStickerProject,
   saveAnimatedStickerHandoff,
@@ -238,8 +240,9 @@ type ImagePreview = {
 
 type ItemOffset = { x: number; y: number };
 
-const SAFE_PADDING = 10;
-const SMART_SAFE_PADDING = 4;
+const SAFE_PADDING_RATIO = 0.075;
+const SMART_SAFE_PADDING_RATIO = 0.055;
+const MOTHER_SHEET_CELL_INSET_RATIO = 0.01;
 const ALPHA_THRESHOLD = 12;
 
 type ContentBox = { x: number; y: number; width: number; height: number };
@@ -504,7 +507,12 @@ function drawStickerToTransparentCanvas(
     return;
   }
 
-  const padding = mode === "smart-safe" ? SMART_SAFE_PADDING : SAFE_PADDING;
+  const paddingRatio =
+    mode === "smart-safe" ? SMART_SAFE_PADDING_RATIO : SAFE_PADDING_RATIO;
+  const padding = Math.max(
+    3,
+    Math.round(Math.min(targetW, targetH) * paddingRatio),
+  );
   const maxW = Math.max(1, targetW - padding * 2);
   const maxH = Math.max(1, targetH - padding * 2);
   const scale =
@@ -655,6 +663,53 @@ function removeConnectedWhiteBackground(
   context.putImageData(imageData, 0, 0);
 }
 
+function cleanPaleEdgeHalo(canvas: HTMLCanvasElement, passes = 1) {
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  if (!context) return;
+
+  for (let pass = 0; pass < passes; pass += 1) {
+    const { width, height } = canvas;
+    const imageData = context.getImageData(0, 0, width, height);
+    const src = imageData.data;
+    const next = new Uint8ClampedArray(src);
+
+    const isTransparentNeighbor = (x: number, y: number) => {
+      if (x < 0 || y < 0 || x >= width || y >= height) return true;
+      return src[(y * width + x) * 4 + 3] <= 24;
+    };
+
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const p = (y * width + x) * 4;
+        const a = src[p + 3];
+        if (a <= 24) continue;
+
+        const r = src[p];
+        const g = src[p + 1];
+        const b = src[p + 2];
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        const paleNeutral = min >= 226 && max - min <= 34;
+        if (!paleNeutral) continue;
+
+        const touchesTransparent =
+          isTransparentNeighbor(x - 1, y) ||
+          isTransparentNeighbor(x + 1, y) ||
+          isTransparentNeighbor(x, y - 1) ||
+          isTransparentNeighbor(x, y + 1);
+        if (!touchesTransparent) continue;
+
+        if (min >= 246) next[p + 3] = 0;
+        else if (min >= 238) next[p + 3] = Math.min(a, 70);
+        else next[p + 3] = Math.min(a, 150);
+      }
+    }
+
+    imageData.data.set(next);
+    context.putImageData(imageData, 0, 0);
+  }
+}
+
 async function splitMotherSheet(
   file: File,
   grid: "auto" | MotherSheetGrid,
@@ -673,10 +728,18 @@ async function splitMotherSheet(
 
   for (let row = 0; row < rows; row += 1) {
     for (let column = 0; column < columns; column += 1) {
-      const left = Math.round((column * sourceWidth) / columns);
-      const top = Math.round((row * sourceHeight) / rows);
-      const right = Math.round(((column + 1) * sourceWidth) / columns);
-      const bottom = Math.round(((row + 1) * sourceHeight) / rows);
+      const rawLeft = Math.round((column * sourceWidth) / columns);
+      const rawTop = Math.round((row * sourceHeight) / rows);
+      const rawRight = Math.round(((column + 1) * sourceWidth) / columns);
+      const rawBottom = Math.round(((row + 1) * sourceHeight) / rows);
+      const rawW = Math.max(1, rawRight - rawLeft);
+      const rawH = Math.max(1, rawBottom - rawTop);
+      const insetX = Math.round(rawW * MOTHER_SHEET_CELL_INSET_RATIO);
+      const insetY = Math.round(rawH * MOTHER_SHEET_CELL_INSET_RATIO);
+      const left = rawLeft + insetX;
+      const top = rawTop + insetY;
+      const right = rawRight - insetX;
+      const bottom = rawBottom - insetY;
       const canvas = document.createElement("canvas");
       canvas.width = Math.max(1, right - left);
       canvas.height = Math.max(1, bottom - top);
@@ -694,7 +757,10 @@ async function splitMotherSheet(
         canvas.width,
         canvas.height,
       );
-      if (removeWhiteBackground) removeConnectedWhiteBackground(canvas);
+      if (removeWhiteBackground) {
+        removeConnectedWhiteBackground(canvas, 232);
+        cleanPaleEdgeHalo(canvas, 1);
+      }
       const blob = await canvasToBlob(canvas, t);
       results.push(
         new File(
@@ -897,7 +963,10 @@ export default function LineStickerTool() {
   );
   const [mainImageIndex, setMainImageIndex] = useState<number>(0);
   const [cropMode, setCropMode] = useState<LineStickerCropMode>("smart-safe");
-  const [cropScale, setCropScale] = useState<number>(100);
+  const [cropScale, setCropScale] = useState<number>(96);
+  const [downloadCompleted, setDownloadCompleted] = useState(
+    () => flowProject?.mode === "static" && flowProject?.stage === 5,
+  );
   const [itemScales, setItemScales] = useState<Record<number, number>>({});
   const [itemOffsets, setItemOffsets] = useState<Record<number, ItemOffset>>({});
   const [reviewedWarnings, setReviewedWarnings] = useState<Record<number, boolean>>({});
@@ -1034,8 +1103,10 @@ export default function LineStickerTool() {
     files.forEach((p) => URL.revokeObjectURL(p.url));
     setFiles([]);
     setItemScales({});
+    setItemOffsets({});
     setReviewedWarnings({});
     setMainImageIndex(0);
+    setDownloadCompleted(false);
   }, [files]);
 
   const needMore = stickerCount - files.length;
@@ -1155,6 +1226,10 @@ export default function LineStickerTool() {
       }
       const content = await zip.generateAsync({ type: "blob" });
       saveAs(content, ZIP_FILENAME);
+      if (flowProject?.mode !== "animated") {
+        updateLineStickerProject({ stage: 5 });
+        setDownloadCompleted(true);
+      }
     } catch (err) {
       const message =
         err instanceof Error ? err.message : t("line_sticker_pack_failed");
@@ -1171,8 +1246,22 @@ export default function LineStickerTool() {
     getOffsetForIndex,
     mainImageIndex,
     qualityErrorCount,
+    flowProject,
     t,
   ]);
+
+  const startNewStickerFlow = useCallback(async () => {
+    clearAll();
+    clearLineStickerProject();
+    try {
+      await clearAnimatedStickerHandoff();
+    } catch {
+      // IndexedDB 清除失敗不影響重新開始靜態貼圖流程。
+    }
+    setDownloadCompleted(false);
+    navigate("/tools/sticker-prompt?new=1");
+    window.setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 0);
+  }, [clearAll, navigate]);
 
   const continueToAnimated = useCallback(async () => {
     if (!canDownload || loading) return;
@@ -1239,7 +1328,13 @@ export default function LineStickerTool() {
       <div className="min-h-screen bg-slate-50 px-4 py-8 pb-24 sm:pb-32">
         <div className="mx-auto max-w-5xl">
           <LineStickerFlowSteps
-            activeStep={files.length >= stickerCount ? 4 : 3}
+            activeStep={
+              downloadCompleted && flowProject?.mode !== "animated"
+                ? 5
+                : files.length >= stickerCount
+                  ? 4
+                  : 3
+            }
             mode={flowProject?.mode ?? "static"}
           />
 
@@ -1254,6 +1349,44 @@ export default function LineStickerTool() {
               {t("line_sticker_hero_desc")}
             </p>
           </header>
+
+          {downloadCompleted && flowProject?.mode !== "animated" ? (
+            <section className="mb-6 rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-blue-50 p-5 shadow-sm">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-600 text-sm font-black text-white">
+                  ✓
+                </span>
+                <div>
+                  <p className="text-xs font-black text-emerald-700">
+                    第 5 步完成
+                  </p>
+                  <h2 className="text-lg font-black text-slate-900">
+                    LINE 上架 ZIP 已下載
+                  </h2>
+                </div>
+              </div>
+              <p className="mt-3 text-sm leading-6 text-slate-600">
+                這一組已完成。要做下一組不用回首頁，直接按「再做一組新貼圖」會清除本次流程並回到第 1 步。
+              </p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={startNewStickerFlow}
+                  className="min-h-12 rounded-2xl bg-violet-600 px-5 py-3 text-sm font-black text-white shadow-md transition hover:-translate-y-0.5 hover:bg-violet-700 hover:shadow-lg"
+                >
+                  ✨ 再做一組新貼圖｜回到第 1 步
+                </button>
+                <button
+                  type="button"
+                  onClick={generateZip}
+                  disabled={loading}
+                  className="min-h-12 rounded-2xl border border-blue-200 bg-blue-50 px-5 py-3 text-sm font-black text-blue-800 transition hover:bg-blue-100 disabled:opacity-50"
+                >
+                  ⬇ 再下載一次同一個 ZIP
+                </button>
+              </div>
+            </section>
+          ) : null}
 
           {flowProject ? (
             <section className="mb-6 rounded-3xl border border-blue-200 bg-blue-50 p-5">
@@ -1353,7 +1486,7 @@ export default function LineStickerTool() {
                     上傳母圖，後面交給系統自動整理
                   </h2>
                   <p className="mt-1 text-xs leading-relaxed text-slate-500">
-                    直接選擇 ChatGPT 產生的母圖即可。24 張可一次選 4×4＋4×2；系統會由左到右、由上到下自動排序。
+                    直接選擇 ChatGPT 產生的母圖即可。系統會由左到右、由上到下平均切格，切格時略避開格線，再自動去白底、清理淡白邊並保留四周安全留白。
                   </p>
                 </div>
                 <div className="flex shrink-0 flex-col gap-2 sm:min-w-[220px]">
@@ -1390,7 +1523,7 @@ export default function LineStickerTool() {
                       onChange={(event) => setAutoRemoveWhiteBg(event.target.checked)}
                       className="h-4 w-4 accent-emerald-600"
                     />
-                    自動移除白色背景（推薦）
+                    自動去白底＋清理淡白邊（推薦）
                   </label>
                   <input
                     ref={motherSheetInputRef}
@@ -1483,7 +1616,11 @@ export default function LineStickerTool() {
                   </button>
                 </div>
 
-                {(cropMode === "crop" || cropMode === "smart-safe") && (
+                <p className="mt-3 rounded-xl bg-emerald-50 px-3 py-2 text-[11px] font-bold leading-5 text-emerald-800">
+                  預設「智慧滿版」會自動置中並保留約 5%～6% 四邊安全空間；若文字仍太靠邊，可把安全縮放調低。
+                </p>
+
+                                {(cropMode === "crop" || cropMode === "smart-safe") && (
                   <div className="mt-4 rounded-xl bg-slate-50 p-3">
                     <div className="mb-2 flex items-center justify-between gap-2">
                       <span className="text-[11px] font-black text-slate-500">
@@ -2039,7 +2176,9 @@ export default function LineStickerTool() {
                 {loading
                   ? t("line_sticker_processing")
                   : canDownload
-                    ? `步驟 5｜下載 ${stickerCount} 張 LINE 上架 ZIP`
+                    ? downloadCompleted
+                      ? "✓ 第 5 步完成｜再次下載 ZIP"
+                      : `步驟 5｜下載 ${stickerCount} 張 LINE 上架 ZIP`
                     : t("line_sticker_need_more_to_pack", { count: needMore })}
               </button>
             )}

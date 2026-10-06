@@ -98,6 +98,11 @@ export function saveLineStickerProject(project: LineStickerProject) {
   );
 }
 
+export function clearLineStickerProject() {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(PROJECT_KEY);
+}
+
 export function updateLineStickerProject(
   patch: Partial<Omit<LineStickerProject, "version" | "id" | "createdAt">>,
 ): LineStickerProject | null {

@@ -4089,7 +4089,7 @@ function buildPrompt(
   const rolePrompt = buildRolePrompt(role, photoMode);
   const photoReminder = buildPhotoReminder(photoMode);
 
-  return `請設計一張 LINE ${label}大圖，白色背景，${style}。\n\n${rolePrompt}\n\n風格加強：${stickerStylePrompt}。\n\n真人／原創設定：${photoModePrompt}。${photoReminder}\n\n請畫成 ${gridInfo.layoutText}。每格貼圖都要獨立清楚、平均排列，格與格之間保留大間距與安全留白，方便後續切割。角色與文字都要完整置中在各自格子內，不可超出邊界，不可重疊，不可跨格。\n\n文字設定：請使用繁體中文，字體粗體，${textSizePrompt}，${textColorPrompt}，${textPositionPrompt}。文字必須清楚好讀，不要貼近邊界，不要切到字，不可出現序號、數字、標題、格號或列表符號。\n\n每張貼圖都要有不同表情與動作，整體風格一致、乾淨可愛、適合 LINE 貼圖使用。\n\n貼圖文字如下：\n${numberedTexts}`;
+  return `請設計一張 LINE ${label}大圖，白色背景，${style}。\n\n${rolePrompt}\n\n風格加強：${stickerStylePrompt}。\n\n真人／原創設定：${photoModePrompt}。${photoReminder}\n\n請畫成 ${gridInfo.layoutText}。每格貼圖都要獨立清楚、平均排列。每一格的角色＋文字＋裝飾只佔該格中央約 78%～82%，上下左右至少保留約 9%～11% 的純白安全留白，格與格之間必須看得到明顯白色空間，方便後續平均切割。角色與文字都要完整置中在各自格子內，不可超出邊界、不可跨格、不可互相重疊；若空間不足，寧可把角色與文字整體縮小，也不要貼邊。\n\n文字設定：請使用繁體中文，字體粗體，${textSizePrompt}，${textColorPrompt}，${textPositionPrompt}。文字必須清楚好讀，文字與頭髮、臉、手勢、手機、文件等主體至少保留明顯空隙，不可壓在人物或道具上；文字四周也要保留白邊，不要貼近格子邊界，不要切到字，不可出現序號、數字、標題、格號或列表符號。\n\n每張貼圖都要有不同表情與動作，整體風格一致、乾淨可愛、適合 LINE 貼圖使用。\n\n貼圖文字如下：\n${numberedTexts}`;
 }
 
 function buildStablePrompt(
@@ -4114,7 +4114,7 @@ ${rolePrompt}
 
 真人／原創設定：${photoModePrompt}。${photoReminder}
 
-請畫成 ${gridInfo.layoutText}。每格是一個獨立角色動作，格與格之間要有明顯留白，方便後續切割。
+請畫成 ${gridInfo.layoutText}。每格是一個獨立角色動作；角色只佔單格中央約 78%～82%，上下左右至少保留約 9%～11% 純白安全留白，格與格之間要有明顯白色空間，方便後續平均切割。若角色太大，請整體縮小，不可貼邊或跨格。
 
 角色要保持同一人物、同一髮型、同一服裝、同一臉部特徵，每格只改變表情與動作。若選擇真人 Q 版，請以同一張真人照片為基準，不要每格變成不同人。
 
