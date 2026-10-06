@@ -20,6 +20,8 @@ type QrPosition = "top-left" | "top-right" | "bottom-left" | "bottom-right";
 type QrDisplayMode = "final" | "all";
 type FinalQrPosition = "top" | "middle" | "bottom";
 type CaptionPosition = "top" | "bottom";
+type CaptionStyle = "bar" | "outline" | "plain";
+type FrameRate = 15 | 18 | 24;
 
 type WritableFileLike = {
   write(data: Blob): Promise<void>;
@@ -106,43 +108,85 @@ function drawCaption(
   height: number,
   position: CaptionPosition,
   fontSize: number,
+  style: CaptionStyle,
 ) {
   if (!text.trim()) return;
 
   const scaledFont = Math.max(18, Math.round((fontSize / 1080) * width));
-  const paddingX = Math.round(width * 0.055);
-  const paddingY = Math.round(height * 0.025);
-  const lineHeight = Math.round(scaledFont * 1.3);
+  const paddingX = Math.round(width * 0.05);
+  const paddingY =
+    style === "bar"
+      ? Math.round(height * 0.015)
+      : Math.round(height * 0.01);
+  const lineHeight = Math.round(scaledFont * 1.28);
 
   ctx.save();
-  ctx.font = `700 ${scaledFont}px system-ui, -apple-system, "Segoe UI", sans-serif`;
+  ctx.font = `800 ${scaledFont}px system-ui, -apple-system, "Segoe UI", sans-serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
 
   const lines = wrapCanvasText(ctx, text, width - paddingX * 2);
   const boxHeight = lines.length * lineHeight + paddingY * 2;
+  const edge = Math.round(height * 0.04);
   const boxY =
     position === "top"
-      ? Math.round(height * 0.035)
-      : height - boxHeight - Math.round(height * 0.035);
+      ? edge
+      : height - boxHeight - edge;
 
-  ctx.fillStyle = "rgba(0, 0, 0, 0.58)";
-  ctx.fillRect(
-    Math.round(width * 0.035),
-    boxY,
-    Math.round(width * 0.93),
-    boxHeight,
-  );
+  if (style === "bar") {
+    ctx.fillStyle = "rgba(0, 0, 0, 0.46)";
+    const left = Math.round(width * 0.045);
+    const barWidth = Math.round(width * 0.91);
+    const radius = Math.max(10, Math.round(width * 0.018));
+    ctx.beginPath();
+    ctx.roundRect(left, boxY, barWidth, boxHeight, radius);
+    ctx.fill();
+  }
 
-  ctx.fillStyle = "#ffffff";
   lines.forEach((line, index) => {
+    const y =
+      boxY + paddingY + lineHeight * index + lineHeight / 2;
+
+    if (style === "outline") {
+      ctx.lineJoin = "round";
+      ctx.miterLimit = 2;
+      ctx.lineWidth = Math.max(3, scaledFont * 0.13);
+      ctx.strokeStyle = "rgba(0,0,0,0.86)";
+      ctx.strokeText(
+        line,
+        width / 2,
+        y,
+        width - paddingX * 2,
+      );
+      ctx.fillStyle = "#ffffff";
+      ctx.fillText(
+        line,
+        width / 2,
+        y,
+        width - paddingX * 2,
+      );
+      return;
+    }
+
+    if (style === "plain") {
+      ctx.shadowColor = "rgba(0,0,0,0.72)";
+      ctx.shadowBlur = Math.max(4, scaledFont * 0.12);
+      ctx.shadowOffsetY = Math.max(2, scaledFont * 0.04);
+    }
+
+    ctx.fillStyle = "#ffffff";
     ctx.fillText(
       line,
       width / 2,
-      boxY + paddingY + lineHeight * index + lineHeight / 2,
+      y,
       width - paddingX * 2,
     );
+
+    ctx.shadowColor = "transparent";
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetY = 0;
   });
+
   ctx.restore();
 }
 
@@ -191,6 +235,7 @@ function drawFinalQrPage(
   position: FinalQrPosition,
   title: string,
   subtitle: string,
+  ctaText: string,
   qrPercent: number,
 ) {
   ctx.save();
@@ -224,12 +269,19 @@ function drawFinalQrPage(
 
   const titleHeight = Math.max(1, titleLines.length) * titleLineHeight;
   const subtitleHeight = Math.max(1, subtitleLines.length) * subtitleLineHeight;
+  const ctaSize = Math.max(18, Math.round(width * 0.034));
+  const ctaHeight = ctaText.trim()
+    ? Math.max(44, Math.round(height * 0.06))
+    : 0;
+  const ctaGap = ctaText.trim() ? Math.round(height * 0.022) : 0;
   const groupHeight =
     titleHeight +
     Math.round(height * 0.025) +
     qrBox +
     Math.round(height * 0.025) +
-    subtitleHeight;
+    subtitleHeight +
+    ctaGap +
+    ctaHeight;
 
   const edge = Math.round(height * 0.07);
   let groupTop = edge;
@@ -283,6 +335,31 @@ function drawFinalQrPage(
     );
   });
 
+  if (ctaText.trim()) {
+    const ctaTop =
+      subtitleTop + subtitleHeight + ctaGap;
+    const ctaWidth = Math.min(
+      width - safeX * 2,
+      Math.round(width * 0.62),
+    );
+    const ctaX = Math.round((width - ctaWidth) / 2);
+    const radius = Math.round(ctaHeight / 2);
+
+    ctx.fillStyle = "#059669";
+    ctx.beginPath();
+    ctx.roundRect(ctaX, ctaTop, ctaWidth, ctaHeight, radius);
+    ctx.fill();
+
+    ctx.fillStyle = "#ffffff";
+    ctx.font = `800 ${ctaSize}px system-ui, -apple-system, "Segoe UI", sans-serif`;
+    ctx.fillText(
+      ctaText.trim(),
+      width / 2,
+      ctaTop + ctaHeight / 2,
+      ctaWidth - Math.round(width * 0.04),
+    );
+  }
+
   ctx.restore();
 }
 
@@ -293,6 +370,7 @@ async function createFinalQrPageJpeg(
   position: FinalQrPosition,
   title: string,
   subtitle: string,
+  ctaText: string,
   qrPercent: number,
 ) {
   const canvas = document.createElement("canvas");
@@ -309,6 +387,7 @@ async function createFinalQrPageJpeg(
     position,
     title,
     subtitle,
+    ctaText,
     qrPercent,
   );
 
@@ -553,6 +632,7 @@ async function imageToJpeg(
   caption: string,
   captionPosition: CaptionPosition,
   captionFontSize: number,
+  captionStyle: CaptionStyle,
   qrCanvas: HTMLCanvasElement | null,
   qrPosition: QrPosition,
   qrPercent: number,
@@ -612,6 +692,7 @@ async function imageToJpeg(
       height,
       captionPosition,
       captionFontSize,
+      captionStyle,
     );
     drawQrOverlay(
       ctx,
@@ -713,6 +794,7 @@ function drawNativeVideoFrame(
   caption: string,
   captionPosition: CaptionPosition,
   captionFontSize: number,
+  captionStyle: CaptionStyle,
   qrCanvas: HTMLCanvasElement | null,
   qrPosition: QrPosition,
   qrPercent: number,
@@ -791,6 +873,7 @@ function drawNativeVideoFrame(
     height,
     captionPosition,
     captionFontSize,
+    captionStyle,
   );
   drawQrOverlay(
     ctx,
@@ -905,6 +988,8 @@ export default function BrowserImageToMp4() {
   const [captionPosition, setCaptionPosition] =
     useState<CaptionPosition>("bottom");
   const [captionFontSize, setCaptionFontSize] = useState(54);
+  const [captionStyle, setCaptionStyle] = useState<CaptionStyle>("bar");
+  const [frameRate, setFrameRate] = useState<FrameRate>(24);
   const [qrEnabled, setQrEnabled] = useState(false);
   const [qrText, setQrText] = useState("");
   const [qrDisplayMode, setQrDisplayMode] =
@@ -918,6 +1003,8 @@ export default function BrowserImageToMp4() {
     useState("喜歡這組圖片嗎？");
   const [finalPageSubtitle, setFinalPageSubtitle] =
     useState("掃描 QR Code，查看更多免費圖片");
+  const [finalPageCta, setFinalPageCta] =
+    useState("免費看更多 →");
   const [qrPercent, setQrPercent] = useState(18);
   const [busy, setBusy] = useState(false);
   const [engineReady, setEngineReady] = useState(false);
@@ -930,6 +1017,7 @@ export default function BrowserImageToMp4() {
   const [qrTextHistory, setQrTextHistory] = useState<string[]>([]);
   const [finalTitleHistory, setFinalTitleHistory] = useState<string[]>([]);
   const [finalSubtitleHistory, setFinalSubtitleHistory] = useState<string[]>([]);
+  const [finalCtaHistory, setFinalCtaHistory] = useState<string[]>([]);
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
   const [autoGenerateAfterSelect, setAutoGenerateAfterSelect] = useState(false);
   const [outputDirectoryName, setOutputDirectoryName] =
@@ -955,7 +1043,7 @@ export default function BrowserImageToMp4() {
     Boolean(nativeMp4MimeType) &&
     typeof HTMLCanvasElement !== "undefined" &&
     "captureStream" in HTMLCanvasElement.prototype;
-  const outputFps = quality === "540p" ? 15 : quality === "720p" ? 18 : 20;
+  const outputFps = frameRate;
   const encodeTimeoutMs =
     quality === "540p" ? 180_000 : quality === "720p" ? 240_000 : 300_000;
 
@@ -990,6 +1078,7 @@ export default function BrowserImageToMp4() {
     setQrTextHistory(readTextHistory("qr-text"));
     setFinalTitleHistory(readTextHistory("final-title"));
     setFinalSubtitleHistory(readTextHistory("final-subtitle"));
+    setFinalCtaHistory(readTextHistory("final-cta"));
 
     const saved = readVideoSettings();
     if (!saved) return;
@@ -1042,6 +1131,12 @@ export default function BrowserImageToMp4() {
     if (typeof saved.captionFontSize === "number") {
       setCaptionFontSize(saved.captionFontSize);
     }
+    if (["bar", "outline", "plain"].includes(String(saved.captionStyle))) {
+      setCaptionStyle(saved.captionStyle as CaptionStyle);
+    }
+    if ([15, 18, 24].includes(Number(saved.frameRate))) {
+      setFrameRate(Number(saved.frameRate) as FrameRate);
+    }
     if (typeof saved.qrEnabled === "boolean") setQrEnabled(saved.qrEnabled);
     if (typeof saved.qrText === "string") setQrText(saved.qrText);
     if (["final", "all"].includes(String(saved.qrDisplayMode))) {
@@ -1065,6 +1160,9 @@ export default function BrowserImageToMp4() {
     }
     if (typeof saved.finalPageSubtitle === "string") {
       setFinalPageSubtitle(saved.finalPageSubtitle);
+    }
+    if (typeof saved.finalPageCta === "string") {
+      setFinalPageCta(saved.finalPageCta);
     }
     if (typeof saved.qrPercent === "number") setQrPercent(saved.qrPercent);
     if (typeof saved.autoSaveEnabled === "boolean") {
@@ -1372,6 +1470,8 @@ export default function BrowserImageToMp4() {
       caption,
       captionPosition,
       captionFontSize,
+      captionStyle,
+      frameRate,
       qrEnabled,
       qrText,
       qrDisplayMode,
@@ -1380,6 +1480,7 @@ export default function BrowserImageToMp4() {
       finalPageDuration,
       finalPageTitle,
       finalPageSubtitle,
+      finalPageCta,
       qrPercent,
       autoSaveEnabled,
       autoGenerateAfterSelect,
@@ -1550,6 +1651,7 @@ export default function BrowserImageToMp4() {
             finalQrPosition,
             finalPageTitle,
             finalPageSubtitle,
+            finalPageCta,
             qrPercent,
           );
         } else {
@@ -1576,6 +1678,7 @@ export default function BrowserImageToMp4() {
             caption,
             captionPosition,
             captionFontSize,
+            captionStyle,
             qrEnabled && qrDisplayMode === "all"
               ? qrCanvasRef.current
               : null,
@@ -1663,6 +1766,12 @@ export default function BrowserImageToMp4() {
       finalPageSubtitle,
       setFinalSubtitleHistory,
     );
+  const rememberFinalCta = () =>
+    storeTextHistory(
+      "final-cta",
+      finalPageCta,
+      setFinalCtaHistory,
+    );
 
   const generate = async () => {
     if (busy) return;
@@ -1686,6 +1795,7 @@ export default function BrowserImageToMp4() {
     if (qrEnabled && qrDisplayMode === "final") {
       rememberFinalTitle();
       rememberFinalSubtitle();
+      rememberFinalCta();
     }
 
     setBusy(true);
@@ -1731,6 +1841,7 @@ export default function BrowserImageToMp4() {
           caption,
           captionPosition,
           captionFontSize,
+          captionStyle,
           qrEnabled && qrDisplayMode === "all"
             ? qrCanvasRef.current
             : null,
@@ -1759,6 +1870,7 @@ export default function BrowserImageToMp4() {
           finalQrPosition,
           finalPageTitle,
           finalPageSubtitle,
+          finalPageCta,
           qrPercent,
         );
         await ffmpeg.writeFile("rxv-final-qr.jpg", finalPageData);
@@ -2004,7 +2116,7 @@ export default function BrowserImageToMp4() {
               圖片轉 MP4｜音樂・字幕・QR Code・動畫／光效
             </h1>
             <p className="mt-2 max-w-4xl break-words leading-7 text-slate-600">
-              圖片、音樂與影片都留在你的裝置。可加星光、上方金光、漂浮光點、柔光散景、花瓣，再設定字幕與 QR Code；QRCode 可只放最後一頁。
+              圖片、音樂與影片都留在你的裝置。可用 24fps 社群模式、星光／金光特效、字幕樣式與 QR Code 結尾 CTA，快速做成可發布短影片。
             </p>
           </div>
 
@@ -2183,7 +2295,7 @@ export default function BrowserImageToMp4() {
                     設定影片效果
                   </h2>
                   <p className="mt-1 break-words text-xs leading-5 text-slate-500">
-                    秒數、畫質、動畫、字幕與 QR Code 都在這裡設定。
+                    秒數、畫質、24fps、動畫、字幕樣式與 QR Code 都在這裡設定。
                   </p>
                   <p className="mt-1 break-words text-xs leading-5 text-slate-400">
                     文字欄位會記住這台瀏覽器最近輸入過的內容，下次可直接從下拉選單選用。
@@ -2222,6 +2334,24 @@ export default function BrowserImageToMp4() {
                   </select>
                   <span className="mt-1 block break-words text-xs font-medium leading-5 text-slate-500">
                     540p 最適合瀏覽器快速產生；720p 較清晰；1080p 最吃效能、可能需要較久。
+                  </span>
+                </label>
+
+                <label className="min-w-0 text-sm font-black text-slate-800">
+                  影格率
+                  <select
+                    value={frameRate}
+                    onChange={(e) =>
+                      setFrameRate(Number(e.target.value) as FrameRate)
+                    }
+                    className="mt-2 min-h-12 w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-3 pr-10 text-base font-semibold text-slate-800"
+                  >
+                    <option value={15}>15 fps｜快速</option>
+                    <option value={18}>18 fps｜平衡</option>
+                    <option value={24}>24 fps｜社群推薦</option>
+                  </select>
+                  <span className="mt-1 block text-xs font-medium leading-5 text-slate-500">
+                    24 fps 的慢推近與星光會更順；如果裝置較慢可改 18 或 15 fps。
                   </span>
                 </label>
 
@@ -2470,7 +2600,21 @@ export default function BrowserImageToMp4() {
                     ))}
                   </select>
                 ) : null}
-                <div className="mt-3 grid gap-3 lg:grid-cols-2">
+                <div className="mt-3 grid gap-3 lg:grid-cols-3">
+                  <label className="text-xs font-black text-slate-700">
+                    字幕樣式
+                    <select
+                      value={captionStyle}
+                      onChange={(e) =>
+                        setCaptionStyle(e.target.value as CaptionStyle)
+                      }
+                      className="mt-1 min-h-10 w-full rounded-lg border border-slate-300 bg-white px-2 py-2"
+                    >
+                      <option value="bar">半透明黑底（清楚）</option>
+                      <option value="outline">白字黑描邊（推薦）</option>
+                      <option value="plain">白字陰影（簡潔）</option>
+                    </select>
+                  </label>
                   <label className="text-xs font-black text-slate-700">
                     文字位置
                     <select
@@ -2697,6 +2841,36 @@ export default function BrowserImageToMp4() {
                         </label>
 
                         <label className="mt-3 block text-xs font-black text-slate-700">
+                          行動按鈕文字（可不填）
+                          <input
+                            value={finalPageCta}
+                            onChange={(e) => setFinalPageCta(e.target.value)}
+                            onBlur={rememberFinalCta}
+                            maxLength={28}
+                            placeholder="例如：免費看更多 →"
+                            className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"
+                          />
+                          {finalCtaHistory.length ? (
+                            <select
+                              value=""
+                              onChange={(e) => {
+                                if (e.target.value) {
+                                  setFinalPageCta(e.target.value);
+                                }
+                              }}
+                              className="mt-2 min-h-10 w-full rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm font-semibold text-slate-700"
+                            >
+                              <option value="">選擇以前輸入的按鈕文字…</option>
+                              {finalCtaHistory.map((item) => (
+                                <option key={item} value={item}>
+                                  {item}
+                                </option>
+                              ))}
+                            </select>
+                          ) : null}
+                        </label>
+
+                        <label className="mt-3 block text-xs font-black text-slate-700">
                           QR 大小：{qrPercent}%
                           <input
                             className="mt-2 w-full"
@@ -2742,6 +2916,11 @@ export default function BrowserImageToMp4() {
                               {finalPageSubtitle ||
                                 "掃描 QR Code，查看更多免費圖片"}
                             </p>
+                            {finalPageCta.trim() ? (
+                              <div className="mt-3 rounded-full bg-emerald-600 px-4 py-2 text-center text-xs font-black text-white shadow">
+                                {finalPageCta}
+                              </div>
+                            ) : null}
                           </div>
                         </div>
                       </div>
