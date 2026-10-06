@@ -20,6 +20,16 @@ type QrPosition = "top-left" | "top-right" | "bottom-left" | "bottom-right";
 type QrDisplayMode = "final" | "all";
 type FinalQrPosition = "top" | "middle" | "bottom";
 type CaptionPosition = "top" | "bottom";
+type VisualEffect =
+  | "none"
+  | "sparkle"
+  | "gold_rays"
+  | "floating_lights"
+  | "bokeh"
+  | "petals";
+type VisualEffectIntensity = "low" | "medium" | "high";
+type VisualEffectPosition = "full" | "top" | "middle" | "bottom";
+type VisualEffectTone = "auto" | "gold" | "white" | "pink" | "blue";
 
 const RATIO_SIZE: Record<Ratio, Record<Quality, [number, number]>> = {
   "9:16": {
@@ -297,6 +307,226 @@ async function createFinalQrPageJpeg(
   return new Uint8Array(await blob.arrayBuffer());
 }
 
+function seededUnit(seed: number) {
+  const value = Math.sin(seed * 12.9898 + 78.233) * 43758.5453;
+  return value - Math.floor(value);
+}
+
+function getVisualEffectAlpha(
+  position: VisualEffectPosition,
+  y: number,
+  height: number,
+) {
+  const ratio = y / Math.max(1, height);
+
+  if (position === "top") {
+    return Math.max(0, Math.min(1, 1.25 - ratio * 2.2));
+  }
+  if (position === "middle") {
+    return Math.max(0, 1 - Math.abs(ratio - 0.5) * 2.8);
+  }
+  if (position === "bottom") {
+    return Math.max(0, Math.min(1, (ratio - 0.42) * 2.2));
+  }
+  return 1;
+}
+
+function visualToneColor(
+  tone: VisualEffectTone,
+  fallback: VisualEffectTone,
+) {
+  const resolved = tone === "auto" ? fallback : tone;
+  if (resolved === "gold") return [255, 206, 84] as const;
+  if (resolved === "pink") return [255, 154, 196] as const;
+  if (resolved === "blue") return [142, 208, 255] as const;
+  return [255, 255, 255] as const;
+}
+
+function drawDecorativeEffect(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  effect: VisualEffect,
+  intensity: VisualEffectIntensity,
+  position: VisualEffectPosition,
+  tone: VisualEffectTone,
+  timeSec: number,
+) {
+  if (effect === "none") return;
+
+  const density =
+    intensity === "low" ? 0.65 : intensity === "high" ? 1.45 : 1;
+  const strength =
+    intensity === "low" ? 0.62 : intensity === "high" ? 1.25 : 0.9;
+  const minSide = Math.min(width, height);
+
+  ctx.save();
+
+  if (effect === "gold_rays") {
+    const [r, g, b] = visualToneColor(tone, "gold");
+    const centerX = width * 0.5;
+    const startY = -height * 0.04;
+    const rayCount = Math.max(3, Math.round(5 * density));
+
+    ctx.globalCompositeOperation = "screen";
+
+    for (let i = 0; i < rayCount; i += 1) {
+      const base = (i - (rayCount - 1) / 2) * width * 0.12;
+      const sway = Math.sin(timeSec * 0.45 + i * 1.6) * width * 0.025;
+      const endX = centerX + base + sway;
+      const rayWidth = width * (0.10 + seededUnit(i + 31) * 0.08);
+      const endY = height * (0.62 + seededUnit(i + 9) * 0.2);
+      const gradient = ctx.createLinearGradient(centerX, startY, endX, endY);
+      gradient.addColorStop(0, `rgba(${r},${g},${b},${0.24 * strength})`);
+      gradient.addColorStop(0.55, `rgba(${r},${g},${b},${0.09 * strength})`);
+      gradient.addColorStop(1, `rgba(${r},${g},${b},0)`);
+
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.moveTo(centerX - rayWidth * 0.16, startY);
+      ctx.lineTo(centerX + rayWidth * 0.16, startY);
+      ctx.lineTo(endX + rayWidth, endY);
+      ctx.lineTo(endX - rayWidth, endY);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    const glow = ctx.createRadialGradient(
+      centerX,
+      0,
+      0,
+      centerX,
+      0,
+      height * 0.55,
+    );
+    glow.addColorStop(0, `rgba(${r},${g},${b},${0.34 * strength})`);
+    glow.addColorStop(1, `rgba(${r},${g},${b},0)`);
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, width, height * 0.65);
+    ctx.restore();
+    return;
+  }
+
+  if (effect === "sparkle") {
+    const [r, g, b] = visualToneColor(tone, "white");
+    const count = Math.max(10, Math.round(28 * density));
+    ctx.globalCompositeOperation = "screen";
+
+    for (let i = 0; i < count; i += 1) {
+      const x = seededUnit(i * 7 + 3) * width;
+      const y = seededUnit(i * 13 + 8) * height;
+      const positionAlpha = getVisualEffectAlpha(position, y, height);
+      if (positionAlpha <= 0) continue;
+
+      const phase = timeSec * (1.4 + seededUnit(i + 71) * 1.8) + i * 0.9;
+      const twinkle = Math.max(0, Math.sin(phase));
+      const radius =
+        minSide * (0.004 + seededUnit(i + 44) * 0.008) * (0.7 + twinkle);
+      const alpha = (0.15 + twinkle * 0.7) * strength * positionAlpha;
+
+      ctx.strokeStyle = `rgba(${r},${g},${b},${Math.min(0.95, alpha)})`;
+      ctx.lineWidth = Math.max(1, radius * 0.18);
+      ctx.beginPath();
+      ctx.moveTo(x - radius, y);
+      ctx.lineTo(x + radius, y);
+      ctx.moveTo(x, y - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.stroke();
+
+      ctx.fillStyle = `rgba(${r},${g},${b},${Math.min(0.8, alpha * 0.8)})`;
+      ctx.beginPath();
+      ctx.arc(x, y, Math.max(1, radius * 0.24), 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.restore();
+    return;
+  }
+
+  if (effect === "floating_lights" || effect === "bokeh") {
+    const fallbackTone: VisualEffectTone =
+      effect === "bokeh" ? "gold" : "white";
+    const [r, g, b] = visualToneColor(tone, fallbackTone);
+    const count =
+      effect === "bokeh"
+        ? Math.max(8, Math.round(16 * density))
+        : Math.max(12, Math.round(24 * density));
+    ctx.globalCompositeOperation = "screen";
+
+    for (let i = 0; i < count; i += 1) {
+      const baseX = seededUnit(i * 11 + 5) * width;
+      const baseY = seededUnit(i * 17 + 2) * height;
+      const speed = 0.018 + seededUnit(i + 92) * 0.035;
+      const drift = Math.sin(timeSec * 0.55 + i) * width * 0.018;
+      const y =
+        ((baseY - timeSec * height * speed) % height + height) % height;
+      const x = baseX + drift;
+      const positionAlpha = getVisualEffectAlpha(position, y, height);
+      if (positionAlpha <= 0) continue;
+
+      const radius =
+        effect === "bokeh"
+          ? minSide * (0.025 + seededUnit(i + 24) * 0.055)
+          : minSide * (0.007 + seededUnit(i + 24) * 0.018);
+      const alpha =
+        (effect === "bokeh" ? 0.12 : 0.24) * strength * positionAlpha;
+
+      const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+      gradient.addColorStop(
+        0,
+        `rgba(${r},${g},${b},${Math.min(0.65, alpha * 1.6)})`,
+      );
+      gradient.addColorStop(0.45, `rgba(${r},${g},${b},${alpha})`);
+      gradient.addColorStop(1, `rgba(${r},${g},${b},0)`);
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.restore();
+    return;
+  }
+
+  if (effect === "petals") {
+    const [r, g, b] = visualToneColor(tone, "pink");
+    const count = Math.max(8, Math.round(18 * density));
+
+    for (let i = 0; i < count; i += 1) {
+      const startX = seededUnit(i * 19 + 4) * width;
+      const speed = height * (0.045 + seededUnit(i + 51) * 0.05);
+      const y =
+        ((seededUnit(i * 23 + 7) * height + timeSec * speed) %
+          (height + minSide * 0.12)) -
+        minSide * 0.06;
+      const x =
+        startX +
+        Math.sin(timeSec * (0.8 + seededUnit(i + 64)) + i) *
+          width *
+          0.035;
+      const positionAlpha = getVisualEffectAlpha(position, y, height);
+      if (positionAlpha <= 0) continue;
+
+      const size = minSide * (0.010 + seededUnit(i + 17) * 0.015);
+      const rotation = timeSec * (0.8 + seededUnit(i + 73) * 1.5) + i;
+
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(rotation);
+      ctx.fillStyle = `rgba(${r},${g},${b},${0.44 * strength * positionAlpha})`;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, size * 0.65, size, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    ctx.restore();
+    return;
+  }
+
+  ctx.restore();
+}
+
 async function imageToJpeg(
   file: File,
   width: number,
@@ -309,6 +539,10 @@ async function imageToJpeg(
   qrCanvas: HTMLCanvasElement | null,
   qrPosition: QrPosition,
   qrPercent: number,
+  visualEffect: VisualEffect,
+  visualEffectIntensity: VisualEffectIntensity,
+  visualEffectPosition: VisualEffectPosition,
+  visualEffectTone: VisualEffectTone,
 ) {
   const url = URL.createObjectURL(file);
 
@@ -342,6 +576,17 @@ async function imageToJpeg(
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
     ctx.drawImage(img, x, y, drawWidth, drawHeight);
+
+    drawDecorativeEffect(
+      ctx,
+      width,
+      height,
+      visualEffect,
+      visualEffectIntensity,
+      visualEffectPosition,
+      visualEffectTone,
+      0.8,
+    );
 
     drawCaption(
       ctx,
@@ -454,6 +699,11 @@ function drawNativeVideoFrame(
   qrCanvas: HTMLCanvasElement | null,
   qrPosition: QrPosition,
   qrPercent: number,
+  visualEffect: VisualEffect,
+  visualEffectIntensity: VisualEffectIntensity,
+  visualEffectPosition: VisualEffectPosition,
+  visualEffectTone: VisualEffectTone,
+  timeSec: number,
 ) {
   ctx.save();
   ctx.globalAlpha = 1;
@@ -505,6 +755,17 @@ function drawNativeVideoFrame(
   ctx.imageSmoothingQuality = "high";
   ctx.drawImage(image, x, y, drawWidth, drawHeight);
   ctx.restore();
+
+  drawDecorativeEffect(
+    ctx,
+    width,
+    height,
+    visualEffect,
+    visualEffectIntensity,
+    visualEffectPosition,
+    visualEffectTone,
+    timeSec,
+  );
 
   drawCaption(
     ctx,
@@ -581,6 +842,13 @@ export default function BrowserImageToMp4() {
   const [fitMode, setFitMode] = useState<FitMode>("contain");
   const [background, setBackground] = useState<"#000000" | "#ffffff">("#000000");
   const [effect, setEffect] = useState<Effect>("zoom_in");
+  const [visualEffect, setVisualEffect] = useState<VisualEffect>("none");
+  const [visualEffectIntensity, setVisualEffectIntensity] =
+    useState<VisualEffectIntensity>("medium");
+  const [visualEffectPosition, setVisualEffectPosition] =
+    useState<VisualEffectPosition>("full");
+  const [visualEffectTone, setVisualEffectTone] =
+    useState<VisualEffectTone>("auto");
   const [secondsPerImage, setSecondsPerImage] = useState(2.5);
   const [audioVolume, setAudioVolume] = useState(0.7);
   const [caption, setCaption] = useState("");
@@ -1043,6 +1311,11 @@ export default function BrowserImageToMp4() {
               : null,
             qrPosition,
             qrPercent,
+            visualEffect,
+            visualEffectIntensity,
+            visualEffectPosition,
+            visualEffectTone,
+            videoTimeSec,
           );
         }
 
@@ -1060,7 +1333,9 @@ export default function BrowserImageToMp4() {
           `⚡ 快速模式正在產生 MP4：${Math.min(
             totalSeconds,
             (frameIndex + 1) / outputFps,
-          ).toFixed(1)} / ${totalSeconds.toFixed(1)} 秒`,
+          ).toFixed(1)} / ${totalSeconds.toFixed(1)} 秒${
+            visualEffect !== "none" ? "・含畫面特效" : ""
+          }`,
         );
       }
 
@@ -1189,6 +1464,10 @@ export default function BrowserImageToMp4() {
             : null,
           qrPosition,
           qrPercent,
+          visualEffect,
+          visualEffectIntensity,
+          visualEffectPosition,
+          visualEffectTone,
         );
         const name = `rxv-img-${i}.jpg`;
         await ffmpeg.writeFile(name, data);
@@ -1393,7 +1672,7 @@ export default function BrowserImageToMp4() {
     <>
       <SEO
         title="免費圖片轉 MP4｜加音樂、字幕、QR Code｜RxV"
-        description="圖片直接在你的瀏覽器轉成 MP4，可設定秒數、MP3/BGM、字幕、QR Code、縮放與平移效果；不上傳伺服器。"
+        description="圖片直接在你的瀏覽器轉成 MP4，可設定秒數、MP3/BGM、字幕、QR Code、星光、上方金光、散景、花瓣與縮放平移效果；不上傳伺服器。"
         keywords="圖片轉MP4, 圖片轉影片, JPG轉MP4, PNG轉MP4, QR Code影片, 免費影片工具"
         path="/tools/image-to-mp4"
       />
@@ -1423,10 +1702,10 @@ export default function BrowserImageToMp4() {
             </div>
 
             <h1 className="mt-3 break-words text-2xl font-black leading-tight text-slate-900 sm:text-3xl">
-              圖片轉 MP4｜音樂・字幕・QR Code・動畫效果
+              圖片轉 MP4｜音樂・字幕・QR Code・動畫／光效
             </h1>
             <p className="mt-2 max-w-4xl break-words leading-7 text-slate-600">
-              圖片、音樂與影片都留在你的裝置。先選圖片，再設定秒數、特效、字幕與 QR Code；QRCode 可改成只在最後一頁顯示，影片畫面更乾淨。
+              圖片、音樂與影片都留在你的裝置。可加星光、上方金光、漂浮光點、柔光散景、花瓣，再設定字幕與 QR Code；QRCode 可只放最後一頁。
             </p>
           </div>
 
@@ -1665,6 +1944,132 @@ export default function BrowserImageToMp4() {
                     <option value="pan_down">向下平移</option>
                   </select>
                 </label>
+
+                <div className="min-w-0 lg:col-span-2 rounded-2xl border border-amber-100 bg-amber-50/60 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-black text-amber-950">
+                        ✨ 畫面特效（可不選）
+                      </p>
+                      <p className="mt-1 text-xs leading-5 text-amber-800">
+                        星光、金光、漂浮光點等會疊在圖片上方；字幕與 QR Code 仍會保持在最上層。
+                      </p>
+                    </div>
+                    {visualEffect !== "none" ? (
+                      <button
+                        type="button"
+                        onClick={() => setVisualEffect("none")}
+                        className="rounded-lg border border-amber-200 bg-white px-3 py-2 text-xs font-black text-amber-800 transition hover:bg-amber-100"
+                      >
+                        清除特效
+                      </button>
+                    ) : null}
+                  </div>
+
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <label className="text-xs font-black text-slate-700">
+                      特效種類
+                      <select
+                        value={visualEffect}
+                        onChange={(e) =>
+                          setVisualEffect(e.target.value as VisualEffect)
+                        }
+                        className="mt-1 min-h-11 w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm font-bold text-slate-800"
+                      >
+                        <option value="none">無特效</option>
+                        <option value="sparkle">✨ 星光閃爍</option>
+                        <option value="gold_rays">🌤 上方金光</option>
+                        <option value="floating_lights">🫧 漂浮光點</option>
+                        <option value="bokeh">🔆 柔光散景</option>
+                        <option value="petals">🌸 花瓣飄落</option>
+                      </select>
+                    </label>
+
+                    <label className="text-xs font-black text-slate-700">
+                      特效強度
+                      <select
+                        value={visualEffectIntensity}
+                        disabled={visualEffect === "none"}
+                        onChange={(e) =>
+                          setVisualEffectIntensity(
+                            e.target.value as VisualEffectIntensity,
+                          )
+                        }
+                        className="mt-1 min-h-11 w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm font-bold text-slate-800 disabled:bg-slate-100"
+                      >
+                        <option value="low">弱</option>
+                        <option value="medium">中（建議）</option>
+                        <option value="high">強</option>
+                      </select>
+                    </label>
+
+                    <label className="text-xs font-black text-slate-700">
+                      特效位置
+                      <select
+                        value={visualEffectPosition}
+                        disabled={visualEffect === "none" || visualEffect === "gold_rays"}
+                        onChange={(e) =>
+                          setVisualEffectPosition(
+                            e.target.value as VisualEffectPosition,
+                          )
+                        }
+                        className="mt-1 min-h-11 w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm font-bold text-slate-800 disabled:bg-slate-100"
+                      >
+                        <option value="full">全畫面</option>
+                        <option value="top">上半部</option>
+                        <option value="middle">中間</option>
+                        <option value="bottom">下半部</option>
+                      </select>
+                    </label>
+
+                    <label className="text-xs font-black text-slate-700">
+                      光效顏色
+                      <select
+                        value={visualEffectTone}
+                        disabled={visualEffect === "none"}
+                        onChange={(e) =>
+                          setVisualEffectTone(
+                            e.target.value as VisualEffectTone,
+                          )
+                        }
+                        className="mt-1 min-h-11 w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm font-bold text-slate-800 disabled:bg-slate-100"
+                      >
+                        <option value="auto">自動（推薦）</option>
+                        <option value="gold">金色</option>
+                        <option value="white">白色</option>
+                        <option value="pink">粉色</option>
+                        <option value="blue">藍色</option>
+                      </select>
+                    </label>
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {([
+                      ["sparkle", "✨ 星光"],
+                      ["gold_rays", "🌤 金光"],
+                      ["floating_lights", "🫧 光點"],
+                      ["bokeh", "🔆 散景"],
+                      ["petals", "🌸 花瓣"],
+                    ] as const).map(([value, label]) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setVisualEffect(value)}
+                        className={`rounded-full border px-3 py-2 text-xs font-black transition hover:-translate-y-0.5 ${
+                          visualEffect === value
+                            ? "border-amber-500 bg-amber-100 text-amber-900"
+                            : "border-amber-200 bg-white text-slate-700 hover:bg-amber-50"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <p className="mt-3 text-xs leading-5 text-amber-800">
+                    ⚡ 原生快速模式會呈現完整動態特效；若瀏覽器退回 FFmpeg 相容模式，特效會以靜態光效保留。
+                  </p>
+                </div>
 
                 <label className="min-w-0 text-sm font-black text-slate-800">
                   圖片顯示
