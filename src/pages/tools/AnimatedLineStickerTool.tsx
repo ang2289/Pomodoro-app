@@ -566,6 +566,149 @@ function readImageFile(file: File, t: Translate): Promise<FrameItem> {
   });
 }
 
+function removeSmallTransparentEdgeFragments(
+  canvas: HTMLCanvasElement,
+  edgeRatio = 0.075,
+  maxFragmentRatio = 0.018,
+) {
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  if (!ctx) return;
+
+  const { width, height } = canvas;
+  const imageData = ctx.getImageData(0, 0, width, height);
+  const data = imageData.data;
+  const total = width * height;
+  const mask = new Uint8Array(total);
+  let visibleCount = 0;
+
+  for (let i = 0; i < total; i += 1) {
+    if (data[i * 4 + 3] > 20) {
+      mask[i] = 1;
+      visibleCount += 1;
+    }
+  }
+  if (!visibleCount) return;
+
+  const seen = new Uint8Array(total);
+  const queue = new Int32Array(total);
+  const components: Array<{
+    pixels: number[];
+    size: number;
+    minX: number;
+    minY: number;
+    maxX: number;
+    maxY: number;
+  }> = [];
+
+  for (let start = 0; start < total; start += 1) {
+    if (!mask[start] || seen[start]) continue;
+    let head = 0;
+    let tail = 0;
+    queue[tail++] = start;
+    seen[start] = 1;
+    const pixels: number[] = [];
+    let minX = width;
+    let minY = height;
+    let maxX = -1;
+    let maxY = -1;
+
+    while (head < tail) {
+      const current = queue[head++];
+      pixels.push(current);
+      const x = current % width;
+      const y = Math.floor(current / width);
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x);
+      maxY = Math.max(maxY, y);
+
+      const neighbors = [
+        x > 0 ? current - 1 : -1,
+        x + 1 < width ? current + 1 : -1,
+        y > 0 ? current - width : -1,
+        y + 1 < height ? current + width : -1,
+      ];
+      for (const next of neighbors) {
+        if (next >= 0 && mask[next] && !seen[next]) {
+          seen[next] = 1;
+          queue[tail++] = next;
+        }
+      }
+    }
+
+    components.push({
+      pixels,
+      size: pixels.length,
+      minX,
+      minY,
+      maxX,
+      maxY,
+    });
+  }
+
+  if (components.length <= 1) return;
+
+  components.sort((a, b) => b.size - a.size);
+  const edgeX = Math.max(4, Math.round(width * edgeRatio));
+  const edgeY = Math.max(4, Math.round(height * edgeRatio));
+  const maxFragmentSize = Math.max(
+    10,
+    Math.round(visibleCount * maxFragmentRatio),
+  );
+
+  let changed = false;
+  for (const component of components.slice(1)) {
+    const nearEdge =
+      component.minX < edgeX ||
+      component.minY < edgeY ||
+      component.maxX >= width - edgeX ||
+      component.maxY >= height - edgeY;
+    if (!nearEdge || component.size > maxFragmentSize) continue;
+
+    for (const index of component.pixels) {
+      data[index * 4 + 3] = 0;
+    }
+    changed = true;
+  }
+
+  if (changed) ctx.putImageData(imageData, 0, 0);
+}
+
+async function sanitizeStaticHandoffStickerFile(
+  file: File,
+  t: Translate,
+): Promise<File> {
+  const sourceUrl = URL.createObjectURL(file);
+  try {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () =>
+        reject(
+          new Error(
+            t("animated_line_sticker.error_read_image", { name: file.name }),
+          ),
+        );
+      img.src = sourceUrl;
+    });
+
+    const canvas = document.createElement("canvas");
+    canvas.width = image.naturalWidth || image.width;
+    canvas.height = image.naturalHeight || image.height;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return file;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(image, 0, 0);
+    removeSmallTransparentEdgeFragments(canvas);
+
+    const blob = await canvasToPngBlob(canvas);
+    return new File([blob], file.name, { type: "image/png" });
+  } finally {
+    URL.revokeObjectURL(sourceUrl);
+  }
+}
+
 function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -1274,8 +1417,11 @@ const AnimatedLineStickerTool: React.FC = () => {
           }
           return;
         }
+        const cleanedFiles = await Promise.all(
+          storedFiles.map((file) => sanitizeStaticHandoffStickerFile(file, t)),
+        );
         const loaded = await Promise.all(
-          storedFiles.map((file) => readImageFile(file, t)),
+          cleanedFiles.map((file) => readImageFile(file, t)),
         );
         if (cancelled) {
           loaded.forEach((item) => URL.revokeObjectURL(item.url));
@@ -1757,6 +1903,95 @@ const AnimatedLineStickerTool: React.FC = () => {
       if (found) URL.revokeObjectURL(found.url);
       return prev.filter((frame) => frame.id !== id);
     });
+  };
+
+  const exportManualStoryboardPack = async () => {
+    if (workflowMode !== "manual" || !canExportApng || busy) return;
+
+    setBusy(true);
+    setMessage("");
+    setExportStatus("正在整理自備分鏡動態貼圖包…");
+
+    try {
+      await waitMs(30);
+      const apng = await createLineSafeApngBlob(
+        frames,
+        durationSec,
+        loopCount,
+        t,
+        setExportStatus,
+      );
+      const mainBlob = await createLineMainImageApngBlob(
+        frames,
+        durationSec,
+        loopCount,
+        t,
+      );
+      const tabBlob = await createLineStaticSmallImageBlob(
+        frames,
+        t,
+        LINE_TAB_ICON_WIDTH,
+        LINE_TAB_ICON_HEIGHT,
+        2,
+      );
+      const ready = await createLineReadyFrameFiles(frames, t);
+
+      const files: { name: string; data: Uint8Array }[] = [
+        {
+          name: "animated-sticker.png",
+          data: new Uint8Array(await apng.arrayBuffer()),
+        },
+        {
+          name: "main.png",
+          data: new Uint8Array(await mainBlob.arrayBuffer()),
+        },
+        {
+          name: "tab.png",
+          data: new Uint8Array(await tabBlob.arrayBuffer()),
+        },
+        ...ready.files.map((item) => ({
+          name: `frames/${item.name}`,
+          data: item.data,
+        })),
+      ];
+
+      const readme = [
+        "RxV 自備分鏡動態貼圖打包",
+        `分鏡張數：${frames.length}`,
+        `單次播放：${durationSec} 秒`,
+        `循環次數：${loopCount}`,
+        `APNG 大小：約 ${Math.round(apng.size / 1024)}KB`,
+        "",
+        "animated-sticker.png：正式 APNG 動態貼圖",
+        "main.png：主要圖片",
+        "tab.png：聊天室標籤圖片",
+        "frames/：整理後的分鏡 PNG",
+        "",
+        apng.size <= LINE_APNG_MAX_BYTES
+          ? "APNG 小於 1MB：OK"
+          : "APNG 超過 1MB：請調整分鏡數或畫面複雜度後重新匯出",
+      ].join("\n");
+
+      files.push({
+        name: "README.txt",
+        data: new TextEncoder().encode(readme),
+      });
+
+      const zip = makeZip(files);
+      downloadBlob(zip, "rxv-manual-storyboard-dynamic-pack.zip");
+      setMessage(
+        apng.size <= LINE_APNG_MAX_BYTES
+          ? "自備分鏡動態貼圖包已下載：APNG、main、tab、整理後分鏡都已放進 ZIP。"
+          : `ZIP 已下載，但 APNG 約 ${Math.round(apng.size / 1024)}KB，超過 LINE 1MB 限制，請先調整後再送審。`,
+      );
+    } catch (error: any) {
+      setMessage(
+        error?.message || "自備分鏡打包失敗，請重新整理後再試一次。",
+      );
+    } finally {
+      setBusy(false);
+      setExportStatus("");
+    }
   };
 
   const exportZip = async () => {
@@ -2368,9 +2603,16 @@ const AnimatedLineStickerTool: React.FC = () => {
         <section className="mt-6 grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(330px,0.85fr)]">
           <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
             {workflowMode === "manual" ? (
-              <div className="mb-5 rounded-2xl border border-sky-100 bg-sky-50 p-4">
-                <p className="text-sm font-black text-sky-900">{t("animated_line_sticker.manual_title")}</p>
-                <p className="mt-1 text-xs leading-6 text-sky-800">{t("animated_line_sticker.manual_steps")}</p>
+              <div className="mb-5 rounded-2xl border border-sky-200 bg-sky-50 p-4">
+                <p className="text-sm font-black text-sky-950">
+                  🧩 客戶自備分鏡 PNG｜手動動態製作
+                </p>
+                <p className="mt-2 text-xs font-bold leading-6 text-sky-900">
+                  1 上傳 5～20 張分鏡 PNG → 2 調整播放順序 → 3 看動態預覽 → 4 一鍵產生 APNG 並打包。
+                </p>
+                <p className="mt-1 text-xs leading-5 text-sky-700">
+                  這個模式不會套用自動動作，會照客戶自己畫好的每一格分鏡播放。
+                </p>
               </div>
             ) : null}
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -2513,6 +2755,17 @@ const AnimatedLineStickerTool: React.FC = () => {
 
             <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
               <h2 className="text-xl font-black text-slate-900">{t("animated_line_sticker.export_title")}</h2>
+              {workflowMode === "manual" ? (
+                <button
+                  type="button"
+                  disabled={!canExportApng || busy}
+                  onClick={exportManualStoryboardPack}
+                  className="mt-4 inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-violet-600 px-4 py-3 text-sm font-black !text-white shadow-md transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                >
+                  {busy ? "處理中…" : "📦 一鍵製作＋打包自備分鏡"}
+                </button>
+              ) : null}
+
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <button
                   type="button"

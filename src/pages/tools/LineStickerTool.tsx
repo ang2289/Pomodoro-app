@@ -242,7 +242,7 @@ type ItemOffset = { x: number; y: number };
 
 const SAFE_PADDING_RATIO = 0.075;
 const SMART_SAFE_PADDING_RATIO = 0.055;
-const MOTHER_SHEET_CELL_INSET_RATIO = 0.01;
+const MOTHER_SHEET_CELL_INSET_RATIO = 0.025;
 const ALPHA_THRESHOLD = 12;
 
 type ContentBox = { x: number; y: number; width: number; height: number };
@@ -710,6 +710,117 @@ function cleanPaleEdgeHalo(canvas: HTMLCanvasElement, passes = 1) {
   }
 }
 
+function removeTinyEdgeFragments(
+  canvas: HTMLCanvasElement,
+  edgeRatio = 0.075,
+  maxFragmentRatio = 0.018,
+) {
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  if (!context) return;
+
+  const { width, height } = canvas;
+  const imageData = context.getImageData(0, 0, width, height);
+  const data = imageData.data;
+  const total = width * height;
+  const mask = new Uint8Array(total);
+  let visibleCount = 0;
+
+  for (let i = 0; i < total; i += 1) {
+    if (data[i * 4 + 3] > 20) {
+      mask[i] = 1;
+      visibleCount += 1;
+    }
+  }
+  if (!visibleCount) return;
+
+  const seen = new Uint8Array(total);
+  const queue = new Int32Array(total);
+  const components: Array<{
+    pixels: number[];
+    size: number;
+    minX: number;
+    minY: number;
+    maxX: number;
+    maxY: number;
+  }> = [];
+
+  for (let start = 0; start < total; start += 1) {
+    if (!mask[start] || seen[start]) continue;
+
+    let head = 0;
+    let tail = 0;
+    queue[tail++] = start;
+    seen[start] = 1;
+
+    const pixels: number[] = [];
+    let minX = width;
+    let minY = height;
+    let maxX = -1;
+    let maxY = -1;
+
+    while (head < tail) {
+      const current = queue[head++];
+      pixels.push(current);
+      const x = current % width;
+      const y = Math.floor(current / width);
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x);
+      maxY = Math.max(maxY, y);
+
+      const neighbors = [
+        x > 0 ? current - 1 : -1,
+        x + 1 < width ? current + 1 : -1,
+        y > 0 ? current - width : -1,
+        y + 1 < height ? current + width : -1,
+      ];
+      for (const next of neighbors) {
+        if (next >= 0 && mask[next] && !seen[next]) {
+          seen[next] = 1;
+          queue[tail++] = next;
+        }
+      }
+    }
+
+    components.push({
+      pixels,
+      size: pixels.length,
+      minX,
+      minY,
+      maxX,
+      maxY,
+    });
+  }
+
+  if (components.length <= 1) return;
+
+  components.sort((a, b) => b.size - a.size);
+  const edgeX = Math.max(4, Math.round(width * edgeRatio));
+  const edgeY = Math.max(4, Math.round(height * edgeRatio));
+  const maxFragmentSize = Math.max(
+    10,
+    Math.round(visibleCount * maxFragmentRatio),
+  );
+
+  let removed = false;
+  for (const component of components.slice(1)) {
+    const nearEdge =
+      component.minX < edgeX ||
+      component.minY < edgeY ||
+      component.maxX >= width - edgeX ||
+      component.maxY >= height - edgeY;
+
+    if (!nearEdge || component.size > maxFragmentSize) continue;
+
+    for (const index of component.pixels) {
+      data[index * 4 + 3] = 0;
+    }
+    removed = true;
+  }
+
+  if (removed) context.putImageData(imageData, 0, 0);
+}
+
 async function splitMotherSheet(
   file: File,
   grid: "auto" | MotherSheetGrid,
@@ -760,6 +871,7 @@ async function splitMotherSheet(
       if (removeWhiteBackground) {
         removeConnectedWhiteBackground(canvas, 232);
         cleanPaleEdgeHalo(canvas, 1);
+        removeTinyEdgeFragments(canvas);
       }
       const blob = await canvasToBlob(canvas, t);
       results.push(
