@@ -1940,43 +1940,68 @@ const AnimatedLineStickerTool: React.FC = () => {
               不需要重新上傳圖片。下面確認動畫效果後，按一次按鈕就會逐張產生動態貼圖並整理成 ZIP。
             </p>
           </section>
-        ) : (
-          <details className="mt-6 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm md:p-5" open>
-            <summary className="cursor-pointer text-sm font-black text-slate-900">
-              其他製作方式
-            </summary>
-            <p className="mt-2 text-xs leading-5 text-slate-500">
-              如果不是從前面的貼圖流程進來，可在這裡選擇單張、自備影格或整套製作。
-            </p>
-            <div className="mt-4 grid gap-3 md:grid-cols-3">
-              {([
-                ["single", "✨", t("animated_line_sticker.mode_single_title"), t("animated_line_sticker.mode_single_desc")],
-                ["manual", "🧩", t("animated_line_sticker.mode_manual_title"), t("animated_line_sticker.mode_manual_desc")],
-                ["batch", "📦", t("animated_line_sticker.mode_batch_title"), t("animated_line_sticker.mode_batch_desc")],
-              ] as const).map(([mode, icon, title, desc]) => {
-                const active = workflowMode === mode;
-                return (
-                  <button
-                    key={mode}
-                    type="button"
-                    onClick={() => setWorkflowMode(mode)}
-                    className={`rounded-2xl border p-4 text-left transition ${
-                      active
-                        ? "border-violet-500 bg-violet-50 ring-2 ring-violet-100"
-                        : "border-slate-200 bg-slate-50 hover:border-violet-200 hover:bg-white"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="text-xl">{icon}</span>
-                      <span className="text-sm font-black text-slate-900">{title}</span>
-                    </div>
-                    <p className="mt-2 text-xs leading-5 text-slate-600">{desc}</p>
-                  </button>
-                );
-              })}
+        ) : null}
+
+        <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="text-sm font-black text-slate-900">
+                選擇動態貼圖製作方式
+              </p>
+              <p className="mt-1 text-xs leading-5 text-slate-500">
+                三種方式都會保留；有自己設計好的動作 PNG，請使用「自備動作 PNG 影格」。
+              </p>
             </div>
-          </details>
-        )}
+            <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-black text-amber-700">
+              可隨時切換，不會刪掉已選圖片
+            </span>
+          </div>
+
+          <div className="mt-4 grid gap-3 md:grid-cols-3">
+            {([
+              [
+                "single",
+                "✨",
+                "單張 PNG 自動做動態",
+                "上傳 1 張靜態貼圖，選動作效果後自動產生動畫影格。",
+              ],
+              [
+                "manual",
+                "🧩",
+                "自備動作 PNG 影格",
+                "你已自己畫好每個動作影格時使用；可排序、預覽，再輸出 APNG／GIF／ZIP。",
+              ],
+              [
+                "batch",
+                "📦",
+                "8／16／24 張整套自動",
+                "一批貼圖套用同一組動畫效果，最後一次整理成 LINE 上架 ZIP。",
+              ],
+            ] as const).map(([mode, icon, title, desc]) => {
+              const active = workflowMode === mode;
+              return (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => setWorkflowMode(mode)}
+                  className={`rounded-2xl border p-4 text-left transition ${
+                    active
+                      ? "border-violet-500 bg-violet-50 ring-2 ring-violet-100"
+                      : "border-slate-200 bg-slate-50 hover:border-violet-200 hover:bg-white"
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">{icon}</span>
+                    <span className="text-sm font-black leading-5 text-slate-900">
+                      {title}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-xs leading-5 text-slate-600">{desc}</p>
+                </button>
+              );
+            })}
+          </div>
+        </section>
 
         {workflowMode === "single" ? (
         <section className="mt-6 rounded-3xl border border-violet-200 bg-gradient-to-br from-violet-50 via-white to-fuchsia-50 p-5 shadow-sm md:p-7">
@@ -2161,17 +2186,42 @@ const AnimatedLineStickerTool: React.FC = () => {
                 />
 
                 {batchSources.length ? (
-                  <div className="mt-4 grid grid-cols-4 gap-2 sm:grid-cols-8">
-                    {batchSources.map((item, index) => (
-                      <div key={item.id} className="rounded-xl border border-slate-100 bg-slate-50 p-1.5">
-                        <div className="aspect-square overflow-hidden rounded-lg bg-white">
-                          <img src={item.url} alt={item.name} className="h-full w-full object-contain" />
+                  <div className="mt-4">
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-xs font-black text-slate-700">
+                        來源貼圖預覽｜先確認每張文字與角色都正常
+                      </p>
+                      <span className="text-[11px] font-bold text-slate-400">
+                        {batchSources.length} 張
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                      {batchSources.map((item, index) => (
+                        <div
+                          key={item.id}
+                          className="rounded-2xl border border-slate-200 bg-slate-50 p-2.5 shadow-sm"
+                        >
+                          <div className="aspect-[320/270] overflow-hidden rounded-xl border border-slate-100 bg-white p-2">
+                            <img
+                              src={item.url}
+                              alt={item.name}
+                              className="h-full w-full object-contain"
+                            />
+                          </div>
+                          <div className="mt-2 flex items-center justify-between gap-2">
+                            <p className="text-sm font-black text-slate-700">
+                              {String(index + 1).padStart(2, "0")}
+                            </p>
+                            <p
+                              className="max-w-[75%] truncate text-right text-[10px] font-bold text-slate-400"
+                              title={item.name}
+                            >
+                              {item.name}
+                            </p>
+                          </div>
                         </div>
-                        <p className="mt-1 text-center text-[10px] font-black text-slate-500">
-                          {String(index + 1).padStart(2, "0")}
-                        </p>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 ) : (
                   <button
