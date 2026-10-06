@@ -20,6 +20,23 @@ type QrPosition = "top-left" | "top-right" | "bottom-left" | "bottom-right";
 type QrDisplayMode = "final" | "all";
 type FinalQrPosition = "top" | "middle" | "bottom";
 type CaptionPosition = "top" | "bottom";
+
+type WritableFileLike = {
+  write(data: Blob): Promise<void>;
+  close(): Promise<void>;
+};
+
+type FileHandleLike = {
+  createWritable(): Promise<WritableFileLike>;
+};
+
+type DirectoryHandleLike = {
+  name: string;
+  getFileHandle(
+    name: string,
+    options: { create: boolean },
+  ): Promise<FileHandleLike>;
+};
 type VisualEffect =
   | "none"
   | "sparkle"
@@ -829,6 +846,39 @@ function storeTextHistory(
   setter(next);
 }
 
+const VIDEO_SETTINGS_KEY = "rxv:image-to-mp4:settings:v1";
+
+function readVideoSettings() {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const raw = window.localStorage.getItem(VIDEO_SETTINGS_KEY);
+    return raw ? (JSON.parse(raw) as Record<string, unknown>) : null;
+  } catch {
+    return null;
+  }
+}
+
+function buildOutputFileName(ratio: Ratio) {
+  const now = new Date();
+  const pad = (value: number) => String(value).padStart(2, "0");
+  const stamp =
+    `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-` +
+    `${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+  return `rxv-image-to-mp4-${ratio.replace(":", "x")}-${stamp}.mp4`;
+}
+
+function triggerBlobDownload(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
 function wait(ms: number) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
@@ -880,14 +930,26 @@ export default function BrowserImageToMp4() {
   const [qrTextHistory, setQrTextHistory] = useState<string[]>([]);
   const [finalTitleHistory, setFinalTitleHistory] = useState<string[]>([]);
   const [finalSubtitleHistory, setFinalSubtitleHistory] = useState<string[]>([]);
+  const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
+  const [autoGenerateAfterSelect, setAutoGenerateAfterSelect] = useState(false);
+  const [outputDirectoryName, setOutputDirectoryName] =
+    useState("瀏覽器下載資料夾");
+  const [saveStatus, setSaveStatus] = useState("");
+  const [automationMessage, setAutomationMessage] = useState("");
+  const [resultFileName, setResultFileName] = useState("");
 
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const audioInputRef = useRef<HTMLInputElement | null>(null);
   const qrCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const ffmpegRef = useRef<FFmpeg | null>(null);
   const loadedRef = useRef(false);
+  const outputDirectoryHandleRef = useRef<DirectoryHandleLike | null>(null);
+  const resultBlobRef = useRef<Blob | null>(null);
+  const pendingAutoGenerateRef = useRef(false);
 
   const [width, height] = RATIO_SIZE[ratio][quality];
+  const directoryPickerAvailable =
+    typeof window !== "undefined" && "showDirectoryPicker" in window;
   const nativeMp4MimeType = getNativeMp4MimeType();
   const nativeMp4Available =
     Boolean(nativeMp4MimeType) &&
@@ -928,6 +990,91 @@ export default function BrowserImageToMp4() {
     setQrTextHistory(readTextHistory("qr-text"));
     setFinalTitleHistory(readTextHistory("final-title"));
     setFinalSubtitleHistory(readTextHistory("final-subtitle"));
+
+    const saved = readVideoSettings();
+    if (!saved) return;
+
+    if (["9:16", "16:9", "1:1", "4:5"].includes(String(saved.ratio))) {
+      setRatio(saved.ratio as Ratio);
+    }
+    if (["540p", "720p", "1080p"].includes(String(saved.quality))) {
+      setQuality(saved.quality as Quality);
+    }
+    if (["contain", "cover"].includes(String(saved.fitMode))) {
+      setFitMode(saved.fitMode as FitMode);
+    }
+    if (saved.background === "#000000" || saved.background === "#ffffff") {
+      setBackground(saved.background);
+    }
+    if (
+      ["static", "zoom_in", "zoom_out", "fade", "pan_left", "pan_right", "pan_up", "pan_down"].includes(
+        String(saved.effect),
+      )
+    ) {
+      setEffect(saved.effect as Effect);
+    }
+    if (
+      ["none", "sparkle", "gold_rays", "floating_lights", "bokeh", "petals"].includes(
+        String(saved.visualEffect),
+      )
+    ) {
+      setVisualEffect(saved.visualEffect as VisualEffect);
+    }
+    if (["low", "medium", "high"].includes(String(saved.visualEffectIntensity))) {
+      setVisualEffectIntensity(saved.visualEffectIntensity as VisualEffectIntensity);
+    }
+    if (["full", "top", "middle", "bottom"].includes(String(saved.visualEffectPosition))) {
+      setVisualEffectPosition(saved.visualEffectPosition as VisualEffectPosition);
+    }
+    if (["auto", "gold", "white", "pink", "blue"].includes(String(saved.visualEffectTone))) {
+      setVisualEffectTone(saved.visualEffectTone as VisualEffectTone);
+    }
+    if (typeof saved.secondsPerImage === "number") {
+      setSecondsPerImage(saved.secondsPerImage);
+    }
+    if (typeof saved.audioVolume === "number") {
+      setAudioVolume(saved.audioVolume);
+    }
+    if (typeof saved.caption === "string") setCaption(saved.caption);
+    if (["top", "bottom"].includes(String(saved.captionPosition))) {
+      setCaptionPosition(saved.captionPosition as CaptionPosition);
+    }
+    if (typeof saved.captionFontSize === "number") {
+      setCaptionFontSize(saved.captionFontSize);
+    }
+    if (typeof saved.qrEnabled === "boolean") setQrEnabled(saved.qrEnabled);
+    if (typeof saved.qrText === "string") setQrText(saved.qrText);
+    if (["final", "all"].includes(String(saved.qrDisplayMode))) {
+      setQrDisplayMode(saved.qrDisplayMode as QrDisplayMode);
+    }
+    if (
+      ["top-left", "top-right", "bottom-left", "bottom-right"].includes(
+        String(saved.qrPosition),
+      )
+    ) {
+      setQrPosition(saved.qrPosition as QrPosition);
+    }
+    if (["top", "middle", "bottom"].includes(String(saved.finalQrPosition))) {
+      setFinalQrPosition(saved.finalQrPosition as FinalQrPosition);
+    }
+    if (typeof saved.finalPageDuration === "number") {
+      setFinalPageDuration(saved.finalPageDuration);
+    }
+    if (typeof saved.finalPageTitle === "string") {
+      setFinalPageTitle(saved.finalPageTitle);
+    }
+    if (typeof saved.finalPageSubtitle === "string") {
+      setFinalPageSubtitle(saved.finalPageSubtitle);
+    }
+    if (typeof saved.qrPercent === "number") setQrPercent(saved.qrPercent);
+    if (typeof saved.autoSaveEnabled === "boolean") {
+      setAutoSaveEnabled(saved.autoSaveEnabled);
+    }
+    if (typeof saved.autoGenerateAfterSelect === "boolean") {
+      setAutoGenerateAfterSelect(saved.autoGenerateAfterSelect);
+    }
+
+    setAutomationMessage("已套用上次使用的影片設定，只要換圖片即可。");
   }, []);
 
   const loadFfmpeg = async () => {
@@ -1162,6 +1309,26 @@ export default function BrowserImageToMp4() {
     }
   };
 
+  const handleImageSelection = (fileList: FileList | null) => {
+    const nextImages = Array.from(fileList || []).slice(0, 12);
+    setImages(nextImages);
+    setError("");
+    setResultUrl((current) => {
+      if (current) URL.revokeObjectURL(current);
+      return "";
+    });
+    resultBlobRef.current = null;
+    setResultFileName("");
+    setSaveStatus("");
+
+    if (autoGenerateAfterSelect && nextImages.length > 0) {
+      pendingAutoGenerateRef.current = true;
+      setAutomationMessage("已換新圖片，準備自動產生 MP4…");
+    } else if (nextImages.length > 0) {
+      setAutomationMessage("已換新圖片，其他設定全部保留。");
+    }
+  };
+
   const moveImage = (index: number, direction: -1 | 1) => {
     setImages((current) => {
       const target = index + direction;
@@ -1187,6 +1354,109 @@ export default function BrowserImageToMp4() {
     setProgress(0);
     setRenderMode("");
     setStatus("已取消。下次可重新產生。");
+  };
+
+  const saveCurrentSettings = (showMessage = true) => {
+    const settings = {
+      ratio,
+      quality,
+      fitMode,
+      background,
+      effect,
+      visualEffect,
+      visualEffectIntensity,
+      visualEffectPosition,
+      visualEffectTone,
+      secondsPerImage,
+      audioVolume,
+      caption,
+      captionPosition,
+      captionFontSize,
+      qrEnabled,
+      qrText,
+      qrDisplayMode,
+      qrPosition,
+      finalQrPosition,
+      finalPageDuration,
+      finalPageTitle,
+      finalPageSubtitle,
+      qrPercent,
+      autoSaveEnabled,
+      autoGenerateAfterSelect,
+    };
+
+    try {
+      window.localStorage.setItem(VIDEO_SETTINGS_KEY, JSON.stringify(settings));
+      if (showMessage) {
+        setAutomationMessage("✓ 已記住目前設定。下次開啟工具會自動套用。");
+      }
+    } catch {
+      if (showMessage) {
+        setAutomationMessage("瀏覽器目前無法儲存設定。");
+      }
+    }
+  };
+
+  const chooseOutputDirectory = async () => {
+    if (!directoryPickerAvailable) {
+      setSaveStatus(
+        "此瀏覽器不支援固定輸出資料夾；完成後會改用瀏覽器自動下載。",
+      );
+      return;
+    }
+
+    try {
+      const picker = (
+        window as Window & {
+          showDirectoryPicker?: () => Promise<DirectoryHandleLike>;
+        }
+      ).showDirectoryPicker;
+
+      if (!picker) return;
+      const handle = await picker();
+      outputDirectoryHandleRef.current = handle;
+      setOutputDirectoryName(handle.name || "已選擇資料夾");
+      setSaveStatus(
+        `已選擇「${handle.name || "輸出資料夾"}」。這個頁面開著期間，完成後會自動存入。`,
+      );
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
+      setSaveStatus("無法取得資料夾權限，將改用瀏覽器下載。");
+    }
+  };
+
+  const saveCompletedVideo = async (blob: Blob) => {
+    resultBlobRef.current = blob;
+    const filename = buildOutputFileName(ratio);
+    setResultFileName(filename);
+
+    if (!autoSaveEnabled) {
+      setSaveStatus("影片已完成；自動存檔目前關閉，可按「下載 MP4」。");
+      return;
+    }
+
+    const directory = outputDirectoryHandleRef.current;
+    if (directory) {
+      try {
+        const fileHandle = await directory.getFileHandle(filename, {
+          create: true,
+        });
+        const writable = await fileHandle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+        setSaveStatus(
+          `✓ 已自動存檔：${outputDirectoryName} / ${filename}`,
+        );
+        return;
+      } catch {
+        setSaveStatus("指定資料夾寫入失敗，已改用瀏覽器自動下載。");
+      }
+    }
+
+    triggerBlobDownload(blob, filename);
+    setSaveStatus(
+      `✓ 已自動下載一次：${filename}`,
+    );
   };
 
   const generateWithNativeRecorder = async () => {
@@ -1352,6 +1622,7 @@ export default function BrowserImageToMp4() {
 
       const url = URL.createObjectURL(blob);
       setResultUrl(url);
+      await saveCompletedVideo(blob);
       setProgress(100);
       setStatus(
         `完成！⚡ 原生快速模式，影片大小約 ${(
@@ -1409,6 +1680,7 @@ export default function BrowserImageToMp4() {
       return;
     }
 
+    saveCurrentSettings(false);
     rememberCaption();
     if (qrEnabled) rememberQrText();
     if (qrEnabled && qrDisplayMode === "final") {
@@ -1627,6 +1899,7 @@ export default function BrowserImageToMp4() {
 
       const url = URL.createObjectURL(blob);
       setResultUrl(url);
+      await saveCompletedVideo(blob);
       setProgress(100);
       setStatus(
         `完成！影片大小約 ${(blob.size / 1024 / 1024).toFixed(1)} MB。`,
@@ -1655,11 +1928,37 @@ export default function BrowserImageToMp4() {
     }
   };
 
+  useEffect(() => {
+    if (
+      !pendingAutoGenerateRef.current ||
+      images.length === 0 ||
+      busy
+    ) {
+      return;
+    }
+
+    pendingAutoGenerateRef.current = false;
+    const timer = window.setTimeout(() => {
+      void generate();
+    }, 180);
+
+    return () => window.clearTimeout(timer);
+  }, [images]);
+
   const download = () => {
+    const blob = resultBlobRef.current;
+    if (blob) {
+      triggerBlobDownload(
+        blob,
+        resultFileName || buildOutputFileName(ratio),
+      );
+      return;
+    }
+
     if (!resultUrl) return;
     const a = document.createElement("a");
     a.href = resultUrl;
-    a.download = `rxv-image-to-mp4-${ratio.replace(":", "x")}.mp4`;
+    a.download = resultFileName || buildOutputFileName(ratio);
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -1739,11 +2038,10 @@ export default function BrowserImageToMp4() {
                   type="file"
                   accept="image/*"
                   multiple
-                  onChange={(e) =>
-                    setImages(
-                      Array.from(e.target.files || []).slice(0, 12),
-                    )
-                  }
+                  onChange={(e) => {
+                    handleImageSelection(e.target.files);
+                    e.currentTarget.value = "";
+                  }}
                 />
 
                 <p className="mt-3 break-words text-sm font-bold text-slate-700">
@@ -2485,6 +2783,96 @@ export default function BrowserImageToMp4() {
               </div>
             </div>
 
+            <div className="mt-4 rounded-2xl border border-sky-100 bg-white p-4 shadow-sm">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-black text-slate-900">
+                    ⚙️ 自動化設定
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                    如果每次只換圖片，可記住所有參數；影片完成後也可自動存檔。
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => saveCurrentSettings(true)}
+                  className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-2.5 text-xs font-black text-sky-800 transition hover:-translate-y-0.5 hover:bg-sky-100"
+                >
+                  💾 記住目前設定
+                </button>
+              </div>
+
+              <div className="mt-4 grid gap-3 md:grid-cols-2">
+                <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <input
+                    type="checkbox"
+                    checked={autoSaveEnabled}
+                    onChange={(e) => setAutoSaveEnabled(e.target.checked)}
+                    className="mt-0.5 h-5 w-5"
+                  />
+                  <span>
+                    <span className="block text-sm font-black text-slate-800">
+                      完成後自動存檔
+                    </span>
+                    <span className="mt-1 block text-xs leading-5 text-slate-500">
+                      有選輸出資料夾就直接存入；沒有則自動下載一次。
+                    </span>
+                  </span>
+                </label>
+
+                <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <input
+                    type="checkbox"
+                    checked={autoGenerateAfterSelect}
+                    onChange={(e) =>
+                      setAutoGenerateAfterSelect(e.target.checked)
+                    }
+                    className="mt-0.5 h-5 w-5"
+                  />
+                  <span>
+                    <span className="block text-sm font-black text-slate-800">
+                      換圖後自動開始
+                    </span>
+                    <span className="mt-1 block text-xs leading-5 text-slate-500">
+                      適合所有設定固定，只一直換新圖片的使用方式。
+                    </span>
+                  </span>
+                </label>
+              </div>
+
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={chooseOutputDirectory}
+                  disabled={!directoryPickerAvailable || busy}
+                  className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-black text-emerald-800 transition hover:-translate-y-0.5 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  📁 選擇輸出資料夾
+                </button>
+                <div className="min-w-0 flex-1 rounded-xl bg-slate-50 px-3 py-2">
+                  <p className="break-all text-xs font-black text-slate-700">
+                    目前位置：{outputDirectoryName}
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                    {directoryPickerAvailable
+                      ? "Chrome / Edge 桌機可選資料夾；因瀏覽器安全限制，重新開啟頁面後需再授權一次。"
+                      : "此瀏覽器不支援固定資料夾，完成後會使用瀏覽器下載。"}
+                  </p>
+                </div>
+              </div>
+
+              {automationMessage ? (
+                <p className="mt-3 rounded-xl bg-blue-50 px-3 py-2 text-xs font-bold leading-5 text-blue-800">
+                  {automationMessage}
+                </p>
+              ) : null}
+              {saveStatus ? (
+                <p className="mt-3 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-bold leading-5 text-emerald-800">
+                  {saveStatus}
+                </p>
+              ) : null}
+            </div>
+
             <div className="mt-4 flex flex-wrap items-center gap-3">
               {!nativeMp4Available && !engineReady ? (
                 <button
@@ -2564,6 +2952,28 @@ export default function BrowserImageToMp4() {
                 playsInline
               />
             ) : null}
+
+            <div className="mt-5 rounded-2xl border border-blue-100 bg-white p-4">
+              <p className="text-sm font-black text-slate-900">
+                下一批只要換圖片
+              </p>
+              <p className="mt-1 text-xs leading-5 text-slate-500">
+                比例、秒數、字幕、QR Code、特效等設定都會保留，不需要捲回最上面重新設定。
+              </p>
+              <button
+                type="button"
+                onClick={() => imageInputRef.current?.click()}
+                disabled={busy}
+                className="mt-3 inline-flex min-h-12 w-full items-center justify-center rounded-2xl border border-blue-300 bg-blue-50 px-4 py-3 text-sm font-black text-blue-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-blue-100 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                🖼️ 重新選圖（保留全部設定）
+              </button>
+              {autoGenerateAfterSelect ? (
+                <p className="mt-2 text-center text-xs font-bold text-violet-700">
+                  ⚡ 已開啟「換圖後自動開始」，選完新圖片就會直接產生。
+                </p>
+              ) : null}
+            </div>
           </section>
 
           <div className="mt-6 grid gap-3 text-sm text-slate-600 sm:grid-cols-3">
