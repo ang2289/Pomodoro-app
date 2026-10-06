@@ -236,13 +236,15 @@ type ImagePreview = {
   status: "ok" | "process" | "warn_small" | "warn_no_transparency";
   hasTransparency: boolean;
   transparencyRatio: number;
+  sourceTouchesHardEdge: boolean;
+  sourceNearEdge: boolean;
 };
 
 type ItemOffset = { x: number; y: number };
 
-const SAFE_PADDING_RATIO = 0.075;
-const SMART_SAFE_PADDING_RATIO = 0.055;
-const MOTHER_SHEET_CELL_INSET_RATIO = 0.025;
+const SAFE_PADDING_RATIO = 0.11;
+const SMART_SAFE_PADDING_RATIO = 0.08;
+const MOTHER_SHEET_OVERLAP_RATIO = 0.06;
 const ALPHA_THRESHOLD = 12;
 
 type ContentBox = { x: number; y: number; width: number; height: number };
@@ -250,7 +252,14 @@ type ContentBox = { x: number; y: number; width: number; height: number };
 type QualitySeverity = "error" | "warning" | "ok";
 
 type StickerQualityIssue = {
-  code: "no_transparency" | "empty" | "touches_edge" | "small" | "fragment";
+  code:
+    | "no_transparency"
+    | "empty"
+    | "touches_edge"
+    | "small"
+    | "fragment"
+    | "source_cut"
+    | "source_near_edge";
   severity: Exclude<QualitySeverity, "ok">;
   message: string;
 };
@@ -262,7 +271,7 @@ type StickerQualityReport = {
 };
 
 const QUALITY_ALPHA_THRESHOLD = 12;
-const QUALITY_EDGE_MARGIN = 3;
+const QUALITY_EDGE_MARGIN = 14;
 const QUALITY_MIN_CONTENT_RATIO = 0.08;
 const QUALITY_FRAGMENT_MAX_RATIO = 0.025;
 
@@ -483,9 +492,10 @@ function drawStickerToTransparentCanvas(
       ? transparencyInfo.box
       : { x: 0, y: 0, width: sourceW, height: sourceH };
 
-  const safeScale = Math.max(0.7, Math.min(1.3, scalePercent / 100));
+  const requestedScale = Math.max(0.65, Math.min(1.3, scalePercent / 100));
 
   if (mode === "crop") {
+    const safeScale = requestedScale;
     const scale =
       Math.max(targetW / sourceBox.width, targetH / sourceBox.height) *
       safeScale;
@@ -510,17 +520,28 @@ function drawStickerToTransparentCanvas(
   const paddingRatio =
     mode === "smart-safe" ? SMART_SAFE_PADDING_RATIO : SAFE_PADDING_RATIO;
   const padding = Math.max(
-    3,
+    6,
     Math.round(Math.min(targetW, targetH) * paddingRatio),
   );
   const maxW = Math.max(1, targetW - padding * 2);
   const maxH = Math.max(1, targetH - padding * 2);
+
+  // 安全模式永遠不允許把內容放大到安全框之外。
+  // 想故意滿版裁切時才使用「滿版」模式。
+  const safeScale = Math.min(1, requestedScale);
   const scale =
     Math.min(maxW / sourceBox.width, maxH / sourceBox.height) * safeScale;
-  const drawW = Math.round(sourceBox.width * scale);
-  const drawH = Math.round(sourceBox.height * scale);
-  const dx = Math.round((targetW - drawW) / 2 + offset.x);
-  const dy = Math.round((targetH - drawH) / 2 + offset.y);
+  const drawW = Math.max(1, Math.round(sourceBox.width * scale));
+  const drawH = Math.max(1, Math.round(sourceBox.height * scale));
+  const centeredX = Math.round((targetW - drawW) / 2);
+  const centeredY = Math.round((targetH - drawH) / 2);
+  const minX = padding;
+  const maxX = Math.max(padding, targetW - padding - drawW);
+  const minY = padding;
+  const maxY = Math.max(padding, targetH - padding - drawH);
+  const dx = Math.max(minX, Math.min(maxX, centeredX + Math.round(offset.x)));
+  const dy = Math.max(minY, Math.min(maxY, centeredY + Math.round(offset.y)));
+
   ctx.drawImage(
     img,
     sourceBox.x,
@@ -821,6 +842,87 @@ function removeTinyEdgeFragments(
   if (removed) context.putImageData(imageData, 0, 0);
 }
 
+function removeForeignCellComponents(
+  canvas: HTMLCanvasElement,
+  core: { x: number; y: number; width: number; height: number },
+) {
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  if (!context) return;
+
+  const { width, height } = canvas;
+  const imageData = context.getImageData(0, 0, width, height);
+  const data = imageData.data;
+  const total = width * height;
+  const mask = new Uint8Array(total);
+
+  for (let i = 0; i < total; i += 1) {
+    if (data[i * 4 + 3] > 20) mask[i] = 1;
+  }
+
+  const seen = new Uint8Array(total);
+  const queue = new Int32Array(total);
+  let changed = false;
+
+  const coreRight = core.x + core.width;
+  const coreBottom = core.y + core.height;
+  const isInsideCore = (x: number, y: number) =>
+    x >= core.x && x < coreRight && y >= core.y && y < coreBottom;
+
+  for (let start = 0; start < total; start += 1) {
+    if (!mask[start] || seen[start]) continue;
+
+    let head = 0;
+    let tail = 0;
+    queue[tail++] = start;
+    seen[start] = 1;
+
+    const pixels: number[] = [];
+    let insideCount = 0;
+    let sumX = 0;
+    let sumY = 0;
+
+    while (head < tail) {
+      const current = queue[head++];
+      pixels.push(current);
+      const x = current % width;
+      const y = Math.floor(current / width);
+      sumX += x;
+      sumY += y;
+      if (isInsideCore(x, y)) insideCount += 1;
+
+      const neighbors = [
+        x > 0 ? current - 1 : -1,
+        x + 1 < width ? current + 1 : -1,
+        y > 0 ? current - width : -1,
+        y + 1 < height ? current + width : -1,
+      ];
+      for (const next of neighbors) {
+        if (next >= 0 && mask[next] && !seen[next]) {
+          seen[next] = 1;
+          queue[tail++] = next;
+        }
+      }
+    }
+
+    const size = pixels.length;
+    const insideRatio = size ? insideCount / size : 0;
+    const centerX = size ? sumX / size : 0;
+    const centerY = size ? sumY / size : 0;
+    const centerOwned = isInsideCore(centerX, centerY);
+
+    // 擴張切格是為了救回靠近格線的文字；相鄰格內容若主要在 core 外就刪除。
+    const belongsToThisCell =
+      insideCount > 0 && (centerOwned || insideRatio >= 0.42);
+
+    if (!belongsToThisCell) {
+      for (const index of pixels) data[index * 4 + 3] = 0;
+      changed = true;
+    }
+  }
+
+  if (changed) context.putImageData(imageData, 0, 0);
+}
+
 async function splitMotherSheet(
   file: File,
   grid: "auto" | MotherSheetGrid,
@@ -845,12 +947,22 @@ async function splitMotherSheet(
       const rawBottom = Math.round(((row + 1) * sourceHeight) / rows);
       const rawW = Math.max(1, rawRight - rawLeft);
       const rawH = Math.max(1, rawBottom - rawTop);
-      const insetX = Math.round(rawW * MOTHER_SHEET_CELL_INSET_RATIO);
-      const insetY = Math.round(rawH * MOTHER_SHEET_CELL_INSET_RATIO);
-      const left = rawLeft + insetX;
-      const top = rawTop + insetY;
-      const right = rawRight - insetX;
-      const bottom = rawBottom - insetY;
+
+      // 不再把每格四邊直接切掉。改成往外多取 6%，救回貼近格線的文字，
+      // 再用 component ownership 移除屬於相鄰格的內容。
+      const overlapX = Math.round(rawW * MOTHER_SHEET_OVERLAP_RATIO);
+      const overlapY = Math.round(rawH * MOTHER_SHEET_OVERLAP_RATIO);
+      const left = Math.max(0, rawLeft - overlapX);
+      const top = Math.max(0, rawTop - overlapY);
+      const right = Math.min(sourceWidth, rawRight + overlapX);
+      const bottom = Math.min(sourceHeight, rawBottom + overlapY);
+      const core = {
+        x: rawLeft - left,
+        y: rawTop - top,
+        width: rawW,
+        height: rawH,
+      };
+
       const canvas = document.createElement("canvas");
       canvas.width = Math.max(1, right - left);
       canvas.height = Math.max(1, bottom - top);
@@ -871,7 +983,8 @@ async function splitMotherSheet(
       if (removeWhiteBackground) {
         removeConnectedWhiteBackground(canvas, 232);
         cleanPaleEdgeHalo(canvas, 1);
-        removeTinyEdgeFragments(canvas);
+        removeForeignCellComponents(canvas, core);
+        removeTinyEdgeFragments(canvas, 0.09, 0.022);
       }
       const blob = await canvasToBlob(canvas, t);
       results.push(
@@ -988,7 +1101,13 @@ function PreviewCard({
           height={previewH}
         />
         <div className="pointer-events-none absolute inset-0 rounded-xl border border-sky-200" />
-        <div className="pointer-events-none absolute inset-2 rounded-lg border border-dashed border-slate-300/80" />
+        <div
+          className="pointer-events-none absolute rounded-lg border border-dashed border-emerald-400/90"
+          style={{ inset: "8%" }}
+        />
+        <span className="pointer-events-none absolute left-[8%] top-[8%] rounded-br-md bg-emerald-500/90 px-1.5 py-0.5 text-[9px] font-black text-white">
+          安全框
+        </span>
       </div>
 
       <div className="mt-2 flex items-center justify-between text-[10px] text-slate-400">
@@ -1037,7 +1156,7 @@ function PreviewCard({
             <input
               type="range"
               min="70"
-              max="130"
+              max={cropMode === "crop" ? 130 : 100}
               value={itemScale}
               onChange={(e) => onScaleChange(Number(e.target.value))}
               className="mt-2 w-full accent-blue-600"
@@ -1075,7 +1194,7 @@ export default function LineStickerTool() {
   );
   const [mainImageIndex, setMainImageIndex] = useState<number>(0);
   const [cropMode, setCropMode] = useState<LineStickerCropMode>("smart-safe");
-  const [cropScale, setCropScale] = useState<number>(96);
+  const [cropScale, setCropScale] = useState<number>(92);
   const [downloadCompleted, setDownloadCompleted] = useState(
     () => flowProject?.mode === "static" && flowProject?.stage === 5,
   );
@@ -1130,6 +1249,28 @@ export default function LineStickerTool() {
         try {
           const img = await loadImage(f, t);
           const transparency = getImageTransparencyInfo(img);
+          const sourceBox = transparency.box;
+          const sourceEdgeMargin = Math.max(
+            2,
+            Math.round(Math.min(img.naturalWidth, img.naturalHeight) * 0.025),
+          );
+          const sourceTouchesHardEdge = Boolean(
+            sourceBox &&
+              (sourceBox.x <= 1 ||
+                sourceBox.y <= 1 ||
+                sourceBox.x + sourceBox.width >= img.naturalWidth - 1 ||
+                sourceBox.y + sourceBox.height >= img.naturalHeight - 1),
+          );
+          const sourceNearEdge = Boolean(
+            sourceBox &&
+              (sourceBox.x <= sourceEdgeMargin ||
+                sourceBox.y <= sourceEdgeMargin ||
+                sourceBox.x + sourceBox.width >=
+                  img.naturalWidth - sourceEdgeMargin ||
+                sourceBox.y + sourceBox.height >=
+                  img.naturalHeight - sourceEdgeMargin),
+          );
+
           previews.push({
             file: f,
             url: URL.createObjectURL(f),
@@ -1141,6 +1282,8 @@ export default function LineStickerTool() {
               : "warn_no_transparency",
             hasTransparency: transparency.hasTransparency,
             transparencyRatio: transparency.transparencyRatio,
+            sourceTouchesHardEdge,
+            sourceNearEdge,
           });
         } catch {
           /* skip */
@@ -1253,6 +1396,21 @@ export default function LineStickerTool() {
     setItemOffsets((prev) => ({ ...prev, [index]: nextOffset }));
   }, []);
 
+  const autoSafetyFixAll = useCallback(() => {
+    setCropMode("smart-safe");
+    setCropScale(92);
+    const nextScales: Record<number, number> = {};
+    const nextOffsets: Record<number, ItemOffset> = {};
+    files.forEach((_, index) => {
+      nextScales[index] = 92;
+      nextOffsets[index] = { x: 0, y: 0 };
+    });
+    setItemScales(nextScales);
+    setItemOffsets(nextOffsets);
+    setReviewedWarnings({});
+    setError(null);
+  }, [files]);
+
   useEffect(() => {
     setReviewedWarnings({});
   }, [files, stickerCount, cropMode, cropScale, itemScales, itemOffsets]);
@@ -1267,7 +1425,25 @@ export default function LineStickerTool() {
         getScaleForIndex(index),
         getOffsetForIndex(index),
       );
-      return analyzeStickerCanvas(canvas, index);
+      const report = analyzeStickerCanvas(canvas, index);
+
+      if (preview.sourceTouchesHardEdge) {
+        report.issues.unshift({
+          code: "source_cut",
+          severity: "error",
+          message: "原圖內容已碰到切圖邊界，可能已切到文字／角色，請重新切圖或換母圖",
+        });
+        report.severity = "error";
+      } else if (preview.sourceNearEdge) {
+        report.issues.unshift({
+          code: "source_near_edge",
+          severity: "warning",
+          message: "原圖內容非常靠近切圖邊界，建議按「全部自動安全修正」後再確認",
+        });
+        if (report.severity === "ok") report.severity = "warning";
+      }
+
+      return report;
     });
   }, [files, stickerCount, cropMode, getScaleForIndex, getOffsetForIndex]);
 
@@ -1598,7 +1774,7 @@ export default function LineStickerTool() {
                     上傳母圖，後面交給系統自動整理
                   </h2>
                   <p className="mt-1 text-xs leading-relaxed text-slate-500">
-                    直接選擇 ChatGPT 產生的母圖即可。系統會由左到右、由上到下平均切格，切格時略避開格線，再自動去白底、清理淡白邊並保留四周安全留白。
+                    直接選擇 ChatGPT 產生的母圖即可。系統會在每格外多取約 6% 內容，盡量救回貼近格線的文字，再辨識並移除相鄰格殘片、去白底，最後放回安全框內。
                   </p>
                 </div>
                 <div className="flex shrink-0 flex-col gap-2 sm:min-w-[220px]">
@@ -1729,7 +1905,7 @@ export default function LineStickerTool() {
                 </div>
 
                 <p className="mt-3 rounded-xl bg-emerald-50 px-3 py-2 text-[11px] font-bold leading-5 text-emerald-800">
-                  預設「智慧滿版」會自動置中並保留約 5%～6% 四邊安全空間；若文字仍太靠邊，可把安全縮放調低。
+                  預設「智慧滿版」會保留約 8% 四邊安全空間，並自動限制拖曳／縮放不超出安全框，降低切到文字、頭髮與手勢的風險。
                 </p>
 
                                 {(cropMode === "crop" || cropMode === "smart-safe") && (
@@ -1744,8 +1920,8 @@ export default function LineStickerTool() {
                     </div>
                     <input
                       type="range"
-                      min={80}
-                      max={135}
+                      min={75}
+                      max={cropMode === "crop" ? 135 : 100}
                       step={1}
                       value={cropScale}
                       onChange={(e) => updateGlobalScale(Number(e.target.value))}
@@ -1759,7 +1935,7 @@ export default function LineStickerTool() {
                       套用目前縮放到全部貼圖
                     </button>
                     <p className="mt-2 text-[11px] leading-relaxed text-slate-500">
-                      上方滑桿會即時套用全部貼圖；有文字建議 90%～100%，若單張太小可在下方卡片各別放大或微調位置。
+                      安全模式最多 100%，不會讓內容超出安全框；有文字建議 88%～94%。只有選「滿版」才允許放大裁切。
                     </p>
                   </div>
                 )}
@@ -1784,6 +1960,16 @@ export default function LineStickerTool() {
                   </h3>
                   <p className="mt-1 text-xs leading-relaxed text-slate-500">
                     自動檢查透明背景、空白、碰邊、圖案過小及孤立碎圖。手腳、表情、錯字等內容問題仍請查看預覽確認。
+                  </p>
+                  <button
+                    type="button"
+                    onClick={autoSafetyFixAll}
+                    className="mt-3 inline-flex min-h-10 items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-black text-emerald-800 shadow-sm transition hover:bg-emerald-100"
+                  >
+                    🛡️ 全部自動安全修正
+                  </button>
+                  <p className="mt-2 text-[11px] font-bold leading-5 text-emerald-700">
+                    會統一改成智慧安全模式、縮放 92%、置中，並限制內容不可越過安全框。
                   </p>
                 </div>
                 <div className="grid min-w-[240px] grid-cols-3 gap-2 text-center">
