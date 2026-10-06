@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { fetchFile } from "@ffmpeg/util";
 import { QRCodeCanvas } from "qrcode.react";
+import { Link } from "react-router-dom";
 import SEO from "@/components/SEO";
 
 type Ratio = "9:16" | "16:9" | "1:1" | "4:5";
@@ -1025,6 +1026,8 @@ export default function BrowserImageToMp4() {
   const [saveStatus, setSaveStatus] = useState("");
   const [automationMessage, setAutomationMessage] = useState("");
   const [resultFileName, setResultFileName] = useState("");
+  const [showMobileInstallButton, setShowMobileInstallButton] =
+    useState(false);
 
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const audioInputRef = useRef<HTMLInputElement | null>(null);
@@ -1072,6 +1075,23 @@ export default function BrowserImageToMp4() {
       urls.forEach((url) => URL.revokeObjectURL(url));
     };
   }, [images]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof navigator === "undefined") {
+      return;
+    }
+
+    const standalone =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      (window.navigator as Navigator & { standalone?: boolean }).standalone ===
+        true;
+    const mobileUa =
+      /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || "");
+    const touchTablet =
+      (navigator.maxTouchPoints || 0) > 0 && window.innerWidth <= 1100;
+
+    setShowMobileInstallButton(!standalone && (mobileUa || touchTablet));
+  }, []);
 
   useEffect(() => {
     setCaptionHistory(readTextHistory("caption"));
@@ -1405,6 +1425,12 @@ export default function BrowserImageToMp4() {
     } finally {
       setBusy(false);
     }
+  };
+
+  const requestAddToHomeScreen = () => {
+    window.dispatchEvent(
+      new CustomEvent("rxv:pwa-install-request"),
+    );
   };
 
   const handleImageSelection = (fileList: FileList | null) => {
@@ -3169,6 +3195,94 @@ export default function BrowserImageToMp4() {
               適合 Shorts、Reels、TikTok、商品與社群宣傳影片。
             </div>
           </div>
+
+          <section className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 sm:p-5">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-black text-emerald-900">
+                  🔗 影片做好後，繼續使用 RxV
+                </p>
+                <p className="mt-1 text-xs leading-5 text-emerald-800">
+                  可直接找圖片素材、免費資源或其他工具，不用回首頁重新找。
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <Link
+                to="/images"
+                className="rounded-2xl border border-emerald-200 bg-emerald-100/70 p-4 no-underline transition hover:-translate-y-0.5 hover:bg-emerald-100 hover:shadow"
+              >
+                <span className="block text-sm font-black text-emerald-950">
+                  🖼️ 圖片素材庫
+                </span>
+                <span className="mt-1 block text-xs leading-5 text-emerald-800">
+                  免費圖片＋付費完整素材庫／專業圖片包，找下一批影片素材。
+                </span>
+              </Link>
+
+              <Link
+                to="/free"
+                className="rounded-2xl border border-blue-200 bg-blue-50 p-4 no-underline transition hover:-translate-y-0.5 hover:bg-blue-100 hover:shadow"
+              >
+                <span className="block text-sm font-black text-blue-950">
+                  🎁 免費資源中心
+                </span>
+                <span className="mt-1 block text-xs leading-5 text-blue-800">
+                  找免費圖片、提示詞與可直接使用的資源。
+                </span>
+              </Link>
+
+              <Link
+                to="/tools/line-sticker"
+                className="rounded-2xl border border-violet-200 bg-violet-50 p-4 no-underline transition hover:-translate-y-0.5 hover:bg-violet-100 hover:shadow"
+              >
+                <span className="block text-sm font-black text-violet-950">
+                  💬 LINE 貼圖工具
+                </span>
+                <span className="mt-1 block text-xs leading-5 text-violet-800">
+                  圖片也可接著整理成 LINE 貼圖與上架素材。
+                </span>
+              </Link>
+
+              <Link
+                to="/tools"
+                className="rounded-2xl border border-slate-200 bg-slate-50 p-4 no-underline transition hover:-translate-y-0.5 hover:bg-slate-100 hover:shadow"
+              >
+                <span className="block text-sm font-black text-slate-900">
+                  🧰 更多免費工具
+                </span>
+                <span className="mt-1 block text-xs leading-5 text-slate-600">
+                  QR Code、圖片處理、貼圖與其他免費工具入口。
+                </span>
+              </Link>
+            </div>
+
+            <a
+              href="https://play.google.com/store/apps/details?id=com.rxv.healingimages"
+              target="_blank"
+              rel="noreferrer"
+              className="mt-3 flex min-h-12 w-full items-center justify-center rounded-2xl border border-emerald-300 bg-emerald-600 px-4 py-3 text-center text-sm font-black !text-white no-underline shadow transition hover:-translate-y-0.5 hover:bg-emerald-700 hover:shadow-md"
+            >
+              📱 Android：安裝 RxV 療癒圖片庫 APP
+            </a>
+
+            {showMobileInstallButton ? (
+              <button
+                type="button"
+                onClick={requestAddToHomeScreen}
+                className="mt-3 flex min-h-12 w-full items-center justify-center rounded-2xl border border-blue-300 bg-blue-600 px-4 py-3 text-sm font-black text-white shadow transition hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-md"
+              >
+                📲 把 RxV 工具加到手機桌面
+              </button>
+            ) : null}
+
+            {showMobileInstallButton ? (
+              <p className="mt-2 text-center text-xs leading-5 text-slate-500">
+                Android Chrome 可直接叫出安裝視窗；iPhone／iPad 會顯示「加入主畫面」步驟。
+              </p>
+            ) : null}
+          </section>
         </div>
       </div>
     </>

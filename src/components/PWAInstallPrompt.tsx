@@ -136,11 +136,12 @@ function buildChromeIntentUrl() {
   return `intent://${withoutProtocol}#Intent;scheme=https;package=com.android.chrome;end`;
 }
 
-export default function PWAInstallPrompt() {
+export default function PWAInstallPrompt({ manualOnly = false }: { manualOnly?: boolean }) {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [visible, setVisible] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
   const [notificationStatus, setNotificationStatus] = useState<NotificationPermission | 'unsupported'>('unsupported');
+  const [manualRequested, setManualRequested] = useState(false);
 
   const isStandalone = useMemo(() => isStandaloneMode(), []);
   const isIOS = useMemo(() => isIOSDevice(), []);
@@ -182,15 +183,16 @@ export default function PWAInstallPrompt() {
 
     const onBeforeInstallPrompt = (event: Event) => {
       event.preventDefault();
-      if (shouldSuppressPrompt()) return;
       setDeferredPrompt(event as BeforeInstallPromptEvent);
-      setVisible(true);
+      if (!manualOnly && !shouldSuppressPrompt()) {
+        setVisible(true);
+      }
     };
 
     window.addEventListener('appinstalled', onInstalled);
     window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt);
 
-    if (!shouldSuppressPrompt()) {
+    if (!manualOnly && !shouldSuppressPrompt()) {
       // LINE / FB / IG 內建瀏覽器不會觸發 beforeinstallprompt，直接顯示「用 Chrome 開啟」轉換卡。
       // iPhone / iPad 同樣不支援一鍵安裝，顯示加入主畫面教學。
       // Android Chrome 若事件稍慢，先延遲顯示，避免一進站就擋畫面。
@@ -210,7 +212,51 @@ export default function PWAInstallPrompt() {
       window.removeEventListener('appinstalled', onInstalled);
       window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt);
     };
-  }, [inApp, isIOS, mobileOrTablet]);
+  }, [inApp, isIOS, mobileOrTablet, manualOnly]);
+
+  useEffect(() => {
+    const onManualRequest = async () => {
+      if (!mobileOrTablet || isStandaloneMode()) return;
+
+      setManualRequested(true);
+      setVisible(true);
+
+      if (inApp) {
+        if (isAndroid) {
+          window.location.href = buildChromeIntentUrl();
+          window.setTimeout(() => setGuideOpen(true), 800);
+        } else {
+          setGuideOpen(true);
+        }
+        return;
+      }
+
+      if (deferredPrompt && chrome) {
+        try {
+          await deferredPrompt.prompt();
+          const choice = await deferredPrompt.userChoice.catch(() => null);
+          setDeferredPrompt(null);
+
+          if (choice?.outcome === 'accepted') {
+            localStorage.setItem(INSTALLED_KEY, '1');
+            setVisible(false);
+            setManualRequested(false);
+          } else {
+            setGuideOpen(true);
+          }
+        } catch {
+          setGuideOpen(true);
+        }
+        return;
+      }
+
+      setGuideOpen(true);
+    };
+
+    window.addEventListener('rxv:pwa-install-request', onManualRequest as EventListener);
+    return () =>
+      window.removeEventListener('rxv:pwa-install-request', onManualRequest as EventListener);
+  }, [chrome, deferredPrompt, inApp, isAndroid, mobileOrTablet]);
 
   useEffect(() => {
     if (localStorage.getItem(REMINDER_KEY) !== '1') return;
@@ -232,11 +278,13 @@ export default function PWAInstallPrompt() {
 
   const dismissFor7Days = () => {
     localStorage.setItem(DISMISSED_KEY, String(Date.now() + SEVEN_DAYS));
+    setManualRequested(false);
     setVisible(false);
   };
 
   const neverShowAgain = () => {
     localStorage.setItem(NEVER_SHOW_KEY, '1');
+    setManualRequested(false);
     setVisible(false);
   };
 
@@ -285,7 +333,13 @@ export default function PWAInstallPrompt() {
   };
 
   // V81 最後一道保險：桌機版任何情況都不渲染。
-  if (isDesktopHardBlocked() || !mobileOrTablet || !visible || isStandalone || shouldSuppressPrompt()) return null;
+  if (
+    isDesktopHardBlocked() ||
+    !mobileOrTablet ||
+    !visible ||
+    isStandalone ||
+    (!manualRequested && shouldSuppressPrompt())
+  ) return null;
 
   const primaryLabel = inApp
     ? '🚀 用 Chrome 開啟'

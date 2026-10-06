@@ -6,6 +6,7 @@ import MobileBottomNav from '../components/MobileBottomNav';
 import ToolCoupangAd from '../components/ToolCoupangAd';
 import CoupangContentAd from '../components/CoupangContentAd';
 import HealingImagesAppPromo from '../components/HealingImagesAppPromo';
+import PWAInstallPrompt from '../components/PWAInstallPrompt';
 import { useTranslation } from 'react-i18next';
 
 export default function MainLayout() {
@@ -43,6 +44,7 @@ export default function MainLayout() {
       <ToolCoupangAd />
       <MobileBottomNav />
       <SiteFooter />
+      <PWAInstallPrompt manualOnly />
     </div>
   );
 }
