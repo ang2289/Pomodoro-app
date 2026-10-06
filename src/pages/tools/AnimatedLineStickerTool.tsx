@@ -2295,8 +2295,8 @@ const AnimatedLineStickerTool: React.FC = () => {
             ref={batchPreviewSectionRef}
             className="mt-6 scroll-mt-24 rounded-3xl border border-violet-200 bg-gradient-to-br from-violet-50 via-white to-sky-50 p-5 shadow-sm md:p-7"
           >
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div>
+            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+              <div className="min-w-0 flex-1">
                 <p className="text-xs font-black uppercase tracking-wide text-violet-700">
                   動態成品檢查
                 </p>
@@ -2310,7 +2310,7 @@ const AnimatedLineStickerTool: React.FC = () => {
               <button
                 type="button"
                 onClick={() => replayBatchPreview()}
-                className="min-h-11 shrink-0 rounded-xl border border-violet-200 bg-white px-4 py-2.5 text-sm font-black text-violet-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-violet-100 hover:shadow-md"
+                className="inline-flex min-h-11 w-auto shrink-0 items-center justify-center whitespace-nowrap rounded-xl border border-violet-200 bg-violet-50 px-4 py-2.5 text-sm font-black text-violet-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-violet-100 hover:shadow-md"
               >
                 ▶ 重播全部
               </button>
@@ -2320,7 +2320,7 @@ const AnimatedLineStickerTool: React.FC = () => {
               {batchAnimatedPreviews.map((item) => (
                 <article
                   key={item.url}
-                  className="min-w-0 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm"
+                  className="min-w-0 rounded-2xl border border-slate-200 bg-slate-50/70 p-3 shadow-sm"
                 >
                   <button
                     type="button"

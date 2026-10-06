@@ -42,7 +42,7 @@ export default function LineStickerFlowSteps({
         </p>
       </div>
 
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-2">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {steps.map((item) => {
           const active = item.step === activeStep;
           const done = item.step < activeStep;
@@ -64,12 +64,12 @@ export default function LineStickerFlowSteps({
                       ? "bg-violet-600 text-white"
                       : done
                         ? "bg-emerald-600 text-white"
-                        : "bg-white text-slate-500"
+                        : "bg-slate-100 text-slate-500"
                   }`}
                 >
                   {done ? "✓" : item.step}
                 </span>
-                <span className="min-w-0 break-words text-xs font-black leading-5 text-slate-900">{item.title}</span>
+                <span className="min-w-[5.5rem] flex-1 whitespace-normal break-keep text-xs font-black leading-5 text-slate-900">{item.title}</span>
               </div>
               <p className="mt-2 min-w-0 break-words text-[11px] leading-5 text-slate-500">{item.desc}</p>
             </div>
