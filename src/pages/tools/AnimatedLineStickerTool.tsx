@@ -89,6 +89,16 @@ type LinePreviewFrame = {
   name: string;
 };
 
+type BatchAnimatedPreview = {
+  id: string;
+  index: number;
+  name: string;
+  blob: Blob;
+  url: string;
+  sizeKb: number;
+  overLimit: boolean;
+};
+
 
 function makeFullBounds(width: number, height: number): AlphaBounds {
   return { left: 0, top: 0, right: width, bottom: height, width, height };
@@ -1208,6 +1218,8 @@ const AnimatedLineStickerTool: React.FC = () => {
   const [batchProgress, setBatchProgress] = useState(0);
   const [batchStatus, setBatchStatus] = useState("");
   const [batchMessage, setBatchMessage] = useState("");
+  const [batchAnimatedPreviews, setBatchAnimatedPreviews] =
+    useState<BatchAnimatedPreview[]>([]);
   const [handoffLoaded, setHandoffLoaded] = useState(false);
   const [handoffTheme, setHandoffTheme] = useState("");
   const [previewIndex, setPreviewIndex] = useState(0);
@@ -1223,6 +1235,8 @@ const AnimatedLineStickerTool: React.FC = () => {
   const linePreviewUrlsRef = useRef<string[]>([]);
   const autoPreviewFramesRef = useRef<FrameItem[]>([]);
   const batchSourcesRef = useRef<FrameItem[]>([]);
+  const batchAnimatedPreviewsRef = useRef<BatchAnimatedPreview[]>([]);
+  const batchPreviewSectionRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     framesRef.current = frames;
@@ -1235,6 +1249,10 @@ const AnimatedLineStickerTool: React.FC = () => {
   useEffect(() => {
     batchSourcesRef.current = batchSources;
   }, [batchSources]);
+
+  useEffect(() => {
+    batchAnimatedPreviewsRef.current = batchAnimatedPreviews;
+  }, [batchAnimatedPreviews]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -1294,6 +1312,9 @@ const AnimatedLineStickerTool: React.FC = () => {
       framesRef.current.forEach((frame) => URL.revokeObjectURL(frame.url));
       autoPreviewFramesRef.current.forEach((frame) => URL.revokeObjectURL(frame.url));
       batchSourcesRef.current.forEach((frame) => URL.revokeObjectURL(frame.url));
+      batchAnimatedPreviewsRef.current.forEach((item) =>
+        URL.revokeObjectURL(item.url),
+      );
       linePreviewUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
     };
   }, []);
@@ -1494,6 +1515,42 @@ const AnimatedLineStickerTool: React.FC = () => {
     }
   };
 
+  const replaceBatchAnimatedPreviews = (
+    items: Array<Omit<BatchAnimatedPreview, "url">>,
+  ) => {
+    batchAnimatedPreviewsRef.current.forEach((item) =>
+      URL.revokeObjectURL(item.url),
+    );
+    const next = items.map((item) => ({
+      ...item,
+      url: URL.createObjectURL(item.blob),
+    }));
+    batchAnimatedPreviewsRef.current = next;
+    setBatchAnimatedPreviews(next);
+  };
+
+  const clearBatchAnimatedPreviews = () => {
+    batchAnimatedPreviewsRef.current.forEach((item) =>
+      URL.revokeObjectURL(item.url),
+    );
+    batchAnimatedPreviewsRef.current = [];
+    setBatchAnimatedPreviews([]);
+  };
+
+  const replayBatchPreview = (id?: string) => {
+    const current = batchAnimatedPreviewsRef.current;
+    if (!current.length) return;
+
+    const next = current.map((item) => {
+      if (id && item.id !== id) return item;
+      const nextUrl = URL.createObjectURL(item.blob);
+      URL.revokeObjectURL(item.url);
+      return { ...item, url: nextUrl };
+    });
+    batchAnimatedPreviewsRef.current = next;
+    setBatchAnimatedPreviews(next);
+  };
+
   const handleBatchSources = async (fileList: FileList | null) => {
     if (!fileList || fileList.length === 0 || batchBusy) {
       if (batchInputRef.current) batchInputRef.current.value = "";
@@ -1508,6 +1565,7 @@ const AnimatedLineStickerTool: React.FC = () => {
     setBatchMessage("");
     setBatchStatus("");
     setBatchProgress(0);
+    clearBatchAnimatedPreviews();
 
     try {
       const loaded = await Promise.all(imageFiles.map((file) => readImageFile(file, t)));
@@ -1533,6 +1591,7 @@ const AnimatedLineStickerTool: React.FC = () => {
     setBatchProgress(0);
     setBatchStatus("");
     setBatchMessage("");
+    clearBatchAnimatedPreviews();
     if (batchInputRef.current) batchInputRef.current.value = "";
   };
 
@@ -1542,8 +1601,10 @@ const AnimatedLineStickerTool: React.FC = () => {
     setBatchBusy(true);
     setBatchProgress(0);
     setBatchMessage("");
+    clearBatchAnimatedPreviews();
     const files: { name: string; data: Uint8Array }[] = [];
     const sizeReport: string[] = [];
+    const completedPreviews: Array<Omit<BatchAnimatedPreview, "url">> = [];
     let mainData: Uint8Array | null = null;
     let tabData: Uint8Array | null = null;
 
@@ -1580,6 +1641,14 @@ const AnimatedLineStickerTool: React.FC = () => {
           files.push({
             name: stickerName,
             data: new Uint8Array(await apng.arrayBuffer()),
+          });
+          completedPreviews.push({
+            id: "batch-preview-" + String(i + 1),
+            index: i,
+            name: stickerName,
+            blob: apng,
+            sizeKb: Math.round(apng.size / 1024),
+            overLimit: apng.size > LINE_APNG_MAX_BYTES,
           });
           sizeReport.push(
             `${stickerName}\t${Math.round(apng.size / 1024)}KB\t${
@@ -1648,6 +1717,13 @@ const AnimatedLineStickerTool: React.FC = () => {
 
       setBatchProgress(100);
       setBatchStatus(t("animated_line_sticker.batch_status_done"));
+      replaceBatchAnimatedPreviews(completedPreviews);
+      window.setTimeout(() => {
+        batchPreviewSectionRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }, 120);
       const overLimit = sizeReport.filter((line) => line.includes("超過1MB")).length;
       setBatchMessage(
         overLimit > 0
@@ -2160,6 +2236,80 @@ const AnimatedLineStickerTool: React.FC = () => {
                   </p>
                 ) : null}
               </div>
+            </div>
+          </section>
+        ) : null}
+
+        {workflowMode === "batch" && batchAnimatedPreviews.length ? (
+          <section
+            ref={batchPreviewSectionRef}
+            className="mt-6 scroll-mt-24 rounded-3xl border border-violet-200 bg-gradient-to-br from-violet-50 via-white to-sky-50 p-5 shadow-sm md:p-7"
+          >
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="text-xs font-black uppercase tracking-wide text-violet-700">
+                  動態成品檢查
+                </p>
+                <h2 className="mt-1 text-xl font-black text-slate-900 md:text-2xl">
+                  {batchAnimatedPreviews.length} 張動態貼圖預覽
+                </h2>
+                <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+                  這裡顯示剛剛 ZIP 裡的實際 APNG 成品。先逐張確認文字、角色、邊界與動畫是否正常，再到 LINE 後台送審。
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => replayBatchPreview()}
+                className="min-h-11 shrink-0 rounded-xl border border-violet-200 bg-white px-4 py-2.5 text-sm font-black text-violet-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-violet-100 hover:shadow-md"
+              >
+                ▶ 重播全部
+              </button>
+            </div>
+
+            <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+              {batchAnimatedPreviews.map((item) => (
+                <article
+                  key={item.url}
+                  className="min-w-0 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm"
+                >
+                  <button
+                    type="button"
+                    onClick={() => replayBatchPreview(item.id)}
+                    className="group block w-full rounded-xl border border-slate-200 bg-[linear-gradient(45deg,#f8fafc_25%,transparent_25%),linear-gradient(-45deg,#f8fafc_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#f8fafc_75%),linear-gradient(-45deg,transparent_75%,#f8fafc_75%)] bg-[length:18px_18px] bg-[position:0_0,0_9px,9px_-9px,-9px_0] p-2 transition hover:border-violet-300 hover:ring-2 hover:ring-violet-100"
+                    title="點一下重新播放這張動畫"
+                  >
+                    <div className="aspect-[320/270] overflow-hidden rounded-lg">
+                      <img
+                        src={item.url}
+                        alt={"第 " + String(item.index + 1) + " 張動態貼圖預覽"}
+                        className="h-full w-full object-contain"
+                      />
+                    </div>
+                  </button>
+                  <div className="mt-2 flex items-center justify-between gap-2">
+                    <span className="text-xs font-black text-slate-700">
+                      {String(item.index + 1).padStart(2, "0")}
+                    </span>
+                    <span
+                      className={
+                        "rounded-full px-2 py-1 text-[10px] font-black " +
+                        (item.overLimit
+                          ? "bg-rose-100 text-rose-700"
+                          : "bg-emerald-100 text-emerald-700")
+                      }
+                    >
+                      {item.sizeKb} KB
+                    </span>
+                  </div>
+                  <p className="mt-1 text-[10px] leading-4 text-slate-400">
+                    點圖片可重播
+                  </p>
+                </article>
+              ))}
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-xs font-bold leading-5 text-sky-900">
+              瀏覽器顯示的是實際 APNG 動畫；若動畫已播放完，可按「重播全部」或點單張圖片重新播放。
             </div>
           </section>
         ) : null}
