@@ -42,6 +42,25 @@ export default function LineStickerFlowSteps({
         </p>
       </div>
 
+      <div className="mb-4 rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 via-white to-violet-50 px-4 py-3">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+          <div className="min-w-0">
+            <p className="text-sm font-black text-amber-900">
+              🎁 LINE 貼圖新功能試用期間免費
+            </p>
+            <p className="mt-1 text-xs leading-5 text-slate-600">
+              目前靜態貼圖整理、母圖切割、動畫效果與整套輸出都可免費使用。
+            </p>
+            <p className="mt-1 text-[11px] leading-5 text-slate-500">
+              RxV 貼圖工廠 APP 即將推出；未來部分進階批次與動態功能可能改由 APP／Pro 提供，基本免費工具仍會保留。
+            </p>
+          </div>
+          <span className="w-fit shrink-0 rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-black text-emerald-700">
+            目前免費開放
+          </span>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {steps.map((item) => {
           const active = item.step === activeStep;
