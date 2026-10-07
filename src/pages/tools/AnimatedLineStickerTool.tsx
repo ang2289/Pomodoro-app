@@ -104,6 +104,26 @@ type MotionPresetGalleryItem = {
   urls: string[];
 };
 
+type BatchMotionMode = "mixed" | "single";
+
+const MIXED_BATCH_MOTION_PRESETS: AutoMotionPreset[] = [
+  "auto",
+  "bounce",
+  "nod",
+  "sway",
+  "textPop",
+  "sparkle",
+  "pop",
+  "pulse",
+  "shake",
+  "salute",
+  "alert",
+  "slideLeft",
+  "slideRight",
+  "breathe",
+  "spin",
+];
+
 
 function makeFullBounds(width: number, height: number): AlphaBounds {
   return { left: 0, top: 0, right: width, bottom: height, width, height };
@@ -1361,7 +1381,10 @@ const AnimatedLineStickerTool: React.FC = () => {
   const [autoPreviewFrames, setAutoPreviewFrames] = useState<FrameItem[]>([]);
   const [workflowMode, setWorkflowMode] = useState<WorkflowMode>("single");
   const [batchSources, setBatchSources] = useState<FrameItem[]>([]);
-  const [batchMotionPreset, setBatchMotionPreset] = useState<AutoMotionPreset>("auto");
+  const [batchMotionMode, setBatchMotionMode] =
+    useState<BatchMotionMode>("mixed");
+  const [batchMotionPreset, setBatchMotionPreset] =
+    useState<AutoMotionPreset>("auto");
   const [batchBusy, setBatchBusy] = useState(false);
   const [batchProgress, setBatchProgress] = useState(0);
   const [batchStatus, setBatchStatus] = useState("");
@@ -1849,6 +1872,7 @@ const AnimatedLineStickerTool: React.FC = () => {
     clearBatchAnimatedPreviews();
     const files: { name: string; data: Uint8Array }[] = [];
     const sizeReport: string[] = [];
+    const motionReport: string[] = [];
     const completedPreviews: Array<Omit<BatchAnimatedPreview, "url">> = [];
     let mainData: Uint8Array | null = null;
     let tabData: Uint8Array | null = null;
@@ -1866,7 +1890,16 @@ const AnimatedLineStickerTool: React.FC = () => {
         setBatchProgress(Math.round((i / batchSources.length) * 90));
         await waitMs(40);
 
-        const generatedFiles = await generateAutoAnimationFrameFiles(item.file, batchMotionPreset);
+        const motionPreset =
+          batchMotionMode === "mixed"
+            ? MIXED_BATCH_MOTION_PRESETS[
+                i % MIXED_BATCH_MOTION_PRESETS.length
+              ]
+            : batchMotionPreset;
+        const generatedFiles = await generateAutoAnimationFrameFiles(
+          item.file,
+          motionPreset,
+        );
         const generatedFrames = await Promise.all(
           generatedFiles.map((file) => readImageFile(file, t)),
         );
@@ -1900,6 +1933,12 @@ const AnimatedLineStickerTool: React.FC = () => {
               apng.size <= LINE_APNG_MAX_BYTES ? "OK" : "超過1MB，請最後人工檢查"
             }`,
           );
+          const motionLabel =
+            AUTO_MOTION_PRESETS.find((preset) => preset.value === motionPreset)
+              ?.labelKey ?? "animated_line_sticker.auto_motion_auto";
+          motionReport.push(
+            `${stickerName}\t${motionPreset}\t${t(motionLabel)}`,
+          );
 
           if (i === 0) {
             const mainBlob = await createLineMainImageApngBlob(
@@ -1930,7 +1969,10 @@ const AnimatedLineStickerTool: React.FC = () => {
         "RxV LINE 動態貼圖一鍵整套整理包",
         `貼圖數量：${batchSources.length}`,
         "每張來源圖：自動產生 8 禎 / 2 秒 / 2 次循環",
-        `動畫模板：${batchMotionPreset}`,
+        `動畫模式：${batchMotionMode === "mixed" ? "多效果輪用" : "全部同一效果"}`,
+        batchMotionMode === "mixed"
+          ? `輪用效果：${MIXED_BATCH_MOTION_PRESETS.join(", ")}`
+          : `動畫模板：${batchMotionPreset}`,
         "",
         "檔案：",
         "01.png ～ 08.png / 16.png / 24.png：各貼圖 APNG",
@@ -1948,6 +1990,12 @@ const AnimatedLineStickerTool: React.FC = () => {
       files.push({
         name: "size-report.txt",
         data: new TextEncoder().encode(sizeReport.join("\n")),
+      });
+      files.push({
+        name: "motion-report.txt",
+        data: new TextEncoder().encode(
+          ["檔案\t效果代碼\t效果名稱", ...motionReport].join("\n"),
+        ),
       });
 
       setBatchStatus(t("animated_line_sticker.batch_status_zip"));
@@ -2309,7 +2357,7 @@ const AnimatedLineStickerTool: React.FC = () => {
                 "batch",
                 "📦",
                 "8／16／24 張整套自動",
-                "一批貼圖套用同一組動畫效果，最後一次整理成 LINE 上架 ZIP。",
+                "一批貼圖可選多效果輪用或全部同一效果，最後一次整理成 LINE 上架 ZIP。",
               ],
             ] as const).map(([mode, icon, title, desc]) => {
               const active = workflowMode === mode;
@@ -2572,23 +2620,115 @@ const AnimatedLineStickerTool: React.FC = () => {
               </div>
 
               <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                <label className="block">
+                <div>
                   <span className="text-sm font-black text-slate-800">
-                    {t("animated_line_sticker.batch_motion_label")}
+                    動畫套用方式
                   </span>
-                  <select
-                    value={batchMotionPreset}
-                    onChange={(event) => setBatchMotionPreset(event.target.value as AutoMotionPreset)}
-                    disabled={batchBusy}
-                    className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-bold"
-                  >
-                    {AUTO_MOTION_PRESETS.map((preset) => (
-                      <option key={preset.value} value={preset.value}>
-                        {t(preset.labelKey)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                  <div className="mt-2 grid gap-2">
+                    <button
+                      type="button"
+                      disabled={batchBusy}
+                      onClick={() => setBatchMotionMode("mixed")}
+                      className={`rounded-xl border px-3 py-3 text-left transition ${
+                        batchMotionMode === "mixed"
+                          ? "border-violet-500 bg-violet-50 ring-2 ring-violet-100"
+                          : "border-slate-200 bg-white hover:border-violet-200"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-sm font-black text-slate-900">
+                          ✨ 多效果輪用（推薦）
+                        </span>
+                        {batchMotionMode === "mixed" ? (
+                          <span className="rounded-full bg-violet-600 px-2 py-1 text-[10px] font-black text-white">
+                            已選
+                          </span>
+                        ) : null}
+                      </div>
+                      <p className="mt-1 text-xs leading-5 text-slate-600">
+                        每張貼圖自動換一種動畫，整套不會全部動得一樣。
+                      </p>
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={batchBusy}
+                      onClick={() => setBatchMotionMode("single")}
+                      className={`rounded-xl border px-3 py-3 text-left transition ${
+                        batchMotionMode === "single"
+                          ? "border-emerald-500 bg-emerald-50 ring-2 ring-emerald-100"
+                          : "border-slate-200 bg-white hover:border-emerald-200"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-sm font-black text-slate-900">
+                          🎬 全部使用同一效果
+                        </span>
+                        {batchMotionMode === "single" ? (
+                          <span className="rounded-full bg-emerald-600 px-2 py-1 text-[10px] font-black text-white">
+                            已選
+                          </span>
+                        ) : null}
+                      </div>
+                      <p className="mt-1 text-xs leading-5 text-slate-600">
+                        適合品牌想維持同一節奏，或指定全部使用某一種動畫。
+                      </p>
+                    </button>
+                  </div>
+
+                  {batchMotionMode === "single" ? (
+                    <label className="mt-3 block">
+                      <span className="text-xs font-black text-slate-700">
+                        選擇整套效果
+                      </span>
+                      <select
+                        value={batchMotionPreset}
+                        onChange={(event) =>
+                          setBatchMotionPreset(
+                            event.target.value as AutoMotionPreset,
+                          )
+                        }
+                        disabled={batchBusy}
+                        className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-bold"
+                      >
+                        {AUTO_MOTION_PRESETS.map((preset) => (
+                          <option key={preset.value} value={preset.value}>
+                            {t(preset.labelKey)}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ) : (
+                    <div className="mt-3 rounded-xl bg-violet-50 px-3 py-2">
+                      <p className="text-xs font-black text-violet-800">
+                        目前會依序輪用：
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {MIXED_BATCH_MOTION_PRESETS.slice(
+                          0,
+                          Math.min(
+                            batchSources.length || 8,
+                            MIXED_BATCH_MOTION_PRESETS.length,
+                          ),
+                        ).map((preset, index) => {
+                          const labelKey =
+                            AUTO_MOTION_PRESETS.find(
+                              (item) => item.value === preset,
+                            )?.labelKey ??
+                            "animated_line_sticker.auto_motion_auto";
+                          return (
+                            <span
+                              key={`${preset}-${index}`}
+                              className="rounded-full bg-white px-2 py-1 text-[10px] font-bold text-violet-700"
+                            >
+                              {String(index + 1).padStart(2, "0")} {t(labelKey)}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
 
                 <div className="mt-4 rounded-2xl bg-sky-50 p-3 text-xs leading-6 text-sky-900">
                   {t("animated_line_sticker.batch_output_summary")}
@@ -2630,10 +2770,10 @@ const AnimatedLineStickerTool: React.FC = () => {
                       第一張試播
                     </p>
                     <h3 className="mt-1 text-lg font-black text-slate-900">
-                      先看全部動畫效果，再決定整套套用哪一種
+                      先看全部動畫效果，也可以直接選「多效果輪用」
                     </h3>
                     <p className="mt-1 text-xs leading-5 text-slate-600">
-                      系統會只用第 01 張產生所有效果預覽，不會先處理整套；點預覽卡就會選中該效果。
+                      系統只用第 01 張產生所有效果預覽。點單一效果卡會自動切到「全部同一效果」；若想每張不同，就保留「多效果輪用」。
                     </p>
                   </div>
                   <div className="shrink-0 text-xs font-black text-violet-700">
@@ -2644,11 +2784,43 @@ const AnimatedLineStickerTool: React.FC = () => {
                 </div>
 
                 <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+                  <button
+                    type="button"
+                    disabled={batchBusy}
+                    onClick={() => setBatchMotionMode("mixed")}
+                    className={`min-w-0 rounded-2xl border p-2.5 text-left transition ${
+                      batchMotionMode === "mixed"
+                        ? "border-fuchsia-500 bg-fuchsia-50 ring-2 ring-fuchsia-200 shadow-md"
+                        : "border-fuchsia-100 bg-white/80 hover:border-fuchsia-300 hover:shadow-sm"
+                    }`}
+                  >
+                    <div className="flex aspect-[320/270] items-center justify-center rounded-xl border border-fuchsia-100 bg-gradient-to-br from-violet-100 via-white to-amber-50 p-3">
+                      <div className="grid grid-cols-2 gap-2 text-center text-2xl">
+                        <span>↕️</span>
+                        <span>↔️</span>
+                        <span>✨</span>
+                        <span>💥</span>
+                      </div>
+                    </div>
+                    <div className="mt-2 flex items-center justify-between gap-2">
+                      <span className="min-w-0 flex-1 text-xs font-black leading-5 text-fuchsia-800">
+                        多效果輪用
+                      </span>
+                      {batchMotionMode === "mixed" ? (
+                        <span className="shrink-0 rounded-full bg-fuchsia-600 px-2 py-1 text-[9px] font-black text-white">
+                          已選
+                        </span>
+                      ) : null}
+                    </div>
+                  </button>
+
                   {AUTO_MOTION_PRESETS.map((preset) => {
                     const preview = batchEffectGallery.find(
                       (item) => item.preset === preset.value,
                     );
-                    const selected = batchMotionPreset === preset.value;
+                    const selected =
+                      batchMotionMode === "single" &&
+                      batchMotionPreset === preset.value;
                     const previewUrl = preview?.urls[
                       batchEffectGalleryFrame % Math.max(preview.urls.length, 1)
                     ];
@@ -2658,7 +2830,10 @@ const AnimatedLineStickerTool: React.FC = () => {
                         key={preset.value}
                         type="button"
                         disabled={!previewUrl || batchBusy}
-                        onClick={() => setBatchMotionPreset(preset.value)}
+                        onClick={() => {
+                          setBatchMotionMode("single");
+                          setBatchMotionPreset(preset.value);
+                        }}
                         className={`min-w-0 rounded-2xl border p-2.5 text-left transition ${
                           selected
                             ? "border-violet-500 bg-white ring-2 ring-violet-200 shadow-md"
@@ -2694,10 +2869,20 @@ const AnimatedLineStickerTool: React.FC = () => {
                 </div>
 
                 <div className="mt-4 rounded-xl bg-white px-3 py-2 text-xs font-bold text-violet-800">
-                  目前整套效果：{t(
-                    AUTO_MOTION_PRESETS.find(
-                      (item) => item.value === batchMotionPreset,
-                    )?.labelKey ?? "animated_line_sticker.auto_motion_auto",
+                  {batchMotionMode === "mixed" ? (
+                    <>
+                      目前：✨ 多效果輪用。第 01 張開始依序套用不同效果，超過效果數後再從第一種循環。
+                    </>
+                  ) : (
+                    <>
+                      目前整套效果：
+                      {t(
+                        AUTO_MOTION_PRESETS.find(
+                          (item) => item.value === batchMotionPreset,
+                        )?.labelKey ??
+                          "animated_line_sticker.auto_motion_auto",
+                      )}
+                    </>
                   )}
                 </div>
               </div>
