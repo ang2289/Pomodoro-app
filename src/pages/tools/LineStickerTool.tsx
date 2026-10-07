@@ -2072,8 +2072,8 @@ export default function LineStickerTool() {
 
           <div className="space-y-4 mb-10">
             <section className="rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50 to-white p-5">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
+              <div className="grid gap-4">
+                <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="rounded-full bg-violet-600 px-3 py-1 text-[10px] font-black text-white">
                       一鍵母圖切割
@@ -2092,7 +2092,8 @@ export default function LineStickerTool() {
                     先選母圖，系統會先顯示每張的尺寸、判定格數與預計張數；確認組合正確後才開始切圖、去白底與安全整理，避免 16＋8 等混合母圖切錯。
                   </p>
                 </div>
-                <div className="flex shrink-0 flex-col gap-2 sm:min-w-[220px]">
+                <div className="min-w-0 grid gap-2 sm:grid-cols-2">
+                  <div className="sm:col-span-2">
                   {flowProject ? (
                     <div className="rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-xs font-black leading-5 text-violet-800">
                       已依第 1 步設定自動辨識：
@@ -2103,6 +2104,7 @@ export default function LineStickerTool() {
                     </div>
                   ) : (
                     <div className="grid grid-cols-2 gap-2">
+
                       {(["auto", "4x2", "4x4", "4x5"] as const).map((grid) => (
                         <button
                           key={grid}
@@ -2119,7 +2121,8 @@ export default function LineStickerTool() {
                       ))}
                     </div>
                   )}
-                  <label className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800">
+                  </div>
+                  <label className="flex min-w-0 items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800 sm:col-span-2">
                     <input
                       type="checkbox"
                       checked={autoRemoveWhiteBg}
@@ -2140,7 +2143,7 @@ export default function LineStickerTool() {
                     type="button"
                     disabled={loading}
                     onClick={() => motherSheetInputRef.current?.click()}
-                    className="rounded-xl bg-violet-600 px-4 py-3 text-sm font-black text-white shadow-md transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="rounded-xl bg-violet-600 px-4 py-3 text-sm font-black text-white shadow-md transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-2"
                   >
                     {loading && motherSheetDetectionStatus !== "cutting"
                       ? "正在判斷母圖格數…"
@@ -2531,6 +2534,12 @@ export default function LineStickerTool() {
             </section>
           )}
 
+          {files.length > 0 ? (
+            <div className="mb-10">
+              <CoupangAd placement="sticker" />
+            </div>
+          ) : null}
+
           {/* --- 修改開始：PhotoRoom 聯盟導流卡片 --- */}
           <section className="mt-10 mb-20 border-t border-slate-100 pt-10">
             <div className="flex flex-wrap items-center gap-2 mb-3">
@@ -2871,7 +2880,6 @@ export default function LineStickerTool() {
               </Link>
             </div>
           </section>
-          <CoupangAd placement="sticker" />
         </div>
 
         <footer className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white/85 px-3 py-2 backdrop-blur-xl sm:p-4">

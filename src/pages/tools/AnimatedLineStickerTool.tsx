@@ -99,6 +99,11 @@ type BatchAnimatedPreview = {
   overLimit: boolean;
 };
 
+type MotionPresetGalleryItem = {
+  preset: AutoMotionPreset;
+  urls: string[];
+};
+
 
 function makeFullBounds(width: number, height: number): AlphaBounds {
   return { left: 0, top: 0, right: width, bottom: height, width, height };
@@ -1363,6 +1368,13 @@ const AnimatedLineStickerTool: React.FC = () => {
   const [batchMessage, setBatchMessage] = useState("");
   const [batchAnimatedPreviews, setBatchAnimatedPreviews] =
     useState<BatchAnimatedPreview[]>([]);
+  const [batchEffectGallery, setBatchEffectGallery] =
+    useState<MotionPresetGalleryItem[]>([]);
+  const [batchEffectGalleryLoading, setBatchEffectGalleryLoading] =
+    useState(false);
+  const [batchEffectGalleryProgress, setBatchEffectGalleryProgress] =
+    useState(0);
+  const [batchEffectGalleryFrame, setBatchEffectGalleryFrame] = useState(0);
   const [handoffLoaded, setHandoffLoaded] = useState(false);
   const [handoffTheme, setHandoffTheme] = useState("");
   const [previewIndex, setPreviewIndex] = useState(0);
@@ -1379,6 +1391,7 @@ const AnimatedLineStickerTool: React.FC = () => {
   const autoPreviewFramesRef = useRef<FrameItem[]>([]);
   const batchSourcesRef = useRef<FrameItem[]>([]);
   const batchAnimatedPreviewsRef = useRef<BatchAnimatedPreview[]>([]);
+  const batchEffectGalleryUrlsRef = useRef<string[]>([]);
   const batchPreviewSectionRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
@@ -1461,6 +1474,9 @@ const AnimatedLineStickerTool: React.FC = () => {
       batchAnimatedPreviewsRef.current.forEach((item) =>
         URL.revokeObjectURL(item.url),
       );
+      batchEffectGalleryUrlsRef.current.forEach((url) =>
+        URL.revokeObjectURL(url),
+      );
       linePreviewUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
     };
   }, []);
@@ -1534,6 +1550,83 @@ const AnimatedLineStickerTool: React.FC = () => {
       window.clearTimeout(timer);
     };
   }, [autoSourceFile, autoMotionPreset, t]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    batchEffectGalleryUrlsRef.current.forEach((url) =>
+      URL.revokeObjectURL(url),
+    );
+    batchEffectGalleryUrlsRef.current = [];
+    setBatchEffectGallery([]);
+    setBatchEffectGalleryProgress(0);
+    setBatchEffectGalleryFrame(0);
+
+    const source = batchSources[0]?.file;
+    if (workflowMode !== "batch" || !source) {
+      setBatchEffectGalleryLoading(false);
+      return undefined;
+    }
+
+    setBatchEffectGalleryLoading(true);
+
+    (async () => {
+      const items: MotionPresetGalleryItem[] = [];
+      const createdUrls: string[] = [];
+
+      try {
+        for (let index = 0; index < AUTO_MOTION_PRESETS.length; index += 1) {
+          const preset = AUTO_MOTION_PRESETS[index];
+          const generated = await generateAutoAnimationFrameFiles(
+            source,
+            preset.value,
+          );
+
+          if (cancelled) break;
+
+          const urls = generated.map((file) => {
+            const url = URL.createObjectURL(file);
+            createdUrls.push(url);
+            return url;
+          });
+
+          items.push({ preset: preset.value, urls });
+          setBatchEffectGallery([...items]);
+          setBatchEffectGalleryProgress(
+            Math.round(((index + 1) / AUTO_MOTION_PRESETS.length) * 100),
+          );
+          await waitMs(10);
+        }
+
+        if (cancelled) {
+          createdUrls.forEach((url) => URL.revokeObjectURL(url));
+          return;
+        }
+
+        batchEffectGalleryUrlsRef.current = createdUrls;
+        setBatchEffectGallery(items);
+      } catch {
+        createdUrls.forEach((url) => URL.revokeObjectURL(url));
+        if (!cancelled) {
+          setBatchEffectGallery([]);
+        }
+      } finally {
+        if (!cancelled) setBatchEffectGalleryLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [batchSources, workflowMode]);
+
+  useEffect(() => {
+    if (!batchEffectGallery.length) return undefined;
+    const timer = window.setInterval(() => {
+      setBatchEffectGalleryFrame((current) => (current + 1) % 8);
+    }, 230);
+    return () => window.clearInterval(timer);
+  }, [batchEffectGallery.length]);
 
   const activePreviewCount = autoPreviewFrames.length || frames.length;
 
@@ -1738,6 +1831,12 @@ const AnimatedLineStickerTool: React.FC = () => {
     setBatchStatus("");
     setBatchMessage("");
     clearBatchAnimatedPreviews();
+    batchEffectGalleryUrlsRef.current.forEach((url) =>
+      URL.revokeObjectURL(url),
+    );
+    batchEffectGalleryUrlsRef.current = [];
+    setBatchEffectGallery([]);
+    setBatchEffectGalleryProgress(0);
     if (batchInputRef.current) batchInputRef.current.value = "";
   };
 
@@ -2522,6 +2621,87 @@ const AnimatedLineStickerTool: React.FC = () => {
                 ) : null}
               </div>
             </div>
+
+            {batchSources.length ? (
+              <div className="mt-6 rounded-3xl border border-violet-200 bg-violet-50/60 p-4 md:p-5">
+                <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+                  <div className="min-w-0">
+                    <p className="text-xs font-black uppercase tracking-wide text-violet-700">
+                      第一張試播
+                    </p>
+                    <h3 className="mt-1 text-lg font-black text-slate-900">
+                      先看全部動畫效果，再決定整套套用哪一種
+                    </h3>
+                    <p className="mt-1 text-xs leading-5 text-slate-600">
+                      系統會只用第 01 張產生所有效果預覽，不會先處理整套；點預覽卡就會選中該效果。
+                    </p>
+                  </div>
+                  <div className="shrink-0 text-xs font-black text-violet-700">
+                    {batchEffectGalleryLoading
+                      ? `正在建立預覽 ${batchEffectGalleryProgress}%`
+                      : `已建立 ${batchEffectGallery.length} 種效果`}
+                  </div>
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+                  {AUTO_MOTION_PRESETS.map((preset) => {
+                    const preview = batchEffectGallery.find(
+                      (item) => item.preset === preset.value,
+                    );
+                    const selected = batchMotionPreset === preset.value;
+                    const previewUrl = preview?.urls[
+                      batchEffectGalleryFrame % Math.max(preview.urls.length, 1)
+                    ];
+
+                    return (
+                      <button
+                        key={preset.value}
+                        type="button"
+                        disabled={!previewUrl || batchBusy}
+                        onClick={() => setBatchMotionPreset(preset.value)}
+                        className={`min-w-0 rounded-2xl border p-2.5 text-left transition ${
+                          selected
+                            ? "border-violet-500 bg-white ring-2 ring-violet-200 shadow-md"
+                            : "border-violet-100 bg-white/80 hover:border-violet-300 hover:shadow-sm"
+                        } disabled:cursor-wait disabled:opacity-60`}
+                      >
+                        <div className="aspect-[320/270] overflow-hidden rounded-xl border border-slate-100 bg-[linear-gradient(45deg,#f8fafc_25%,transparent_25%),linear-gradient(-45deg,#f8fafc_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#f8fafc_75%),linear-gradient(-45deg,transparent_75%,#f8fafc_75%)] bg-[length:16px_16px] bg-[position:0_0,0_8px,8px_-8px,-8px_0]">
+                          {previewUrl ? (
+                            <img
+                              src={previewUrl}
+                              alt={t(preset.labelKey)}
+                              className="h-full w-full object-contain"
+                            />
+                          ) : (
+                            <div className="flex h-full items-center justify-center px-2 text-center text-[10px] font-bold text-slate-400">
+                              建立中…
+                            </div>
+                          )}
+                        </div>
+                        <div className="mt-2 flex items-center justify-between gap-2">
+                          <span className="min-w-0 flex-1 break-words text-xs font-black leading-5 text-slate-800">
+                            {t(preset.labelKey)}
+                          </span>
+                          {selected ? (
+                            <span className="shrink-0 rounded-full bg-violet-600 px-2 py-1 text-[9px] font-black text-white">
+                              已選
+                            </span>
+                          ) : null}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="mt-4 rounded-xl bg-white px-3 py-2 text-xs font-bold text-violet-800">
+                  目前整套效果：{t(
+                    AUTO_MOTION_PRESETS.find(
+                      (item) => item.value === batchMotionPreset,
+                    )?.labelKey ?? "animated_line_sticker.auto_motion_auto",
+                  )}
+                </div>
+              </div>
+            ) : null}
           </section>
         ) : null}
 

@@ -122,7 +122,8 @@ function normalizeSource(image: HTMLImageElement): HTMLCanvasElement {
   const bounds = detectBoundsFromData(sourceData.data, source.width, source.height);
   if (!bounds) throw new Error("圖片沒有可辨識的內容，請確認透明PNG內有角色或文字。");
 
-  const padding = 6;
+  // 預留更大的動畫位移空間，避免加強動作後碰到畫布邊界。
+  const padding = 16;
   const scale = Math.min(
     (OUTPUT_WIDTH - padding * 2) / bounds.width,
     (OUTPUT_HEIGHT - padding * 2) / bounds.height,
@@ -304,13 +305,14 @@ function drawLayer(context: CanvasRenderingContext2D, layer: Layer, transform: T
 }
 
 function getTransforms(preset: AutoMotionPreset, frameIndex: number) {
-  const textScale = [1, 0.94, 1.06, 1.015, 1, 1.025, 0.985, 1][frameIndex];
-  const textY = [0, 4, -3, -1, 0, -1, 1, 0][frameIndex];
-  const bounceY = [0, 5, -5, -1, 0, -2, 1, 0][frameIndex];
-  const bounceScaleY = [1, 0.96, 1.035, 1.01, 1, 1.015, 0.99, 1][frameIndex];
-  const shakeRotation = [0, -2.5, 2.5, -1.4, 0, 1.5, -0.8, 0][frameIndex];
-  const nodRotation = [0, -1, 1.8, 3.2, 1.5, -0.8, 0.5, 0][frameIndex];
-  const accentOpacity = [0.55, 0.8, 1, 0.65, 1, 0.82, 0.55, 0.55][frameIndex];
+  // v2：整體把動作幅度放大約 35%～80%，讓手機上預覽也能一眼看出差異。
+  const textScale = [1, 0.9, 1.12, 1.03, 1, 1.055, 0.97, 1][frameIndex];
+  const textY = [0, 7, -6, -2, 0, -2, 2, 0][frameIndex];
+  const bounceY = [0, 9, -10, -3, 0, -5, 2, 0][frameIndex];
+  const bounceScaleY = [1, 0.91, 1.08, 1.025, 1, 1.035, 0.98, 1][frameIndex];
+  const shakeRotation = [0, -5.5, 5.5, -3.2, 0, 3.5, -2, 0][frameIndex];
+  const nodRotation = [0, -2.2, 3.8, 6.2, 3.2, -1.8, 1.2, 0][frameIndex];
+  const accentOpacity = [0.35, 0.78, 1, 0.5, 1, 0.75, 0.38, 0.35][frameIndex];
 
   const text: Transform = {};
   const character: Transform = {};
@@ -328,62 +330,61 @@ function getTransforms(preset: AutoMotionPreset, frameIndex: number) {
   }
   if (preset === "shake" || preset === "salute") {
     character.rotation = shakeRotation;
-    character.dx = [0, -2, 2, -1, 0, 1, -1, 0][frameIndex];
+    character.dx = [0, -6, 6, -3, 0, 3, -2, 0][frameIndex];
   }
   if (preset === "nod") {
     character.rotation = nodRotation;
-    character.dy = [0, 1, 3, 5, 2, -1, 0, 0][frameIndex];
+    character.dy = [0, 3, 6, 10, 5, -2, 1, 0][frameIndex];
   }
   if (preset === "sparkle") {
-    text.scaleX = [1, 1.01, 1.025, 1.01, 1, 1.015, 1, 1][frameIndex];
+    text.scaleX = [1, 1.025, 1.06, 1.025, 1, 1.04, 1, 1][frameIndex];
     text.scaleY = text.scaleX;
   }
   if (preset === "pulse") {
-    const s = [1, 1.04, 1.08, 1.03, 1, 1.035, 1.015, 1][frameIndex];
+    const s = [1, 1.07, 1.13, 1.055, 1, 1.07, 1.025, 1][frameIndex];
     text.scaleX = s;
     text.scaleY = s;
     character.scaleX = s;
     character.scaleY = s;
   }
   if (preset === "sway") {
-    character.rotation = [0, -4, 3.5, -2.5, 2, -1.2, 0.6, 0][frameIndex];
-    character.dx = [0, -3, 3, -2, 2, -1, 1, 0][frameIndex];
+    character.rotation = [0, -8, 7, -5, 4, -2.5, 1.2, 0][frameIndex];
+    character.dx = [0, -7, 7, -5, 4, -3, 2, 0][frameIndex];
   }
   if (preset === "pop") {
-    const s = [0.88, 1.08, 0.97, 1.04, 1, 1.02, 0.99, 1][frameIndex];
+    const s = [0.8, 1.16, 0.94, 1.09, 1, 1.045, 0.985, 1][frameIndex];
     character.scaleX = s;
     character.scaleY = s;
-    character.dy = [8, -5, 2, -2, 0, -1, 0, 0][frameIndex];
+    character.dy = [14, -9, 4, -4, 0, -2, 0, 0][frameIndex];
   }
   if (preset === "alert") {
-    text.scaleX = [1, 1.08, 0.98, 1.06, 1, 1.04, 1, 1][frameIndex];
+    text.scaleX = [1, 1.14, 0.96, 1.11, 1, 1.075, 0.99, 1][frameIndex];
     text.scaleY = text.scaleX;
-    character.rotation = [0, -2.5, 2.5, -2, 2, -1, 0.5, 0][frameIndex];
-    character.dx = [0, -3, 3, -2, 2, -1, 1, 0][frameIndex];
+    character.rotation = [0, -5.5, 5.5, -4, 4, -2.5, 1.3, 0][frameIndex];
+    character.dx = [0, -6, 6, -4, 4, -2, 2, 0][frameIndex];
   }
   if (preset === "spin") {
-    character.rotation = [0, -7, 9, -6, 4, -2, 1, 0][frameIndex];
-    character.scaleX = [1, 0.98, 1.02, 1, 1.01, 1, 1, 1][frameIndex];
+    character.rotation = [0, -14, 17, -12, 8, -4, 2, 0][frameIndex];
+    character.scaleX = [1, 0.96, 1.04, 0.99, 1.02, 1, 1, 1][frameIndex];
     character.scaleY = character.scaleX;
   }
   if (preset === "slideLeft") {
-    character.dx = [18, 10, 3, -2, 1, 0, 0, 0][frameIndex];
-    text.dx = [8, 4, 1, 0, 0, 0, 0, 0][frameIndex];
+    character.dx = [34, 20, 7, -4, 2, 0, 0, 0][frameIndex];
+    text.dx = [16, 9, 3, 0, 0, 0, 0, 0][frameIndex];
   }
   if (preset === "slideRight") {
-    character.dx = [-18, -10, -3, 2, -1, 0, 0, 0][frameIndex];
-    text.dx = [-8, -4, -1, 0, 0, 0, 0, 0][frameIndex];
+    character.dx = [-34, -20, -7, 4, -2, 0, 0, 0][frameIndex];
+    text.dx = [-16, -9, -3, 0, 0, 0, 0, 0][frameIndex];
   }
   if (preset === "breathe") {
-    const sx = [1, 1.01, 1.02, 1.025, 1.02, 1.01, 1, 1][frameIndex];
-    const sy = [1, 1.018, 1.035, 1.045, 1.035, 1.018, 1, 1][frameIndex];
+    const sx = [1, 1.025, 1.045, 1.06, 1.045, 1.025, 1, 1][frameIndex];
+    const sy = [1, 1.04, 1.075, 1.095, 1.075, 1.04, 1, 1][frameIndex];
     character.scaleX = sx;
     character.scaleY = sy;
-    character.dy = [0, -1, -2, -2, -1, 0, 0, 0][frameIndex];
+    character.dy = [0, -2, -4, -5, -3, -1, 0, 0][frameIndex];
   }
   return { text, character, accents };
 }
-
 function drawMotionMarks(
   context: CanvasRenderingContext2D,
   preset: AutoMotionPreset,
@@ -395,24 +396,24 @@ function drawMotionMarks(
     context.strokeStyle = "rgba(255,153,0,0.95)";
     context.lineWidth = 4;
     context.beginPath();
-    context.arc(62, 120, 24, Math.PI * 1.05, Math.PI * 1.75);
+    context.arc(62, 120, 31, Math.PI * 1.05, Math.PI * 1.75);
     context.stroke();
     context.strokeStyle = "rgba(255,210,45,0.9)";
     context.lineWidth = 2;
     context.beginPath();
-    context.arc(62, 120, 32, Math.PI * 1.08, Math.PI * 1.72);
+    context.arc(62, 120, 41, Math.PI * 1.08, Math.PI * 1.72);
     context.stroke();
   }
   if ((preset === "shake" || preset === "auto") && (frameIndex === 5 || frameIndex === 6)) {
     context.strokeStyle = "rgba(35,111,232,0.95)";
     context.lineWidth = 4;
     context.beginPath();
-    context.arc(276, 170, 25, -Math.PI * 0.42, Math.PI * 0.42);
+    context.arc(276, 170, 32, -Math.PI * 0.42, Math.PI * 0.42);
     context.stroke();
     context.strokeStyle = "rgba(101,184,255,0.9)";
     context.lineWidth = 2;
     context.beginPath();
-    context.arc(276, 170, 33, -Math.PI * 0.4, Math.PI * 0.4);
+    context.arc(276, 170, 42, -Math.PI * 0.4, Math.PI * 0.4);
     context.stroke();
   }
   context.restore();
