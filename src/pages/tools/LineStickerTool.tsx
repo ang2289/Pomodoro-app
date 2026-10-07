@@ -627,6 +627,144 @@ function detectMotherSheetGrid(
   return "4x4";
 }
 
+type MotherSheetDetection = {
+  id: string;
+  file: File;
+  sourceIndex: number;
+  width: number;
+  height: number;
+  grid: MotherSheetGrid;
+  stickerCount: number;
+};
+
+type MotherSheetPlanCheck = {
+  valid: boolean;
+  expectedCount: number;
+  actualCount: number;
+  expectedLabel: string;
+  actualLabel: string;
+  message: string;
+};
+
+function getMotherSheetGridStickerCount(grid: MotherSheetGrid) {
+  if (grid === "4x2") return 8;
+  if (grid === "4x5") return 20;
+  return 16;
+}
+
+function formatMotherSheetGrid(grid: MotherSheetGrid) {
+  return grid.replace("x", "×");
+}
+
+function formatMotherSheetPlan(
+  plan: ReturnType<typeof getMotherSheetPlan>,
+) {
+  return plan
+    .map((item) => `${formatMotherSheetGrid(item.grid)}（${item.count} 張）`)
+    .join(" ＋ ");
+}
+
+async function inspectMotherSheetFile(
+  file: File,
+  sourceIndex: number,
+  t: (key: string) => string,
+): Promise<MotherSheetDetection> {
+  const image = await loadImage(file, t);
+  const width = image.naturalWidth || image.width;
+  const height = image.naturalHeight || image.height;
+  const grid = detectMotherSheetGrid(width, height);
+
+  return {
+    id: `${sourceIndex}-${file.name}-${file.size}`,
+    file,
+    sourceIndex,
+    width,
+    height,
+    grid,
+    stickerCount: getMotherSheetGridStickerCount(grid),
+  };
+}
+
+function checkMotherSheetPlan(
+  detections: MotherSheetDetection[],
+  plan: ReturnType<typeof getMotherSheetPlan>,
+): MotherSheetPlanCheck {
+  const expectedCount = plan.reduce((sum, item) => sum + item.count, 0);
+  const actualCount = detections.reduce(
+    (sum, item) => sum + item.stickerCount,
+    0,
+  );
+  const expectedLabel = formatMotherSheetPlan(plan);
+  const actualLabel = detections.length
+    ? detections
+        .map(
+          (item) =>
+            `${formatMotherSheetGrid(item.grid)}（${item.stickerCount} 張）`,
+        )
+        .join(" ＋ ")
+    : "尚未選擇母圖";
+
+  if (detections.length !== plan.length) {
+    return {
+      valid: false,
+      expectedCount,
+      actualCount,
+      expectedLabel,
+      actualLabel,
+      message: `需要 ${plan.length} 張母圖，目前選了 ${detections.length} 張。`,
+    };
+  }
+
+  const expectedGrids = plan.map((item) => item.grid).sort();
+  const actualGrids = detections.map((item) => item.grid).sort();
+  const sameGridCombination =
+    expectedGrids.length === actualGrids.length &&
+    expectedGrids.every((grid, index) => grid === actualGrids[index]);
+
+  if (!sameGridCombination || expectedCount !== actualCount) {
+    return {
+      valid: false,
+      expectedCount,
+      actualCount,
+      expectedLabel,
+      actualLabel,
+      message: `母圖組合不符合。目前方案需要 ${expectedLabel}，實際偵測為 ${actualLabel}。`,
+    };
+  }
+
+  return {
+    valid: true,
+    expectedCount,
+    actualCount,
+    expectedLabel,
+    actualLabel,
+    message: `辨識正確，共 ${actualCount} 張，可以開始切圖。`,
+  };
+}
+
+function orderDetectedMotherSheetsForPlan(
+  detections: MotherSheetDetection[],
+  plan: ReturnType<typeof getMotherSheetPlan>,
+) {
+  const used = new Set<number>();
+  const ordered: Array<{ detection: MotherSheetDetection; grid: MotherSheetGrid }> = [];
+
+  plan.forEach((planned) => {
+    const matchIndex = detections.findIndex(
+      (item, index) => !used.has(index) && item.grid === planned.grid,
+    );
+    if (matchIndex < 0) return;
+    used.add(matchIndex);
+    ordered.push({
+      detection: detections[matchIndex],
+      grid: planned.grid,
+    });
+  });
+
+  return ordered;
+}
+
+
 async function detectMotherSheetGridFromFile(
   file: File,
   t: (key: string) => string,
@@ -1257,6 +1395,11 @@ export default function LineStickerTool() {
   const [reviewedWarnings, setReviewedWarnings] = useState<Record<number, boolean>>({});
   const [motherSheetGrid, setMotherSheetGrid] = useState<"auto" | MotherSheetGrid>("auto");
   const [autoRemoveWhiteBg, setAutoRemoveWhiteBg] = useState(true);
+  const [motherSheetDetections, setMotherSheetDetections] = useState<
+    MotherSheetDetection[]
+  >([]);
+  const [motherSheetDetectionStatus, setMotherSheetDetectionStatus] =
+    useState<"idle" | "ready" | "invalid" | "cutting">("idle");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1368,75 +1511,161 @@ export default function LineStickerTool() {
     [validateAndAddFiles],
   );
 
+  const expectedMotherSheetPlan = useMemo(
+    () => getMotherSheetPlan(flowProject?.count ?? stickerCount),
+    [flowProject, stickerCount],
+  );
+
+  const motherSheetPlanCheck = useMemo(
+    () => checkMotherSheetPlan(motherSheetDetections, expectedMotherSheetPlan),
+    [motherSheetDetections, expectedMotherSheetPlan],
+  );
+
   const handleMotherSheetChange = useCallback(
     async (event: ChangeEvent<HTMLInputElement>) => {
       const selected = Array.from(event.target.files || []);
       event.target.value = "";
       if (!selected.length) return;
+
       setLoading(true);
       setError(null);
+      setMotherSheetDetectionStatus("idle");
+
       try {
-        const splitFiles: File[] = [];
         const validSelected = selected.filter((file) =>
           ACCEPT_TYPES.includes(file.type),
         );
-        const plannedSheets = flowProject
-          ? getMotherSheetPlan(flowProject.count)
-          : null;
 
-        if (plannedSheets?.length) {
-          // 24 張 = 4×4（16 張）＋4×2（8 張）。
-          // 多選檔案時瀏覽器回傳順序不保證等於使用者點選順序，
-          // 所以先依圖片比例辨識格數，再依計畫順序配對。
-          const orderedSheets = await orderMotherSheetsForPlan(
-            validSelected,
-            plannedSheets,
-            t,
-          );
-
-          for (let sourceIndex = 0; sourceIndex < orderedSheets.length; sourceIndex += 1) {
-            const item = orderedSheets[sourceIndex];
-            const plannedGrid = plannedSheets[sourceIndex]?.grid;
-            const gridForFile = plannedGrid ?? item.grid;
-
-            splitFiles.push(
-              ...(await splitMotherSheet(
-                item.file,
-                gridForFile,
-                t,
-                autoRemoveWhiteBg,
-              )),
-            );
-          }
-        } else {
-          for (const file of validSelected) {
-            splitFiles.push(
-              ...(await splitMotherSheet(
-                file,
-                motherSheetGrid,
-                t,
-                autoRemoveWhiteBg,
-              )),
-            );
-          }
+        if (!validSelected.length) {
+          throw new Error("請選擇 PNG、JPG 或 WebP 母圖。");
         }
-        if (flowProject && splitFiles.length !== flowProject.count) {
-          throw new Error(
-            `母圖辨識後得到 ${splitFiles.length} 張，但目前設定需要 ${flowProject.count} 張。請確認母圖是否為 ${getMotherSheetPlan(flowProject.count)
-              .map((item) => item.grid.replace("x", "×"))
-              .join(" ＋ ")}。`,
-          );
+
+        const detections = await Promise.all(
+          validSelected.map((file, index) =>
+            inspectMotherSheetFile(file, index, t),
+          ),
+        );
+
+        setMotherSheetDetections(detections);
+
+        if (!flowProject && motherSheetGrid !== "auto") {
+          setMotherSheetDetectionStatus("ready");
+          return;
         }
-        await validateAndAddFiles(splitFiles);
-        if (flowProject) updateLineStickerProject({ stage: 4 });
+
+        const plan = getMotherSheetPlan(flowProject?.count ?? stickerCount);
+        const check = checkMotherSheetPlan(detections, plan);
+        setMotherSheetDetectionStatus(check.valid ? "ready" : "invalid");
+
+        if (!check.valid) {
+          setError(check.message);
+        }
       } catch (cause) {
-        setError(cause instanceof Error ? cause.message : "母圖自動切割失敗");
+        setMotherSheetDetections([]);
+        setMotherSheetDetectionStatus("invalid");
+        setError(
+          cause instanceof Error ? cause.message : "母圖格數辨識失敗",
+        );
       } finally {
         setLoading(false);
       }
     },
-    [motherSheetGrid, autoRemoveWhiteBg, flowProject, t, validateAndAddFiles],
+    [flowProject, motherSheetGrid, stickerCount, t],
   );
+
+  const confirmMotherSheetSplit = useCallback(async () => {
+    if (!motherSheetDetections.length || loading) return;
+
+    const useAutoPlan = Boolean(flowProject) || motherSheetGrid === "auto";
+    const plan = getMotherSheetPlan(flowProject?.count ?? stickerCount);
+    const check = checkMotherSheetPlan(motherSheetDetections, plan);
+
+    if (useAutoPlan && !check.valid) {
+      setMotherSheetDetectionStatus("invalid");
+      setError(check.message);
+      return;
+    }
+
+    setLoading(true);
+    setMotherSheetDetectionStatus("cutting");
+    setError(null);
+
+    try {
+      const splitFiles: File[] = [];
+
+      if (useAutoPlan) {
+        const orderedSheets = orderDetectedMotherSheetsForPlan(
+          motherSheetDetections,
+          plan,
+        );
+
+        if (orderedSheets.length !== plan.length) {
+          throw new Error(
+            `無法配對母圖。方案需要 ${formatMotherSheetPlan(plan)}，請重新選擇母圖。`,
+          );
+        }
+
+        for (const item of orderedSheets) {
+          splitFiles.push(
+            ...(await splitMotherSheet(
+              item.detection.file,
+              item.grid,
+              t,
+              autoRemoveWhiteBg,
+            )),
+          );
+        }
+      } else {
+        for (const item of motherSheetDetections) {
+          splitFiles.push(
+            ...(await splitMotherSheet(
+              item.file,
+              motherSheetGrid,
+              t,
+              autoRemoveWhiteBg,
+            )),
+          );
+        }
+      }
+
+      const targetCount = flowProject?.count ?? stickerCount;
+      if (splitFiles.length !== targetCount) {
+        throw new Error(
+          `切圖後得到 ${splitFiles.length} 張，但目前設定需要 ${targetCount} 張。請確認母圖格數與方案。`,
+        );
+      }
+
+      // 新母圖確認後，直接取代上一批結果，避免重複累加。
+      files.forEach((preview) => URL.revokeObjectURL(preview.url));
+      setFiles([]);
+      setItemScales({});
+      setItemOffsets({});
+      setReviewedWarnings({});
+      setMainImageIndex(0);
+      setDownloadCompleted(false);
+
+      await validateAndAddFiles(splitFiles);
+      setMotherSheetDetectionStatus("ready");
+      if (flowProject) updateLineStickerProject({ stage: 4 });
+    } catch (cause) {
+      setMotherSheetDetectionStatus("invalid");
+      setError(
+        cause instanceof Error ? cause.message : "母圖自動切割失敗",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [
+    autoRemoveWhiteBg,
+    files,
+    flowProject,
+    loading,
+    motherSheetDetections,
+    motherSheetGrid,
+    stickerCount,
+    t,
+    validateAndAddFiles,
+  ]);
 
   const clearAll = useCallback(() => {
     files.forEach((p) => URL.revokeObjectURL(p.url));
@@ -1445,6 +1674,8 @@ export default function LineStickerTool() {
     setItemOffsets({});
     setReviewedWarnings({});
     setMainImageIndex(0);
+    setMotherSheetDetections([]);
+    setMotherSheetDetectionStatus("idle");
     setDownloadCompleted(false);
   }, [files]);
 
@@ -1858,7 +2089,7 @@ export default function LineStickerTool() {
                     上傳母圖，後面交給系統自動整理
                   </h2>
                   <p className="mt-1 text-xs leading-relaxed text-slate-500">
-                    直接選擇 ChatGPT 產生的母圖即可。系統會在每格外多取約 6% 內容，盡量救回貼近格線的文字，再辨識並移除相鄰格殘片、去白底，最後放回安全框內。
+                    先選母圖，系統會先顯示每張的尺寸、判定格數與預計張數；確認組合正確後才開始切圖、去白底與安全整理，避免 16＋8 等混合母圖切錯。
                   </p>
                 </div>
                 <div className="flex shrink-0 flex-col gap-2 sm:min-w-[220px]">
@@ -1911,10 +2142,148 @@ export default function LineStickerTool() {
                     onClick={() => motherSheetInputRef.current?.click()}
                     className="rounded-xl bg-violet-600 px-4 py-3 text-sm font-black text-white shadow-md transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {loading ? "正在自動整理…" : "選擇母圖 → 自動裁切與去背"}
+                    {loading && motherSheetDetectionStatus !== "cutting"
+                      ? "正在判斷母圖格數…"
+                      : "選擇母圖 → 先判斷格數"}
                   </button>
                 </div>
               </div>
+
+              {motherSheetDetections.length > 0 ? (
+                <div className="mt-5 rounded-2xl border border-violet-200 bg-white p-4 shadow-sm">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-black text-slate-900">
+                        🔎 母圖辨識結果
+                      </p>
+                      <p className="mt-1 text-xs leading-5 text-slate-500">
+                        系統先確認每張母圖尺寸與格數；組合正確後才會真的切圖。
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => motherSheetInputRef.current?.click()}
+                      disabled={loading}
+                      className="rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-xs font-black text-violet-700 hover:bg-violet-100 disabled:opacity-50"
+                    >
+                      重新選母圖
+                    </button>
+                  </div>
+
+                  {(flowProject || motherSheetGrid === "auto") ? (
+                    <div className="mt-4 grid gap-2 text-xs sm:grid-cols-2">
+                      <div className="rounded-xl bg-blue-50 px-3 py-2 font-bold text-blue-800">
+                        方案需要：{motherSheetPlanCheck.expectedLabel}
+                        <span className="ml-1">
+                          ＝ {motherSheetPlanCheck.expectedCount} 張
+                        </span>
+                      </div>
+                      <div
+                        className={`rounded-xl px-3 py-2 font-bold ${
+                          motherSheetPlanCheck.valid
+                            ? "bg-emerald-50 text-emerald-800"
+                            : "bg-rose-50 text-rose-700"
+                        }`}
+                      >
+                        實際偵測：{motherSheetPlanCheck.actualLabel}
+                        <span className="ml-1">
+                          ＝ {motherSheetPlanCheck.actualCount} 張
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mt-4 rounded-xl bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800">
+                      目前是手動格數模式：每張母圖將強制使用
+                      {formatMotherSheetGrid(motherSheetGrid)}。
+                    </div>
+                  )}
+
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    {motherSheetDetections.map((item, index) => {
+                      const plannedGrid =
+                        expectedMotherSheetPlan[index]?.grid ?? null;
+                      const matchesPlan =
+                        !plannedGrid ||
+                        item.grid === plannedGrid ||
+                        expectedMotherSheetPlan.some(
+                          (planItem) => planItem.grid === item.grid,
+                        );
+
+                      return (
+                        <div
+                          key={item.id}
+                          className={`rounded-2xl border p-3 ${
+                            matchesPlan
+                              ? "border-emerald-200 bg-emerald-50/60"
+                              : "border-rose-200 bg-rose-50"
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <p
+                                className="truncate text-xs font-black text-slate-800"
+                                title={item.file.name}
+                              >
+                                母圖 {index + 1}｜{item.file.name}
+                              </p>
+                              <p className="mt-1 text-[11px] text-slate-500">
+                                {item.width} × {item.height}
+                              </p>
+                            </div>
+                            <span
+                              className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-black ${
+                                matchesPlan
+                                  ? "bg-emerald-100 text-emerald-700"
+                                  : "bg-rose-100 text-rose-700"
+                              }`}
+                            >
+                              {matchesPlan ? "✓ 已辨識" : "需確認"}
+                            </span>
+                          </div>
+                          <div className="mt-3 flex items-center justify-between gap-2">
+                            <span className="text-xs font-bold text-slate-600">
+                              判定格數
+                            </span>
+                            <strong className="text-sm text-violet-700">
+                              {formatMotherSheetGrid(item.grid)} → {item.stickerCount} 張
+                            </strong>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div
+                    className={`mt-4 rounded-xl px-3 py-2 text-xs font-bold leading-5 ${
+                      (flowProject || motherSheetGrid === "auto") &&
+                      !motherSheetPlanCheck.valid
+                        ? "bg-rose-50 text-rose-700"
+                        : "bg-emerald-50 text-emerald-800"
+                    }`}
+                  >
+                    {(flowProject || motherSheetGrid === "auto")
+                      ? motherSheetPlanCheck.message
+                      : `已辨識 ${motherSheetDetections.length} 張母圖；確認後會依手動格數 ${formatMotherSheetGrid(
+                          motherSheetGrid,
+                        )} 切圖。`}
+                  </div>
+
+                  <button
+                    type="button"
+                    disabled={
+                      loading ||
+                      ((flowProject || motherSheetGrid === "auto") &&
+                        !motherSheetPlanCheck.valid)
+                    }
+                    onClick={confirmMotherSheetSplit}
+                    className="mt-4 min-h-12 w-full rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-black text-white shadow-md transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                  >
+                    {loading && motherSheetDetectionStatus === "cutting"
+                      ? "正在切圖、去背與安全整理…"
+                      : "✓ 確認格數正確，開始切圖"}
+                  </button>
+                </div>
+              ) : null}
             </section>
 
             <section
