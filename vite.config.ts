@@ -9,6 +9,7 @@ export default defineConfig(({ mode }) => {
   const serverEnv = loadEnv(mode, process.cwd(), '')
   Object.assign(process.env, serverEnv)
   const env = loadEnv(mode, process.cwd(), 'VITE_')
+  const devPort = Number(serverEnv.VITE_DEV_PORT || 3005)
   const apiProxyTarget =
     env.VITE_VERCEL_URL?.trim() || 'https://pomodoro-app-eight-rouge.vercel.app'
   const apiIsHttps = apiProxyTarget.startsWith('https://')
@@ -121,11 +122,11 @@ export default defineConfig(({ mode }) => {
       ],
     },
     host: '0.0.0.0',
-    port: 3005,
+    port: devPort,
     hmr: {
       overlay: false,
       host: 'localhost',
-      port: 3005,
+      port: devPort,
       protocol: 'ws'
     },
     watch: {
