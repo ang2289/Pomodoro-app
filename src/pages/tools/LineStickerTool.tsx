@@ -627,6 +627,60 @@ function detectMotherSheetGrid(
   return "4x4";
 }
 
+async function detectMotherSheetGridFromFile(
+  file: File,
+  t: (key: string) => string,
+): Promise<MotherSheetGrid> {
+  const image = await loadImage(file, t);
+  return detectMotherSheetGrid(
+    image.naturalWidth || image.width,
+    image.naturalHeight || image.height,
+  );
+}
+
+async function orderMotherSheetsForPlan(
+  files: File[],
+  plan: ReturnType<typeof getMotherSheetPlan>,
+  t: (key: string) => string,
+): Promise<Array<{ file: File; grid: MotherSheetGrid }>> {
+  if (!plan.length) return [];
+
+  const detected = await Promise.all(
+    files.map(async (file, index) => ({
+      file,
+      index,
+      grid: await detectMotherSheetGridFromFile(file, t),
+    })),
+  );
+
+  const used = new Set<number>();
+  const ordered: Array<{ file: File; grid: MotherSheetGrid }> = [];
+
+  for (const planned of plan) {
+    let match = detected.find(
+      (item) => !used.has(item.index) && item.grid === planned.grid,
+    );
+
+    // 32 / 40 張的兩張母圖格數相同時，保留瀏覽器提供的檔案順序。
+    if (!match) {
+      match = detected.find((item) => !used.has(item.index));
+    }
+    if (!match) break;
+
+    used.add(match.index);
+    ordered.push({
+      file: match.file,
+      grid: match.grid === planned.grid ? planned.grid : match.grid,
+    });
+  }
+
+  detected
+    .filter((item) => !used.has(item.index))
+    .forEach((item) => ordered.push({ file: item.file, grid: item.grid }));
+
+  return ordered;
+}
+
 function removeConnectedWhiteBackground(
   canvas: HTMLCanvasElement,
   threshold = 238,
@@ -1323,24 +1377,54 @@ export default function LineStickerTool() {
       setError(null);
       try {
         const splitFiles: File[] = [];
+        const validSelected = selected.filter((file) =>
+          ACCEPT_TYPES.includes(file.type),
+        );
         const plannedSheets = flowProject
           ? getMotherSheetPlan(flowProject.count)
           : null;
 
-        for (let sourceIndex = 0; sourceIndex < selected.length; sourceIndex += 1) {
-          const file = selected[sourceIndex];
-          if (!ACCEPT_TYPES.includes(file.type)) continue;
+        if (plannedSheets?.length) {
+          // 24 張 = 4×4（16 張）＋4×2（8 張）。
+          // 多選檔案時瀏覽器回傳順序不保證等於使用者點選順序，
+          // 所以先依圖片比例辨識格數，再依計畫順序配對。
+          const orderedSheets = await orderMotherSheetsForPlan(
+            validSelected,
+            plannedSheets,
+            t,
+          );
 
-          const plannedGrid = plannedSheets?.[sourceIndex]?.grid;
-          const gridForFile = plannedGrid ?? motherSheetGrid;
+          for (let sourceIndex = 0; sourceIndex < orderedSheets.length; sourceIndex += 1) {
+            const item = orderedSheets[sourceIndex];
+            const plannedGrid = plannedSheets[sourceIndex]?.grid;
+            const gridForFile = plannedGrid ?? item.grid;
 
-          splitFiles.push(
-            ...(await splitMotherSheet(
-              file,
-              gridForFile,
-              t,
-              autoRemoveWhiteBg,
-            )),
+            splitFiles.push(
+              ...(await splitMotherSheet(
+                item.file,
+                gridForFile,
+                t,
+                autoRemoveWhiteBg,
+              )),
+            );
+          }
+        } else {
+          for (const file of validSelected) {
+            splitFiles.push(
+              ...(await splitMotherSheet(
+                file,
+                motherSheetGrid,
+                t,
+                autoRemoveWhiteBg,
+              )),
+            );
+          }
+        }
+        if (flowProject && splitFiles.length !== flowProject.count) {
+          throw new Error(
+            `母圖辨識後得到 ${splitFiles.length} 張，但目前設定需要 ${flowProject.count} 張。請確認母圖是否為 ${getMotherSheetPlan(flowProject.count)
+              .map((item) => item.grid.replace("x", "×"))
+              .join(" ＋ ")}。`,
           );
         }
         await validateAndAddFiles(splitFiles);
@@ -1687,7 +1771,7 @@ export default function LineStickerTool() {
                 {getMotherSheetPlan(flowProject.count)
                   .map((item) => item.grid.replace("x", "×"))
                   .join(" ＋ ")}
-                。上傳後會自動依順序裁切。
+                。可一起選取，順序不限；系統會先辨識每張母圖比例，再用正確格數裁切。
               </p>
             </section>
           ) : (
@@ -1780,11 +1864,11 @@ export default function LineStickerTool() {
                 <div className="flex shrink-0 flex-col gap-2 sm:min-w-[220px]">
                   {flowProject ? (
                     <div className="rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-xs font-black leading-5 text-violet-800">
-                      已依第 1 步設定自動辨識順序：
+                      已依第 1 步設定自動辨識：
                       {getMotherSheetPlan(flowProject.count)
                         .map((item) => item.grid.replace("x", "×"))
                         .join(" ＋ ")}
-                      ，不用再選格數。
+                      。可一次多選，檔案順序不限，系統會依圖片比例自動配對。
                     </div>
                   ) : (
                     <div className="grid grid-cols-2 gap-2">
