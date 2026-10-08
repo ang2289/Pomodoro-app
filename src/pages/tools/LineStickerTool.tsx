@@ -463,6 +463,94 @@ function getImageTransparencyInfo(img: HTMLImageElement): {
   return { hasTransparency, transparencyRatio, box };
 }
 
+function getImageSourceEdgeRisk(img: HTMLImageElement): {
+  touchesHardEdge: boolean;
+  nearEdge: boolean;
+} {
+  const width = img.naturalWidth || img.width;
+  const height = img.naturalHeight || img.height;
+  if (!width || !height) {
+    return { touchesHardEdge: false, nearEdge: false };
+  }
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  if (!context) {
+    return { touchesHardEdge: false, nearEdge: false };
+  }
+
+  context.clearRect(0, 0, width, height);
+  context.drawImage(img, 0, 0, width, height);
+  const pixels = context.getImageData(0, 0, width, height).data;
+
+  const hardMargin = Math.max(
+    2,
+    Math.round(Math.min(width, height) * 0.006),
+  );
+  const nearMargin = Math.max(
+    hardMargin + 2,
+    Math.round(Math.min(width, height) * 0.025),
+  );
+
+  let visible = 0;
+  let hardPixels = 0;
+  let nearPixels = 0;
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const alpha = pixels[(y * width + x) * 4 + 3];
+      if (alpha <= ALPHA_THRESHOLD) continue;
+      visible += 1;
+
+      const hard =
+        x < hardMargin ||
+        y < hardMargin ||
+        x >= width - hardMargin ||
+        y >= height - hardMargin;
+      const near =
+        x < nearMargin ||
+        y < nearMargin ||
+        x >= width - nearMargin ||
+        y >= height - nearMargin;
+
+      if (hard) hardPixels += 1;
+      if (near) nearPixels += 1;
+    }
+  }
+
+  if (!visible) {
+    return { touchesHardEdge: false, nearEdge: false };
+  }
+
+  const hardBorderArea =
+    width * hardMargin * 2 +
+    Math.max(0, height - hardMargin * 2) * hardMargin * 2;
+  const nearBorderArea =
+    width * nearMargin * 2 +
+    Math.max(0, height - nearMargin * 2) * nearMargin * 2;
+
+  const hardCoverage = hardBorderArea ? hardPixels / hardBorderArea : 0;
+  const nearCoverage = nearBorderArea ? nearPixels / nearBorderArea : 0;
+  const hardRatio = hardPixels / visible;
+  const nearRatio = nearPixels / visible;
+
+  // 少量抗鋸齒、花瓣或擴張切格留下的 1~2px 像素不再誤判為「內容被切到」。
+  // 只有邊界有一段明顯、連續的內容時才提示。
+  const touchesHardEdge =
+    hardPixels >= 36 &&
+    hardCoverage >= 0.025 &&
+    hardRatio >= 0.0015;
+  const nearEdge =
+    !touchesHardEdge &&
+    nearPixels >= 90 &&
+    nearCoverage >= 0.035 &&
+    nearRatio >= 0.004;
+
+  return { touchesHardEdge, nearEdge };
+}
+
 function drawStickerToTransparentCanvas(
   img: HTMLImageElement,
   canvas: HTMLCanvasElement,
@@ -1547,27 +1635,9 @@ export default function LineStickerTool() {
         try {
           const img = await loadImage(f, t);
           const transparency = getImageTransparencyInfo(img);
-          const sourceBox = transparency.box;
-          const sourceEdgeMargin = Math.max(
-            2,
-            Math.round(Math.min(img.naturalWidth, img.naturalHeight) * 0.025),
-          );
-          const sourceTouchesHardEdge = Boolean(
-            sourceBox &&
-              (sourceBox.x <= 1 ||
-                sourceBox.y <= 1 ||
-                sourceBox.x + sourceBox.width >= img.naturalWidth - 1 ||
-                sourceBox.y + sourceBox.height >= img.naturalHeight - 1),
-          );
-          const sourceNearEdge = Boolean(
-            sourceBox &&
-              (sourceBox.x <= sourceEdgeMargin ||
-                sourceBox.y <= sourceEdgeMargin ||
-                sourceBox.x + sourceBox.width >=
-                  img.naturalWidth - sourceEdgeMargin ||
-                sourceBox.y + sourceBox.height >=
-                  img.naturalHeight - sourceEdgeMargin),
-          );
+          const edgeRisk = getImageSourceEdgeRisk(img);
+          const sourceTouchesHardEdge = edgeRisk.touchesHardEdge;
+          const sourceNearEdge = edgeRisk.nearEdge;
 
           previews.push({
             file: f,
@@ -1620,6 +1690,35 @@ export default function LineStickerTool() {
   const motherSheetPlanCheck = useMemo(
     () => checkMotherSheetPlan(motherSheetDetections, expectedMotherSheetPlan),
     [motherSheetDetections, expectedMotherSheetPlan],
+  );
+
+  const overrideMotherSheetGrid = useCallback(
+    (id: string, grid: MotherSheetGrid) => {
+      setMotherSheetDetections((previous) => {
+        const next = previous.map((item) =>
+          item.id === id
+            ? {
+                ...item,
+                grid,
+                stickerCount: getMotherSheetGridStickerCount(grid),
+              }
+            : item,
+        );
+
+        if (flowProject || motherSheetGrid === "auto") {
+          const plan = getMotherSheetPlan(flowProject?.count ?? stickerCount);
+          const check = checkMotherSheetPlan(next, plan);
+          setMotherSheetDetectionStatus(check.valid ? "ready" : "invalid");
+          setError(check.valid ? null : check.message);
+        } else {
+          setMotherSheetDetectionStatus("ready");
+          setError(null);
+        }
+
+        return next;
+      });
+    },
+    [flowProject, motherSheetGrid, stickerCount],
   );
 
   const handleMotherSheetChange = useCallback(
@@ -2261,7 +2360,7 @@ export default function LineStickerTool() {
                         🔎 母圖辨識結果
                       </p>
                       <p className="mt-1 text-xs leading-5 text-slate-500">
-                        系統先確認每張母圖尺寸與格數；組合正確後才會真的切圖。
+                        系統會看實際內容排列，不只看圖片長寬；正方形畫布也可能是 4×2。若判錯，可在下方直接手動修正。
                       </p>
                     </div>
                     <button
@@ -2302,7 +2401,7 @@ export default function LineStickerTool() {
                     </div>
                   )}
 
-                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <div className="mt-4 grid gap-3 xl:grid-cols-2">
                     {motherSheetDetections.map((item, index) => {
                       const plannedGrid =
                         expectedMotherSheetPlan[index]?.grid ?? null;
@@ -2351,6 +2450,32 @@ export default function LineStickerTool() {
                             <strong className="text-sm text-violet-700">
                               {formatMotherSheetGrid(item.grid)} → {item.stickerCount} 張
                             </strong>
+                          </div>
+                          <div className="mt-3 rounded-xl border border-violet-100 bg-white/80 p-2">
+                            <p className="text-[10px] font-bold leading-4 text-slate-500">
+                              如果 AI 母圖留白很多、系統判錯，可直接手動指定這一張：
+                            </p>
+                            <div className="mt-2 grid grid-cols-3 gap-1.5">
+                              {(["4x2", "4x4", "4x5"] as MotherSheetGrid[]).map(
+                                (grid) => (
+                                  <button
+                                    key={grid}
+                                    type="button"
+                                    onClick={() =>
+                                      overrideMotherSheetGrid(item.id, grid)
+                                    }
+                                    disabled={loading}
+                                    className={`rounded-lg px-2 py-1.5 text-[10px] font-black transition ${
+                                      item.grid === grid
+                                        ? "bg-violet-600 text-white"
+                                        : "bg-slate-100 text-slate-600 hover:bg-violet-50 hover:text-violet-700"
+                                    }`}
+                                  >
+                                    {formatMotherSheetGrid(grid)}
+                                  </button>
+                                ),
+                              )}
+                            </div>
                           </div>
                         </div>
                       );
@@ -2562,8 +2687,8 @@ export default function LineStickerTool() {
                                 : "border-amber-200 bg-amber-50"
                           }`}
                         >
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div className="min-w-0">
                               <p className="text-sm font-black text-slate-900">
                                 第 {String(report.index + 1).padStart(2, "0")} 張
                               </p>
