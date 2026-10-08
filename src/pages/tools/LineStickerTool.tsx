@@ -627,6 +627,110 @@ function detectMotherSheetGrid(
   return "4x4";
 }
 
+function percentile(values: number[], q: number) {
+  if (!values.length) return 1;
+  const sorted = [...values].sort((a, b) => a - b);
+  const index = Math.min(
+    sorted.length - 1,
+    Math.max(0, Math.floor((sorted.length - 1) * q)),
+  );
+  return sorted[index];
+}
+
+function detectMotherSheetGridFromImage(
+  image: HTMLImageElement,
+): MotherSheetGrid {
+  const sourceWidth = Math.max(1, image.naturalWidth || image.width);
+  const sourceHeight = Math.max(1, image.naturalHeight || image.height);
+  const ratioFallback = detectMotherSheetGrid(sourceWidth, sourceHeight);
+
+  const maxSide = 360;
+  const scale = Math.min(1, maxSide / Math.max(sourceWidth, sourceHeight));
+  const width = Math.max(48, Math.round(sourceWidth * scale));
+  const height = Math.max(48, Math.round(sourceHeight * scale));
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  if (!context) return ratioFallback;
+
+  context.drawImage(image, 0, 0, width, height);
+  const pixels = context.getImageData(0, 0, width, height).data;
+  const cornerIndexes = [
+    0,
+    (width - 1) * 4,
+    (height - 1) * width * 4,
+    (height * width - 1) * 4,
+  ];
+  const background = [0, 1, 2, 3].map((channel) =>
+    Math.round(
+      cornerIndexes.reduce(
+        (sum, index) => sum + pixels[index + channel],
+        0,
+      ) / cornerIndexes.length,
+    ),
+  );
+
+  const rowInk = new Array<number>(height).fill(0);
+  let totalInk = 0;
+
+  for (let y = 0; y < height; y += 1) {
+    let ink = 0;
+    for (let x = 0; x < width; x += 1) {
+      const p = (y * width + x) * 4;
+      const alpha = pixels[p + 3];
+      const alphaDiff = Math.abs(alpha - background[3]);
+      const colorDiff =
+        Math.abs(pixels[p] - background[0]) +
+        Math.abs(pixels[p + 1] - background[1]) +
+        Math.abs(pixels[p + 2] - background[2]);
+      const visibleAgainstTransparent =
+        background[3] < 40 && alpha > 40;
+
+      if (
+        visibleAgainstTransparent ||
+        alphaDiff > 45 ||
+        (alpha > 24 && colorDiff > 54)
+      ) {
+        ink += 1;
+      }
+    }
+    rowInk[y] = ink / width;
+    totalInk += ink;
+  }
+
+  const overallInk = totalInk / (width * height);
+  if (overallInk < 0.02) return ratioFallback;
+
+  const separatorScore = (fraction: number) => {
+    const center = Math.round(height * fraction);
+    const radius = Math.max(2, Math.round(height * 0.018));
+    const values: number[] = [];
+    for (
+      let y = Math.max(0, center - radius);
+      y <= Math.min(height - 1, center + radius);
+      y += 1
+    ) {
+      values.push(rowInk[y]);
+    }
+    return percentile(values, 0.2);
+  };
+
+  const threshold = Math.max(
+    0.12,
+    Math.min(0.32, overallInk * 0.45),
+  );
+  const fifths = [0.2, 0.4, 0.6, 0.8].map(separatorScore);
+  const quarters = [0.25, 0.5, 0.75].map(separatorScore);
+  const center = separatorScore(0.5);
+
+  if (fifths.every((score) => score < threshold)) return "4x5";
+  if (quarters.every((score) => score < threshold)) return "4x4";
+  if (center < threshold) return "4x2";
+
+  return ratioFallback;
+}
+
 type MotherSheetDetection = {
   id: string;
   file: File;
@@ -672,7 +776,7 @@ async function inspectMotherSheetFile(
   const image = await loadImage(file, t);
   const width = image.naturalWidth || image.width;
   const height = image.naturalHeight || image.height;
-  const grid = detectMotherSheetGrid(width, height);
+  const grid = detectMotherSheetGridFromImage(image);
 
   return {
     id: `${sourceIndex}-${file.name}-${file.size}`,
@@ -770,10 +874,7 @@ async function detectMotherSheetGridFromFile(
   t: (key: string) => string,
 ): Promise<MotherSheetGrid> {
   const image = await loadImage(file, t);
-  return detectMotherSheetGrid(
-    image.naturalWidth || image.width,
-    image.naturalHeight || image.height,
-  );
+  return detectMotherSheetGridFromImage(image);
 }
 
 async function orderMotherSheetsForPlan(
