@@ -1942,18 +1942,28 @@ export default function LineStickerTool() {
       );
       const report = analyzeStickerCanvas(canvas, index);
 
+      const offset = getOffsetForIndex(index);
+      const scale = getScaleForIndex(index);
+      const autoSafeLayout =
+        cropMode === "smart-safe" &&
+        scale <= 92 &&
+        Math.abs(offset.x) <= 1 &&
+        Math.abs(offset.y) <= 1;
+
       if (preview.sourceTouchesHardEdge) {
         report.issues.unshift({
           code: "source_cut",
-          severity: "error",
-          message: "原圖內容已碰到切圖邊界，可能已切到文字／角色，請重新切圖或換母圖",
+          severity: "warning",
+          message:
+            "母圖內容貼近原始切格邊界；系統已保留重疊區並加安全留白，請用上方預覽目視確認文字／角色是否完整",
         });
-        report.severity = "error";
-      } else if (preview.sourceNearEdge) {
+        if (report.severity === "ok") report.severity = "warning";
+      } else if (preview.sourceNearEdge && !autoSafeLayout) {
         report.issues.unshift({
           code: "source_near_edge",
           severity: "warning",
-          message: "原圖內容非常靠近切圖邊界，建議按「全部自動安全修正」後再確認",
+          message:
+            "母圖內容靠近切格邊界；可按「全部自動安全修正」回到安全位置",
         });
         if (report.severity === "ok") report.severity = "warning";
       }
@@ -2687,14 +2697,19 @@ export default function LineStickerTool() {
                                 : "border-amber-200 bg-amber-50"
                           }`}
                         >
-                          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                          <div className="flex min-w-0 flex-col gap-3">
                             <div className="min-w-0">
                               <p className="text-sm font-black text-slate-900">
                                 第 {String(report.index + 1).padStart(2, "0")} 張
                               </p>
-                              <ul className="mt-1 space-y-1 text-xs text-slate-600">
+                              <ul className="mt-1 space-y-1 text-xs leading-6 text-slate-600">
                                 {report.issues.map((issue) => (
-                                  <li key={issue.code}>• {issue.message}</li>
+                                  <li
+                                    key={issue.code}
+                                    className="whitespace-normal break-words"
+                                  >
+                                    • {issue.message}
+                                  </li>
                                 ))}
                               </ul>
                             </div>
@@ -2707,10 +2722,10 @@ export default function LineStickerTool() {
                                     [report.index]: !reviewed,
                                   }))
                                 }
-                                className={`shrink-0 rounded-xl px-3 py-2 text-[11px] font-black ${
+                                className={`w-fit self-start whitespace-nowrap rounded-xl px-3 py-2 text-[11px] font-black ${
                                   reviewed
                                     ? "bg-emerald-600 text-white"
-                                    : "bg-white text-amber-700 shadow-sm"
+                                    : "bg-amber-100 text-amber-800 shadow-sm"
                                 }`}
                               >
                                 {reviewed ? "已確認" : "人工確認"}
