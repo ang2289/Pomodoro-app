@@ -57,9 +57,12 @@ export default function HealingImagesAppPromo() {
                       className="aspect-[4/5] overflow-hidden rounded-lg bg-slate-100 shadow-sm"
                     >
                       <img
-                        src={item.src}
+                        src={item.src.replace(/\.png$/, "-preview.webp")}
                         alt={item.alt}
                         loading="lazy"
+                        decoding="async"
+                        width={540}
+                        height={540}
                         className="h-full w-full object-cover"
                       />
                     </div>
