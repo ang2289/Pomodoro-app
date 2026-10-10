@@ -1591,12 +1591,13 @@ export default function LineStickerTool() {
     useState<"idle" | "ready" | "invalid" | "cutting">("idle");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [exportCheckResult, setExportCheckResult] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const motherSheetInputRef = useRef<HTMLInputElement>(null);
   const getToolShareData = useCallback(() => {
     const url = typeof window !== "undefined" ? window.location.href : "";
     const title = "RxV LINE 貼圖整理工具";
-    const text = "免費整理 LINE 貼圖尺寸、主圖與 ZIP 打包，也可搭配 PhotoRoom 產生素材與去背。";
+    const text = "免費 LINE 貼圖五大步驟，自動分割母圖、去白底、整理主圖及 ZIP；PhotoRoom 是選用工具。";
     return { url, title, text };
   }, []);
 
@@ -1989,8 +1990,17 @@ export default function LineStickerTool() {
       return;
     }
     setLoading(true);
+    setExportCheckResult(null);
+    setError(null);
     try {
       const zip = new JSZip();
+      const addCheckedPng = async (name: string, canvas: HTMLCanvasElement) => {
+        const blob = await canvasToBlob(canvas, t);
+        if (blob.size > 1_000_000) {
+          throw new Error(`${name} 為 ${Math.round(blob.size / 1024)}KB，超過保守的 LINE 單張 1MB 容量限制，請調整這張貼圖再輸出。`);
+        }
+        zip.file(name, blob);
+      };
       const targetMainImg = files[mainImageIndex]?.img || files[0].img;
       const mainScale = getScaleForIndex(mainImageIndex);
       const mainCanvas = resizeImageToCanvas(
@@ -2015,8 +2025,8 @@ export default function LineStickerTool() {
       ) {
         throw new Error("輸出不是透明 PNG，請確認上傳的是已去背 PNG/WebP。");
       }
-      zip.file("main.png", await canvasToBlob(mainCanvas, t));
-      zip.file("tab.png", await canvasToBlob(tabCanvas, t));
+      await addCheckedPng("main.png", mainCanvas);
+      await addCheckedPng("tab.png", tabCanvas);
 
       for (let i = 0; i < stickerCount; i++) {
         const canvas = resizeImageToCanvas(
@@ -2032,13 +2042,14 @@ export default function LineStickerTool() {
             `第 ${i + 1} 張輸出不是透明 PNG，請確認該張原圖是已去背 PNG/WebP。`,
           );
         }
-        zip.file(
-          `${String(i + 1).padStart(2, "0")}.png`,
-          await canvasToBlob(canvas, t),
-        );
+        await addCheckedPng(`${String(i + 1).padStart(2, "0")}.png`, canvas);
       }
       const content = await zip.generateAsync({ type: "blob" });
+      if (content.size > 60 * 1024 * 1024) {
+        throw new Error("ZIP 超過 60MB，請減少圖片檔案大小再產生。");
+      }
       saveAs(content, ZIP_FILENAME);
+      setExportCheckResult(`已檢查 ${stickerCount} 張貼圖＋main＋tab：透明背景、尺寸、檔名與每張容量符合工具可驗證的 LINE 基本規格；下載後仍請人工檢查文字及著作權。`);
       if (flowProject?.mode !== "animated") {
         updateLineStickerProject({ stage: 5 });
         setDownloadCompleted(true);
@@ -2152,6 +2163,7 @@ export default function LineStickerTool() {
           />
 
           <header className="mb-6">
+            <div className="mb-3 inline-flex rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-black text-sky-700">上架檢查強化版 · 2026.10.10</div>
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">
               第 3～4 步｜上傳母圖，自動整理貼圖
             </h1>
@@ -2162,6 +2174,14 @@ export default function LineStickerTool() {
               {t("line_sticker_hero_desc")}
             </p>
           </header>
+
+          <section className="mb-5 rounded-2xl border border-indigo-100 bg-white p-4 shadow-sm">
+            <h2 className="text-sm font-black text-slate-900">一般客戶照著做就可以：5 個步驟</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-700">① 選靜態／動態與張數 → ② 複製提示詞到 ChatGPT 生圖 → ③ 上傳母圖自動分割、去白底 → ④ 預覽每張並選 MAIN／TAB → ⑤ 下載 ZIP，至 LINE Creators Market 上傳送審。</p>
+            <p className="mt-2 text-xs leading-5 text-slate-500">裁切、去白底與尺寸整理都由本站處理；若去背不理想，再選擇外部進階工具。完成 ZIP 不代表 LINE 必定審核通過。</p>
+            <Link to="/tools/line-sticker-guide" className="mt-3 inline-flex items-center rounded-lg bg-indigo-50 px-3 py-2 text-xs font-black text-indigo-700 hover:bg-indigo-100">查看完整圖文教學</Link>
+            {exportCheckResult ? <p role="status" className="mt-3 rounded-xl bg-emerald-50 p-3 text-sm font-bold leading-6 text-emerald-800">{exportCheckResult}</p> : null}
+          </section>
 
           {downloadCompleted && flowProject?.mode !== "animated" ? (
             <section className="mb-6 rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-blue-50 p-5 shadow-sm">
@@ -2788,11 +2808,11 @@ export default function LineStickerTool() {
                 AI Creator Tools
               </span>
               <h3 className="text-sm font-black text-slate-900 tracking-tight">
-                貼圖創作者推薦工具
+                其他創作工具（選用，非必要）
               </h3>
             </div>
             <p className="mb-6 text-sm text-slate-500 leading-relaxed">
-              ① 用 ChatGPT 或 PhotoRoom 產生素材 → ② 用本站分割與檢查透明背景 → ③ 回本工具整理 LINE 貼圖尺寸並打包 ZIP。
+              一般流程只要用 ChatGPT 生圖，再回本站上傳母圖，即可自動分割、去背和輸出 ZIP。以下 PhotoRoom 是選用的外部進階工具，不需申請或付費才能完成本站貼圖製作。
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
