@@ -10,20 +10,13 @@ export const WHATSAPP_TRAY_MAX_BYTES = 50_000;
 
 export function partitionWhatsAppPacks(count: number): number[] {
   if (!Number.isInteger(count) || count < 3) throw new Error("WhatsApp 每組至少需要 3 張貼圖。");
-  const groups: number[] = [];
-  let remaining = count;
-  while (remaining > 0) {
-    if (remaining <= 30) {
-      groups.push(remaining);
-      remaining = 0;
-    } else {
-      // 避免最後剩下 1 或 2 張不符合最低張數。
-      const next = remaining - 30 < 3 ? remaining - 3 : 30;
-      groups.push(next);
-      remaining -= next;
-    }
-  }
-  return groups;
+  // 均分到最少組數；32 張 => 16+16，40 張 => 20+20，
+  // 不會產生客戶不好管理的 29+3 迷你貼圖集。
+  const packCount = Math.ceil(count / 30);
+  const base = Math.floor(count / packCount);
+  return Array.from({ length: packCount }, (_, index) =>
+    base + (index < count % packCount ? 1 : 0),
+  );
 }
 
 export function isRealWebp(blob: Blob): boolean {
@@ -31,15 +24,22 @@ export function isRealWebp(blob: Blob): boolean {
 }
 
 async function encode(canvas: HTMLCanvasElement, quality: number): Promise<Blob> {
-  return new Promise<Blob>((resolve, reject) => {
+  const blob = await new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(
-      (blob) => blob && isRealWebp(blob)
-        ? resolve(blob)
-        : reject(new Error("這個瀏覽器不支援 WebP 輸出，請使用新版 Edge 或 Chrome。")),
+      (output) => output ? resolve(output) : reject(new Error("無法產生 WhatsApp WebP。")),
       "image/webp",
       quality,
     );
   });
+  if (!isRealWebp(blob)) {
+    throw new Error("這個瀏覽器不支援 WebP 輸出，請使用新版 Edge 或 Chrome。");
+  }
+  const header = new Uint8Array(await blob.slice(0, 12).arrayBuffer());
+  const signature = String.fromCharCode(...header);
+  if (!signature.startsWith("RIFF") || signature.slice(8, 12) !== "WEBP") {
+    throw new Error("輸出的圖片不是有效 WebP，請改用新版 Chrome 或 Edge。");
+  }
+  return blob;
 }
 
 export async function createWhatsAppWebpSticker(
