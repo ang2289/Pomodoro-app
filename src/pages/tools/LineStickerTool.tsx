@@ -2332,7 +2332,7 @@ export default function LineStickerTool() {
 
           <section className="mb-5 rounded-2xl border border-indigo-100 bg-white p-4 shadow-sm">
             <h2 className="text-sm font-black text-slate-900">一般客戶照著做就可以：5 個步驟</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-700">① 選靜態／動態與張數 → ② 複製提示詞到 ChatGPT 生圖 → ③ 上傳母圖自動分割、去白底 → ④ 預覽每張並選 MAIN／TAB → ⑤ 下載 ZIP，至 LINE Creators Market 上傳送審。</p>
+            <p className="mt-2 text-sm leading-6 text-slate-700">① 選靜態／動態與張數 → ② 使用原有圖片或 ChatGPT 生圖 → ③ 上傳母圖自動分割、去白底 → ④ 預覽並調整大小 → ⑤ 選擇 LINE 上架 ZIP 或 WhatsApp 靜態 WebP 素材包下載。</p>
             <p className="mt-2 text-xs leading-5 text-slate-500">裁切、去白底與尺寸整理都由本站處理；若去背不理想，再選擇外部進階工具。完成 ZIP 不代表 LINE 必定審核通過。</p>
             <Link to="/tools/line-sticker-guide" className="mt-3 inline-flex items-center rounded-lg bg-indigo-50 px-3 py-2 text-xs font-black text-indigo-700 hover:bg-indigo-100">查看完整圖文教學</Link>
             {exportCheckResult ? <p role="status" className="mt-3 rounded-xl bg-emerald-50 p-3 text-sm font-bold leading-6 text-emerald-800">{exportCheckResult}</p> : null}
@@ -2367,6 +2367,16 @@ export default function LineStickerTool() {
                 ? "可沿用以前的母圖、已去背 PNG 或 WebP，不必重新生圖。下載 512×512、單張≤100KB 的靜態貼圖素材 ZIP；WhatsApp 匯入貼圖集須透過內建建立功能或相容貼圖 APP。動態 WebP 尚未開放，避免輸出假動畫。"
                 : "輸出 LINE 貼圖上架 ZIP，靜態為 PNG；如需製作 LINE 動態貼圖請繼續下個步驟。"}
             </p>
+            {exportPlatform === "whatsapp" ? (
+              <a
+                href="https://faq.whatsapp.com/1056840314992666"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 inline-flex text-xs font-black text-emerald-700 underline"
+              >
+                查看 WhatsApp 官方建立及分享貼圖集說明
+              </a>
+            ) : null}
             {exportPlatform === "whatsapp" && flowProject?.mode === "animated" ? (
               <button
                 type="button"
