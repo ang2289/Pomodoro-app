@@ -1431,6 +1431,7 @@ async function createBatchShowcaseVideo(
   sources: FrameItem[],
   presets: AutoMotionPreset[],
   onProgress: (finished: number, total: number) => void,
+  platform: "line" | "whatsapp" = "line",
 ): Promise<{ blob: Blob; extension: "mp4" | "webm"; isMp4: boolean }> {
   if (![8, 16, 24].includes(sources.length) || sources.length !== presets.length) {
     throw new Error("展示影片來源與貼圖數量不一致，請先重新產生整套上架 ZIP。");
@@ -1473,7 +1474,7 @@ async function createBatchShowcaseVideo(
     ctx.textBaseline = "middle";
     ctx.fillStyle = "#744e61";
     ctx.font = 'bold 58px "Microsoft JhengHei", sans-serif';
-    ctx.fillText("LINE 動態貼圖展示", width / 2, 355);
+    ctx.fillText(platform === "whatsapp" ? "WhatsApp 動態貼圖展示" : "LINE 動態貼圖展示", width / 2, 355);
     ctx.fillStyle = "#ffffff";
     ctx.shadowColor = "rgba(93, 72, 84, 0.14)";
     ctx.shadowBlur = 32;
@@ -1504,28 +1505,38 @@ async function createBatchShowcaseVideo(
   });
 
   try {
-    // 錄製前先完成第一張動畫預載，避免影片開頭數秒黑畫面。
-    const firstFiles = await generateAutoAnimationFrameFiles(sources[0].file, presets[0], 2);
-    const firstBitmaps = await Promise.all(firstFiles.map((file) => createImageBitmap(file)));
-    drawShowcaseFrame(firstBitmaps[0], 0);
+    // 先產生整批動畫 PNG，再開始錄影；避免等待下一張動畫生成時影片停頓。
+    // 儲存壓縮 PNG 而非一次保存全部 ImageBitmap，控制 16/24 張記憶體。
+    const prepared: File[][] = [];
+    for (let i = 0; i < sources.length; i += 1) {
+      prepared.push(await generateAutoAnimationFrameFiles(sources[i].file, presets[i], 2));
+    }
+    let current = await Promise.all(prepared[0].map((file) => createImageBitmap(file)));
+    let next: Promise<ImageBitmap[]> | null = prepared[1]
+      ? Promise.all(prepared[1].map((file) => createImageBitmap(file)))
+      : null;
+    drawShowcaseFrame(current[0], 0);
     recorder.start(500);
+    // 一張貼圖 60 禎（2 秒 × 30FPS），動畫原始 8 禎每禎約停留 7~8 畫格。
     for (let index = 0; index < sources.length; index += 1) {
-      // 只保留當前貼圖 8 個影格，避免 24 組影片一次載入造成記憶體超量。
-      const bitmaps = index === 0
-        ? firstBitmaps
-        : await Promise.all(
-            (await generateAutoAnimationFrameFiles(sources[index].file, presets[index], 2))
-              .map((file) => createImageBitmap(file)),
-          );
-      try {
-        for (const bitmap of bitmaps) {
-          drawShowcaseFrame(bitmap, index);
-          await waitMs(250); // 每張 8 格 × 250ms = 2 秒
-        }
-      } finally {
-        bitmaps.forEach((bitmap) => bitmap.close());
+      const startedAt = performance.now();
+      for (let frame = 0; frame < 60; frame += 1) {
+        const bitmap = current[Math.min(7, Math.floor(frame * current.length / 60))];
+        drawShowcaseFrame(bitmap, index);
+        const remaining = startedAt + ((frame + 1) * 1000) / 30 - performance.now();
+        if (remaining > 0) await waitMs(remaining);
+        else await waitMs(0);
       }
+      current.forEach((bitmap) => bitmap.close());
       onProgress(index + 1, sources.length);
+      if (index + 1 < sources.length) {
+        // 提前在上一張播放時解碼下一組影格，降低張與張間的錄影停頓。
+        if (!next) throw new Error("下一組動畫影格預載失敗。");
+        current = await next;
+        next = prepared[index + 2]
+          ? Promise.all(prepared[index + 2].map((file) => createImageBitmap(file)))
+          : null;
+      }
     }
     if (recorder.state === "recording") {
       recorder.requestData();
@@ -2279,8 +2290,9 @@ const AnimatedLineStickerTool: React.FC = () => {
         batchSources,
         sorted.map((item) => item.motionPreset),
         (finished, total) => setBatchVideoProgress(Math.round((finished / total) * 100)),
+        exportPlatform,
       );
-      downloadBlob(result.blob, `rxv-line-animated-${batchSources.length}-hd-1080x1920.${result.extension}`);
+      downloadBlob(result.blob, `rxv-${exportPlatform}-animated-${batchSources.length}-hd-1080x1920.${result.extension}`);
       setBatchVideoMessage(
         result.isMp4
           ? "高清 MP4 已下載！1080×1920 直式展示影片，可用於社群推廣。"
@@ -3352,7 +3364,7 @@ const AnimatedLineStickerTool: React.FC = () => {
             <section className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 p-4">
               <h3 className="text-base font-black text-rose-900">完成後另存高清影片｜整套動態展示</h3>
               <p className="mt-1 text-xs leading-6 text-rose-800">
-                將 {batchAnimatedPreviews.length} 張動態貼圖依序播放，每張約 2 秒；動畫先使用 640×540 高解析影格製作，再合成 1080×1920 直式影片（12 Mbps），減少放大後模糊。LINE 上架仍使用 ZIP，不使用 MP4。
+                將 {batchAnimatedPreviews.length} 張依序播放，每張約 2 秒；先產生 640×540 動畫影格，再以固定約 30FPS 重畫至 1080×1920 直式影片，避免舊版約 3FPS 的跳格現象。MP4 僅供展示，貼圖上架請用對應的 ZIP。
               </p>
               <button type="button" disabled={batchVideoBusy || batchBusy}
                 onClick={exportBatchHdVideo}
