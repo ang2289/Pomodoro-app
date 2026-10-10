@@ -124,10 +124,14 @@ type StoredHandoffFile = {
   blob: Blob;
 };
 
+export type AnimatedHandoffProject = Pick<LineStickerProject, "id" | "count" | "theme" | "texts">;
+
 type StoredHandoff = {
   id: string;
   updatedAt: number;
   files: StoredHandoffFile[];
+  /** 與來源圖片同筆寫入，避免讀到 localStorage 的另一個舊專案。 */
+  project?: AnimatedHandoffProject;
 };
 
 function openFlowDb(): Promise<IDBDatabase> {
@@ -148,12 +152,15 @@ function openFlowDb(): Promise<IDBDatabase> {
   });
 }
 
-export async function saveAnimatedStickerHandoff(files: File[]) {
+export async function saveAnimatedStickerHandoff(files: File[], project?: LineStickerProject | null) {
   const db = await openFlowDb();
   try {
     const stored: StoredHandoff = {
       id: HANDOFF_KEY,
       updatedAt: Date.now(),
+      project: project && project.count === files.length
+        ? { id: project.id, count: project.count, theme: project.theme, texts: project.texts.slice(0, project.count) }
+        : undefined,
       files: files.map((file) => ({
         name: file.name,
         type: file.type || "image/png",
@@ -173,7 +180,10 @@ export async function saveAnimatedStickerHandoff(files: File[]) {
   }
 }
 
-export async function loadAnimatedStickerHandoff(): Promise<File[]> {
+export async function loadAnimatedStickerHandoffBundle(): Promise<{
+  files: File[];
+  project: AnimatedHandoffProject | null;
+}> {
   const db = await openFlowDb();
   try {
     const stored = await new Promise<StoredHandoff | undefined>((resolve, reject) => {
@@ -182,17 +192,30 @@ export async function loadAnimatedStickerHandoff(): Promise<File[]> {
       request.onsuccess = () => resolve(request.result as StoredHandoff | undefined);
       request.onerror = () => reject(request.error || new Error("讀取貼圖暫存失敗。"));
     });
-    if (!stored?.files?.length) return [];
-    return stored.files.map(
+    if (!stored?.files?.length) return { files: [], project: null };
+    const files = stored.files.map(
       (item) =>
         new File([item.blob], item.name, {
           type: item.type || "image/png",
           lastModified: item.lastModified || Date.now(),
         }),
     );
+    const project = stored.project;
+    return {
+      files,
+      project: project?.id && project.count === files.length &&
+        project.texts.length === files.length
+        ? project
+        : null,
+    };
   } finally {
     db.close();
   }
+}
+
+/** 舊呼叫相容；需要批次文字時請使用 Bundle，勿再自行讀 localStorage。 */
+export async function loadAnimatedStickerHandoff(): Promise<File[]> {
+  return (await loadAnimatedStickerHandoffBundle()).files;
 }
 
 export async function clearAnimatedStickerHandoff() {
