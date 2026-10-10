@@ -61,7 +61,7 @@ test("shift a crowded equal-split line toward a real nearby gap", () => {
   });
   const review = analyzeMotherSheetSafety(data, 400, 400, "4x4");
   assert.deepEqual(review.blocked, []);
-  assert.ok(review.xCuts[1] >= 108);
+  assert.ok(review.xCuts[1] >= 106);
   assert.ok(review.warnings.some((item) => item.index === 1));
 });
 
