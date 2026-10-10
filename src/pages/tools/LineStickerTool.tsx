@@ -1570,7 +1570,7 @@ export default function LineStickerTool() {
       },
     })),
   };
-  const [saleTextRisks] = useState(() => stickerSaleTextRisks(readLineStickerProject()?.texts ?? []));
+  const saleTextRisks = useMemo(() => stickerSaleTextRisks(flowProject?.texts ?? []), [flowProject]);
   const [files, setFiles] = useState<ImagePreview[]>([]);
   const [stickerCount, setStickerCount] = useState<8 | 16 | 24 | 32 | 40>(
     () => flowProject?.count ?? 8,
