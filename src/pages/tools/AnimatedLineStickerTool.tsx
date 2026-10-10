@@ -1494,11 +1494,19 @@ async function createBatchShowcaseVideo(
   });
 
   try {
+    // 錄製前先完成第一張動畫預載，避免影片開頭數秒黑畫面。
+    const firstFiles = await generateAutoAnimationFrameFiles(sources[0].file, presets[0]);
+    const firstBitmaps = await Promise.all(firstFiles.map((file) => createImageBitmap(file)));
+    drawShowcaseFrame(firstBitmaps[0], 0);
     recorder.start(500);
     for (let index = 0; index < sources.length; index += 1) {
-      const generated = await generateAutoAnimationFrameFiles(sources[index].file, presets[index]);
       // 只保留當前貼圖 8 個影格，避免 24 組影片一次載入造成記憶體超量。
-      const bitmaps = await Promise.all(generated.map((file) => createImageBitmap(file)));
+      const bitmaps = index === 0
+        ? firstBitmaps
+        : await Promise.all(
+            (await generateAutoAnimationFrameFiles(sources[index].file, presets[index]))
+              .map((file) => createImageBitmap(file)),
+          );
       try {
         for (const bitmap of bitmaps) {
           drawShowcaseFrame(bitmap, index);
@@ -3270,7 +3278,7 @@ const AnimatedLineStickerTool: React.FC = () => {
               <p className="mt-1 text-xs leading-6 text-rose-800">
                 將 {batchAnimatedPreviews.length} 張動態貼圖依序播放，每張約 2 秒；輸出 1080×1920 直式影片，可發 FB／IG／TikTok。LINE 上架仍使用 ZIP，不使用 MP4。
               </p>
-              <button type="button" disabled={batchVideoBusy || batchBusy || batchAnimatedPreviews.some((item) => item.overLimit)}
+              <button type="button" disabled={batchVideoBusy || batchBusy}
                 onClick={exportBatchHdVideo}
                 className="mt-3 min-h-12 rounded-2xl bg-rose-600 px-5 py-3 text-sm font-black text-white shadow-md hover:bg-rose-700 disabled:cursor-not-allowed disabled:bg-slate-300">
                 {batchVideoBusy ? `正在製作高清影片 ${batchVideoProgress}%…` : "下載整套高清影片（MP4 優先）"}
