@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { COUPANG_DYNAMIC_WIDGET } from "@/config/coupangAds";
 
 type CoupangDynamicAdProps = {
@@ -32,16 +32,25 @@ export default function CoupangDynamicAd({
     return () => mediaQuery.removeEventListener("change", updateViewport);
   }, []);
 
-  const [viewportWidth, setViewportWidth] = useState(() =>
-    typeof window !== "undefined" ? window.innerWidth : desktopWidth,
+  const slotRef = useRef<HTMLDivElement | null>(null);
+  const [slotWidth, setSlotWidth] = useState(() =>
+    typeof window !== "undefined" ? Math.max(280, window.innerWidth - 24) : desktopWidth,
   );
   useEffect(() => {
-    const onResize = () => setViewportWidth(window.innerWidth);
-    window.addEventListener("resize", onResize, { passive: true });
-    return () => window.removeEventListener("resize", onResize);
+    const slot = slotRef.current;
+    if (!slot) return;
+    const measure = () => setSlotWidth(Math.max(1, slot.clientWidth));
+    measure();
+    if (typeof ResizeObserver !== "undefined") {
+      const observer = new ResizeObserver(measure);
+      observer.observe(slot);
+      return () => observer.disconnect();
+    }
+    window.addEventListener("resize", measure, { passive: true });
+    return () => window.removeEventListener("resize", measure);
   }, []);
-  // iframe 內的商品不可單純靠 CSS 拉寬，參數與實際像素需同步。
-  const width = Math.max(280, Math.min(isMobile ? mobileWidth : desktopWidth, viewportWidth - 24));
+  // 以容器實際寬度決定 widget 參數，避免工具卡片內的 iframe 被擠壓或截斷。
+  const width = Math.max(1, Math.min(isMobile ? mobileWidth : desktopWidth, slotWidth));
   const height = isMobile ? mobileHeight : desktopHeight;
 
   const src =
@@ -60,7 +69,7 @@ export default function CoupangDynamicAd({
       <div className="mb-1 text-center text-[11px] font-semibold text-slate-400">
         Coupang 推薦
       </div>
-      <div className="flex w-full justify-center overflow-hidden">
+      <div ref={slotRef} className="flex w-full justify-center overflow-hidden">
       <iframe
         title="Coupang Partners 動態商品推薦"
         src={src}
