@@ -2219,7 +2219,7 @@ export default function LineStickerTool() {
           }),
         );
       }
-      await saveAnimatedStickerHandoff(prepared);
+      await saveAnimatedStickerHandoff(prepared, flowProject?.mode === "animated" ? flowProject : null);
       updateLineStickerProject({ stage: 5 });
       navigate("/tools/animated-line-sticker?from=line-sticker");
     } catch (cause) {
