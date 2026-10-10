@@ -5,8 +5,7 @@ import SEO, { getBaseUrl } from "@/components/SEO";
 import LineStickerFlowSteps from "@/components/LineStickerFlowSteps";
 import { stickerSaleTextRisks } from "@/lib/stickerCommercialSafety";
 import {
-  loadAnimatedStickerHandoff,
-  readLineStickerProject,
+  loadAnimatedStickerHandoffBundle,
   updateLineStickerProject,
 } from "@/lib/lineStickerFlow";
 import {
@@ -94,6 +93,7 @@ type LinePreviewFrame = {
 type BatchAnimatedPreview = {
   id: string;
   index: number;
+  motionPreset: AutoMotionPreset;
   name: string;
   blob: Blob;
   url: string;
@@ -1415,6 +1415,121 @@ async function createVideoBlob(
   };
 }
 
+
+/**
+ * 本機展示影片：依 ZIP 已選的各張動態效果重畫影格，以 1080x1920 直式畫布錄影。
+ * 影片僅供社群展示，不能取代 LINE 上架所需 APNG ZIP。
+ * MP4 是否可用取決於瀏覽器的 MediaRecorder 編碼能力，不會把 WebM 偽裝成 MP4。
+ */
+async function createBatchShowcaseVideo(
+  sources: FrameItem[],
+  presets: AutoMotionPreset[],
+  onProgress: (finished: number, total: number) => void,
+): Promise<{ blob: Blob; extension: "mp4" | "webm"; isMp4: boolean }> {
+  if (![8, 16, 24].includes(sources.length) || sources.length !== presets.length) {
+    throw new Error("展示影片來源與貼圖數量不一致，請先重新產生整套上架 ZIP。");
+  }
+  const MediaRecorderCtor = window.MediaRecorder;
+  if (!MediaRecorderCtor) {
+    throw new Error("目前瀏覽器不支援錄製影片，請使用新版 Chrome 或 Edge。");
+  }
+  const mimeCandidates = [
+    "video/mp4;codecs=avc1.42E01E",
+    "video/mp4",
+    "video/webm;codecs=vp9",
+    "video/webm;codecs=vp8",
+    "video/webm",
+  ];
+  const mimeType = mimeCandidates.find((mime) => MediaRecorderCtor.isTypeSupported(mime));
+  if (!mimeType) throw new Error("目前瀏覽器不支援 MP4 或 WebM 錄影。");
+
+  const width = 1080;
+  const height = 1920;
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d", { alpha: false });
+  if (!ctx) throw new Error("無法建立高清影片畫布。");
+  const stream = canvas.captureStream?.(30);
+  if (!stream) throw new Error("瀏覽器不支援影片畫布擷取。");
+
+  const drawShowcaseFrame = (bitmap: ImageBitmap, index: number) => {
+    const bg = ctx.createLinearGradient(0, 0, 0, height);
+    bg.addColorStop(0, "#fff6f8");
+    bg.addColorStop(1, "#f7fbff");
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, width, height);
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "#744e61";
+    ctx.font = 'bold 58px "Microsoft JhengHei", sans-serif';
+    ctx.fillText("LINE 動態貼圖展示", width / 2, 355);
+    ctx.fillStyle = "#ffffff";
+    ctx.shadowColor = "rgba(93, 72, 84, 0.14)";
+    ctx.shadowBlur = 32;
+    ctx.beginPath();
+    ctx.roundRect(52, 490, 976, 830, 46);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    const ratio = Math.min(900 / bitmap.width, 752 / bitmap.height);
+    const w = Math.round(bitmap.width * ratio);
+    const h = Math.round(bitmap.height * ratio);
+    ctx.drawImage(bitmap, (width - w) / 2, 905 - h / 2, w, h);
+    ctx.fillStyle = "#886c7a";
+    ctx.font = 'bold 46px "Microsoft JhengHei", sans-serif';
+    ctx.fillText(`${String(index + 1).padStart(2, "0")} / ${String(sources.length).padStart(2, "0")}`, width / 2, 1480);
+  };
+
+  const recorder = new MediaRecorderCtor(stream, {
+    mimeType,
+    videoBitsPerSecond: 8_000_000,
+  });
+  const chunks: Blob[] = [];
+  recorder.ondataavailable = (event) => {
+    if (event.data.size > 0) chunks.push(event.data);
+  };
+  const stopped = new Promise<void>((resolve, reject) => {
+    recorder.onstop = () => resolve();
+    recorder.onerror = () => reject(new Error("高清影片錄製失敗，請重新嘗試。"));
+  });
+
+  try {
+    recorder.start(500);
+    for (let index = 0; index < sources.length; index += 1) {
+      const generated = await generateAutoAnimationFrameFiles(sources[index].file, presets[index]);
+      // 只保留當前貼圖 8 個影格，避免 24 組影片一次載入造成記憶體超量。
+      const bitmaps = await Promise.all(generated.map((file) => createImageBitmap(file)));
+      try {
+        for (const bitmap of bitmaps) {
+          drawShowcaseFrame(bitmap, index);
+          await waitMs(250); // 每張 8 格 × 250ms = 2 秒
+        }
+      } finally {
+        bitmaps.forEach((bitmap) => bitmap.close());
+      }
+      onProgress(index + 1, sources.length);
+    }
+    if (recorder.state === "recording") {
+      recorder.requestData();
+      await waitMs(150);
+      recorder.stop();
+    }
+    await stopped;
+  } catch (error) {
+    if (recorder.state !== "inactive") recorder.stop();
+    // 停止後的非同步 rejected Promise 一律有接收端，不會留下瀏覽器未處理拒絕。
+    await stopped.catch(() => undefined);
+    throw error;
+  } finally {
+    stream.getTracks().forEach((track) => track.stop());
+  }
+
+  const blob = new Blob(chunks, { type: mimeType });
+  if (!blob.size) throw new Error("影片為 0KB，請保持此分頁開啟並重新產生。");
+  const isMp4 = mimeType.includes("mp4");
+  return { blob, extension: isMp4 ? "mp4" : "webm", isMp4 };
+}
+
 const AnimatedLineStickerTool: React.FC = () => {
   const { t } = useTranslation();
   const [frames, setFrames] = useState<FrameItem[]>([]);
@@ -1439,6 +1554,9 @@ const AnimatedLineStickerTool: React.FC = () => {
   const [batchProgress, setBatchProgress] = useState(0);
   const [batchStatus, setBatchStatus] = useState("");
   const [batchMessage, setBatchMessage] = useState("");
+  const [batchVideoBusy, setBatchVideoBusy] = useState(false);
+  const [batchVideoProgress, setBatchVideoProgress] = useState(0);
+  const [batchVideoMessage, setBatchVideoMessage] = useState("");
   const [batchAnimatedPreviews, setBatchAnimatedPreviews] =
     useState<BatchAnimatedPreview[]>([]);
   const [batchEffectGallery, setBatchEffectGallery] =
@@ -1450,8 +1568,12 @@ const AnimatedLineStickerTool: React.FC = () => {
   const [batchEffectGalleryFrame, setBatchEffectGalleryFrame] = useState(0);
   const [handoffLoaded, setHandoffLoaded] = useState(false);
   const [handoffTheme, setHandoffTheme] = useState("");
-  const [sourceCaptions] = useState<string[]>(() => readLineStickerProject()?.texts ?? []);
-  const [saleTextRisks] = useState(() => stickerSaleTextRisks(readLineStickerProject()?.texts ?? []));
+  const [sourceCaptions, setSourceCaptions] = useState<string[]>([]);
+  const [captionEdits, setCaptionEdits] = useState<Record<number, string>>({});
+  const saleTextRisks = useMemo(
+    () => stickerSaleTextRisks(sourceCaptions),
+    [sourceCaptions],
+  );
   const [previewIndex, setPreviewIndex] = useState(0);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -1494,7 +1616,8 @@ const AnimatedLineStickerTool: React.FC = () => {
     let cancelled = false;
     (async () => {
       try {
-        const storedFiles = await loadAnimatedStickerHandoff();
+        const handoff = await loadAnimatedStickerHandoffBundle();
+        const storedFiles = handoff.files;
         if (cancelled || ![8, 16, 24].includes(storedFiles.length)) {
           if (!cancelled) {
             setBatchMessage(
@@ -1520,8 +1643,10 @@ const AnimatedLineStickerTool: React.FC = () => {
           return loaded;
         });
         setBatchCustomMotionPresets({});
-        const project = readLineStickerProject();
-        setHandoffTheme(project?.theme ?? "");
+        setHandoffTheme(handoff.project?.theme ?? "");
+        // 舊版暫存沒有綁定該批圖片的文字：不顯示誤導的「應有文字」。
+        setSourceCaptions(handoff.project?.texts ?? []);
+        setCaptionEdits({});
         setWorkflowMode("batch");
         setHandoffLoaded(true);
         setBatchMessage(
@@ -1880,6 +2005,10 @@ const AnimatedLineStickerTool: React.FC = () => {
     setBatchMessage("");
     setBatchStatus("");
     setBatchProgress(0);
+    setSourceCaptions([]);
+    setCaptionEdits({});
+    setHandoffLoaded(false);
+    setHandoffTheme("");
     clearBatchAnimatedPreviews();
 
     try {
@@ -1900,6 +2029,10 @@ const AnimatedLineStickerTool: React.FC = () => {
   };
 
   const clearBatchSources = () => {
+    setSourceCaptions([]);
+    setCaptionEdits({});
+    setHandoffLoaded(false);
+    setHandoffTheme("");
     setBatchSources((previous) => {
       previous.forEach((frame) => URL.revokeObjectURL(frame.url));
       return [];
@@ -1980,6 +2113,7 @@ const AnimatedLineStickerTool: React.FC = () => {
           completedPreviews.push({
             id: "batch-preview-" + String(i + 1),
             index: i,
+            motionPreset,
             name: stickerName,
             blob: apng,
             sizeKb: Math.round(apng.size / 1024),
@@ -2058,6 +2192,32 @@ const AnimatedLineStickerTool: React.FC = () => {
       );
     } finally {
       setBatchBusy(false);
+    }
+  };
+
+
+  const exportBatchHdVideo = async () => {
+    if (batchBusy || batchVideoBusy || batchAnimatedPreviews.length !== batchSources.length) return;
+    setBatchVideoBusy(true);
+    setBatchVideoProgress(0);
+    setBatchVideoMessage("");
+    try {
+      const sorted = [...batchAnimatedPreviews].sort((left, right) => left.index - right.index);
+      const result = await createBatchShowcaseVideo(
+        batchSources,
+        sorted.map((item) => item.motionPreset),
+        (finished, total) => setBatchVideoProgress(Math.round((finished / total) * 100)),
+      );
+      downloadBlob(result.blob, `rxv-line-animated-${batchSources.length}-hd-1080x1920.${result.extension}`);
+      setBatchVideoMessage(
+        result.isMp4
+          ? "高清 MP4 已下載！1080×1920 直式展示影片，可用於社群推廣。"
+          : "瀏覽器不支援直接錄製 MP4，已下載高清 WebM（不是 MP4）。可在本機影片編輯器轉成 MP4；沒有更改 LINE 上架 ZIP。",
+      );
+    } catch (error) {
+      setBatchVideoMessage(error instanceof Error ? error.message : "高清影片產生失敗，請重新試一次。");
+    } finally {
+      setBatchVideoBusy(false);
     }
   };
 
@@ -3033,7 +3193,7 @@ const AnimatedLineStickerTool: React.FC = () => {
                   {batchAnimatedPreviews.length} 張動態貼圖預覽
                 </h2>
                 <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-                  這裡顯示剛剛 ZIP 裡的實際 APNG 成品。先逐張確認文字、角色、邊界與動畫是否正常，再到 LINE 後台送審。
+                  這裡顯示剛剛 ZIP 裡的實際 APNG 成品。下方的「來源提示詞」只用來人工比對，不是文字辨識結果；圖片上的文字才是實際輸出內容。請逐張確認後再送審。
                 </p>
               </div>
               <button
@@ -3081,10 +3241,23 @@ const AnimatedLineStickerTool: React.FC = () => {
                     </span>
                   </div>
                   {handoffLoaded && sourceCaptions[item.index] ? (
-                    <p className="mt-2 rounded-lg bg-sky-50 px-2 py-1.5 text-[11px] font-bold leading-4 text-sky-800">
-                      應有文字：{sourceCaptions[item.index]}
+                    <label className="mt-2 block rounded-lg bg-sky-50 px-2 py-1.5 text-[11px] font-bold leading-4 text-sky-800">
+                      來源提示詞（僅供核對，非圖片自動辨字）
+                      <input
+                        aria-label={`第 ${item.index + 1} 張參考文字`}
+                        value={captionEdits[item.index] ?? sourceCaptions[item.index]}
+                        onChange={(event) => setCaptionEdits((previous) => ({
+                          ...previous,
+                          [item.index]: event.target.value,
+                        }))}
+                        className="mt-1.5 w-full rounded-lg border border-sky-200 bg-white px-2 py-2 text-xs font-medium text-slate-800"
+                      />
+                    </label>
+                  ) : (
+                    <p className="mt-2 text-[11px] leading-4 text-slate-500">
+                      未綁定這批圖片的原始文案，請直接核對圖片內的文字。
                     </p>
-                  ) : null}
+                  )}
                   <p className="mt-1 text-[10px] leading-4 text-slate-400">
                     點圖片可重播
                   </p>
@@ -3092,6 +3265,20 @@ const AnimatedLineStickerTool: React.FC = () => {
               ))}
             </div>
 
+            <section className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 p-4">
+              <h3 className="text-base font-black text-rose-900">完成後另存高清影片｜整套動態展示</h3>
+              <p className="mt-1 text-xs leading-6 text-rose-800">
+                將 {batchAnimatedPreviews.length} 張動態貼圖依序播放，每張約 2 秒；輸出 1080×1920 直式影片，可發 FB／IG／TikTok。LINE 上架仍使用 ZIP，不使用 MP4。
+              </p>
+              <button type="button" disabled={batchVideoBusy || batchBusy || batchAnimatedPreviews.some((item) => item.overLimit)}
+                onClick={exportBatchHdVideo}
+                className="mt-3 min-h-12 rounded-2xl bg-rose-600 px-5 py-3 text-sm font-black text-white shadow-md hover:bg-rose-700 disabled:cursor-not-allowed disabled:bg-slate-300">
+                {batchVideoBusy ? `正在製作高清影片 ${batchVideoProgress}%…` : "下載整套高清影片（MP4 優先）"}
+              </button>
+              {batchVideoBusy ? <div className="mt-3 h-2 overflow-hidden rounded-full bg-rose-200"><div className="h-full bg-rose-600 transition-all" style={{ width: `${batchVideoProgress}%` }} /></div> : null}
+              {batchVideoMessage ? <p role="status" className="mt-3 text-xs font-bold leading-6 text-rose-900">{batchVideoMessage}</p> : null}
+              <p className="mt-2 text-[11px] leading-5 text-rose-700">全程在本機瀏覽器製作，不需要上傳影片到雲端。若瀏覽器沒有 MP4 錄影支援，會明確輸出 WebM，絕不把 WebM 假裝成 MP4；建議用新版 Edge／Chrome。</p>
+            </section>
             <div className="mt-4 rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-xs font-bold leading-5 text-sky-900">
               瀏覽器顯示的是實際 APNG 動畫；若動畫已播放完，可按「重播全部」或點單張圖片重新播放。
             </div>
