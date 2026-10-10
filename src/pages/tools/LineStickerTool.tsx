@@ -1439,7 +1439,7 @@ async function splitMotherSheet(
       results.push(
         new File(
           [blob],
-          `${file.name.replace(/\\.[^.]+$/, "")}-${String(row * columns + column + 1).padStart(2, "0")}.png`,
+          `${file.name.replace(/\.[^.]+$/, "")}-${String(row * columns + column + 1).padStart(2, "0")}.png`,
           { type: "image/png" },
         ),
       );
@@ -1763,10 +1763,11 @@ export default function LineStickerTool() {
     [motherSheetDetections, expectedMotherSheetPlan],
   );
   const unsafeMotherSheets = useMemo(
-    () => motherSheetDetections.flatMap((item) =>
-      item.safetyByGrid[item.grid].blocked.map((message) => `${item.file.name}：${message}`),
-    ),
-    [motherSheetDetections],
+    () => motherSheetDetections.flatMap((item) => {
+      const grid = !flowProject && motherSheetGrid !== "auto" ? motherSheetGrid : item.grid;
+      return item.safetyByGrid[grid].blocked.map((message) => `${item.file.name}：${message}`);
+    }),
+    [motherSheetDetections, motherSheetGrid, flowProject],
   );
 
   const overrideMotherSheetGrid = useCallback(
