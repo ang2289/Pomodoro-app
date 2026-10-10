@@ -110,7 +110,7 @@ function loadImage(file: File): Promise<HTMLImageElement> {
   });
 }
 
-function normalizeSource(image: HTMLImageElement): HTMLCanvasElement {
+function normalizeSource(image: HTMLImageElement, renderScale = 1): HTMLCanvasElement {
   const source = document.createElement("canvas");
   source.width = image.naturalWidth || image.width;
   source.height = image.naturalHeight || image.height;
@@ -123,22 +123,24 @@ function normalizeSource(image: HTMLImageElement): HTMLCanvasElement {
   if (!bounds) throw new Error("圖片沒有可辨識的內容，請確認透明PNG內有角色或文字。");
 
   // 預留更大的動畫位移空間，避免加強動作後碰到畫布邊界。
-  const padding = 16;
+  const padding = 16 * renderScale;
+  const logicalWidth = OUTPUT_WIDTH * renderScale;
+  const logicalHeight = OUTPUT_HEIGHT * renderScale;
   const scale = Math.min(
-    (OUTPUT_WIDTH - padding * 2) / bounds.width,
-    (OUTPUT_HEIGHT - padding * 2) / bounds.height,
+    (logicalWidth - padding * 2) / bounds.width,
+    (logicalHeight - padding * 2) / bounds.height,
   );
   const targetWidth = Math.max(1, Math.round(bounds.width * scale));
   const targetHeight = Math.max(1, Math.round(bounds.height * scale));
-  const targetX = Math.round((OUTPUT_WIDTH - targetWidth) / 2);
-  const targetY = Math.round((OUTPUT_HEIGHT - targetHeight) / 2);
+  const targetX = Math.round((logicalWidth - targetWidth) / 2);
+  const targetY = Math.round((logicalHeight - targetHeight) / 2);
 
   const output = document.createElement("canvas");
-  output.width = OUTPUT_WIDTH;
-  output.height = OUTPUT_HEIGHT;
+  output.width = logicalWidth;
+  output.height = logicalHeight;
   const context = output.getContext("2d", { willReadFrequently: true });
   if (!context) throw new Error("無法建立動畫畫布。");
-  context.clearRect(0, 0, OUTPUT_WIDTH, OUTPUT_HEIGHT);
+  context.clearRect(0, 0, logicalWidth, logicalHeight);
   context.imageSmoothingEnabled = true;
   context.imageSmoothingQuality = "high";
   context.drawImage(
@@ -244,7 +246,7 @@ function makeWholeLayer(source: HTMLCanvasElement): Layer {
   return { canvas, bounds: detectBoundsFromData(data.data, canvas.width, canvas.height) };
 }
 
-function splitLayers(source: HTMLCanvasElement): {
+function splitLayers(source: HTMLCanvasElement, renderScale = 1): {
   text: Layer;
   character: Layer;
   accents: Layer;
@@ -254,22 +256,22 @@ function splitLayers(source: HTMLCanvasElement): {
   if (!context) throw new Error("無法分析圖片內容。");
   const imageData = context.getImageData(0, 0, source.width, source.height);
   const { labels, components } = findComponents(imageData);
-  const meaningful = components.filter((component) => component.area >= 12);
+  const meaningful = components.filter((component) => component.area >= 12 * renderScale * renderScale);
   if (meaningful.length < 2) {
     const blank = makeLayer(imageData, labels, new Set());
     return { text: blank, character: makeWholeLayer(source), accents: blank, segmented: false };
   }
 
   const character = meaningful.reduce((best, component) => {
-    const lowerBodyBonus = component.bottom > OUTPUT_HEIGHT * 0.6 ? 1.35 : 1;
-    const bestBonus = best.bottom > OUTPUT_HEIGHT * 0.6 ? 1.35 : 1;
+    const lowerBodyBonus = component.bottom > source.height * 0.6 ? 1.35 : 1;
+    const bestBonus = best.bottom > source.height * 0.6 ? 1.35 : 1;
     return component.area * lowerBodyBonus > best.area * bestBonus ? component : best;
   });
   const textCandidates = meaningful.filter((component) => (
     component.id !== character.id
-    && component.area >= 35
-    && component.top < character.top + Math.min(36, character.height * 0.15)
-    && component.bottom < OUTPUT_HEIGHT * 0.58
+    && component.area >= 35 * renderScale * renderScale
+    && component.top < character.top + Math.min(36 * renderScale, character.height * 0.15)
+    && component.bottom < source.height * 0.58
   ));
   if (textCandidates.length === 0) {
     const blank = makeLayer(imageData, labels, new Set());
@@ -291,13 +293,21 @@ function splitLayers(source: HTMLCanvasElement): {
   };
 }
 
-function drawLayer(context: CanvasRenderingContext2D, layer: Layer, transform: Transform = {}) {
+function drawLayer(
+  context: CanvasRenderingContext2D,
+  layer: Layer,
+  transform: Transform = {},
+  renderScale = 1,
+) {
   if (!layer.bounds) return;
   const centerX = (layer.bounds.left + layer.bounds.right) / 2;
   const centerY = (layer.bounds.top + layer.bounds.bottom) / 2;
   context.save();
   context.globalAlpha = transform.opacity ?? 1;
-  context.translate(centerX + (transform.dx ?? 0), centerY + (transform.dy ?? 0));
+  context.translate(
+    centerX + (transform.dx ?? 0) * renderScale,
+    centerY + (transform.dy ?? 0) * renderScale,
+  );
   context.rotate(((transform.rotation ?? 0) * Math.PI) / 180);
   context.scale(transform.scaleX ?? 1, transform.scaleY ?? 1);
   context.drawImage(layer.canvas, -centerX, -centerY);
@@ -390,8 +400,10 @@ function drawMotionMarks(
   context: CanvasRenderingContext2D,
   preset: AutoMotionPreset,
   frameIndex: number,
+  renderScale = 1,
 ) {
   context.save();
+  context.scale(renderScale, renderScale);
   context.lineCap = "round";
   if ((preset === "salute" || preset === "auto") && (frameIndex === 2 || frameIndex === 3)) {
     context.strokeStyle = "rgba(255,153,0,0.95)";
@@ -420,13 +432,17 @@ function drawMotionMarks(
   context.restore();
 }
 
-function renderFrames(source: HTMLCanvasElement, preset: AutoMotionPreset): HTMLCanvasElement[] {
-  const layers = splitLayers(source);
+function renderFrames(
+  source: HTMLCanvasElement,
+  preset: AutoMotionPreset,
+  renderScale = 1,
+): HTMLCanvasElement[] {
+  const layers = splitLayers(source, renderScale);
   const fallback = !layers.segmented;
   return Array.from({ length: FRAME_COUNT }, (_, frameIndex) => {
     const canvas = document.createElement("canvas");
-    canvas.width = OUTPUT_WIDTH;
-    canvas.height = OUTPUT_HEIGHT;
+    canvas.width = OUTPUT_WIDTH * renderScale;
+    canvas.height = OUTPUT_HEIGHT * renderScale;
     const context = canvas.getContext("2d");
     if (!context) throw new Error("無法建立動畫影格。");
     context.clearRect(0, 0, OUTPUT_WIDTH, OUTPUT_HEIGHT);
@@ -437,13 +453,13 @@ function renderFrames(source: HTMLCanvasElement, preset: AutoMotionPreset): HTML
         scaleX: transforms.text.scaleX ?? transforms.character.scaleX,
         scaleY: transforms.text.scaleY ?? transforms.character.scaleY,
         dy: (transforms.character.dy ?? 0) + (transforms.text.dy ?? 0),
-      });
+      }, renderScale);
     } else {
-      drawLayer(context, layers.text, transforms.text);
-      drawLayer(context, layers.character, transforms.character);
-      drawLayer(context, layers.accents, transforms.accents);
+      drawLayer(context, layers.text, transforms.text, renderScale);
+      drawLayer(context, layers.character, transforms.character, renderScale);
+      drawLayer(context, layers.accents, transforms.accents, renderScale);
     }
-    drawMotionMarks(context, preset, frameIndex);
+    drawMotionMarks(context, preset, frameIndex, renderScale);
     return canvas;
   });
 }
@@ -463,10 +479,12 @@ function canvasToPngFile(canvas: HTMLCanvasElement, name: string): Promise<File>
 export async function generateAutoAnimationFrameFiles(
   sourceFile: File,
   preset: AutoMotionPreset,
+  renderScale: 1 | 2 = 1,
 ): Promise<File[]> {
+  // LINE APNG 固定 1 倍 320x270；高清展示才以 2 倍 640x540 先繪製再合成。
   const image = await loadImage(sourceFile);
-  const normalized = normalizeSource(image);
-  const frames = renderFrames(normalized, preset);
+  const normalized = normalizeSource(image, renderScale);
+  const frames = renderFrames(normalized, preset, renderScale);
   return Promise.all(
     frames.map((canvas, index) => canvasToPngFile(
       canvas,

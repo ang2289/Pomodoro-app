@@ -1354,11 +1354,14 @@ async function createVideoBlob(
   if (!ctx) throw new Error(t("animated_line_sticker.error_canvas_create"));
 
   const renderData = await prepareLineRenderData(frames, t);
+  // 單張 HD MP4 直接以來源禎繪製到 2 倍暫存畫布，不先降到 320x270 再放大。
+  const sourceScale = allowScaleUp && width >= 1000 ? 2 : 1;
   const preparedCanvas = document.createElement("canvas");
-  preparedCanvas.width = OUTPUT_WIDTH;
-  preparedCanvas.height = OUTPUT_HEIGHT;
+  preparedCanvas.width = OUTPUT_WIDTH * sourceScale;
+  preparedCanvas.height = OUTPUT_HEIGHT * sourceScale;
   const preparedCtx = preparedCanvas.getContext("2d", { willReadFrequently: true });
   if (!preparedCtx) throw new Error(t("animated_line_sticker.error_canvas_create"));
+  preparedCtx.setTransform(sourceScale, 0, 0, sourceScale, 0, 0);
   const stream = (canvas as any).captureStream?.(frameRate);
   if (!stream) throw new Error(t("animated_line_sticker.error_canvas_video_unsupported"));
 
@@ -1453,7 +1456,11 @@ async function createBatchShowcaseVideo(
   const stream = canvas.captureStream?.(30);
   if (!stream) throw new Error("瀏覽器不支援影片畫布擷取。");
 
+  // 高清展示影片來源直接在 640×540 繪製各動畫層，
+  // 避免先壓成 320×270 再放大到直式 1080p 造成二次模糊。
   const drawShowcaseFrame = (bitmap: ImageBitmap, index: number) => {
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
     const bg = ctx.createLinearGradient(0, 0, 0, height);
     bg.addColorStop(0, "#fff6f8");
     bg.addColorStop(1, "#f7fbff");
@@ -1482,7 +1489,7 @@ async function createBatchShowcaseVideo(
 
   const recorder = new MediaRecorderCtor(stream, {
     mimeType,
-    videoBitsPerSecond: 8_000_000,
+    videoBitsPerSecond: 12_000_000,
   });
   const chunks: Blob[] = [];
   recorder.ondataavailable = (event) => {
@@ -1495,7 +1502,7 @@ async function createBatchShowcaseVideo(
 
   try {
     // 錄製前先完成第一張動畫預載，避免影片開頭數秒黑畫面。
-    const firstFiles = await generateAutoAnimationFrameFiles(sources[0].file, presets[0]);
+    const firstFiles = await generateAutoAnimationFrameFiles(sources[0].file, presets[0], 2);
     const firstBitmaps = await Promise.all(firstFiles.map((file) => createImageBitmap(file)));
     drawShowcaseFrame(firstBitmaps[0], 0);
     recorder.start(500);
@@ -1504,7 +1511,7 @@ async function createBatchShowcaseVideo(
       const bitmaps = index === 0
         ? firstBitmaps
         : await Promise.all(
-            (await generateAutoAnimationFrameFiles(sources[index].file, presets[index]))
+            (await generateAutoAnimationFrameFiles(sources[index].file, presets[index], 2))
               .map((file) => createImageBitmap(file)),
           );
       try {
@@ -2424,7 +2431,7 @@ const AnimatedLineStickerTool: React.FC = () => {
         loopCount,
         t,
         quality === "hd"
-          ? { width: 1080, height: 1080, frameRate: 30, videoBitsPerSecond: 9000000, fillWhite: true, allowScaleUp: true }
+          ? { width: 1080, height: 1080, frameRate: 30, videoBitsPerSecond: 12000000, fillWhite: true, allowScaleUp: true }
           : { width: 500, height: 500, frameRate: 30, videoBitsPerSecond: 3500000, fillWhite: true, allowScaleUp: false }
       );
       downloadBlob(
@@ -2435,7 +2442,7 @@ const AnimatedLineStickerTool: React.FC = () => {
       );
       setMessage(
         quality === "hd"
-          ? "高清 MP4 已下載，可用於傳給客戶預覽、FB／IG／Threads 展示。"
+          ? (result.isMp4 ? "高清 MP4 已下載，可用於傳給客戶預覽及社群展示。" : "瀏覽器不支援 MP4，已輸出高清 WebM（不是 MP4），可本機轉檔。")
           : result.isMp4
           ? t("animated_line_sticker.message_mp4_success")
           : t("animated_line_sticker.message_webm_success")
@@ -3257,7 +3264,7 @@ const AnimatedLineStickerTool: React.FC = () => {
             <section className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 p-4">
               <h3 className="text-base font-black text-rose-900">完成後另存高清影片｜整套動態展示</h3>
               <p className="mt-1 text-xs leading-6 text-rose-800">
-                將 {batchAnimatedPreviews.length} 張動態貼圖依序播放，每張約 2 秒；輸出 1080×1920 直式影片，可發 FB／IG／TikTok。LINE 上架仍使用 ZIP，不使用 MP4。
+                將 {batchAnimatedPreviews.length} 張動態貼圖依序播放，每張約 2 秒；動畫先使用 640×540 高解析影格製作，再合成 1080×1920 直式影片（12 Mbps），減少放大後模糊。LINE 上架仍使用 ZIP，不使用 MP4。
               </p>
               <button type="button" disabled={batchVideoBusy || batchBusy}
                 onClick={exportBatchHdVideo}
@@ -3266,7 +3273,7 @@ const AnimatedLineStickerTool: React.FC = () => {
               </button>
               {batchVideoBusy ? <div className="mt-3 h-2 overflow-hidden rounded-full bg-rose-200"><div className="h-full bg-rose-600 transition-all" style={{ width: `${batchVideoProgress}%` }} /></div> : null}
               {batchVideoMessage ? <p role="status" className="mt-3 text-xs font-bold leading-6 text-rose-900">{batchVideoMessage}</p> : null}
-              <p className="mt-2 text-[11px] leading-5 text-rose-700">全程在本機瀏覽器製作，不需要上傳影片到雲端。若瀏覽器沒有 MP4 錄影支援，會明確輸出 WebM，絕不把 WebM 假裝成 MP4；建議用新版 Edge／Chrome。</p>
+              <p className="mt-2 text-[11px] leading-5 text-rose-700">全程在本機瀏覽器製作，無需上傳雲端。畫質上限仍受原始圖片清晰度限制：原圖已模糊無法單靠放大恢復細節。若瀏覽器不支援 MP4，會輸出真正的 WebM 而非假 MP4。</p>
             </section>
             <div className="mt-4 rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-xs font-bold leading-5 text-sky-900">
               瀏覽器顯示的是實際 APNG 動畫；若動畫已播放完，可按「重播全部」或點單張圖片重新播放。
