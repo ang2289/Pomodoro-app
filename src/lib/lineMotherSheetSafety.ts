@@ -92,7 +92,51 @@ export function analyzeMotherSheetSafety(
 
   const vertical = findSeparatorCuts(xInk, width, height, columns, "欄");
   const horizontal = findSeparatorCuts(yInk, height, width, rows, "列");
-  const blocked = [...vertical.blocked, ...horizontal.blocked];
+
+  // 把「第幾道分隔線」轉成一般客戶看得懂的「第幾張貼圖」。
+  const affectedBySeparator = (axis: "欄" | "列", boundary: number): number[] => {
+    const found = new Set<number>();
+    const line = axis === "欄" ? vertical.cuts[boundary] : horizontal.cuts[boundary];
+    const band = 2;
+    if (axis === "欄") {
+      for (let row = 0; row < rows; row += 1) {
+        let inkCount = 0;
+        for (let y = horizontal.cuts[row]; y < horizontal.cuts[row + 1]; y += 1) {
+          for (let x = Math.max(0, line - band); x <= Math.min(width - 1, line + band); x += 1) {
+            inkCount += mask[y * width + x];
+          }
+        }
+        if (inkCount >= 3) {
+          found.add(row * columns + boundary);
+          found.add(row * columns + boundary + 1);
+        }
+      }
+    } else {
+      for (let column = 0; column < columns; column += 1) {
+        let inkCount = 0;
+        for (let y = Math.max(0, line - band); y <= Math.min(height - 1, line + band); y += 1) {
+          for (let x = vertical.cuts[column]; x < vertical.cuts[column + 1]; x += 1) {
+            inkCount += mask[y * width + x];
+          }
+        }
+        if (inkCount >= 3) {
+          found.add((boundary - 1) * columns + column + 1);
+          found.add(boundary * columns + column + 1);
+        }
+      }
+    }
+    return [...found].sort((a, b) => a - b);
+  };
+  const describeSeparator = (message: string, axis: "欄" | "列") => {
+    const boundary = Number(message.match(/第 (\\d+) 道/)?.[1] ?? 0);
+    if (!boundary) return message;
+    const cells = affectedBySeparator(axis, boundary);
+    return cells.length ? `${message} 可能影響第 ${cells.join("、")} 張。` : message;
+  };
+  const blocked = [
+    ...vertical.blocked.map((message) => describeSeparator(message, "欄")),
+    ...horizontal.blocked.map((message) => describeSeparator(message, "列")),
+  ];
   const warnings: MotherSheetCellWarning[] = [];
 
   for (let row = 0; row < rows; row += 1) {
