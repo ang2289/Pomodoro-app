@@ -11,6 +11,7 @@ import {
   type LineStickerCount,
   type LineStickerMode,
 } from "@/lib/lineStickerFlow";
+import { stickerSaleTextRisks, suggestSaleFriendlyLines } from "@/lib/stickerCommercialSafety";
 
 type TemplateKey =
   | "couple"
@@ -4089,7 +4090,7 @@ function buildPrompt(
   const rolePrompt = buildRolePrompt(role, photoMode);
   const photoReminder = buildPhotoReminder(photoMode);
 
-  return `請設計一張 LINE ${label}大圖，白色背景，${style}。\n\n${rolePrompt}\n\n風格加強：${stickerStylePrompt}。\n\n真人／原創設定：${photoModePrompt}。${photoReminder}\n\n請畫成 ${gridInfo.layoutText}。每格貼圖都要獨立清楚、平均排列。每一格的角色＋文字＋裝飾只佔該格中央約 78%～82%，上下左右至少保留約 9%～11% 的純白安全留白，格與格之間必須看得到明顯白色空間，方便後續平均切割。角色與文字都要完整置中在各自格子內，不可超出邊界、不可跨格、不可互相重疊；若空間不足，寧可把角色與文字整體縮小，也不要貼邊。\n\n文字設定：請使用繁體中文，字體粗體，${textSizePrompt}，${textColorPrompt}，${textPositionPrompt}。文字必須清楚好讀，文字與頭髮、臉、手勢、手機、文件等主體至少保留明顯空隙，不可壓在人物或道具上；文字四周也要保留白邊，不要貼近格子邊界，不要切到字，不可出現序號、數字、標題、格號或列表符號。\n\n每張貼圖都要有不同表情與動作，整體風格一致、乾淨可愛、適合 LINE 貼圖使用。\n\n貼圖文字如下：\n${numberedTexts}`;
+  return `請設計一張 LINE ${label}大圖，白色背景，${style}。\n\n商用販售安全：每格只能出現下方指定的主要貼圖短句，禁止在卡片、紙袋、花籃、店招、制服、道具額外產生任何文字、英文 NEW、價格、網址、QR Code、商標、店家 Logo、品牌字樣或促銷宣傳；角色、衣服與道具皆需為原創，不可仿畫知名品牌角色。圖文清晰易讀、避免多手多腳、勿遮住文字。\n\n${rolePrompt}\n\n風格加強：${stickerStylePrompt}。\n\n真人／原創設定：${photoModePrompt}。${photoReminder}\n\n請畫成 ${gridInfo.layoutText}。每格貼圖都要獨立清楚、平均排列。每一格的角色＋文字＋裝飾只佔該格中央約 78%～82%，上下左右至少保留約 9%～11% 的純白安全留白，格與格之間必須看得到明顯白色空間，方便後續平均切割。角色與文字都要完整置中在各自格子內，不可超出邊界、不可跨格、不可互相重疊；若空間不足，寧可把角色與文字整體縮小，也不要貼邊。\n\n文字設定：請使用繁體中文，字體粗體，${textSizePrompt}，${textColorPrompt}，${textPositionPrompt}。文字必須清楚好讀，文字與頭髮、臉、手勢、手機、文件等主體至少保留明顯空隙，不可壓在人物或道具上；文字四周也要保留白邊，不要貼近格子邊界，不要切到字，不可出現序號、數字、標題、格號或列表符號。\n\n每張貼圖都要有不同表情與動作，整體風格一致、乾淨可愛、適合 LINE 貼圖使用。\n\n貼圖文字如下：\n${numberedTexts}`;
 }
 
 function buildStablePrompt(
@@ -4180,7 +4181,7 @@ function buildFlowTexts(
 ) {
   const source = [
     ...normalizeLines(textArea, 999),
-    ...templates[type].texts.map((line) =>
+    ...suggestSaleFriendlyLines(templates[type].texts).map((line) =>
       applyNameToLine(line, nameMode, customName),
     ),
     ...EXTRA_STICKER_TEXTS.map((line) =>
@@ -4205,7 +4206,7 @@ function getDefaultFlowTexts(
   customName: string,
 ) {
   const source = [
-    ...templates[type].texts,
+    ...suggestSaleFriendlyLines(templates[type].texts),
     ...EXTRA_STICKER_TEXTS,
   ].map((line) => applyNameToLine(line, nameMode, customName));
   const unique: string[] = [];
@@ -4696,6 +4697,7 @@ export default function StickerPromptGenerator() {
     () => buildFlowTexts(type, texts, targetCount, nameMode, customName),
     [type, texts, targetCount, nameMode, customName],
   );
+  const saleRisks = useMemo(() => stickerSaleTextRisks(flowTexts), [flowTexts]);
   const motherSheetPlan = useMemo(
     () => getMotherSheetPlan(targetCount),
     [targetCount],
@@ -4832,12 +4834,20 @@ export default function StickerPromptGenerator() {
   }
 
   async function copyFlowPrompt(index: number) {
+    if (saleRisks.length) return;
     const item = flowPrompts[index];
     if (!item) return;
     await navigator.clipboard.writeText(item.prompt);
     persistFlowProject(2);
     setCopiedBatchIndex(index);
     window.setTimeout(() => setCopiedBatchIndex(null), 1800);
+  }
+
+  function applySaleFriendlyTexts() {
+    const input = normalizeLines(texts, 999);
+    setTexts(suggestSaleFriendlyLines(input).join("\n"));
+    setCopiedBatchIndex(null);
+    setCopied(false);
   }
 
   function handleStickerMode(nextMode: LineStickerMode) {
@@ -5193,6 +5203,23 @@ export default function StickerPromptGenerator() {
                   {currentCount}/{requiredCount} 句
                 </span>
               </div>
+              <div className={`mt-3 rounded-2xl border p-4 text-xs leading-6 ${saleRisks.length ? "border-amber-300 bg-amber-50 text-amber-900" : "border-emerald-200 bg-emerald-50 text-emerald-900"}`}>
+                <p className="text-sm font-black">LINE 公開販售文案預檢：{saleRisks.length ? `發現 ${saleRisks.length} 句促銷／導流風險文字` : "已輸入的短句未發現常見促銷文字"}</p>
+                {saleRisks.length ? (
+                  <>
+                    <p className="mt-1">為避免花費時間重畫，請先修正這些文字再複製母圖提示詞：</p>
+                    <ul className="mt-2 list-disc space-y-1 pl-5">
+                      {saleRisks.slice(0, 8).map((risk) => (
+                        <li key={risk.index}>第 {risk.index + 1} 句「{risk.text}」→ 建議「{risk.replacement}」</li>
+                      ))}
+                    </ul>
+                    <button type="button" onClick={applySaleFriendlyTexts} className="mt-3 rounded-xl bg-amber-700 px-4 py-2 text-xs font-black text-white hover:bg-amber-800">
+                      一鍵換成一般聊天／祝福用語
+                    </button>
+                  </>
+                ) : null}
+                <p className="mt-2">這裡僅檢查輸入的短句，不會讀取圖片上的字；仍須人工確認 AI 沒有畫出額外文字、品牌或侵權內容，LINE 最終以官方審核為準。</p>
+              </div>
               <textarea
                 value={texts}
                 onChange={(e) => setTexts(e.target.value)}
@@ -5233,7 +5260,9 @@ export default function StickerPromptGenerator() {
                       <button
                         type="button"
                         onClick={() => copyFlowPrompt(index)}
-                        className="rounded-2xl bg-violet-600 px-4 py-3 text-sm font-black !text-white shadow hover:bg-violet-700"
+                        disabled={saleRisks.length > 0}
+                        title={saleRisks.length ? "請先修正促銷／導流風險短句" : undefined}
+                        className="rounded-2xl bg-violet-600 px-4 py-3 text-sm font-black !text-white shadow hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-slate-300"
                       >
                         {copiedBatchIndex === index
                           ? "已複製"
