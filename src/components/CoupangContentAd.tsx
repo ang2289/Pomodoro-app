@@ -60,6 +60,10 @@ export default function CoupangContentAd() {
   return (
     <CoupangDynamicAd
       subId={makeCoupangSubId(normalizedPath, "top")}
+      desktopWidth={1100}
+      desktopHeight={190}
+      mobileWidth={320}
+      mobileHeight={150}
       priority
       className="mx-auto mb-3 mt-4"
     />
