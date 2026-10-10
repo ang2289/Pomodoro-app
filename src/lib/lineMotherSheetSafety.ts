@@ -128,7 +128,7 @@ export function analyzeMotherSheetSafety(
     return [...found].sort((a, b) => a - b);
   };
   const describeSeparator = (message: string, axis: "欄" | "列") => {
-    const boundary = Number(message.match(/第 (\\d+) 道/)?.[1] ?? 0);
+    const boundary = Number(message.match(/第 (\d+) 道/)?.[1] ?? 0);
     if (!boundary) return message;
     const cells = affectedBySeparator(axis, boundary);
     return cells.length ? `${message} 可能影響第 ${cells.join("、")} 張。` : message;
