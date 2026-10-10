@@ -29,5 +29,34 @@
       "path": "/api/main?action=ping",
       "schedule": "0 22 * * 0"
     }
+  ],
+  "headers": [
+    {
+      "source": "/images/showcase/:asset",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=604800, stale-while-revalidate=86400"
+        }
+      ]
+    },
+    {
+      "source": "/images/sticker-prompt-demo/:asset",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=604800, stale-while-revalidate=86400"
+        }
+      ]
+    },
+    {
+      "source": "/favicon-small.ico",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=604800, stale-while-revalidate=86400"
+        }
+      ]
+    }
   ]
 }
