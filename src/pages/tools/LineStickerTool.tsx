@@ -2923,7 +2923,7 @@ export default function LineStickerTool() {
                   />
                   {flowProject?.texts[i] ? (
                     <p className="mt-2 rounded-xl border border-sky-200 bg-sky-50 p-3 text-xs font-bold leading-5 text-sky-900">
-                      這張應有文字：「{flowProject.texts[i]}」——請和圖片逐字比對，確認沒有多餘小字。
+                      來源提示詞（非圖片辨字）：「{flowProject.texts[i]}」。請以實際圖片為準，若文字不同，代表 AI 沒照提示詞生圖，須自行確認。
                     </p>
                   ) : null}
                   </div>
