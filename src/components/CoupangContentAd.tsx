@@ -27,8 +27,8 @@ const EXCLUDED_EXACT_PATHS = new Set([
   "/pricing/fail",
 ]);
 
-function makeTopSubId(pathname: string) {
-  if (pathname === "/") return "rxv_top_home";
+export function makeCoupangSubId(pathname: string, placement: "top" | "bottom" = "top") {
+  if (pathname === "/") return `rxv_${placement}_home`;
 
   const slug = pathname
     .replace(/^\/+|\/+$/g, "")
@@ -37,27 +37,30 @@ function makeTopSubId(pathname: string) {
     .replace(/^_+|_+$/g, "")
     .slice(0, 48);
 
-  return `rxv_top_${slug || "page"}`;
+  return `rxv_${placement}_${slug || "page"}`;
 }
 
-export default function CoupangContentAd() {
-  const { pathname } = useLocation();
-  const normalizedPath = pathname.replace(/\/+$/, "") || "/";
-
-  if (
+export function isCoupangPublicPage(normalizedPath: string) {
+  return !(
     EXCLUDED_EXACT_PATHS.has(normalizedPath) ||
     EXCLUDED_PREFIXES.some((prefix) =>
       prefix.endsWith("/")
         ? normalizedPath.startsWith(prefix)
         : normalizedPath === prefix || normalizedPath.startsWith(`${prefix}/`),
     )
-  ) {
-    return null;
-  }
+  );
+}
+
+export default function CoupangContentAd() {
+  const { pathname } = useLocation();
+  const normalizedPath = pathname.replace(/\/+$/, "") || "/";
+
+  if (!isCoupangPublicPage(normalizedPath)) return null;
 
   return (
     <CoupangDynamicAd
-      subId={makeTopSubId(normalizedPath)}
+      subId={makeCoupangSubId(normalizedPath, "top")}
+      priority
       className="mx-auto mb-3 mt-4"
     />
   );
