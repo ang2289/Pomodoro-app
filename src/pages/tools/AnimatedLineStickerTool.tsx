@@ -1577,7 +1577,6 @@ const AnimatedLineStickerTool: React.FC = () => {
   const [handoffLoaded, setHandoffLoaded] = useState(false);
   const [handoffTheme, setHandoffTheme] = useState("");
   const [sourceCaptions, setSourceCaptions] = useState<string[]>([]);
-  const [captionEdits, setCaptionEdits] = useState<Record<number, string>>({});
   const saleTextRisks = useMemo(
     () => stickerSaleTextRisks(sourceCaptions),
     [sourceCaptions],
@@ -1654,7 +1653,6 @@ const AnimatedLineStickerTool: React.FC = () => {
         setHandoffTheme(handoff.project?.theme ?? "");
         // 舊版暫存沒有綁定該批圖片的文字：不顯示誤導的「應有文字」。
         setSourceCaptions(handoff.project?.texts ?? []);
-        setCaptionEdits({});
         setWorkflowMode("batch");
         setHandoffLoaded(true);
         setBatchMessage(
@@ -2014,7 +2012,6 @@ const AnimatedLineStickerTool: React.FC = () => {
     setBatchStatus("");
     setBatchProgress(0);
     setSourceCaptions([]);
-    setCaptionEdits({});
     setHandoffLoaded(false);
     setHandoffTheme("");
     clearBatchAnimatedPreviews();
@@ -2039,7 +2036,6 @@ const AnimatedLineStickerTool: React.FC = () => {
   const clearBatchSources = () => {
     if (batchBusy || batchVideoBusy) return;
     setSourceCaptions([]);
-    setCaptionEdits({});
     setHandoffLoaded(false);
     setHandoffTheme("");
     setBatchSources((previous) => {
@@ -3202,13 +3198,9 @@ const AnimatedLineStickerTool: React.FC = () => {
                   {batchAnimatedPreviews.length} 張動態貼圖預覽
                 </h2>
                 <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-                  這裡顯示剛剛 ZIP 裡的實際 APNG 成品。下方的「來源提示詞」只用來人工比對，不是文字辨識結果；圖片上的文字才是實際輸出內容。請逐張確認後再送審。
+                  這裡顯示已完成的 APNG 動畫，請直接目視確認圖片中文字、人物、去背與動畫效果。為避免顯示以前的文字，預覽卡片不再帶入提示詞內容。
                 </p>
-                {handoffLoaded && sourceCaptions.length === 0 ? (
-                  <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold leading-5 text-amber-800">
-                    這組是舊版暫存的圖片，沒有與來源文字一起綁定；已停止顯示舊專案的錯誤文字。您可以直接核對圖片，或由第 1 步重新開始取得新版文字對照。
-                  </p>
-                ) : null}
+
               </div>
               <button
                 type="button"
@@ -3254,20 +3246,7 @@ const AnimatedLineStickerTool: React.FC = () => {
                       {item.sizeKb} KB
                     </span>
                   </div>
-                  {handoffLoaded && sourceCaptions[item.index] ? (
-                    <label className="mt-2 block rounded-lg bg-sky-50 px-2 py-1.5 text-[11px] font-bold leading-4 text-sky-800">
-                      來源提示詞（僅供核對，非圖片自動辨字）
-                      <input
-                        aria-label={`第 ${item.index + 1} 張參考文字`}
-                        value={captionEdits[item.index] ?? sourceCaptions[item.index]}
-                        onChange={(event) => setCaptionEdits((previous) => ({
-                          ...previous,
-                          [item.index]: event.target.value,
-                        }))}
-                        className="mt-1.5 w-full rounded-lg border border-sky-200 bg-white px-2 py-2 text-xs font-medium text-slate-800"
-                      />
-                    </label>
-                  ) : null}
+
                   <p className="mt-1 text-[10px] leading-4 text-slate-400">
                     點圖片可重播
                   </p>
