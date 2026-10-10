@@ -588,7 +588,7 @@ function App() {
   }
 
   return (
-    <div className={isBusinessCardPage || isStorefrontPage || isGroupBuyPage ? "w-full min-h-screen" : "w-full min-h-screen max-w-screen-md mx-auto"}>
+    <div className="w-full min-h-screen min-w-0">
       {/* ⚠️ 已移除升級成功提示 */}
       
       {/* Auth buttons removed for testing */}
