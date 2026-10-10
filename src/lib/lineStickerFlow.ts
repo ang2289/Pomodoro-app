@@ -1,4 +1,5 @@
 export type LineStickerMode = "static" | "animated";
+export type StickerExportPlatform = "line" | "whatsapp";
 export type LineStickerCount = 8 | 16 | 24 | 32 | 40;
 export type LineStickerStage = 1 | 2 | 3 | 4 | 5;
 export type MotherSheetGrid = "4x2" | "4x4" | "4x5";
@@ -7,6 +8,7 @@ export type LineStickerProject = {
   version: 1;
   id: string;
   mode: LineStickerMode;
+  platform?: StickerExportPlatform; // 舊版專案預設 LINE
   count: LineStickerCount;
   theme: string;
   texts: string[];
@@ -59,6 +61,7 @@ function makeProjectId() {
 
 export function createLineStickerProject(input: {
   mode: LineStickerMode;
+  platform?: StickerExportPlatform;
   count: LineStickerCount;
   theme: string;
   texts: string[];
@@ -68,6 +71,7 @@ export function createLineStickerProject(input: {
     version: 1,
     id: makeProjectId(),
     mode: input.mode,
+    platform: input.platform ?? "line",
     count: input.count,
     theme: input.theme,
     texts: input.texts.slice(0, input.count),
