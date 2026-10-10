@@ -27,6 +27,7 @@ import {
   getRelatedToolsItems,
 } from "@/data/internalLinks";
 import JSZip from "jszip";
+import { createWhatsAppTrayPng, createWhatsAppWebpSticker, partitionWhatsAppPacks } from "@/lib/whatsAppStickerExport";
 import { stickerSaleTextRisks } from "@/lib/stickerCommercialSafety";
 import { saveAs } from "file-saver";
 import { removeStickerWhiteBackground, type StickerWhiteRemovalMode } from "@/lib/stickerWhiteBackground";
@@ -1603,6 +1604,7 @@ export default function LineStickerTool() {
     () => flowProject?.count ?? 8,
   );
   const [mainImageIndex, setMainImageIndex] = useState<number>(0);
+  const [exportPlatform, setExportPlatform] = useState<"line" | "whatsapp">("line");
   const [cropMode, setCropMode] = useState<LineStickerCropMode>("smart-safe");
   const [cropScale, setCropScale] = useState<number>(92);
   const [downloadCompleted, setDownloadCompleted] = useState(
@@ -2145,6 +2147,88 @@ export default function LineStickerTool() {
     t,
   ]);
 
+  const generateWhatsAppZip = useCallback(async () => {
+    if (!canDownload || loading) return;
+    if (qualityErrorCount > 0) {
+      setError(`尚有 ${qualityErrorCount} 張嚴重品質問題，請先修正再輸出 WhatsApp 貼圖。`);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    setExportCheckResult(null);
+    try {
+      const sizes = partitionWhatsAppPacks(stickerCount);
+      const zip = new JSZip();
+      let startIndex = 0;
+      const mainIndex = mainImageIndex < stickerCount ? mainImageIndex : 0;
+      const mainCanvas = resizeImageToCanvas(
+        files[mainIndex].img,
+        STICKER_BODY.width,
+        STICKER_BODY.height,
+        cropMode,
+        getScaleForIndex(mainIndex),
+        getOffsetForIndex(mainIndex),
+      );
+      if (!canvasHasTransparency(mainCanvas)) {
+        throw new Error("WhatsApp 貼圖集封面仍有不透明背景，請先完成去背。");
+      }
+      const trayIcon = await createWhatsAppTrayPng(mainCanvas);
+      for (let packIndex = 0; packIndex < sizes.length; packIndex++) {
+        const packSize = sizes[packIndex];
+        const folder = zip.folder(`WhatsApp_Pack_${String(packIndex + 1).padStart(2, "0")}`);
+        if (!folder) throw new Error("無法建立 WhatsApp 貼圖集資料夾。");
+        folder.file("tray.png", trayIcon);
+        for (let localIndex = 0; localIndex < packSize; localIndex++) {
+          const index = startIndex + localIndex;
+          const canvas = resizeImageToCanvas(
+            files[index].img,
+            STICKER_BODY.width,
+            STICKER_BODY.height,
+            cropMode,
+            getScaleForIndex(index),
+            getOffsetForIndex(index),
+          );
+          if (!canvasHasTransparency(canvas)) {
+            throw new Error(`第 ${index + 1} 張背景不是透明，請先完成去背。`);
+          }
+          const webp = await createWhatsAppWebpSticker(canvas);
+          folder.file(`${String(localIndex + 1).padStart(2, "0")}.webp`, webp);
+        }
+        startIndex += packSize;
+      }
+      zip.file("WhatsApp_匯入說明.txt",
+        "RXV WhatsApp 靜態貼圖素材包\\n\\n"
+        + "1. 每張圖片為 512x512 透明 WebP、容量不超過 100KB。\\n"
+        + "2. 一組 3 到 30 張；32/40 張已分成兩組。\\n"
+        + "3. tray.png 是 96x96 的貼圖集縮圖。\\n"
+        + "4. 本 ZIP 是素材檔，無法直接在 WhatsApp 內按 ZIP 一鍵安裝。\\n"
+        + "5. 請使用支援匯入 WebP 圖片的 WhatsApp 貼圖製作 APP 建立貼圖集，"
+        + "或使用 WhatsApp 內建貼圖建立功能逐張加入。\\n"
+        + "6. LINE 上架需要原本的 PNG / APNG ZIP，不能與 WhatsApp 混用。\\n"
+      );
+      const blob = await zip.generateAsync({ type: "blob" });
+      saveAs(blob, `rxv-whatsapp-static-${stickerCount}-webp.zip`);
+      setExportCheckResult(`WhatsApp 靜態貼圖已輸出 ${stickerCount} 張（${sizes.length} 組），512×512 WebP、每張≤100KB、附貼圖集縮圖。此 ZIP 是素材包，仍須在 WhatsApp 或相容貼圖 APP 匯入。`);
+      setDownloadCompleted(true);
+      if (flowProject?.mode !== "animated") updateLineStickerProject({ stage: 5 });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "WhatsApp 貼圖產生失敗。");
+    } finally {
+      setLoading(false);
+    }
+  }, [
+    canDownload,
+    loading,
+    qualityErrorCount,
+    stickerCount,
+    mainImageIndex,
+    files,
+    cropMode,
+    getScaleForIndex,
+    getOffsetForIndex,
+    flowProject,
+  ]);
+
   const startNewStickerFlow = useCallback(async () => {
     clearAll();
     clearLineStickerProject();
@@ -2213,10 +2297,10 @@ export default function LineStickerTool() {
   return (
     <>
       <SEO
-        title="LINE 貼圖製作工具｜免費LINE 貼圖製作工具 - RxV AI工具中心"
-        description="免費LINE 貼圖製作工具，支援線上使用，快速完成任務，無需下載。"
+        title="LINE＋WhatsApp 貼圖製作工具｜母圖切割、去背、WebP 輸出 - RxV"
+        description="使用舊圖片或 ChatGPT 母圖，免費自動切割去背；LINE 可輸出 PNG 上架 ZIP，WhatsApp 靜態貼圖可輸出 512x512 WebP 素材包。"
         path="/tools/line-sticker"
-        keywords="LINE 貼圖製作工具, AI工具, 免費工具"
+        keywords="LINE貼圖, WhatsApp貼圖, WebP製作, 靜態貼圖轉檔, 自動去背, 免費工具"
         jsonLd={faqJsonLd}
       />
 
@@ -2239,7 +2323,7 @@ export default function LineStickerTool() {
               第 3～4 步｜上傳母圖，自動整理貼圖
             </h1>
             <p className="text-slate-500 text-sm mt-1">
-              把剛才從 ChatGPT 下載的母圖直接傳上來。系統會自動切成單張、移除白色背景、整理尺寸並檢查。正常的圖片不用另外設定。
+              可直接上傳以前已生成的圖片、去背 PNG／WebP 或新的 ChatGPT 母圖，不需要重新產圖。系統會自動切割、去背並依 LINE 或 WhatsApp 規格整理。
             </p>
             <p className="text-slate-500 text-sm mt-2">
               {t("line_sticker_hero_desc")}
@@ -2248,7 +2332,7 @@ export default function LineStickerTool() {
 
           <section className="mb-5 rounded-2xl border border-indigo-100 bg-white p-4 shadow-sm">
             <h2 className="text-sm font-black text-slate-900">一般客戶照著做就可以：5 個步驟</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-700">① 選靜態／動態與張數 → ② 複製提示詞到 ChatGPT 生圖 → ③ 上傳母圖自動分割、去白底 → ④ 預覽每張並選 MAIN／TAB → ⑤ 下載 ZIP，至 LINE Creators Market 上傳送審。</p>
+            <p className="mt-2 text-sm leading-6 text-slate-700">① 選靜態／動態與張數 → ② 使用原有圖片或 ChatGPT 生圖 → ③ 上傳母圖自動分割、去白底 → ④ 預覽並調整大小 → ⑤ 選擇 LINE 上架 ZIP 或 WhatsApp 靜態 WebP 素材包下載。</p>
             <p className="mt-2 text-xs leading-5 text-slate-500">裁切、去白底與尺寸整理都由本站處理；若去背不理想，再選擇外部進階工具。完成 ZIP 不代表 LINE 必定審核通過。</p>
             <Link to="/tools/line-sticker-guide" className="mt-3 inline-flex items-center rounded-lg bg-indigo-50 px-3 py-2 text-xs font-black text-indigo-700 hover:bg-indigo-100">查看完整圖文教學</Link>
             {exportCheckResult ? <p role="status" className="mt-3 rounded-xl bg-emerald-50 p-3 text-sm font-bold leading-6 text-emerald-800">{exportCheckResult}</p> : null}
@@ -2263,6 +2347,47 @@ export default function LineStickerTool() {
               </p>
             </section>
           ) : null}
+
+          <section className="mb-5 rounded-2xl border border-sky-200 bg-white p-4 shadow-sm">
+            <h2 className="text-sm font-black text-slate-900">輸出平台｜同一張母圖可製作 LINE 或 WhatsApp 貼圖</h2>
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <button type="button" onClick={() => setExportPlatform("line")}
+                aria-pressed={exportPlatform === "line"}
+                className={`min-h-12 rounded-xl border-2 px-3 py-2 text-sm font-black ${exportPlatform === "line" ? "border-emerald-500 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-slate-50 text-slate-600"}`}>
+                LINE · PNG／APNG
+              </button>
+              <button type="button" onClick={() => setExportPlatform("whatsapp")}
+                aria-pressed={exportPlatform === "whatsapp"}
+                className={`min-h-12 rounded-xl border-2 px-3 py-2 text-sm font-black ${exportPlatform === "whatsapp" ? "border-emerald-500 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-slate-50 text-slate-600"}`}>
+                WhatsApp · 靜態 WebP
+              </button>
+            </div>
+            <p className="mt-2 text-xs leading-6 text-slate-600">
+              {exportPlatform === "whatsapp"
+                ? "可沿用以前的母圖、已去背 PNG 或 WebP，不必重新生圖。下載 512×512、單張≤100KB 的靜態貼圖素材 ZIP；WhatsApp 匯入貼圖集須透過內建建立功能或相容貼圖 APP。動態 WebP 尚未開放，避免輸出假動畫。"
+                : "輸出 LINE 貼圖上架 ZIP，靜態為 PNG；如需製作 LINE 動態貼圖請繼續下個步驟。"}
+            </p>
+            {exportPlatform === "whatsapp" ? (
+              <a
+                href="https://faq.whatsapp.com/1056840314992666"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 inline-flex text-xs font-black text-emerald-700 underline"
+              >
+                查看 WhatsApp 官方建立及分享貼圖集說明
+              </a>
+            ) : null}
+            {exportPlatform === "whatsapp" && flowProject?.mode === "animated" ? (
+              <button
+                type="button"
+                onClick={generateWhatsAppZip}
+                disabled={!canDownload || loading}
+                className="mt-3 w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-slate-300"
+              >
+                {loading ? "正在輸出 WhatsApp WebP…" : `下載 ${stickerCount} 張 WhatsApp 靜態 WebP ZIP`}
+              </button>
+            ) : null}
+          </section>
 
           {downloadCompleted && flowProject?.mode !== "animated" ? (
             <section className="mb-6 rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-blue-50 p-5 shadow-sm">
@@ -2916,7 +3041,6 @@ export default function LineStickerTool() {
               </div>
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
                 {files.map((p, i) => (
-                  <div key={i} className="min-w-0">
                   <PreviewCard
                     preview={p}
                     index={i}
@@ -2931,12 +3055,6 @@ export default function LineStickerTool() {
                     isExcluded={i >= stickerCount}
                     onToggleExclude={() => {}}
                   />
-                  {flowProject?.texts[i] ? (
-                    <p className="mt-2 rounded-xl border border-sky-200 bg-sky-50 p-3 text-xs font-bold leading-5 text-sky-900">
-                      來源提示詞（非圖片辨字）：「{flowProject.texts[i]}」。請以實際圖片為準，若文字不同，代表 AI 沒照提示詞生圖，須自行確認。
-                    </p>
-                  ) : null}
-                  </div>
                 ))}
               </div>
             </section>
@@ -3308,7 +3426,7 @@ export default function LineStickerTool() {
             {flowProject?.mode === "animated" ? (
               <>
                 <button
-                  onClick={generateZip}
+                  onClick={exportPlatform === "whatsapp" ? generateWhatsAppZip : generateZip}
                   disabled={!canDownload || loading}
                   className={`hidden min-h-[52px] rounded-2xl px-4 py-3 text-xs font-black sm:inline-flex sm:items-center sm:justify-center ${
                     !canDownload || loading
@@ -3316,7 +3434,7 @@ export default function LineStickerTool() {
                       : "border border-blue-200 bg-white text-blue-700 hover:bg-blue-50"
                   }`}
                 >
-                  下載靜態備份 ZIP
+                  {exportPlatform === "whatsapp" ? "下載 WhatsApp 靜態 WebP ZIP" : "下載 LINE 靜態備份 ZIP"}
                 </button>
                 <button
                   onClick={continueToAnimated}
@@ -3330,13 +3448,15 @@ export default function LineStickerTool() {
                   {loading
                     ? "正在準備下一步…"
                     : canDownload
-                      ? "下一步：自動製作動態貼圖"
+                      ? (exportPlatform === "whatsapp"
+                          ? "LINE 動態製作（WhatsApp 動態尚未支援）"
+                          : "下一步：自動製作 LINE 動態貼圖")
                       : `還差 ${needMore} 張`}
                 </button>
               </>
             ) : (
               <button
-                onClick={generateZip}
+                onClick={exportPlatform === "whatsapp" ? generateWhatsAppZip : generateZip}
                 disabled={!canDownload || loading}
                 className={`h-12 min-h-12 flex-1 whitespace-nowrap rounded-2xl px-3 py-0 text-[15px] font-black leading-none tracking-tight shadow-lg transition-all active:scale-[0.97] sm:h-auto sm:min-h-[52px] sm:py-3.5 sm:text-sm ${!canDownload || loading ? "cursor-not-allowed bg-slate-200 text-slate-400 shadow-none" : "bg-blue-600 text-white hover:bg-blue-700 shadow-lg"}`}
               >
@@ -3344,8 +3464,8 @@ export default function LineStickerTool() {
                   ? t("line_sticker_processing")
                   : canDownload
                     ? downloadCompleted
-                      ? "✓ 第 5 步完成｜再次下載 ZIP"
-                      : `步驟 5｜下載 ${stickerCount} 張 LINE 上架 ZIP`
+                      ? `✓ 再次下載 ${exportPlatform === "whatsapp" ? "WhatsApp WebP" : "LINE"} ZIP`
+                      : `步驟 5｜下載 ${stickerCount} 張 ${exportPlatform === "whatsapp" ? "WhatsApp WebP" : "LINE 上架"} ZIP`
                     : t("line_sticker_need_more_to_pack", { count: needMore })}
               </button>
             )}
