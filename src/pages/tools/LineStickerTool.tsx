@@ -2552,6 +2552,7 @@ export default function LineStickerTool() {
                   ) : null}
                   <div className="mt-4 grid gap-3 xl:grid-cols-2">
                     {motherSheetDetections.map((item, index) => {
+                      const safetyGrid = !flowProject && motherSheetGrid !== "auto" ? motherSheetGrid : item.grid;
                       const plannedGrid =
                         expectedMotherSheetPlan[index]?.grid ?? null;
                       const matchesPlan =
@@ -2601,9 +2602,9 @@ export default function LineStickerTool() {
                             </strong>
                           </div>
                           <div className="mt-3 rounded-xl border border-sky-100 bg-sky-50 px-3 py-2 text-xs font-bold leading-5 text-sky-900">
-                            {item.safetyByGrid[item.grid].blocked.length
-                              ? `需調整：${item.safetyByGrid[item.grid].blocked.slice(0, 2).join("；")}`
-                              : `安全切線已分析；原圖留白不足 8.5% 的貼圖有 ${item.safetyByGrid[item.grid].warnings.length} 張，切圖後會自動置中補白。`}
+                            {item.safetyByGrid[safetyGrid].blocked.length
+                              ? `需調整：${item.safetyByGrid[safetyGrid].blocked.slice(0, 2).join("；")}`
+                              : `安全切線已分析（${formatMotherSheetGrid(safetyGrid)}）；原圖留白不足 8.5% 的貼圖有 ${item.safetyByGrid[safetyGrid].warnings.length} 張，切圖後會自動置中補白。`}
                           </div>
                           <div className="mt-3 rounded-xl border border-violet-100 bg-white/80 p-2">
                             <p className="text-[10px] font-bold leading-4 text-slate-500">
