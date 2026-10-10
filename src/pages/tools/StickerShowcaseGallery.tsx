@@ -180,8 +180,12 @@ export default function StickerShowcaseGallery() {
                 >
                   <div className="aspect-square overflow-hidden bg-slate-100">
                     <img
-                      src={item.img}
+                      src={item.img.replace(/\.png$/, "-preview.webp")}
                       alt={item.title}
+                      loading="lazy"
+                      decoding="async"
+                      width={540}
+                      height={540}
                       className="h-full w-full object-cover transition duration-300 hover:scale-105"
                     />
                   </div>
@@ -210,8 +214,12 @@ export default function StickerShowcaseGallery() {
                   <>
                     <div className="bg-slate-100 p-3">
                       <img
-                        src={selectedItem.img}
+                        src={selectedItem.img.replace(/\.png$/, "-detail.webp")}
                         alt={`${selectedItem.title}放大成果`}
+                        loading="lazy"
+                        decoding="async"
+                        width={1200}
+                        height={1200}
                         className="mx-auto max-h-[72vh] w-full rounded-2xl object-contain"
                       />
                     </div>
