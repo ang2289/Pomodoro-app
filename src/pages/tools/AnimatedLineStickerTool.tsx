@@ -41,7 +41,8 @@ const LINE_MAIN_IMAGE_WIDTH = 240;
 const LINE_MAIN_IMAGE_HEIGHT = 240;
 const LINE_TAB_ICON_WIDTH = 96;
 const LINE_TAB_ICON_HEIGHT = 74;
-const LINE_APNG_MAX_BYTES = 1024 * 1024;
+// 採用保守的十進位 1MB 上限，避免上架平台與瀏覽器的 MB 換算差異。
+const LINE_APNG_MAX_BYTES = 1_000_000;
 const MAX_LINE_ZIP_MB = 60;
 const ALPHA_VISIBLE_THRESHOLD = 8;
 const SOURCE_CROP_PADDING = 12;
@@ -976,7 +977,17 @@ async function createLineSafeApngBlob(
       : { contentScale: 1, quantizeBits: 6 };
     onProgress?.(`正在產生 APNG（${frames.length} 禎快速模式，可能需要 10～30 秒）...`);
     await waitMs(80);
-    return createApngBlob(frames, durationSec, loopCount, t, fastPreset);
+    let best = await createApngBlob(frames, durationSec, loopCount, t, fastPreset);
+    if (best.size <= LINE_APNG_MAX_BYTES) return best;
+    // 大圖／花束複雜細節容易超標：先嘗試降低色階，保留原人物比例。
+    for (const quantizeBits of [4, 3]) {
+      onProgress?.(`正在進一步壓縮 APNG（${quantizeBits} bit 色階）…`);
+      await waitMs(40);
+      const next = await createApngBlob(frames, durationSec, loopCount, t, { contentScale: 1, quantizeBits });
+      if (next.size < best.size) best = next;
+      if (best.size <= LINE_APNG_MAX_BYTES) return best;
+    }
+    return best;
   }
 
   // 5～9 禎通常可在保留角色大小的前提下壓到 LINE 1MB 內。
@@ -988,6 +999,7 @@ async function createLineSafeApngBlob(
     { contentScale: 1, quantizeBits: 6 },
     { contentScale: 1, quantizeBits: 5 },
     { contentScale: 1, quantizeBits: 4 },
+    { contentScale: 1, quantizeBits: 3 },
   ];
 
   let smallest: Blob | null = null;
@@ -1011,6 +1023,40 @@ function toDosDateTime(date = new Date()) {
   const dosTime = (date.getHours() << 11) | (date.getMinutes() << 5) | Math.floor(date.getSeconds() / 2);
   const dosDate = ((date.getFullYear() - 1980) << 9) | ((date.getMonth() + 1) << 5) | date.getDate();
   return { dosTime, dosDate };
+}
+
+
+/** ZIP 打包前以位元組檢查真實 PNG / APNG，而非只信任副檔名。 */
+function verifyLineOutputPng(data: Uint8Array, name: string, width: number, height: number, animated: boolean) {
+  const signature = [137, 80, 78, 71, 13, 10, 26, 10];
+  if (data.length < 33 || !signature.every((byte, index) => data[index] === byte)) {
+    throw new Error(`${name} 不是有效 PNG，請重新產生。`);
+  }
+  const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
+  if (view.getUint32(16) !== width || view.getUint32(20) !== height) {
+    throw new Error(`${name} 尺寸不正確：LINE 要求 ${width}×${height}px。`);
+  }
+  let offset = 8;
+  let frameCount = 0;
+  let hasAnimationControl = false;
+  let hasEnd = false;
+  while (offset + 12 <= data.length) {
+    const length = view.getUint32(offset);
+    const end = offset + 12 + length;
+    if (end > data.length) throw new Error(`${name} PNG 資料不完整。`);
+    const type = String.fromCharCode(data[offset + 4], data[offset + 5], data[offset + 6], data[offset + 7]);
+    if (type === "acTL") hasAnimationControl = true;
+    if (type === "fcTL") frameCount++;
+    if (type === "IEND") { hasEnd = true; break; }
+    offset = end;
+  }
+  if (!hasEnd) throw new Error(`${name} PNG 缺少結束標記，請重新輸出。`);
+  if (animated && (!hasAnimationControl || frameCount < 5 || frameCount > 20)) {
+    throw new Error(`${name} 必須是 5～20 畫格的 APNG，不能只用靜態 PNG 改檔名。`);
+  }
+  if (!animated && hasAnimationControl) {
+    throw new Error(`${name} 必須是靜態 PNG。`);
+  }
 }
 
 function makeZip(files: { name: string; data: Uint8Array }[]) {
@@ -1927,10 +1973,9 @@ const AnimatedLineStickerTool: React.FC = () => {
               ),
           );
           const stickerName = `${String(i + 1).padStart(2, "0")}.png`;
-          files.push({
-            name: stickerName,
-            data: new Uint8Array(await apng.arrayBuffer()),
-          });
+          const stickerData = new Uint8Array(await apng.arrayBuffer());
+          verifyLineOutputPng(stickerData, stickerName, OUTPUT_WIDTH, OUTPUT_HEIGHT, true);
+          files.push({ name: stickerName, data: stickerData });
           completedPreviews.push({
             id: "batch-preview-" + String(i + 1),
             index: i,
@@ -1967,6 +2012,8 @@ const AnimatedLineStickerTool: React.FC = () => {
             );
             mainData = new Uint8Array(await mainBlob.arrayBuffer());
             tabData = new Uint8Array(await tabBlob.arrayBuffer());
+            verifyLineOutputPng(mainData, "main.png", LINE_MAIN_IMAGE_WIDTH, LINE_MAIN_IMAGE_HEIGHT, true);
+            verifyLineOutputPng(tabData, "tab.png", LINE_TAB_ICON_WIDTH, LINE_TAB_ICON_HEIGHT, false);
           }
         } finally {
           generatedFrames.forEach((frame) => URL.revokeObjectURL(frame.url));
@@ -1976,52 +2023,27 @@ const AnimatedLineStickerTool: React.FC = () => {
       if (mainData) files.push({ name: "main.png", data: mainData });
       if (tabData) files.push({ name: "tab.png", data: tabData });
 
-      const readme = [
-        "RxV LINE 動態貼圖一鍵整套整理包",
-        `貼圖數量：${batchSources.length}`,
-        "每張來源圖：自動產生 8 禎 / 2 秒 / 2 次循環",
-        `動畫模式：${
-          batchMotionMode === "mixed"
-            ? "多效果輪用"
-            : batchMotionMode === "custom"
-              ? "每張自選效果"
-              : "全部同一效果"
-        }`,
-        batchMotionMode === "mixed"
-          ? `輪用效果：${MIXED_BATCH_MOTION_PRESETS.join(", ")}`
-          : batchMotionMode === "custom"
-            ? "每張效果請參考 motion-report.txt"
-            : `動畫模板：${batchMotionPreset}`,
-        "",
-        "檔案：",
-        "01.png ～ 08.png / 16.png / 24.png：各貼圖 APNG",
-        "main.png：整套主要圖片（由第 1 張來源自動產生）",
-        "tab.png：聊天室標籤圖片（由第 1 張來源自動產生）",
-        "size-report.txt：每張 APNG 大小檢查結果",
-        "",
-        "重要：本工具會自動整理尺寸、命名與 ZIP，但 LINE Creators Market 的規格可能更新，送審前仍請在官方後台做最後規格檢查。",
-      ].join("\n");
-
-      files.push({
-        name: "README.txt",
-        data: new TextEncoder().encode(readme),
-      });
-      files.push({
-        name: "size-report.txt",
-        data: new TextEncoder().encode(sizeReport.join("\n")),
-      });
-      files.push({
-        name: "motion-report.txt",
-        data: new TextEncoder().encode(
-          ["檔案\t效果代碼\t效果名稱", ...motionReport].join("\n"),
-        ),
-      });
+      // 上架 ZIP 僅包含貼圖、main、tab；不再混入 README 與報告文字檔。
+      // 報告留在畫面，避免一般使用者誤傳文字檔到 LINE。
+      const oversized = files.filter((file) => file.data.byteLength > LINE_APNG_MAX_BYTES);
+      if (oversized.length > 0) {
+        replaceBatchAnimatedPreviews(completedPreviews);
+        setBatchProgress(92);
+        setBatchStatus("已完成預覽，但尚未產生上架 ZIP");
+        setBatchMessage(
+          `有 ${oversized.length} 個圖片超過 1MB：${oversized.map((file) => `${file.name} (${Math.round(file.data.byteLength / 1024)}KB)`).join("、")}。請改用較簡單的動態效果或減少複雜裝飾後再產生，避免下載不可上架的檔案。`,
+        );
+        return;
+      }
 
       setBatchStatus(t("animated_line_sticker.batch_status_zip"));
       setBatchProgress(96);
       await waitMs(40);
 
       const zip = makeZip(files);
+      if (zip.size > MAX_LINE_ZIP_MB * 1024 * 1024) {
+        throw new Error(`ZIP 為 ${(zip.size / 1024 / 1024).toFixed(1)}MB，超過 LINE 60MB 上限，請簡化圖片再試。`);
+      }
       downloadBlob(
         zip,
         `rxv-line-animated-sticker-upload-pack-${batchSources.length}.zip`,
@@ -2036,11 +2058,8 @@ const AnimatedLineStickerTool: React.FC = () => {
           block: "start",
         });
       }, 120);
-      const overLimit = sizeReport.filter((line) => line.includes("超過1MB")).length;
       setBatchMessage(
-        overLimit > 0
-          ? t("animated_line_sticker.batch_done_with_warning", { count: overLimit })
-          : t("animated_line_sticker.batch_done_ok"),
+        `上架 ZIP 已下載，包含 ${batchSources.length} 張 APNG、main.png（APNG）、tab.png（靜態 PNG），共 ${files.length} 個圖片檔。已通過格式、尺寸及單檔 1MB／ZIP 60MB 檢查。仍請逐張確認文字與動畫內容，LINE 最終以官方審核為準。`,
       );
     } catch (error: any) {
       setBatchProgress(0);
@@ -2838,6 +2857,7 @@ const AnimatedLineStickerTool: React.FC = () => {
 
                 <div className="mt-4 rounded-2xl bg-sky-50 p-3 text-xs leading-6 text-sky-900">
                   {t("animated_line_sticker.batch_output_summary")}
+                  <p className="mt-2 font-bold">下一版上架安全檢查：ZIP 僅包含貼圖 APNG、main.png、tab.png，不夾帶文字報告；產生後自動核對尺寸、畫格與容量，超標會指出檔名。</p>
                 </div>
 
                 <button
