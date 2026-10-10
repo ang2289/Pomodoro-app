@@ -3,6 +3,7 @@ import { Helmet } from "react-helmet-async";
 import { useTranslation } from "react-i18next";
 import SEO, { getBaseUrl } from "@/components/SEO";
 import LineStickerFlowSteps from "@/components/LineStickerFlowSteps";
+import { stickerSaleTextRisks } from "@/lib/stickerCommercialSafety";
 import {
   loadAnimatedStickerHandoff,
   readLineStickerProject,
@@ -1449,6 +1450,7 @@ const AnimatedLineStickerTool: React.FC = () => {
   const [batchEffectGalleryFrame, setBatchEffectGalleryFrame] = useState(0);
   const [handoffLoaded, setHandoffLoaded] = useState(false);
   const [handoffTheme, setHandoffTheme] = useState("");
+  const [saleTextRisks] = useState(() => stickerSaleTextRisks(readLineStickerProject()?.texts ?? []));
   const [previewIndex, setPreviewIndex] = useState(0);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -2333,6 +2335,16 @@ const AnimatedLineStickerTool: React.FC = () => {
             onChange={(event) => handleFiles(event.target.files)}
           />
         </section>
+
+        {handoffLoaded && saleTextRisks.length > 0 ? (
+          <section className="mt-5 rounded-2xl border border-amber-300 bg-amber-50 p-4">
+            <p className="font-black text-amber-900">LINE 公開販售內容提醒：來源文案含 {saleTextRisks.length} 句可能被視為促銷／導流。</p>
+            <p className="mt-2 text-xs leading-6 text-amber-900">
+              {saleTextRisks.slice(0, 6).map((risk) => `${risk.text} → ${risk.replacement}`).join("；")}。
+              工具無法從 APNG 自動刪掉圖片上的字；建議返回提示詞修改後重畫，以降低退件風險。
+            </p>
+          </section>
+        ) : null}
 
         {handoffLoaded ? (
           <section className="mt-6 rounded-3xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm">
