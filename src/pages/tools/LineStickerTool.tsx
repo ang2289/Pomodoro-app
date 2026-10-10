@@ -2788,8 +2788,8 @@ export default function LineStickerTool() {
               </div>
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
                 {files.map((p, i) => (
+                  <div key={i} className="min-w-0">
                   <PreviewCard
-                    key={i}
                     preview={p}
                     index={i}
                     cropMode={cropMode}
@@ -2802,6 +2802,12 @@ export default function LineStickerTool() {
                     isExcluded={i >= stickerCount}
                     onToggleExclude={() => {}}
                   />
+                  {flowProject?.texts[i] ? (
+                    <p className="mt-2 rounded-xl border border-sky-200 bg-sky-50 p-3 text-xs font-bold leading-5 text-sky-900">
+                      這張應有文字：「{flowProject.texts[i]}」——請和圖片逐字比對，確認沒有多餘小字。
+                    </p>
+                  ) : null}
+                  </div>
                 ))}
               </div>
             </section>
