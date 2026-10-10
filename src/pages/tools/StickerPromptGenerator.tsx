@@ -4396,8 +4396,12 @@ function ShowcaseSection() {
               aria-label={`查看${item.title}放大成果`}
             >
               <img
-                src={item.img}
+                src={item.img.replace(/\.png$/, "-preview.webp")}
                 alt={item.title}
+                loading="lazy"
+                decoding="async"
+                width={540}
+                height={540}
                 className="h-full w-full object-cover transition duration-300 hover:scale-105"
               />
             </Link>
@@ -5521,9 +5525,12 @@ export default function StickerPromptGenerator() {
                       請放示範圖：{step.img.split("/").pop()}
                     </div>
                     <img
-                      src={step.img}
+                      src={step.img.replace(/\.png$/, "-preview.webp")}
                       alt={step.alt}
                       loading="lazy"
+                      decoding="async"
+                      width={820}
+                      height={615}
                       className="relative z-10 h-full w-full object-cover"
                       onError={(event) => {
                         event.currentTarget.remove();
