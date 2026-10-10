@@ -1923,8 +1923,6 @@ const AnimatedLineStickerTool: React.FC = () => {
     setBatchMessage("");
     clearBatchAnimatedPreviews();
     const files: { name: string; data: Uint8Array }[] = [];
-    const sizeReport: string[] = [];
-    const motionReport: string[] = [];
     const completedPreviews: Array<Omit<BatchAnimatedPreview, "url">> = [];
     let mainData: Uint8Array | null = null;
     let tabData: Uint8Array | null = null;
@@ -1984,18 +1982,6 @@ const AnimatedLineStickerTool: React.FC = () => {
             sizeKb: Math.round(apng.size / 1024),
             overLimit: apng.size > LINE_APNG_MAX_BYTES,
           });
-          sizeReport.push(
-            `${stickerName}\t${Math.round(apng.size / 1024)}KB\t${
-              apng.size <= LINE_APNG_MAX_BYTES ? "OK" : "超過1MB，請最後人工檢查"
-            }`,
-          );
-          const motionLabel =
-            AUTO_MOTION_PRESETS.find((preset) => preset.value === motionPreset)
-              ?.labelKey ?? "animated_line_sticker.auto_motion_auto";
-          motionReport.push(
-            `${stickerName}\t${motionPreset}\t${t(motionLabel)}`,
-          );
-
           if (i === 0) {
             const mainBlob = await createLineMainImageApngBlob(
               generatedFrames,
@@ -2024,7 +2010,7 @@ const AnimatedLineStickerTool: React.FC = () => {
       if (tabData) files.push({ name: "tab.png", data: tabData });
 
       // 上架 ZIP 僅包含貼圖、main、tab；不再混入 README 與報告文字檔。
-      // 報告留在畫面，避免一般使用者誤傳文字檔到 LINE。
+      // 每張 APNG 的檔案大小留在畫面預覽區，避免使用者誤傳報告到 LINE。
       const oversized = files.filter((file) => file.data.byteLength > LINE_APNG_MAX_BYTES);
       if (oversized.length > 0) {
         replaceBatchAnimatedPreviews(completedPreviews);
