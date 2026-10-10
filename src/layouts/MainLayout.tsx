@@ -13,7 +13,7 @@ export default function MainLayout() {
   const { t } = useTranslation();
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-white to-blue-50">
+    <div className="min-h-screen w-full min-w-0 flex flex-col bg-gradient-to-b from-white to-blue-50">
       {/* 頂部 Navbar：標題 + 語言切換 + 桌機版導航 */}
       {/* 實色頂欄：避免 WebKit/平板多重 backdrop-filter 與半透明疊加造成整頁霧面 */}
       <header className="sticky top-0 z-30 px-3 py-2 sm:px-4 sm:py-3 bg-white border-b border-gray-200">
@@ -36,7 +36,7 @@ export default function MainLayout() {
         </div>
       </header>
 
-      <main className="app-main-reading flex-grow pb-20">
+      <main className="app-main-reading w-full min-w-0 flex-grow pb-20">
         <CoupangContentAd />
         <HealingImagesAppPromo />
         <Outlet />

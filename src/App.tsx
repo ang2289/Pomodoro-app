@@ -431,9 +431,6 @@ function App() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
-  const isBusinessCardPage = location.pathname.startsWith('/tools/business-card') || location.pathname.startsWith('/tools/product-showcase-page') || location.pathname.startsWith('/business-card/payment') || location.pathname.startsWith('/my-business-card-orders') || location.pathname.startsWith('/my-product-images') || location.pathname.startsWith('/my-services') || location.pathname.startsWith('/card/') || location.pathname.startsWith('/admin/business-card-orders') || location.pathname.startsWith('/admin/product-image-history')
-  const isStorefrontPage = location.pathname.startsWith('/settings/storefront') || location.pathname.startsWith('/shop/')
-  const isGroupBuyPage = GROUP_BUY_ENABLED && (location.pathname.startsWith('/group-buy/') || location.pathname.startsWith('/admin/group-buy') || location.pathname.startsWith('/my/group-buy-orders'))
   useGATracker()
   const [showAd, setShowAd] = useState(false)
   const [isSubscribed, setIsSubscribed] = useState(false)
@@ -588,7 +585,7 @@ function App() {
   }
 
   return (
-    <div className={isBusinessCardPage || isStorefrontPage || isGroupBuyPage ? "w-full min-h-screen" : "w-full min-h-screen max-w-screen-md mx-auto"}>
+    <div className="w-full min-h-screen min-w-0">
       {/* ⚠️ 已移除升級成功提示 */}
       
       {/* Auth buttons removed for testing */}

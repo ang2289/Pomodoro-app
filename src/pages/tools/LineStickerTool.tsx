@@ -9,7 +9,7 @@ import {
   analyzeMotherSheetSafety,
   type MotherSheetSafetyReview,
 } from "@/lib/lineMotherSheetSafety";
-import CoupangAd from "@/components/CoupangAd";
+import CoupangDynamicAd from "@/components/CoupangDynamicAd";
 import {
   clearAnimatedStickerHandoff,
   clearLineStickerProject,
@@ -2221,7 +2221,7 @@ export default function LineStickerTool() {
       />
 
       <div className="min-h-screen bg-slate-50 px-4 py-8 pb-24 sm:pb-32">
-        <div className="mx-auto max-w-5xl">
+        <div className="mx-auto max-w-[1480px]">
           <LineStickerFlowSteps
             activeStep={
               downloadCompleted && flowProject?.mode !== "animated"
@@ -2944,7 +2944,7 @@ export default function LineStickerTool() {
 
           {files.length > 0 ? (
             <div className="mb-10">
-              <CoupangAd placement="sticker" />
+              <CoupangDynamicAd subId="rxv_sticker_inline" desktopWidth={1100} desktopHeight={190} mobileWidth={320} mobileHeight={150} />
             </div>
           ) : null}
 
@@ -3291,7 +3291,7 @@ export default function LineStickerTool() {
         </div>
 
         <footer className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white/85 px-3 py-2 backdrop-blur-xl sm:p-4">
-          <div className="mx-auto flex max-w-5xl items-center gap-2 sm:gap-4">
+          <div className="mx-auto flex max-w-[1480px] items-center gap-2 sm:gap-4">
             <div className="hidden sm:block">
               <p className="text-[10px] font-bold text-slate-400 uppercase leading-none">
                 {t("line_sticker_status_label")}

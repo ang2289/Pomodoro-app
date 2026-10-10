@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import SEO from "@/components/SEO";
+import CoupangDynamicAd from "@/components/CoupangDynamicAd";
 import LineStickerAuthorCard from "@/components/LineStickerAuthorCard";
 import LineStickerFlowSteps from "@/components/LineStickerFlowSteps";
 import {
@@ -4888,7 +4889,7 @@ export default function StickerPromptGenerator() {
       />
 
       <main className="min-h-screen bg-gradient-to-b from-violet-50 via-white to-blue-50 px-4 py-8">
-        <div className="mx-auto max-w-6xl">
+        <div className="mx-auto w-full max-w-[1480px]">
           <LineStickerFlowSteps activeStep={1} mode={stickerMode} />
 
           <section className="rounded-3xl border border-violet-100 bg-white p-6 shadow-sm sm:p-8">
@@ -5288,6 +5289,15 @@ export default function StickerPromptGenerator() {
               >
                 我已經產生圖片 → 下一步上傳母圖
               </Link>
+
+              <CoupangDynamicAd
+                subId="rxv_sticker_prompt_after_prompt"
+                desktopWidth={1100}
+                desktopHeight={190}
+                mobileWidth={320}
+                mobileHeight={150}
+                className="mt-5 rounded-2xl border border-violet-100 bg-white px-2 py-3 sm:px-5"
+              />
 
               <details className="mt-4 rounded-2xl border border-slate-200 bg-slate-50">
                 <summary className="cursor-pointer px-4 py-3 text-sm font-black text-slate-700">

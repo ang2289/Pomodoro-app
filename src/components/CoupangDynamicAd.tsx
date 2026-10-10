@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { COUPANG_DYNAMIC_WIDGET } from "@/config/coupangAds";
 
 type CoupangDynamicAdProps = {
@@ -8,6 +8,7 @@ type CoupangDynamicAdProps = {
   desktopHeight?: number;
   mobileWidth?: number;
   mobileHeight?: number;
+  priority?: boolean;
 };
 
 export default function CoupangDynamicAd({
@@ -17,6 +18,7 @@ export default function CoupangDynamicAd({
   desktopHeight = COUPANG_DYNAMIC_WIDGET.desktopHeight,
   mobileWidth = COUPANG_DYNAMIC_WIDGET.mobileWidth,
   mobileHeight = COUPANG_DYNAMIC_WIDGET.mobileHeight,
+  priority = false,
 }: CoupangDynamicAdProps) {
   const [isMobile, setIsMobile] = useState(() =>
     typeof window !== "undefined" ? window.innerWidth < 768 : false,
@@ -30,7 +32,25 @@ export default function CoupangDynamicAd({
     return () => mediaQuery.removeEventListener("change", updateViewport);
   }, []);
 
-  const width = isMobile ? mobileWidth : desktopWidth;
+  const slotRef = useRef<HTMLDivElement | null>(null);
+  const [slotWidth, setSlotWidth] = useState(() =>
+    typeof window !== "undefined" ? Math.max(280, window.innerWidth - 24) : desktopWidth,
+  );
+  useEffect(() => {
+    const slot = slotRef.current;
+    if (!slot) return;
+    const measure = () => setSlotWidth(Math.max(1, slot.clientWidth));
+    measure();
+    if (typeof ResizeObserver !== "undefined") {
+      const observer = new ResizeObserver(measure);
+      observer.observe(slot);
+      return () => observer.disconnect();
+    }
+    window.addEventListener("resize", measure, { passive: true });
+    return () => window.removeEventListener("resize", measure);
+  }, []);
+  // 以容器實際寬度決定 widget 參數，避免工具卡片內的 iframe 被擠壓或截斷。
+  const width = Math.max(1, Math.min(isMobile ? mobileWidth : desktopWidth, slotWidth));
   const height = isMobile ? mobileHeight : desktopHeight;
 
   const src =
@@ -49,7 +69,7 @@ export default function CoupangDynamicAd({
       <div className="mb-1 text-center text-[11px] font-semibold text-slate-400">
         Coupang 推薦
       </div>
-      <div className="flex w-full justify-center overflow-hidden">
+      <div ref={slotRef} className="flex w-full justify-center overflow-hidden">
       <iframe
         title="Coupang Partners 動態商品推薦"
         src={src}
@@ -58,7 +78,7 @@ export default function CoupangDynamicAd({
         frameBorder="0"
         scrolling="no"
         referrerPolicy="unsafe-url"
-        loading="eager"
+        loading={priority ? "eager" : "lazy"}
         className="block max-w-full border-0"
         style={{ width: `${width}px`, height: `${height}px`, maxWidth: "100%" }}
       />

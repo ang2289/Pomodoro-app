@@ -27,12 +27,12 @@ body {
   }
 }
 
-/* 桌機版：限制最大寬度，保持良好閱讀體驗 */
+/* 全站外層滿版，內層閱讀區由各頁自己的 max-width 控制。 */
 @media (min-width: 1025px) {
   body {
     width: 100% !important;
-    max-width: 1200px !important;
-    margin: 0 auto !important;
+    max-width: none !important;
+    margin: 0 !important;
     padding: 0 !important;
   }
 }
