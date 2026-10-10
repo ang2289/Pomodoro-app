@@ -29,6 +29,7 @@ import {
 import JSZip from "jszip";
 import { stickerSaleTextRisks } from "@/lib/stickerCommercialSafety";
 import { saveAs } from "file-saver";
+import { removeStickerWhiteBackground, type StickerWhiteRemovalMode } from "@/lib/stickerWhiteBackground";
 
 function DonationLite() {
   return (
@@ -1033,59 +1034,14 @@ async function orderMotherSheetsForPlan(
 
 function removeConnectedWhiteBackground(
   canvas: HTMLCanvasElement,
-  threshold = 238,
+  mode: StickerWhiteRemovalMode = "protect",
 ) {
   const context = canvas.getContext("2d", { willReadFrequently: true });
-  if (!context) return;
-  const { width, height } = canvas;
-  const imageData = context.getImageData(0, 0, width, height);
-  const data = imageData.data;
-  const total = width * height;
-  const visited = new Uint8Array(total);
-  const queue = new Int32Array(total);
-  let head = 0;
-  let tail = 0;
-
-  const isBackground = (index: number) => {
-    const p = index * 4;
-    if (data[p + 3] === 0) return true;
-    const r = data[p];
-    const g = data[p + 1];
-    const b = data[p + 2];
-    const max = Math.max(r, g, b);
-    const min = Math.min(r, g, b);
-    return r >= threshold && g >= threshold && b >= threshold && max - min <= 28;
-  };
-
-  const push = (index: number) => {
-    if (index < 0 || index >= total || visited[index] || !isBackground(index)) return;
-    visited[index] = 1;
-    queue[tail++] = index;
-  };
-
-  for (let x = 0; x < width; x += 1) {
-    push(x);
-    push((height - 1) * width + x);
-  }
-  for (let y = 0; y < height; y += 1) {
-    push(y * width);
-    push(y * width + width - 1);
-  }
-
-  while (head < tail) {
-    const index = queue[head++];
-    const x = index % width;
-    const y = Math.floor(index / width);
-    if (x > 0) push(index - 1);
-    if (x + 1 < width) push(index + 1);
-    if (y > 0) push(index - width);
-    if (y + 1 < height) push(index + width);
-  }
-
-  for (let i = 0; i < total; i += 1) {
-    if (visited[i]) data[i * 4 + 3] = 0;
-  }
-  context.putImageData(imageData, 0, 0);
+  if (!context || mode === "off") return;
+  const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+  const result = removeStickerWhiteBackground(imageData.data, canvas.width, canvas.height, mode);
+  // 已經有透明背景的 PNG 不重覆去白，保住白衣、文字白邊與皮膚高光。
+  if (result.removedPixels > 0) context.putImageData(imageData, 0, 0);
 }
 
 function cleanPaleEdgeHalo(canvas: HTMLCanvasElement, passes = 1) {
@@ -1384,6 +1340,7 @@ async function splitMotherSheet(
   grid: "auto" | MotherSheetGrid,
   t: (key: string) => string,
   removeWhiteBackground: boolean,
+  whiteRemovalMode: StickerWhiteRemovalMode,
   safety?: MotherSheetSafetyReview,
 ): Promise<File[]> {
   const image = await loadImage(file, t);
@@ -1429,8 +1386,9 @@ async function splitMotherSheet(
 
       // 不再向相鄰格擴張 6% 取像，也不推測連通區塊歸屬，避免誤刪花朵／文字。
       if (removeWhiteBackground) {
-        removeConnectedWhiteBackground(canvas, 232);
-        cleanPaleEdgeHalo(canvas, 1);
+        removeConnectedWhiteBackground(canvas, whiteRemovalMode);
+        // 明確選擇強力模式時才修整白邊：此步可能傷到白色衣服。
+        if (whiteRemovalMode === "strong") cleanPaleEdgeHalo(canvas, 1);
       }
       const output = removeWhiteBackground
         ? centerMotherSheetCellWithPadding(canvas)
@@ -1453,6 +1411,7 @@ function PreviewCard({
   index,
   cropMode,
   itemScale,
+  darkStickerPreview,
   onScaleChange,
   offset,
   onOffsetChange,
@@ -1465,6 +1424,7 @@ function PreviewCard({
   index: number;
   cropMode: LineStickerCropMode;
   itemScale: number;
+  darkStickerPreview: boolean;
   onScaleChange: (nextScale: number) => void;
   offset: ItemOffset;
   onOffsetChange: (nextOffset: ItemOffset) => void;
@@ -1536,7 +1496,7 @@ function PreviewCard({
       } ${isExcluded ? "opacity-50 grayscale" : ""} min-w-0`}
     >
       <div
-        className="relative mx-auto aspect-[520/450] w-full cursor-grab touch-none overflow-hidden rounded-xl border-[3px] border-sky-500 bg-white active:cursor-grabbing"
+        className={`relative mx-auto aspect-[520/450] w-full cursor-grab touch-none overflow-hidden rounded-xl border-[3px] border-sky-500 active:cursor-grabbing ${darkStickerPreview ? "bg-slate-700" : "bg-white"}`}
         title="直接拖曳圖片可上下左右微調位置"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
@@ -1653,6 +1613,8 @@ export default function LineStickerTool() {
   const [reviewedWarnings, setReviewedWarnings] = useState<Record<number, boolean>>({});
   const [motherSheetGrid, setMotherSheetGrid] = useState<"auto" | MotherSheetGrid>("auto");
   const [autoRemoveWhiteBg, setAutoRemoveWhiteBg] = useState(true);
+  const [whiteRemovalMode, setWhiteRemovalMode] = useState<StickerWhiteRemovalMode>("protect");
+  const [darkStickerPreview, setDarkStickerPreview] = useState(false);
   const [motherSheetSafetyResult, setMotherSheetSafetyResult] = useState<string | null>(null);
   const [motherSheetDetections, setMotherSheetDetections] = useState<
     MotherSheetDetection[]
@@ -1899,6 +1861,7 @@ export default function LineStickerTool() {
               item.grid,
               t,
               autoRemoveWhiteBg,
+              whiteRemovalMode,
               safety,
             )),
           );
@@ -1917,6 +1880,7 @@ export default function LineStickerTool() {
               grid,
               t,
               autoRemoveWhiteBg,
+              whiteRemovalMode,
               safety,
             )),
           );
@@ -1960,6 +1924,7 @@ export default function LineStickerTool() {
     }
   }, [
     autoRemoveWhiteBg,
+    whiteRemovalMode,
     files,
     flowProject,
     loading,
@@ -2432,7 +2397,7 @@ export default function LineStickerTool() {
                     上傳母圖，後面交給系統自動整理
                   </h2>
                   <p className="mt-1 text-xs leading-relaxed text-slate-500">
-                    先辨識 4×2／4×4／4×5 與格數，再自動尋找白色安全分隔通道；切割後逐張去背、置中並補透明留白。若圖案真的跨格，會標示風險並阻止硬切，避免 16＋8 切壞。
+                    先辨識 4×2／4×4／4×5 與格數，再安全切割。去背預設保護白色衣服、白色文字描邊及淺色道具；處理後可切換深色背景逐張檢查。若原圖本來已有透明背景，不會重覆去白。
                   </p>
                 </div>
                 <div className="min-w-0 grid gap-2 sm:grid-cols-2">
@@ -2472,8 +2437,26 @@ export default function LineStickerTool() {
                       onChange={(event) => setAutoRemoveWhiteBg(event.target.checked)}
                       className="h-4 w-4 accent-emerald-600"
                     />
-                    自動去白底＋清理淡白邊（推薦）
+                    自動去白底（優先保護衣服與白色文字）
                   </label>
+                  {autoRemoveWhiteBg ? (
+                    <div className="rounded-xl border border-sky-200 bg-sky-50 px-3 py-3 sm:col-span-2">
+                      <label className="block text-sm font-black text-sky-900" htmlFor="white-removal-mode">去背強度（人物衣服偏白時選保護模式）</label>
+                      <select id="white-removal-mode" value={whiteRemovalMode}
+                        onChange={(event) => setWhiteRemovalMode(event.target.value as StickerWhiteRemovalMode)}
+                        className="mt-2 w-full rounded-xl border border-sky-200 bg-white px-3 py-3 text-sm font-bold text-slate-800">
+                        <option value="protect">保護白衣／白色字邊（預設推薦）</option>
+                        <option value="balanced">均衡清理白底</option>
+                        <option value="strong">加強去白底（可能傷到白衣與淺色花朵）</option>
+                      </select>
+                      <p className="mt-2 text-xs leading-6 text-sky-800">
+                        預設只清除與畫布四周連接的極淺白色背景，避免把白衣、皮膚高光、藥片及白色文字描邊挖成透明。來源本身已有透明背景時會保留原圖。
+                      </p>
+                      {whiteRemovalMode === "strong" ? (
+                        <p className="mt-2 rounded-lg bg-amber-100 p-2 text-xs font-black text-amber-900">加強模式可能誤刪白色制服或白色字邊。請先用深色底預覽檢查，再決定是否輸出。</p>
+                      ) : null}
+                    </div>
+                  ) : null}
                   <input
                     ref={motherSheetInputRef}
                     type="file"
@@ -2905,6 +2888,18 @@ export default function LineStickerTool() {
                   預覽卡片已放大；可直接拖曳圖片微調位置，也可用下方縮放滑桿調整單張大小。
                 </p>
               </div>
+              <div className="mb-4 flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                <span className="text-sm font-black text-slate-700">透明去背檢查：</span>
+                <button type="button" onClick={() => setDarkStickerPreview(false)}
+                  className={`rounded-xl px-3 py-2 text-xs font-black ${!darkStickerPreview ? "bg-blue-600 text-white" : "bg-white text-slate-700"}`}>
+                  白底
+                </button>
+                <button type="button" onClick={() => setDarkStickerPreview(true)}
+                  className={`rounded-xl px-3 py-2 text-xs font-black ${darkStickerPreview ? "bg-slate-700 text-white" : "bg-white text-slate-700"}`}>
+                  深色底（檢查白衣是否消失）
+                </button>
+                <span className="text-xs font-medium text-slate-500">背景切換只影響預覽，不會改變輸出 PNG。</span>
+              </div>
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
                 {files.map((p, i) => (
                   <div key={i} className="min-w-0">
@@ -2913,6 +2908,7 @@ export default function LineStickerTool() {
                     index={i}
                     cropMode={cropMode}
                     itemScale={getScaleForIndex(i)}
+                    darkStickerPreview={darkStickerPreview}
                     onScaleChange={(nextScale) => updateItemScale(i, nextScale)}
                     offset={getOffsetForIndex(i)}
                     onOffsetChange={(nextOffset) => updateItemOffset(i, nextOffset)}
