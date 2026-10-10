@@ -8,7 +8,7 @@
     "dev:image-admin": "concurrently \"tsx scripts/dev-image-admin-api.ts\" \"vite --config vite.image-admin.config.ts\"",
     "server": "node -r dotenv/config server/image-to-video-server.cjs",
     "dev:all": "concurrently \"npm run dev\" \"npm run server\"",
-    "prebuild": "npm run generate-sitemap && npm run generate-image-sitemap && npm run generate-rss",
+    "prebuild": "npm run optimize:sticker-images && npm run generate-sitemap && npm run generate-image-sitemap && npm run generate-rss",
     "build": "tsc && vite build --config vite.config.ts",
     "test:group-buy": "tsx --test test/groupBuyRules.test.ts test/groupBuyProductRules.test.ts",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
@@ -25,7 +25,9 @@
     "social:affiliate": "node scripts/social_affiliate_automation.mjs",
     "social:facebook:publish": "node scripts/facebook_page_publisher.mjs",
     "clean": "rimraf node_modules/.cache && rimraf .vite && rimraf .next",
-    "postinstall": "node scripts/copy-ffmpeg-core.js"
+    "postinstall": "node scripts/copy-ffmpeg-core.js",
+    "optimize:sticker-images": "node scripts/optimize-sticker-assets.mjs",
+    "predev": "npm run optimize:sticker-images"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1105.0",
