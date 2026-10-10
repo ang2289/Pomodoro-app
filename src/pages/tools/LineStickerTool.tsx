@@ -1615,6 +1615,7 @@ export default function LineStickerTool() {
   const [autoRemoveWhiteBg, setAutoRemoveWhiteBg] = useState(true);
   const [whiteRemovalMode, setWhiteRemovalMode] = useState<StickerWhiteRemovalMode>("protect");
   const [darkStickerPreview, setDarkStickerPreview] = useState(false);
+  const [mattingModeStale, setMattingModeStale] = useState(false);
   const [motherSheetSafetyResult, setMotherSheetSafetyResult] = useState<string | null>(null);
   const [motherSheetDetections, setMotherSheetDetections] = useState<
     MotherSheetDetection[]
@@ -1907,6 +1908,7 @@ export default function LineStickerTool() {
       setDownloadCompleted(false);
 
       await validateAndAddFiles(splitFiles);
+      setMattingModeStale(false);
       setMotherSheetSafetyResult(
         safetyWarnings.length
           ? `切割完成：已調整安全分隔線、置中補足約 13% 透明留白。偵測到原圖留白較小：${safetyWarnings.slice(0, 12).join("、")}${safetyWarnings.length > 12 ? `，另有 ${safetyWarnings.length - 12} 張` : ""}。請在下方逐張確認文字和花朵。`
@@ -1946,10 +1948,11 @@ export default function LineStickerTool() {
     setMotherSheetDetections([]);
     setMotherSheetDetectionStatus("idle");
     setDownloadCompleted(false);
+    setMattingModeStale(false);
   }, [files]);
 
   const needMore = stickerCount - files.length;
-  const canDownload = files.length >= stickerCount;
+  const canDownload = files.length >= stickerCount && !mattingModeStale;
   const noTransparencyCount = files.filter((p) => !p.hasTransparency).length;
   const getScaleForIndex = useCallback(
     (index: number) => itemScales[index] ?? cropScale,
@@ -2434,7 +2437,10 @@ export default function LineStickerTool() {
                     <input
                       type="checkbox"
                       checked={autoRemoveWhiteBg}
-                      onChange={(event) => setAutoRemoveWhiteBg(event.target.checked)}
+                      onChange={(event) => {
+                        setAutoRemoveWhiteBg(event.target.checked);
+                        if (motherSheetDetections.length && files.length) setMattingModeStale(true);
+                      }}
                       className="h-4 w-4 accent-emerald-600"
                     />
                     自動去白底（優先保護衣服與白色文字）
@@ -2443,7 +2449,10 @@ export default function LineStickerTool() {
                     <div className="rounded-xl border border-sky-200 bg-sky-50 px-3 py-3 sm:col-span-2">
                       <label className="block text-sm font-black text-sky-900" htmlFor="white-removal-mode">去背強度（人物衣服偏白時選保護模式）</label>
                       <select id="white-removal-mode" value={whiteRemovalMode}
-                        onChange={(event) => setWhiteRemovalMode(event.target.value as StickerWhiteRemovalMode)}
+                        onChange={(event) => {
+                          setWhiteRemovalMode(event.target.value as StickerWhiteRemovalMode);
+                          if (motherSheetDetections.length && files.length) setMattingModeStale(true);
+                        }}
                         className="mt-2 w-full rounded-xl border border-sky-200 bg-white px-3 py-3 text-sm font-bold text-slate-800">
                         <option value="protect">保護白衣／白色字邊（預設推薦）</option>
                         <option value="balanced">均衡清理白底</option>
@@ -2452,6 +2461,11 @@ export default function LineStickerTool() {
                       <p className="mt-2 text-xs leading-6 text-sky-800">
                         預設只清除與畫布四周連接的極淺白色背景，避免把白衣、皮膚高光、藥片及白色文字描邊挖成透明。來源本身已有透明背景時會保留原圖。
                       </p>
+                      {mattingModeStale ? (
+                        <p className="mt-2 rounded-lg bg-amber-100 p-2 text-xs font-black text-amber-900">
+                          去背模式已變更，舊預覽還沒更新。請重新按下方「確認切割」，才能產生新版圖片並繼續下載 ZIP。
+                        </p>
+                      ) : null}
                       {whiteRemovalMode === "strong" ? (
                         <p className="mt-2 rounded-lg bg-amber-100 p-2 text-xs font-black text-amber-900">加強模式可能誤刪白色制服或白色字邊。請先用深色底預覽檢查，再決定是否輸出。</p>
                       ) : null}
