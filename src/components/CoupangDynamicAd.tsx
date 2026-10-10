@@ -8,6 +8,7 @@ type CoupangDynamicAdProps = {
   desktopHeight?: number;
   mobileWidth?: number;
   mobileHeight?: number;
+  priority?: boolean;
 };
 
 export default function CoupangDynamicAd({
@@ -17,6 +18,7 @@ export default function CoupangDynamicAd({
   desktopHeight = COUPANG_DYNAMIC_WIDGET.desktopHeight,
   mobileWidth = COUPANG_DYNAMIC_WIDGET.mobileWidth,
   mobileHeight = COUPANG_DYNAMIC_WIDGET.mobileHeight,
+  priority = false,
 }: CoupangDynamicAdProps) {
   const [isMobile, setIsMobile] = useState(() =>
     typeof window !== "undefined" ? window.innerWidth < 768 : false,
@@ -30,7 +32,16 @@ export default function CoupangDynamicAd({
     return () => mediaQuery.removeEventListener("change", updateViewport);
   }, []);
 
-  const width = isMobile ? mobileWidth : desktopWidth;
+  const [viewportWidth, setViewportWidth] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth : desktopWidth,
+  );
+  useEffect(() => {
+    const onResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener("resize", onResize, { passive: true });
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  // iframe 內的商品不可單純靠 CSS 拉寬，參數與實際像素需同步。
+  const width = Math.max(280, Math.min(isMobile ? mobileWidth : desktopWidth, viewportWidth - 24));
   const height = isMobile ? mobileHeight : desktopHeight;
 
   const src =
@@ -58,7 +69,7 @@ export default function CoupangDynamicAd({
         frameBorder="0"
         scrolling="no"
         referrerPolicy="unsafe-url"
-        loading="eager"
+        loading={priority ? "eager" : "lazy"}
         className="block max-w-full border-0"
         style={{ width: `${width}px`, height: `${height}px`, maxWidth: "100%" }}
       />
