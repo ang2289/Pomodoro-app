@@ -352,10 +352,11 @@ function getTransforms(preset: AutoMotionPreset, frameIndex: number) {
     character.dx = [0, -7, 7, -5, 4, -3, 2, 0][frameIndex];
   }
   if (preset === "pop") {
-    const s = [0.8, 1.16, 0.94, 1.09, 1, 1.045, 0.985, 1][frameIndex];
+    // 第 1 禎會用作商店封面與靜態預覽，維持原大角色、降低彈出幅度避免過度縮放。
+    const s = [1, 1.07, 0.97, 1.045, 1, 1.02, 0.995, 1][frameIndex];
     character.scaleX = s;
     character.scaleY = s;
-    character.dy = [14, -9, 4, -4, 0, -2, 0, 0][frameIndex];
+    character.dy = [0, -5, 2, -2, 0, -1, 0, 0][frameIndex];
   }
   if (preset === "alert") {
     text.scaleX = [1, 1.14, 0.96, 1.11, 1, 1.075, 0.99, 1][frameIndex];
@@ -369,12 +370,12 @@ function getTransforms(preset: AutoMotionPreset, frameIndex: number) {
     character.scaleY = character.scaleX;
   }
   if (preset === "slideLeft") {
-    character.dx = [34, 20, 7, -4, 2, 0, 0, 0][frameIndex];
-    text.dx = [16, 9, 3, 0, 0, 0, 0, 0][frameIndex];
+    character.dx = [12, 8, 4, -2, 1, 0, 0, 0][frameIndex];
+    text.dx = [8, 5, 2, 0, 0, 0, 0, 0][frameIndex];
   }
   if (preset === "slideRight") {
-    character.dx = [-34, -20, -7, 4, -2, 0, 0, 0][frameIndex];
-    text.dx = [-16, -9, -3, 0, 0, 0, 0, 0][frameIndex];
+    character.dx = [-12, -8, -4, 2, -1, 0, 0, 0][frameIndex];
+    text.dx = [-8, -5, -2, 0, 0, 0, 0, 0][frameIndex];
   }
   if (preset === "breathe") {
     const sx = [1, 1.025, 1.045, 1.06, 1.045, 1.025, 1, 1][frameIndex];
