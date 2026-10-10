@@ -1953,8 +1953,15 @@ export default function LineStickerTool() {
     setMattingModeStale(false);
   }, [files]);
 
-  const needMore = stickerCount - files.length;
+  const needMore = Math.max(0, stickerCount - files.length);
   const canDownload = files.length >= stickerCount && !mattingModeStale;
+  const exportReadyMessage = loading
+    ? "正在產生檔案，請稍候完成。"
+    : mattingModeStale
+      ? "您已更改去背設定，請回到母圖區重新按「確認切割」，更新貼圖後才能下載。"
+      : needMore > 0
+        ? `目前已載入 ${files.length} / ${stickerCount} 張，還差 ${needMore} 張。請先上傳母圖或單張 PNG，再下載 ZIP。`
+        : "已備妥全部貼圖，可直接下載所選平台的 ZIP。";
   const noTransparencyCount = files.filter((p) => !p.hasTransparency).length;
   const getScaleForIndex = useCallback(
     (index: number) => itemScales[index] ?? cropScale,
@@ -2351,15 +2358,23 @@ export default function LineStickerTool() {
           <section className="mb-5 rounded-2xl border border-sky-200 bg-white p-4 shadow-sm">
             <h2 className="text-sm font-black text-slate-900">輸出平台｜同一張母圖可製作 LINE 或 WhatsApp 貼圖</h2>
             <div className="mt-3 grid grid-cols-2 gap-3">
-              <button type="button" onClick={() => setExportPlatform("line")}
+              <button type="button" onClick={() => {
+                  setExportPlatform("line");
+                  setExportCheckResult(null);
+                  setDownloadCompleted(false);
+                }}
                 aria-pressed={exportPlatform === "line"}
-                className={`min-h-12 rounded-xl border-2 px-3 py-2 text-sm font-black ${exportPlatform === "line" ? "border-emerald-500 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-slate-50 text-slate-600"}`}>
-                LINE · PNG／APNG
+                className={`min-h-12 rounded-xl border-2 px-3 py-2 text-sm font-black transition-colors ${exportPlatform === "line" ? "border-emerald-500 bg-emerald-50 text-emerald-800 shadow-sm" : "border-slate-300 bg-white text-slate-700 hover:border-emerald-300 hover:bg-emerald-50"}`}>
+                {exportPlatform === "line" ? "✓ 已選 LINE · PNG／APNG" : "LINE · PNG／APNG"}
               </button>
-              <button type="button" onClick={() => setExportPlatform("whatsapp")}
+              <button type="button" onClick={() => {
+                  setExportPlatform("whatsapp");
+                  setExportCheckResult(null);
+                  setDownloadCompleted(false);
+                }}
                 aria-pressed={exportPlatform === "whatsapp"}
-                className={`min-h-12 rounded-xl border-2 px-3 py-2 text-sm font-black ${exportPlatform === "whatsapp" ? "border-emerald-500 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-slate-50 text-slate-600"}`}>
-                WhatsApp · 靜態 WebP
+                className={`min-h-12 rounded-xl border-2 px-3 py-2 text-sm font-black transition-colors ${exportPlatform === "whatsapp" ? "border-emerald-500 bg-emerald-50 text-emerald-800 shadow-sm" : "border-slate-300 bg-white text-slate-700 hover:border-emerald-300 hover:bg-emerald-50"}`}>
+                {exportPlatform === "whatsapp" ? "✓ 已選 WhatsApp · WebP" : "WhatsApp · 靜態 WebP"}
               </button>
             </div>
             <p className="mt-2 text-xs leading-6 text-slate-600">
@@ -2377,14 +2392,25 @@ export default function LineStickerTool() {
                 查看 WhatsApp 官方建立及分享貼圖集說明
               </a>
             ) : null}
+            <div
+              role="status"
+              aria-live="polite"
+              className={`mt-3 rounded-xl border px-3 py-2.5 text-xs font-bold leading-6 ${canDownload ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-amber-200 bg-amber-50 text-amber-900"}`}
+            >
+              {exportReadyMessage}
+            </div>
             {exportPlatform === "whatsapp" && flowProject?.mode === "animated" ? (
               <button
                 type="button"
                 onClick={generateWhatsAppZip}
                 disabled={!canDownload || loading}
-                className="mt-3 w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-slate-300"
+                className={`mt-3 w-full rounded-xl px-4 py-3 text-sm font-black transition-colors ${canDownload && !loading ? "bg-emerald-600 text-white hover:bg-emerald-700" : "cursor-not-allowed border border-amber-300 bg-amber-100 text-amber-900"}`}
               >
-                {loading ? "正在輸出 WhatsApp WebP…" : `下載 ${stickerCount} 張 WhatsApp 靜態 WebP ZIP`}
+                {loading ? "正在輸出 WhatsApp WebP…" : canDownload
+                  ? `下載 ${stickerCount} 張 WhatsApp 靜態 WebP ZIP`
+                  : needMore > 0
+                    ? `尚差 ${needMore} 張，完成上傳後可下載`
+                    : "請重新確認切割後下載"}
               </button>
             ) : null}
           </section>
@@ -3466,7 +3492,9 @@ export default function LineStickerTool() {
                     ? downloadCompleted
                       ? `✓ 再次下載 ${exportPlatform === "whatsapp" ? "WhatsApp WebP" : "LINE"} ZIP`
                       : `步驟 5｜下載 ${stickerCount} 張 ${exportPlatform === "whatsapp" ? "WhatsApp WebP" : "LINE 上架"} ZIP`
-                    : t("line_sticker_need_more_to_pack", { count: needMore })}
+                    : mattingModeStale
+                      ? "去背已變更｜請重新確認切割"
+                      : `已載入 ${files.length}/${stickerCount} 張｜尚差 ${needMore} 張`}
               </button>
             )}
           </div>
