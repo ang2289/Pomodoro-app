@@ -2297,10 +2297,10 @@ export default function LineStickerTool() {
   return (
     <>
       <SEO
-        title="LINE 貼圖製作工具｜免費LINE 貼圖製作工具 - RxV AI工具中心"
-        description="免費LINE 貼圖製作工具，支援線上使用，快速完成任務，無需下載。"
+        title="LINE＋WhatsApp 貼圖製作工具｜母圖切割、去背、WebP 輸出 - RxV"
+        description="使用舊圖片或 ChatGPT 母圖，免費自動切割去背；LINE 可輸出 PNG 上架 ZIP，WhatsApp 靜態貼圖可輸出 512x512 WebP 素材包。"
         path="/tools/line-sticker"
-        keywords="LINE 貼圖製作工具, AI工具, 免費工具"
+        keywords="LINE貼圖, WhatsApp貼圖, WebP製作, 靜態貼圖轉檔, 自動去背, 免費工具"
         jsonLd={faqJsonLd}
       />
 
@@ -2323,7 +2323,7 @@ export default function LineStickerTool() {
               第 3～4 步｜上傳母圖，自動整理貼圖
             </h1>
             <p className="text-slate-500 text-sm mt-1">
-              把剛才從 ChatGPT 下載的母圖直接傳上來。系統會自動切成單張、移除白色背景、整理尺寸並檢查。正常的圖片不用另外設定。
+              可直接上傳以前已生成的圖片、去背 PNG／WebP 或新的 ChatGPT 母圖，不需要重新產圖。系統會自動切割、去背並依 LINE 或 WhatsApp 規格整理。
             </p>
             <p className="text-slate-500 text-sm mt-2">
               {t("line_sticker_hero_desc")}
@@ -2367,6 +2367,16 @@ export default function LineStickerTool() {
                 ? "可沿用以前的母圖、已去背 PNG 或 WebP，不必重新生圖。下載 512×512、單張≤100KB 的靜態貼圖素材 ZIP；WhatsApp 匯入貼圖集須透過內建建立功能或相容貼圖 APP。動態 WebP 尚未開放，避免輸出假動畫。"
                 : "輸出 LINE 貼圖上架 ZIP，靜態為 PNG；如需製作 LINE 動態貼圖請繼續下個步驟。"}
             </p>
+            {exportPlatform === "whatsapp" && flowProject?.mode === "animated" ? (
+              <button
+                type="button"
+                onClick={generateWhatsAppZip}
+                disabled={!canDownload || loading}
+                className="mt-3 w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-slate-300"
+              >
+                {loading ? "正在輸出 WhatsApp WebP…" : `下載 ${stickerCount} 張 WhatsApp 靜態 WebP ZIP`}
+              </button>
+            ) : null}
           </section>
 
           {downloadCompleted && flowProject?.mode !== "animated" ? (
