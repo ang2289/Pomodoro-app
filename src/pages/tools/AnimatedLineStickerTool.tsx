@@ -1354,11 +1354,14 @@ async function createVideoBlob(
   if (!ctx) throw new Error(t("animated_line_sticker.error_canvas_create"));
 
   const renderData = await prepareLineRenderData(frames, t);
+  // 單張 HD MP4 直接以來源禎繪製到 2 倍暫存畫布，不先降到 320x270 再放大。
+  const sourceScale = allowScaleUp && width >= 1000 ? 2 : 1;
   const preparedCanvas = document.createElement("canvas");
-  preparedCanvas.width = OUTPUT_WIDTH;
-  preparedCanvas.height = OUTPUT_HEIGHT;
+  preparedCanvas.width = OUTPUT_WIDTH * sourceScale;
+  preparedCanvas.height = OUTPUT_HEIGHT * sourceScale;
   const preparedCtx = preparedCanvas.getContext("2d", { willReadFrequently: true });
   if (!preparedCtx) throw new Error(t("animated_line_sticker.error_canvas_create"));
+  preparedCtx.setTransform(sourceScale, 0, 0, sourceScale, 0, 0);
   const stream = (canvas as any).captureStream?.(frameRate);
   if (!stream) throw new Error(t("animated_line_sticker.error_canvas_video_unsupported"));
 
@@ -2428,7 +2431,7 @@ const AnimatedLineStickerTool: React.FC = () => {
         loopCount,
         t,
         quality === "hd"
-          ? { width: 1080, height: 1080, frameRate: 30, videoBitsPerSecond: 9000000, fillWhite: true, allowScaleUp: true }
+          ? { width: 1080, height: 1080, frameRate: 30, videoBitsPerSecond: 12000000, fillWhite: true, allowScaleUp: true }
           : { width: 500, height: 500, frameRate: 30, videoBitsPerSecond: 3500000, fillWhite: true, allowScaleUp: false }
       );
       downloadBlob(
@@ -2439,7 +2442,7 @@ const AnimatedLineStickerTool: React.FC = () => {
       );
       setMessage(
         quality === "hd"
-          ? "高清 MP4 已下載，可用於傳給客戶預覽、FB／IG／Threads 展示。"
+          ? (result.isMp4 ? "高清 MP4 已下載，可用於傳給客戶預覽及社群展示。" : "瀏覽器不支援 MP4，已輸出高清 WebM（不是 MP4），可本機轉檔。")
           : result.isMp4
           ? t("animated_line_sticker.message_mp4_success")
           : t("animated_line_sticker.message_webm_success")
