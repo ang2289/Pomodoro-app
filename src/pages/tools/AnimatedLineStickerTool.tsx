@@ -1450,6 +1450,7 @@ const AnimatedLineStickerTool: React.FC = () => {
   const [batchEffectGalleryFrame, setBatchEffectGalleryFrame] = useState(0);
   const [handoffLoaded, setHandoffLoaded] = useState(false);
   const [handoffTheme, setHandoffTheme] = useState("");
+  const [sourceCaptions] = useState<string[]>(() => readLineStickerProject()?.texts ?? []);
   const [saleTextRisks] = useState(() => stickerSaleTextRisks(readLineStickerProject()?.texts ?? []));
   const [previewIndex, setPreviewIndex] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -3079,6 +3080,11 @@ const AnimatedLineStickerTool: React.FC = () => {
                       {item.sizeKb} KB
                     </span>
                   </div>
+                  {handoffLoaded && sourceCaptions[item.index] ? (
+                    <p className="mt-2 rounded-lg bg-sky-50 px-2 py-1.5 text-[11px] font-bold leading-4 text-sky-800">
+                      應有文字：{sourceCaptions[item.index]}
+                    </p>
+                  ) : null}
                   <p className="mt-1 text-[10px] leading-4 text-slate-400">
                     點圖片可重播
                   </p>
