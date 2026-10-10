@@ -1908,7 +1908,7 @@ export default function LineStickerTool() {
         }
       } else {
         for (const item of motherSheetDetections) {
-          const grid = motherSheetGrid === "auto" ? item.grid : motherSheetGrid;
+          const grid = motherSheetGrid;
           const safety = item.safetyByGrid[grid];
           const previousCount = splitFiles.length;
           splitFiles.push(
