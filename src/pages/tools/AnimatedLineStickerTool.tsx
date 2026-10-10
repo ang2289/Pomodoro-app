@@ -2088,6 +2088,8 @@ const AnimatedLineStickerTool: React.FC = () => {
     setBatchMessage("");
     setBatchStatus("準備 WhatsApp 動畫 WebP…");
     const zipFiles: { name: string; data: Uint8Array }[] = [];
+    const previews: Array<Omit<BatchAnimatedPreview, "url">> = [];
+    clearBatchAnimatedPreviews();
     try {
       const packCounts = partitionWhatsAppPacks(batchSources.length);
       const traySource = await createImageBitmap(batchSources[0].file);
@@ -2113,18 +2115,30 @@ const AnimatedLineStickerTool: React.FC = () => {
               : batchMotionPreset;
           const pngs = await generateAutoAnimationFrameFiles(batchSources[i].file, preset);
           const webp = await createWhatsAppAnimatedSticker(pngs);
+          const filename = `${String(localIndex + 1).padStart(2, "0")}.webp`;
           zipFiles.push({
-            name: `${folder}/${String(localIndex + 1).padStart(2, "0")}.webp`,
+            name: `${folder}/${filename}`,
             data: new Uint8Array(await webp.arrayBuffer()),
+          });
+          previews.push({
+            id: `whatsapp-preview-${i}`,
+            index: i,
+            motionPreset: preset,
+            name: filename,
+            blob: webp,
+            sizeKb: Math.round(webp.size / 1024),
+            overLimit: webp.size > 500_000,
           });
           setBatchProgress(Math.round(((i + 1) / batchSources.length) * 100));
           await waitMs(10);
         }
       }
       const zip = makeZip(zipFiles);
+      replaceBatchAnimatedPreviews(previews);
       downloadBlob(zip, `rxv-whatsapp-animated-${batchSources.length}-webp.zip`);
       setBatchStatus("WhatsApp 動畫 ZIP 製作完成");
       setBatchMessage(`完成 ${batchSources.length} 張 512×512 動態 WebP（每張≤500KB，共 ${packCounts.length} 組）。此 ZIP 是供相容貼圖 APP 匯入的素材包，不能直接當作 WhatsApp 一鍵安裝檔案。`);
+      window.setTimeout(() => batchPreviewSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
       updateLineStickerProject({ stage: 5 });
     } catch (error) {
       setBatchStatus("WhatsApp 動畫輸出尚未完成");
@@ -3305,7 +3319,7 @@ const AnimatedLineStickerTool: React.FC = () => {
                   {batchAnimatedPreviews.length} 張動態貼圖預覽
                 </h2>
                 <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-                  這裡顯示已完成的 APNG 動畫，請直接目視確認圖片中文字、人物、去背與動畫效果。為避免顯示以前的文字，預覽卡片不再帶入提示詞內容。
+                  這裡顯示實際完成的 {exportPlatform === "whatsapp" ? "動畫 WebP" : "APNG"} 成品，請逐張檢查人物、文字與去背。預覽不帶入舊提示詞文字。
                 </p>
 
               </div>
@@ -3373,7 +3387,7 @@ const AnimatedLineStickerTool: React.FC = () => {
               </button>
               {batchVideoBusy ? <div className="mt-3 h-2 overflow-hidden rounded-full bg-rose-200"><div className="h-full bg-rose-600 transition-all" style={{ width: `${batchVideoProgress}%` }} /></div> : null}
               {batchVideoMessage ? <p role="status" className="mt-3 text-xs font-bold leading-6 text-rose-900">{batchVideoMessage}</p> : null}
-              <p className="mt-2 text-[11px] leading-5 text-rose-700">全程在本機瀏覽器製作，無需上傳雲端。畫質上限仍受原始圖片清晰度限制：原圖已模糊無法單靠放大恢復細節。若瀏覽器不支援 MP4，會輸出真正的 WebM 而非假 MP4。</p>
+              <p className="mt-2 text-[11px] leading-5 text-rose-700">全程在本機瀏覽器製作，無需上傳雲端。原始低解析度素材的細節無法憑空還原；影片錄製時間約為貼圖數量×2秒，且會先準備動畫影格。瀏覽器不支援 MP4 時會輸出真正 WebM。</p>
             </section>
             <div className="mt-4 rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-xs font-bold leading-5 text-sky-900">
               瀏覽器顯示的是實際 APNG 動畫；若動畫已播放完，可按「重播全部」或點單張圖片重新播放。
