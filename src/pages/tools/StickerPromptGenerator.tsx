@@ -4529,6 +4529,11 @@ export default function StickerPromptGenerator() {
       ? "animated"
       : "static";
   const [stickerMode, setStickerMode] = useState<LineStickerMode>(initialMode);
+  const [stickerPlatform, setStickerPlatform] = useState<"line" | "whatsapp">(
+    typeof window !== "undefined" && new URLSearchParams(window.location.search).get("platform") === "whatsapp"
+      ? "whatsapp"
+      : "line",
+  );
   const [targetCount, setTargetCount] = useState<LineStickerCount>(16);
   const [copiedBatchIndex, setCopiedBatchIndex] = useState<number | null>(null);
   const [type, setType] = useState<TemplateKey>("businessPersonal");
@@ -4827,6 +4832,7 @@ export default function StickerPromptGenerator() {
   function persistFlowProject(stage: 1 | 2 | 3 = 2) {
     const project = createLineStickerProject({
       mode: stickerMode,
+      platform: stickerPlatform,
       count: targetCount,
       theme: templates[type].label,
       texts: flowTexts,
@@ -4921,13 +4927,21 @@ export default function StickerPromptGenerator() {
                 步驟 1｜選擇要做的貼圖
               </h2>
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                先選靜態或動態，再選張數。動態貼圖可選 8、16、24 張。
+                先選 LINE 或 WhatsApp，再選靜態／動態與張數；同一批母圖可重複用於兩個平台。
               </p>
-
-              <div className="mt-5 grid grid-cols-2 gap-3">
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                {(["line", "whatsapp"] as const).map((platform) => (
+                  <button key={platform} type="button" aria-pressed={stickerPlatform === platform}
+                    onClick={() => setStickerPlatform(platform)}
+                    className={`min-h-12 rounded-2xl border-2 px-4 py-3 text-sm font-black transition ${stickerPlatform === platform ? "border-emerald-500 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-white text-slate-700"}`}>
+                    {stickerPlatform === platform ? "✓ " : ""}{platform === "line" ? "LINE 貼圖" : "WhatsApp 貼圖"}
+                  </button>
+                ))}
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-3">
                 {([
-                  ["static", "靜態 LINE 貼圖", "完成後直接下載上架 ZIP"],
-                  ["animated", "動態 LINE 貼圖", "完成裁切後自動接到動態製作"],
+                  ["static", "靜態貼圖", "下載 LINE PNG 或 WhatsApp WebP"],
+                  ["animated", "動態貼圖", "接到動畫製作，輸出 APNG 或動畫 WebP"],
                 ] as const).map(([mode, title, desc]) => (
                   <button
                     key={mode}
@@ -4945,6 +4959,11 @@ export default function StickerPromptGenerator() {
                 ))}
               </div>
 
+              <p className="mt-3 text-xs font-bold leading-5 text-emerald-700">
+                {stickerPlatform === "whatsapp"
+                  ? (stickerMode === "animated" ? "WhatsApp 動態：512×512 動畫 WebP、每張上限 500KB；由下一步自動處理。" : "WhatsApp 靜態：512×512 WebP、每張上限 100KB。")
+                  : (stickerMode === "animated" ? "LINE 動態：產生符合 LINE 規格的 APNG ZIP。" : "LINE 靜態：產生 PNG 上架 ZIP。")}
+              </p>
               <label className="mt-5 block text-xs font-black text-slate-500">
                 貼圖張數
               </label>
