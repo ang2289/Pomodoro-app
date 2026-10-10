@@ -2000,7 +2000,7 @@ const AnimatedLineStickerTool: React.FC = () => {
   };
 
   const handleBatchSources = async (fileList: FileList | null) => {
-    if (!fileList || fileList.length === 0 || batchBusy) {
+    if (!fileList || fileList.length === 0 || batchBusy || batchVideoBusy) {
       if (batchInputRef.current) batchInputRef.current.value = "";
       return;
     }
@@ -2037,6 +2037,7 @@ const AnimatedLineStickerTool: React.FC = () => {
   };
 
   const clearBatchSources = () => {
+    if (batchBusy || batchVideoBusy) return;
     setSourceCaptions([]);
     setCaptionEdits({});
     setHandoffLoaded(false);
@@ -2060,7 +2061,7 @@ const AnimatedLineStickerTool: React.FC = () => {
   };
 
   const exportBatchUploadPack = async () => {
-    if (batchBusy || ![8, 16, 24].includes(batchSources.length)) return;
+    if (batchBusy || batchVideoBusy || ![8, 16, 24].includes(batchSources.length)) return;
 
     setBatchBusy(true);
     setBatchProgress(0);
@@ -2745,7 +2746,7 @@ const AnimatedLineStickerTool: React.FC = () => {
                   <div className="flex gap-2">
                     <button
                       type="button"
-                      disabled={batchBusy}
+                      disabled={batchBusy || batchVideoBusy}
                       onClick={() => batchInputRef.current?.click()}
                       className="rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-black !text-white shadow disabled:bg-slate-300"
                     >
@@ -2754,7 +2755,7 @@ const AnimatedLineStickerTool: React.FC = () => {
                     {batchSources.length ? (
                       <button
                         type="button"
-                        disabled={batchBusy}
+                        disabled={batchBusy || batchVideoBusy}
                         onClick={clearBatchSources}
                         className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-black text-slate-600"
                       >
