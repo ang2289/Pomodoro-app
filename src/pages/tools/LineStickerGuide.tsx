@@ -98,7 +98,7 @@ function VideoDemoSection() {
         </h2>
         <p className="mt-3 text-sm leading-relaxed text-slate-600">
           先產生貼圖提示詞，再用 AI 生圖，接著把大圖切成多張貼圖，最後回到 RxV
-          工具整理尺寸並下載 ZIP 上架包。
+          工具自動處理母圖分割、去白底、尺寸與 ZIP；外部去背工具僅在自動處理不理想時才需要。
         </p>
 
         <div className="mt-5 overflow-hidden rounded-3xl border border-slate-200 bg-slate-950 shadow-sm">
