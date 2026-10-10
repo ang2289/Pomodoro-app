@@ -6,8 +6,11 @@ import LineStickerFlowSteps from "@/components/LineStickerFlowSteps";
 import { stickerSaleTextRisks } from "@/lib/stickerCommercialSafety";
 import {
   loadAnimatedStickerHandoffBundle,
+  readLineStickerProject,
   updateLineStickerProject,
 } from "@/lib/lineStickerFlow";
+import { createWhatsAppAnimatedSticker } from "@/lib/whatsAppAnimatedWebp";
+import { createWhatsAppTrayPng, partitionWhatsAppPacks } from "@/lib/whatsAppStickerExport";
 import {
   AUTO_MOTION_PRESETS,
   generateAutoAnimationFrameFiles,
@@ -1428,6 +1431,7 @@ async function createBatchShowcaseVideo(
   sources: FrameItem[],
   presets: AutoMotionPreset[],
   onProgress: (finished: number, total: number) => void,
+  platform: "line" | "whatsapp" = "line",
 ): Promise<{ blob: Blob; extension: "mp4" | "webm"; isMp4: boolean }> {
   if (![8, 16, 24].includes(sources.length) || sources.length !== presets.length) {
     throw new Error("展示影片來源與貼圖數量不一致，請先重新產生整套上架 ZIP。");
@@ -1470,7 +1474,7 @@ async function createBatchShowcaseVideo(
     ctx.textBaseline = "middle";
     ctx.fillStyle = "#744e61";
     ctx.font = 'bold 58px "Microsoft JhengHei", sans-serif';
-    ctx.fillText("LINE 動態貼圖展示", width / 2, 355);
+    ctx.fillText(platform === "whatsapp" ? "WhatsApp 動態貼圖展示" : "LINE 動態貼圖展示", width / 2, 355);
     ctx.fillStyle = "#ffffff";
     ctx.shadowColor = "rgba(93, 72, 84, 0.14)";
     ctx.shadowBlur = 32;
@@ -1501,28 +1505,38 @@ async function createBatchShowcaseVideo(
   });
 
   try {
-    // 錄製前先完成第一張動畫預載，避免影片開頭數秒黑畫面。
-    const firstFiles = await generateAutoAnimationFrameFiles(sources[0].file, presets[0], 2);
-    const firstBitmaps = await Promise.all(firstFiles.map((file) => createImageBitmap(file)));
-    drawShowcaseFrame(firstBitmaps[0], 0);
+    // 先產生整批動畫 PNG，再開始錄影；避免等待下一張動畫生成時影片停頓。
+    // 儲存壓縮 PNG 而非一次保存全部 ImageBitmap，控制 16/24 張記憶體。
+    const prepared: File[][] = [];
+    for (let i = 0; i < sources.length; i += 1) {
+      prepared.push(await generateAutoAnimationFrameFiles(sources[i].file, presets[i], 2));
+    }
+    let current = await Promise.all(prepared[0].map((file) => createImageBitmap(file)));
+    let next: Promise<ImageBitmap[]> | null = prepared[1]
+      ? Promise.all(prepared[1].map((file) => createImageBitmap(file)))
+      : null;
+    drawShowcaseFrame(current[0], 0);
     recorder.start(500);
+    // 一張貼圖 60 禎（2 秒 × 30FPS），動畫原始 8 禎每禎約停留 7~8 畫格。
     for (let index = 0; index < sources.length; index += 1) {
-      // 只保留當前貼圖 8 個影格，避免 24 組影片一次載入造成記憶體超量。
-      const bitmaps = index === 0
-        ? firstBitmaps
-        : await Promise.all(
-            (await generateAutoAnimationFrameFiles(sources[index].file, presets[index], 2))
-              .map((file) => createImageBitmap(file)),
-          );
-      try {
-        for (const bitmap of bitmaps) {
-          drawShowcaseFrame(bitmap, index);
-          await waitMs(250); // 每張 8 格 × 250ms = 2 秒
-        }
-      } finally {
-        bitmaps.forEach((bitmap) => bitmap.close());
+      const startedAt = performance.now();
+      for (let frame = 0; frame < 60; frame += 1) {
+        const bitmap = current[Math.min(7, Math.floor(frame * current.length / 60))];
+        drawShowcaseFrame(bitmap, index);
+        const remaining = startedAt + ((frame + 1) * 1000) / 30 - performance.now();
+        if (remaining > 0) await waitMs(remaining);
+        else await waitMs(0);
       }
+      current.forEach((bitmap) => bitmap.close());
       onProgress(index + 1, sources.length);
+      if (index + 1 < sources.length) {
+        // 提前在上一張播放時解碼下一組影格，降低張與張間的錄影停頓。
+        if (!next) throw new Error("下一組動畫影格預載失敗。");
+        current = await next;
+        next = prepared[index + 2]
+          ? Promise.all(prepared[index + 2].map((file) => createImageBitmap(file)))
+          : null;
+      }
     }
     if (recorder.state === "recording") {
       recorder.requestData();
@@ -1565,6 +1579,9 @@ const AnimatedLineStickerTool: React.FC = () => {
   const [batchCustomMotionPresets, setBatchCustomMotionPresets] = useState<
     Record<number, AutoMotionPreset>
   >({});
+  const [exportPlatform, setExportPlatform] = useState<"line" | "whatsapp">(() =>
+    readLineStickerProject()?.platform === "whatsapp" ? "whatsapp" : "line"
+  );
   const [batchBusy, setBatchBusy] = useState(false);
   const [batchProgress, setBatchProgress] = useState(0);
   const [batchStatus, setBatchStatus] = useState("");
@@ -2063,6 +2080,74 @@ const AnimatedLineStickerTool: React.FC = () => {
     if (batchInputRef.current) batchInputRef.current.value = "";
   };
 
+
+  const exportWhatsAppAnimatedPack = async () => {
+    if (batchBusy || batchVideoBusy || ![8, 16, 24].includes(batchSources.length)) return;
+    setBatchBusy(true);
+    setBatchProgress(0);
+    setBatchMessage("");
+    setBatchStatus("準備 WhatsApp 動畫 WebP…");
+    const zipFiles: { name: string; data: Uint8Array }[] = [];
+    const previews: Array<Omit<BatchAnimatedPreview, "url">> = [];
+    clearBatchAnimatedPreviews();
+    try {
+      const packCounts = partitionWhatsAppPacks(batchSources.length);
+      const traySource = await createImageBitmap(batchSources[0].file);
+      const trayCanvas = document.createElement("canvas");
+      trayCanvas.width = traySource.width;
+      trayCanvas.height = traySource.height;
+      const trayCtx = trayCanvas.getContext("2d");
+      if (!trayCtx) throw new Error("無法建立 WhatsApp 封面畫布");
+      trayCtx.drawImage(traySource, 0, 0);
+      traySource.close();
+      const tray = new Uint8Array(await (await createWhatsAppTrayPng(trayCanvas)).arrayBuffer());
+      let globalIndex = 0;
+      for (let packIndex = 0; packIndex < packCounts.length; packIndex++) {
+        const folder = `WhatsApp_Animated_Pack_${String(packIndex + 1).padStart(2, "0")}`;
+        zipFiles.push({ name: `${folder}/tray.png`, data: tray });
+        for (let localIndex = 0; localIndex < packCounts[packIndex]; localIndex++, globalIndex++) {
+          const i = globalIndex;
+          setBatchStatus(`正在壓縮 WhatsApp 動畫 ${i + 1}/${batchSources.length}（500KB 上限）…`);
+          const preset = batchMotionMode === "mixed"
+            ? MIXED_BATCH_MOTION_PRESETS[i % MIXED_BATCH_MOTION_PRESETS.length]
+            : batchMotionMode === "custom"
+              ? batchCustomMotionPresets[i] ?? MIXED_BATCH_MOTION_PRESETS[i % MIXED_BATCH_MOTION_PRESETS.length]
+              : batchMotionPreset;
+          const pngs = await generateAutoAnimationFrameFiles(batchSources[i].file, preset);
+          const webp = await createWhatsAppAnimatedSticker(pngs);
+          const filename = `${String(localIndex + 1).padStart(2, "0")}.webp`;
+          zipFiles.push({
+            name: `${folder}/${filename}`,
+            data: new Uint8Array(await webp.arrayBuffer()),
+          });
+          previews.push({
+            id: `whatsapp-preview-${i}`,
+            index: i,
+            motionPreset: preset,
+            name: filename,
+            blob: webp,
+            sizeKb: Math.round(webp.size / 1024),
+            overLimit: webp.size > 500_000,
+          });
+          setBatchProgress(Math.round(((i + 1) / batchSources.length) * 100));
+          await waitMs(10);
+        }
+      }
+      const zip = makeZip(zipFiles);
+      replaceBatchAnimatedPreviews(previews);
+      downloadBlob(zip, `rxv-whatsapp-animated-${batchSources.length}-webp.zip`);
+      setBatchStatus("WhatsApp 動畫 ZIP 製作完成");
+      setBatchMessage(`完成 ${batchSources.length} 張 512×512 動態 WebP（每張≤500KB，共 ${packCounts.length} 組）。此 ZIP 是供相容貼圖 APP 匯入的素材包，不能直接當作 WhatsApp 一鍵安裝檔案。`);
+      window.setTimeout(() => batchPreviewSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
+      updateLineStickerProject({ stage: 5 });
+    } catch (error) {
+      setBatchStatus("WhatsApp 動畫輸出尚未完成");
+      setBatchMessage(error instanceof Error ? error.message : "產生 WhatsApp 動態貼圖失敗，請重新試一次。");
+    } finally {
+      setBatchBusy(false);
+    }
+  };
+
   const exportBatchUploadPack = async () => {
     if (batchBusy || batchVideoBusy || ![8, 16, 24].includes(batchSources.length)) return;
 
@@ -2219,8 +2304,9 @@ const AnimatedLineStickerTool: React.FC = () => {
         batchSources,
         sorted.map((item) => item.motionPreset),
         (finished, total) => setBatchVideoProgress(Math.round((finished / total) * 100)),
+        exportPlatform,
       );
-      downloadBlob(result.blob, `rxv-line-animated-${batchSources.length}-hd-1080x1920.${result.extension}`);
+      downloadBlob(result.blob, `rxv-${exportPlatform}-animated-${batchSources.length}-hd-1080x1920.${result.extension}`);
       setBatchVideoMessage(
         result.isMp4
           ? "高清 MP4 已下載！1080×1920 直式展示影片，可用於社群推廣。"
@@ -2473,6 +2559,28 @@ const AnimatedLineStickerTool: React.FC = () => {
       <main className="relative left-1/2 w-screen -translate-x-1/2 px-4 py-8 md:px-6 md:py-10">
         <div className="mx-auto w-full max-w-[1480px]">
         <LineStickerFlowSteps activeStep={5} mode="animated" />
+        <section className="mb-5 rounded-2xl border border-emerald-200 bg-white p-4">
+          <p className="text-sm font-black text-slate-900">輸出平台｜動態貼圖</p>
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            {(["line", "whatsapp"] as const).map((platform) => (
+              <button key={platform} type="button" aria-pressed={exportPlatform === platform}
+                disabled={batchBusy || batchVideoBusy}
+                onClick={() => {
+                  setExportPlatform(platform);
+                  updateLineStickerProject({ platform });
+                  setBatchMessage("");
+                }}
+                className={`min-h-12 rounded-xl border-2 px-3 py-2 text-sm font-black ${exportPlatform === platform ? "border-emerald-500 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-white text-slate-700"}`}>
+                {exportPlatform === platform ? "✓ " : ""}{platform === "line" ? "LINE 動態 APNG" : "WhatsApp 動態 WebP"}
+              </button>
+            ))}
+          </div>
+          <p className="mt-2 text-xs leading-5 text-slate-600">
+            {exportPlatform === "whatsapp"
+              ? "真正的動畫 WebP（512×512，每張≤500KB、最多 10 秒），不混入靜態貼圖。ZIP 仍需透過相容貼圖 APP 建立並匯入 WhatsApp。"
+              : "輸出 LINE 官方尺寸的 APNG 動態貼圖 ZIP。"}
+          </p>
+        </section>
         <section className="rounded-3xl border border-fuchsia-100 bg-gradient-to-br from-fuchsia-50 via-white to-sky-50 p-5 shadow-sm md:p-8">
           <p className="text-sm font-bold text-fuchsia-700">{t("animated_line_sticker.eyebrow")}</p>
           <h1 className="mt-2 text-2xl font-black tracking-tight text-slate-900 md:text-4xl">
@@ -3027,19 +3135,25 @@ const AnimatedLineStickerTool: React.FC = () => {
                 </div>
 
                 <div className="mt-4 rounded-2xl bg-sky-50 p-3 text-xs leading-6 text-sky-900">
-                  {t("animated_line_sticker.batch_output_summary")}
-                  <p className="mt-2 font-bold">下一版上架安全檢查：ZIP 僅包含貼圖 APNG、main.png、tab.png，不夾帶文字報告；產生後自動核對尺寸、畫格與容量，超標會指出檔名。</p>
+                  {exportPlatform === "whatsapp"
+                    ? "輸出 WhatsApp 512×512 動畫 WebP 素材包，每張 500KB 上限；不會改成靜態圖片。"
+                    : t("animated_line_sticker.batch_output_summary")}
+                  <p className="mt-2 font-bold">
+                    {exportPlatform === "whatsapp"
+                      ? "下載後需使用支援動態貼圖的 WhatsApp 相容貼圖 APP 匯入；無法直接將 ZIP 安裝到 WhatsApp。"
+                      : "LINE ZIP 僅包含貼圖 APNG、main.png、tab.png，逐張自動核對尺寸與容量。"}
+                  </p>
                 </div>
 
                 <button
                   type="button"
                   disabled={batchBusy || ![8, 16, 24].includes(batchSources.length)}
-                  onClick={exportBatchUploadPack}
+                  onClick={exportPlatform === "whatsapp" ? exportWhatsAppAnimatedPack : exportBatchUploadPack}
                   className="mt-4 inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-black !text-white shadow-md transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
                 >
                   {batchBusy
-                    ? t("animated_line_sticker.batch_generating_button")
-                    : t("animated_line_sticker.batch_generate_button")}
+                    ? (exportPlatform === "whatsapp" ? "正在壓縮 WhatsApp 動畫 WebP…" : t("animated_line_sticker.batch_generating_button"))
+                    : (exportPlatform === "whatsapp" ? "產生 WhatsApp 動態 WebP ZIP（真動畫）" : t("animated_line_sticker.batch_generate_button"))}
                 </button>
 
                 <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-200">
@@ -3205,7 +3319,7 @@ const AnimatedLineStickerTool: React.FC = () => {
                   {batchAnimatedPreviews.length} 張動態貼圖預覽
                 </h2>
                 <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-                  這裡顯示已完成的 APNG 動畫，請直接目視確認圖片中文字、人物、去背與動畫效果。為避免顯示以前的文字，預覽卡片不再帶入提示詞內容。
+                  這裡顯示實際完成的 {exportPlatform === "whatsapp" ? "動畫 WebP" : "APNG"} 成品，請逐張檢查人物、文字與去背。預覽不帶入舊提示詞文字。
                 </p>
 
               </div>
@@ -3264,7 +3378,7 @@ const AnimatedLineStickerTool: React.FC = () => {
             <section className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 p-4">
               <h3 className="text-base font-black text-rose-900">完成後另存高清影片｜整套動態展示</h3>
               <p className="mt-1 text-xs leading-6 text-rose-800">
-                將 {batchAnimatedPreviews.length} 張動態貼圖依序播放，每張約 2 秒；動畫先使用 640×540 高解析影格製作，再合成 1080×1920 直式影片（12 Mbps），減少放大後模糊。LINE 上架仍使用 ZIP，不使用 MP4。
+                將 {batchAnimatedPreviews.length} 張依序播放，每張約 2 秒；先產生 640×540 動畫影格，再以固定約 30FPS 重畫至 1080×1920 直式影片，避免舊版約 3FPS 的跳格現象。MP4 僅供展示，貼圖上架請用對應的 ZIP。
               </p>
               <button type="button" disabled={batchVideoBusy || batchBusy}
                 onClick={exportBatchHdVideo}
@@ -3273,7 +3387,7 @@ const AnimatedLineStickerTool: React.FC = () => {
               </button>
               {batchVideoBusy ? <div className="mt-3 h-2 overflow-hidden rounded-full bg-rose-200"><div className="h-full bg-rose-600 transition-all" style={{ width: `${batchVideoProgress}%` }} /></div> : null}
               {batchVideoMessage ? <p role="status" className="mt-3 text-xs font-bold leading-6 text-rose-900">{batchVideoMessage}</p> : null}
-              <p className="mt-2 text-[11px] leading-5 text-rose-700">全程在本機瀏覽器製作，無需上傳雲端。畫質上限仍受原始圖片清晰度限制：原圖已模糊無法單靠放大恢復細節。若瀏覽器不支援 MP4，會輸出真正的 WebM 而非假 MP4。</p>
+              <p className="mt-2 text-[11px] leading-5 text-rose-700">全程在本機瀏覽器製作，無需上傳雲端。原始低解析度素材的細節無法憑空還原；影片錄製時間約為貼圖數量×2秒，且會先準備動畫影格。瀏覽器不支援 MP4 時會輸出真正 WebM。</p>
             </section>
             <div className="mt-4 rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-xs font-bold leading-5 text-sky-900">
               瀏覽器顯示的是實際 APNG 動畫；若動畫已播放完，可按「重播全部」或點單張圖片重新播放。

@@ -1604,7 +1604,9 @@ export default function LineStickerTool() {
     () => flowProject?.count ?? 8,
   );
   const [mainImageIndex, setMainImageIndex] = useState<number>(0);
-  const [exportPlatform, setExportPlatform] = useState<"line" | "whatsapp">("line");
+  const [exportPlatform, setExportPlatform] = useState<"line" | "whatsapp">(() =>
+    readLineStickerProject()?.platform === "whatsapp" ? "whatsapp" : "line"
+  );
   const [cropMode, setCropMode] = useState<LineStickerCropMode>("smart-safe");
   const [cropScale, setCropScale] = useState<number>(92);
   const [downloadCompleted, setDownloadCompleted] = useState(
@@ -2262,8 +2264,8 @@ export default function LineStickerTool() {
       for (let i = 0; i < stickerCount; i += 1) {
         const canvas = resizeImageToCanvas(
           files[i].img,
-          STICKER_BODY.width,
-          STICKER_BODY.height,
+          STICKER_BODY.width * 3,
+          STICKER_BODY.height * 3,
           cropMode,
           getScaleForIndex(i),
           getOffsetForIndex(i),
@@ -2360,6 +2362,7 @@ export default function LineStickerTool() {
             <div className="mt-3 grid grid-cols-2 gap-3">
               <button type="button" onClick={() => {
                   setExportPlatform("line");
+                  updateLineStickerProject({ platform: "line" });
                   setExportCheckResult(null);
                   setDownloadCompleted(false);
                 }}
@@ -2369,6 +2372,7 @@ export default function LineStickerTool() {
               </button>
               <button type="button" onClick={() => {
                   setExportPlatform("whatsapp");
+                  updateLineStickerProject({ platform: "whatsapp" });
                   setExportCheckResult(null);
                   setDownloadCompleted(false);
                 }}
@@ -2379,8 +2383,10 @@ export default function LineStickerTool() {
             </div>
             <p className="mt-2 text-xs leading-6 text-slate-600">
               {exportPlatform === "whatsapp"
-                ? "可沿用以前的母圖、已去背 PNG 或 WebP，不必重新生圖。下載 512×512、單張≤100KB 的靜態貼圖素材 ZIP；WhatsApp 匯入貼圖集須透過內建建立功能或相容貼圖 APP。動態 WebP 尚未開放，避免輸出假動畫。"
-                : "輸出 LINE 貼圖上架 ZIP，靜態為 PNG；如需製作 LINE 動態貼圖請繼續下個步驟。"}
+                ? (flowProject?.mode === "animated"
+                    ? "已選 WhatsApp 動態：完成切割後按底部「下一步」，即可製作真正的 512×512 動畫 WebP ZIP（每張≤500KB）。"
+                    : "WhatsApp 靜態：下載 512×512、單張≤100KB 的透明 WebP ZIP；匯入貼圖集需透過 WhatsApp 或相容貼圖 APP。")
+                : "LINE：靜態輸出 PNG 上架 ZIP，動態輸出 APNG；可以接續下一步製作動態貼圖。"}
             </p>
             {exportPlatform === "whatsapp" ? (
               <a
@@ -2399,20 +2405,7 @@ export default function LineStickerTool() {
             >
               {exportReadyMessage}
             </div>
-            {exportPlatform === "whatsapp" && flowProject?.mode === "animated" ? (
-              <button
-                type="button"
-                onClick={generateWhatsAppZip}
-                disabled={!canDownload || loading}
-                className={`mt-3 w-full rounded-xl px-4 py-3 text-sm font-black transition-colors ${canDownload && !loading ? "bg-emerald-600 text-white hover:bg-emerald-700" : "cursor-not-allowed border border-amber-300 bg-amber-100 text-amber-900"}`}
-              >
-                {loading ? "正在輸出 WhatsApp WebP…" : canDownload
-                  ? `下載 ${stickerCount} 張 WhatsApp 靜態 WebP ZIP`
-                  : needMore > 0
-                    ? `尚差 ${needMore} 張，完成上傳後可下載`
-                    : "請重新確認切割後下載"}
-              </button>
-            ) : null}
+
           </section>
 
           {downloadCompleted && flowProject?.mode !== "animated" ? (
@@ -3460,7 +3453,7 @@ export default function LineStickerTool() {
                       : "border border-blue-200 bg-white text-blue-700 hover:bg-blue-50"
                   }`}
                 >
-                  {exportPlatform === "whatsapp" ? "下載 WhatsApp 靜態 WebP ZIP" : "下載 LINE 靜態備份 ZIP"}
+                  {exportPlatform === "whatsapp" ? "另存 WhatsApp 靜態 ZIP" : "另存 LINE 靜態備份 ZIP"}
                 </button>
                 <button
                   onClick={continueToAnimated}
@@ -3475,7 +3468,7 @@ export default function LineStickerTool() {
                     ? "正在準備下一步…"
                     : canDownload
                       ? (exportPlatform === "whatsapp"
-                          ? "LINE 動態製作（WhatsApp 動態尚未支援）"
+                          ? "下一步：製作 WhatsApp 動態 WebP"
                           : "下一步：自動製作 LINE 動態貼圖")
                       : `還差 ${needMore} 張`}
                 </button>
