@@ -3438,7 +3438,9 @@ export default function LineStickerTool() {
                   {loading
                     ? "正在準備下一步…"
                     : canDownload
-                      ? "下一步：自動製作動態貼圖"
+                      ? (exportPlatform === "whatsapp"
+                          ? "LINE 動態製作（WhatsApp 動態尚未支援）"
+                          : "下一步：自動製作 LINE 動態貼圖")
                       : `還差 ${needMore} 張`}
                 </button>
               </>
