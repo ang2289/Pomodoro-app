@@ -23,6 +23,7 @@ import {
   getRelatedToolsItems,
 } from "@/data/internalLinks";
 import JSZip from "jszip";
+import { stickerSaleTextRisks } from "@/lib/stickerCommercialSafety";
 import { saveAs } from "file-saver";
 
 function DonationLite() {
@@ -1569,6 +1570,7 @@ export default function LineStickerTool() {
       },
     })),
   };
+  const saleTextRisks = useMemo(() => stickerSaleTextRisks(flowProject?.texts ?? []), [flowProject]);
   const [files, setFiles] = useState<ImagePreview[]>([]);
   const [stickerCount, setStickerCount] = useState<8 | 16 | 24 | 32 | 40>(
     () => flowProject?.count ?? 8,
@@ -2183,6 +2185,16 @@ export default function LineStickerTool() {
             {exportCheckResult ? <p role="status" className="mt-3 rounded-xl bg-emerald-50 p-3 text-sm font-bold leading-6 text-emerald-800">{exportCheckResult}</p> : null}
           </section>
 
+          {saleTextRisks.length > 0 ? (
+            <section className="mb-5 rounded-2xl border border-amber-300 bg-amber-50 p-4">
+              <p className="text-sm font-black text-amber-900">LINE 公開販售提醒：前一步貼圖文字有 {saleTextRisks.length} 句可能屬於促銷或導流。</p>
+              <p className="mt-1 text-xs leading-6 text-amber-800">
+                {saleTextRisks.slice(0, 6).map((risk) => `${risk.text} → ${risk.replacement}`).join("；")}。
+                若圖片已畫出這些字，修改文字清單不會自動改變圖片，請先重新產圖；否則仍可能被 LINE 退件。
+              </p>
+            </section>
+          ) : null}
+
           {downloadCompleted && flowProject?.mode !== "animated" ? (
             <section className="mb-6 rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-blue-50 p-5 shadow-sm">
               <div className="flex flex-wrap items-center gap-2">
@@ -2776,8 +2788,8 @@ export default function LineStickerTool() {
               </div>
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
                 {files.map((p, i) => (
+                  <div key={i} className="min-w-0">
                   <PreviewCard
-                    key={i}
                     preview={p}
                     index={i}
                     cropMode={cropMode}
@@ -2790,6 +2802,12 @@ export default function LineStickerTool() {
                     isExcluded={i >= stickerCount}
                     onToggleExclude={() => {}}
                   />
+                  {flowProject?.texts[i] ? (
+                    <p className="mt-2 rounded-xl border border-sky-200 bg-sky-50 p-3 text-xs font-bold leading-5 text-sky-900">
+                      這張應有文字：「{flowProject.texts[i]}」——請和圖片逐字比對，確認沒有多餘小字。
+                    </p>
+                  ) : null}
+                  </div>
                 ))}
               </div>
             </section>
