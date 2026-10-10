@@ -3203,6 +3203,11 @@ const AnimatedLineStickerTool: React.FC = () => {
                 <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
                   這裡顯示剛剛 ZIP 裡的實際 APNG 成品。下方的「來源提示詞」只用來人工比對，不是文字辨識結果；圖片上的文字才是實際輸出內容。請逐張確認後再送審。
                 </p>
+                {handoffLoaded && sourceCaptions.length === 0 ? (
+                  <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold leading-5 text-amber-800">
+                    這組是舊版暫存的圖片，沒有與來源文字一起綁定；已停止顯示舊專案的錯誤文字。您可以直接核對圖片，或由第 1 步重新開始取得新版文字對照。
+                  </p>
+                ) : null}
               </div>
               <button
                 type="button"
@@ -3261,11 +3266,7 @@ const AnimatedLineStickerTool: React.FC = () => {
                         className="mt-1.5 w-full rounded-lg border border-sky-200 bg-white px-2 py-2 text-xs font-medium text-slate-800"
                       />
                     </label>
-                  ) : (
-                    <p className="mt-2 text-[11px] leading-4 text-slate-500">
-                      未綁定這批圖片的原始文案，請直接核對圖片內的文字。
-                    </p>
-                  )}
+                  ) : null}
                   <p className="mt-1 text-[10px] leading-4 text-slate-400">
                     點圖片可重播
                   </p>
