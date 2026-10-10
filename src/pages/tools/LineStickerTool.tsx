@@ -5,6 +5,10 @@ import { useTranslation } from "react-i18next";
 import SEO from "@/components/SEO";
 import LineStickerAuthorCard from "@/components/LineStickerAuthorCard";
 import LineStickerFlowSteps from "@/components/LineStickerFlowSteps";
+import {
+  analyzeMotherSheetSafety,
+  type MotherSheetSafetyReview,
+} from "@/lib/lineMotherSheetSafety";
 import CoupangAd from "@/components/CoupangAd";
 import {
   clearAnimatedStickerHandoff,
@@ -821,6 +825,7 @@ function detectMotherSheetGridFromImage(
 }
 
 type MotherSheetDetection = {
+  safetyByGrid: Record<MotherSheetGrid, MotherSheetSafetyReview>;
   id: string;
   file: File;
   sourceIndex: number;
@@ -866,8 +871,25 @@ async function inspectMotherSheetFile(
   const width = image.naturalWidth || image.width;
   const height = image.naturalHeight || image.height;
   const grid = detectMotherSheetGridFromImage(image);
+  // 大圖僅縮小用於「分析」；最後的切圖仍使用高解析原檔。
+  const analysisScale = Math.min(1, 1400 / Math.max(width, height));
+  const analysisWidth = Math.max(1, Math.round(width * analysisScale));
+  const analysisHeight = Math.max(1, Math.round(height * analysisScale));
+  const canvas = document.createElement("canvas");
+  canvas.width = analysisWidth;
+  canvas.height = analysisHeight;
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  if (!context) throw new Error("無法建立母圖安全分析畫布");
+  context.drawImage(image, 0, 0, analysisWidth, analysisHeight);
+  const rgba = context.getImageData(0, 0, analysisWidth, analysisHeight).data;
+  const safetyByGrid = {
+    "4x2": analyzeMotherSheetSafety(rgba, analysisWidth, analysisHeight, "4x2"),
+    "4x4": analyzeMotherSheetSafety(rgba, analysisWidth, analysisHeight, "4x4"),
+    "4x5": analyzeMotherSheetSafety(rgba, analysisWidth, analysisHeight, "4x5"),
+  };
 
   return {
+    safetyByGrid,
     id: `${sourceIndex}-${file.name}-${file.size}`,
     file,
     sourceIndex,
@@ -1305,74 +1327,119 @@ function removeForeignCellComponents(
   if (changed) context.putImageData(imageData, 0, 0);
 }
 
+/**
+ * 已通過留白切割檢查後，重新置中縮放至透明安全框。
+ * 避免直接剪去花瓣、文字，也不會因為原圖貼邊就截斷。
+ */
+function centerMotherSheetCellWithPadding(source: HTMLCanvasElement): HTMLCanvasElement {
+  const context = source.getContext("2d", { willReadFrequently: true });
+  if (!context) throw new Error("無法讀取去背後圖片");
+  const { width, height } = source;
+  const pixels = context.getImageData(0, 0, width, height).data;
+  let minX = width;
+  let minY = height;
+  let maxX = -1;
+  let maxY = -1;
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const alpha = pixels[(y * width + x) * 4 + 3];
+      if (alpha <= ALPHA_THRESHOLD) continue;
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+      if (y < minY) minY = y;
+      if (y > maxY) maxY = y;
+    }
+  }
+  if (maxX < minX || maxY < minY) {
+    throw new Error("去背後出現空白貼圖，請重新選擇母圖。");
+  }
+  const boxWidth = maxX - minX + 1;
+  const boxHeight = maxY - minY + 1;
+  const padding = Math.max(5, Math.round(Math.min(width, height) * 0.13));
+  const scale = Math.min(
+    (width - padding * 2) / boxWidth,
+    (height - padding * 2) / boxHeight,
+  );
+  const drawWidth = Math.max(1, Math.round(boxWidth * scale));
+  const drawHeight = Math.max(1, Math.round(boxHeight * scale));
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("無法建立安全留白畫布");
+  ctx.clearRect(0, 0, width, height);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(
+    source, minX, minY, boxWidth, boxHeight,
+    Math.round((width - drawWidth) / 2),
+    Math.round((height - drawHeight) / 2),
+    drawWidth, drawHeight,
+  );
+  return canvas;
+}
+
 async function splitMotherSheet(
   file: File,
   grid: "auto" | MotherSheetGrid,
   t: (key: string) => string,
   removeWhiteBackground: boolean,
+  safety?: MotherSheetSafetyReview,
 ): Promise<File[]> {
   const image = await loadImage(file, t);
   const sourceWidth = image.naturalWidth || image.width;
   const sourceHeight = image.naturalHeight || image.height;
-  const detectedGrid =
-    grid === "auto"
-      ? detectMotherSheetGrid(sourceWidth, sourceHeight)
-      : grid;
-  const [columns, rows] = detectedGrid.split("x").map(Number);
+  const actualGrid =
+    grid === "auto" ? detectMotherSheetGridFromImage(image) : grid;
+  const [columns, rows] = actualGrid.split("x").map(Number);
+  const review = safety ?? (() => {
+    const canvas = document.createElement("canvas");
+    canvas.width = sourceWidth;
+    canvas.height = sourceHeight;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) throw new Error("無法建立安全切割畫布");
+    ctx.drawImage(image, 0, 0);
+    return analyzeMotherSheetSafety(
+      ctx.getImageData(0, 0, sourceWidth, sourceHeight).data,
+      sourceWidth, sourceHeight, actualGrid,
+    );
+  })();
+
+  if (review.grid !== actualGrid) throw new Error("安全切圖格數不一致，請重新辨識母圖。");
+  if (review.blocked.length) {
+    throw new Error(`母圖「${file.name}」無法安全切割：${review.blocked.slice(0, 3).join("；")}`);
+  }
+  const xCuts = review.xCuts.map((x) => Math.round((x * sourceWidth) / review.width));
+  const yCuts = review.yCuts.map((y) => Math.round((y * sourceHeight) / review.height));
   const results: File[] = [];
 
   for (let row = 0; row < rows; row += 1) {
     for (let column = 0; column < columns; column += 1) {
-      const rawLeft = Math.round((column * sourceWidth) / columns);
-      const rawTop = Math.round((row * sourceHeight) / rows);
-      const rawRight = Math.round(((column + 1) * sourceWidth) / columns);
-      const rawBottom = Math.round(((row + 1) * sourceHeight) / rows);
-      const rawW = Math.max(1, rawRight - rawLeft);
-      const rawH = Math.max(1, rawBottom - rawTop);
-
-      // 不再把每格四邊直接切掉。改成往外多取 6%，救回貼近格線的文字，
-      // 再用 component ownership 移除屬於相鄰格的內容。
-      const overlapX = Math.round(rawW * MOTHER_SHEET_OVERLAP_RATIO);
-      const overlapY = Math.round(rawH * MOTHER_SHEET_OVERLAP_RATIO);
-      const left = Math.max(0, rawLeft - overlapX);
-      const top = Math.max(0, rawTop - overlapY);
-      const right = Math.min(sourceWidth, rawRight + overlapX);
-      const bottom = Math.min(sourceHeight, rawBottom + overlapY);
-      const core = {
-        x: rawLeft - left,
-        y: rawTop - top,
-        width: rawW,
-        height: rawH,
-      };
-
+      const left = xCuts[column];
+      const top = yCuts[row];
+      const width = Math.max(1, xCuts[column + 1] - left);
+      const height = Math.max(1, yCuts[row + 1] - top);
       const canvas = document.createElement("canvas");
-      canvas.width = Math.max(1, right - left);
-      canvas.height = Math.max(1, bottom - top);
+      canvas.width = width;
+      canvas.height = height;
       const context = canvas.getContext("2d");
       if (!context) throw new Error("無法建立母圖切割畫布");
-      context.clearRect(0, 0, canvas.width, canvas.height);
-      context.drawImage(
-        image,
-        left,
-        top,
-        canvas.width,
-        canvas.height,
-        0,
-        0,
-        canvas.width,
-        canvas.height,
-      );
+      context.clearRect(0, 0, width, height);
+      context.drawImage(image, left, top, width, height, 0, 0, width, height);
+
+      // 不再向相鄰格擴張 6% 取像，也不推測連通區塊歸屬，避免誤刪花朵／文字。
       if (removeWhiteBackground) {
         removeConnectedWhiteBackground(canvas, 232);
         cleanPaleEdgeHalo(canvas, 1);
-        removeForeignCellComponents(canvas, core);
-        removeTinyEdgeFragments(canvas, 0.09, 0.022);
       }
-      const blob = await canvasToBlob(canvas, t);
+      const output = removeWhiteBackground
+        ? centerMotherSheetCellWithPadding(canvas)
+        : canvas;
+      const blob = await canvasToBlob(output, t);
       results.push(
         new File(
           [blob],
-          `${file.name.replace(/\.[^.]+$/, "")}-${String(row * columns + column + 1).padStart(2, "0")}.png`,
+          `${file.name.replace(/\\.[^.]+$/, "")}-${String(row * columns + column + 1).padStart(2, "0")}.png`,
           { type: "image/png" },
         ),
       );
@@ -1586,6 +1653,7 @@ export default function LineStickerTool() {
   const [reviewedWarnings, setReviewedWarnings] = useState<Record<number, boolean>>({});
   const [motherSheetGrid, setMotherSheetGrid] = useState<"auto" | MotherSheetGrid>("auto");
   const [autoRemoveWhiteBg, setAutoRemoveWhiteBg] = useState(true);
+  const [motherSheetSafetyResult, setMotherSheetSafetyResult] = useState<string | null>(null);
   const [motherSheetDetections, setMotherSheetDetections] = useState<
     MotherSheetDetection[]
   >([]);
@@ -1694,6 +1762,12 @@ export default function LineStickerTool() {
     () => checkMotherSheetPlan(motherSheetDetections, expectedMotherSheetPlan),
     [motherSheetDetections, expectedMotherSheetPlan],
   );
+  const unsafeMotherSheets = useMemo(
+    () => motherSheetDetections.flatMap((item) =>
+      item.safetyByGrid[item.grid].blocked.map((message) => `${item.file.name}：${message}`),
+    ),
+    [motherSheetDetections],
+  );
 
   const overrideMotherSheetGrid = useCallback(
     (id: string, grid: MotherSheetGrid) => {
@@ -1732,6 +1806,7 @@ export default function LineStickerTool() {
 
       setLoading(true);
       setError(null);
+      setMotherSheetSafetyResult(null);
       setMotherSheetDetectionStatus("idle");
 
       try {
@@ -1788,6 +1863,11 @@ export default function LineStickerTool() {
       setError(check.message);
       return;
     }
+    if (unsafeMotherSheets.length) {
+      setMotherSheetDetectionStatus("invalid");
+      setError(`安全切割未通過：${unsafeMotherSheets.slice(0, 3).join("；")}`);
+      return;
+    }
 
     setLoading(true);
     setMotherSheetDetectionStatus("cutting");
@@ -1795,6 +1875,7 @@ export default function LineStickerTool() {
 
     try {
       const splitFiles: File[] = [];
+      const safetyWarnings: string[] = [];
 
       if (useAutoPlan) {
         const orderedSheets = orderDetectedMotherSheetsForPlan(
@@ -1809,25 +1890,38 @@ export default function LineStickerTool() {
         }
 
         for (const item of orderedSheets) {
+          const safety = item.detection.safetyByGrid[item.grid];
+          const previousCount = splitFiles.length;
           splitFiles.push(
             ...(await splitMotherSheet(
               item.detection.file,
               item.grid,
               t,
               autoRemoveWhiteBg,
+              safety,
             )),
           );
+          safetyWarnings.push(...safety.warnings.map((warning) =>
+            `第 ${previousCount + warning.index} 張原圖留白 ${warning.marginPercent}%`,
+          ));
         }
       } else {
         for (const item of motherSheetDetections) {
+          const grid = motherSheetGrid === "auto" ? item.grid : motherSheetGrid;
+          const safety = item.safetyByGrid[grid];
+          const previousCount = splitFiles.length;
           splitFiles.push(
             ...(await splitMotherSheet(
               item.file,
-              motherSheetGrid,
+              grid,
               t,
               autoRemoveWhiteBg,
+              safety,
             )),
           );
+          safetyWarnings.push(...safety.warnings.map((warning) =>
+            `第 ${previousCount + warning.index} 張原圖留白 ${warning.marginPercent}%`,
+          ));
         }
       }
 
@@ -1848,6 +1942,11 @@ export default function LineStickerTool() {
       setDownloadCompleted(false);
 
       await validateAndAddFiles(splitFiles);
+      setMotherSheetSafetyResult(
+        safetyWarnings.length
+          ? `切割完成：已調整安全分隔線、置中補足約 13% 透明留白。偵測到原圖留白較小：${safetyWarnings.slice(0, 12).join("、")}${safetyWarnings.length > 12 ? `，另有 ${safetyWarnings.length - 12} 張` : ""}。請在下方逐張確認文字和花朵。`
+          : "安全切割完成：已尋找各格之間的留白通道，並自動去背、置中與補足約 13% 透明留白。請逐張預覽後再打包。",
+      );
       setMotherSheetDetectionStatus("ready");
       if (flowProject) updateLineStickerProject({ stage: 4 });
     } catch (cause) {
@@ -1865,6 +1964,7 @@ export default function LineStickerTool() {
     loading,
     motherSheetDetections,
     motherSheetGrid,
+    unsafeMotherSheets,
     stickerCount,
     t,
     validateAndAddFiles,
@@ -2331,7 +2431,7 @@ export default function LineStickerTool() {
                     上傳母圖，後面交給系統自動整理
                   </h2>
                   <p className="mt-1 text-xs leading-relaxed text-slate-500">
-                    先選母圖，系統會先顯示每張的尺寸、判定格數與預計張數；確認組合正確後才開始切圖、去白底與安全整理，避免 16＋8 等混合母圖切錯。
+                    先辨識 4×2／4×4／4×5 與格數，再自動尋找白色安全分隔通道；切割後逐張去背、置中並補透明留白。若圖案真的跨格，會標示風險並阻止硬切，避免 16＋8 切壞。
                   </p>
                 </div>
                 <div className="min-w-0 grid gap-2 sm:grid-cols-2">
@@ -2443,6 +2543,12 @@ export default function LineStickerTool() {
                     </div>
                   )}
 
+                  {unsafeMotherSheets.length ? (
+                    <div role="alert" className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-bold leading-6 text-rose-800">
+                      <p className="font-black">無法保證安全切割：請修正以下母圖或格數，暫不允許硬切。</p>
+                      {unsafeMotherSheets.slice(0, 6).map((reason, index) => <p key={index}>{reason}</p>)}
+                    </div>
+                  ) : null}
                   <div className="mt-4 grid gap-3 xl:grid-cols-2">
                     {motherSheetDetections.map((item, index) => {
                       const plannedGrid =
@@ -2492,6 +2598,11 @@ export default function LineStickerTool() {
                             <strong className="text-sm text-violet-700">
                               {formatMotherSheetGrid(item.grid)} → {item.stickerCount} 張
                             </strong>
+                          </div>
+                          <div className="mt-3 rounded-xl border border-sky-100 bg-sky-50 px-3 py-2 text-xs font-bold leading-5 text-sky-900">
+                            {item.safetyByGrid[item.grid].blocked.length
+                              ? `需調整：${item.safetyByGrid[item.grid].blocked.slice(0, 2).join("；")}`
+                              : `安全切線已分析；原圖留白不足 8.5% 的貼圖有 ${item.safetyByGrid[item.grid].warnings.length} 張，切圖後會自動置中補白。`}
                           </div>
                           <div className="mt-3 rounded-xl border border-violet-100 bg-white/80 p-2">
                             <p className="text-[10px] font-bold leading-4 text-slate-500">
@@ -2543,6 +2654,7 @@ export default function LineStickerTool() {
                     type="button"
                     disabled={
                       loading ||
+                      unsafeMotherSheets.length > 0 ||
                       ((flowProject || motherSheetGrid === "auto") &&
                         !motherSheetPlanCheck.valid)
                     }
@@ -2557,6 +2669,11 @@ export default function LineStickerTool() {
               ) : null}
             </section>
 
+            {motherSheetSafetyResult ? (
+              <div role="status" className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-bold leading-6 text-sky-900">
+                {motherSheetSafetyResult}
+              </div>
+            ) : null}
             <section
               id="line-sticker-pack-tool"
               onClick={() => fileInputRef.current?.click()}
