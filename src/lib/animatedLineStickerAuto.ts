@@ -1,3 +1,5 @@
+import { auditStickerFrames, LINE_RECOMMENDED_DISTINCT_FRAMES } from "./animatedStickerFrameQuality";
+
 export type AutoMotionPreset =
   | "auto"
   | "salute"
@@ -464,6 +466,50 @@ function renderFrames(
   });
 }
 
+/**
+ * Preserve the original first/last loop pose. If an auto preset has fewer
+ * than five visibly different frames (e.g. subtle breathe on a small image),
+ * apply small offsets to intermediate frames only. Do not add random noise or
+ * change text/color/alpha content to fabricate uniqueness.
+ */
+function ensureVisibleMotion(canvases: HTMLCanvasElement[], renderScale: number) {
+  const read = (canvas: HTMLCanvasElement) => {
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) throw new Error("無法檢查動畫影格。");
+    return ctx.getImageData(0, 0, canvas.width, canvas.height);
+  };
+  const initial = auditStickerFrames(canvases.map(read));
+  if (initial.distinct >= LINE_RECOMMENDED_DISTINCT_FRAMES) return { canvases, repaired: false };
+
+  const offsets: Array<[number, number]> = [
+    [0, 0], [2, -2], [-3, 1], [3, 2], [-2, -3], [4, -1], [-4, 2], [0, 0],
+  ];
+  const adjusted = [...canvases];
+  for (let pass = 0; pass < 2; pass++) {
+    const audit = auditStickerFrames(adjusted.map(read));
+    if (audit.distinct >= LINE_RECOMMENDED_DISTINCT_FRAMES) break;
+    for (const index of audit.duplicateIndices) {
+      // Frame 0 is the baseline; frame 7 closes the loop smoothly.
+      if (index === 0 || index === adjusted.length - 1) continue;
+      const old = adjusted[index];
+      const shifted = document.createElement("canvas");
+      shifted.width = old.width;
+      shifted.height = old.height;
+      const ctx = shifted.getContext("2d");
+      if (!ctx) throw new Error("無法修正動態畫格。");
+      const [dx, dy] = offsets[index % offsets.length];
+      // Every pass starts from the source frame so it never accumulates blur.
+      ctx.drawImage(canvases[index], dx * renderScale * (pass + 1), dy * renderScale * (pass + 1));
+      adjusted[index] = shifted;
+    }
+  }
+  const final = auditStickerFrames(adjusted.map(read));
+  if (final.distinct < LINE_RECOMMENDED_DISTINCT_FRAMES) {
+    throw new Error(`此圖片只有 ${final.distinct} 個有效動態畫格，無法自動補足。請更換動作效果或重新上傳。`);
+  }
+  return { canvases: adjusted, repaired: true };
+}
+
 function canvasToPngFile(canvas: HTMLCanvasElement, name: string): Promise<File> {
   return new Promise((resolve, reject) => {
     canvas.toBlob((blob) => {
@@ -476,19 +522,34 @@ function canvasToPngFile(canvas: HTMLCanvasElement, name: string): Promise<File>
   });
 }
 
+export async function generateAutoAnimationWithQuality(
+  sourceFile: File,
+  preset: AutoMotionPreset,
+  renderScale: 1 | 2 = 1,
+): Promise<{ files: File[]; distinctFrames: number; repaired: boolean }> {
+  const image = await loadImage(sourceFile);
+  const normalized = normalizeSource(image, renderScale);
+  const result = ensureVisibleMotion(renderFrames(normalized, preset, renderScale), renderScale);
+  const rendered = result.canvases.map((canvas) => {
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) throw new Error("無法檢查動畫畫格。");
+    return ctx.getImageData(0, 0, canvas.width, canvas.height);
+  });
+  const distinctFrames = auditStickerFrames(rendered).distinct;
+  const files = await Promise.all(
+    result.canvases.map((canvas, index) => canvasToPngFile(
+      canvas,
+      `auto_frame_${String(index + 1).padStart(3, "0")}.png`,
+    )),
+  );
+  return { files, distinctFrames, repaired: result.repaired };
+}
+
 export async function generateAutoAnimationFrameFiles(
   sourceFile: File,
   preset: AutoMotionPreset,
   renderScale: 1 | 2 = 1,
 ): Promise<File[]> {
-  // LINE APNG 固定 1 倍 320x270；高清展示才以 2 倍 640x540 先繪製再合成。
-  const image = await loadImage(sourceFile);
-  const normalized = normalizeSource(image, renderScale);
-  const frames = renderFrames(normalized, preset, renderScale);
-  return Promise.all(
-    frames.map((canvas, index) => canvasToPngFile(
-      canvas,
-      `auto_frame_${String(index + 1).padStart(3, "0")}.png`,
-    )),
-  );
+  // LINE APNG stays 320×270; HD preview uses 640×540.
+  return (await generateAutoAnimationWithQuality(sourceFile, preset, renderScale)).files;
 }
