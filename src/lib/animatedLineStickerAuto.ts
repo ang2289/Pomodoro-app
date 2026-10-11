@@ -282,8 +282,10 @@ function splitLayers(source: HTMLCanvasElement, renderScale = 1): {
 
   const textIds = new Set(textCandidates.map((component) => component.id));
   const characterIds = new Set([character.id]);
+  // Preserve every small detached detail (punctuation, hair, gloves,
+  // accessories, decoration). Filtering by area used to drop these pixels.
   const accentIds = new Set(
-    meaningful
+    components
       .filter((component) => !textIds.has(component.id) && component.id !== character.id)
       .map((component) => component.id),
   );
@@ -324,11 +326,12 @@ function getTransforms(preset: AutoMotionPreset, frameIndex: number) {
   const bounceScaleY = [1, 0.91, 1.08, 1.025, 1, 1.035, 0.98, 1][frameIndex];
   const shakeRotation = [0, -5.5, 5.5, -3.2, 0, 3.5, -2, 0][frameIndex];
   const nodRotation = [0, -2.2, 3.8, 6.2, 3.2, -1.8, 1.2, 0][frameIndex];
-  const accentOpacity = [0.35, 0.78, 1, 0.5, 1, 0.75, 0.38, 0.35][frameIndex];
+  // Never fade original accent layers: detached sleeves, hair and text dots
+  // must remain fully opaque throughout the animation.
 
   const text: Transform = {};
   const character: Transform = {};
-  const accents: Transform = { opacity: accentOpacity };
+  const accents: Transform = { opacity: 1 };
 
   if (preset === "auto" || preset === "textPop") {
     text.scaleX = textScale;
