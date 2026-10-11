@@ -522,19 +522,34 @@ function canvasToPngFile(canvas: HTMLCanvasElement, name: string): Promise<File>
   });
 }
 
+export async function generateAutoAnimationWithQuality(
+  sourceFile: File,
+  preset: AutoMotionPreset,
+  renderScale: 1 | 2 = 1,
+): Promise<{ files: File[]; distinctFrames: number; repaired: boolean }> {
+  const image = await loadImage(sourceFile);
+  const normalized = normalizeSource(image, renderScale);
+  const result = ensureVisibleMotion(renderFrames(normalized, preset, renderScale), renderScale);
+  const rendered = result.canvases.map((canvas) => {
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) throw new Error("無法檢查動畫畫格。");
+    return ctx.getImageData(0, 0, canvas.width, canvas.height);
+  });
+  const distinctFrames = auditStickerFrames(rendered).distinct;
+  const files = await Promise.all(
+    result.canvases.map((canvas, index) => canvasToPngFile(
+      canvas,
+      `auto_frame_${String(index + 1).padStart(3, "0")}.png`,
+    )),
+  );
+  return { files, distinctFrames, repaired: result.repaired };
+}
+
 export async function generateAutoAnimationFrameFiles(
   sourceFile: File,
   preset: AutoMotionPreset,
   renderScale: 1 | 2 = 1,
 ): Promise<File[]> {
-  // LINE APNG 固定 1 倍 320x270；高清展示才以 2 倍 640x540 先繪製再合成。
-  const image = await loadImage(sourceFile);
-  const normalized = normalizeSource(image, renderScale);
-  const frames = ensureVisibleMotion(renderFrames(normalized, preset, renderScale), renderScale).canvases;
-  return Promise.all(
-    frames.map((canvas, index) => canvasToPngFile(
-      canvas,
-      `auto_frame_${String(index + 1).padStart(3, "0")}.png`,
-    )),
-  );
+  // LINE APNG stays 320×270; HD preview uses 640×540.
+  return (await generateAutoAnimationWithQuality(sourceFile, preset, renderScale)).files;
 }
