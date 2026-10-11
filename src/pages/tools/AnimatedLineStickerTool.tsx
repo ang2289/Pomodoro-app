@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { requireDistinctLineFrames } from "@/lib/animatedStickerFrameQuality";
 import { Helmet } from "react-helmet-async";
 import { useTranslation } from "react-i18next";
 import SEO, { getBaseUrl } from "@/components/SEO";
@@ -301,6 +302,13 @@ async function createSizedApngFromCanvases(
   const remainderMs = totalDurationMs - baseDelayMs * canvases.length;
   const frameDelaysMs = canvases.map((_, index) => baseDelayMs + (index < remainderMs ? 1 : 0));
 
+  const renderedImages = canvases.map((canvas) => {
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) throw new Error(t("animated_line_sticker.error_canvas_create"));
+    return ctx.getImageData(0, 0, width, height);
+  });
+  requireDistinctLineFrames(renderedImages, "main.png");
+
   const pngSignature = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
   const ihdrData = concatBytes([
     u32(width),
@@ -317,9 +325,7 @@ async function createSizedApngFromCanvases(
   let sequence = 0;
   let previousImageData: ImageData | null = null;
   for (let i = 0; i < canvases.length; i += 1) {
-    const ctx = canvases[i].getContext("2d", { willReadFrequently: true });
-    if (!ctx) throw new Error(t("animated_line_sticker.error_canvas_create"));
-    const imageData = ctx.getImageData(0, 0, width, height);
+    const imageData = renderedImages[i];
     const bounds = i === 0 ? fullImageDataBounds(imageData) : detectChangedBounds(previousImageData, imageData);
     const encodedImageData = i === 0 ? imageData : cropImageData(imageData, bounds);
     const compressed = await deflateBytes(toPngScanlines(encodedImageData), t);
@@ -916,6 +922,10 @@ async function createApngBlob(
   const remainderMs = totalDurationMs - baseDelayMs * frames.length;
   const frameDelaysMs = frames.map((_, index) => baseDelayMs + (index < remainderMs ? 1 : 0));
   const renderData = await prepareLineRenderData(frames, t);
+  const renderedImages = renderData.images.map((image, index) =>
+    getPreparedFrameImageData(image, renderData.plans[index], options),
+  );
+  requireDistinctLineFrames(renderedImages, "animated-sticker.png");
 
   const pngSignature = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
   const ihdrData = concatBytes([
@@ -933,7 +943,7 @@ async function createApngBlob(
   let sequence = 0;
   let previousImageData: ImageData | null = null;
   for (let i = 0; i < frames.length; i += 1) {
-    const imageData = getPreparedFrameImageData(renderData.images[i], renderData.plans[i], options);
+    const imageData = renderedImages[i];
 
     // APNG 若每一禎都用完整 320×270 RGBA 打包，12～20 禎很容易超過 1MB，
     // 甚至讓瀏覽器壓縮卡住。第 2 禎之後改用「差異矩形」：只寫入和上一禎不同的區域。
