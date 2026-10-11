@@ -363,6 +363,8 @@ async function createLineMainImageApngBlob(
   t: Translate
 ): Promise<Blob> {
   if (frames.length < 5) throw new Error("主要圖片 APNG 至少需要 5 禎。請先上傳完整動畫禎。");
+  const opaque = frames.find((frame) => frame.transparent === false);
+  if (opaque) throw new Error(`${opaque.name} 沒有透明背景，請先去背再匯出 main.png。`);
 
   const renderData = await prepareLineRenderData(frames, t);
   const baseCanvases = renderData.images.map((image, index) => {
@@ -919,6 +921,8 @@ async function createApngBlob(
   options: { contentScale?: number; quantizeBits?: number } = {}
 ) {
   if (frames.length < 5) throw new Error(t("animated_line_sticker.error_min_frames_apng"));
+  const opaque = frames.find((frame) => frame.transparent === false);
+  if (opaque) throw new Error(`${opaque.name} 沒有透明背景，請先去背再匯出 LINE APNG。`);
 
   // LINE Creators Market 對動畫貼圖的「單次播放時間」檢查很嚴格：
   // 只能是 1 / 2 / 3 / 4 秒，不能出現 1.998 秒、2.004 秒這種四捨五入誤差。
@@ -2154,6 +2158,9 @@ const AnimatedLineStickerTool: React.FC = () => {
       for (let i = 0; i < batchSources.length; i += 1) {
         const item = batchSources[i];
         const stickerName = `${String(i + 1).padStart(2, "0")}.png`;
+        if (item.transparent === false) {
+          throw new Error(`${stickerName} 來源圖片不是透明背景，請先去背。`);
+        }
         setBatchStatus(
           t("animated_line_sticker.batch_status_item", {
             current: i + 1,
