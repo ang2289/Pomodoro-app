@@ -2176,6 +2176,7 @@ const AnimatedLineStickerTool: React.FC = () => {
     try {
       for (let i = 0; i < batchSources.length; i += 1) {
         const item = batchSources[i];
+        const stickerName = `${String(i + 1).padStart(2, "0")}.png`;
         setBatchStatus(
           t("animated_line_sticker.batch_status_item", {
             current: i + 1,
@@ -2197,7 +2198,8 @@ const AnimatedLineStickerTool: React.FC = () => {
                   i % MIXED_BATCH_MOTION_PRESETS.length
                 ]
               : batchMotionPreset;
-        const motion = await generateAutoAnimationWithQuality(item.file, motionPreset);
+        const motion = await generateAutoAnimationWithQuality(item.file, motionPreset)
+          .catch((error: Error) => { throw new Error(`${stickerName} 動畫檢查失敗：${error.message}`); });
         const generatedFrames = await Promise.all(
           motion.files.map((file) => readImageFile(file, t)),
         );
@@ -2212,8 +2214,7 @@ const AnimatedLineStickerTool: React.FC = () => {
               setBatchStatus(
                 `[${i + 1}/${batchSources.length}] ${status}`,
               ),
-          );
-          const stickerName = `${String(i + 1).padStart(2, "0")}.png`;
+          ).catch((error: Error) => { throw new Error(`${stickerName} 輸出檢查失敗：${error.message}`); });
           const stickerData = new Uint8Array(await apng.arrayBuffer());
           verifyLineOutputPng(stickerData, stickerName, OUTPUT_WIDTH, OUTPUT_HEIGHT, true);
           files.push({ name: stickerName, data: stickerData });
@@ -2295,7 +2296,7 @@ const AnimatedLineStickerTool: React.FC = () => {
       );
     } catch (error: any) {
       setBatchProgress(0);
-      setBatchStatus("");
+      setBatchStatus("未通過上架前檢查；未下載不合格 ZIP");
       setBatchMessage(
         error?.message || t("animated_line_sticker.batch_error_failed"),
       );
