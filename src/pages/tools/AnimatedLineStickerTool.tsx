@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { requireDistinctLineFrames } from "@/lib/animatedStickerFrameQuality";
+import { verifyLinePngBytes } from "@/lib/lineApngFileQuality";
 import { Helmet } from "react-helmet-async";
 import { useTranslation } from "react-i18next";
 import SEO, { getBaseUrl } from "@/components/SEO";
@@ -394,9 +395,13 @@ async function createLineSmallImagesZip(frames: FrameItem[], durationSec: number
     "注意：聊天室標籤圖片右上角的小播放符號由 LINE 系統自動加上，請不要自己加。",
   ].join("\n");
 
+  const mainData = new Uint8Array(await mainBlob.arrayBuffer());
+  const tabData = new Uint8Array(await tabBlob.arrayBuffer());
+  verifyLineOutputPng(mainData, "main_240x240.png", LINE_MAIN_IMAGE_WIDTH, LINE_MAIN_IMAGE_HEIGHT, true);
+  verifyLineOutputPng(tabData, "tab_96x74.png", LINE_TAB_ICON_WIDTH, LINE_TAB_ICON_HEIGHT, false);
   return makeZip([
-    { name: "main_240x240.png", data: new Uint8Array(await mainBlob.arrayBuffer()) },
-    { name: "tab_96x74.png", data: new Uint8Array(await tabBlob.arrayBuffer()) },
+    { name: "main_240x240.png", data: mainData },
+    { name: "tab_96x74.png", data: tabData },
     { name: "readme.txt", data: new TextEncoder().encode(note) },
   ]);
 }
@@ -1043,37 +1048,9 @@ function toDosDateTime(date = new Date()) {
 }
 
 
-/** ZIP 打包前以位元組檢查真實 PNG / APNG，而非只信任副檔名。 */
+/** Validate CRC, frame counts, dimensions, duration and loops. */
 function verifyLineOutputPng(data: Uint8Array, name: string, width: number, height: number, animated: boolean) {
-  const signature = [137, 80, 78, 71, 13, 10, 26, 10];
-  if (data.length < 33 || !signature.every((byte, index) => data[index] === byte)) {
-    throw new Error(`${name} 不是有效 PNG，請重新產生。`);
-  }
-  const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
-  if (view.getUint32(16) !== width || view.getUint32(20) !== height) {
-    throw new Error(`${name} 尺寸不正確：LINE 要求 ${width}×${height}px。`);
-  }
-  let offset = 8;
-  let frameCount = 0;
-  let hasAnimationControl = false;
-  let hasEnd = false;
-  while (offset + 12 <= data.length) {
-    const length = view.getUint32(offset);
-    const end = offset + 12 + length;
-    if (end > data.length) throw new Error(`${name} PNG 資料不完整。`);
-    const type = String.fromCharCode(data[offset + 4], data[offset + 5], data[offset + 6], data[offset + 7]);
-    if (type === "acTL") hasAnimationControl = true;
-    if (type === "fcTL") frameCount++;
-    if (type === "IEND") { hasEnd = true; break; }
-    offset = end;
-  }
-  if (!hasEnd) throw new Error(`${name} PNG 缺少結束標記，請重新輸出。`);
-  if (animated && (!hasAnimationControl || frameCount < 5 || frameCount > 20)) {
-    throw new Error(`${name} 必須是 5～20 畫格的 APNG，不能只用靜態 PNG 改檔名。`);
-  }
-  if (!animated && hasAnimationControl) {
-    throw new Error(`${name} 必須是靜態 PNG。`);
-  }
+  return verifyLinePngBytes(data, name, width, height, animated);
 }
 
 function makeZip(files: { name: string; data: Uint8Array }[]) {
@@ -2258,7 +2235,7 @@ const AnimatedLineStickerTool: React.FC = () => {
 
       // 上架 ZIP 僅包含貼圖、main、tab；不再混入 README 與報告文字檔。
       // 每張 APNG 的檔案大小留在畫面預覽區，避免使用者誤傳報告到 LINE。
-      const oversized = files.filter((file) => file.data.byteLength > LINE_APNG_MAX_BYTES);
+      const oversized = files.filter((file) => file.data.byteLength >= LINE_APNG_MAX_BYTES);
       if (oversized.length > 0) {
         replaceBatchAnimatedPreviews(completedPreviews);
         setBatchProgress(92);
@@ -2400,6 +2377,9 @@ const AnimatedLineStickerTool: React.FC = () => {
         })),
       ];
 
+      verifyLineOutputPng(files[0].data, "animated-sticker.png", OUTPUT_WIDTH, OUTPUT_HEIGHT, true);
+      verifyLineOutputPng(files[1].data, "main.png", LINE_MAIN_IMAGE_WIDTH, LINE_MAIN_IMAGE_HEIGHT, true);
+      verifyLineOutputPng(files[2].data, "tab.png", LINE_TAB_ICON_WIDTH, LINE_TAB_ICON_HEIGHT, false);
       const readme = [
         "RxV 自備分鏡動態貼圖打包",
         `分鏡張數：${frames.length}`,
@@ -2423,6 +2403,7 @@ const AnimatedLineStickerTool: React.FC = () => {
       });
 
       const zip = makeZip(files);
+      if (zip.size >= MAX_LINE_ZIP_MB * 1024 * 1024) throw new Error("自備分鏡 ZIP 超過 60MB，已停止下載。");
       downloadBlob(zip, "rxv-manual-storyboard-dynamic-pack.zip");
       setMessage(
         apng.size <= LINE_APNG_MAX_BYTES
@@ -2484,6 +2465,7 @@ const AnimatedLineStickerTool: React.FC = () => {
       await new Promise((resolve) => window.setTimeout(resolve, 30));
       const apng = await createLineSafeApngBlob(frames, durationSec, loopCount, t, setExportStatus);
       const sizeKb = Math.round(apng.size / 1024);
+      verifyLineOutputPng(new Uint8Array(await apng.arrayBuffer()), "animated-sticker.png", OUTPUT_WIDTH, OUTPUT_HEIGHT, true);
       downloadBlob(apng, "rxv-line-dynamic-sticker-apng.png");
       setMessage(
         apng.size <= LINE_APNG_MAX_BYTES
