@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { requireDistinctLineFrames } from "@/lib/animatedStickerFrameQuality";
 import { Helmet } from "react-helmet-async";
 import { useTranslation } from "react-i18next";
 import SEO, { getBaseUrl } from "@/components/SEO";
@@ -14,6 +15,7 @@ import { createWhatsAppTrayPng, partitionWhatsAppPacks } from "@/lib/whatsAppSti
 import {
   AUTO_MOTION_PRESETS,
   generateAutoAnimationFrameFiles,
+  generateAutoAnimationWithQuality,
   type AutoMotionPreset,
 } from "@/lib/animatedLineStickerAuto";
 
@@ -102,6 +104,8 @@ type BatchAnimatedPreview = {
   url: string;
   sizeKb: number;
   overLimit: boolean;
+  distinctFrames?: number;
+  motionRepaired?: boolean;
 };
 
 type MotionPresetGalleryItem = {
@@ -301,6 +305,13 @@ async function createSizedApngFromCanvases(
   const remainderMs = totalDurationMs - baseDelayMs * canvases.length;
   const frameDelaysMs = canvases.map((_, index) => baseDelayMs + (index < remainderMs ? 1 : 0));
 
+  const renderedImages = canvases.map((canvas) => {
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) throw new Error(t("animated_line_sticker.error_canvas_create"));
+    return ctx.getImageData(0, 0, width, height);
+  });
+  requireDistinctLineFrames(renderedImages, "main.png");
+
   const pngSignature = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
   const ihdrData = concatBytes([
     u32(width),
@@ -317,9 +328,7 @@ async function createSizedApngFromCanvases(
   let sequence = 0;
   let previousImageData: ImageData | null = null;
   for (let i = 0; i < canvases.length; i += 1) {
-    const ctx = canvases[i].getContext("2d", { willReadFrequently: true });
-    if (!ctx) throw new Error(t("animated_line_sticker.error_canvas_create"));
-    const imageData = ctx.getImageData(0, 0, width, height);
+    const imageData = renderedImages[i];
     const bounds = i === 0 ? fullImageDataBounds(imageData) : detectChangedBounds(previousImageData, imageData);
     const encodedImageData = i === 0 ? imageData : cropImageData(imageData, bounds);
     const compressed = await deflateBytes(toPngScanlines(encodedImageData), t);
@@ -916,6 +925,10 @@ async function createApngBlob(
   const remainderMs = totalDurationMs - baseDelayMs * frames.length;
   const frameDelaysMs = frames.map((_, index) => baseDelayMs + (index < remainderMs ? 1 : 0));
   const renderData = await prepareLineRenderData(frames, t);
+  const renderedImages = renderData.images.map((image, index) =>
+    getPreparedFrameImageData(image, renderData.plans[index], options),
+  );
+  requireDistinctLineFrames(renderedImages, "animated-sticker.png");
 
   const pngSignature = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
   const ihdrData = concatBytes([
@@ -933,7 +946,7 @@ async function createApngBlob(
   let sequence = 0;
   let previousImageData: ImageData | null = null;
   for (let i = 0; i < frames.length; i += 1) {
-    const imageData = getPreparedFrameImageData(renderData.images[i], renderData.plans[i], options);
+    const imageData = renderedImages[i];
 
     // APNG 若每一禎都用完整 320×270 RGBA 打包，12～20 禎很容易超過 1MB，
     // 甚至讓瀏覽器壓縮卡住。第 2 禎之後改用「差異矩形」：只寫入和上一禎不同的區域。
@@ -2163,6 +2176,7 @@ const AnimatedLineStickerTool: React.FC = () => {
     try {
       for (let i = 0; i < batchSources.length; i += 1) {
         const item = batchSources[i];
+        const stickerName = `${String(i + 1).padStart(2, "0")}.png`;
         setBatchStatus(
           t("animated_line_sticker.batch_status_item", {
             current: i + 1,
@@ -2184,12 +2198,10 @@ const AnimatedLineStickerTool: React.FC = () => {
                   i % MIXED_BATCH_MOTION_PRESETS.length
                 ]
               : batchMotionPreset;
-        const generatedFiles = await generateAutoAnimationFrameFiles(
-          item.file,
-          motionPreset,
-        );
+        const motion = await generateAutoAnimationWithQuality(item.file, motionPreset)
+          .catch((error: Error) => { throw new Error(`${stickerName} 動畫檢查失敗：${error.message}`); });
         const generatedFrames = await Promise.all(
-          generatedFiles.map((file) => readImageFile(file, t)),
+          motion.files.map((file) => readImageFile(file, t)),
         );
 
         try {
@@ -2202,8 +2214,7 @@ const AnimatedLineStickerTool: React.FC = () => {
               setBatchStatus(
                 `[${i + 1}/${batchSources.length}] ${status}`,
               ),
-          );
-          const stickerName = `${String(i + 1).padStart(2, "0")}.png`;
+          ).catch((error: Error) => { throw new Error(`${stickerName} 輸出檢查失敗：${error.message}`); });
           const stickerData = new Uint8Array(await apng.arrayBuffer());
           verifyLineOutputPng(stickerData, stickerName, OUTPUT_WIDTH, OUTPUT_HEIGHT, true);
           files.push({ name: stickerName, data: stickerData });
@@ -2215,6 +2226,8 @@ const AnimatedLineStickerTool: React.FC = () => {
             blob: apng,
             sizeKb: Math.round(apng.size / 1024),
             overLimit: apng.size > LINE_APNG_MAX_BYTES,
+            distinctFrames: motion.distinctFrames,
+            motionRepaired: motion.repaired,
           });
           if (i === 0) {
             const mainBlob = await createLineMainImageApngBlob(
@@ -2279,11 +2292,11 @@ const AnimatedLineStickerTool: React.FC = () => {
         });
       }, 120);
       setBatchMessage(
-        `上架 ZIP 已下載，包含 ${batchSources.length} 張 APNG、main.png（APNG）、tab.png（靜態 PNG），共 ${files.length} 個圖片檔。已通過格式、尺寸及單檔 1MB／ZIP 60MB 檢查。仍請逐張確認文字與動畫內容，LINE 最終以官方審核為準。`,
+        `上架 ZIP 已下載，包含 ${batchSources.length} 張 APNG、main.png（APNG）、tab.png（靜態 PNG）。已逐張檢查至少 5 格明顯不同的動畫、尺寸、單檔 1MB 與 ZIP 60MB；其中 ${completedPreviews.filter((p) => p.motionRepaired).length} 張已自動微調重複畫格。請逐張確認人物、文字及背景透明；LINE 最終仍以官方審核為準。`,
       );
     } catch (error: any) {
       setBatchProgress(0);
-      setBatchStatus("");
+      setBatchStatus("未通過上架前檢查；未下載不合格 ZIP");
       setBatchMessage(
         error?.message || t("animated_line_sticker.batch_error_failed"),
       );
@@ -3137,7 +3150,7 @@ const AnimatedLineStickerTool: React.FC = () => {
                 <div className="mt-4 rounded-2xl bg-sky-50 p-3 text-xs leading-6 text-sky-900">
                   {exportPlatform === "whatsapp"
                     ? "輸出 WhatsApp 512×512 動畫 WebP 素材包，每張 500KB 上限；不會改成靜態圖片。"
-                    : t("animated_line_sticker.batch_output_summary")}
+                    : "LINE 上架前逐張檢查 APNG 畫格：至少 5 個明顯不同；自動修正重複畫格後再檢查。若仍不足會停止 ZIP 輸出並指出錯誤。"}
                   <p className="mt-2 font-bold">
                     {exportPlatform === "whatsapp"
                       ? "下載後需使用支援動態貼圖的 WhatsApp 相容貼圖 APP 匯入；無法直接將 ZIP 安裝到 WhatsApp。"
@@ -3371,6 +3384,12 @@ const AnimatedLineStickerTool: React.FC = () => {
                   <p className="mt-1 text-[10px] leading-4 text-slate-400">
                     點圖片可重播
                   </p>
+                  {exportPlatform === "line" && item.distinctFrames !== undefined ? (
+                    <p className="mt-1 text-[11px] font-bold leading-5 text-emerald-800">
+                      有效動畫：{item.distinctFrames}/8 格
+                      {item.motionRepaired ? " · 已自動微調重複格" : " · 已確認"}
+                    </p>
+                  ) : null}
                 </article>
               ))}
             </div>
