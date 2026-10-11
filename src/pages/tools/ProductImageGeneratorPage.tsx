@@ -2118,16 +2118,17 @@ export default function ProductImageGeneratorPage() {
               className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl"
             >
               <a
-                href={demo.src}
+                href={demo.src.replace(/\.png$/, "-detail.webp")}
                 target="_blank"
                 rel="noreferrer"
                 className="flex min-h-[230px] items-center justify-center bg-slate-50 p-3 sm:min-h-[280px]"
               >
                 <img
-                  src={demo.src}
+                  src={demo.src.replace(/\.png$/, "-preview.webp")}
                   alt={demo.title}
                   className="max-h-[320px] w-full object-contain"
                   loading="lazy"
+                  decoding="async"
                 />
               </a>
               <div className="p-4 sm:p-5">
@@ -2136,7 +2137,7 @@ export default function ProductImageGeneratorPage() {
                     {demo.tag}
                   </span>
                   <a
-                    href={demo.src}
+                    href={demo.src.replace(/\.png$/, "-detail.webp")}
                     target="_blank"
                     rel="noreferrer"
                     className="text-sm font-black text-emerald-700 underline underline-offset-4"
