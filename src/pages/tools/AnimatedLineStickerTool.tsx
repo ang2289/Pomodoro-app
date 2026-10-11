@@ -2272,10 +2272,13 @@ const AnimatedLineStickerTool: React.FC = () => {
         `上架 ZIP 已下載，包含 ${batchSources.length} 張 APNG、main.png（APNG）、tab.png（靜態 PNG）。已逐張檢查至少 5 格明顯不同的動畫、尺寸、單檔 1MB 與 ZIP 60MB；其中 ${completedPreviews.filter((p) => p.motionRepaired).length} 張已自動微調重複畫格。請逐張確認人物、文字及背景透明；LINE 最終仍以官方審核為準。`,
       );
     } catch (error: any) {
-      setBatchProgress(0);
+      // Keep all completed previews visible so the customer can identify the
+      // next failing sticker instead of restarting without any feedback.
+      if (completedPreviews.length) replaceBatchAnimatedPreviews(completedPreviews);
+      setBatchProgress(Math.round((completedPreviews.length / batchSources.length) * 90));
       setBatchStatus("未通過上架前檢查；未下載不合格 ZIP");
       setBatchMessage(
-        error?.message || t("animated_line_sticker.batch_error_failed"),
+        `已完成 ${completedPreviews.length}/${batchSources.length} 張；${error?.message || t("animated_line_sticker.batch_error_failed")}。請修正指定貼圖後重新製作。`,
       );
     } finally {
       setBatchBusy(false);
