@@ -498,8 +498,21 @@ function ensureVisibleMotion(canvases: HTMLCanvasElement[], renderScale: number)
       const ctx = shifted.getContext("2d");
       if (!ctx) throw new Error("無法修正動態畫格。");
       const [dx, dy] = offsets[index % offsets.length];
-      // Every pass starts from the source frame so it never accumulates blur.
-      ctx.drawImage(canvases[index], dx * renderScale * (pass + 1), dy * renderScale * (pass + 1));
+      const shiftX = dx * renderScale * (pass + 1);
+      const shiftY = dy * renderScale * (pass + 1);
+      // Refuse a repair if any visible character or text pixel would be
+      // clipped by the canvas edge. Keep a small safety margin as well.
+      const pixels = read(canvases[index]);
+      const bounds = detectBoundsFromData(pixels.data, pixels.width, pixels.height);
+      const margin = 4 * renderScale;
+      if (!bounds ||
+        bounds.left + shiftX < margin ||
+        bounds.top + shiftY < margin ||
+        bounds.right + shiftX > old.width - margin ||
+        bounds.bottom + shiftY > old.height - margin) continue;
+      // Every pass starts from the original, never from a previously shifted
+      // bitmap, to avoid progressively blurring fonts or costume details.
+      ctx.drawImage(canvases[index], shiftX, shiftY);
       adjusted[index] = shifted;
     }
   }
