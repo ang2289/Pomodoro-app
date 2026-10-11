@@ -14,6 +14,7 @@ const showcaseNames = [
   'drink-promo', 'shop-support-sticker', 'florist-sticker',
 ];
 const demoNames = ['demo-prompt', 'demo-result', 'demo-pack'];
+const productDemoNames = ['demo-dessert', 'demo-drink', 'demo-ecommerce', 'demo-food'];
 const jobs = [
   ...showcaseNames.flatMap((name) => [
     { source: `images/showcase/${name}.png`, target: `images/showcase/${name}-preview.webp`, width: 540, quality: 70 },
@@ -25,6 +26,10 @@ const jobs = [
     width: 820,
     quality: 72,
   })),
+  ...productDemoNames.flatMap((name) => [
+    { source: `images/product-demo/${name}.png`, target: `images/product-demo/${name}-preview.webp`, width: 640, quality: 76 },
+    { source: `images/product-demo/${name}.png`, target: `images/product-demo/${name}-detail.webp`, width: 1360, quality: 84 },
+  ]),
 ];
 async function statOrNull(file) {
   try { return await fs.stat(file); }
@@ -53,7 +58,9 @@ for (const job of jobs) {
   totalOptimized += optimized.size;
   console.log(`[rxv-images] ${job.target}: ${(optimized.size / 1024).toFixed(1)} KB`);
 }
-// Create a small, valid ICO with embedded 48px PNG; leave favicon.ico untouched.
+// Create a small, valid ICO with embedded 48px PNG. Replacing the oversized
+// public/favicon.ico is important: browsers/bots may request it directly even
+// when index.html points to favicon-small.ico.
 const primaryIcon = path.join(publicDir, 'icon.png');
 const faviconSource = (await statOrNull(primaryIcon))
   ? primaryIcon : path.join(publicDir, 'icons/icon-192.png');
@@ -64,7 +71,7 @@ const previousIcon = await statOrNull(iconTarget);
 if (!previousIcon || previousIcon.mtimeMs < faviconStat.mtimeMs) {
   const png = await sharp(faviconSource)
     .resize(48, 48, { fit: 'contain', background: '#ffffff' })
-    .png({ palette: true, compressionLevel: 9 })
+    .png({ compressionLevel: 9 })
     .toBuffer();
   const header = Buffer.alloc(22);
   header.writeUInt16LE(0, 0);
@@ -78,5 +85,20 @@ if (!previousIcon || previousIcon.mtimeMs < faviconStat.mtimeMs) {
   await fs.writeFile(iconTarget, Buffer.concat([header, png]));
   created++;
 }
-const iconSize = (await fs.stat(iconTarget)).size;
+// Keep a one-time local backup of the legacy 1.43MB favicon outside public/.
+// Browser requests to /favicon.ico then receive the same small valid ICO.
+const legacyIcon = path.join(publicDir, 'favicon.ico');
+const currentLegacy = await statOrNull(legacyIcon);
+const iconBytes = await fs.readFile(iconTarget);
+if (!currentLegacy || currentLegacy.size !== iconBytes.length) {
+  if (currentLegacy && currentLegacy.size > 50_000) {
+    const backupDir = path.join(root, '.rxv-image-opt-backup');
+    await fs.mkdir(backupDir, { recursive: true });
+    const backupFile = path.join(backupDir, 'favicon-original.ico');
+    if (!await statOrNull(backupFile)) await fs.copyFile(legacyIcon, backupFile);
+  }
+  await fs.writeFile(legacyIcon, iconBytes);
+  created++;
+}
+const iconSize = iconBytes.length;
 console.log(`[rxv-images] ${jobs.length} WebP outputs, ${created} updated; originals ${(totalOriginal / 1048576).toFixed(2)} MiB, previews/details ${(totalOptimized / 1048576).toFixed(2)} MiB; favicon ${(iconSize / 1024).toFixed(1)} KB.`);
