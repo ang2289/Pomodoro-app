@@ -58,3 +58,21 @@ test("all-transparent input never passes the motion gate", () => {
     Array.from({ length: 8 }, () => frame(0, true)), "empty.png",
   ), /只有 1\/8/);
 });
+
+test("rejects scattered opaque specks even when their count exceeds threshold", () => {
+  const a = frame();
+  const b = frame();
+  // 30 far-apart specks with no connected area cannot represent a pose.
+  for (let i = 0; i < 30; i++) {
+    const x = 4 + (i % 10) * 28;
+    const y = 4 + Math.floor(i / 10) * 24;
+    const offset = (y * b.width + x) * 4;
+    b.data[offset] = 255;
+    b.data[offset + 3] = 255;
+  }
+  assert.equal(auditStickerFrames([a, b]).distinct, 1);
+});
+
+test("a visibly displaced coherent object is distinct", () => {
+  assert.equal(auditStickerFrames([frame(0), frame(6)]).distinct, 2);
+});
