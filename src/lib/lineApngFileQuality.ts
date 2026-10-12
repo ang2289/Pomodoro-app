@@ -124,3 +124,90 @@ export function verifyLinePngBytes(
   }
   return { width, height, frames, loops, cycleSeconds, animated: hasAnimation };
 }
+
+
+/**
+ * Verify the actual composited pixels *inside* our exported APNG, not just the
+ * fcTL frame count. This decoder intentionally supports the format produced
+ * by the local RxV encoder: 8-bit RGBA, zlib/deflate, PNG scanline filter 0,
+ * APNG SOURCE blend (0) and NONE dispose (0). Unknown encodings fail closed.
+ *
+ * This must run after final quantization/compression and before the LINE ZIP
+ * download. The normal metadata+CRC verification is retained separately.
+ */
+export async function auditEncodedLineApngDistinctFrames(
+  data: Uint8Array,
+  filename: string,
+  expectedWidth: number,
+  expectedHeight: number,
+): Promise<import("./animatedStickerFrameQuality").StickerFrameAudit> {
+  const metadata = verifyLinePngBytes(data, filename, expectedWidth, expectedHeight, true);
+  const { requireDistinctLineFrames } = await import("./animatedStickerFrameQuality");
+  const decompressor = typeof DecompressionStream !== "undefined" ? DecompressionStream : null;
+  if (!decompressor) throw new Error(`${filename}：此瀏覽器缺少 APNG 解壓檢查功能，無法安全輸出上架 ZIP`);
+  type EncodedFrame = {
+    width: number; height: number; left: number; top: number;
+    compressed: Uint8Array[];
+  };
+  const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
+  const frames: EncodedFrame[] = [];
+  let current: EncodedFrame | null = null;
+  for (let offset = 8; offset + 12 <= data.length;) {
+    const length = view.getUint32(offset);
+    const end = offset + length + 12;
+    if (end > data.length) throw new Error(`${filename}：APNG chunk 超出資料長度`);
+    const kind = String.fromCharCode(...data.subarray(offset + 4, offset + 8));
+    const body = data.subarray(offset + 8, end - 4);
+    if (kind === "fcTL") {
+      if (current) frames.push(current);
+      const width = view.getUint32(offset + 12);
+      const height = view.getUint32(offset + 16);
+      const left = view.getUint32(offset + 20);
+      const top = view.getUint32(offset + 24);
+      if (view.getUint8(offset + 32) !== 0 || view.getUint8(offset + 33) !== 0) {
+        throw new Error(`${filename}：無法安全解碼非標準的動畫混合／清除模式`);
+      }
+      current = { width, height, left, top, compressed: [] };
+    } else if (kind === "IDAT" || kind === "fdAT") {
+      if (!current) throw new Error(`${filename}：APNG 影格資料順序錯誤`);
+      if (kind === "fdAT" && body.length < 4) throw new Error(`${filename}：fdAT 資料異常`);
+      current.compressed.push(kind === "fdAT" ? body.subarray(4) : body);
+    }
+    offset = end;
+    if (kind === "IEND") break;
+  }
+  if (current) frames.push(current);
+  if (frames.length !== metadata.frames) throw new Error(`${filename}：APNG 畫格數與內容不一致`);
+
+  const composite = new Uint8Array(metadata.width * metadata.height * 4);
+  const rendered: { width: number; height: number; data: Uint8Array }[] = [];
+  for (let index = 0; index < frames.length; index++) {
+    const frame = frames[index];
+    const size = frame.compressed.reduce((total, bytes) => total + bytes.byteLength, 0);
+    if (size < 2) throw new Error(`${filename}：第 ${index + 1} 格缺少壓縮影像`);
+    const compressed = new Uint8Array(size);
+    let pos = 0;
+    for (const bytes of frame.compressed) { compressed.set(bytes, pos); pos += bytes.byteLength; }
+    let inflated: Uint8Array;
+    try {
+      const buffer = await new Response(
+        new Blob([compressed.buffer]).stream().pipeThrough(new decompressor("deflate")),
+      ).arrayBuffer();
+      inflated = new Uint8Array(buffer);
+    } catch {
+      throw new Error(`${filename}：第 ${index + 1} 格 APNG 解壓失敗`);
+    }
+    const stride = frame.width * 4;
+    if (inflated.byteLength !== (stride + 1) * frame.height) {
+      throw new Error(`${filename}：第 ${index + 1} 格解壓後資料長度不正確`);
+    }
+    for (let y = 0; y < frame.height; y++) {
+      const input = y * (stride + 1);
+      if (inflated[input] !== 0) throw new Error(`${filename}：第 ${index + 1} 格不是預期的 RGBA 無濾鏡格式`);
+      const dest = ((frame.top + y) * metadata.width + frame.left) * 4;
+      composite.set(inflated.subarray(input + 1, input + 1 + stride), dest);
+    }
+    rendered.push({ width: metadata.width, height: metadata.height, data: composite.slice() });
+  }
+  return requireDistinctLineFrames(rendered, filename);
+}
