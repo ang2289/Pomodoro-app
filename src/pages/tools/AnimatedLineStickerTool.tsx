@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { requireDistinctLineFrames } from "@/lib/animatedStickerFrameQuality";
 import { WhatsAppMobileZipHandoff, type WhatsAppZipArchive } from "@/components/WhatsAppMobileZipHandoff";
-import { verifyLinePngBytes } from "@/lib/lineApngFileQuality";
+import { verifyLinePngBytes, auditEncodedLineApngDistinctFrames } from "@/lib/lineApngFileQuality";
 import { Helmet } from "react-helmet-async";
 import { useTranslation } from "react-i18next";
 import SEO, { getBaseUrl } from "@/components/SEO";
@@ -401,6 +401,7 @@ async function createLineSmallImagesZip(frames: FrameItem[], durationSec: number
   const mainData = new Uint8Array(await mainBlob.arrayBuffer());
   const tabData = new Uint8Array(await tabBlob.arrayBuffer());
   verifyLineOutputPng(mainData, "main_240x240.png", LINE_MAIN_IMAGE_WIDTH, LINE_MAIN_IMAGE_HEIGHT, true);
+  await auditEncodedLineApngDistinctFrames(mainData, "main_240x240.png", LINE_MAIN_IMAGE_WIDTH, LINE_MAIN_IMAGE_HEIGHT);
   verifyLineOutputPng(tabData, "tab_96x74.png", LINE_TAB_ICON_WIDTH, LINE_TAB_ICON_HEIGHT, false);
   return makeZip([
     { name: "main_240x240.png", data: mainData },
@@ -2206,6 +2207,8 @@ const AnimatedLineStickerTool: React.FC = () => {
           ).catch((error: Error) => { throw new Error(`${stickerName} 輸出檢查失敗：${error.message}`); });
           const stickerData = new Uint8Array(await apng.arrayBuffer());
           verifyLineOutputPng(stickerData, stickerName, OUTPUT_WIDTH, OUTPUT_HEIGHT, true);
+          // Check composited frames *after* the final APNG encoder and quantization.
+          const decodedAudit = await auditEncodedLineApngDistinctFrames(stickerData, stickerName, OUTPUT_WIDTH, OUTPUT_HEIGHT);
           files.push({ name: stickerName, data: stickerData });
           completedPreviews.push({
             id: "batch-preview-" + String(i + 1),
@@ -2215,7 +2218,7 @@ const AnimatedLineStickerTool: React.FC = () => {
             blob: apng,
             sizeKb: Math.round(apng.size / 1024),
             overLimit: apng.size > LINE_APNG_MAX_BYTES,
-            distinctFrames: motion.distinctFrames,
+            distinctFrames: decodedAudit.distinct,
             motionRepaired: motion.repaired,
           });
           if (i === 0) {
@@ -2235,6 +2238,7 @@ const AnimatedLineStickerTool: React.FC = () => {
             mainData = new Uint8Array(await mainBlob.arrayBuffer());
             tabData = new Uint8Array(await tabBlob.arrayBuffer());
             verifyLineOutputPng(mainData, "main.png", LINE_MAIN_IMAGE_WIDTH, LINE_MAIN_IMAGE_HEIGHT, true);
+            await auditEncodedLineApngDistinctFrames(mainData, "main.png", LINE_MAIN_IMAGE_WIDTH, LINE_MAIN_IMAGE_HEIGHT);
             verifyLineOutputPng(tabData, "tab.png", LINE_TAB_ICON_WIDTH, LINE_TAB_ICON_HEIGHT, false);
           }
         } finally {
@@ -2393,7 +2397,9 @@ const AnimatedLineStickerTool: React.FC = () => {
       ];
 
       verifyLineOutputPng(files[0].data, "animated-sticker.png", OUTPUT_WIDTH, OUTPUT_HEIGHT, true);
+      await auditEncodedLineApngDistinctFrames(files[0].data, "animated-sticker.png", OUTPUT_WIDTH, OUTPUT_HEIGHT);
       verifyLineOutputPng(files[1].data, "main.png", LINE_MAIN_IMAGE_WIDTH, LINE_MAIN_IMAGE_HEIGHT, true);
+      await auditEncodedLineApngDistinctFrames(files[1].data, "main.png", LINE_MAIN_IMAGE_WIDTH, LINE_MAIN_IMAGE_HEIGHT);
       verifyLineOutputPng(files[2].data, "tab.png", LINE_TAB_ICON_WIDTH, LINE_TAB_ICON_HEIGHT, false);
       const readme = [
         "RxV 自備分鏡動態貼圖打包",
@@ -2476,7 +2482,9 @@ const AnimatedLineStickerTool: React.FC = () => {
       await new Promise((resolve) => window.setTimeout(resolve, 30));
       const apng = await createLineSafeApngBlob(frames, durationSec, loopCount, t, setExportStatus);
       const sizeKb = Math.round(apng.size / 1024);
-      verifyLineOutputPng(new Uint8Array(await apng.arrayBuffer()), "animated-sticker.png", OUTPUT_WIDTH, OUTPUT_HEIGHT, true);
+      const apngData = new Uint8Array(await apng.arrayBuffer());
+      verifyLineOutputPng(apngData, "animated-sticker.png", OUTPUT_WIDTH, OUTPUT_HEIGHT, true);
+      await auditEncodedLineApngDistinctFrames(apngData, "animated-sticker.png", OUTPUT_WIDTH, OUTPUT_HEIGHT);
       downloadBlob(apng, "rxv-line-dynamic-sticker-apng.png");
       setMessage(`${t("animated_line_sticker.message_apng_success")}（約 ${sizeKb}KB；已通過輸出檔案檢查）`);
     } catch (error: any) {
