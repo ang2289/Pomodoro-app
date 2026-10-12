@@ -27,6 +27,7 @@ import {
   getRelatedToolsItems,
 } from "@/data/internalLinks";
 import JSZip from "jszip";
+import { WhatsAppMobileZipHandoff, type WhatsAppZipArchive } from "@/components/WhatsAppMobileZipHandoff";
 import { createWhatsAppTrayPng, createWhatsAppWebpSticker, partitionWhatsAppPacks } from "@/lib/whatsAppStickerExport";
 import { stickerSaleTextRisks } from "@/lib/stickerCommercialSafety";
 import { saveAs } from "file-saver";
@@ -1607,6 +1608,7 @@ export default function LineStickerTool() {
   const [exportPlatform, setExportPlatform] = useState<"line" | "whatsapp">(() =>
     readLineStickerProject()?.platform === "whatsapp" ? "whatsapp" : "line"
   );
+  const [whatsAppReadyZip, setWhatsAppReadyZip] = useState<WhatsAppZipArchive | null>(null);
   const [cropMode, setCropMode] = useState<LineStickerCropMode>("smart-safe");
   const [cropScale, setCropScale] = useState<number>(92);
   const [downloadCompleted, setDownloadCompleted] = useState(
@@ -2158,6 +2160,7 @@ export default function LineStickerTool() {
 
   const generateWhatsAppZip = useCallback(async () => {
     if (!canDownload || loading) return;
+    setWhatsAppReadyZip(null);
     if (qualityErrorCount > 0) {
       setError(`尚有 ${qualityErrorCount} 張嚴重品質問題，請先修正再輸出 WhatsApp 貼圖。`);
       return;
@@ -2216,7 +2219,9 @@ export default function LineStickerTool() {
         + "6. LINE 上架需要原本的 PNG / APNG ZIP，不能與 WhatsApp 混用。\\n"
       );
       const blob = await zip.generateAsync({ type: "blob" });
-      saveAs(blob, `rxv-whatsapp-static-${stickerCount}-webp.zip`);
+      const filename = `rxv-whatsapp-static-${stickerCount}-webp.zip`;
+      saveAs(blob, filename);
+      setWhatsAppReadyZip({ blob, filename });
       setExportCheckResult(`WhatsApp 靜態貼圖已輸出 ${stickerCount} 張（${sizes.length} 組），512×512 WebP、每張≤100KB、附貼圖集縮圖。此 ZIP 是素材包，仍須在 WhatsApp 或相容貼圖 APP 匯入。`);
       setDownloadCompleted(true);
       if (flowProject?.mode !== "animated") updateLineStickerProject({ stage: 5 });
@@ -2362,6 +2367,7 @@ export default function LineStickerTool() {
             <div className="mt-3 grid grid-cols-2 gap-3">
               <button type="button" onClick={() => {
                   setExportPlatform("line");
+                  setWhatsAppReadyZip(null);
                   updateLineStickerProject({ platform: "line" });
                   setExportCheckResult(null);
                   setDownloadCompleted(false);
@@ -2372,6 +2378,7 @@ export default function LineStickerTool() {
               </button>
               <button type="button" onClick={() => {
                   setExportPlatform("whatsapp");
+                  setWhatsAppReadyZip(null);
                   updateLineStickerProject({ platform: "whatsapp" });
                   setExportCheckResult(null);
                   setDownloadCompleted(false);
@@ -2398,6 +2405,7 @@ export default function LineStickerTool() {
                 查看 WhatsApp 官方建立及分享貼圖集說明
               </a>
             ) : null}
+            {exportPlatform === "whatsapp" && <WhatsAppMobileZipHandoff archive={whatsAppReadyZip} />}
             <div
               role="status"
               aria-live="polite"
