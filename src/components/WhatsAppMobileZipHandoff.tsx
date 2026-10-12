@@ -4,8 +4,7 @@ import { useState } from "react";
 export type WhatsAppZipArchive = { blob: Blob; filename: string };
 
 export function isAndroidPhone(): boolean {
-  return typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent) &&
-    /Mobile/i.test(navigator.userAgent);
+  return typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent);
 }
 
 export function WhatsAppMobileZipHandoff({ archive }: { archive: WhatsAppZipArchive | null }) {
@@ -42,9 +41,23 @@ export function WhatsAppMobileZipHandoff({ archive }: { archive: WhatsAppZipArch
           className="mt-3 min-h-12 w-full rounded-xl bg-violet-700 px-4 py-3 text-sm font-black text-white hover:bg-violet-800">
           將這份 ZIP 分享到 RXV 貼圖工廠
         </button>
+      ) : archive ? (
+        <button type="button" onClick={() => {
+          const url = URL.createObjectURL(archive.blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = archive.filename;
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          window.setTimeout(() => URL.revokeObjectURL(url), 15_000);
+          setStatus("ZIP 已再次下載。請開啟 RXV 貼圖工廠 APP → WA 匯入 → 選擇 ZIP，然後加入 WhatsApp。");
+        }} className="mt-3 min-h-12 w-full rounded-xl bg-violet-700 px-4 py-3 text-sm font-black text-white">
+          下載 ZIP，使用 RXV APP 匯入
+        </button>
       ) : (
         <p role="status" className="mt-3 rounded-xl bg-white p-3 text-sm font-bold leading-6 text-violet-900">
-          {archive ? "此瀏覽器無法直接分享 ZIP；請下載 ZIP，再從 RXV APP 的「WA 匯入」選檔。" : "完成 WhatsApp ZIP 下載後，這裡會顯示手機匯入按鈕。"}
+          完成 WhatsApp ZIP 後，這裡會顯示手機匯入按鈕。
         </p>
       )}
       <p className="mt-2 text-xs leading-5 text-slate-700">
