@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { requireDistinctLineFrames } from "@/lib/animatedStickerFrameQuality";
+import { WhatsAppMobileZipHandoff, type WhatsAppZipArchive } from "@/components/WhatsAppMobileZipHandoff";
 import { verifyLinePngBytes } from "@/lib/lineApngFileQuality";
 import { Helmet } from "react-helmet-async";
 import { useTranslation } from "react-i18next";
@@ -1576,6 +1577,7 @@ const AnimatedLineStickerTool: React.FC = () => {
   const [exportPlatform, setExportPlatform] = useState<"line" | "whatsapp">(() =>
     readLineStickerProject()?.platform === "whatsapp" ? "whatsapp" : "line"
   );
+  const [whatsAppReadyZip, setWhatsAppReadyZip] = useState<WhatsAppZipArchive | null>(null);
   const [batchBusy, setBatchBusy] = useState(false);
   const [batchProgress, setBatchProgress] = useState(0);
   const [batchStatus, setBatchStatus] = useState("");
@@ -2077,6 +2079,7 @@ const AnimatedLineStickerTool: React.FC = () => {
 
   const exportWhatsAppAnimatedPack = async () => {
     if (batchBusy || batchVideoBusy || ![8, 16, 24].includes(batchSources.length)) return;
+    setWhatsAppReadyZip(null);
     setBatchBusy(true);
     setBatchProgress(0);
     setBatchMessage("");
@@ -2129,7 +2132,9 @@ const AnimatedLineStickerTool: React.FC = () => {
       }
       const zip = makeZip(zipFiles);
       replaceBatchAnimatedPreviews(previews);
-      downloadBlob(zip, `rxv-whatsapp-animated-${batchSources.length}-webp.zip`);
+      const filename = `rxv-whatsapp-animated-${batchSources.length}-webp.zip`;
+      downloadBlob(zip, filename);
+      setWhatsAppReadyZip({ blob: zip, filename });
       setBatchStatus("WhatsApp 動畫 ZIP 製作完成");
       setBatchMessage(`完成 ${batchSources.length} 張 512×512 動態 WebP（每張≤500KB，共 ${packCounts.length} 組）。此 ZIP 是供相容貼圖 APP 匯入的素材包，不能直接當作 WhatsApp 一鍵安裝檔案。`);
       window.setTimeout(() => batchPreviewSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
@@ -2572,6 +2577,7 @@ const AnimatedLineStickerTool: React.FC = () => {
                 disabled={batchBusy || batchVideoBusy}
                 onClick={() => {
                   setExportPlatform(platform);
+                  setWhatsAppReadyZip(null);
                   updateLineStickerProject({ platform });
                   setBatchMessage("");
                 }}
@@ -3170,6 +3176,7 @@ const AnimatedLineStickerTool: React.FC = () => {
                 {batchStatus ? (
                   <p className="mt-2 text-xs font-bold leading-5 text-emerald-800">{batchStatus}</p>
                 ) : null}
+                {exportPlatform === "whatsapp" && <WhatsAppMobileZipHandoff archive={whatsAppReadyZip} />}
                 {batchMessage ? (
                   <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-xs font-bold leading-5 text-amber-800">
                     {batchMessage}
