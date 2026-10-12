@@ -387,12 +387,12 @@ export function getTransforms(preset: AutoMotionPreset, frameIndex: number) {
     character.scaleY = character.scaleX;
   }
   if (preset === "slideLeft") {
-    character.dx = [12, 8, 4, -2, 1, 0, 0, 0][frameIndex];
-    text.dx = [8, 5, 2, 0, 0, 0, 0, 0][frameIndex];
+    character.dx = [12, 8, 4, -2, 1, 0, 8, 12][frameIndex];
+    text.dx = [8, 5, 2, 0, 0, 0, 4, 8][frameIndex];
   }
   if (preset === "slideRight") {
-    character.dx = [-12, -8, -4, 2, -1, 0, 0, 0][frameIndex];
-    text.dx = [-8, -5, -2, 0, 0, 0, 0, 0][frameIndex];
+    character.dx = [-12, -8, -4, 2, -1, 0, -8, -12][frameIndex];
+    text.dx = [-8, -5, -2, 0, 0, 0, -4, -8][frameIndex];
   }
   if (preset === "breathe") {
     // 7 distinct smooth poses: no repeated rising/falling scale states.
