@@ -2420,11 +2420,7 @@ const AnimatedLineStickerTool: React.FC = () => {
       const zip = makeZip(files);
       if (zip.size >= MAX_LINE_ZIP_MB * 1024 * 1024) throw new Error("自備分鏡 ZIP 超過 60MB，已停止下載。");
       downloadBlob(zip, "rxv-manual-storyboard-dynamic-pack.zip");
-      setMessage(
-        apng.size <= LINE_APNG_MAX_BYTES
-          ? "自備分鏡動態貼圖包已下載：APNG、main、tab、整理後分鏡都已放進 ZIP。"
-          : `ZIP 已下載，但 APNG 約 ${Math.round(apng.size / 1024)}KB，超過 LINE 1MB 限制，請先調整後再送審。`,
-      );
+      setMessage("自備分鏡動態貼圖包已通過 APNG、main、tab 尺寸／容量／播放控制檢查並下載；送審前仍須人工檢查人物、文字與著作權。");
     } catch (error: any) {
       setMessage(
         error?.message || "自備分鏡打包失敗，請重新整理後再試一次。",
@@ -2482,11 +2478,7 @@ const AnimatedLineStickerTool: React.FC = () => {
       const sizeKb = Math.round(apng.size / 1024);
       verifyLineOutputPng(new Uint8Array(await apng.arrayBuffer()), "animated-sticker.png", OUTPUT_WIDTH, OUTPUT_HEIGHT, true);
       downloadBlob(apng, "rxv-line-dynamic-sticker-apng.png");
-      setMessage(
-        apng.size <= LINE_APNG_MAX_BYTES
-          ? `${t("animated_line_sticker.message_apng_success")}（約 ${sizeKb}KB）`
-          : `APNG 已下載，但目前約 ${sizeKb}KB，超過 LINE 單張 1MB 限制。可先用來預覽；正式上架前請減少禎數或簡化裝飾後再匯出。`
-      );
+      setMessage(`${t("animated_line_sticker.message_apng_success")}（約 ${sizeKb}KB；已通過輸出檔案檢查）`);
     } catch (error: any) {
       setMessage(error?.message || t("animated_line_sticker.error_apng_failed"));
     } finally {
