@@ -318,7 +318,7 @@ function drawLayer(
   context.restore();
 }
 
-function getTransforms(preset: AutoMotionPreset, frameIndex: number) {
+export function getTransforms(preset: AutoMotionPreset, frameIndex: number) {
   // v2：整體把動作幅度放大約 35%～80%，讓手機上預覽也能一眼看出差異。
   const textScale = [1, 0.9, 1.12, 1.03, 1, 1.055, 0.97, 1][frameIndex];
   const textY = [0, 7, -6, -2, 0, -2, 2, 0][frameIndex];
@@ -352,7 +352,9 @@ function getTransforms(preset: AutoMotionPreset, frameIndex: number) {
     character.dy = [0, 3, 6, 10, 5, -2, 1, 0][frameIndex];
   }
   if (preset === "sparkle") {
-    text.scaleX = [1, 1.025, 1.06, 1.025, 1, 1.04, 1, 1][frameIndex];
+    // Keep at least six actual poses even without repair. The former
+    // [1,1.025,1.06,1.025,1,1.04,1,1] contained only four distinct states.
+    text.scaleX = [1, 1.035, 1.07, 1.045, 1, 1.06, 1.022, 1][frameIndex];
     text.scaleY = text.scaleX;
   }
   if (preset === "pulse") {
@@ -393,11 +395,13 @@ function getTransforms(preset: AutoMotionPreset, frameIndex: number) {
     text.dx = [-8, -5, -2, 0, 0, 0, 0, 0][frameIndex];
   }
   if (preset === "breathe") {
-    const sx = [1, 1.025, 1.045, 1.06, 1.045, 1.025, 1, 1][frameIndex];
-    const sy = [1, 1.04, 1.075, 1.095, 1.075, 1.04, 1, 1][frameIndex];
+    // 7 distinct smooth poses: no repeated rising/falling scale states.
+    // Modest scaling also helps preserve outlines, hair and shirt edges.
+    const sx = [1, 1.025, 1.048, 1.07, 1.055, 1.036, 1.014, 1][frameIndex];
+    const sy = [1, 1.031, 1.058, 1.079, 1.063, 1.042, 1.016, 1][frameIndex];
     character.scaleX = sx;
     character.scaleY = sy;
-    character.dy = [0, -2, -4, -5, -3, -1, 0, 0][frameIndex];
+    character.dy = [0, -1, -3, -4, -3, -2, -1, 0][frameIndex];
   }
   return { text, character, accents };
 }
