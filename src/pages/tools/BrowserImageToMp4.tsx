@@ -3217,7 +3217,7 @@ export default function BrowserImageToMp4() {
                   🖼️ 圖片素材庫
                 </span>
                 <span className="mt-1 block text-xs leading-5 text-emerald-800">
-                  免費圖片＋付費完整素材庫／專業圖片包，找下一批影片素材。
+                  2,858 張圖片素材全部免費下載；選好圖片就能回來製作 MP4。
                 </span>
               </Link>
 
