@@ -10,9 +10,9 @@ type Props = {
 
 const BASE_STEPS = [
   { step: 1 as const, title: "選擇貼圖", desc: "選類型、主題與張數" },
-  { step: 2 as const, title: "ChatGPT 生圖", desc: "複製指令並產生母圖" },
-  { step: 3 as const, title: "上傳圖片", desc: "把母圖傳回本站" },
-  { step: 4 as const, title: "自動整理", desc: "切圖、去背、尺寸檢查" },
+  { step: 2 as const, title: "Google Gemini 畫圖", desc: "複製指令，到 Gemini 貼上生圖" },
+  { step: 3 as const, title: "上傳圖片", desc: "把完整大圖傳回 RXV" },
+  { step: 4 as const, title: "自動整理", desc: "一張大圖自動分成多張貼圖" },
 ];
 
 export default function LineStickerFlowSteps({
@@ -61,33 +61,25 @@ export default function LineStickerFlowSteps({
           跟著 1 → 2 → 3 → 4 → 5 完成
         </h2>
         <p className="mt-1 text-xs leading-5 text-slate-500">
-          紫色是目前階段，點下方「第幾步」即可前往對應操作；已完成的階段會標示勾選。
+          紫色是目前查看的步驟。點任何步驟都可回去查看，不會清除已選的內容。
         </p>
       </div>
 
-      <div className="mb-4 rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 via-white to-violet-50 px-4 py-3">
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-          <div className="min-w-0">
-            <p className="text-sm font-black text-amber-900">
-              🎁 RXV 免費貼圖製作工具
-            </p>
-            <p className="mt-1 text-xs leading-5 text-slate-600">
-              目前靜態貼圖整理、母圖切割、動畫效果與整套輸出都可免費使用。
-            </p>
-            <p className="mt-1 text-[11px] leading-5 text-slate-500">
-              第一次使用建議先選 8 或 16 張靜態貼圖，熟悉流程後再製作動態；LINE 上架仍需平台審核。
-            </p>
-          </div>
-          <span className="w-fit shrink-0 rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-black text-emerald-700">
-            目前免費開放
-          </span>
-        </div>
+      <div className="mb-4 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3">
+        <p className="text-sm font-black text-sky-900">先知道一件事：不是一張張畫貼圖</p>
+        <p className="mt-1 text-sm leading-6 text-slate-700">
+          用 Google Gemini 畫一張有 8 或 16 格的完整大圖（叫「母圖」），下載大圖後傳回 RXV，系統就會自動分割、去背及整理。
+        </p>
+        <p className="mt-1 text-xs leading-5 text-slate-600">
+          目前 RXV 貼圖工具免費使用；Google Gemini 的使用限制依 Google 帳號與服務規則為準。
+          <Link to="/tools/line-sticker-guide" className="ml-2 font-bold text-sky-800 underline underline-offset-2">看圖片操作教學 →</Link>
+        </p>
       </div>
 
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {steps.map((item) => {
           const active = item.step === activeStep;
-          const done = item.step < activeStep;
+          const previous = item.step < activeStep;
           return (
             <Link
               key={item.step}
@@ -97,8 +89,8 @@ export default function LineStickerFlowSteps({
               className={`block rounded-2xl border p-3 transition hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-violet-600 ${
                 active
                   ? "border-violet-500 bg-violet-50 ring-2 ring-violet-100"
-                  : done
-                    ? "border-emerald-200 bg-emerald-50"
+                  : previous
+                    ? "border-slate-200 bg-white"
                     : "border-slate-200 bg-slate-50"
               }`}
             >
@@ -107,12 +99,12 @@ export default function LineStickerFlowSteps({
                   className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-black ${
                     active
                       ? "bg-violet-600 text-white"
-                      : done
-                        ? "bg-emerald-600 text-white"
+                      : previous
+                        ? "bg-slate-200 text-slate-700"
                         : "bg-slate-100 text-slate-500"
                   }`}
                 >
-                  {done ? "✓" : item.step}
+                  {item.step}
                 </span>
                 <span className="min-w-[5.5rem] flex-1 whitespace-normal break-keep text-xs font-black leading-5 text-slate-900">第 {item.step} 步｜{item.title}</span>
               </div>
