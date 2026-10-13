@@ -17,6 +17,19 @@ if not exist "node_modules\@aws-sdk\client-s3" (
     exit /b 1
   )
 )
+echo Checking program syntax and rollback rules...
+node --check scripts\rxv-images-batch-free.mjs
+if errorlevel 1 (
+  echo Script syntax test failed. R2 was not modified.
+  pause
+  exit /b 1
+)
+node --test test\rxvImageFreeCatalog.test.mjs
+if errorlevel 1 (
+  echo Catalog safety tests failed. R2 was not modified.
+  pause
+  exit /b 1
+)
 powershell -NoProfile -STA -ExecutionPolicy Bypass -File "%~dp0RXV-IMAGES-FREE-GUI.ps1"
 if errorlevel 1 (
   echo GUI was unable to start. Console fallback:
