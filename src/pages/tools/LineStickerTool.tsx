@@ -2312,7 +2312,7 @@ export default function LineStickerTool() {
     <>
       <SEO
         title="LINE＋WhatsApp 貼圖製作工具｜母圖切割、去背、WebP 輸出 - RxV"
-        description="使用舊圖片或 ChatGPT 母圖，免費自動切割去背；LINE 可輸出 PNG 上架 ZIP，WhatsApp 靜態貼圖可輸出 512x512 WebP 素材包。"
+        description="使用舊圖片或 Google Gemini／ChatGPT 母圖，免費自動切割去背；LINE 可輸出 PNG 上架 ZIP，WhatsApp 靜態貼圖可輸出 512x512 WebP 素材包。"
         path="/tools/line-sticker"
         keywords="LINE貼圖, WhatsApp貼圖, WebP製作, 靜態貼圖轉檔, 自動去背, 免費工具"
         jsonLd={faqJsonLd}
@@ -2337,7 +2337,7 @@ export default function LineStickerTool() {
               第 3～4 步｜上傳母圖，自動整理貼圖
             </h1>
             <p className="text-slate-500 text-sm mt-1">
-              可直接上傳以前已生成的圖片、去背 PNG／WebP 或新的 ChatGPT 母圖，不需要重新產圖。系統會自動切割、去背並依 LINE 或 WhatsApp 規格整理。
+              將 Google Gemini 或其他 AI 畫出的「一整張母圖」存到手機或電腦，直接上傳這裡；不用自己切成 8 或 16 張，RXV 會自動切割、去背並整理。已有單張貼圖也可以直接上傳。
             </p>
             <p className="text-slate-500 text-sm mt-2">
               {t("line_sticker_hero_desc")}
@@ -2346,7 +2346,7 @@ export default function LineStickerTool() {
 
           <section className="mb-5 rounded-2xl border border-indigo-100 bg-white p-4 shadow-sm">
             <h2 className="text-sm font-black text-slate-900">一般客戶照著做就可以：5 個步驟</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-700">① 選靜態／動態與張數 → ② 使用原有圖片或 ChatGPT 生圖 → ③ 上傳母圖自動分割、去白底 → ④ 預覽並調整大小 → ⑤ 選擇 LINE 上架 ZIP 或 WhatsApp 靜態 WebP 素材包下載。</p>
+            <p className="mt-2 text-sm leading-6 text-slate-700">① 選貼圖種類與張數 → ② 複製指令到 Google Gemini 產生完整大圖 → ③ 回本站上傳大圖 → ④ 預覽自動切割、去背結果 → ⑤ 下載 ZIP；動態貼圖再進入動畫流程。</p>
             <p className="mt-2 text-xs leading-5 text-slate-500">裁切、去白底與尺寸整理都由本站處理；若去背不理想，再選擇外部進階工具。完成 ZIP 不代表 LINE 必定審核通過。</p>
             <Link to="/tools/line-sticker-guide" className="mt-3 inline-flex items-center rounded-lg bg-indigo-50 px-3 py-2 text-xs font-black text-indigo-700 hover:bg-indigo-100">查看完整圖文教學</Link>
             {exportCheckResult ? <p role="status" className="mt-3 rounded-xl bg-emerald-50 p-3 text-sm font-bold leading-6 text-emerald-800">{exportCheckResult}</p> : null}
@@ -2549,7 +2549,7 @@ export default function LineStickerTool() {
                     步驟 3
                   </p>
                   <h2 className="mt-1 text-base font-black text-slate-900">
-                    上傳母圖，後面交給系統自動整理
+                    第 3 步｜上傳整張大圖（不用先切割）
                   </h2>
                   <p className="mt-1 text-xs leading-relaxed text-slate-500">
                     先辨識 4×2／4×4／4×5 與格數，再安全切割。去背預設保護白色衣服、白色文字描邊及淺色道具；處理後可切換深色背景逐張檢查。若原圖本來已有透明背景，不會重覆去白。
@@ -3126,7 +3126,7 @@ export default function LineStickerTool() {
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                  可用來測試可愛貼紙角色、商品圖與品牌素材；有字 LINE 貼圖建議仍以 ChatGPT 產圖或後製加字。
+                  可用來測試可愛貼紙角色、商品圖與品牌素材；可先使用 Google Gemini 產圖；若中文字不清楚，可換 ChatGPT 生圖或後製加字。
                 </p>
                 <span
                   className="mt-4 inline-flex w-fit rounded-lg bg-blue-600 px-3 py-2 text-xs font-black !text-white group-hover:bg-blue-700"
@@ -3180,7 +3180,7 @@ export default function LineStickerTool() {
           {/* --- 修改結束 --- */}
 
           {/* --- 新增：品牌接案與行銷推廣服務區塊 --- */}
-          <section className="mt-10 mb-12 rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-amber-50 p-6 shadow-sm">
+          <section className="hidden mt-10 mb-12 rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-amber-50 p-6 shadow-sm">
             <div className="flex flex-wrap items-center gap-2 mb-3">
               <span className="bg-emerald-100 text-emerald-700 text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-tighter">
                 Custom Service
@@ -3269,7 +3269,7 @@ export default function LineStickerTool() {
           {/* --- 新增結束 --- */}
 
           {/* --- 新增：輕量贊助區塊（避免干擾使用者） --- */}
-          <section className="mt-10 mb-12 rounded-3xl border border-amber-200 bg-amber-50/70 p-5 shadow-sm">
+          <section className="hidden mt-10 mb-12 rounded-3xl border border-amber-200 bg-amber-50/70 p-5 shadow-sm">
             <div className="text-center">
               <h2 className="text-base font-black text-slate-900 tracking-tight">
                 ❤️ 支持免費工具開發
