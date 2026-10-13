@@ -182,11 +182,18 @@ function getDownloadButton(
 
 // 首批顯示 24 張，避免客戶誤以為圖片很少；後續按鈕再載入更多。
 const PAGE_SIZE = 24;
+const IMAGE_TO_MP4_TOOL_PATH = "/tools/image-to-mp4";
 
 export default function ImagesPage() {
   const { t } = useTranslation();
   const [downloadToastId, setDownloadToastId] = useState(0);
   const navigate = useNavigate();
+  const trackMp4ToolClick = (entryPoint: string) => {
+    trackEvent("image_to_mp4_tool_click", {
+      source_page: "images",
+      entry_point: entryPoint,
+    });
+  };
   const sharePageUrl = typeof window !== "undefined" ? window.location.href : "";
 
   const openShareWindow = (url: string) => {
@@ -285,7 +292,7 @@ export default function ImagesPage() {
 
     const timer = window.setTimeout(() => {
       setDownloadToastId(0);
-    }, 2200);
+    }, 8000);
 
     return () => window.clearTimeout(timer);
   }, [downloadToastId]);
@@ -708,6 +715,23 @@ export default function ImagesPage() {
         </div>
 
 
+        {/* RXV_IMAGE_TO_MP4_PUBLIC_CTA: browser-only video creation; never link local-only backend. */}
+        <section className="mb-6 flex flex-col gap-3 rounded-2xl border border-sky-200 bg-gradient-to-r from-sky-50 via-white to-violet-50 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-5">
+          <div>
+            <h2 className="text-lg font-black text-slate-900">下載圖片後，免費轉成 MP4 短影片</h2>
+            <p className="mt-1 text-sm leading-relaxed text-slate-600">
+              將剛下載的圖片匯入工具，可製作多圖輪播、加入音樂與字幕；直接在瀏覽器製作，不需安裝軟體。
+            </p>
+          </div>
+          <Link
+            to={IMAGE_TO_MP4_TOOL_PATH}
+            onClick={() => trackMp4ToolClick("library_above_images")}
+            className="inline-flex min-h-[48px] shrink-0 items-center justify-center rounded-xl bg-sky-700 px-5 py-3 text-sm font-black !text-white shadow-md transition hover:bg-sky-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-sky-300"
+          >
+            🎬 免費圖片轉 MP4
+          </Link>
+        </section>
+
         {loading && (
           <div className="text-center py-12">
             <p className="text-gray-600">{t("images_loading")}</p>
@@ -893,7 +917,21 @@ export default function ImagesPage() {
           <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
             🎨 免費圖片可以這樣使用
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
+            <Link
+              to={IMAGE_TO_MP4_TOOL_PATH}
+              onClick={() => trackMp4ToolClick("after_image_list")}
+              className="rounded-xl border border-sky-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-sky-400 hover:shadow-lg focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-sky-200"
+            >
+              <div className="mb-2 text-2xl">🎬</div>
+              <h4 className="mb-2 font-semibold text-slate-900">圖片轉 MP4 短影片</h4>
+              <p className="mb-4 text-sm text-gray-600">
+                將下載的圖片上傳，免費製作輪播影片，加入音樂、字幕和 QR Code。
+              </p>
+              <span className="inline-flex min-h-[40px] items-center justify-center rounded-lg bg-sky-700 px-4 py-2 text-sm font-bold text-white">
+                前往圖片轉 MP4 工具
+              </span>
+            </Link>
             <div
               onClick={() => navigate("/tools/line-sticker")}
               className="cursor-pointer rounded-xl bg-white p-5 border shadow-sm hover:shadow-md hover:border-cyan-400 transition duration-200 ease-out hover:-translate-y-0.5 hover:shadow-lg hover:ring-2 hover:ring-blue-100"
@@ -1109,10 +1147,20 @@ export default function ImagesPage() {
       {downloadToastId > 0 && (
         <div
           aria-live="polite"
-          className="pointer-events-none fixed bottom-4 left-1/2 z-[100] -translate-x-1/2 rounded-full border border-emerald-200 bg-white/95 px-4 py-2.5 text-sm font-black text-emerald-800 shadow-lg backdrop-blur"
-          style={{ maxWidth: "calc(100vw - 32px)" }}
+          className="fixed bottom-4 left-1/2 z-[100] flex w-max -translate-x-1/2 flex-col items-center gap-2 rounded-2xl border border-emerald-200 bg-white/95 px-4 py-3 text-sm font-black text-emerald-800 shadow-lg backdrop-blur sm:flex-row"
+          style={{ maxWidth: "calc(100vw - 24px)" }}
         >
-          ✓ 圖片已開始下載
+          <span role="status">✓ 圖片已開始下載</span>
+          <Link
+            to={IMAGE_TO_MP4_TOOL_PATH}
+            onClick={() => {
+              trackMp4ToolClick("download_success");
+              setDownloadToastId(0);
+            }}
+            className="inline-flex min-h-[40px] items-center justify-center rounded-xl bg-sky-700 px-4 py-2 text-center text-sm font-black !text-white transition hover:bg-sky-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-sky-300"
+          >
+            🎬 立即將圖片轉 MP4
+          </Link>
         </div>
       )}
     </div>
