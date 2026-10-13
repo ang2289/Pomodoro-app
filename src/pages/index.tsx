@@ -777,9 +777,9 @@ const HomePage: React.FC = () => {
     return base.includes("localhost") ? productionUrl : base.replace(/\/$/, "");
   };
 
-  const homeShareTitle = "RxV 高畫質圖片素材庫｜1,583+ 張完整版 NT$399";
+  const homeShareTitle = "RxV 免費圖片素材庫｜2,858 張高畫質圖片免費下載";
   const homeShareText =
-    "1,583+ 張高畫質圖片素材庫完整版 NT$399，涵蓋食物、商業、花卉、社群、桌布與更多分類；網站另提供部分圖片免費試用。";
+    "2,858 張高畫質圖片免費下載，涵蓋食物、商業、花卉、社群、桌布與更多分類；也能製作 LINE 貼圖或 MP4 短影片。";
 
   const getHomeFullShareText = () =>
     `${homeShareTitle}\n${homeShareText}\n${getHomeShareUrl()}`;
@@ -1293,7 +1293,7 @@ const HomePage: React.FC = () => {
     if (videoLocked) return null;
 
     const imageLibraryDescription =
-      "原價 NT$399，首波限時優惠 NT$199；優惠結束後恢復原價 NT$399，另提供部分圖片免費試用。";
+      "2,858 張高畫質圖片全部免費下載，還能搭配 LINE 貼圖與圖片轉 MP4 工具使用。";
 
     return (
       <Link
@@ -1306,13 +1306,8 @@ const HomePage: React.FC = () => {
             {card.icon}
           </span>
           {card.id === "images" ? (
-            <span className="flex items-center gap-1.5 text-xs font-black">
-              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-500 line-through">
-                原價 NT$399
-              </span>
-              <span className="rounded-full bg-rose-100 px-2.5 py-1 text-rose-700">
-                限時 NT$199
-              </span>
+            <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-black text-emerald-700">
+              全部免費
             </span>
           ) : card.badge ? (
             <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600">
@@ -1327,7 +1322,7 @@ const HomePage: React.FC = () => {
           {card.id === "images" ? imageLibraryDescription : t(card.descriptionKey)}
         </p>
         <span className="mt-auto pt-4 text-sm font-black text-sky-700">
-          {card.id === "images" ? "查看限時 NT$199 素材庫 →" : "開啟工具 →"}
+          {card.id === "images" ? "免費下載圖片 →" : "開啟工具 →"}
         </span>
       </Link>
     );
@@ -1741,26 +1736,24 @@ const HomePage: React.FC = () => {
             <div className="flex flex-col gap-6 lg:flex-row lg:items-center">
               <div className="flex-1 space-y-3">
                 <p className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
-                  🖼️ 1,583+ 張高畫質圖片素材庫
+                  🖼️ 2,858 張免費高畫質圖片
                 </p>
                 <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-                  高畫質圖片素材庫完整版｜部分圖片免費試用
+                  2,858 張高畫質圖片全部免費下載
                 </h1>
                 <p className="text-sm leading-relaxed text-slate-600 sm:text-base">
-                  一次取得 1,583+ 張高畫質圖片素材，適合網站、社群貼文、廣告、短影音與商業設計；
-                  網站保留部分圖片免費試用，也可搭配 LINE 貼圖與圖片工具使用。
+                  2,858 張高畫質圖片全部免費下載，適合網站、社群貼文、廣告、短影音與商業設計；
+                  下載後還能使用 LINE 貼圖工具與圖片轉 MP4 製作短影音。
                 </p>
-                <p className="text-sm font-bold text-rose-700 sm:text-base">
-                  <span className="mr-2 text-slate-500 line-through">原價 NT$399</span>
-                  <span className="text-lg font-black">限時 NT$199</span>
-                  <span className="ml-2 text-slate-600">首波限時優惠 NT$199，優惠結束後恢復原價 NT$399。</span>
+                <p className="text-sm font-bold text-emerald-700 sm:text-base">
+                  免登入・免費下載高畫質原圖
                 </p>
                 <div className="flex flex-wrap gap-3 pt-2">
                   <Link
                     to="/images"
                     className="inline-flex items-center rounded-full bg-emerald-600 px-6 py-3 text-base font-bold !text-white shadow-lg transition-all duration-200 hover:scale-[1.02] hover:bg-emerald-700 hover:shadow-xl"
                   >
-                    🖼️ 查看限時 NT$199 完整素材庫
+                    🖼️ 免費下載 2,858 張圖片
                   </Link>
                   <Link
                     to="/tools/sticker-prompt"
@@ -1807,9 +1800,8 @@ const HomePage: React.FC = () => {
                     to="/images"
                     className="relative flex flex-col justify-between rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 p-4 text-white shadow-lg ring-1 ring-white/10 transition-all hover:shadow-xl"
                   >
-                    <span className="absolute right-3 top-3 flex items-center gap-1 text-xs font-bold">
-                      <span className="rounded-full bg-slate-700/70 px-2 py-0.5 text-white/80 line-through">原價 NT$399</span>
-                      <span className="rounded-full bg-rose-500 px-2 py-0.5 text-white">限時 NT$199</span>
+                    <span className="absolute right-3 top-3 rounded-full bg-white/20 px-2 py-0.5 text-xs font-bold text-white">
+                      全部免費下載
                     </span>
                     <div className="flex items-center pr-14">
                       <span className="text-lg font-semibold text-white">
@@ -1817,7 +1809,7 @@ const HomePage: React.FC = () => {
                       </span>
                     </div>
                     <p className="mt-2 text-xs text-white">
-                      首波限時優惠 NT$199，優惠結束後恢復原價 NT$399；部分圖片可免費試用，適合社群、網站、短影音、廣告與商業設計。
+                      2,858 張圖片全部免費下載，適合社群、網站、短影音、廣告與商業設計。
                     </p>
                   </Link>
                   <Link
@@ -1904,7 +1896,7 @@ const HomePage: React.FC = () => {
                       </span>
                       <p className="mt-2 text-sm leading-relaxed text-slate-600">
                         {tool.id === "images"
-                          ? "1,583+ 張高畫質圖片素材庫完整版 NT$399，網站另提供部分圖片免費試用。"
+                          ? "2,858 張高畫質圖片免費下載，搭配 LINE 貼圖與 MP4 工具製作影音作品。"
                           : t(tool.descKey)}
                       </p>
                     </Link>
@@ -1926,7 +1918,7 @@ const HomePage: React.FC = () => {
                 <ul className="mt-3 space-y-2 text-base font-semibold text-blue-600">
                   <li>
                     <Link to="/images" className="hover:underline">
-                      🖼️ 高畫質圖片素材庫 NT$399
+                      🖼️ 免費高畫質圖片素材庫
                     </Link>
                   </li>
                   <li>
@@ -2039,7 +2031,7 @@ const HomePage: React.FC = () => {
                 🖼️ 高畫質圖片素材庫持續更新中
               </h4>
               <p className="text-sm leading-relaxed text-gray-700">
-                目前提供 1,583+ 張高畫質圖片素材，完整版一次取得 NT$399；網站另保留部分圖片免費試用。
+                目前提供 2,858 張高畫質圖片素材，全部開放免費下載。
                 適合社群貼文、短影音封面、網站、廣告與商業設計，並會持續新增素材。
               </p>
               <div className="mt-4 flex flex-wrap gap-3">
@@ -2048,7 +2040,7 @@ const HomePage: React.FC = () => {
                   className="inline-flex rounded-lg bg-emerald-600 px-5 py-2 text-sm font-bold !text-white shadow hover:bg-emerald-700 hover:!text-white"
                   style={{ color: "#ffffff" }}
                 >
-                  查看 NT$399 完整素材庫
+                  免費下載圖片素材
                 </Link>
                 <a
                   href="mailto:rxv0227@gmail.com?subject=我想許願圖片素材風格"
@@ -2203,13 +2195,13 @@ const HomePage: React.FC = () => {
                   🖼️ 高畫質圖片素材庫
                 </h4>
                 <p className="text-sm text-gray-700 mb-4 leading-relaxed">
-                  1,583+ 張高畫質圖片素材完整版 NT$399，部分圖片可免費試用；適合社群貼文、網站、短影音與商業設計。
+                  2,858 張高畫質圖片全部免費下載；適合社群貼文、網站、短影音與商業設計。
                 </p>
                 <div
                   className="inline-flex items-center rounded-lg bg-teal-600 px-5 py-2 font-semibold !text-white shadow transition-all duration-200 ease-out group-hover:bg-teal-700 text-sm"
                   style={{ color: "#ffffff" }}
                 >
-                  查看 NT$399 完整素材庫
+                  免費下載圖片素材
                 </div>
               </Link>
             </div>
@@ -2347,7 +2339,7 @@ const HomePage: React.FC = () => {
                       </div>
                       <p className="mt-2 text-sm text-slate-600">
                         {card.id === "images"
-                          ? "1,583+ 張高畫質圖片素材庫完整版 NT$399，網站另提供部分圖片免費試用。"
+                          ? "2,858 張高畫質圖片免費下載，搭配 LINE 貼圖與 MP4 工具製作影音作品。"
                           : t(card.descriptionKey)}
                       </p>
                       {videoLocked && (
