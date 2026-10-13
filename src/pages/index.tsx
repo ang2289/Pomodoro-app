@@ -1748,6 +1748,10 @@ const HomePage: React.FC = () => {
                 <p className="text-sm font-bold text-emerald-700 sm:text-base">
                   免登入・免費下載高畫質原圖
                 </p>
+                <div className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-bold leading-6 text-sky-900">
+                  第一次製作貼圖？先看懂「一張大圖 → 自動切成多張貼圖」的五步驟流程。
+                  <Link to="/tools" className="ml-2 inline-flex font-black text-blue-700 underline underline-offset-4">查看新手教學 →</Link>
+                </div>
                 <div className="flex flex-wrap gap-3 pt-2">
                   <Link
                     to="/images"
@@ -1765,13 +1769,13 @@ const HomePage: React.FC = () => {
                     to="/tools/sticker-prompt"
                     className="inline-flex items-center rounded-full bg-blue-600 px-6 py-3 text-base font-bold !text-white shadow-lg transition-all duration-200 hover:scale-[1.02] hover:bg-blue-700 hover:shadow-xl"
                   >
-                    💬 LINE 貼圖提示詞
+                    第 1 步｜從零製作貼圖
                   </Link>
                   <Link
                     to="/tools/line-sticker"
                     className="inline-flex items-center rounded-full bg-cyan-600 px-6 py-3 text-base font-bold !text-white shadow-lg transition-all duration-200 hover:scale-[1.02] hover:bg-cyan-700 hover:shadow-xl"
                   >
-                    🧩 LINE 貼圖分割打包
+                    第 3 步｜已有圖片，直接上傳
                   </Link>
                   <Link
                     to="/tools/image-prompt"
