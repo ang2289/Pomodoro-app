@@ -4898,7 +4898,7 @@ export default function StickerPromptGenerator() {
         <div className="mx-auto w-full max-w-[1480px]">
           <LineStickerFlowSteps activeStep={1} mode={stickerMode} />
 
-          <section className="rounded-3xl border border-violet-100 bg-white p-6 shadow-sm sm:p-8">
+          <section id="sticker-start" className="scroll-mt-24 rounded-3xl border border-violet-100 bg-white p-6 shadow-sm sm:p-8">
             <div className="flex flex-wrap gap-2">
               <span className="rounded-full bg-violet-600 px-3 py-1 text-xs font-black !text-white">
                 線上試用
@@ -5248,7 +5248,7 @@ export default function StickerPromptGenerator() {
               />
             </div>
 
-            <div className="rounded-3xl border border-violet-100 bg-white p-5 shadow-sm">
+            <div id="sticker-copy" className="scroll-mt-24 rounded-3xl border border-violet-100 bg-white p-5 shadow-sm">
               <div className="flex flex-col gap-3">
                 <div>
                   <p className="text-xs font-black tracking-wide text-violet-600">步驟 2</p>
@@ -5286,7 +5286,7 @@ export default function StickerPromptGenerator() {
                       >
                         {copiedBatchIndex === index
                           ? "已複製"
-                          : `複製第 ${index + 1} 張 ChatGPT 生圖指令`}
+                          : `第 2 步｜複製第 ${index + 1} 張 AI 生圖指令`}
                       </button>
                     </div>
                     <details className="mt-3 rounded-2xl border border-violet-100 bg-white">
@@ -5306,7 +5306,7 @@ export default function StickerPromptGenerator() {
                 onClick={() => persistFlowProject(3)}
                 className="mt-5 inline-flex min-h-[52px] w-full items-center justify-center rounded-2xl bg-blue-600 px-5 py-3 text-center text-sm font-black !text-white shadow-lg transition hover:bg-blue-700"
               >
-                我已經產生圖片 → 下一步上傳母圖
+                第 3 步｜我已存好圖片，前往上傳母圖 →
               </Link>
 
               <CoupangDynamicAd
@@ -5499,7 +5499,7 @@ export default function StickerPromptGenerator() {
                 成果示範
               </span>
               <h2 className="text-xl font-black text-slate-900">
-                從提示詞到貼圖打包，三步驟完成
+                從提示詞、AI 生圖到自動打包的實際示範
               </h2>
             </div>
             <p className="mt-3 text-sm leading-relaxed text-slate-700">
@@ -5517,9 +5517,6 @@ export default function StickerPromptGenerator() {
                   className="overflow-hidden rounded-2xl border border-emerald-100 bg-white shadow-sm"
                 >
                   <div className="relative aspect-[4/3] bg-gradient-to-br from-emerald-50 to-sky-50">
-                    <div className="absolute inset-0 flex items-center justify-center px-5 text-center text-xs font-bold leading-5 text-emerald-700">
-                      請放示範圖：{step.img.split("/").pop()}
-                    </div>
                     <img
                       src={step.img}
                       alt={step.alt}
