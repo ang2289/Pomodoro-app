@@ -31,10 +31,7 @@ const BADGE_KEYS: Record<string, string> = {
   life: "tools_badge_life",
 };
 
-const DIRECT_BADGE_LABELS: Record<string, string> = {
-  price399: "NT$399",
-  partialFree: "部分免費",
-};
+const DIRECT_BADGE_LABELS: Record<string, string> = {};
 
 function getBadgeLabel(badge: string, t: (key: string) => string) {
   return DIRECT_BADGE_LABELS[badge] || t(BADGE_KEYS[badge] || badge);
@@ -55,10 +52,10 @@ export default function ToolsPage() {
     },
     {
       title: "高畫質圖片素材庫",
-      desc: "1,583+ 張高畫質圖片完整版 NT$399，涵蓋食物、商業、花卉、社群、桌布等分類；另提供部分圖片免費試用。",
+      desc: "2,858 張高畫質圖片全部免費下載，涵蓋花卉、商業、社群、桌布等分類；下載後還能製作 LINE 貼圖或 MP4。",
       icon: "🖼️",
       to: "/images",
-      badges: ["price399", "partialFree", "hot"],
+      badges: ["free", "hot"],
     },
     {
       title: "免費資源中心",
