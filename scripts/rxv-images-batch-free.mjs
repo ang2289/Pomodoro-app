@@ -195,7 +195,7 @@ async function makeOriginalPublic(item, state) {
       Bucket: publicBucket, Key: item.destKey,
       CopySource: copySource(privateBucket, item.sourceKey),
       ContentType: contentTypeFor(item.sourceKey), MetadataDirective: "REPLACE",
-      CacheControl: "public, max-age=31536000, immutable",
+      CacheControl: "public, max-age=60, s-maxage=60",
     }));
   }
   const verified = await head(publicBucket, item.destKey);
