@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   readManifest, rebuildManifest, checkPreviewStatus, imageIsFree,
-  indexOriginals, sourceCandidates, validateMasterKey, changeToFree,
+  indexOriginals, sourceCandidates, validateMasterKey, changeToFree, imageNeedsPublish,
   publicUrl, makeFreePublicKey, plannedLockedImages, catalogFingerprint,
 } from "../scripts/lib/rxv-image-free-core.mjs";
 
@@ -74,4 +74,14 @@ test("fingerprint changes when the actual catalog bytes change", () => {
   const a = catalogFingerprint(JSON.stringify([locked, free]));
   const b = catalogFingerprint(JSON.stringify([free, locked]));
   assert.notEqual(a, b);
+});
+
+
+test("a free badge without a direct R2 download URL must be repaired", () => {
+  const cdn = "https://assets.example.org";
+  assert.equal(imageNeedsPublish(locked, cdn), true);
+  assert.equal(imageNeedsPublish(free, cdn), true);
+  const downloadable = changeToFree(locked, cdn + "/free/originals/" + id1 + ".png");
+  assert.equal(imageNeedsPublish(downloadable, cdn), false);
+  assert.equal(imageNeedsPublish({ ...downloadable, download_url: "" }, cdn), true);
 });
