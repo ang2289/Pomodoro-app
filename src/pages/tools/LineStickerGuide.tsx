@@ -2,8 +2,6 @@ import { Link } from "react-router-dom";
 import SEO from "@/components/SEO";
 import LineStickerAuthorCard from "@/components/LineStickerAuthorCard";
 
-const demoVideoSrc = "/videos/line-sticker-guide.mp4";
-const demoVideoPosterSrc = "/images/line-sticker-guide-cover.jpg";
 const SUPPORT_TW_URL = "https://p.ecpay.com.tw/FD7CD6D";
 const SUPPORT_KOFI_URL = "https://ko-fi.com/ang2289";
 const PHOTOROOM_AI_URL =
@@ -39,26 +37,11 @@ const promptCards = [
 ];
 
 const steps = [
-  {
-    title: "產生提示詞",
-    desc: "先用 RxV 的提示詞產生器選分類、角色、風格與貼圖文字。",
-  },
-  {
-    title: "用 AI 生圖",
-    desc: "把提示詞貼到生圖工具，產生 4×4 或 5×4 的貼圖大圖。",
-  },
-  {
-    title: "分割貼圖",
-    desc: "使用 RxV 圖片分割工具切成多張小圖，支援 4×4／5×4 與拖曳分割線微調。",
-  },
-  {
-    title: "去背檢查",
-    desc: "若要上架，建議整理成透明 PNG，並確認沒有白底殘留。",
-  },
-  {
-    title: "回到 RxV 打包",
-    desc: "上傳切好的圖片，自動整理尺寸、命名、main.png、tab.png 與 ZIP。",
-  },
+  { title: "選主題與張數", desc: "先選 LINE 或 WhatsApp、靜態或動態，再選主題與上架張數。" },
+  { title: "給 AI 畫圖", desc: "複製本站產生的指令，貼到 ChatGPT；將每張貼圖母圖下載到手機或電腦。" },
+  { title: "上傳母圖", desc: "把一張 4×4（16 格）等母圖傳回本站；不用自己一張張手動切。" },
+  { title: "確認自動整理", desc: "確認格數與預覽，讓工具切圖、去背、調整尺寸；文字不能被切掉。" },
+  { title: "下載／做動態", desc: "靜態貼圖下載 ZIP；動態貼圖接著產生動畫。LINE 上架仍須審核。" },
 ];
 
 const faqItems = [
@@ -80,49 +63,32 @@ const faqItems = [
   },
 ];
 
-function VideoDemoSection() {
+const demoScreenshots = [
+  { src: "/images/sticker-prompt-demo/demo-prompt.png", title: "第 1 步：選擇主題、張數", desc: "先選靜態或動態，網站自動產生 AI 繪圖指令。" },
+  { src: "/images/sticker-prompt-demo/demo-result.png", title: "第 2 步：用 AI 畫出母圖", desc: "一張 4×4 圖片內有 16 格，先存成圖片，不用手工拆開。" },
+  { src: "/images/sticker-prompt-demo/demo-pack.png", title: "第 3～5 步：上傳、切圖、下載", desc: "將母圖交給 RXV 切割、整理、檢查後下載 ZIP。" },
+] as const;
+
+function IllustratedDemoSection() {
   return (
-    <section className="mt-10 rounded-3xl border border-blue-100 bg-white p-4 shadow-sm sm:p-6">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="rounded-full bg-blue-600 px-3 py-1 text-xs font-black text-white">
-          影片教學
-        </span>
-        <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-700">
-          新手快速看懂
-        </span>
+    <section className="mt-10 rounded-3xl border border-sky-200 bg-white p-4 shadow-sm sm:p-6">
+      <span className="inline-flex rounded-full bg-sky-100 px-3 py-1 text-xs font-black text-sky-800">看圖片就懂</span>
+      <h2 className="mt-3 text-xl font-black text-slate-900 sm:text-2xl">不是一張張畫：先畫一張大圖，再讓工具切開</h2>
+      <p className="mt-2 text-sm leading-7 text-slate-600">以下三張是網站現有操作示範圖片。依序點下方步驟按鈕，就能實際操作。</p>
+      <div className="mt-4 grid gap-4 md:grid-cols-3">
+        {demoScreenshots.map((item) => (
+          <figure key={item.src} className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+            <img src={item.src} alt={item.title} loading="lazy" decoding="async" className="aspect-[4/3] w-full object-contain" />
+            <figcaption className="p-4">
+              <p className="text-sm font-black text-slate-900">{item.title}</p>
+              <p className="mt-2 text-xs leading-6 text-slate-600">{item.desc}</p>
+            </figcaption>
+          </figure>
+        ))}
       </div>
-
-      <div className="mt-5">
-        <h2 className="text-2xl font-black text-slate-900">
-          先看影片：LINE 貼圖從生圖到打包怎麼做
-        </h2>
-        <p className="mt-3 text-sm leading-relaxed text-slate-600">
-          先產生貼圖提示詞，再用 AI 生圖，接著把大圖切成多張貼圖，最後回到 RxV
-          工具自動處理母圖分割、去白底、尺寸與 ZIP；外部去背工具僅在自動處理不理想時才需要。
-        </p>
-
-        <div className="mt-5 overflow-hidden rounded-3xl border border-slate-200 bg-slate-950 shadow-sm">
-          <video
-            className="aspect-video w-full bg-slate-950"
-            controls
-            playsInline
-            preload="metadata"
-            poster={demoVideoPosterSrc}
-          >
-            <source src={demoVideoSrc} type="video/mp4" />
-            你的瀏覽器不支援影片播放，請改用下方影片連結觀看。
-          </video>
-        </div>
-        <div className="mt-3 flex flex-wrap gap-2 text-xs font-bold">
-          <a
-            href={demoVideoSrc}
-            target="_blank"
-            rel="noreferrer"
-            className="rounded-full border border-blue-200 bg-blue-50 px-3 py-2 text-blue-700 hover:bg-blue-100"
-          >
-            直接開啟影片檔
-          </a>
-        </div>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <Link to="/tools/sticker-prompt#sticker-start" className="inline-flex min-h-11 items-center rounded-xl bg-sky-700 px-4 py-2 text-sm font-black !text-white hover:bg-sky-800">第 1 步｜開始製作 →</Link>
+        <Link to="/tools/line-sticker#mother-upload" className="inline-flex min-h-11 items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-800 hover:bg-slate-100">第 3 步｜已有圖片 →</Link>
       </div>
     </section>
   );
@@ -272,22 +238,21 @@ export default function LineStickerGuide() {
               第一次做 LINE 貼圖？照流程做，最後整理成上架素材包
             </h1>
             <p className="mt-4 text-sm leading-relaxed text-slate-600 sm:text-base">
-              這份教學是給新手、店家、品牌與客製貼圖客戶看的版本。你可以先產生貼圖提示詞，再用
-              AI 生成貼圖大圖，切成多張後回到 RxV 工具整理尺寸、命名與 ZIP
-              打包。
+              這份教學是給第一次使用的新手、店家與創作者看的版本。先用本站準備 ChatGPT 生圖指令，
+              讓 AI 畫好貼圖大圖，下載後傳回 RXV，自動切割、去背、整理尺寸與打包 ZIP。
             </p>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <Link
                 to="/tools/sticker-prompt"
                 className="inline-flex justify-center rounded-2xl bg-violet-600 px-5 py-3 text-sm font-black !text-white shadow-md hover:bg-violet-700"
               >
-                先產生貼圖提示詞
+                第 1 步｜開始選主題
               </Link>
               <Link
                 to="/tools/line-sticker"
                 className="inline-flex justify-center rounded-2xl bg-blue-600 px-5 py-3 text-sm font-black !text-white shadow-md hover:bg-blue-700"
               >
-                回到工具整理 ZIP
+                第 3 步｜已有圖片
               </Link>
               <a
                 href="#prompt"
@@ -300,7 +265,7 @@ export default function LineStickerGuide() {
 
           <LineStickerAuthorCard />
 
-          <VideoDemoSection />
+          <IllustratedDemoSection />
 
           <section className="mt-8 grid gap-4 md:grid-cols-5">
             {steps.map((step, index) => (
@@ -322,53 +287,17 @@ export default function LineStickerGuide() {
           </section>
 
           <section className="mt-10 rounded-3xl border border-violet-100 bg-violet-50/70 p-6 shadow-sm">
-            <h2 className="text-2xl font-black text-slate-900">目前建議流程</h2>
+            <h2 className="text-xl font-black text-slate-900">做到哪一步，就從哪個按鈕繼續</h2>
             <div className="mt-4 grid gap-3 md:grid-cols-3">
-              <Link
-                to="/tools/sticker-prompt"
-                className="rounded-2xl bg-white p-5 shadow-sm hover:shadow-md"
-              >
-                <p className="text-sm font-black text-violet-700">
-                  ① 產生提示詞
-                </p>
-                <p className="mt-2 text-xs leading-relaxed text-slate-600">
-                  選情侶、品牌、遊戲、寵物等分類，一鍵複製提示詞。
-                </p>
-              </Link>
-              <div className="rounded-2xl bg-white p-5 shadow-sm">
-                <p className="text-sm font-black text-violet-700">② 分割圖片</p>
-                <p className="mt-2 text-xs leading-relaxed text-slate-600">
-                  使用本站圖片分割工具，支援 4×4／5×4 大圖分割，也可拖曳分割線微調位置。
-                </p>
-                <div className="mt-3 flex flex-col gap-2">
-                  <a
-                    href={PHOTOROOM_BG_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="rounded-xl bg-purple-600 px-3 py-2 text-center text-xs font-black !text-white hover:bg-purple-700 hover:!text-white"
-                    style={{ color: "#ffffff" }}
-                  >
-                    PhotoRoom 去背
-                  </a>
-                  <Link
-                    to="/tools/sticker-splitter"
-                    className="rounded-xl bg-emerald-600 px-3 py-2 text-center text-xs font-black !text-white hover:bg-emerald-700 hover:!text-white"
-                    style={{ color: "#ffffff" }}
-                  >
-                    本站圖片分割
-                  </Link>
-                </div>
-              </div>
-              <Link
-                to="/tools/line-sticker"
-                className="rounded-2xl bg-white p-5 shadow-sm hover:shadow-md"
-              >
-                <p className="text-sm font-black text-violet-700">③ 整理 ZIP</p>
-                <p className="mt-2 text-xs leading-relaxed text-slate-600">
-                  上傳切好的圖片，整理 LINE 上架尺寸、主圖、標籤圖與 ZIP。
-                </p>
-              </Link>
+              <Link to="/tools/sticker-prompt#sticker-start" className="rounded-2xl bg-white p-4 shadow-sm hover:shadow-md"><p className="text-sm font-black text-violet-700">第 1～2 步：還沒有圖片</p><p className="mt-2 text-xs leading-6 text-slate-600">挑選主題、複製 AI 生圖指令。</p></Link>
+              <Link to="/tools/line-sticker#mother-upload" className="rounded-2xl bg-white p-4 shadow-sm hover:shadow-md"><p className="text-sm font-black text-violet-700">第 3～4 步：已有圖片</p><p className="mt-2 text-xs leading-6 text-slate-600">上傳母圖，由 RXV 自動切圖、去背與整理。</p></Link>
+              <Link to="/tools/animated-line-sticker#animated-sticker-batch" className="rounded-2xl bg-white p-4 shadow-sm hover:shadow-md"><p className="text-sm font-black text-violet-700">第 5 步：製作動態</p><p className="mt-2 text-xs leading-6 text-slate-600">已完成靜態圖，再選動畫效果並打包。</p></Link>
             </div>
+            <details className="mt-4 rounded-xl border border-violet-100 bg-white p-3">
+              <summary className="cursor-pointer text-xs font-black text-slate-800">進階：若自動去背不理想</summary>
+              <p className="mt-2 text-xs leading-6 text-slate-600">一般情況先用本站自動去背。若文字或白色衣物被誤刪，再使用其他去背工具修正。</p>
+              <a href={PHOTOROOM_BG_URL} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex text-xs font-black text-violet-700 underline">PhotoRoom 去背工具（選用）</a>
+            </details>
           </section>
 
           <section
