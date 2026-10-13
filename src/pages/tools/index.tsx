@@ -928,7 +928,7 @@ const HomePage: React.FC = () => {
       id: "product-showcase-page",
       titleKey: "小店商品展示頁",
       descriptionKey:
-        "NT$199／3 個月，可建立商品目錄頁，放商品照片、價格、介紹、LINE 詢問、公開網址與 QR Code。",
+        "可建立商品目錄頁，放商品照片、價格、介紹、LINE 詢問、公開網址與 QR Code；使用方案請見功能說明。",
       icon: "🛒",
       href: "/tools/product-showcase-page",
       categoryKey: "home_category_design",
@@ -1307,7 +1307,7 @@ const HomePage: React.FC = () => {
       id: "product-showcase-page",
       icon: "🛒",
       titleKey: "小店商品展示頁",
-      descKey: "NT$199／3 個月，建立可分享的商品目錄頁，放商品照片、價格、LINE 詢問與 QR Code。",
+      descKey: "建立可分享的商品目錄頁，放商品照片、價格、LINE 詢問與 QR Code；方案內容請見工具說明。",
       href: "/tools/product-showcase-page",
     },
     {
@@ -1616,7 +1616,7 @@ const HomePage: React.FC = () => {
                   className="inline-flex min-h-[48px] items-center justify-center rounded-xl bg-gradient-to-r from-cyan-600 to-sky-500 px-5 py-3 text-sm font-black !text-white shadow-md transition hover:-translate-y-0.5 hover:from-cyan-700 hover:to-sky-600 hover:shadow-lg"
                   style={{ color: "#ffffff", WebkitTextFillColor: "#ffffff" }}
                 >
-                  商品展示頁 NT$199／3 個月
+                  了解商品展示頁服務
                 </Link>
                 <Link
                   to="/pricing"
