@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import type { LineStickerMode, LineStickerStage } from "@/lib/lineStickerFlow";
 
 type Props = {
@@ -18,6 +19,13 @@ export default function LineStickerFlowSteps({
   mode = "static",
   compact = false,
 }: Props) {
+  const paths = [
+    "/tools/sticker-prompt#sticker-start",
+    "/tools/sticker-prompt#sticker-copy",
+    "/tools/line-sticker#mother-upload",
+    "/tools/line-sticker#mother-split",
+    mode === "animated" ? "/tools/animated-line-sticker#animated-sticker-batch" : "/tools/line-sticker#sticker-download",
+  ];
   const steps = [
     ...BASE_STEPS,
     {
@@ -38,7 +46,7 @@ export default function LineStickerFlowSteps({
           跟著 1 → 2 → 3 → 4 → 5 完成
         </h2>
         <p className="mt-1 text-xs leading-5 text-slate-500">
-          目前做到哪一步會自動標示，不需要記工具名稱。
+          紫色是目前階段，點下方「第幾步」即可前往對應操作；已完成的階段會標示勾選。
         </p>
       </div>
 
@@ -66,9 +74,12 @@ export default function LineStickerFlowSteps({
           const active = item.step === activeStep;
           const done = item.step < activeStep;
           return (
-            <div
+            <Link
               key={item.step}
-              className={`rounded-2xl border p-3 transition ${
+              to={paths[item.step - 1]}
+              aria-current={active ? "step" : undefined}
+              aria-label={`第 ${item.step} 步：${item.title}，前往操作`}
+              className={`block rounded-2xl border p-3 transition hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-violet-600 ${
                 active
                   ? "border-violet-500 bg-violet-50 ring-2 ring-violet-100"
                   : done
@@ -88,10 +99,11 @@ export default function LineStickerFlowSteps({
                 >
                   {done ? "✓" : item.step}
                 </span>
-                <span className="min-w-[5.5rem] flex-1 whitespace-normal break-keep text-xs font-black leading-5 text-slate-900">{item.title}</span>
+                <span className="min-w-[5.5rem] flex-1 whitespace-normal break-keep text-xs font-black leading-5 text-slate-900">第 {item.step} 步｜{item.title}</span>
               </div>
               <p className="mt-2 min-w-0 break-words text-[11px] leading-5 text-slate-500">{item.desc}</p>
-            </div>
+              <span className="mt-2 inline-block text-[11px] font-bold text-violet-700">前往第 {item.step} 步 →</span>
+            </Link>
           );
         })}
       </div>
