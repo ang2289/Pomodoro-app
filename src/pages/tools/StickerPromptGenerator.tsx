@@ -4896,7 +4896,7 @@ export default function StickerPromptGenerator() {
 
       <main className="min-h-screen bg-gradient-to-b from-violet-50 via-white to-blue-50 px-4 py-8">
         <div className="mx-auto w-full max-w-[1480px]">
-          <LineStickerFlowSteps activeStep={1} mode={stickerMode} />
+          <LineStickerFlowSteps activeStep={copiedBatchIndex !== null || copied || copiedStable ? 2 : 1} mode={stickerMode} />
 
           <section id="sticker-start" className="scroll-mt-24 rounded-3xl border border-violet-100 bg-white p-6 shadow-sm sm:p-8">
             <div className="flex flex-wrap gap-2">
