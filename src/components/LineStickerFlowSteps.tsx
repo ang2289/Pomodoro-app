@@ -1,4 +1,5 @@
-import { Link } from "react-router-dom";
+import { useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
 import type { LineStickerMode, LineStickerStage } from "@/lib/lineStickerFlow";
 
 type Props = {
@@ -19,6 +20,17 @@ export default function LineStickerFlowSteps({
   mode = "static",
   compact = false,
 }: Props) {
+  const location = useLocation();
+  useEffect(() => {
+    if (!location.hash) return;
+    let anchorId = location.hash.slice(1);
+    try { anchorId = decodeURIComponent(anchorId); } catch { /* 保留原始 hash */ }
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById(anchorId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [location.pathname, location.hash]);
+
   const paths = [
     "/tools/sticker-prompt#sticker-start",
     "/tools/sticker-prompt#sticker-copy",
