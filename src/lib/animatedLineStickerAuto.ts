@@ -439,13 +439,18 @@ function renderFrames(
 ): HTMLCanvasElement[] {
   const layers = splitLayers(source, renderScale);
   const fallback = !layers.segmented;
-  return Array.from({ length: FRAME_COUNT }, (_, frameIndex) => {
+  const outputWidth = OUTPUT_WIDTH * renderScale;
+  const outputHeight = OUTPUT_HEIGHT * renderScale;
+  // 先在加大畫布上繪製旋轉、位移與特效，再以整組影格的聯集統一縮放。
+  // 不能在原始 320x270 畫布上直接繪製，否則裁切掉的頭髮／文字無法補回。
+  const overscan = 80 * renderScale;
+  const rawFrames = Array.from({ length: FRAME_COUNT }, (_, frameIndex) => {
     const canvas = document.createElement("canvas");
-    canvas.width = OUTPUT_WIDTH * renderScale;
-    canvas.height = OUTPUT_HEIGHT * renderScale;
+    canvas.width = outputWidth + overscan * 2;
+    canvas.height = outputHeight + overscan * 2;
     const context = canvas.getContext("2d");
     if (!context) throw new Error("無法建立動畫影格。");
-    context.clearRect(0, 0, OUTPUT_WIDTH, OUTPUT_HEIGHT);
+    context.translate(overscan, overscan);
     const transforms = getTransforms(preset, frameIndex);
     if (fallback) {
       drawLayer(context, layers.character, {
@@ -460,6 +465,45 @@ function renderFrames(
       drawLayer(context, layers.accents, transforms.accents, renderScale);
     }
     drawMotionMarks(context, preset, frameIndex, renderScale);
+    return canvas;
+  });
+
+  // 所有影格共用同一個裁切框和縮放率，避免動畫播放時突然跳動或忽大忽小。
+  let left = rawFrames[0].width;
+  let top = rawFrames[0].height;
+  let right = 0;
+  let bottom = 0;
+  for (const canvas of rawFrames) {
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    if (!context) throw new Error("無法檢查動畫影格。");
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
+    const bounds = detectBoundsFromData(pixels.data, canvas.width, canvas.height);
+    if (!bounds) continue;
+    left = Math.min(left, bounds.left);
+    top = Math.min(top, bounds.top);
+    right = Math.max(right, bounds.right);
+    bottom = Math.max(bottom, bounds.bottom);
+  }
+  if (right <= left || bottom <= top) throw new Error("動畫內容為空，請檢查原始貼圖。");
+
+  const safePadding = 16 * renderScale;
+  const scale = Math.min(
+    1,
+    (outputWidth - safePadding * 2) / (right - left),
+    (outputHeight - safePadding * 2) / (bottom - top),
+  );
+  const offsetX = outputWidth / 2 - ((left + right) / 2) * scale;
+  const offsetY = outputHeight / 2 - ((top + bottom) / 2) * scale;
+  return rawFrames.map((rawFrame) => {
+    const canvas = document.createElement("canvas");
+    canvas.width = outputWidth;
+    canvas.height = outputHeight;
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("無法建立安全動畫影格。");
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = "high";
+    context.setTransform(scale, 0, 0, scale, offsetX, offsetY);
+    context.drawImage(rawFrame, 0, 0);
     return canvas;
   });
 }
