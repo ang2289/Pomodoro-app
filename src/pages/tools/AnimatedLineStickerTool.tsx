@@ -49,7 +49,7 @@ const LINE_APNG_MAX_BYTES = 1_000_000;
 const MAX_LINE_ZIP_MB = 60;
 const ALPHA_VISIBLE_THRESHOLD = 8;
 const SOURCE_CROP_PADDING = 12;
-const OUTPUT_SAFE_PADDING = 4;
+const OUTPUT_SAFE_PADDING = 12; // 防止 APNG 打包二次放大後貼邊
 
 type AlphaBounds = {
   left: number;
