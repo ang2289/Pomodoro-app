@@ -46,7 +46,7 @@ export default function LineStickerFlowSteps({
     {
       step: 5 as const,
       title: mode === "animated" ? "製作動態貼圖" : "下載完成",
-      desc: mode === "animated" ? "自動套動畫並打包" : "下載 LINE 上架檔案",
+      desc: mode === "animated" ? "自動套動畫並打包" : "下載 LINE／WhatsApp 貼圖 ZIP",
     },
   ];
 
@@ -69,13 +69,13 @@ export default function LineStickerFlowSteps({
         <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
           <div className="min-w-0">
             <p className="text-sm font-black text-amber-900">
-              🎁 LINE 貼圖新功能試用期間免費
+              🎁 RXV 免費貼圖製作工具
             </p>
             <p className="mt-1 text-xs leading-5 text-slate-600">
               目前靜態貼圖整理、母圖切割、動畫效果與整套輸出都可免費使用。
             </p>
             <p className="mt-1 text-[11px] leading-5 text-slate-500">
-              RxV 貼圖工廠 APP 即將推出；未來部分進階批次與動態功能可能改由 APP／Pro 提供，基本免費工具仍會保留。
+              第一次使用建議先選 8 或 16 張靜態貼圖，熟悉流程後再製作動態；LINE 上架仍需平台審核。
             </p>
           </div>
           <span className="w-fit shrink-0 rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-black text-emerald-700">
