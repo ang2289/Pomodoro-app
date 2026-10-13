@@ -72,6 +72,13 @@ export function sourceCandidates(id, index) {
   return ["jpg", "jpeg", "png", "webp"].map((ext) => "originals/by-image-id/" + id + "/original." + ext);
 }
 
+export function imageNeedsPublish(image, publicBase) {
+  // An existing free badge is insufficient unless the file has a real
+  // publicly downloadable original. API-proxy URLs still cost Vercel.
+  const url = String(image?.download_url || "");
+  return !imageIsFree(image) || !url.startsWith(publicBase.replace(/\/+$/, "") + "/free/originals/");
+}
+
 export function catalogFingerprint(bytes) {
   return createHash("sha256").update(bytes).digest("hex");
 }
