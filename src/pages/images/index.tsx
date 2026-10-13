@@ -607,9 +607,9 @@ export default function ImagesPage() {
           </section>
         </div>
 
-                <CoupangDynamicAd subId="rxv_images_dynamic" desktopWidth={1000} desktopHeight={180} />
+        <CoupangDynamicAd subId="rxv_images_dynamic" desktopWidth={1000} desktopHeight={180} />
 
-        {/* 分類篩選：手機版改成橫向滑動，避免按鈕全部擠在一起。 */}        {/* 分類篩選：手機版改成橫向滑動，避免按鈕全部擠在一起。 */}
+        {/* 分類篩選：手機版橫向滑動，避免按鈕擠在一起。 */}
         {!loadingCategories && categories.length > 0 && (
           <div className="mb-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between gap-3">
