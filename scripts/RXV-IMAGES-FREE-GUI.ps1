@@ -1,4 +1,4 @@
-# RxV local-only batch free manager. Powershell 5.1 compatible.
+﻿# RxV local-only batch free manager. Powershell 5.1 compatible.
 # UI buttons never change R2 without a second explicit text confirmation.
 param(
   [string]$ProjectPath = ""
@@ -37,24 +37,24 @@ $form.Font = New-Object System.Drawing.Font("Microsoft JhengHei",10)
 $form.MaximizeBox = $false
 
 $heading = New-Object System.Windows.Forms.Label
-$heading.Text = "RXV - Image Free Download Manager"
+$heading.Text = "RXV 圖片批次免費管理"
 $heading.Font = New-Object System.Drawing.Font("Microsoft JhengHei",16,[System.Drawing.FontStyle]::Bold)
 $heading.Location = New-Object System.Drawing.Point(26,20)
 $heading.AutoSize = $true
 $form.Controls.Add($heading)
 
 $note = New-Object System.Windows.Forms.Label
-$note.Text = "Local test branch only. Preview changes nothing. Other actions modify LIVE R2 only after explicit confirmation. No Vercel deployment."
+$note.Text = "獨立測試分支：預覽不修改資料。測試 10 張、全部免費及還原會變更 R2，必須再次確認。不部署 Vercel。"
 $note.Location = New-Object System.Drawing.Point(28,62)
 $note.Size = New-Object System.Drawing.Size(575,50)
 $note.ForeColor = [System.Drawing.Color]::FromArgb(93,105,123)
 $form.Controls.Add($note)
 
 $items = @(
-  @{ Text = "1. Preview (read only)"; Mode = "preview"; X=28; Y=129 },
-  @{ Text = "2. Test 10 images"; Mode = "test"; X=327; Y=129 },
-  @{ Text = "3. Release all locked images"; Mode = "all"; X=28; Y=192 },
-  @{ Text = "4. Restore original settings"; Mode = "restore"; X=327; Y=192 }
+  @{ Text = "1. 只查看（不修改）"; Mode = "preview"; X=28; Y=129 },
+  @{ Text = "2. 先測試 10 張"; Mode = "test"; X=327; Y=129 },
+  @{ Text = "3. 全部圖片改免費"; Mode = "all"; X=28; Y=192 },
+  @{ Text = "4. 還原原本設定"; Mode = "restore"; X=327; Y=192 }
 )
 foreach ($item in $items) {
   $button = New-Object System.Windows.Forms.Button
@@ -72,8 +72,8 @@ foreach ($item in $items) {
     if ($mode -ne "preview") {
       $phrase = $phrases[$mode]
       $answer = [Microsoft.VisualBasic.Interaction]::InputBox(
-        "This modifies LIVE R2. To continue, type: " + $phrase,
-        "Confirm RXV operation", "")
+        "此操作會修改真實 R2。若要繼續，請輸入：" + $phrase,
+        "確認 RXV 批次操作", "")
       if ($answer -cne $phrase) { return }
     }
     # Run in an ordinary console so the user can watch progress and errors.
@@ -92,7 +92,7 @@ foreach ($item in $items) {
 }
 
 $footer = New-Object System.Windows.Forms.Label
-$footer.Text = "Safeguards: private R2 + local backup, 10-image batches, no original deletion, resumable rollback. Close the action console only after it finishes."
+$footer.Text = "安全機制：本機與私人 R2 雙重備份，每批 10 張，不刪私人原圖；可還原。請等命令視窗執行結束後再關閉。"
 $footer.Location = New-Object System.Drawing.Point(28,278)
 $footer.Size = New-Object System.Drawing.Size(570,67)
 $footer.ForeColor = [System.Drawing.Color]::FromArgb(93,105,123)
