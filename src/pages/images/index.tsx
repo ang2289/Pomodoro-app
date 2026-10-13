@@ -17,8 +17,7 @@ import CoupangDynamicAd from "@/components/CoupangDynamicAd";
 import { isLoggedIn, getCurrentUserId } from "@/lib/auth";
 import { getCurrentCreditSummary } from "@/lib/accountApi";
 
-// ===== 圖片素材庫：免費試用 + NT$399 完整素材包 =====
-// 免費圖片可直接下載；其餘圖片作為完整版素材庫展示。
+// 圖片庫公開頁：高畫質原圖免費下載，並引導至 LINE 與 MP4 工具。
 
 async function forceDownloadImage(downloadUrl: string, filename: string) {
   if (!downloadUrl) throw new Error("這張圖片目前沒有可用的下載網址");
@@ -167,7 +166,7 @@ function getImageCost(_planType: PlanType): number {
   return 0;
 }
 
-// 下載按鈕：免費圖片直接下載；完整版圖片導向 NT$399 素材包。
+// 圖片正在更新免費下載設定時，不提供舊版付費購買入口。
 function getDownloadButton(
   _t: (k: string) => string,
   planType: PlanType,
@@ -177,7 +176,7 @@ function getDownloadButton(
 ): { buttonText: string; action: "download" | "bundle" } {
   return planType === "free"
     ? { buttonText: "免費下載", action: "download" }
-    : { buttonText: "取得完整版", action: "bundle" };
+    : { buttonText: "暫不可下載", action: "bundle" };
 }
 
 // 首批顯示 24 張，避免客戶誤以為圖片很少；後續按鈕再載入更多。
@@ -504,14 +503,13 @@ export default function ImagesPage() {
     loadImages(0, false);
   }, [selectedCategoryId, manifestLoaded, allImages]);
 
-  const goToBundleCheckout = () => {
-    trackEvent("image_bundle_checkout_click", { product_code: "image-bundle-full", amount_ntd: 199 });
-    navigate("/payment/bank-transfer?product=image-bundle-full");
+  const notifyImagePendingFreeDownload = () => {
+    alert("這張圖片的免費下載資訊正在更新，請稍後重新整理頁面。");
   };
 
   const handleDownload = async (image: ImageAsset) => {
     if (image.planType !== "free") {
-      goToBundleCheckout();
+      notifyImagePendingFreeDownload();
       return;
     }
 
@@ -528,7 +526,7 @@ export default function ImagesPage() {
 
   const handleButtonClick = (image: ImageAsset) => {
     if (image.planType === "bundle") {
-      goToBundleCheckout();
+      notifyImagePendingFreeDownload();
       return;
     }
     void handleDownload(image);
@@ -763,7 +761,7 @@ export default function ImagesPage() {
                       }}
                       role="button"
                       tabIndex={0}
-                      aria-label={image.planType === "free" ? `下載${usageTitle}圖片` : `取得${usageTitle}完整素材庫`}
+                      aria-label={image.planType === "free" ? `下載${usageTitle}圖片` : `${usageTitle}圖片暫不可下載`}
                     >
                       <img
                         src={image.previewUrl}
@@ -780,7 +778,7 @@ export default function ImagesPage() {
 
                       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/35 via-transparent to-transparent opacity-0 transition duration-300 group-hover:opacity-100" />
                       <span className="pointer-events-none absolute bottom-3 left-3 rounded-full bg-slate-950/70 px-3 py-1.5 text-xs font-black !text-white opacity-0 shadow-sm backdrop-blur transition duration-300 group-hover:opacity-100" style={{ color: "#ffffff", WebkitTextFillColor: "#ffffff" }}>
-                        {image.planType === "free" ? "免費下載" : "完整版素材"}
+                        {image.planType === "free" ? "免費下載" : "暫不可下載"}
                       </span>
                       <button
                         type="button"
@@ -789,8 +787,8 @@ export default function ImagesPage() {
                           handleButtonClick(image);
                         }}
                         className={`absolute bottom-3 right-3 z-10 ${downloadIconClass}`}
-                        aria-label={image.planType === "free" ? `下載${usageTitle}圖片` : `取得${usageTitle}完整素材庫`}
-                        title={image.planType === "free" ? "免費下載圖片" : "取得完整素材庫"}
+                        aria-label={image.planType === "free" ? `下載${usageTitle}圖片` : `${usageTitle}圖片暫不可下載`}
+                        title={image.planType === "free" ? "免費下載圖片" : "免費下載資訊更新中"}
                       >
                         {image.planType === "free" ? "↓" : "🔒"}
                       </button>
@@ -1014,11 +1012,11 @@ export default function ImagesPage() {
           </div>
         </div>
 
-        {/* 免費試用與完整版使用說明 */}
+        {/* 免費圖片授權使用說明 */}
         <div className="mt-12 rounded-lg border bg-white p-6 text-sm leading-relaxed text-gray-700">
           <h3 className="mb-3 text-base font-semibold">圖片素材使用說明</h3>
           <ul className="list-disc space-y-2 pl-5">
-            <li>標示「免費下載」的圖片可直接下載試用；其餘圖片屬於 NT$199 完整素材庫。</li>
+            <li>本站圖片庫開放免費下載，可用於一般社群、網站與內容創作；下載前請確認適用的授權條件。</li>
             <li>
               圖片可作為社群貼文、短影音封面、商品圖靈感、LINE
               貼圖測試、個人創作練習與一般商用設計使用。
@@ -1044,7 +1042,7 @@ export default function ImagesPage() {
             </li>
           </ul>
           <p className="mt-3 text-xs text-gray-500">
-            RxV 會持續新增圖片；完整版素材庫以網站目前可販售內容為準。
+            RxV 會持續新增免費圖片，並提供 LINE 貼圖與 MP4 影片製作工具。
           </p>
         </div>
       </div>
@@ -1084,7 +1082,7 @@ export default function ImagesPage() {
                 <p className="mt-1 text-sm text-slate-500">
                   {previewImage.planType === "free"
                     ? "免費圖片，可直接下載"
-                    : "完整版素材，可預覽；高畫質原圖包含於 NT$199 完整素材庫"}
+                    : "免費下載資訊更新中，請稍後重新整理頁面"}
                 </p>
               </div>
 
@@ -1112,7 +1110,7 @@ export default function ImagesPage() {
                 >
                   {previewImage.planType === "free"
                     ? "免費下載"
-                    : "取得 NT$199 完整素材庫"}
+                    : "暫不可下載"}
                 </button>
               </div>
             </div>
