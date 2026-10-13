@@ -1756,6 +1756,12 @@ const HomePage: React.FC = () => {
                     🖼️ 免費下載 2,858 張圖片
                   </Link>
                   <Link
+                    to="/tools/image-to-mp4"
+                    className="inline-flex items-center rounded-full bg-sky-700 px-6 py-3 text-base font-bold !text-white shadow-lg transition-all duration-200 hover:scale-[1.02] hover:bg-sky-800 hover:shadow-xl"
+                  >
+                    🎬 免費圖片轉 MP4
+                  </Link>
+                  <Link
                     to="/tools/sticker-prompt"
                     className="inline-flex items-center rounded-full bg-blue-600 px-6 py-3 text-base font-bold !text-white shadow-lg transition-all duration-200 hover:scale-[1.02] hover:bg-blue-700 hover:shadow-xl"
                   >
