@@ -4458,7 +4458,7 @@ function RecommendedToolsSection() {
         </h2>
       </div>
       <p className="mt-3 text-sm leading-relaxed text-slate-600">
-        有字貼圖建議先用 ChatGPT 產生；PhotoRoom
+        初次使用建議先在 Google Gemini 畫母圖；ChatGPT 也可作為備選。PhotoRoom
         適合測試貼紙角色素材、商品圖去背與品牌素材，最後回到 RxV 整理貼圖尺寸與
         ZIP。
       </p>
@@ -4468,14 +4468,14 @@ function RecommendedToolsSection() {
             GPT
           </div>
           <h3 className="text-lg font-black text-slate-900">
-            ChatGPT 有字貼圖
+            Google Gemini／ChatGPT 生圖
           </h3>
           <p className="mt-2 text-sm leading-relaxed text-slate-600">
             較適合測試有繁體中文文字的 LINE 貼圖大圖；PhotoRoom
             則適合貼紙角色與商品素材。
           </p>
           <span className="mt-4 inline-flex rounded-xl bg-emerald-600 px-4 py-2 text-xs font-black !text-white">
-            主流程建議
+            生圖工具（自選）
           </span>
         </div>
         <a
@@ -4492,7 +4492,7 @@ function RecommendedToolsSection() {
           </h3>
           <p className="mt-2 text-sm leading-relaxed text-slate-600">
             可用來測試貼紙風角色、商品素材與品牌視覺；若要繁體中文貼圖文字，建議先用本站產生提示詞，再用
-            ChatGPT 或後製工具處理。
+            Google Gemini、ChatGPT 或後製工具處理。
           </p>
           <span className="mt-4 inline-flex rounded-xl bg-blue-600 px-4 py-2 text-xs font-black !text-white">
             前往創作工具
@@ -4914,20 +4914,20 @@ export default function StickerPromptGenerator() {
               LINE 貼圖一鍵製作｜第 1 步
             </h1>
             <p className="mt-4 text-sm leading-relaxed text-slate-600 sm:text-base">
-              先選擇「靜態」或「動態」貼圖，再選主題與張數。系統會自動準備要貼到 ChatGPT 的生圖指令；完成後照著第 2、3、4、5 步一路做完，不需要自己找下一個工具。
+              先選 LINE／WhatsApp、靜態或動態、張數和主題。系統會自動準備畫圖指令；第 2 步複製後，貼到 Google Gemini 畫出完整大圖，再回本站自動切圖。
             </p>
             <p className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold leading-7 text-amber-800">
-              操作方式：① 選貼圖類型與張數 → ② 複製生圖指令到 ChatGPT → ③ 下載母圖並傳回本站 → ④ 系統自動裁切、去背與檢查 → ⑤ 下載靜態貼圖，或繼續一鍵製作動態貼圖。
+              操作方式：① 選好貼圖 → ② 複製指令，在 Google Gemini 貼上並產圖 → ③ 將整張大圖下載、上傳 RXV → ④ RXV 自動切圖、去背、檢查 → ⑤ 下載 ZIP（動態另選動畫效果）。
             </p>
           </section>
 
           <section className="mt-6 grid gap-6 xl:grid-cols-[0.82fr_1.18fr]">
             <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
               <h2 className="text-xl font-black text-slate-900">
-                步驟 1｜選擇要做的貼圖
+                第 1 步｜先選貼圖（建議第一次選 8 張）
               </h2>
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                先選 LINE 或 WhatsApp，再選靜態／動態與張數；同一批母圖可重複用於兩個平台。
+                先選 LINE 或 WhatsApp、靜態或動態，再選張數與主題。第一次建議試做 8 張；不知道怎麼選，保持預設值也可以。
               </p>
               <div className="mt-4 grid grid-cols-2 gap-3">
                 {(["line", "whatsapp"] as const).map((platform) => (
@@ -5056,6 +5056,9 @@ export default function StickerPromptGenerator() {
                 選擇貼圖類型後，系統會自動帶入常用貼圖文字。可在下方「貼圖文字」欄位確認或微調。
               </p>
 
+              <details className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                <summary className="cursor-pointer text-sm font-black text-slate-800">想換角色、修改文字或指定畫風？展開進階設定（可跳過）</summary>
+                <div className="mt-3">
               <label className="mt-5 block text-xs font-black text-slate-500">
                 角色來源
               </label>
@@ -5246,6 +5249,8 @@ export default function StickerPromptGenerator() {
                 rows={24}
                 className="mt-3 min-h-[520px] w-full resize-y rounded-2xl border border-slate-200 bg-white px-4 py-4 text-base leading-8 text-slate-700 outline-none focus:border-violet-400"
               />
+                </div>
+              </details>
             </div>
 
             <div id="sticker-copy" className="scroll-mt-24 rounded-3xl border border-violet-100 bg-white p-5 shadow-sm">
@@ -5253,10 +5258,10 @@ export default function StickerPromptGenerator() {
                 <div>
                   <p className="text-xs font-black tracking-wide text-violet-600">步驟 2</p>
                   <h2 className="mt-1 text-xl font-black text-slate-900">
-                    複製到 ChatGPT 生圖
+                    第 2 步｜複製指令，到 Google Gemini 畫圖
                   </h2>
                   <p className="mt-2 text-sm leading-6 text-slate-600">
-                    按順序複製下方指令到 ChatGPT。每個按鈕會產生一張母圖，完成後把圖片下載到電腦或手機。
+                    先按紫色按鈕複製指令，再點「開啟 Google Gemini」，貼上（電腦 Ctrl+V／手機長按貼上）並送出。AI 畫好後，請下載「整張大圖」，不要自己切成小張。
                   </p>
                 </div>
               </div>
@@ -5265,6 +5270,15 @@ export default function StickerPromptGenerator() {
                 這次需要產生 {motherSheetPlan.length} 張母圖，共 {targetCount} 張貼圖。請一張一張產生，不要把不同母圖再合成一張。
               </div>
 
+              <div className="mt-4 rounded-2xl border border-sky-200 bg-sky-50 p-4">
+                <p className="text-sm font-black text-sky-900">第一次使用，照這三個動作就好</p>
+                <p className="mt-2 text-sm leading-7 text-slate-700">① 按下方「複製第 1 張指令」 → ② 開啟 Google Gemini → ③ 在 Gemini 對話框貼上並送出。</p>
+                <a href="https://gemini.google.com/app" target="_blank" rel="noopener noreferrer"
+                  className="mt-3 inline-flex min-h-11 items-center justify-center rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-black !text-white hover:bg-blue-800">
+                  第 2 步｜開啟 Google Gemini 畫圖 ↗
+                </a>
+                <p className="mt-2 text-xs leading-6 text-slate-600">本站只幫你複製文字，不會自動貼進 Gemini。也可以用 ChatGPT 等支援生圖的工具。Gemini 若要求登入，請先用自己的 Google 帳號登入。</p>
+              </div>
               <div className="mt-4 space-y-4">
                 {flowPrompts.map((item, index) => (
                   <div key={`${item.grid}-${index}`} className="rounded-3xl border border-violet-100 bg-violet-50/50 p-4">
@@ -5286,7 +5300,7 @@ export default function StickerPromptGenerator() {
                       >
                         {copiedBatchIndex === index
                           ? "已複製"
-                          : `第 2 步｜複製第 ${index + 1} 張 AI 生圖指令`}
+                          : `第 2 步｜複製第 ${index + 1} 張畫圖指令`}
                       </button>
                     </div>
                     <details className="mt-3 rounded-2xl border border-violet-100 bg-white">
@@ -5306,7 +5320,7 @@ export default function StickerPromptGenerator() {
                 onClick={() => persistFlowProject(3)}
                 className="mt-5 inline-flex min-h-[52px] items-center justify-center rounded-2xl bg-blue-600 px-5 py-3 text-center text-sm font-black !text-white shadow-lg transition hover:bg-blue-700"
               >
-                第 3 步｜我已存好圖片，前往上傳母圖 →
+                第 3 步｜已下載整張大圖，回 RXV 上傳 →
               </Link>
 
               <CoupangDynamicAd
@@ -5340,7 +5354,7 @@ export default function StickerPromptGenerator() {
                 </div>
               </details>
 
-              <div className="mt-5 rounded-3xl border border-orange-200 bg-orange-50 p-5">
+              <div className="hidden mt-5 rounded-3xl border border-orange-200 bg-orange-50 p-5">
                 <h3 className="text-lg font-black text-slate-900">
                   想要更多主題與店家職業版？
                 </h3>
@@ -5391,7 +5405,7 @@ export default function StickerPromptGenerator() {
             </div>
           </section>
 
-          <SupportSection />
+          {false && <SupportSection />}
 
           <section className="mt-6 rounded-3xl border border-pink-100 bg-gradient-to-br from-pink-50 via-white to-amber-50 p-5 shadow-sm">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
@@ -5403,16 +5417,14 @@ export default function StickerPromptGenerator() {
                   店家與職業專用 LINE 貼圖提示詞
                 </h2>
                 <p className="mt-2 text-sm leading-7 text-slate-600">
-                  先在網站試用更多熱門職業範例；想要 100+
-                  職業、每個職業多組情境文字、角色與排版變化，可購買進階版 Excel
-                  模板包，適合接案或大量製作。
+                  下面提供可直接套用的職業與店家貼圖範例。選一個範例，系統會自動填入角色及常見回覆文字，不用從零開始設定。
                 </p>
               </div>
               <a
                 href={KOFI_SHOP_URL}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex min-h-[44px] items-center justify-center rounded-2xl bg-orange-500 px-4 py-3 text-sm font-black !text-white shadow-md transition hover:-translate-y-0.5 hover:bg-orange-600 hover:shadow-lg"
+                className="hidden min-h-[44px] items-center justify-center rounded-2xl bg-orange-500 px-4 py-3 text-sm font-black !text-white shadow-md transition hover:-translate-y-0.5 hover:bg-orange-600 hover:shadow-lg"
                 style={{ color: "#ffffff" }}
               >
                 購買進階版模板
