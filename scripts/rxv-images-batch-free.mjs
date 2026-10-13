@@ -231,7 +231,10 @@ async function doRelease(live, index) {
   }
   const state = loadState();
   if (state && live.sha !== state.lastSha) throw new Error("R2 catalog changed outside tool; no changes made");
-  console.log("Verified all selected originals: " + plan.length);
+  const totalSourceBytes = plan.reduce((sum, item) => sum + Number(item.sourceHead?.ContentLength || 0), 0);
+  console.log("Verified originals: " + plan.length + " | possible additional public R2 storage: "
+    + (totalSourceBytes / 1024 / 1024 / 1024).toFixed(2) + " GiB (upper estimate).");
+  console.log("R2 storage is NOT unlimited. Review free storage quota before confirming.");
   console.log("THIS WILL PUBLISH ORIGINAL-SIZE IMAGES TO THE PUBLIC R2 BUCKET.");
   await confirm(mode === "test" ? "TEST 10" : "FREE ALL");
   let active = await startBackup(live);
