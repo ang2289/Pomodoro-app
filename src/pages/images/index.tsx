@@ -837,7 +837,7 @@ export default function ImagesPage() {
               可製作白底商品圖、高級商業圖、社群宣傳圖與外送平台主圖。
             </p>
             <p className="mt-3 text-sm font-black text-emerald-700">
-              白底商品圖約 NT$19 起｜高級商業圖約 NT$29 起
+              商品圖工具採點數方案，使用條件請以工具頁說明為準。
             </p>
             <Link
               to="/tools/product-image-generator"
@@ -860,7 +860,7 @@ export default function ImagesPage() {
               由工作室協助人工排版；確認預覽後再送印。
             </p>
             <p className="mt-3 text-sm font-black text-violet-700">
-              人工排版名片 200 張 NT$349 起
+              可洽詢客製名片設計、排版與印刷服務。
             </p>
             <p className="mt-1 text-xs font-bold text-violet-700">
               符合方案加贈一頁式品牌／公司介紹網站
