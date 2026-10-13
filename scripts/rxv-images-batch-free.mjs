@@ -24,7 +24,7 @@ import {
 import {
   readManifest, rebuildManifest, checkPreviewStatus, catalogFingerprint,
   indexOriginals, sourceCandidates, validateMasterKey, contentTypeFor,
-  makeFreePublicKey, publicUrl, imageIsFree, changeToFree,
+  makeFreePublicKey, publicUrl, imageIsFree, imageNeedsPublish, changeToFree,
 } from "./lib/rxv-image-free-core.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -206,22 +206,22 @@ async function makeOriginalPublic(item, state) {
 }
 async function doPreview(live, index) {
   const count = checkPreviewStatus(live.doc);
-  const unknownLegacy = live.doc.images.filter((v) => !imageIsFree(v) && !index.has(v.id)).length;
+  const unknownLegacy = live.doc.images.filter((v) => imageNeedsPublish(v, publicBase) && !index.has(v.id)).length;
   console.log(JSON.stringify({ mode: "preview", counts: count, mappedOriginals: index.size,
     lockedWithoutLegacyMapping: unknownLegacy, sourceFile: privateMasterPath,
     previewOnly: true, changesMade: false }, null, 2));
-  const subset = live.doc.images.filter((v) => !imageIsFree(v)).slice(0, 10);
+  const subset = live.doc.images.filter((v) => imageNeedsPublish(v, publicBase)).slice(0, 10);
   console.log("Checking up to 10 locked originals...");
   const results = await preflight(subset, index);
   console.log(JSON.stringify({ sampleResolved: results.filter((v) => v.sourceKey).length,
     sampleMissingIds: results.filter((v) => v.error).map((v) => v.id) }, null, 2));
 }
 async function doRelease(live, index) {
-  if (!live.doc.images.some((v) => !imageIsFree(v))) {
+  if (!live.doc.images.some((v) => imageNeedsPublish(v, publicBase))) {
     console.log("All catalog images are already free. Nothing to change.");
     return;
   }
-  const locked = live.doc.images.filter((v) => !imageIsFree(v));
+  const locked = live.doc.images.filter((v) => imageNeedsPublish(v, publicBase));
   const target = mode === "test" ? locked.slice(0, chunkSize) : locked;
   const plan = await preflight(target, index);
   const missing = plan.filter((item) => !item.sourceKey);
@@ -293,7 +293,8 @@ async function main() {
   const live = await readLive();
   const index = loadMaster();
   const count = checkPreviewStatus(live.doc);
-  console.log("Live catalog " + count.total + " | free " + count.free + " | locked " + count.locked);
+  const incomplete = live.doc.images.filter((v) => imageNeedsPublish(v, publicBase)).length;
+  console.log("Live catalog " + count.total + " | free " + count.free + " | locked " + count.locked + " | requiring download setup " + incomplete);
   if (mode === "preview") await doPreview(live, index);
   else if (mode === "restore") await doRestore(live);
   else await doRelease(live, index);
