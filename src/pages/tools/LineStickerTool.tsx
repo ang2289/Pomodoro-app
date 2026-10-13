@@ -2525,7 +2525,7 @@ export default function LineStickerTool() {
             </div>
           )}
 
-          <div className="space-y-4 mb-10">
+          <div id="mother-upload" className="scroll-mt-24 space-y-4 mb-10">
             <section className="rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50 to-white p-5">
               <div className="grid gap-4">
                 <div className="min-w-0">
@@ -2691,7 +2691,7 @@ export default function LineStickerTool() {
                       {unsafeMotherSheets.slice(0, 6).map((reason, index) => <p key={index}>{reason}</p>)}
                     </div>
                   ) : null}
-                  <div className="mt-4 grid gap-3 xl:grid-cols-2">
+                  <div id="mother-split" className="scroll-mt-24 mt-4 grid gap-3 xl:grid-cols-2">
                     {motherSheetDetections.map((item, index) => {
                       const safetyGrid = !flowProject && motherSheetGrid !== "auto" ? motherSheetGrid : item.grid;
                       const plannedGrid =
@@ -2806,7 +2806,7 @@ export default function LineStickerTool() {
                   >
                     {loading && motherSheetDetectionStatus === "cutting"
                       ? "正在切圖、去背與安全整理…"
-                      : "✓ 確認格數正確，開始切圖"}
+                      : "第 4 步｜確認格數，開始自動切圖"}
                   </button>
                 </div>
               ) : null}
@@ -2831,7 +2831,7 @@ export default function LineStickerTool() {
                 className="hidden"
               />
               <p className="text-slate-600 font-bold">
-                {t("line_sticker_upload_click")}
+                第 3 步｜點這裡上傳圖片（可一次多選）
               </p>
               <p className="text-[11px] text-slate-400 mt-1">
                 {t("line_sticker_upload_hint")}｜建議上傳已去背 PNG /
@@ -3427,7 +3427,8 @@ export default function LineStickerTool() {
           </section>
         </div>
 
-        <footer className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white/85 px-3 py-2 backdrop-blur-xl sm:p-4">
+        <div id="sticker-download" className="scroll-mt-24" />
+        <footer aria-label="第 5 步：貼圖下載或動態製作" className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white/85 px-3 py-2 backdrop-blur-xl sm:p-4">
           <div className="mx-auto flex max-w-[1480px] items-center gap-2 sm:gap-4">
             <div className="hidden sm:block">
               <p className="text-[10px] font-bold text-slate-400 uppercase leading-none">
@@ -3468,8 +3469,8 @@ export default function LineStickerTool() {
                     ? "正在準備下一步…"
                     : canDownload
                       ? (exportPlatform === "whatsapp"
-                          ? "下一步：製作 WhatsApp 動態 WebP"
-                          : "下一步：自動製作 LINE 動態貼圖")
+                          ? "第 5 步｜製作 WhatsApp 動態 WebP"
+                          : "第 5 步｜自動製作 LINE 動態貼圖")
                       : `還差 ${needMore} 張`}
                 </button>
               </>
