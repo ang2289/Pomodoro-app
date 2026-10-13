@@ -1124,21 +1124,33 @@ export default function ImagesPage() {
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={() => {
-                  void handleButtonClick(previewImage);
-                }}
-                className={`inline-flex min-h-[46px] items-center justify-center rounded-xl px-5 py-3 text-sm font-black !text-white shadow-sm ${
-                  previewImage.planType === "free"
-                    ? "bg-emerald-600 hover:bg-emerald-700"
-                    : "bg-amber-600 hover:bg-amber-700"
-                }`}
-              >
-                {previewImage.planType === "free"
-                  ? "免費下載"
-                  : "取得 NT$199 完整素材庫"}
-              </button>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Link
+                  to={IMAGE_TO_MP4_TOOL_PATH}
+                  onClick={() => {
+                    trackMp4ToolClick("image_preview");
+                    setPreviewImage(null);
+                  }}
+                  className="inline-flex min-h-[46px] items-center justify-center rounded-xl border border-sky-300 bg-sky-50 px-5 py-3 text-sm font-black text-sky-800 transition hover:bg-sky-100 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-sky-200"
+                >
+                  🎬 圖片轉 MP4
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    void handleButtonClick(previewImage);
+                  }}
+                  className={`inline-flex min-h-[46px] items-center justify-center rounded-xl px-5 py-3 text-sm font-black !text-white shadow-sm ${
+                    previewImage.planType === "free"
+                      ? "bg-emerald-600 hover:bg-emerald-700"
+                      : "bg-amber-600 hover:bg-amber-700"
+                  }`}
+                >
+                  {previewImage.planType === "free"
+                    ? "免費下載"
+                    : "取得 NT$199 完整素材庫"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
