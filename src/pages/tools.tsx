@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import NewUserStickerGuide from "@/components/NewUserStickerGuide";
 import { Helmet } from "react-helmet-async";
 import SEO, { getBaseUrl } from "@/components/SEO";
 import { useTranslation } from "react-i18next";
@@ -405,6 +406,8 @@ export default function ToolsPage() {
           {t("categoryTools.h1")}
         </h1>
         <p className="text-slate-600 mb-6">{t("categoryTools.lead")}</p>
+
+        <NewUserStickerGuide />
 
         {/* 搜尋欄 */}
         <div className="mb-8">
