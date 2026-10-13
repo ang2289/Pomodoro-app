@@ -2559,7 +2559,7 @@ const AnimatedLineStickerTool: React.FC = () => {
       <main className="relative left-1/2 w-screen -translate-x-1/2 px-4 py-8 md:px-6 md:py-10">
         <div className="mx-auto w-full max-w-[1480px]">
         <LineStickerFlowSteps activeStep={5} mode="animated" />
-        <section className="mb-5 rounded-2xl border border-emerald-200 bg-white p-4">
+        <section id="animated-sticker-batch" className="scroll-mt-24 mb-5 rounded-2xl border border-emerald-200 bg-white p-4">
           <p className="text-sm font-black text-slate-900">輸出平台｜動態貼圖</p>
           <div className="mt-3 grid grid-cols-2 gap-3">
             {(["line", "whatsapp"] as const).map((platform) => (
