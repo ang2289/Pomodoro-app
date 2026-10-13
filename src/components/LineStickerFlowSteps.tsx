@@ -26,7 +26,10 @@ export default function LineStickerFlowSteps({
     let anchorId = location.hash.slice(1);
     try { anchorId = decodeURIComponent(anchorId); } catch { /* 保留原始 hash */ }
     const frame = window.requestAnimationFrame(() => {
-      document.getElementById(anchorId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      // 尚未上傳圖片時，第 4 步切割區還未顯示；先引導回第 3 步上傳區。
+      const target = document.getElementById(anchorId)
+        ?? (anchorId === "mother-split" ? document.getElementById("mother-upload") : null);
+      target?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
     return () => window.cancelAnimationFrame(frame);
   }, [location.pathname, location.hash]);
