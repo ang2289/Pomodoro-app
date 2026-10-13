@@ -76,7 +76,8 @@ export function imageNeedsPublish(image, publicBase) {
   // An existing free badge is insufficient unless the file has a real
   // publicly downloadable original. API-proxy URLs still cost Vercel.
   const url = String(image?.download_url || "");
-  return !imageIsFree(image) || !url.startsWith(publicBase.replace(/\/+$/, "") + "/free/originals/");
+  const prefix = publicBase.replace(/\/+$/, "") + "/free/originals/" + image?.id + ".";
+  return !imageIsFree(image) || !url.startsWith(prefix) || !/\.(jpg|jpeg|png|webp)$/i.test(url);
 }
 
 export function catalogFingerprint(bytes) {
