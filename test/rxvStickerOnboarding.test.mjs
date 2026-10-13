@@ -1,9 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, existsSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 
-const projectRoot = fileURLToPath(new URL("../", import.meta.url));
 const read = (name) => readFileSync(new URL(`../${name}`, import.meta.url), "utf8");
 
 test("新手教學與首頁、工具中心相連", () => {
