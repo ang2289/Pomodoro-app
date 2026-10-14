@@ -70,7 +70,8 @@ test("貼圖工具主要按鈕依內容寬度排列，不再整列滿版", () =>
   const guide = read("src/pages/tools/LineStickerGuide.tsx");
 
   assert.match(upload, /w-fit max-w-full shrink-0 items-center justify-center rounded-full/);
-  assert.match(upload, /w-\[calc\(100%-1rem\)\] max-w-3xl/);
+  assert.match(upload, /mt-6 max-w-3xl rounded-2xl/);
+  assert.doesNotMatch(upload, /className="fixed bottom-2 left-1\/2/);
   assert.match(upload, /inline-flex min-h-12 w-auto max-w-full shrink-0/);
   assert.doesNotMatch(upload, /h-12 min-h-12 flex-1 whitespace-nowrap/);
   assert.match(prompt, /mt-4 flex flex-wrap items-center gap-3/);
@@ -166,4 +167,27 @@ test("第 2 步顯示全部已選設定，母圖提示詞逐格指定位置並�
   assert.match(source, /stickerMode,\s*stickerPlatform,\s*\),/);
   assert.match(source, /\[\s*motherSheetPlan,[\s\S]*?textPosition,\s*fontStyle,[\s\S]*?stickerMode,\s*stickerPlatform,\s*\]/);
   assert.doesNotMatch(source, /人物從第一格到最後一格保持完全同一組新郎新娘/);
+});
+
+
+test("第一次進貼圖工具從第 1 步開始，只有明確選擇已有圖片才進第 3 步", () => {
+  const upload = read("src/pages/tools/LineStickerTool.tsx");
+  const prompt = read("src/pages/tools/StickerPromptGenerator.tsx");
+  const progress = read("src/components/LineStickerFlowSteps.tsx");
+  const guide = read("src/components/NewUserStickerGuide.tsx");
+
+  assert.match(upload, /if \(isFirstVisit\) \{/);
+  assert.match(upload, /<LineStickerFlowSteps activeStep=\{1\} \/>/);
+  assert.match(upload, /我還沒有母圖，從零開始/);
+  assert.match(upload, /line-sticker\?existing=1#mother-upload/);
+  assert.match(upload, /!new URLSearchParams\(location.search\)\.has\("existing"\)/);
+  assert.match(upload, /!location\.hash/);
+  assert.match(prompt, /mt-6 flex flex-col gap-6/);
+  assert.doesNotMatch(prompt, /xl:grid-cols-\[0\.82fr_1\.18fr\]/);
+  assert.match(prompt, /前往第 2 步｜複製畫圖指令 ↓/);
+  assert.match(prompt, /to="\/tools\/line-sticker\?flow=1#mother-upload"/);
+  assert.match(progress, /flex flex-col gap-2" aria-label="由上而下的五步驟導覽"/);
+  assert.match(guide, /mt-4 flex flex-col gap-2/);
+  assert.doesNotMatch(guide, /lg:grid-cols-5/);
+  assert.doesNotMatch(upload, /className="fixed bottom-2 left-1\/2/);
 });
