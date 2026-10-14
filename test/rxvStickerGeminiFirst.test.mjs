@@ -86,3 +86,19 @@ test("貼圖工具主要按鈕依內容寬度排列，不再整列滿版", () =>
   assert.match(animated, /min-h-\[230px\] w-full flex-col/);
   assert.match(prompt, /min-h-\[520px\] w-full resize-y/);
 });
+
+test("Gemini 4×4 橫幅與多餘英文需要專用指令，切圖前應阻擋異常長寬比", () => {
+  const prompt = read("src/pages/tools/StickerPromptGenerator.tsx");
+  const upload = read("src/pages/tools/LineStickerTool.tsx");
+  const steps = read("src/components/LineStickerFlowSteps.tsx");
+  assert.match(prompt, /function buildGeminiStrictMotherSheetPrompt/);
+  assert.match(prompt, /1:1 正方形畫布/);
+  assert.match(prompt, /JUST MARRIED/);
+  assert.match(prompt, /複製 Gemini 排版強化版/);
+  assert.match(prompt, /copyFlowPrompt\(index, "chatgpt"\)/);
+  assert.match(prompt, /copyFlowPrompt\(index, "gemini"\)/);
+  assert.match(upload, /requiresSquare4x4/);
+  assert.match(upload, /aspect < 0\.82 \|\| aspect > 1\.22/);
+  assert.match(upload, /unsafeMotherSheets\.length > 0/);
+  assert.match(steps, /已實測 ChatGPT/);
+});
