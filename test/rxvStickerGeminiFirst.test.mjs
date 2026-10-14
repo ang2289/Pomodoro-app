@@ -100,5 +100,10 @@ test("Gemini 4×4 橫幅與多餘英文需要專用指令，切圖前應阻擋�
   assert.match(upload, /requiresSquare4x4/);
   assert.match(upload, /aspect < 0\.82 \|\| aspect > 1\.22/);
   assert.match(upload, /unsafeMotherSheets\.length > 0/);
-  assert.match(steps, /已實測 ChatGPT/);
+  assert.match(steps, /ChatGPT 已有符合 4×4/);
+  assert.match(prompt, /const rowAssignment = Array.from/);
+  assert.match(prompt, /最終版型僅此一種/);
+  assert.match(prompt, /每格短句位置必須依下表/);
+  assert.doesNotMatch(prompt, /嚴格按照指定 4×2、4×4 或 4×5 格數/);
+  assert.match(read("src/components/StickerBeginnerActions.tsx"), /實驗性選項/);
 });
