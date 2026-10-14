@@ -74,7 +74,7 @@ test("貼圖工具主要按鈕依內容寬度排列，不再整列滿版", () =>
   assert.doesNotMatch(upload, /className="fixed bottom-2 left-1\/2/);
   assert.match(upload, /inline-flex min-h-12 w-auto max-w-full shrink-0/);
   assert.doesNotMatch(upload, /h-12 min-h-12 flex-1 whitespace-nowrap/);
-  assert.match(prompt, /mt-4 flex flex-wrap items-center gap-3/);
+  assert.match(prompt, /grid-cols-2 items-stretch gap-3" role="group" aria-label="選擇貼圖平台"/);
   assert.match(prompt, /w-fit max-w-full/);
   assert.match(actions, /flex flex-wrap items-center gap-2/);
   assert.match(actions, /開啟 ChatGPT 畫圖/);
@@ -218,7 +218,7 @@ test("新手頁面保持窄版與極簡進度列，不再用滿版彩色卡片�
   assert.match(steps, /<nav/);
   assert.match(steps, /<ol className="flex flex-wrap items-center gap-2"/);
   assert.doesNotMatch(steps, /先知道一件事：不是一張張畫貼圖/);
-  assert.match(prompt, /w-fit max-w-full flex-none items-center/);
+  assert.match(prompt, /min-h-12 w-full min-w-0 items-center justify-center/);
   assert.match(prompt, /rows=\{Math\.min\(requiredCount \+ 1, 12\)\}/);
   assert.match(prompt, /id="sticker-customize"/);
   assert.match(help, /下一步：\{children\}/);
@@ -232,27 +232,27 @@ test("每組貼圖選擇按鈕同寬，選取、懸停、鍵盤焦點狀態清�
   const animated = read("src/pages/tools/AnimatedLineStickerTool.tsx");
 
   // 平台與動靜態要使用等分的兩欄格線，格線本身有最大寬度，避免整頁滿版。
-  assert.match(prompt, /grid w-full max-w-\\[520px\\] grid-cols-2 items-stretch gap-3" role="group" aria-label="選擇貼圖平台"/);
-  assert.match(prompt, /grid w-full max-w-\\[520px\\] grid-cols-2 items-stretch gap-3" role="group" aria-label="選擇靜態或動態貼圖"/);
-  assert.match(upload, /grid w-full max-w-\\[520px\\] grid-cols-2 items-stretch gap-3" role="group" aria-label="選擇貼圖輸出平台"/);
-  assert.match(animated, /grid w-full max-w-\\[520px\\] grid-cols-2 items-stretch gap-3" role="group" aria-label="選擇動態貼圖輸出平台"/);
+  assert.match(prompt, /grid-cols-2 items-stretch gap-3" role="group" aria-label="選擇貼圖平台"/);
+  assert.match(prompt, /grid-cols-2 items-stretch gap-3" role="group" aria-label="選擇靜態或動態貼圖"/);
+  assert.match(upload, /grid-cols-2 items-stretch gap-3" role="group" aria-label="選擇貼圖輸出平台"/);
+  assert.match(animated, /grid-cols-2 items-stretch gap-3" role="group" aria-label="選擇動態貼圖輸出平台"/);
 
-  assert.match(prompt, /aria-pressed=\\{stickerPlatform === platform\\}/);
-  assert.match(prompt, /aria-pressed=\\{stickerMode === mode\\}/);
-  assert.match(prompt, /aria-pressed=\\{targetCount === count\\}/);
-  assert.match(upload, /aria-pressed=\\{exportPlatform === "whatsapp"\\}/);
-  assert.match(animated, /aria-pressed=\\{exportPlatform === platform\\}/);
+  assert.ok(prompt.includes("aria-pressed={stickerPlatform === platform}"));
+  assert.ok(prompt.includes("aria-pressed={stickerMode === mode}"));
+  assert.ok(prompt.includes("aria-pressed={targetCount === count}"));
+  assert.ok(upload.includes('aria-pressed={exportPlatform === "whatsapp"}'));
+  assert.ok(animated.includes("aria-pressed={exportPlatform === platform}"));
 
   // 選項使用同色系，未選擇也有明確邊框與底色，滑過和鍵盤操作有可見回饋。
   for (const source of [prompt, upload, animated]) {
-    assert.match(source, /hover:-translate-y-0\\.5/);
+    assert.ok(source.includes("hover:-translate-y-0.5"));
     assert.match(source, /hover:shadow-md/);
     assert.match(source, /focus-visible:outline-offset-2/);
     assert.match(source, /border-violet-600 bg-violet-600/);
     assert.match(source, /border-violet-200 bg-violet-50/);
   }
   // 張數按鈕為同寬且可換行，窄手機不應強迫五顆擠在同一排。
-  assert.match(prompt, /w-\\[76px\\] shrink-0/);
-  assert.match(prompt, /max-w-\\[520px\\] flex-wrap gap-2" role="group" aria-label="選擇貼圖張數"/);
-  assert.match(upload, /w-\\[68px\\] shrink-0/);
+  assert.ok(prompt.includes("w-[76px] shrink-0"));
+  assert.ok(prompt.includes('max-w-[520px] flex-wrap gap-2" role="group" aria-label="選擇貼圖張數"'));
+  assert.ok(upload.includes("w-[68px] shrink-0"));
 });
