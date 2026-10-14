@@ -4491,7 +4491,7 @@ function RecommendedToolsSection() {
         </h2>
       </div>
       <p className="mt-3 text-sm leading-relaxed text-slate-600">
-        生圖可任選 ChatGPT 或 Google Gemini；目前已有 ChatGPT 製作示範。PhotoRoom
+        推薦使用已實測的 ChatGPT；Gemini 目前僅作為實驗性替代方案。PhotoRoom
         適合測試貼紙角色素材、商品圖去背與品牌素材，最後回到 RxV 整理貼圖尺寸與
         ZIP。
       </p>
@@ -5305,7 +5305,7 @@ export default function StickerPromptGenerator() {
                     第 2 步｜複製指令，用 ChatGPT 或 Gemini 畫圖
                   </h2>
                   <p className="mt-2 text-sm leading-6 text-slate-600">
-                    先按下方紫色按鈕複製指令，再自由選擇「開啟 ChatGPT 畫圖」或「開啟 Google Gemini 畫圖」，貼上（電腦 Ctrl+V／手機長按貼上）並送出。AI 畫好後請下載「整張大圖」，不用自己切成小張。
+                    請優先使用已實測的 ChatGPT。先按紫色按鈕複製指令，再按「開啟 ChatGPT 畫圖」貼上（電腦 Ctrl+V／手機長按貼上）並送出；Gemini 為實驗性選項，可能不遵守格數。AI 畫好後請下載「整張大圖」，不用自己切成小張。
                   </p>
                 </div>
               </div>
@@ -5352,7 +5352,7 @@ export default function StickerPromptGenerator() {
                           {copiedGeminiIndex === index ? "✓ 已複製 Gemini 強化版" : "複製 Gemini 排版強化版"}
                         </button>
                       </div>
-                      <p className="mt-2 text-xs leading-5 text-amber-800">ChatGPT 已有實際產圖案例；Gemini 有時會把 4×4 畫成橫幅，請選強化版，產圖後確認 1:1 正方形、16 格、沒有額外英文。</p>
+                      <p className="mt-2 text-xs leading-5 text-amber-800">ChatGPT 已有成功製作貼圖的案例。Gemini 多次測試仍可能出現錯誤欄數、重複文字或橫幅；即使複製強化版也不能保證。若 4×4 不是 4 欄 × 4 列、共 16 格，請重新用 ChatGPT 產圖。</p>
                       <StickerAIProviderLinks compact />
                       </div>
                     </div>
