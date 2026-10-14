@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import SEO from "@/components/SEO";
 import LineStickerAuthorCard from "@/components/LineStickerAuthorCard";
-import { StickerExistingMotherSheetShortcut, StickerCustomInquiry, StickerNextActionHint } from "@/components/StickerBeginnerActions";
+import { StickerExistingMotherSheetShortcut, StickerCustomInquiry, StickerNextActionHint, StickerAIProviderLinks } from "@/components/StickerBeginnerActions";
 
 const SUPPORT_TW_URL = "https://p.ecpay.com.tw/FD7CD6D";
 const SUPPORT_KOFI_URL = "https://ko-fi.com/ang2289";
@@ -39,7 +39,7 @@ const promptCards = [
 
 const steps = [
   { title: "選主題與張數", desc: "先選 LINE 或 WhatsApp、靜態或動態，再選主題與上架張數。" },
-  { title: "到 Google Gemini 畫圖", desc: "複製本站產生的指令，貼到 Google Gemini 並送出；把完整大圖下載到手機或電腦。" },
+  { title: "用 ChatGPT／Gemini 畫圖", desc: "複製指令，任選 ChatGPT 或 Google Gemini 貼上並送出；下載完整大圖。" },
   { title: "上傳母圖", desc: "把一張 4×4（16 格）等母圖傳回本站；不用自己一張張手動切。" },
   { title: "確認自動整理", desc: "確認格數與預覽，讓工具切圖、去背、調整尺寸；文字不能被切掉。" },
   { title: "下載／做動態", desc: "靜態貼圖下載 ZIP；動態貼圖接著產生動畫。LINE 上架仍須審核。" },
@@ -239,13 +239,13 @@ export default function LineStickerGuide() {
               第一次做 LINE 貼圖？照流程做，最後整理成上架素材包
             </h1>
             <p className="mt-4 text-sm leading-relaxed text-slate-600 sm:text-base">
-              這份教學是給第一次使用的新手、店家與創作者看的版本。先用本站準備 AI 生圖指令，貼到 Google Gemini，
+              這份教學是給第一次使用的新手、店家與創作者看的版本。先用本站準備 AI 生圖指令，貼到 ChatGPT 或 Google Gemini，
               讓 AI 畫好貼圖大圖，下載後傳回 RXV，自動切割、去背、整理尺寸與打包 ZIP。
             </p>
             <p className="mt-4 rounded-xl border border-blue-100 bg-blue-50 p-3 text-sm leading-6 text-blue-900">
-              最簡單的方法：先在 RXV 選主題並複製指令 → 開啟 Google Gemini 貼上、產出整張圖片 → 下載圖片 → 回 RXV 上傳。Google 搜尋不是 Gemini。
-              <a href="https://gemini.google.com/app" target="_blank" rel="noopener noreferrer" className="ml-2 font-bold underline">開啟 Google Gemini ↗</a>
+              最簡單的方法：先在 RXV 選主題並複製指令 → 選 ChatGPT 或 Google Gemini 貼上、產出整張圖片 → 下載完整大圖 → 回 RXV 上傳。兩者任選一個即可。
             </p>
+            <StickerAIProviderLinks />
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <Link
                 to="/tools/sticker-prompt"
