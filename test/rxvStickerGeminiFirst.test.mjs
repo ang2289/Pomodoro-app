@@ -224,3 +224,35 @@ test("新手頁面保持窄版與極簡進度列，不再用滿版彩色卡片�
   assert.match(help, /下一步：\{children\}/);
   assert.doesNotMatch(help, /rounded-xl bg-amber-50 px-3 py-2 text-xs font-black/);
 });
+
+
+test("每組貼圖選擇按鈕同寬，選取、懸停、鍵盤焦點狀態清楚", () => {
+  const prompt = read("src/pages/tools/StickerPromptGenerator.tsx");
+  const upload = read("src/pages/tools/LineStickerTool.tsx");
+  const animated = read("src/pages/tools/AnimatedLineStickerTool.tsx");
+
+  // 平台與動靜態要使用等分的兩欄格線，格線本身有最大寬度，避免整頁滿版。
+  assert.match(prompt, /grid w-full max-w-\\[520px\\] grid-cols-2 items-stretch gap-3" role="group" aria-label="選擇貼圖平台"/);
+  assert.match(prompt, /grid w-full max-w-\\[520px\\] grid-cols-2 items-stretch gap-3" role="group" aria-label="選擇靜態或動態貼圖"/);
+  assert.match(upload, /grid w-full max-w-\\[520px\\] grid-cols-2 items-stretch gap-3" role="group" aria-label="選擇貼圖輸出平台"/);
+  assert.match(animated, /grid w-full max-w-\\[520px\\] grid-cols-2 items-stretch gap-3" role="group" aria-label="選擇動態貼圖輸出平台"/);
+
+  assert.match(prompt, /aria-pressed=\\{stickerPlatform === platform\\}/);
+  assert.match(prompt, /aria-pressed=\\{stickerMode === mode\\}/);
+  assert.match(prompt, /aria-pressed=\\{targetCount === count\\}/);
+  assert.match(upload, /aria-pressed=\\{exportPlatform === "whatsapp"\\}/);
+  assert.match(animated, /aria-pressed=\\{exportPlatform === platform\\}/);
+
+  // 選項使用同色系，未選擇也有明確邊框與底色，滑過和鍵盤操作有可見回饋。
+  for (const source of [prompt, upload, animated]) {
+    assert.match(source, /hover:-translate-y-0\\.5/);
+    assert.match(source, /hover:shadow-md/);
+    assert.match(source, /focus-visible:outline-offset-2/);
+    assert.match(source, /border-violet-600 bg-violet-600/);
+    assert.match(source, /border-violet-200 bg-violet-50/);
+  }
+  // 張數按鈕為同寬且可換行，窄手機不應強迫五顆擠在同一排。
+  assert.match(prompt, /w-\\[76px\\] shrink-0/);
+  assert.match(prompt, /max-w-\\[520px\\] flex-wrap gap-2" role="group" aria-label="選擇貼圖張數"/);
+  assert.match(upload, /w-\\[68px\\] shrink-0/);
+});
