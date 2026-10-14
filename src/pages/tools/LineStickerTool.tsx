@@ -2320,6 +2320,41 @@ export default function LineStickerTool() {
     t,
   ]);
 
+  // 一般進站先看到第 1 步；只有明確從「已有母圖」或第 2 步完成跳轉才顯示切圖流程。
+  if (isFirstVisit) {
+    return (
+      <>
+        <SEO
+          title="LINE／WhatsApp 免費貼圖製作｜從第 1 步開始 - RxV"
+          description="從貼圖主題、文字與字型選擇開始，先用 ChatGPT 畫母圖，再回 RXV 切圖；已有母圖可以直接跳到上傳。"
+          path="/tools/line-sticker"
+        />
+        <main className="min-h-screen bg-slate-50 px-4 py-8">
+          <div className="mx-auto max-w-4xl">
+            <h1 className="text-2xl font-black text-slate-900">第一次做 LINE／WhatsApp 貼圖？從第 1 步開始</h1>
+            <p className="mt-3 text-sm leading-7 text-slate-700">沒有圖片也沒關係，按順序選主題及文字 → 複製指令給 ChatGPT → 下載整張大圖 → 回 RXV 上傳切割。整個流程由上往下操作。</p>
+            <LineStickerFlowSteps activeStep={1} />
+            <section className="rounded-2xl border border-sky-200 bg-sky-50 p-5" aria-label="選擇貼圖製作起點">
+              <h2 className="text-lg font-black text-sky-900">下一步請先選一個按鈕</h2>
+              <p className="mt-2 text-sm leading-7 text-slate-700">沒有母圖，請按第一個按鈕開始設定；若已經有完整母圖，才按第二個按鈕直接上傳。</p>
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <Link to="/tools/sticker-prompt#sticker-start"
+                  className="inline-flex min-h-12 w-fit max-w-full items-center justify-center rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-black !text-white hover:bg-violet-700">
+                  第 1 步｜我還沒有母圖，從零開始 →
+                </Link>
+                <Link to="/tools/line-sticker?existing=1#mother-upload"
+                  className="inline-flex min-h-12 w-fit max-w-full items-center justify-center rounded-xl border border-emerald-300 bg-white px-4 py-2.5 text-sm font-black text-emerald-800 hover:bg-emerald-50">
+                  我已有母圖｜直接進入第 3 步 →
+                </Link>
+              </div>
+            </section>
+            <div className="mt-6"><StickerCustomInquiry compact /></div>
+          </div>
+        </main>
+      </>
+    );
+  }
+
   return (
     <>
       <SEO
@@ -2343,26 +2378,6 @@ export default function LineStickerTool() {
             }
             mode={flowProject?.mode ?? "static"}
           />
-
-          {isFirstVisit ? (
-            <section className="mb-6 rounded-2xl border border-sky-200 bg-sky-50 p-5" aria-label="第一次使用先選開始方式">
-              <h2 className="text-lg font-black text-sky-900">第一次使用？從第 1 步開始，不需要先上傳圖片</h2>
-              <p className="mt-2 text-sm leading-7 text-slate-700">
-                沒有母圖：先選主題、文字和風格，複製指令到 ChatGPT 畫圖，下載整張大圖後再回 RXV 上傳。
-                已經有母圖：才使用下方「直接上傳」捷徑。
-              </p>
-              <div className="mt-3 flex flex-wrap items-center gap-3">
-                <Link to="/tools/sticker-prompt#sticker-start"
-                  className="inline-flex min-h-12 w-fit max-w-full items-center justify-center rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-black !text-white hover:bg-violet-700">
-                  第 1 步｜沒有母圖，開始製作 →
-                </Link>
-                <Link to="/tools/line-sticker?existing=1#mother-upload"
-                  className="inline-flex min-h-12 w-fit max-w-full items-center justify-center rounded-xl border border-emerald-300 bg-white px-4 py-2.5 text-sm font-black text-emerald-800 hover:bg-emerald-50">
-                  我已有母圖｜直接上傳 →
-                </Link>
-              </div>
-            </section>
-          ) : null}
 
           <header className="mb-6">
             <div className="mb-3 inline-flex rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-black text-sky-700">上架檢查強化版 · 2026.10.10</div>
