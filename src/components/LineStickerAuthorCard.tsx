@@ -34,19 +34,19 @@ export default function LineStickerAuthorCard({
           </p>
         </div>
 
-        <div className={`${compact ? "mt-4" : ""} flex flex-col gap-3 sm:flex-row md:flex-col`}>
+        <div className={`${compact ? "mt-4" : ""} flex flex-wrap items-start gap-3`}>
           <a
             href={LINE_STICKER_AUTHOR_URL}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center justify-center rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-black !text-white shadow-md transition hover:-translate-y-0.5 hover:bg-emerald-700 hover:!text-white hover:shadow-xl active:scale-[0.98]"
+            className="inline-flex w-fit max-w-full items-center justify-center rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-black !text-white shadow-md transition hover:-translate-y-0.5 hover:bg-emerald-700 hover:!text-white hover:shadow-xl active:scale-[0.98]"
             style={{ color: "#ffffff" }}
           >
             前往 LINE STORE 看貼圖
           </a>
           <Link
             to="/tools/line-sticker"
-            className="inline-flex items-center justify-center rounded-2xl border border-emerald-200 bg-white px-5 py-3 text-sm font-black text-emerald-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-emerald-50 hover:shadow-lg active:scale-[0.98]"
+            className="inline-flex w-fit max-w-full items-center justify-center rounded-2xl border border-emerald-200 bg-white px-5 py-3 text-sm font-black text-emerald-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-emerald-50 hover:shadow-lg active:scale-[0.98]"
           >
             使用本站貼圖工具
           </Link>
