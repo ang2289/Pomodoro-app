@@ -4925,6 +4925,7 @@ export default function StickerPromptGenerator() {
       return;
     }
     setCharacterReference({ name: file.name, url: URL.createObjectURL(file), scope: referenceScope });
+    event.target.value = "";
   }
   // 所有母圖沿用同一角色設定，不會因為 24／40 張分批產生就更換長相。
   // 真人似顏繪優先忠實參考本人照片，不額外覆蓋髮型及臉部特徵。
@@ -5662,14 +5663,14 @@ export default function StickerPromptGenerator() {
                     `平台：${stickerPlatform === "line" ? "LINE" : "WhatsApp"}`,
                     `貼圖模式：${stickerMode === "static" ? "靜態" : "動態"}`,
                     `數量：${targetCount} 張`,
-                    `文字位置：${optionLabel(TEXT_POSITION_OPTIONS, textPosition)}`,
-                    `字型：${optionLabel(FONT_STYLE_OPTIONS, fontStyle)}`,
-                    `字大小：${optionLabel(TEXT_SIZE_OPTIONS, textSize)}`,
-                    `顏色／文字效果：${optionLabel(TEXT_COLOR_OPTIONS, textColor)}`,
-                    `貼圖風格：${optionLabel(STICKER_STYLE_OPTIONS, stickerStylePreset)}`,
-                    `角色來源：${optionLabel(PHOTO_MODE_OPTIONS, photoMode)}`,
+                    `文字位置：${optionLabel(TEXT_POSITION_OPTIONS, promptProfile.textPosition)}`,
+                    `字型：${optionLabel(FONT_STYLE_OPTIONS, promptProfile.fontStyle)}`,
+                    `字大小：${optionLabel(TEXT_SIZE_OPTIONS, promptProfile.textSize)}`,
+                    `顏色／文字效果：${optionLabel(TEXT_COLOR_OPTIONS, promptProfile.textColor)}`,
+                    `貼圖風格：${optionLabel(STICKER_STYLE_OPTIONS, promptProfile.stickerStylePreset)}`,
+                    `角色來源：${optionLabel(PHOTO_MODE_OPTIONS, promptProfile.photoMode)}`,
                     `名稱：${optionLabel(NAME_MODE_OPTIONS, nameMode)}`,
-                    ...(type === "businessPersonal" && photoMode === "original" ? [`角色：${businessAvatar.persona}`, `髮型：${businessAvatar.hair}`, `服裝：${businessAvatar.clothes}`, `配色：${businessAvatar.palette}`] : []),
+                    ...(activeProfile ? ["角色：已鎖定第 1 張設定"] : type === "businessPersonal" && photoMode === "original" ? [`角色：${businessAvatar.persona}`, `髮型：${businessAvatar.hair}`, `服裝：${businessAvatar.clothes}`, `配色：${businessAvatar.palette}`] : []),
                   ].map((label) => (
                     <span key={label} className="rounded-md bg-slate-100 px-2.5 py-1.5">{label}</span>
                   ))}
@@ -5735,7 +5736,7 @@ export default function StickerPromptGenerator() {
                           disabled={saleRisks.length > 0}
                           className="inline-flex min-h-11 w-fit max-w-full items-center justify-center rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-black !text-white shadow hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-slate-300"
                         >
-                          {copiedBatchIndex === index ? "✓ 已複製 ChatGPT 指令" : `第 2 步｜複製第 ${index + 1} 張畫圖指令（ChatGPT）`}
+                          {copiedBatchIndex === index ? "✓ 已複製 ChatGPT 指令" : `第 ${motherSheetPlan.length > 1 && index > 0 ? 4 : 2} 步｜複製第 ${index + 1} 張畫圖指令（ChatGPT）`}
                         </button>
                         <button
                           type="button"
