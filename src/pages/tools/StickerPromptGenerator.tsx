@@ -4980,52 +4980,35 @@ export default function StickerPromptGenerator() {
         keywords="LINE貼圖提示詞, LINE貼圖咒語, AI貼圖, 貼圖生圖提示詞, RxV"
       />
 
-      <main className="min-h-screen bg-gradient-to-b from-violet-50 via-white to-blue-50 px-4 py-8">
-        <div className="mx-auto w-full max-w-[1480px]">
+      <main className="min-h-screen bg-slate-50 px-3 py-6 sm:px-6">
+        <div className="mx-auto w-full max-w-3xl">
           <LineStickerFlowSteps activeStep={copiedBatchIndex !== null || copied || copiedStable ? 2 : 1} mode={stickerMode} />
-          <div className="mb-4"><StickerExistingMotherSheetShortcut /></div>
-
-          <section id="sticker-start" className="scroll-mt-24 rounded-3xl border border-violet-100 bg-white p-6 shadow-sm sm:p-8">
-            <div className="flex flex-wrap gap-2">
-              <span className="rounded-full bg-violet-600 px-3 py-1 text-xs font-black !text-white">
-                線上試用
-              </span>
-              <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-700">
-                一鍵複製
-              </span>
-              <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-black text-amber-700">
-                4×2／4×4／4×5
-              </span>
-            </div>
-            <h1 className="mt-5 text-3xl font-black leading-tight text-slate-900 sm:text-4xl">
-              LINE 貼圖一鍵製作｜第 1 步
-            </h1>
-            <p className="mt-4 text-sm leading-relaxed text-slate-600 sm:text-base">
-              先選 LINE／WhatsApp、靜態或動態、張數和主題。系統會準備畫圖指令；第 2 步複製後，選 ChatGPT 或 Google Gemini 貼上畫出完整大圖，再回本站自動切圖。
+          <header className="mb-5">
+            <h1 className="text-2xl font-bold leading-tight text-slate-900 sm:text-3xl">製作 LINE／WhatsApp 貼圖</h1>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              先選貼圖內容，再複製指令到 ChatGPT 畫圖；下載完整母圖後，回來上傳切割。
             </p>
-            <p className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold leading-7 text-amber-800">
-              操作方式：① 選好貼圖 → ② 複製指令，選 ChatGPT 或 Google Gemini 畫圖 → ③ 下載整張大圖、回 RXV 上傳 → ④ RXV 自動切圖、去背、檢查 → ⑤ 下載 ZIP（動態另選動畫效果）。
-            </p>
-          </section>
+          </header>
+          <div className="mb-5"><StickerExistingMotherSheetShortcut compact /></div>
+          <div id="sticker-start" className="scroll-mt-24" />
 
           <section className="mt-6 flex flex-col gap-6" aria-label="依順序操作第 1、2 步">
-            <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-              <h2 className="text-xl font-black text-slate-900">
-                第 1 步｜先選貼圖（建議第一次選 8 張）
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+              <h2 className="text-xl font-bold text-slate-900">
+                第 1 步｜選擇貼圖設定
               </h2>
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                先選 LINE 或 WhatsApp、靜態或動態，再選張數與主題。下方還能直接選擇「字型、文字大小、顏色、位置、角色」並修改每句貼圖文字；不想修改可以保持預設。
+                所有設定都有預設值。依序選擇平台、動靜態、張數與主題，文字和字型也能自行修改。
               </p>
-              <p className="mt-3 rounded-xl border border-sky-200 bg-sky-50 px-3 py-3 text-sm font-bold leading-7 text-sky-900">
-                所有貼圖文字與字型樣式都能自行選擇，已直接顯示在本頁，不用展開隱藏選單。
-                <a href="#sticker-customize" className="ml-2 inline-flex min-h-10 items-center font-black text-blue-700 underline underline-offset-2">前往自訂文字／字型設定 ↓</a>
+              <p className="mt-3 text-sm font-medium leading-6 text-slate-600">
+                接下來先選平台，再選靜態／動態與張數。
+                {" "}<a href="#sticker-customize" className="font-semibold text-violet-700 underline underline-offset-2">直接調整文字、字型 ↓</a>
               </p>
-              <StickerNextActionHint>先選下方「LINE 貼圖」或「WhatsApp 貼圖」按鈕，再選靜態／動態及張數。第一次使用也可保留預設值。</StickerNextActionHint>
               <div className="mt-4 flex flex-wrap items-center gap-3">
                 {(["line", "whatsapp"] as const).map((platform) => (
                   <button key={platform} type="button" aria-pressed={stickerPlatform === platform}
                     onClick={() => setStickerPlatform(platform)}
-                    className={`inline-flex min-h-12 w-auto max-w-full items-center justify-center rounded-2xl border-2 px-4 py-3 text-sm font-black transition ${stickerPlatform === platform ? "border-emerald-500 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-white text-slate-700"}`}>
+                    className={`inline-flex min-h-11 w-fit max-w-full flex-none items-center justify-center self-start rounded-lg border px-4 py-2.5 text-sm font-semibold transition ${stickerPlatform === platform ? "border-violet-600 bg-violet-50 text-violet-800" : "border-slate-300 bg-white text-slate-700 hover:border-slate-400"}`}>
                     {stickerPlatform === platform ? "✓ " : ""}{platform === "line" ? "LINE 貼圖" : "WhatsApp 貼圖"}
                   </button>
                 ))}
@@ -5039,10 +5022,10 @@ export default function StickerPromptGenerator() {
                     key={mode}
                     type="button"
                     onClick={() => handleStickerMode(mode)}
-                    className={`w-auto min-w-[154px] max-w-[260px] flex-1 rounded-2xl border p-4 text-left transition ${
+                    className={`w-auto min-w-[150px] max-w-[240px] flex-none rounded-lg border p-3 text-left transition ${
                       stickerMode === mode
-                        ? "border-violet-500 bg-violet-50 ring-2 ring-violet-100"
-                        : "border-slate-200 bg-slate-50 hover:border-violet-200"
+                        ? "border-violet-600 bg-violet-50"
+                        : "border-slate-200 bg-white hover:border-violet-300"
                     }`}
                   >
                     <span className="block text-sm font-black text-slate-900">{title}</span>
@@ -5097,7 +5080,7 @@ export default function StickerPromptGenerator() {
                   {filteredTemplateEntries.length} 筆
                 </span>
               </div>
-              <div className="mt-2 rounded-3xl border border-violet-100 bg-violet-50/70 p-4">
+              <div className="mt-2 rounded-xl bg-slate-50 p-3">
                 <label className="block text-xs font-black text-violet-700">
                   搜尋職業／主題
                 </label>
@@ -5117,9 +5100,7 @@ export default function StickerPromptGenerator() {
                     清除
                   </button>
                 </div>
-                <p className="mt-2 text-xs font-bold leading-6 text-violet-700">
-                  輸入關鍵字後，下方只會顯示符合的貼圖類型，並自動切換到第一筆結果。可搜尋：招牌、廣告、工程、物流、老師。
-                </p>
+                <p className="mt-2 text-xs text-slate-500">搜尋後可從下方選擇對應主題。</p>
               </div>
 
               <select
@@ -5145,16 +5126,11 @@ export default function StickerPromptGenerator() {
                 </p>
               )}
 
-              <p className="mt-3 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-xs font-bold leading-6 text-emerald-800">
-                下一步請往下選擇「字型風格、文字大小、文字顏色、文字位置」，並確認「貼圖文字」。系統已帶入常用句子，全部都可自行修改；不想調整也能直接使用預設值。
-              </p>
 
-              <section id="sticker-customize" aria-label="自訂貼圖文字、字型及角色設定" className="scroll-mt-24 mt-5 rounded-2xl border border-violet-200 bg-violet-50/50 p-4">
-                <div className="rounded-xl bg-white px-4 py-3">
-                  <h3 className="text-base font-black text-violet-900">自訂貼圖內容｜文字、字型、顏色、角色都可以選</h3>
-                  <p className="mt-2 text-sm font-bold leading-7 text-slate-700">以下設定已全部顯示，不用另外展開。請先選擇喜歡的字型與文字效果，再檢查最下方的貼圖短句；每個選項都有預設值，不修改也可以直接進入第 2 步。</p>
-                  <p className="mt-1 text-xs leading-6 text-slate-500">字型風格會加入 ChatGPT／Gemini 生圖指令，屬 AI 繪圖參考，不保證與真實字型完全一致，完成後仍請檢查繁體中文字。</p>
-                </div>
+
+              <section id="sticker-customize" aria-label="自訂貼圖文字、字型及角色設定" className="scroll-mt-24 mt-5 border-t border-slate-200 pt-5">
+                <h3 className="text-base font-semibold text-slate-900">自訂文字、字型與角色（可直接修改）</h3>
+                <p className="mt-1 text-xs leading-5 text-slate-500">保留預設也可以；字型設定會加入 AI 指令，產圖後仍需檢查文字。</p>
                 <div className="mt-3">
               <label className="mt-5 block text-xs font-black text-slate-500">
                 角色來源
@@ -5188,7 +5164,7 @@ export default function StickerPromptGenerator() {
                 onChange={(e) =>
                   handleNameModeChange(e.target.value as NameMode)
                 }
-                className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
+                className="mt-2 w-full max-w-lg rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
               >
                 {NAME_MODE_OPTIONS.map((item) => (
                   <option key={item.value} value={item.value}>
@@ -5206,7 +5182,7 @@ export default function StickerPromptGenerator() {
                     value={customName}
                     onChange={(e) => handleCustomNameChange(e.target.value)}
                     placeholder="例如：小宇、雙果花、舒菓蜜、小芳早餐店"
-                    className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
+                    className="mt-2 w-full max-w-lg rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
                   />
                   <p className="mt-2 rounded-2xl bg-violet-50 px-4 py-3 text-xs font-bold leading-6 text-violet-700">
                     加入名稱後，貼圖文字會變成「小宇已收到」、「小宇幫您確認」這類更有個人記憶點的版本；店家也可改成「雙果花已收到」、「舒菓蜜感謝支持」。
@@ -5222,7 +5198,7 @@ export default function StickerPromptGenerator() {
                   <select
                     value={textSize}
                     onChange={(e) => setTextSize(e.target.value as TextSize)}
-                    className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
+                    className="mt-2 w-full max-w-lg rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
                   >
                     {TEXT_SIZE_OPTIONS.map((item) => (
                       <option key={item.value} value={item.value}>
@@ -5238,7 +5214,7 @@ export default function StickerPromptGenerator() {
                   <select
                     value={fontStyle}
                     onChange={(e) => setFontStyle(e.target.value as FontStyle)}
-                    className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
+                    className="mt-2 w-full max-w-lg rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
                   >
                     {FONT_STYLE_OPTIONS.map((item) => (
                       <option key={item.value} value={item.value}>{item.label}</option>
@@ -5252,7 +5228,7 @@ export default function StickerPromptGenerator() {
                   <select
                     value={textColor}
                     onChange={(e) => setTextColor(e.target.value as TextColor)}
-                    className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
+                    className="mt-2 w-full max-w-lg rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
                   >
                     {TEXT_COLOR_OPTIONS.map((item) => (
                       <option key={item.value} value={item.value}>
@@ -5270,7 +5246,7 @@ export default function StickerPromptGenerator() {
                     onChange={(e) =>
                       setTextPosition(e.target.value as TextPosition)
                     }
-                    className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
+                    className="mt-2 w-full max-w-lg rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
                   >
                     {TEXT_POSITION_OPTIONS.map((item) => (
                       <option key={item.value} value={item.value}>
@@ -5297,7 +5273,7 @@ export default function StickerPromptGenerator() {
                         e.target.value as StickerStylePreset,
                       )
                     }
-                    className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
+                    className="mt-2 w-full max-w-lg rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
                   >
                     {STICKER_STYLE_OPTIONS.map((item) => (
                       <option key={item.value} value={item.value}>
