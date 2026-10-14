@@ -5494,6 +5494,36 @@ export default function StickerPromptGenerator() {
                 </section>
               )}
 
+              <section aria-label="整套貼圖共用角色設定" className="mt-6 rounded-xl border border-violet-200 bg-violet-50/40 p-4">
+                <h3 className="text-base font-bold text-violet-950">整套貼圖共用角色設定｜第 1、2 張使用相同角色</h3>
+                <p className="mt-1 text-xs leading-6 text-slate-700">
+                  設定一次，所有母圖都會完整帶入。以下資料可自行修改，切換母圖不會重選人物。
+                </p>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  {([
+                    ["identity", "角色性別、年齡、職業與形象"],
+                    ["face", "臉型、眼睛、五官與膚色"],
+                    ["hair", "髮型、髮色與瀏海"],
+                    ["clothing", "固定服裝與顏色"],
+                    ["accessory", "固定配件"],
+                    ["palette", "角色主題配色"],
+                    ["proportions", "Q 版頭身比例"],
+                    ["drawing", "插畫風格與描邊粗細"],
+                    ["shading", "上色、陰影與裝飾"],
+                  ] as const).map(([key, label]) => (
+                    <label key={key} className="block text-xs font-semibold leading-5 text-slate-700">
+                      {label}
+                      <textarea rows={2} value={sharedCharacter[key]}
+                        onChange={(event) => setSharedCharacter((previous) => ({ ...previous, [key]: event.target.value }))}
+                        className="mt-1 w-full resize-y rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm leading-6 text-slate-800 focus:border-violet-500" />
+                    </label>
+                  ))}
+                </div>
+                <p className="mt-3 text-xs leading-5 text-slate-600">
+                  文字字型、大小、描邊、配色、位置及插畫風格也會共用本頁設定，不會因切換母圖而更改。
+                </p>
+              </section>
+
               <label className="mt-5 block text-xs font-black text-slate-500">
                 角色設定
               </label>
