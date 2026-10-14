@@ -430,7 +430,7 @@ test("預覽下方直接放第 5 步下載／動畫操作，不再被 FAQ 與廣
   const faq = page.indexOf('id="line-sticker-quick-guide"');
 
   assert.ok(previewStart >= 0);
-  assert.ok(previewStart < mainPicker && mainPicker < download && download < footer);
+  assert.ok(previewStart < download && download < footer && footer < mainPicker, "第 5 步應緊接預覽格後，早於選用的代表圖設定");
   assert.ok(footer < ad && ad < faq, "下載流程應早於推薦工具與 FAQ");
   assert.equal(page.split('id="sticker-download"').length - 1, 1, "第五步錨點不可重複");
   assert.equal(page.split('aria-label="第 5 步：貼圖下載或動態製作"').length - 1, 1);
@@ -440,4 +440,46 @@ test("預覽下方直接放第 5 步下載／動畫操作，不再被 FAQ 與廣
   assert.match(page, /重新設定人物不會直接改變已上傳的圖片/);
   assert.match(page, /files\.slice\(0, stickerCount\)\.map/);
   assert.match(page, /onClick=\{continueToAnimated\}/);
+});
+
+test("原創職業貼圖可獨立選擇性別、兒童與長者年齡、個性與五官", () => {
+  const source = read("src/pages/tools/StickerPromptGenerator.tsx");
+  assert.match(source, /const ORIGINAL_CHARACTER_OPTIONS =/);
+  for (const label of ["女性","男性","中性／不指定性別","兒童（7～12 歲）","長者（70 歲以上）","活潑開朗","沉穩可靠","圓臉笑眼"]) {
+    assert.ok(source.includes(label), "角色選項缺少："+label);
+  }
+  assert.match(source, /aria-label="自選角色性別、年齡、個性與五官"/);
+  assert.match(source, /幫我隨機搭配不同角色/);
+  assert.match(source, /setCharacterTraits\(randomOriginalCharacter\(\)\)/);
+  assert.match(source, /characterTraits, templates\[type\]\.label/);
+  assert.match(source, /identityLock = useMemo/);
+  assert.match(source, /setCharacterTraits\(\{ \.\.\.ORIGINAL_CHARACTER_DEFAULT \}\)/);
+  assert.match(source, /真人參考、多人角色與動物主題不強制套用/);
+});
+
+test("簡易人設只修改指定特徵，不會覆蓋髮型服裝或母圖鎖定風格", () => {
+  const source = read("src/pages/tools/StickerPromptGenerator.tsx");
+  const fn = source.match(/function applyOriginalCharacterTraits\([\s\S]*?\n\}/);
+  assert.ok(fn, "缺少原創人物設定函式");
+  const javascript = ts.transpileModule(fn[0], {compilerOptions:{target:ts.ScriptTarget.ES2022}}).outputText;
+  const apply = vm.runInNewContext(javascript + "\napplyOriginalCharacterTraits", {});
+  const base = {
+    appearance:"35 歲女性美甲師", face:"原本臉型", hair:"黑色低馬尾",
+    outfit:"奶茶色圍裙", accessories:"珍珠髮夾", proportions:"三頭身",
+    illustration:"棕色粗描邊", coloring:"粉彩暖米色",
+  };
+  const custom = apply(base, {
+    gender:"男性", age:"長者（70 歲以上）", personality:"幽默調皮", face:"方圓臉與濃眉"
+  }, "美甲師");
+  assert.match(custom.appearance, /男性/);
+  assert.match(custom.appearance, /長者（70 歲以上）/);
+  assert.match(custom.appearance, /美甲師/);
+  assert.match(custom.face, /方圓臉與濃眉/);
+  assert.match(custom.accessories, /幽默調皮/);
+  for(const key of ["hair","outfit","proportions","illustration","coloring"]) assert.equal(custom[key],base[key]);
+  const auto = apply(base, {
+    gender:"依主題預設",age:"依主題預設",personality:"依主題預設",face:"依主題預設",
+  },"美甲師");
+  assert.equal(auto.appearance,base.appearance);
+  assert.equal(auto.face,base.face);
 });
