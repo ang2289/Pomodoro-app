@@ -4987,7 +4987,11 @@ export default function StickerPromptGenerator() {
                 第 1 步｜先選貼圖（建議第一次選 8 張）
               </h2>
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                先選 LINE 或 WhatsApp、靜態或動態，再選張數與主題。第一次建議試做 8 張；不知道怎麼選，保持預設值也可以。
+                先選 LINE 或 WhatsApp、靜態或動態，再選張數與主題。下方還能直接選擇「字型、文字大小、顏色、位置、角色」並修改每句貼圖文字；不想修改可以保持預設。
+              </p>
+              <p className="mt-3 rounded-xl border border-sky-200 bg-sky-50 px-3 py-3 text-sm font-bold leading-7 text-sky-900">
+                所有貼圖文字與字型樣式都能自行選擇，已直接顯示在本頁，不用展開隱藏選單。
+                <a href="#sticker-customize" className="ml-2 inline-flex min-h-10 items-center font-black text-blue-700 underline underline-offset-2">前往自訂文字／字型設定 ↓</a>
               </p>
               <StickerNextActionHint>先選下方「LINE 貼圖」或「WhatsApp 貼圖」按鈕，再選靜態／動態及張數。第一次使用也可保留預設值。</StickerNextActionHint>
               <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -5118,7 +5122,7 @@ export default function StickerPromptGenerator() {
                 下一步請往下選擇「字型風格、文字大小、文字顏色、文字位置」，並確認「貼圖文字」。系統已帶入常用句子，全部都可自行修改；不想調整也能直接使用預設值。
               </p>
 
-              <section aria-label="自訂貼圖文字、字型及角色設定" className="mt-5 rounded-2xl border border-violet-200 bg-violet-50/50 p-4">
+              <section id="sticker-customize" aria-label="自訂貼圖文字、字型及角色設定" className="scroll-mt-24 mt-5 rounded-2xl border border-violet-200 bg-violet-50/50 p-4">
                 <div className="rounded-xl bg-white px-4 py-3">
                   <h3 className="text-base font-black text-violet-900">自訂貼圖內容｜文字、字型、顏色、角色都可以選</h3>
                   <p className="mt-2 text-sm font-bold leading-7 text-slate-700">以下設定已全部顯示，不用另外展開。請先選擇喜歡的字型與文字效果，再檢查最下方的貼圖短句；每個選項都有預設值，不修改也可以直接進入第 2 步。</p>
