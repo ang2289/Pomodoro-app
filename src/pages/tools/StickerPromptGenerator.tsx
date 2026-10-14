@@ -4980,14 +4980,19 @@ export default function StickerPromptGenerator() {
         keywords="LINE貼圖提示詞, LINE貼圖咒語, AI貼圖, 貼圖生圖提示詞, RxV"
       />
 
-      <main className="min-h-screen bg-slate-50 px-3 py-6 sm:px-6">
+      <main className="min-h-screen bg-[#F8F7F3] px-3 py-6 sm:px-6">
         <div className="mx-auto w-full max-w-3xl">
           <LineStickerFlowSteps activeStep={copiedBatchIndex !== null || copied || copiedStable ? 2 : 1} mode={stickerMode} />
-          <header className="mb-5">
-            <h1 className="text-2xl font-bold leading-tight text-slate-900 sm:text-3xl">製作 LINE／WhatsApp 貼圖</h1>
-            <p className="mt-2 text-sm leading-6 text-slate-600">
-              先選貼圖內容，再複製指令到 ChatGPT 畫圖；下載完整母圖後，回來上傳切割。
+          <header className="mb-6">
+            <p className="text-xs font-semibold tracking-[0.15em] text-violet-700">RXV STICKER STUDIO</p>
+            <h1 className="mt-2 text-2xl font-bold leading-tight text-slate-900 sm:text-3xl">把你的想法，做成專屬貼圖</h1>
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
+              先選喜歡的主題、文字與畫風，再用 ChatGPT 畫出完整母圖。
+              回 RXV 上傳後，自動切割整理，不用一張一張裁圖。
             </p>
+            <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs font-medium text-slate-600">
+              <span>✓ 繁體中文</span><span>✓ LINE／WhatsApp</span><span>✓ 靜態／動態</span>
+            </div>
           </header>
           <div className="mb-5"><StickerExistingMotherSheetShortcut compact /></div>
           <div id="sticker-start" className="scroll-mt-24" />
@@ -4995,10 +5000,10 @@ export default function StickerPromptGenerator() {
           <section className="mt-6 flex flex-col gap-6" aria-label="依順序操作第 1、2 步">
             <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
               <h2 className="text-xl font-bold text-slate-900">
-                第 1 步｜選擇貼圖設定
+                第 1 步｜選擇角色、文字與畫風
               </h2>
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                所有設定都有預設值。依序選擇平台、動靜態、張數與主題，文字和字型也能自行修改。
+                先選貼圖平台、靜態／動態和張數，再往下挑主題並修改文字。所有項目都有預設值。
               </p>
               <p className="mt-3 text-sm font-medium leading-6 text-slate-600">
                 接下來先選平台，再選靜態／動態與張數。
@@ -5008,7 +5013,7 @@ export default function StickerPromptGenerator() {
                 {(["line", "whatsapp"] as const).map((platform) => (
                   <button key={platform} type="button" aria-pressed={stickerPlatform === platform}
                     onClick={() => setStickerPlatform(platform)}
-                    className={`inline-flex min-h-12 w-full min-w-0 items-center justify-center rounded-xl border-2 px-3 py-3 text-center text-sm font-bold leading-5 shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:border-violet-500 hover:bg-violet-100 hover:text-violet-900 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 active:translate-y-0 ${stickerPlatform === platform ? "border-violet-600 bg-violet-600 !text-white shadow-md hover:bg-violet-700 hover:!text-white" : "border-violet-200 bg-violet-50 text-violet-900"}`}>
+                    className={`inline-flex min-h-12 w-full min-w-0 items-center justify-center rounded-xl border-2 px-3 py-3 text-center text-sm font-bold leading-5 shadow-sm transition-all duration-150 hover:border-violet-500 hover:bg-violet-100 hover:text-violet-900 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 ${stickerPlatform === platform ? "border-violet-600 bg-violet-600 !text-white shadow-md hover:bg-violet-700 hover:!text-white" : "border-violet-200 bg-violet-50 text-violet-900"}`}>
                     {stickerPlatform === platform ? "✓ " : ""}{platform === "line" ? "LINE 貼圖" : "WhatsApp 貼圖"}
                   </button>
                 ))}
@@ -5023,7 +5028,7 @@ export default function StickerPromptGenerator() {
                     type="button"
                     onClick={() => handleStickerMode(mode)}
                     aria-pressed={stickerMode === mode}
-                    className={`min-h-[100px] w-full min-w-0 rounded-xl border-2 p-3 text-left shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:border-violet-500 hover:bg-violet-100 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 active:translate-y-0 ${
+                    className={`min-h-[100px] w-full min-w-0 rounded-xl border-2 p-3 text-left shadow-sm transition-all duration-150 hover:border-violet-500 hover:bg-violet-100 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 ${
                       stickerMode === mode
                         ? "border-violet-600 bg-violet-600 !text-white shadow-md hover:bg-violet-700"
                         : "border-violet-200 bg-violet-50 text-violet-900"
@@ -5053,7 +5058,7 @@ export default function StickerPromptGenerator() {
                     type="button"
                     onClick={() => handleTargetCount(count)}
                     aria-pressed={targetCount === count}
-                    className={`inline-flex min-h-11 w-[76px] shrink-0 items-center justify-center rounded-xl border-2 px-2 py-2.5 text-sm font-bold shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:border-violet-500 hover:bg-violet-100 hover:text-violet-900 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 active:translate-y-0 ${
+                    className={`inline-flex min-h-11 w-[76px] shrink-0 items-center justify-center rounded-xl border-2 px-2 py-2.5 text-sm font-bold shadow-sm transition-all duration-150 hover:border-violet-500 hover:bg-violet-100 hover:text-violet-900 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 ${
                       targetCount === count
                         ? "border-violet-600 bg-violet-600 text-white shadow-md hover:bg-violet-700 hover:text-white"
                         : "border-violet-200 bg-violet-50 text-violet-900"
