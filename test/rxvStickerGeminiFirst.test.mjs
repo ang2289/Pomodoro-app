@@ -19,7 +19,7 @@ test("每段新手流程有明確下一步按鈕提示，Gemini 為主、ChatGPT
   const progress = read("src/components/LineStickerFlowSteps.tsx");
   const starter = read("src/components/NewUserStickerGuide.tsx");
   assert.match(prompt, /https:\/\/gemini\.google\.com\/app/);
-  assert.match(prompt, /複製第 \{index \+ 1\} 張畫圖指令/);
+  assert.match(prompt, /下一步請按下方「複製第/);
   assert.match(prompt, /已經在 Gemini 下載完整大圖/);
   assert.match(prompt, /flow=1#mother-upload/);
   assert.match(progress, /Google Gemini 畫圖/);
