@@ -483,3 +483,43 @@ test("簡易人設只修改指定特徵，不會覆蓋髮型服裝或母圖鎖�
   assert.equal(auto.appearance,base.appearance);
   assert.equal(auto.face,base.face);
 });
+
+test("母圖混合格數要辨識 24 張，而不是因舊 16 張方案就把 4×2 當成 4×4", () => {
+  const source = read("src/lib/lineStickerFlow.ts");
+  const javascript = ts.transpileModule(source, {
+    compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS },
+  }).outputText;
+  const context = { exports: {} };
+  vm.runInNewContext(javascript, context);
+  const find = context.exports.findMatchingMotherSheetCount;
+  const plans = context.exports.getMotherSheetPlan;
+  assert.equal(typeof find, "function");
+  for (const [count, grids] of [
+    [8, ["4x2"]],
+    [16, ["4x4"]],
+    [24, ["4x4", "4x2"]],
+    [32, ["4x4", "4x4"]],
+    [40, ["4x5", "4x5"]],
+  ]) {
+    assert.equal(find(grids, "static"), count);
+    assert.equal(plans(count).reduce((sum, item) => sum + item.count, 0), count);
+  }
+  assert.equal(find(["4x2", "4x4"], "animated"), 24);
+  assert.equal(find(["4x5", "4x5"], "animated"), null);
+  assert.equal(find(["4x4", "4x5"], "static"), null);
+  assert.equal(find(["4x4"], "static"), 16);
+});
+
+test("安全檢查只檢查各母圖自己的 4×4 比例，張數變更須先獲得使用者點擊", () => {
+  const upload = read("src/pages/tools/LineStickerTool.tsx");
+  assert.match(upload, /const requiresSquare4x4 = grid === "4x4";/);
+  assert.doesNotMatch(upload, /expectedMotherSheetPlan\.every\(\(step\) => step\.grid === "4x4"\)/);
+  assert.match(upload, /const suggestedMotherSheetCount = useMemo/);
+  assert.match(upload, /findMatchingMotherSheetCount\(/);
+  assert.match(upload, /onClick=\{applyDetectedMotherSheetCount\}/);
+  assert.match(upload, /改用 \{suggestedMotherSheetCount\} 張｜保留已選母圖/);
+  assert.match(upload, /Array\.from\(\{ length: suggestedMotherSheetCount \}/);
+  assert.match(upload, /setFlowProject\(changed\)/);
+  assert.match(upload, /setStickerCount\(suggestedMotherSheetCount\)/);
+  assert.match(upload, /getMotherSheetPlan\(flowProject\?\.count \?\? stickerCount\)/);
+});
