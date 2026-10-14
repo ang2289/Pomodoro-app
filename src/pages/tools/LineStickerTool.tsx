@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import SEO from "@/components/SEO";
 import LineStickerAuthorCard from "@/components/LineStickerAuthorCard";
 import LineStickerFlowSteps from "@/components/LineStickerFlowSteps";
+import { StickerCustomInquiry, StickerNextActionHint } from "@/components/StickerBeginnerActions";
 import {
   analyzeMotherSheetSafety,
   type MotherSheetSafetyReview,
@@ -2534,6 +2535,7 @@ export default function LineStickerTool() {
           )}
 
           <div id="mother-upload" className="scroll-mt-24 space-y-4 mb-10">
+            <StickerNextActionHint>已經有完整母圖？請按下方紫色「第 3 步｜選擇整張母圖並辨識格數」，直接從裝置選圖片，不用回去做提示詞。</StickerNextActionHint>
             <section className="rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50 to-white p-5">
               <div className="grid gap-4">
                 <div className="min-w-0">
@@ -2639,7 +2641,7 @@ export default function LineStickerTool() {
                   >
                     {loading && motherSheetDetectionStatus !== "cutting"
                       ? "正在判斷母圖格數…"
-                      : "選擇母圖 → 先判斷格數"}
+                      : "第 3 步｜選擇整張母圖並辨識格數"}
                   </button>
                 </div>
               </div>
@@ -3436,8 +3438,19 @@ export default function LineStickerTool() {
         </div>
 
         <div id="sticker-download" className="scroll-mt-24" />
+        <div className="mx-auto mb-4 max-w-[1480px]">
+          <StickerCustomInquiry compact />
+        </div>
         <footer aria-label="第 5 步：貼圖下載或動態製作" className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white/85 px-3 py-2 backdrop-blur-xl sm:p-4">
-          <div className="mx-auto flex max-w-[1480px] items-center gap-2 sm:gap-4">
+          <div className="mx-auto max-w-[1480px]">
+            <p className="mb-1 text-center text-[11px] font-bold text-slate-700">
+              {canDownload
+                ? (flowProject?.mode === "animated"
+                    ? "下一步請按下方「第 5 步｜製作動態貼圖」按鈕。"
+                    : "下一步請按下方「步驟 5｜下載貼圖 ZIP」按鈕。")
+                : "下一步：先到上方第 3 步上傳整張母圖，完成切割預覽後才能下載。"}
+            </p>
+          <div className="flex items-center gap-2 sm:gap-4">
             <div className="hidden sm:block">
               <p className="text-[10px] font-bold text-slate-400 uppercase leading-none">
                 {t("line_sticker_status_label")}
@@ -3499,6 +3512,7 @@ export default function LineStickerTool() {
                       : `已載入 ${files.length}/${stickerCount} 張｜尚差 ${needMore} 張`}
               </button>
             )}
+          </div>
           </div>
         </footer>
       </div>
