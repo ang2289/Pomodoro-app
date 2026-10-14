@@ -10,7 +10,7 @@ type Props = {
 
 const BASE_STEPS = [
   { step: 1 as const, title: "選擇貼圖", desc: "選類型、主題與張數" },
-  { step: 2 as const, title: "ChatGPT／Gemini 畫圖", desc: "複製指令，任選一個 AI 工具畫圖" },
+  { step: 2 as const, title: "ChatGPT／Gemini 畫圖", desc: "推薦 ChatGPT；Gemini 僅供實驗" },
   { step: 3 as const, title: "上傳圖片", desc: "把完整大圖傳回 RXV" },
   { step: 4 as const, title: "自動整理", desc: "一張大圖自動分成多張貼圖" },
 ];
@@ -68,7 +68,7 @@ export default function LineStickerFlowSteps({
       <div className="mb-4 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3">
         <p className="text-sm font-black text-sky-900">先知道一件事：不是一張張畫貼圖</p>
         <p className="mt-1 text-sm leading-6 text-slate-700">
-          已實測 ChatGPT 可畫出合適的 4×4 正方形母圖；也可使用 Google Gemini，但請確認畫布比例、格數及每格文字。下載整張圖片傳回 RXV，再分割、去背及整理。
+          ChatGPT 已有符合 4×4 規格的實際案例。Gemini 是實驗性選項，曾無法遵守固定欄數並重複文字；請逐格檢查，不符就改用 ChatGPT 重畫。下載合格母圖後再傳回 RXV 切割。
         </p>
         <p className="mt-1 text-xs leading-5 text-slate-600">
           目前 RXV 貼圖工具免費使用；ChatGPT 與 Gemini 的使用額度、登入條件依各平台規則為準。
