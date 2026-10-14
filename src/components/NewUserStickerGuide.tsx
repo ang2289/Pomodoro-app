@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { StickerExistingMotherSheetShortcut, StickerCustomInquiry, StickerNextActionHint } from "@/components/StickerBeginnerActions";
 
 /**
  * 新手看得懂的一條路：先選題 → AI 生圖 → 上傳母圖 → 自動切割 → 下載。
@@ -104,17 +105,22 @@ export default function NewUserStickerGuide({ compact = false }: Props) {
           </div>
         ))}
       </div>
-      <div className="mt-4 flex flex-wrap items-center gap-2">
+      <div className="mt-4">
+        <StickerNextActionHint>還沒有圖片，就按「第 1 步｜我還沒有圖片」，從選主題開始。</StickerNextActionHint>
+      </div>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
         <Link to="/tools/sticker-prompt#sticker-start" className="inline-flex min-h-11 items-center rounded-xl bg-sky-700 px-4 py-2.5 text-sm font-black !text-white hover:bg-sky-800">
           第 1 步｜我還沒有圖片
         </Link>
-        <Link to="/tools/line-sticker#mother-upload" className="inline-flex min-h-11 items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-800 hover:bg-slate-100">
+        <Link to="/tools/line-sticker?existing=1#mother-upload" className="inline-flex min-h-11 items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-800 hover:bg-slate-100">
           第 3 步｜我已有圖片
         </Link>
         <Link to="/tools/line-sticker-guide" className="inline-flex min-h-11 items-center px-2 py-2 text-sm font-bold text-sky-800 underline underline-offset-4">
           查看完整圖文說明
         </Link>
       </div>
+      <div className="mt-4"><StickerExistingMotherSheetShortcut compact /></div>
+      <div className="mt-3"><StickerCustomInquiry compact /></div>
       <p className="mt-3 rounded-xl bg-emerald-50 px-3 py-2 text-xs leading-6 text-emerald-900">
         生圖請到 Google Gemini（建議先用）或 ChatGPT；Google「搜尋」不會自動產圖。第 2 步會提供複製按鈕與前往 Gemini 的連結。
       </p>
