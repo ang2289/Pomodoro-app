@@ -68,7 +68,7 @@ export default function LineStickerFlowSteps({
       <div className="mb-4 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3">
         <p className="text-sm font-black text-sky-900">先知道一件事：不是一張張畫貼圖</p>
         <p className="mt-1 text-sm leading-6 text-slate-700">
-          用 ChatGPT 或 Google Gemini 畫出一張有 8 或 16 格的完整大圖（叫「母圖」），下載整張圖片傳回 RXV，系統就會自動分割、去背及整理。
+          已實測 ChatGPT 可畫出合適的 4×4 正方形母圖；也可使用 Google Gemini，但請確認畫布比例、格數及每格文字。下載整張圖片傳回 RXV，再分割、去背及整理。
         </p>
         <p className="mt-1 text-xs leading-5 text-slate-600">
           目前 RXV 貼圖工具免費使用；ChatGPT 與 Gemini 的使用額度、登入條件依各平台規則為準。
