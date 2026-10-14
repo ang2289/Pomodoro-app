@@ -1970,13 +1970,18 @@ export default function LineStickerTool() {
   }, [files]);
 
   const needMore = Math.max(0, stickerCount - files.length);
+  // 在單張匯入入口選到整張母圖時，不能將 1/16 誤解為圖片文字太多。
+  const mayHaveUploadedMotherSheetAsSingle =
+    files.length === 1 && stickerCount > 1 && motherSheetDetections.length === 0;
   const canDownload = files.length >= stickerCount && !mattingModeStale;
   const exportReadyMessage = loading
     ? "正在產生檔案，請稍候完成。"
     : mattingModeStale
       ? "您已更改去背設定，請回到母圖區重新按「確認切割」，更新貼圖後才能下載。"
       : needMore > 0
-        ? `目前已載入 ${files.length} / ${stickerCount} 張，還差 ${needMore} 張。請先上傳母圖或單張 PNG，再下載 ZIP。`
+        ? mayHaveUploadedMotherSheetAsSingle
+          ? `目前只載入 1 張獨立貼圖，共需 ${stickerCount} 張。如果這張圖片含有多格小圖，代表可能用錯上傳區，請改用「整張母圖自動切割」，不是文字太多。`
+          : `目前已載入 ${files.length} / ${stickerCount} 張，還差 ${needMore} 張。請先上傳母圖或已切好的單張 PNG，再下載 ZIP。`
         : "已備妥全部貼圖，可直接下載所選平台的 ZIP。";
   const noTransparencyCount = files.filter((p) => !p.hasTransparency).length;
   const getScaleForIndex = useCallback(
@@ -2874,10 +2879,28 @@ export default function LineStickerTool() {
                 {motherSheetSafetyResult}
               </div>
             ) : null}
+            {mayHaveUploadedMotherSheetAsSingle ? (
+              <section role="status" className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-4">
+                <h3 className="text-base font-bold text-amber-950">您可能把整張母圖傳到「單張貼圖」區了</h3>
+                <p className="mt-2 text-sm leading-7 text-amber-900">
+                  目前只有 1／{stickerCount} 張，尚差 {needMore} 張。這不是「字太多」的判定。
+                  如果您上傳的圖片裡已經排好 4×4、4×2 等多格貼圖，請用下方按鈕重新選取整張大圖，RXV 會自動辨識和分割。
+                  如果這本來就是一張獨立貼圖，則繼續上傳其餘 {needMore} 張即可。
+                </p>
+                <button
+                  type="button"
+                  disabled={loading}
+                  onClick={() => motherSheetInputRef.current?.click()}
+                  className="mt-3 inline-flex min-h-11 w-fit max-w-full items-center justify-center rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-violet-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 disabled:opacity-60"
+                >
+                  改用整張母圖自動切割 →
+                </button>
+              </section>
+            ) : null}
             <section
               id="line-sticker-pack-tool"
-              onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer border-slate-300 bg-white hover:border-blue-400 hover:bg-blue-50/30 transition-all group duration-200 ease-out hover:-translate-y-0.5 hover:shadow-lg hover:ring-2 hover:ring-blue-100 duration-200 ease-out hover:-translate-y-0.5 hover:shadow-xl hover:brightness-110 active:scale-[0.98]"
+              className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-5"
+              aria-label="已切好的單張貼圖補充上傳區"
             >
               <input
                 ref={fileInputRef}
@@ -2887,13 +2910,18 @@ export default function LineStickerTool() {
                 onChange={handleInputChange}
                 className="hidden"
               />
-              <p className="text-slate-600 font-bold">
-                第 3 步｜點這裡上傳圖片（可一次多選）
+              <h3 className="text-sm font-bold text-slate-900">備用功能：已切好的單張貼圖上傳</h3>
+              <p className="mt-2 text-xs leading-6 text-slate-600">
+                只有當圖片已經是一張一張分開的透明 PNG／WebP 時才用此功能；
+                若您手上是一張包含 8／16／20 格的大圖，請使用上方紫色「選擇整張母圖並辨識格數」。
               </p>
-              <p className="text-[11px] text-slate-400 mt-1">
-                {t("line_sticker_upload_hint")}｜建議上傳已去背 PNG /
-                WebP，系統會自動提示非透明背景
-              </p>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="mt-3 inline-flex min-h-11 w-fit items-center justify-center rounded-lg border-2 border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-800 transition-colors hover:border-violet-500 hover:bg-violet-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
+              >
+                我已切成單張｜選擇 PNG／WebP（可多選）
+              </button>
             </section>
 
             <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -3554,7 +3582,9 @@ export default function LineStickerTool() {
                       : `步驟 5｜下載 ${stickerCount} 張 ${exportPlatform === "whatsapp" ? "WhatsApp WebP" : "LINE 上架"} ZIP`
                     : mattingModeStale
                       ? "去背已變更｜請重新確認切割"
-                      : `已載入 ${files.length}/${stickerCount} 張｜尚差 ${needMore} 張`}
+                      : mayHaveUploadedMotherSheetAsSingle
+                         ? "可能傳錯區域｜請使用上方整張母圖切割"
+                         : `已載入 ${files.length}/${stickerCount} 張｜尚差 ${needMore} 張`}
               </button>
             )}
           </div>
