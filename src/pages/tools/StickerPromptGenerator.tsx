@@ -4420,10 +4420,10 @@ function ShowcaseSection() {
                 {item.desc}
               </p>
 
-              <div className="mt-4 grid gap-2">
+              <div className="mt-4 flex flex-wrap items-center gap-2">
                 <Link
                   to="/tools/sticker-showcase"
-                  className="w-full rounded-2xl bg-violet-600 px-3 py-2 text-center text-xs font-black !text-white whitespace-nowrap hover:bg-violet-700"
+                  className="inline-flex w-fit max-w-full items-center justify-center rounded-2xl bg-violet-600 px-4 py-2 text-center text-xs font-black !text-white hover:bg-violet-700"
                   style={{ color: "#ffffff" }}
                 >
                   放大看圖
@@ -4433,7 +4433,7 @@ function ShowcaseSection() {
                   href="https://ko-fi.com/s/62381d787d"
                   target="_blank"
                   rel="noreferrer"
-                  className="w-full rounded-2xl bg-pink-600 px-3 py-2 text-center text-xs font-black !text-white whitespace-nowrap hover:bg-pink-700"
+                  className="inline-flex w-fit max-w-full items-center justify-center rounded-2xl bg-pink-600 px-4 py-2 text-center text-xs font-black !text-white hover:bg-pink-700"
                   style={{ color: "#ffffff" }}
                 >
                   購買模板
@@ -4932,16 +4932,16 @@ export default function StickerPromptGenerator() {
                 先選 LINE 或 WhatsApp、靜態或動態，再選張數與主題。第一次建議試做 8 張；不知道怎麼選，保持預設值也可以。
               </p>
               <StickerNextActionHint>先選下方「LINE 貼圖」或「WhatsApp 貼圖」按鈕，再選靜態／動態及張數。第一次使用也可保留預設值。</StickerNextActionHint>
-              <div className="mt-4 grid grid-cols-2 gap-3">
+              <div className="mt-4 flex flex-wrap items-center gap-3">
                 {(["line", "whatsapp"] as const).map((platform) => (
                   <button key={platform} type="button" aria-pressed={stickerPlatform === platform}
                     onClick={() => setStickerPlatform(platform)}
-                    className={`min-h-12 rounded-2xl border-2 px-4 py-3 text-sm font-black transition ${stickerPlatform === platform ? "border-emerald-500 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-white text-slate-700"}`}>
+                    className={`inline-flex min-h-12 w-auto max-w-full items-center justify-center rounded-2xl border-2 px-4 py-3 text-sm font-black transition ${stickerPlatform === platform ? "border-emerald-500 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-white text-slate-700"}`}>
                     {stickerPlatform === platform ? "✓ " : ""}{platform === "line" ? "LINE 貼圖" : "WhatsApp 貼圖"}
                   </button>
                 ))}
               </div>
-              <div className="mt-3 grid grid-cols-2 gap-3">
+              <div className="mt-3 flex flex-wrap items-stretch gap-3">
                 {([
                   ["static", "靜態貼圖", "下載 LINE PNG 或 WhatsApp WebP"],
                   ["animated", "動態貼圖", "接到動畫製作，輸出 APNG 或動畫 WebP"],
@@ -4950,7 +4950,7 @@ export default function StickerPromptGenerator() {
                     key={mode}
                     type="button"
                     onClick={() => handleStickerMode(mode)}
-                    className={`rounded-2xl border p-4 text-left transition ${
+                    className={`w-auto min-w-[154px] max-w-[260px] flex-1 rounded-2xl border p-4 text-left transition ${
                       stickerMode === mode
                         ? "border-violet-500 bg-violet-50 ring-2 ring-violet-100"
                         : "border-slate-200 bg-slate-50 hover:border-violet-200"
@@ -5292,7 +5292,7 @@ export default function StickerPromptGenerator() {
                           貼圖 {item.startIndex + 1}～{item.endIndex}
                         </p>
                       </div>
-                      <div className="w-full sm:w-auto">
+                      <div className="w-fit max-w-full">
                         <StickerNextActionHint>請先按下方「複製第 {index + 1} 張畫圖指令」，再選下方 ChatGPT 或 Google Gemini 按鈕。</StickerNextActionHint>
                       <button
                         type="button"
@@ -5342,7 +5342,7 @@ export default function StickerPromptGenerator() {
                 <summary className="cursor-pointer px-4 py-3 text-sm font-black text-slate-700">
                   進階功能
                 </summary>
-                <div className="grid gap-2 border-t border-slate-200 p-4 sm:grid-cols-2">
+                <div className="flex flex-wrap items-center gap-2 border-t border-slate-200 p-4">
                   <button
                     onClick={copyPrompt}
                     type="button"
@@ -5375,7 +5375,7 @@ export default function StickerPromptGenerator() {
                   href={KOFI_SHOP_URL}
                   target="_blank"
                   rel="noreferrer"
-                  className="mt-3 inline-flex w-full items-center justify-center rounded-2xl bg-orange-500 px-5 py-3 text-sm font-black !text-white shadow-md hover:bg-orange-600 hover:!text-white"
+                  className="mt-3 inline-flex w-auto max-w-full items-center justify-center rounded-2xl bg-orange-500 px-5 py-3 text-sm font-black !text-white shadow-md hover:bg-orange-600 hover:!text-white"
                   style={{ color: "#ffffff" }}
                 >
                   購買進階版 Excel 模板包
@@ -5385,14 +5385,14 @@ export default function StickerPromptGenerator() {
                   onClick={() =>
                     navigator.clipboard.writeText("rxv0227@gmail.com")
                   }
-                  className="mt-3 inline-flex w-full items-center justify-center rounded-2xl bg-slate-900 px-5 py-3 text-sm font-black !text-white shadow-md hover:bg-slate-800 hover:!text-white"
+                  className="mt-3 inline-flex w-auto max-w-full items-center justify-center rounded-2xl bg-slate-900 px-5 py-3 text-sm font-black !text-white shadow-md hover:bg-slate-800 hover:!text-white"
                   style={{ color: "#ffffff" }}
                 >
                   複製客製服務 Email
                 </button>
               </div>
 
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <div className="mt-5 flex flex-wrap items-center gap-3">
                 <Link
                   to="/tools/sticker-splitter"
                   className="inline-flex min-h-[48px] items-center justify-center whitespace-nowrap rounded-2xl bg-violet-600 px-4 py-3 text-sm font-black leading-none !text-white shadow-md transition hover:bg-violet-700 hover:!text-white active:scale-[0.98] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-xl hover:brightness-110"
