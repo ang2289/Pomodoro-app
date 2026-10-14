@@ -243,7 +243,7 @@ export default function LineStickerGuide() {
               讓 AI 畫好貼圖大圖，下載後傳回 RXV，自動切割、去背、整理尺寸與打包 ZIP。
             </p>
             <p className="mt-4 rounded-xl border border-blue-100 bg-blue-50 p-3 text-sm leading-6 text-blue-900">
-              最簡單的方法：先在 RXV 選主題並複製指令 → 選 ChatGPT 或 Google Gemini 貼上、產出整張圖片 → 下載完整大圖 → 回 RXV 上傳。兩者任選一個即可。
+              最簡單的方法：先在 RXV 選主題並複製指令 → 建議使用已實測的 ChatGPT；也可用 Gemini 強化版指令 → 下載完整大圖 → 檢查 4×4 是否正方形、角色和文字是否正確 → 回 RXV 上傳。
             </p>
             <StickerAIProviderLinks />
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
