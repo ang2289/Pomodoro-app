@@ -5072,7 +5072,7 @@ export default function StickerPromptGenerator() {
               </p>
 
               <div className="mt-5 flex items-center justify-between gap-3">
-                <label className="block text-xs font-black text-slate-500">
+                <label className="block text-sm font-semibold text-slate-700">
                   貼圖類型
                 </label>
                 <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">
@@ -5112,7 +5112,7 @@ export default function StickerPromptGenerator() {
                 onChange={(e) =>
                   handleTypeChange(e.target.value as TemplateKey)
                 }
-                className="mt-3 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
+                className="mt-3 w-full max-w-lg rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
               >
                 {filteredTemplateEntries.map(([key, item]) => (
                   <option key={key} value={key}>
@@ -5340,8 +5340,8 @@ export default function StickerPromptGenerator() {
               <textarea
                 value={texts}
                 onChange={(e) => setTexts(e.target.value)}
-                rows={24}
-                className="mt-3 min-h-[520px] w-full resize-y rounded-2xl border border-slate-200 bg-white px-4 py-4 text-base leading-8 text-slate-700 outline-none focus:border-violet-400"
+                rows={Math.min(requiredCount + 1, 12)}
+                className="mt-3 min-h-[200px] max-h-[440px] w-full resize-y overflow-auto rounded-xl border border-slate-200 bg-white px-4 py-4 text-base leading-8 text-slate-700 outline-none focus:border-violet-400"
               />
                 </div>
               </section>
@@ -5353,7 +5353,7 @@ export default function StickerPromptGenerator() {
               </div>
             </div>
 
-            <div id="sticker-copy" className="scroll-mt-24 rounded-3xl border border-violet-100 bg-white p-5 shadow-sm">
+            <div id="sticker-copy" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
               <div className="flex flex-col gap-3">
                 <div>
                   <p className="text-xs font-black tracking-wide text-violet-600">步驟 2</p>
@@ -5366,19 +5366,18 @@ export default function StickerPromptGenerator() {
                 </div>
               </div>
 
-              <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold leading-7 text-emerald-800">
-                這次需要產生 {motherSheetPlan.length} 張母圖，共 {targetCount} 張貼圖。請一張一張產生，不要把不同母圖再合成一張。
-              </div>
+              <p className="mt-3 text-sm font-medium leading-6 text-slate-700">
+                這次需畫 {motherSheetPlan.length} 張完整母圖（共 {targetCount} 張貼圖）。請逐張產生，不要合併不同母圖。
+              </p>
 
-              <div className="mt-4 rounded-2xl border border-sky-200 bg-sky-50 p-4">
-                <p className="text-sm font-black text-sky-900">第一次使用，照這三個動作就好</p>
-                <p className="mt-2 text-sm leading-7 text-slate-700">① 先按下方「複製第 1 張畫圖指令」：ChatGPT 選一般版、Gemini 選強化版 → ② 開啟所選平台 → ③ 貼上並送出。</p>
+              <div className="mt-4 border-t border-slate-200 pt-4">
+                <p className="text-sm font-semibold text-slate-900">複製下方指令，再開啟 AI 工具貼上</p>
+                <p className="mt-1 text-xs leading-5 text-slate-600">推薦 ChatGPT；Gemini 可以試驗但可能不遵守格數。本站不會自動把文字貼進 AI。</p>
                 <StickerAIProviderLinks />
-                <p className="mt-2 text-xs leading-6 text-slate-600">RXV 只複製文字，不會自動幫你貼到其他平台。若要求登入，請使用自己的帳號。</p>
               </div>
-              <div className="mt-4 rounded-2xl border border-violet-200 bg-white p-4">
+              <div className="mt-4 border-t border-slate-200 pt-4">
                 <p className="text-sm font-black text-violet-900">即將複製的貼圖設定（修改第 1 步選項後會同步更新）</p>
-                <div className="mt-2 flex flex-wrap gap-2 text-xs font-bold text-slate-700">
+                <div className="mt-2 flex flex-wrap gap-2 text-xs font-medium text-slate-700">
                   {[
                     `平台：${stickerPlatform === "line" ? "LINE" : "WhatsApp"}`,
                     `貼圖模式：${stickerMode === "static" ? "靜態" : "動態"}`,
@@ -5391,7 +5390,7 @@ export default function StickerPromptGenerator() {
                     `角色來源：${optionLabel(PHOTO_MODE_OPTIONS, photoMode)}`,
                     `名稱：${optionLabel(NAME_MODE_OPTIONS, nameMode)}`,
                   ].map((label) => (
-                    <span key={label} className="rounded-lg bg-violet-50 px-3 py-2">{label}</span>
+                    <span key={label} className="rounded-md bg-slate-100 px-2.5 py-1.5">{label}</span>
                   ))}
                 </div>
                 <p className="mt-2 text-xs leading-6 text-slate-600">角色內容、畫風描述及每句短句也會以目前欄位輸入的內容為準。這些只是給 AI 的指令，不會直接修改已產出的圖片。</p>
@@ -5399,7 +5398,7 @@ export default function StickerPromptGenerator() {
               </div>
               <div className="mt-4 space-y-4">
                 {flowPrompts.map((item, index) => (
-                  <div key={`${item.grid}-${index}`} className="rounded-3xl border border-violet-100 bg-violet-50/50 p-4">
+                  <div key={`${item.grid}-${index}`} className="rounded-xl border border-slate-200 bg-white p-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div>
                         <p className="text-sm font-black text-slate-900">
