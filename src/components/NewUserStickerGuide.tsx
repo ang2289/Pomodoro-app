@@ -87,7 +87,7 @@ export default function NewUserStickerGuide({ compact = false }: Props) {
           </div>
         </div>
       </div>
-      <div className={`mt-4 grid gap-2 ${compact ? "sm:grid-cols-2 lg:grid-cols-3" : "sm:grid-cols-2 lg:grid-cols-5"}`}>
+      <div className="mt-4 flex flex-col gap-2">
         {steps.map((step) => (
           <div key={step.number} className="flex flex-col rounded-2xl border border-slate-200 bg-slate-50 p-3">
             <div className="flex items-center gap-2">
