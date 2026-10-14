@@ -279,3 +279,47 @@ test("三階段參考版型與貼圖錨點不會產生捲動爭用", () => {
   assert.match(prompt, /字型風格（可選）/);
   assert.match(prompt, /WhatsApp 貼圖/);
 });
+
+test("業務個人品牌角色可選外觀並固定整套母圖，不再所有客戶套用同一男性西裝背心", () => {
+  const source = read("src/pages/tools/StickerPromptGenerator.tsx");
+  assert.match(source, /const BUSINESS_AVATAR_OPTIONS =/);
+  for (const key of ["persona", "hair", "clothes", "accessory", "palette"]) {
+    assert.match(source, new RegExp(key + ": \\["));
+  }
+  assert.match(source, /useState<BusinessAvatarSelection>\(savedBusinessAvatar\)/);
+  assert.match(source, /onClick=\{\(\) => setBusinessAvatar\(randomBusinessAvatar\(\)\)\}/);
+  assert.match(source, /businessAvatarPrompt\(businessAvatar, businessSignature\)/);
+  assert.match(source, /const effectiveRole = useMemo/);
+  assert.match(source, /type === "businessPersonal" && photoMode === "original"/);
+  assert.match(source, /effectiveRole,\s*style,\s*item.grid,/);
+  assert.match(source, /effectiveRole,\s*style,\s*grid,\s*texts,/);
+  assert.match(source, /effectiveRole,\s*style,\s*grid,\s*stickerStylePreset,/);
+  assert.match(source, /localStorage\.setItem\(BUSINESS_AVATAR_STORAGE_KEY/);
+  assert.match(source, /個人辨識特徵（選填）/);
+  assert.match(source, /後續第 2 張母圖都必須維持同一張臉/);
+  assert.match(source, /不能一格變一個人/);
+  assert.doesNotMatch(source, /role: "一位親切又專業的年輕業務角色，穿襯衫與西裝背心/);
+  assert.match(source, /無法保證與其他使用者絕不重複/);
+});
+
+test("角色描述組合保持每格一致，能帶入個人外觀但不額外加入名牌文字", () => {
+  const source = read("src/pages/tools/StickerPromptGenerator.tsx");
+  const fn = source.match(/function businessAvatarPrompt\(choice: BusinessAvatarSelection, signature: string\) \{[\s\S]*?\n\}/);
+  assert.ok(fn, "缺少業務角色提示詞建構函式");
+  const javascript = ts.transpileModule(fn[0], { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText;
+  const format = vm.runInNewContext(javascript + "\nbusinessAvatarPrompt", {});
+  const choice = {
+    persona: "30 歲台灣女性顧問",
+    hair: "短黑髮",
+    clothes: "淡綠色西裝",
+    accessory: "小型圓框眼鏡",
+    palette: "薄荷與米色",
+  };
+  const result = format(choice, "左臉小酒窩");
+  for (const expected of Object.values(choice)) assert.ok(result.includes(expected));
+  assert.match(result, /左臉小酒窩/);
+  assert.match(result, /同一張臉、髮型、服裝/);
+  assert.match(result, /不得變成道具上額外文字或商標/);
+  assert.doesNotMatch(format(choice, ""), /自訂辨識特徵：/);
+  assert.doesNotMatch(format(choice, "a".repeat(300)), /a{181}/);
+});
