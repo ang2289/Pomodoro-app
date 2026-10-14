@@ -408,7 +408,7 @@ test("兩張母圖的角色與字型鎖定相同，文字位置三種模式互�
 });
 test("參考圖僅在多母圖顯示，瀏覽器本地預覽及清理物件 URL", () => {
   const source = read("src/pages/tools/StickerPromptGenerator.tsx");
-  assert.match(source,/index === 1 && \(/);
+  assert.match(source,/index > 0 && \(/);
   assert.match(source,/選擇第 1 張參考圖/);
   assert.match(source,/URL\.createObjectURL\(file\)/);
   assert.match(source,/URL\.revokeObjectURL\(referenceUrlRef\.current\)/);
