@@ -5638,18 +5638,55 @@ export default function StickerPromptGenerator() {
               </div>
               <div className="mt-4 space-y-4">
                 {flowPrompts.map((item, index) => (
-                  <div key={`${item.grid}-${index}`} className="rounded-xl border border-slate-200 bg-white p-4">
+                  <div key={`${item.grid}-${index}`}>
+                    {index === 1 && motherSheetPlan.length > 1 ? (
+                      <section aria-label="選擇第 1 張角色參考圖" className="mb-4 rounded-xl border border-violet-200 bg-violet-50/40 p-4">
+                        <h3 className="text-base font-bold text-slate-900">第 3 步｜鎖定角色：選擇第 1 張參考圖</h3>
+                        <p className="mt-2 text-sm leading-6 text-slate-700">
+                          請先在 ChatGPT 產生第 1 張母圖，再選回本站預覽。不需要 Supabase／R2，上傳到 AI 時仍須手動附圖。
+                        </p>
+                        <input ref={characterReferenceInput} type="file" accept="image/png,image/jpeg,image/webp"
+                          onChange={chooseCharacterReference} className="sr-only" aria-label="第 1 張母圖參考圖片" />
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <button type="button" onClick={() => characterReferenceInput.current?.click()}
+                            className="inline-flex min-h-11 items-center rounded-lg bg-violet-600 px-4 py-2 text-sm font-bold text-white hover:bg-violet-700">
+                            {activeReference ? "更換第 1 張參考圖" : "選擇第 1 張參考圖"}
+                          </button>
+                          {activeReference && (
+                            <button type="button" onClick={clearCharacterReference}
+                              className="inline-flex min-h-11 items-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-100">
+                              清除參考圖
+                            </button>
+                          )}
+                        </div>
+                        {activeReference ? (
+                          <div className="mt-3">
+                            <img src={activeReference.url} alt="第 1 張母圖角色參考預覽"
+                              className="max-h-60 w-auto max-w-full rounded-lg border border-slate-200 bg-white object-contain" />
+                            <p className="mt-2 break-all text-xs text-slate-600">已選擇：{activeReference.name}（尚未傳給 ChatGPT）</p>
+                          </div>
+                        ) : (
+                          <p className="mt-3 text-xs leading-6 text-amber-800">未選參考圖：仍可複製提示詞，但僅靠文字無法保證完全一致。</p>
+                        )}
+                        <p className="mt-3 text-sm font-semibold leading-6 text-violet-900">
+                          第 4 步複製指令後，請在同一個 ChatGPT 對話親手附上第 1 張母圖再送出。
+                        </p>
+                      </section>
+                    ) : null}
+                    <div className="rounded-xl border border-slate-200 bg-white p-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div>
                         <p className="text-sm font-black text-slate-900">
-                          第 {index + 1} 張母圖｜{item.grid.replace("x", "×")}
+                          {motherSheetPlan.length > 1 ? (index === 0 ? "第 2 步｜生成第 1 張" : "第 4 步｜生成第 2 張") : "第 2 步｜生成母圖"}｜{item.grid.replace("x", "×")}
                         </p>
                         <p className="mt-1 text-xs font-bold text-slate-500">
                           貼圖 {item.startIndex + 1}～{item.endIndex}
                         </p>
                       </div>
                       <div className="w-fit max-w-full">
-                        <StickerNextActionHint>請先按下方「複製第 {index + 1} 張畫圖指令」，ChatGPT 用一般版、Gemini 請用強化版，再選下方對應 AI 平台按鈕。</StickerNextActionHint>
+                        <StickerNextActionHint>{index === 0
+                          ? "複製第 1 張提示詞到 ChatGPT 生成完整母圖。"
+                          : "複製第 2 張提示詞，回同一個 ChatGPT 對話並親手附上第 1 張母圖。網站不會自動附圖。"}</StickerNextActionHint>
                       <div className="flex flex-wrap items-center gap-2">
                         <button
                           type="button"
@@ -5680,6 +5717,7 @@ export default function StickerPromptGenerator() {
                         {item.prompt}
                       </pre>
                     </details>
+                    </div>
                   </div>
                 ))}
               </div>
