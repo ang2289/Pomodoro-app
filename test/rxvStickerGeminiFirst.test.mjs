@@ -14,17 +14,25 @@ test("新手可以直接跳到第 3 步上傳母圖，不需做提示詞", () =>
   assert.match(homepage, /<StickerExistingMotherSheetShortcut compact \/>/);
 });
 
-test("每段新手流程有明確下一步按鈕提示，Gemini 為主、ChatGPT 為備選", () => {
+test("每段新手流程明確同時提供 ChatGPT 與 Google Gemini，且保留既有母圖捷徑", () => {
   const prompt = read("src/pages/tools/StickerPromptGenerator.tsx");
   const progress = read("src/components/LineStickerFlowSteps.tsx");
   const starter = read("src/components/NewUserStickerGuide.tsx");
-  assert.match(prompt, /https:\/\/gemini\.google\.com\/app/);
+  const guide = read("src/pages/tools/LineStickerGuide.tsx");
+  const buttons = read("src/components/StickerBeginnerActions.tsx");
+  assert.match(buttons, /https:\/\/chatgpt\.com\//);
+  assert.match(buttons, /https:\/\/gemini\.google\.com\/app/);
+  assert.match(buttons, /開啟 ChatGPT 畫圖/);
+  assert.match(buttons, /開啟 Google Gemini 畫圖/);
+  assert.match(prompt, /<StickerAIProviderLinks \/>/);
+  assert.match(prompt, /<StickerAIProviderLinks compact \/>/);
+  assert.match(guide, /<StickerAIProviderLinks \/>/);
   assert.match(prompt, /請先按下方「複製第/);
-  assert.match(prompt, /已經在 Gemini 下載完整大圖/);
+  assert.match(prompt, /已從 ChatGPT 或 Gemini 下載完整大圖/);
   assert.match(prompt, /flow=1#mother-upload/);
-  assert.match(progress, /Google Gemini 畫圖/);
+  assert.match(progress, /ChatGPT／Gemini 畫圖/);
+  assert.match(starter, /用 ChatGPT／Gemini 畫圖/);
   assert.match(starter, /下一步請按/);
-  assert.match(starter, /ChatGPT/);
 });
 
 test("已有母圖的上傳操作清楚，客製服務能私訊且不出現收費價目", () => {
