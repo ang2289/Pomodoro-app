@@ -5306,6 +5306,11 @@ export default function StickerPromptGenerator() {
                           ? "已複製"
                           : `第 2 步｜複製第 ${index + 1} 張畫圖指令`}
                       </button>
+                      <p className="mt-2 text-xs font-black leading-5 text-emerald-800">已按複製？下一步請按下面的「開啟 Google Gemini」，到對話框貼上文字並送出。</p>
+                      <a href="https://gemini.google.com/app" target="_blank" rel="noopener noreferrer"
+                        className="mt-2 inline-flex min-h-11 items-center justify-center rounded-xl border border-emerald-200 bg-white px-4 py-2 text-xs font-black text-emerald-800 hover:bg-emerald-50">
+                        開啟 Google Gemini，貼上指令 ↗
+                      </a>
                       </div>
                     </div>
                     <details className="mt-3 rounded-2xl border border-violet-100 bg-white">
