@@ -5004,16 +5004,16 @@ export default function StickerPromptGenerator() {
                 接下來先選平台，再選靜態／動態與張數。
                 {" "}<a href="#sticker-customize" className="font-semibold text-violet-700 underline underline-offset-2">直接調整文字、字型 ↓</a>
               </p>
-              <div className="mt-4 flex flex-wrap items-center gap-3">
+              <div className="mt-4 grid w-full max-w-[520px] grid-cols-2 items-stretch gap-3" role="group" aria-label="選擇貼圖平台">
                 {(["line", "whatsapp"] as const).map((platform) => (
                   <button key={platform} type="button" aria-pressed={stickerPlatform === platform}
                     onClick={() => setStickerPlatform(platform)}
-                    className={`inline-flex min-h-11 w-fit max-w-full flex-none items-center justify-center self-start rounded-lg border px-4 py-2.5 text-sm font-semibold transition ${stickerPlatform === platform ? "border-violet-600 bg-violet-50 text-violet-800" : "border-slate-300 bg-white text-slate-700 hover:border-slate-400"}`}>
+                    className={`inline-flex min-h-12 w-full min-w-0 items-center justify-center rounded-xl border-2 px-3 py-3 text-center text-sm font-bold leading-5 shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:border-violet-500 hover:bg-violet-100 hover:text-violet-900 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 active:translate-y-0 ${stickerPlatform === platform ? "border-violet-600 bg-violet-600 !text-white shadow-md hover:bg-violet-700 hover:!text-white" : "border-violet-200 bg-violet-50 text-violet-900"}`}>
                     {stickerPlatform === platform ? "✓ " : ""}{platform === "line" ? "LINE 貼圖" : "WhatsApp 貼圖"}
                   </button>
                 ))}
               </div>
-              <div className="mt-3 flex flex-wrap items-stretch gap-3">
+              <div className="mt-3 grid w-full max-w-[520px] grid-cols-2 items-stretch gap-3" role="group" aria-label="選擇靜態或動態貼圖">
                 {([
                   ["static", "靜態貼圖", "下載 LINE PNG 或 WhatsApp WebP"],
                   ["animated", "動態貼圖", "接到動畫製作，輸出 APNG 或動畫 WebP"],
@@ -5022,14 +5022,17 @@ export default function StickerPromptGenerator() {
                     key={mode}
                     type="button"
                     onClick={() => handleStickerMode(mode)}
-                    className={`w-auto min-w-[150px] max-w-[240px] flex-none rounded-lg border p-3 text-left transition ${
+                    aria-pressed={stickerMode === mode}
+                    className={`min-h-[100px] w-full min-w-0 rounded-xl border-2 p-3 text-left shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:border-violet-500 hover:bg-violet-100 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 active:translate-y-0 ${
                       stickerMode === mode
-                        ? "border-violet-600 bg-violet-50"
-                        : "border-slate-200 bg-white hover:border-violet-300"
+                        ? "border-violet-600 bg-violet-600 !text-white shadow-md hover:bg-violet-700"
+                        : "border-violet-200 bg-violet-50 text-violet-900"
                     }`}
                   >
-                    <span className="block text-sm font-black text-slate-900">{title}</span>
-                    <span className="mt-1 block text-xs leading-5 text-slate-500">{desc}</span>
+                    <span className={`block text-sm font-bold ${stickerMode === mode ? "text-white" : "text-violet-950"}`}>
+                      {stickerMode === mode ? "✓ " : ""}{title}
+                    </span>
+                    <span className={`mt-1 block text-xs leading-5 ${stickerMode === mode ? "text-violet-100" : "text-slate-600"}`}>{desc}</span>
                   </button>
                 ))}
               </div>
@@ -5043,16 +5046,17 @@ export default function StickerPromptGenerator() {
                 貼圖張數
               </label>
               <p className="mt-2 text-xs font-bold leading-5 text-violet-800">下一步請按下方張數按鈕，例如「8 張」或「16 張」；第一次建議從 8 張開始。</p>
-              <div className="mt-2 flex flex-wrap gap-2">
+              <div className="mt-2 flex max-w-[520px] flex-wrap gap-2" role="group" aria-label="選擇貼圖張數">
                 {allowedCounts.map((count) => (
                   <button
                     key={count}
                     type="button"
                     onClick={() => handleTargetCount(count)}
-                    className={`min-w-[64px] rounded-xl px-4 py-3 text-sm font-black transition ${
+                    aria-pressed={targetCount === count}
+                    className={`inline-flex min-h-11 w-[76px] shrink-0 items-center justify-center rounded-xl border-2 px-2 py-2.5 text-sm font-bold shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:border-violet-500 hover:bg-violet-100 hover:text-violet-900 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 active:translate-y-0 ${
                       targetCount === count
-                        ? "bg-violet-600 text-white shadow"
-                        : "bg-slate-100 text-slate-600 hover:bg-violet-100"
+                        ? "border-violet-600 bg-violet-600 text-white shadow-md hover:bg-violet-700 hover:text-white"
+                        : "border-violet-200 bg-violet-50 text-violet-900"
                     }`}
                   >
                     {count} 張
