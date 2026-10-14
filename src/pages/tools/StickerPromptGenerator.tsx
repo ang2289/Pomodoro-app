@@ -3219,7 +3219,7 @@ const TEXT_POSITION_OPTIONS: Array<{
   {
     value: "mixed",
     label: "左右交錯",
-    prompt: "左右交錯是強制左右分欄，不是上下交錯：第1、3、5、7等奇數格把完整文字放在格子左側、人物放右側；第2、4、6、8等偶數格文字放右側、人物放左側。每格保留足夠側邊空間，長句可在指定左／右區域換行；嚴禁將文字統一放在角色頭頂、格子上方或底部",
+    prompt: "左右交錯是強制左右分欄，不是上下交錯：整套全域第1、3、5、7等奇數序號的貼圖把完整文字放左側、人物放右側；全域第2、4、6、8等偶數序號的貼圖文字放右側、人物放左側。每格保留足夠側邊空間，長句可在指定左／右區域換行；嚴禁將文字統一放在角色頭頂、格子上方或底部",
   },
 ];
 
@@ -4498,7 +4498,7 @@ function buildGeminiStrictMotherSheetPrompt(originalPrompt: string, grid: GridTy
       : "5:4 畫布，5 欄 × 4 列，共 20 個等大格子";
   return `【Gemini 貼圖母圖排版強制規則，優先於畫風】
 請使用「${layout}」，只輸出一張完整母圖。不可產生橫幅海報、長方形四列拼貼、橫向分鏡或改變畫布比例。
-畫面精確均分，每一格獨立且主體置中，四邊與每格之間保留純白安全間距；不加分隔線，不能跨格或裁到任何字、頭髮、手腳、裙擺與道具。
+畫面精確均分，每格完整圖文作為一組置於中央安全範圍；文字本身的上、下或左右位置完全依照下方已選定的文字位置規則，不能自行改版。四邊與每格之間保留純白安全間距；不加分隔線，不能跨格或裁到任何字、頭髮、手腳、裙擺與道具。
 只准出現下方逐格指定的繁體中文主句。所有道具（卡片、花籃、紅包、標語、招牌、旗幟）都不能有額外英文、中文、數字或圖形字樣；禁止 JUST MARRIED、THANK YOU、WEDDING DAY、WITNESS 等額外文字。
 人物從第一格到最後一格都必須保持與下方「主角設定」相同的角色（相同髮型、臉部特徵、服裝、膚色、Q 版頭身比），僅變換表情、手勢與動作；不可擅自改變職業、增加其他主角或改成婚禮新人。
 必須完整呈現指定格數；若畫布無法符合比例與格數，請重新生成符合版型的一張圖，勿交付錯誤比例。
@@ -5741,7 +5741,7 @@ export default function StickerPromptGenerator() {
               <div className="mt-4 space-y-4">
                 {flowPrompts.map((item, index) => (
                   <div key={`${item.grid}-${index}`} className="rounded-xl border border-slate-200 bg-white p-4">
-                    {index === 1 && (
+                    {index > 0 && (
                       <section className="mb-5 rounded-xl border border-violet-200 bg-violet-50 p-4" aria-label="第 3 步：鎖定角色參考圖">
                         <h3 className="text-base font-bold text-slate-900">第 3 步｜選擇第 1 張母圖作為角色參考</h3>
                         <p className="mt-2 text-sm leading-6 text-slate-700">
