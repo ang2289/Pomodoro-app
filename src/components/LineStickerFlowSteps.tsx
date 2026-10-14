@@ -10,7 +10,7 @@ type Props = {
 
 const BASE_STEPS = [
   { step: 1 as const, title: "選擇貼圖", desc: "選類型、主題與張數" },
-  { step: 2 as const, title: "Google Gemini 畫圖", desc: "複製指令，到 Gemini 貼上生圖" },
+  { step: 2 as const, title: "ChatGPT／Gemini 畫圖", desc: "複製指令，任選一個 AI 工具畫圖" },
   { step: 3 as const, title: "上傳圖片", desc: "把完整大圖傳回 RXV" },
   { step: 4 as const, title: "自動整理", desc: "一張大圖自動分成多張貼圖" },
 ];
@@ -68,10 +68,10 @@ export default function LineStickerFlowSteps({
       <div className="mb-4 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3">
         <p className="text-sm font-black text-sky-900">先知道一件事：不是一張張畫貼圖</p>
         <p className="mt-1 text-sm leading-6 text-slate-700">
-          用 Google Gemini 畫一張有 8 或 16 格的完整大圖（叫「母圖」），下載大圖後傳回 RXV，系統就會自動分割、去背及整理。
+          用 ChatGPT 或 Google Gemini 畫出一張有 8 或 16 格的完整大圖（叫「母圖」），下載整張圖片傳回 RXV，系統就會自動分割、去背及整理。
         </p>
         <p className="mt-1 text-xs leading-5 text-slate-600">
-          目前 RXV 貼圖工具免費使用；Google Gemini 的使用限制依 Google 帳號與服務規則為準。
+          目前 RXV 貼圖工具免費使用；ChatGPT 與 Gemini 的使用額度、登入條件依各平台規則為準。
           <Link to="/tools/line-sticker-guide" className="ml-2 font-bold text-sky-800 underline underline-offset-2">看圖片操作教學 →</Link>
         </p>
       </div>
