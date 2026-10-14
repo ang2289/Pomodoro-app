@@ -3162,36 +3162,10 @@ export default function LineStickerTool() {
                   />
                 ))}
               </div>
-              <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
-                <h4 className="text-sm font-bold text-slate-900">選擇代表人物／主圖</h4>
-                <p className="mt-1 text-xs leading-6 text-slate-600">
-                  請選一張最能代表主角的貼圖，系統會用於 LINE 的 main.png、tab.png。
-                  這裡是選「哪張貼圖當封面」，不會自動換掉圖片裡的人物。
-                </p>
-                <div className="mt-3 flex flex-wrap items-center gap-3">
-                  <label htmlFor="main-character-sticker" className="text-sm font-semibold text-slate-700">代表圖</label>
-                  <select
-                    id="main-character-sticker"
-                    value={Math.min(mainImageIndex, Math.max(0, Math.min(files.length, stickerCount) - 1))}
-                    onChange={(event) => setMainImageIndex(Number(event.target.value))}
-                    className="min-h-11 w-44 max-w-full rounded-lg border-2 border-violet-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-violet-600"
-                  >
-                    {files.slice(0, stickerCount).map((item, index) => (
-                      <option key={item.url} value={index}>{`第 ${String(index + 1).padStart(2, "0")} 張貼圖`}</option>
-                    ))}
-                  </select>
-                  <Link
-                    to="/tools/sticker-prompt#sticker-customize"
-                    className="inline-flex min-h-11 items-center justify-center rounded-lg border border-violet-200 bg-white px-4 py-2 text-sm font-semibold text-violet-800 transition-colors hover:border-violet-500 hover:bg-violet-50"
-                  >
-                    想換人物髮型／服裝？回第 1 步設定 →
-                  </Link>
-                </div>
-                <p className="mt-2 text-xs text-slate-500">重新設定人物不會直接改變已上傳的圖片，需重新到 ChatGPT 生圖並上傳。</p>
-              </div>
         <div id="sticker-download" className="scroll-mt-24" />
-        <footer aria-label="第 5 步：貼圖下載或動態製作" className="mx-auto mt-6 max-w-3xl rounded-2xl border border-slate-200 bg-white px-3 py-4 shadow-sm sm:px-4">
+        <footer aria-label="第 5 步：貼圖下載或動態製作" className="mx-auto mt-5 mb-5 max-w-3xl rounded-2xl border-2 border-violet-200 bg-white px-3 py-4 shadow-sm sm:px-4">
           <div className="mx-auto">
+            <h3 className="mb-2 text-center text-base font-bold text-violet-900">第 5 步｜確認預覽後，下載或製作動態貼圖</h3>
             <p className="mb-2 text-center text-xs font-bold leading-5 text-slate-700">
               {canDownload
                 ? (flowProject?.mode === "animated"
@@ -3266,6 +3240,34 @@ export default function LineStickerTool() {
           </div>
           </div>
         </footer>
+              <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <h4 className="text-sm font-bold text-slate-900">選擇代表人物／主圖</h4>
+                <p className="mt-1 text-xs leading-6 text-slate-600">
+                  請選一張最能代表主角的貼圖，系統會用於 LINE 的 main.png、tab.png。
+                  這裡是選「哪張貼圖當封面」，不會自動換掉圖片裡的人物。
+                </p>
+                <div className="mt-3 flex flex-wrap items-center gap-3">
+                  <label htmlFor="main-character-sticker" className="text-sm font-semibold text-slate-700">代表圖</label>
+                  <select
+                    id="main-character-sticker"
+                    value={Math.min(mainImageIndex, Math.max(0, Math.min(files.length, stickerCount) - 1))}
+                    onChange={(event) => setMainImageIndex(Number(event.target.value))}
+                    className="min-h-11 w-44 max-w-full rounded-lg border-2 border-violet-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-violet-600"
+                  >
+                    {files.slice(0, stickerCount).map((item, index) => (
+                      <option key={item.url} value={index}>{`第 ${String(index + 1).padStart(2, "0")} 張貼圖`}</option>
+                    ))}
+                  </select>
+                  <Link
+                    to="/tools/sticker-prompt#sticker-customize"
+                    className="inline-flex min-h-11 items-center justify-center rounded-lg border border-violet-200 bg-white px-4 py-2 text-sm font-semibold text-violet-800 transition-colors hover:border-violet-500 hover:bg-violet-50"
+                  >
+                    想換人物髮型／服裝？回第 1 步設定 →
+                  </Link>
+                </div>
+                <p className="mt-2 text-xs text-slate-500">重新設定人物不會直接改變已上傳的圖片，需重新到 ChatGPT 生圖並上傳。</p>
+              </div>
+
             </section>
           )}
 
