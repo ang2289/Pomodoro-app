@@ -51,7 +51,7 @@ export function StickerNextActionHint({ children }: { children: ReactNode }) {
 export function StickerAIProviderLinks({ compact = false }: { compact?: boolean }) {
   return (
     <div className={compact ? "mt-2" : "mt-3"}>
-      <p className="mb-2 text-xs font-black leading-6 text-slate-800">下一步請選一個生圖工具：ChatGPT 或 Google Gemini，兩個都可以。</p>
+      <p className="mb-2 text-xs font-black leading-6 text-slate-800">第一次製作建議用已實測的 ChatGPT；也可試用 Google Gemini，但必須檢查母圖格數、比例與文字。</p>
       <div className="flex flex-wrap items-center gap-2">
         <a
           href="https://chatgpt.com/"
@@ -66,7 +66,7 @@ export function StickerAIProviderLinks({ compact = false }: { compact?: boolean 
           className="inline-flex min-h-11 w-fit max-w-full items-center justify-center rounded-xl border border-blue-300 bg-white px-4 py-2.5 text-center text-sm font-black text-blue-800 hover:bg-blue-50"
         >開啟 Google Gemini 畫圖 ↗</a>
       </div>
-      {!compact && <p className="mt-2 text-xs leading-6 text-slate-600">先複製 RXV 的畫圖指令，再到任一工具貼上並送出。畫好後下載完整大圖，回 RXV 上傳切割；各服務的使用額度依其規定。</p>}
+      {!compact && <p className="mt-2 text-xs leading-6 text-slate-600">先複製 RXV 的畫圖指令，再到所選 AI 貼上。Gemini 請使用「複製 Gemini 排版強化版」；若生成橫幅、額外英文或人物不一致，請重新產圖，不要直接切圖。各服務額度依平台規定。</p>}
     </div>
   );
 }
