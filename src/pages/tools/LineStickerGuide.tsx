@@ -295,10 +295,10 @@ export default function LineStickerGuide() {
 
           <section className="mt-10 rounded-3xl border border-violet-100 bg-violet-50/70 p-6 shadow-sm">
             <h2 className="text-xl font-black text-slate-900">做到哪一步，就從哪個按鈕繼續</h2>
-            <div className="mt-4 grid gap-3 md:grid-cols-3">
-              <Link to="/tools/sticker-prompt#sticker-start" className="rounded-2xl bg-white p-4 shadow-sm hover:shadow-md"><p className="text-sm font-black text-violet-700">第 1～2 步：還沒有圖片</p><p className="mt-2 text-xs leading-6 text-slate-600">挑選主題、複製 AI 生圖指令。</p></Link>
-              <Link to="/tools/line-sticker#mother-upload" className="rounded-2xl bg-white p-4 shadow-sm hover:shadow-md"><p className="text-sm font-black text-violet-700">第 3～4 步：已有圖片</p><p className="mt-2 text-xs leading-6 text-slate-600">上傳母圖，由 RXV 自動切圖、去背與整理。</p></Link>
-              <Link to="/tools/animated-line-sticker#animated-sticker-batch" className="rounded-2xl bg-white p-4 shadow-sm hover:shadow-md"><p className="text-sm font-black text-violet-700">第 5 步：製作動態</p><p className="mt-2 text-xs leading-6 text-slate-600">已完成靜態圖，再選動畫效果並打包。</p></Link>
+            <div className="mt-4 flex flex-wrap items-stretch gap-3">
+              <Link to="/tools/sticker-prompt#sticker-start" className="flex w-auto min-w-[200px] max-w-[265px] flex-col rounded-2xl bg-white p-4 shadow-sm hover:shadow-md"><p className="text-sm font-black text-violet-700">第 1～2 步：還沒有圖片</p><p className="mt-2 text-xs leading-6 text-slate-600">挑選主題、複製 AI 生圖指令。</p></Link>
+              <Link to="/tools/line-sticker#mother-upload" className="flex w-auto min-w-[200px] max-w-[265px] flex-col rounded-2xl bg-white p-4 shadow-sm hover:shadow-md"><p className="text-sm font-black text-violet-700">第 3～4 步：已有圖片</p><p className="mt-2 text-xs leading-6 text-slate-600">上傳母圖，由 RXV 自動切圖、去背與整理。</p></Link>
+              <Link to="/tools/animated-line-sticker#animated-sticker-batch" className="flex w-auto min-w-[200px] max-w-[265px] flex-col rounded-2xl bg-white p-4 shadow-sm hover:shadow-md"><p className="text-sm font-black text-violet-700">第 5 步：製作動態</p><p className="mt-2 text-xs leading-6 text-slate-600">已完成靜態圖，再選動畫效果並打包。</p></Link>
             </div>
             <details className="mt-4 rounded-xl border border-violet-100 bg-white p-3">
               <summary className="cursor-pointer text-xs font-black text-slate-800">進階：若自動去背不理想</summary>
