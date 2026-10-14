@@ -158,6 +158,18 @@ type TextColor =
   | "professionalClean"
   | "taiwanPlayful";
 type TextPosition = "top" | "bottom" | "mixed";
+type LockedCharacterProfile = {
+  scope: string;
+  role: string;
+  style: string;
+  textSize: TextSize;
+  textColor: TextColor;
+  textPosition: TextPosition;
+  fontStyle: FontStyle;
+  stickerStylePreset: StickerStylePreset;
+  photoMode: PhotoMode;
+  characterLockText: string;
+};
 type StickerStylePreset =
   | "friendly"
   | "professional"
@@ -4733,6 +4745,7 @@ export default function StickerPromptGenerator() {
     defaultCharacterLock(templates.businessPersonal.label, templates.businessPersonal.role),
   );
   const [characterReference, setCharacterReference] = useState<{ name: string; url: string; scope: string } | null>(null);
+  const [lockedProfile, setLockedProfile] = useState<LockedCharacterProfile | null>(null);
   const characterReferenceInput = useRef<HTMLInputElement>(null);
   const [texts, setTexts] = useState(
     getDefaultTextWithName("businessPersonal", "4x4", "none", "小宇"),
@@ -4891,7 +4904,10 @@ export default function StickerPromptGenerator() {
   );
   const saleRisks = useMemo(() => stickerSaleTextRisks(flowTexts), [flowTexts]);
   const motherSheetPlan = useMemo(() => getMotherSheetPlan(targetCount), [targetCount]);
-  const referenceScope = `${type}:${targetCount}`;
+  const referenceScope = JSON.stringify({
+    type, targetCount, effectiveRole: role, style, sharedCharacter, fontStyle, textSize, textColor,
+    textPosition, stickerStylePreset, photoMode, businessAvatar, businessSignature,
+  });
   const activeReference = characterReference?.scope === referenceScope ? characterReference : null;
   useEffect(() => () => {
     if (characterReference?.url) URL.revokeObjectURL(characterReference.url);
@@ -4926,6 +4942,13 @@ export default function StickerPromptGenerator() {
       color: optionPrompt(TEXT_COLOR_OPTIONS, textColor),
       position: stickerPlacementRule(textPosition) },
   ), [sharedCharacter, effectiveRole, style, fontStyle, textSize, textColor, textPosition]);
+  const profileScope = `${type}:${targetCount}`;
+  const currentProfile: LockedCharacterProfile = {
+    scope: profileScope, role: effectiveRole, style, textSize, textColor, textPosition,
+    fontStyle, stickerStylePreset, photoMode, characterLockText,
+  };
+  const activeProfile = lockedProfile?.scope === profileScope ? lockedProfile : null;
+  const promptProfile = activeProfile ?? currentProfile;
   const flowPrompts = useMemo(
     () =>
       motherSheetPlan.map((item, index) => {
@@ -4934,22 +4957,22 @@ export default function StickerPromptGenerator() {
           ...item,
           prompt: buildFlowPrompt(
             templates[type].label,
-            effectiveRole,
-            style,
+            promptProfile.role,
+            promptProfile.style,
             item.grid,
             batchTexts,
-            textSize,
-            textColor,
-            textPosition,
-            fontStyle,
-            stickerStylePreset,
-            photoMode,
+            promptProfile.textSize,
+            promptProfile.textColor,
+            promptProfile.textPosition,
+            promptProfile.fontStyle,
+            promptProfile.stickerStylePreset,
+            promptProfile.photoMode,
             index + 1,
             stickerMode,
             stickerPlatform,
             item.startIndex,
             flowTexts,
-            characterLockText,
+            promptProfile.characterLockText,
           ),
         };
       }),
@@ -4957,17 +4980,17 @@ export default function StickerPromptGenerator() {
       motherSheetPlan,
       flowTexts,
       type,
-      effectiveRole,
-      style,
-      textSize,
-      textColor,
-      textPosition,
-      fontStyle,
-      stickerStylePreset,
-      photoMode,
+      promptProfile.role,
+      promptProfile.style,
+      promptProfile.textSize,
+      promptProfile.textColor,
+      promptProfile.textPosition,
+      promptProfile.fontStyle,
+      promptProfile.stickerStylePreset,
+      promptProfile.photoMode,
       stickerMode,
       stickerPlatform,
-      characterLockText,
+      promptProfile.characterLockText,
     ],
   );
 
@@ -5021,6 +5044,7 @@ export default function StickerPromptGenerator() {
     setStyle(templates[nextType].style);
     setSharedCharacter(defaultCharacterLock(templates[nextType].label, templates[nextType].role));
     clearCharacterReference();
+    setLockedProfile(null);
     setTexts(
       getDefaultFlowTexts(nextType, targetCount, nameMode, customName),
     );
@@ -5076,9 +5100,14 @@ export default function StickerPromptGenerator() {
     if (saleRisks.length) return;
     const item = flowPrompts[index];
     if (!item) return;
+    const referenceHint = index > 0 && activeReference
+      ? `\n【本次已在 RXV 選取參考圖：${activeReference.name}】請親手在同一個 ChatGPT 對話附加此圖片；本網站僅複製文字，不會自動附圖或上傳。`
+      : "";
+    const completePrompt = item.prompt + referenceHint;
     await navigator.clipboard.writeText(
-      provider === "gemini" ? buildGeminiStrictMotherSheetPrompt(item.prompt, item.grid) : item.prompt,
+      provider === "gemini" ? buildGeminiStrictMotherSheetPrompt(completePrompt, item.grid) : completePrompt,
     );
+    if (index === 0 && !activeProfile) setLockedProfile(currentProfile);
     persistFlowProject(2);
     if (provider === "gemini") {
       setCopiedGeminiIndex(index);
@@ -5104,7 +5133,7 @@ export default function StickerPromptGenerator() {
       : nextMode === "animated"
         ? 16
         : targetCount;
-    if (nextCount !== targetCount) clearCharacterReference();
+    if (nextCount !== targetCount) { clearCharacterReference(); setLockedProfile(null); }
     setTargetCount(nextCount as LineStickerCount);
     const firstGrid = getMotherSheetPlan(nextCount as LineStickerCount)[0]?.grid;
     if (firstGrid) setGrid(firstGrid);
@@ -5119,7 +5148,7 @@ export default function StickerPromptGenerator() {
   }
 
   function handleTargetCount(nextCount: LineStickerCount) {
-    if (nextCount !== targetCount) clearCharacterReference();
+    if (nextCount !== targetCount) { clearCharacterReference(); setLockedProfile(null); }
     setTargetCount(nextCount);
     const firstGrid = getMotherSheetPlan(nextCount)[0]?.grid;
     if (firstGrid) setGrid(firstGrid);
@@ -5615,7 +5644,19 @@ export default function StickerPromptGenerator() {
                 <StickerAIProviderLinks />
               </div>
               <div className="mt-4 border-t border-slate-200 pt-4">
-                <p className="text-sm font-black text-violet-900">即將複製的貼圖設定（修改第 1 步選項後會同步更新）</p>
+                <p className="text-sm font-black text-violet-900">即將複製的貼圖設定</p>
+                {activeProfile && (
+                  <div className="mt-2 flex flex-wrap items-center gap-3 rounded-lg border border-violet-200 bg-violet-50 p-3">
+                    <p className="flex-1 text-xs font-semibold leading-6 text-violet-900">
+                      已鎖定第 1 張使用的角色、畫風與文字樣式。第 2 張會沿用這一份設定；
+                      若要改人物、服裝、字型或配色，須解鎖並重新生成第 1 張。
+                    </p>
+                    <button type="button" onClick={() => { setLockedProfile(null); clearCharacterReference(); }}
+                      className="min-h-10 rounded-lg border border-violet-300 bg-white px-3 py-2 text-xs font-bold text-violet-900 hover:bg-violet-100">
+                      解鎖並重新製作第 1 張
+                    </button>
+                  </div>
+                )}
                 <div className="mt-2 flex flex-wrap gap-2 text-xs font-medium text-slate-700">
                   {[
                     `平台：${stickerPlatform === "line" ? "LINE" : "WhatsApp"}`,
