@@ -151,12 +151,12 @@ test("第 2 步顯示全部已選設定，母圖提示詞逐格指定位置並�
   assert.match(source, /stickerRowMap\(/);
   assert.match(source, /文字所在區域必須嚴格遵守/);
   assert.match(source, /即將複製的貼圖設定/);
-  assert.match(source, /optionLabel\(TEXT_POSITION_OPTIONS, textPosition\)/);
-  assert.match(source, /optionLabel\(FONT_STYLE_OPTIONS, fontStyle\)/);
-  assert.match(source, /optionLabel\(TEXT_SIZE_OPTIONS, textSize\)/);
-  assert.match(source, /optionLabel\(TEXT_COLOR_OPTIONS, textColor\)/);
-  assert.match(source, /optionLabel\(STICKER_STYLE_OPTIONS, stickerStylePreset\)/);
-  assert.match(source, /optionLabel\(PHOTO_MODE_OPTIONS, photoMode\)/);
+  assert.match(source, /optionLabel\(TEXT_POSITION_OPTIONS, promptProfile\.textPosition\)/);
+  assert.match(source, /optionLabel\(FONT_STYLE_OPTIONS, promptProfile\.fontStyle\)/);
+  assert.match(source, /optionLabel\(TEXT_SIZE_OPTIONS, promptProfile\.textSize\)/);
+  assert.match(source, /optionLabel\(TEXT_COLOR_OPTIONS, promptProfile\.textColor\)/);
+  assert.match(source, /optionLabel\(STICKER_STYLE_OPTIONS, promptProfile\.stickerStylePreset\)/);
+  assert.match(source, /optionLabel\(PHOTO_MODE_OPTIONS, promptProfile\.photoMode\)/);
   assert.match(source, /modeInstructions = mode === "animated"/);
   assert.match(source, /platform === "whatsapp" \? "WhatsApp" : "LINE"/);
   assert.match(source, /stickerMode,\s*stickerPlatform,\s*item.startIndex,\s*flowTexts,\s*promptProfile.characterLockText,/);
