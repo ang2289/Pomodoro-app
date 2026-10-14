@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import SEO from "@/components/SEO";
 import CoupangDynamicAd from "@/components/CoupangDynamicAd";
@@ -4342,6 +4342,56 @@ function getDefaultFlowTexts(
   return unique.slice(0, targetCount).join("\n");
 }
 
+type StickerIdentity = {
+  appearance: string;
+  face: string;
+  hair: string;
+  outfit: string;
+  accessories: string;
+  proportions: string;
+  illustration: string;
+  coloring: string;
+};
+const IDENTITY_FIELDS: Array<{ key: keyof StickerIdentity; label: string; hint: string }> = [
+  { key: "appearance", label: "性別、年齡與職業", hint: "例如：30 歲台灣女性美甲師" },
+  { key: "face", label: "臉型、眼睛、五官與膚色", hint: "例如：圓臉、棕色大眼、溫暖膚色" },
+  { key: "hair", label: "固定髮型、髮色與瀏海", hint: "例如：栗棕色低馬尾、空氣瀏海" },
+  { key: "outfit", label: "固定服裝與顏色", hint: "例如：奶茶色圍裙、粉白制服" },
+  { key: "accessories", label: "固定配件及辨識特徵", hint: "例如：珍珠髮夾、無文字工作證" },
+  { key: "proportions", label: "Q 版比例", hint: "例如：2.5～3 頭身，大頭小身體" },
+  { key: "illustration", label: "畫風與線條", hint: "例如：柔和日系 Q 版、深棕色等粗描邊" },
+  { key: "coloring", label: "上色、陰影與裝飾", hint: "例如：粉彩柔霧色塊、細緻柔光陰影" },
+];
+
+function defaultStickerIdentity(role: string, style: string): StickerIdentity {
+  return {
+    appearance: role,
+    face: "東亞／台灣原創 Q 版臉孔，固定臉型、眼睛、五官比例與自然膚色",
+    hair: "同套維持首次選定的髮型、髮色與瀏海，不得自行更改",
+    outfit: "完整沿用角色設定中的固定服裝、圍裙、制服及配色，剪裁和花紋不變",
+    accessories: "固定配件與辨識特徵不變，職業道具可依動作更換",
+    proportions: "2.5～3 頭身，大頭小身體，頭身比與五官比例一致",
+    illustration: `${style}；相同線條粗細、輪廓筆觸、柔和陰影`,
+    coloring: "維持相同主色系、上色方法、陰影方向、光澤與裝飾密度；純白背景",
+  };
+}
+function makeStickerIdentityLock(
+  identity: StickerIdentity,
+  fontStyle: FontStyle,
+  textSize: TextSize,
+  textColor: TextColor,
+  position: TextPosition,
+) {
+  const fields = IDENTITY_FIELDS.map(({key,label}) => `- ${label}：${identity[key]}`).join("\n");
+  return `【整套貼圖共用角色／畫風鎖定｜每張母圖完整重複】
+${fields}
+- 字型：${optionPrompt(FONT_STYLE_OPTIONS, fontStyle)}
+- 字體大小：${optionPrompt(TEXT_SIZE_OPTIONS, textSize)}
+- 字色、描邊與文字效果：${optionPrompt(TEXT_COLOR_OPTIONS, textColor)}
+- 文字位置：${optionPrompt(TEXT_POSITION_OPTIONS, position)}
+所有母圖及每一格必須共用上述人物臉型、眼睛、五官、髮型、服裝、配件、頭身比例、畫風、線條粗細、陰影、字型、字色及排版。不得另創角色；僅允許改表情、手勢、動作、合適道具與指定貼圖短句。禁止把本段設定當作圖中文字印在畫面上。`;
+}
+
 function buildFlowPrompt(
   label: string,
   role: string,
@@ -4357,6 +4407,8 @@ function buildFlowPrompt(
   batchNumber: number,
   mode: LineStickerMode,
   platform: "line" | "whatsapp",
+  startIndex = 0,
+  identityLock = "",
 ) {
   const base = buildPrompt(
     label,
@@ -4380,12 +4432,18 @@ function buildFlowPrompt(
   const ratio = grid === "4x2" ? "2:1 橫向" : grid === "4x4" ? "1:1 正方形" : "4:5 直向";
   const rowAssignment = Array.from({ length: rows }, (_, row) => {
     const cells = batchTexts.slice(row * columns, (row + 1) * columns);
-    return `第 ${row + 1} 列（由左至右）：${cells.map((text, column) => `第 ${column + 1} 格「${text}」〔${textPositionForCell(textPosition, row * columns + column)}〕`).join("、")}`;
+    return `第 ${row + 1} 列（由左至右）：${cells.map((text, column) => `第 ${column + 1} 格「${text}」〔${textPositionForCell(textPosition, startIndex + row * columns + column)}〕`).join("、")}`;
   }).join("\n");
 
   return `請直接生成圖片，不要先提供企劃、說明或提示詞。
 
 這是 ${platform === "whatsapp" ? "WhatsApp" : "LINE"} 貼圖母圖第 ${batchNumber} 張。${modeInstructions} 請嚴格依指定格數排列，這次只生成一張完整母圖。
+
+${identityLock}
+
+${batchNumber > 1
+  ? "這是同一套貼圖的後續母圖。請在同一個 ChatGPT 對話附上第 1 張已完成母圖，作為角色、服裝、配色、線條粗細與字體的視覺參考。不得複製第一張的動作或短句，僅延續畫風。沒有參考圖時仍使用上方完整角色設定，但只靠文字無法保證完全一致。"
+  : "這是整套角色與畫風的基準母圖；完成後請保存原圖，以便生成後續母圖。"}
 
 ${base}
 
@@ -4397,11 +4455,12 @@ ${rowAssignment}
 - 只輸出一張完整母圖；每一列固定 ${columns} 格，總共固定 ${rows} 列。
 - 只能使用以上 ${grid.replace("x", "×")} 排列，不要自行選擇其他格數。
 - 每格只能有指定的單句繁體中文，不能在手牌、道具、卡片、緞帶、招牌、背景另寫英文、中文、數字或其他字樣。
-- 左右交錯時，奇數格文字在左、偶數格文字在右，人物必須在相反側；長句可在各自指定側換行，但不得將文字移到頭頂或整排上方。其他文字位置設定則嚴格依上方選項執行。
-- 每格只能是一張獨立貼圖，人物與文字不可跨格。
+- 每格的文字位置只依上方選擇與逐格標註執行；不得附加其他位置規則。長句只可在指定區域換行或縮小整體圖文。
+- 每格主體與文字共佔中央約 70%～74%，四周至少 13%～15% 純白留白；圖文、道具、陰影與裝飾皆不可跨格。
 - 格與格之間保留明顯白色空間，不要畫格線。
 - 背景使用純白色，方便下一步自動去背與裁切。
 - 不要做成海報、漫畫分鏡或額外拼貼。
+- 禁止多手、多腳、多指，禁止遮住文字；不得任意更改繁體中文短句。
 - 不要在圖片外再加標題、編號、說明文字或浮水印。`;
 }
 
