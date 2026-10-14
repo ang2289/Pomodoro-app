@@ -4263,6 +4263,25 @@ ${base}
 - 不要在圖片外再加標題、編號、說明文字或浮水印。`;
 }
 
+/** Gemini 容易將 4×4 表格生為橫幅，提供可單獨複製的畫布／禁字強化版。 */
+function buildGeminiStrictMotherSheetPrompt(originalPrompt: string, grid: GridType) {
+  const layout = grid === "4x4"
+    ? "1:1 正方形畫布，4 欄 × 4 列，共 16 個等寬等高正方形格子"
+    : grid === "4x2"
+      ? "2:1 橫向畫布，4 欄 × 2 列，共 8 個等大格子"
+      : grid === "4x5" ? "4:5 直向畫布，4 欄 × 5 列，共 20 個等大格子"
+      : "5:4 畫布，5 欄 × 4 列，共 20 個等大格子";
+  return `【Gemini 貼圖母圖排版強制規則，優先於畫風】
+請使用「${layout}」，只輸出一張完整母圖。不可產生橫幅海報、長方形四列拼貼、橫向分鏡或改變畫布比例。
+畫面精確均分，每一格獨立且主體置中，四邊與每格之間保留純白安全間距；不加分隔線，不能跨格或裁到任何字、頭髮、手腳、裙擺與道具。
+只准出現下方逐格指定的繁體中文主句。所有道具（卡片、花籃、紅包、標語、招牌、旗幟）都不能有額外英文、中文、數字或圖形字樣；禁止 JUST MARRIED、THANK YOU、WEDDING DAY、WITNESS 等額外文字。
+人物從第一格到最後一格保持完全同一組新郎新娘（相同髮型、臉、衣服、膚色、Q 版頭身比），只改表情、手勢與動作，不增加其他主角。
+必須完整呈現指定格數；若畫布無法符合比例與格數，請重新生成符合版型的一張圖，勿交付錯誤比例。
+
+【以下是每格人物、風格及文字內容，請完整遵守】
+${originalPrompt}`;
+}
+
 function SupportSection() {
   return (
     <section className="mt-6 rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-amber-50 p-5 shadow-sm sm:p-6">
@@ -4537,6 +4556,7 @@ export default function StickerPromptGenerator() {
   );
   const [targetCount, setTargetCount] = useState<LineStickerCount>(16);
   const [copiedBatchIndex, setCopiedBatchIndex] = useState<number | null>(null);
+  const [copiedGeminiIndex, setCopiedGeminiIndex] = useState<number | null>(null);
   const [type, setType] = useState<TemplateKey>("businessPersonal");
   const [grid, setGrid] = useState<GridType>("4x4");
   const [nameMode, setNameMode] = useState<NameMode>("none");
@@ -4841,14 +4861,21 @@ export default function StickerPromptGenerator() {
     saveLineStickerProject({ ...project, stage });
   }
 
-  async function copyFlowPrompt(index: number) {
+  async function copyFlowPrompt(index: number, provider: "chatgpt" | "gemini" = "chatgpt") {
     if (saleRisks.length) return;
     const item = flowPrompts[index];
     if (!item) return;
-    await navigator.clipboard.writeText(item.prompt);
+    await navigator.clipboard.writeText(
+      provider === "gemini" ? buildGeminiStrictMotherSheetPrompt(item.prompt, item.grid) : item.prompt,
+    );
     persistFlowProject(2);
-    setCopiedBatchIndex(index);
-    window.setTimeout(() => setCopiedBatchIndex(null), 1800);
+    if (provider === "gemini") {
+      setCopiedGeminiIndex(index);
+      window.setTimeout(() => setCopiedGeminiIndex(null), 1800);
+    } else {
+      setCopiedBatchIndex(index);
+      window.setTimeout(() => setCopiedBatchIndex(null), 1800);
+    }
   }
 
   function applySaleFriendlyTexts() {
@@ -5276,7 +5303,7 @@ export default function StickerPromptGenerator() {
 
               <div className="mt-4 rounded-2xl border border-sky-200 bg-sky-50 p-4">
                 <p className="text-sm font-black text-sky-900">第一次使用，照這三個動作就好</p>
-                <p className="mt-2 text-sm leading-7 text-slate-700">① 先按下方「複製第 1 張畫圖指令」 → ② 選 ChatGPT 或 Google Gemini → ③ 在所選工具的對話框貼上並送出。</p>
+                <p className="mt-2 text-sm leading-7 text-slate-700">① 先按下方「複製第 1 張畫圖指令」：ChatGPT 選一般版、Gemini 選強化版 → ② 開啟所選平台 → ③ 貼上並送出。</p>
                 <StickerAIProviderLinks />
                 <p className="mt-2 text-xs leading-6 text-slate-600">RXV 只複製文字，不會自動幫你貼到其他平台。若要求登入，請使用自己的帳號。</p>
               </div>
@@ -5293,18 +5320,26 @@ export default function StickerPromptGenerator() {
                         </p>
                       </div>
                       <div className="w-fit max-w-full">
-                        <StickerNextActionHint>請先按下方「複製第 {index + 1} 張畫圖指令」，再選下方 ChatGPT 或 Google Gemini 按鈕。</StickerNextActionHint>
-                      <button
-                        type="button"
-                        onClick={() => copyFlowPrompt(index)}
-                        disabled={saleRisks.length > 0}
-                        title={saleRisks.length ? "請先修正促銷／導流風險短句" : undefined}
-                        className="rounded-2xl bg-violet-600 px-4 py-3 text-sm font-black !text-white shadow hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-                      >
-                        {copiedBatchIndex === index
-                          ? "已複製"
-                          : `第 2 步｜複製第 ${index + 1} 張畫圖指令`}
-                      </button>
+                        <StickerNextActionHint>請先按下方「複製第 {index + 1} 張畫圖指令」，ChatGPT 用一般版、Gemini 請用強化版，再選下方對應 AI 平台按鈕。</StickerNextActionHint>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => copyFlowPrompt(index, "chatgpt")}
+                          disabled={saleRisks.length > 0}
+                          className="inline-flex min-h-11 w-fit max-w-full items-center justify-center rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-black !text-white shadow hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                        >
+                          {copiedBatchIndex === index ? "✓ 已複製 ChatGPT 指令" : `第 2 步｜複製第 ${index + 1} 張畫圖指令（ChatGPT）`}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => copyFlowPrompt(index, "gemini")}
+                          disabled={saleRisks.length > 0}
+                          className="inline-flex min-h-11 w-fit max-w-full items-center justify-center rounded-xl border border-blue-300 bg-white px-4 py-2.5 text-sm font-black text-blue-800 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {copiedGeminiIndex === index ? "✓ 已複製 Gemini 強化版" : "複製 Gemini 排版強化版"}
+                        </button>
+                      </div>
+                      <p className="mt-2 text-xs leading-5 text-amber-800">ChatGPT 已有實際產圖案例；Gemini 有時會把 4×4 畫成橫幅，請選強化版，產圖後確認 1:1 正方形、16 格、沒有額外英文。</p>
                       <StickerAIProviderLinks compact />
                       </div>
                     </div>
