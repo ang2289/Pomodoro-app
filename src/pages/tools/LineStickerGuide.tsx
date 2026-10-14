@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import SEO from "@/components/SEO";
 import LineStickerAuthorCard from "@/components/LineStickerAuthorCard";
+import { StickerExistingMotherSheetShortcut, StickerCustomInquiry, StickerNextActionHint, StickerAIProviderLinks } from "@/components/StickerBeginnerActions";
 
 const SUPPORT_TW_URL = "https://p.ecpay.com.tw/FD7CD6D";
 const SUPPORT_KOFI_URL = "https://ko-fi.com/ang2289";
@@ -23,8 +24,8 @@ const promptCards = [
     text: "請生成一張 4×4 LINE 貼圖表，共 16 張，角色保持完全一致，可愛 Q 版，白色背景，粗黑線條，每格平均排列並保留大間距，文字使用繁體中文、粗體、黑字白邊，角色與文字都不可貼邊，適合後續切割使用。",
   },
   {
-    title: "5×4 一次產生 20 張貼圖公版咒語",
-    text: "請生成一張 5×4 LINE 貼圖表，共 20 張，角色保持完全一致，可愛 Q 版，白色背景，粗黑線條，表情誇張，每格保留安全邊距，文字使用繁體中文、黑字白邊，適合 LINE 貼圖切割使用。",
+    title: "4×5 一次產生 20 張貼圖公版咒語",
+    text: "請生成一張 4×5 LINE 貼圖表，共 20 張，角色保持完全一致，可愛 Q 版，白色背景，粗黑線條，表情誇張，每格保留安全邊距，文字使用繁體中文、黑字白邊，適合 LINE 貼圖切割使用。",
   },
   {
     title: "角色一致性補強咒語",
@@ -38,7 +39,7 @@ const promptCards = [
 
 const steps = [
   { title: "選主題與張數", desc: "先選 LINE 或 WhatsApp、靜態或動態，再選主題與上架張數。" },
-  { title: "給 AI 畫圖", desc: "複製本站產生的指令，貼到 ChatGPT；將每張貼圖母圖下載到手機或電腦。" },
+  { title: "用 ChatGPT／Gemini 畫圖", desc: "複製指令，任選 ChatGPT 或 Google Gemini 貼上並送出；下載完整大圖。" },
   { title: "上傳母圖", desc: "把一張 4×4（16 格）等母圖傳回本站；不用自己一張張手動切。" },
   { title: "確認自動整理", desc: "確認格數與預覽，讓工具切圖、去背、調整尺寸；文字不能被切掉。" },
   { title: "下載／做動態", desc: "靜態貼圖下載 ZIP；動態貼圖接著產生動畫。LINE 上架仍須審核。" },
@@ -66,7 +67,7 @@ const faqItems = [
 const demoScreenshots = [
   { src: "/images/sticker-prompt-demo/demo-prompt.png", title: "第 1 步：選擇主題、張數", desc: "先選靜態或動態，網站自動產生 AI 繪圖指令。" },
   { src: "/images/sticker-prompt-demo/demo-result.png", title: "第 2 步：用 AI 畫出母圖", desc: "一張 4×4 圖片內有 16 格，先存成圖片，不用手工拆開。" },
-  { src: "/images/sticker-prompt-demo/demo-pack.png", title: "第 3～5 步：上傳、切圖、下載", desc: "將母圖交給 RXV 切割、整理、檢查後下載 ZIP。" },
+  { src: "/images/sticker-prompt-demo/demo-pack.png", title: "第 3～5 步：上傳、切圖、下載", desc: "將一整張母圖交給 RXV 切割、整理、檢查後下載 ZIP。" },
 ] as const;
 
 function IllustratedDemoSection() {
@@ -154,7 +155,7 @@ function GuideRecommendedToolsSection() {
             產生貼圖大圖
           </h3>
           <p className="mt-2 text-sm leading-relaxed text-slate-600">
-            適合製作有繁體中文文字的 4×4／5×4 貼圖大圖。請注意角色一致、文字清楚、每格保留安全距離。
+            可嘗試製作有繁體中文文字的 4×4／4×5 貼圖大圖。請注意角色一致、文字清楚、每格保留安全距離。
           </p>
           <span className="mt-4 inline-flex rounded-xl bg-emerald-600 px-4 py-2 text-xs font-black !text-white">
             建議先完成這一步
@@ -238,9 +239,13 @@ export default function LineStickerGuide() {
               第一次做 LINE 貼圖？照流程做，最後整理成上架素材包
             </h1>
             <p className="mt-4 text-sm leading-relaxed text-slate-600 sm:text-base">
-              這份教學是給第一次使用的新手、店家與創作者看的版本。先用本站準備 ChatGPT 生圖指令，
+              這份教學是給第一次使用的新手、店家與創作者看的版本。先用本站準備 AI 生圖指令，貼到 ChatGPT 或 Google Gemini，
               讓 AI 畫好貼圖大圖，下載後傳回 RXV，自動切割、去背、整理尺寸與打包 ZIP。
             </p>
+            <p className="mt-4 rounded-xl border border-blue-100 bg-blue-50 p-3 text-sm leading-6 text-blue-900">
+              建議流程：先在 RXV 選主題、複製指令 → 使用已實測的 ChatGPT 畫圖 → 下載完整大圖 → 檢查 4×4 是否確實 4 欄 4 列、16 句不重複、角色一致 → 回 RXV 上傳。Google Gemini 屬實驗性選項，曾不遵守格數，即使使用強化指令也請先檢查。
+            </p>
+            <StickerAIProviderLinks />
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <Link
                 to="/tools/sticker-prompt"
@@ -265,9 +270,11 @@ export default function LineStickerGuide() {
 
           <LineStickerAuthorCard />
 
+          <StickerNextActionHint>還沒有圖片，請按上方「第 1 步｜開始選主題」；已有完整母圖，請直接使用下面的上傳捷徑。</StickerNextActionHint>
+          <div className="mt-4"><StickerExistingMotherSheetShortcut /></div>
           <IllustratedDemoSection />
 
-          <section className="mt-8 grid gap-4 md:grid-cols-5">
+          <section className="mt-8 flex flex-col gap-4">
             {steps.map((step, index) => (
               <div
                 key={step.title}
@@ -288,10 +295,10 @@ export default function LineStickerGuide() {
 
           <section className="mt-10 rounded-3xl border border-violet-100 bg-violet-50/70 p-6 shadow-sm">
             <h2 className="text-xl font-black text-slate-900">做到哪一步，就從哪個按鈕繼續</h2>
-            <div className="mt-4 grid gap-3 md:grid-cols-3">
-              <Link to="/tools/sticker-prompt#sticker-start" className="rounded-2xl bg-white p-4 shadow-sm hover:shadow-md"><p className="text-sm font-black text-violet-700">第 1～2 步：還沒有圖片</p><p className="mt-2 text-xs leading-6 text-slate-600">挑選主題、複製 AI 生圖指令。</p></Link>
-              <Link to="/tools/line-sticker#mother-upload" className="rounded-2xl bg-white p-4 shadow-sm hover:shadow-md"><p className="text-sm font-black text-violet-700">第 3～4 步：已有圖片</p><p className="mt-2 text-xs leading-6 text-slate-600">上傳母圖，由 RXV 自動切圖、去背與整理。</p></Link>
-              <Link to="/tools/animated-line-sticker#animated-sticker-batch" className="rounded-2xl bg-white p-4 shadow-sm hover:shadow-md"><p className="text-sm font-black text-violet-700">第 5 步：製作動態</p><p className="mt-2 text-xs leading-6 text-slate-600">已完成靜態圖，再選動畫效果並打包。</p></Link>
+            <div className="mt-4 flex flex-wrap items-stretch gap-3">
+              <Link to="/tools/sticker-prompt#sticker-start" className="flex w-auto min-w-[200px] max-w-[265px] flex-col rounded-2xl bg-white p-4 shadow-sm hover:shadow-md"><p className="text-sm font-black text-violet-700">第 1～2 步：還沒有圖片</p><p className="mt-2 text-xs leading-6 text-slate-600">挑選主題、複製 AI 生圖指令。</p></Link>
+              <Link to="/tools/line-sticker#mother-upload" className="flex w-auto min-w-[200px] max-w-[265px] flex-col rounded-2xl bg-white p-4 shadow-sm hover:shadow-md"><p className="text-sm font-black text-violet-700">第 3～4 步：已有圖片</p><p className="mt-2 text-xs leading-6 text-slate-600">上傳母圖，由 RXV 自動切圖、去背與整理。</p></Link>
+              <Link to="/tools/animated-line-sticker#animated-sticker-batch" className="flex w-auto min-w-[200px] max-w-[265px] flex-col rounded-2xl bg-white p-4 shadow-sm hover:shadow-md"><p className="text-sm font-black text-violet-700">第 5 步：製作動態</p><p className="mt-2 text-xs leading-6 text-slate-600">已完成靜態圖，再選動畫效果並打包。</p></Link>
             </div>
             <details className="mt-4 rounded-xl border border-violet-100 bg-white p-3">
               <summary className="cursor-pointer text-xs font-black text-slate-800">進階：若自動去背不理想</summary>
@@ -372,7 +379,8 @@ export default function LineStickerGuide() {
             </div>
           </section>
 
-          <GuideSupportSection />
+          <StickerCustomInquiry />
+          {false && <GuideSupportSection />}
 
           <GuideRecommendedToolsSection />
 

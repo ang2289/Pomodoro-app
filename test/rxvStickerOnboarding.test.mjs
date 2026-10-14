@@ -23,7 +23,10 @@ test("跨頁導覽有目標錨點與標示", () => {
   for (const name of ["sticker-start", "sticker-copy"]) assert.ok(prompt.includes(`id="${name}"`));
   for (const name of ["mother-upload", "mother-split", "sticker-download"]) assert.ok(slicer.includes(`id="${name}"`));
   assert.ok(animated.includes('id="animated-sticker-batch"'));
-  assert.match(progress, /to=\{paths\[item.step - 1\]\}/);
+  assert.match(progress, /to=\{phase.path\}/);
+  assert.match(progress, /三階段與五步驟導覽/);
+  assert.match(progress, /tools\/sticker-prompt#sticker-start/);
+  assert.match(progress, /tools\/line-sticker\?existing=1#mother-upload/);
   assert.match(slicer, /第 4 步｜確認格數/);
 });
 

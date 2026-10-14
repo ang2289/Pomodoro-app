@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { Link } from "react-router-dom";
 import SEO from "@/components/SEO";
 import CoupangDynamicAd from "@/components/CoupangDynamicAd";
 import LineStickerAuthorCard from "@/components/LineStickerAuthorCard";
 import LineStickerFlowSteps from "@/components/LineStickerFlowSteps";
+import { StickerExistingMotherSheetShortcut, StickerCustomInquiry, StickerNextActionHint, StickerAIProviderLinks } from "@/components/StickerBeginnerActions";
 import {
   createLineStickerProject,
   getAllowedCounts,
@@ -13,6 +14,7 @@ import {
   type LineStickerMode,
 } from "@/lib/lineStickerFlow";
 import { stickerSaleTextRisks, suggestSaleFriendlyLines } from "@/lib/stickerCommercialSafety";
+import { defaultCharacterLock, lockCharacterPrompt, stickerPlacement, stickerPlacementRule, stickerRowMap, type StickerCharacterLock } from "@/lib/stickerCharacterLock";
 
 type TemplateKey =
   | "couple"
@@ -138,6 +140,7 @@ type TemplateKey =
 type GridType = "4x2" | "4x4" | "4x5" | "5x4";
 type NameMode = "none" | "person" | "shop";
 type TextSize = "small" | "medium" | "large";
+type FontStyle = "roundBold" | "handwritten" | "boldSans" | "elegant" | "brush";
 type TextColor =
   | "blackWhite"
   | "blueWhite"
@@ -155,6 +158,18 @@ type TextColor =
   | "professionalClean"
   | "taiwanPlayful";
 type TextPosition = "top" | "bottom" | "mixed";
+type LockedCharacterProfile = {
+  scope: string;
+  role: string;
+  style: string;
+  textSize: TextSize;
+  textColor: TextColor;
+  textPosition: TextPosition;
+  fontStyle: FontStyle;
+  stickerStylePreset: StickerStylePreset;
+  photoMode: PhotoMode;
+  characterLockText: string;
+};
 type StickerStylePreset =
   | "friendly"
   | "professional"
@@ -837,7 +852,7 @@ const templates: Record<TemplateKey, Template> = {
   },
   businessPersonal: {
     label: "業務個人品牌貼圖",
-    role: "一位親切又專業的年輕業務角色，穿襯衫與西裝背心，拿手機、文件夾、筆記本與成長圖表，表情有收到、確認、追進度、感謝與安心服務",
+    role: "一位親切專業的原創台灣業務角色，搭配手機、文件夾、筆記本、業務洽談或服務道具，表情包含收到、確認、追進度、感謝與安心服務。角色的年齡、外觀、髮型、服裝和配色須依下方專屬角色設定，不預設任何固定男業務、西裝背心或棕髮造型",
     style:
       "Q版可愛、親切專業、有個人品牌記憶點、適合業務回覆客戶與長期經營關係",
     texts: [
@@ -3117,6 +3132,14 @@ const TEXT_SIZE_OPTIONS: Array<{
   },
 ];
 
+const FONT_STYLE_OPTIONS: Array<{ value: FontStyle; label: string; prompt: string }> = [
+  { value: "roundBold", label: "可愛圓體（推薦）", prompt: "圓潤飽滿的可愛粗體字型，筆畫清楚、字距適中" },
+  { value: "handwritten", label: "童趣手寫體", prompt: "活潑自然的手寫字型，字體偏粗、筆畫完整，避免潦草難讀" },
+  { value: "boldSans", label: "清楚黑體", prompt: "端正醒目的粗黑體字型，筆畫俐落，手機小圖也易讀" },
+  { value: "elegant", label: "優雅婚禮字", prompt: "優雅柔和但仍清楚可讀的繁體中文字型，適合婚禮與祝福情境" },
+  { value: "brush", label: "活潑筆刷字", prompt: "手繪筆刷感的粗體字型，筆畫流暢而不凌亂，保持繁體中文辨識度" },
+];
+
 const TEXT_COLOR_OPTIONS: Array<{
   value: TextColor;
   label: string;
@@ -3204,12 +3227,12 @@ const TEXT_POSITION_OPTIONS: Array<{
   label: string;
   prompt: string;
 }> = [
-  { value: "top", label: "上方", prompt: "文字固定放在每格貼圖上方" },
-  { value: "bottom", label: "下方", prompt: "文字固定放在每格貼圖下方" },
+  { value: "top", label: "上方", prompt: "每格文字只能置於上方，人物與道具放在文字下方，禁止把文字改放左側、右側或底部" },
+  { value: "bottom", label: "下方", prompt: "每格文字只能置於下方，人物與道具放在文字上方，禁止把文字改放左側、右側或頂部" },
   {
     value: "mixed",
     label: "左右交錯",
-    prompt: "文字可依角色動作在上方、下方或左右交錯安排，但不可遮住角色與商品",
+    prompt: "左右交錯是強制左右分欄，不是上下交錯：第1、3、5、7等奇數格把完整文字放在格子左側、人物放右側；第2、4、6、8等偶數格文字放右側、人物放左側。每格保留足夠側邊空間，長句可在指定左／右區域換行；嚴禁將文字統一放在角色頭頂、格子上方或底部",
   },
 ];
 
@@ -3245,6 +3268,99 @@ const STICKER_STYLE_OPTIONS: Array<{
   },
 ];
 
+// 每個新專案隨機產生一組角色外觀（只在載入時執行一次），可再手動選擇及鎖定。
+const BUSINESS_AVATAR_OPTIONS = {
+  persona: [
+    "30 歲左右、幹練的台灣女性業務",
+    "40 歲左右、沉穩溫暖的台灣男性顧問",
+    "20 多歲、活潑有親和力的台灣女性業務",
+    "35 歲左右、斯文可靠的台灣男性業務",
+    "50 歲左右、成熟專業的台灣女性顧問",
+    "30 歲左右、中性俐落形象的台灣業務",
+  ],
+  hair: [
+    "俐落黑色短髮、側分瀏海",
+    "深棕色微捲中長髮",
+    "自然黑色鮑伯短髮",
+    "栗棕色高馬尾",
+    "短銀灰髮、整齊髮線",
+    "黑色蓬鬆微捲短髮",
+    "柔和深棕齊肩直髮",
+    "茶棕色低包頭",
+  ],
+  clothes: [
+    "霧藍色西裝外套搭白襯衫",
+    "米白色針織外套搭淺卡其長褲",
+    "墨綠色正式外套搭淺色內搭",
+    "酒紅色俐落襯衫搭深色西裝褲",
+    "杏色西裝外套搭淺棕上衣",
+    "淡紫色柔和西裝外套搭白色內搭",
+    "深藍色西裝外套搭淡藍襯衫",
+    "淺灰色休閒西裝搭暖色領巾",
+  ],
+  accessory: [
+    "圓形細框眼鏡",
+    "小型幾何耳飾",
+    "別緻的素色領巾",
+    "原創幾何胸針（無文字與商標）",
+    "小巧腕錶",
+    "特色帆布側背包（無文字與商標）",
+  ],
+  palette: [
+    "湖水綠與奶油白",
+    "珊瑚粉與深海藍",
+    "薰衣草紫與暖米色",
+    "森林綠與淡金色",
+    "霧藍與杏色",
+    "酒紅與米白",
+  ],
+} as const;
+
+type BusinessAvatarKey = keyof typeof BUSINESS_AVATAR_OPTIONS;
+type BusinessAvatarSelection = Record<BusinessAvatarKey, string>;
+const BUSINESS_AVATAR_LABELS: Record<BusinessAvatarKey, string> = {
+  persona: "人物形象",
+  hair: "髮型與髮色",
+  clothes: "服裝搭配",
+  accessory: "記憶點配件",
+  palette: "主題配色",
+};
+function randomBusinessAvatar(): BusinessAvatarSelection {
+  const choose = (options: readonly string[]) =>
+    options[Math.floor(Math.random() * options.length)] || options[0] || "";
+  return {
+    persona: choose(BUSINESS_AVATAR_OPTIONS.persona),
+    hair: choose(BUSINESS_AVATAR_OPTIONS.hair),
+    clothes: choose(BUSINESS_AVATAR_OPTIONS.clothes),
+    accessory: choose(BUSINESS_AVATAR_OPTIONS.accessory),
+    palette: choose(BUSINESS_AVATAR_OPTIONS.palette),
+  };
+}
+const BUSINESS_AVATAR_STORAGE_KEY = "rxv-sticker-business-avatar-v1";
+function savedBusinessAvatar(): BusinessAvatarSelection {
+  try {
+    const saved = JSON.parse(localStorage.getItem(BUSINESS_AVATAR_STORAGE_KEY) || "null") as Partial<BusinessAvatarSelection> | null;
+    if (saved && (Object.keys(BUSINESS_AVATAR_OPTIONS) as BusinessAvatarKey[]).every((key) =>
+      typeof saved[key] === "string" && (BUSINESS_AVATAR_OPTIONS[key] as readonly string[]).includes(saved[key])
+    )) return saved as BusinessAvatarSelection;
+  } catch { /* 瀏覽器禁用儲存時改用隨機搭配 */ }
+  return randomBusinessAvatar();
+}
+function savedBusinessSignature(): string {
+  try { return (localStorage.getItem(BUSINESS_AVATAR_STORAGE_KEY + "-signature") || "").slice(0, 180); }
+  catch { return ""; }
+}
+function businessAvatarPrompt(choice: BusinessAvatarSelection, signature: string) {
+  const detail = signature.trim().slice(0, 180);
+  return `專屬業務個人品牌角色（請保持同套貼圖完全一致）：
+- 人物形象：${choice.persona}
+- 髮型與髮色：${choice.hair}
+- 固定服裝：${choice.clothes}
+- 固定配件：${choice.accessory}
+- 角色配色：${choice.palette}
+${detail ? `- 自訂辨識特徵：${detail}（只改造型，不得變成道具上額外文字或商標）\n` : ""}全部格子以及後續第 2 張母圖都必須維持同一張臉、髮型、服裝、配件及配色，不能一格變一個人；僅改表情與手勢。這是一位獨立設計的原創人物，避免套用常見的棕髮白襯衫深色背心模板。`;
+}
+
 const PHOTO_MODE_OPTIONS: Array<{
   value: PhotoMode;
   label: string;
@@ -3269,11 +3385,22 @@ const PHOTO_MODE_OPTIONS: Array<{
   },
 ];
 
+function optionLabel<T extends string>(
+  options: Array<{ value: T; label: string }>,
+  value: T,
+) {
+  return options.find((item) => item.value === value)?.label ?? "預設";
+}
+
 function optionPrompt<T extends string>(
   options: Array<{ value: T; label: string; prompt: string }>,
   value: T,
 ) {
   return options.find((item) => item.value === value)?.prompt ?? "";
+}
+
+function textPositionForCell(textPosition: TextPosition, index: number) {
+  return stickerPlacement(textPosition, index);
 }
 
 function buildRolePrompt(role: string, photoMode: PhotoMode) {
@@ -4073,8 +4200,10 @@ function buildPrompt(
   textSize: TextSize,
   textColor: TextColor,
   textPosition: TextPosition,
+  fontStyle: FontStyle,
   stickerStyle: StickerStylePreset,
   photoMode: PhotoMode,
+  platform: "line" | "whatsapp" = "line",
 ) {
   const gridInfo = gridOptions[grid];
   const lines = normalizeLines(textArea, gridInfo.count);
@@ -4084,14 +4213,15 @@ function buildPrompt(
 
   const textSizePrompt = optionPrompt(TEXT_SIZE_OPTIONS, textSize);
   const textColorPrompt = optionPrompt(TEXT_COLOR_OPTIONS, textColor);
-  const textPositionPrompt = optionPrompt(TEXT_POSITION_OPTIONS, textPosition);
+  const textPositionPrompt = stickerPlacementRule(textPosition);
+  const fontStylePrompt = optionPrompt(FONT_STYLE_OPTIONS, fontStyle);
   const stickerStylePrompt = optionPrompt(STICKER_STYLE_OPTIONS, stickerStyle);
   const photoModePrompt = optionPrompt(PHOTO_MODE_OPTIONS, photoMode);
 
   const rolePrompt = buildRolePrompt(role, photoMode);
   const photoReminder = buildPhotoReminder(photoMode);
 
-  return `請設計一張 LINE ${label}大圖，白色背景，${style}。\n\n商用販售安全：每格只能出現下方指定的主要貼圖短句，禁止在卡片、紙袋、花籃、店招、制服、道具額外產生任何文字、英文 NEW、價格、網址、QR Code、商標、店家 Logo、品牌字樣或促銷宣傳；角色、衣服與道具皆需為原創，不可仿畫知名品牌角色。圖文清晰易讀、避免多手多腳、勿遮住文字。\n\n${rolePrompt}\n\n風格加強：${stickerStylePrompt}。\n\n真人／原創設定：${photoModePrompt}。${photoReminder}\n\n請畫成 ${gridInfo.layoutText}。每格貼圖都要獨立清楚、平均排列。每一格的角色＋文字＋裝飾只佔該格中央約 70%～74%，上下左右至少保留約 13%～15% 的純白安全留白，格與格之間必須看得到明顯白色空間，方便後續平均切割。角色與文字都要完整置中在各自格子內，不可超出邊界、不可跨格、不可互相重疊；每格最外圈至少 13% 純白，格線附近不可有花瓣、陰影或字；若空間不足，寧可把角色與文字整體縮小，也不要貼邊。\n\n文字設定：請使用繁體中文，字體粗體，${textSizePrompt}，${textColorPrompt}，${textPositionPrompt}。文字必須清楚好讀，文字與頭髮、臉、手勢、手機、文件等主體至少保留明顯空隙，不可壓在人物或道具上；文字四周也要保留白邊，不要貼近格子邊界，不要切到字，不可出現序號、數字、標題、格號或列表符號。\n\n每張貼圖都要有不同表情與動作，整體風格一致、乾淨可愛、適合 LINE 貼圖使用。\n\n貼圖文字如下：\n${numberedTexts}`;
+  return `請設計一張 ${platform === "whatsapp" ? "WhatsApp" : "LINE"} ${label}大圖，白色背景，${style}。\n\n商用販售安全：每格只能出現下方指定的主要貼圖短句，禁止在卡片、紙袋、花籃、店招、制服、道具額外產生任何文字、英文 NEW、價格、網址、QR Code、商標、店家 Logo、品牌字樣或促銷宣傳；角色、衣服與道具皆需為原創，不可仿畫知名品牌角色。圖文清晰易讀、避免多手多腳、勿遮住文字。\n\n${rolePrompt}\n\n風格加強：${stickerStylePrompt}。\n\n真人／原創設定：${photoModePrompt}。${photoReminder}\n\n請畫成 ${gridInfo.layoutText}。每格貼圖都要獨立清楚、平均排列。每一格的角色＋文字＋裝飾只佔該格中央約 70%～74%，上下左右至少保留約 13%～15% 的純白安全留白，格與格之間必須看得到明顯白色空間，方便後續平均切割。角色與文字都要完整置中在各自格子內，不可超出邊界、不可跨格、不可互相重疊；每格最外圈至少 13% 純白，格線附近不可有花瓣、陰影或字；若空間不足，寧可把角色與文字整體縮小，也不要貼邊。\n\n文字設定（優先於其他畫風描述）：請使用繁體中文。字型造型遵守「${fontStylePrompt}」；文字大小遵守「${textSizePrompt}」；填色、描邊與文字效果遵守「${textColorPrompt}」；**文字所在區域必須嚴格遵守「${textPositionPrompt}」**。若背景情境或貼圖風格暗示不同的位置，仍以本次「文字位置」選項為準；不能因為傳統貼圖習慣就把所有文字置頂。文字必須清楚好讀，文字與頭髮、臉、手勢、手機、文件等主體至少保留明顯空隙，不可壓在人物或道具上；文字四周也要保留白邊，不要貼近格子邊界，不要切到字，不可出現序號、數字、標題、格號或列表符號。\n\n每張貼圖都要有不同表情與動作，整體風格一致、乾淨可愛、適合 LINE 貼圖使用。\n\n貼圖文字如下：\n${numberedTexts}`;
 }
 
 function buildStablePrompt(
@@ -4230,9 +4360,15 @@ function buildFlowPrompt(
   textSize: TextSize,
   textColor: TextColor,
   textPosition: TextPosition,
+  fontStyle: FontStyle,
   stickerStyle: StickerStylePreset,
   photoMode: PhotoMode,
   batchNumber: number,
+  mode: LineStickerMode,
+  platform: "line" | "whatsapp",
+  globalStartIndex: number,
+  allTexts: string[],
+  sharedLock: string,
 ) {
   const base = buildPrompt(
     label,
@@ -4243,23 +4379,70 @@ function buildFlowPrompt(
     textSize,
     textColor,
     textPosition,
+    fontStyle,
     stickerStyle,
     photoMode,
+    platform,
   );
+  const modeInstructions = mode === "animated"
+    ? "本次選擇「動態貼圖」：母圖仍是一張靜止的原始圖，但每格角色四周多留移動空間；人物與文字保持視覺距離，避免後續製作位移動畫時被裁切。不要把多格合成動畫影格，也不要加入時間軸文字。"
+    : "本次選擇「靜態貼圖」：每格構圖清晰完整，方便後續直接裁切成獨立貼圖。";
+  const columns = 4;
+  const rows = grid === "4x2" ? 2 : grid === "4x4" ? 4 : 5;
+  const ratio = grid === "4x2" ? "2:1 橫向" : grid === "4x4" ? "1:1 正方形" : "4:5 直向";
+  const rowAssignment = stickerRowMap(
+    { grid: grid as "4x2" | "4x4" | "4x5", startIndex: globalStartIndex, endIndex: globalStartIndex + batchTexts.length },
+    allTexts,
+    textPosition,
+  );
+
   return `請直接生成圖片，不要先提供企劃、說明或提示詞。
 
-這是 LINE 貼圖母圖第 ${batchNumber} 張。請嚴格依指定格數排列，這次只生成一張完整母圖。
+這是 ${platform === "whatsapp" ? "WhatsApp" : "LINE"} 貼圖母圖第 ${batchNumber} 張。${modeInstructions} 請嚴格依指定格數排列，這次只生成一張完整母圖。
 
 ${base}
 
+${sharedLock}
+
+${batchNumber > 1 ? `【第 ${batchNumber} 張母圖，延續同一套角色】
+請沿用第 1 張母圖的臉型、五官、髮型、服裝、配件、筆觸、描邊、陰影、字型及配色。
+建議沿用同一個 ChatGPT 對話，並在生圖時親手附上已完成的第 1 張母圖作為視覺參考。RXV 不會自動把圖片傳送給 ChatGPT。
+沒有附上參考圖也能複製本提示詞，但只有文字不能保證外觀完全一致。僅更換本張指定短句、動作與職業道具，不重複第 1 張的文字。` : "【第 1 張母圖】建立整套貼圖的角色與畫風基準，後續母圖須沿用同一份設定。"}
+
+最終版型僅此一種：${columns} 欄 × ${rows} 列（${grid.replace("x", "×")}、共 ${columns * rows} 格），畫布採用 ${ratio} 比例。禁止改成其他列數、欄數、橫幅或任意拼貼。
+每格短句位置必須依下表由左到右、由上到下排列，${columns * rows} 句各出現一次，不可遺漏、不可重複、不可更換成其他文字。每一格的「文字／人物相對位置」是強制條件，不能因圖像排版習慣而擅自改成上方標題：
+${rowAssignment}
+
 重要規則：
-- 只輸出一張完整母圖。
-- 嚴格按照指定 4×2、4×4 或 4×5 格數。
-- 每格只能是一張獨立貼圖，人物與文字不可跨格。
+- 只輸出一張完整母圖；每一列固定 ${columns} 格，總共固定 ${rows} 列。
+- 只能使用以上 ${grid.replace("x", "×")} 排列，不要自行選擇其他格數。
+- 每格只能有指定的單句繁體中文，不能在手牌、道具、卡片、緞帶、招牌、背景另寫英文、中文、數字或其他字樣。
+- 本套文字位置規則：${stickerPlacementRule(textPosition)} 長句可在指定區域換行或整體縮小；不得變更所選位置。
+- 每格只能是一張獨立貼圖，人物與文字不可跨格；圖文主體只佔中央約 70%～74%，四邊至少約 13%～15% 純白留白，長句可換行或縮小，勿貼邊。
+- 同一套不得更換人物、頭身比例、描邊粗細與文字風格；不要多手多腳或畫出多餘手指。
 - 格與格之間保留明顯白色空間，不要畫格線。
 - 背景使用純白色，方便下一步自動去背與裁切。
 - 不要做成海報、漫畫分鏡或額外拼貼。
 - 不要在圖片外再加標題、編號、說明文字或浮水印。`;
+}
+
+/** Gemini 容易將 4×4 表格生為橫幅，提供可單獨複製的畫布／禁字強化版。 */
+function buildGeminiStrictMotherSheetPrompt(originalPrompt: string, grid: GridType) {
+  const layout = grid === "4x4"
+    ? "1:1 正方形畫布，4 欄 × 4 列，共 16 個等寬等高正方形格子"
+    : grid === "4x2"
+      ? "2:1 橫向畫布，4 欄 × 2 列，共 8 個等大格子"
+      : grid === "4x5" ? "4:5 直向畫布，4 欄 × 5 列，共 20 個等大格子"
+      : "5:4 畫布，5 欄 × 4 列，共 20 個等大格子";
+  return `【Gemini 貼圖母圖排版強制規則，優先於畫風】
+請使用「${layout}」，只輸出一張完整母圖。不可產生橫幅海報、長方形四列拼貼、橫向分鏡或改變畫布比例。
+畫面精確均分，每一格獨立且主體置中，四邊與每格之間保留純白安全間距；不加分隔線，不能跨格或裁到任何字、頭髮、手腳、裙擺與道具。
+只准出現下方逐格指定的繁體中文主句。所有道具（卡片、花籃、紅包、標語、招牌、旗幟）都不能有額外英文、中文、數字或圖形字樣；禁止 JUST MARRIED、THANK YOU、WEDDING DAY、WITNESS 等額外文字。
+人物從第一格到最後一格都必須保持與下方「主角設定」相同的角色（相同髮型、臉部特徵、服裝、膚色、Q 版頭身比），僅變換表情、手勢與動作；不可擅自改變職業、增加其他主角或改成婚禮新人。
+必須完整呈現指定格數；若畫布無法符合比例與格數，請重新生成符合版型的一張圖，勿交付錯誤比例。
+
+【以下是每格人物、風格及文字內容，請完整遵守】
+${originalPrompt}`;
 }
 
 function SupportSection() {
@@ -4419,10 +4602,10 @@ function ShowcaseSection() {
                 {item.desc}
               </p>
 
-              <div className="mt-4 grid gap-2">
+              <div className="mt-4 flex flex-wrap items-center gap-2">
                 <Link
                   to="/tools/sticker-showcase"
-                  className="w-full rounded-2xl bg-violet-600 px-3 py-2 text-center text-xs font-black !text-white whitespace-nowrap hover:bg-violet-700"
+                  className="inline-flex w-fit max-w-full items-center justify-center rounded-2xl bg-violet-600 px-4 py-2 text-center text-xs font-black !text-white hover:bg-violet-700"
                   style={{ color: "#ffffff" }}
                 >
                   放大看圖
@@ -4432,7 +4615,7 @@ function ShowcaseSection() {
                   href="https://ko-fi.com/s/62381d787d"
                   target="_blank"
                   rel="noreferrer"
-                  className="w-full rounded-2xl bg-pink-600 px-3 py-2 text-center text-xs font-black !text-white whitespace-nowrap hover:bg-pink-700"
+                  className="inline-flex w-fit max-w-full items-center justify-center rounded-2xl bg-pink-600 px-4 py-2 text-center text-xs font-black !text-white hover:bg-pink-700"
                   style={{ color: "#ffffff" }}
                 >
                   購買模板
@@ -4458,7 +4641,7 @@ function RecommendedToolsSection() {
         </h2>
       </div>
       <p className="mt-3 text-sm leading-relaxed text-slate-600">
-        有字貼圖建議先用 ChatGPT 產生；PhotoRoom
+        推薦使用已實測的 ChatGPT；Gemini 目前僅作為實驗性替代方案。PhotoRoom
         適合測試貼紙角色素材、商品圖去背與品牌素材，最後回到 RxV 整理貼圖尺寸與
         ZIP。
       </p>
@@ -4468,14 +4651,14 @@ function RecommendedToolsSection() {
             GPT
           </div>
           <h3 className="text-lg font-black text-slate-900">
-            ChatGPT 有字貼圖
+            Google Gemini／ChatGPT 生圖
           </h3>
           <p className="mt-2 text-sm leading-relaxed text-slate-600">
             較適合測試有繁體中文文字的 LINE 貼圖大圖；PhotoRoom
             則適合貼紙角色與商品素材。
           </p>
           <span className="mt-4 inline-flex rounded-xl bg-emerald-600 px-4 py-2 text-xs font-black !text-white">
-            主流程建議
+            生圖工具（自選）
           </span>
         </div>
         <a
@@ -4492,7 +4675,7 @@ function RecommendedToolsSection() {
           </h3>
           <p className="mt-2 text-sm leading-relaxed text-slate-600">
             可用來測試貼紙風角色、商品素材與品牌視覺；若要繁體中文貼圖文字，建議先用本站產生提示詞，再用
-            ChatGPT 或後製工具處理。
+            Google Gemini、ChatGPT 或後製工具處理。
           </p>
           <span className="mt-4 inline-flex rounded-xl bg-blue-600 px-4 py-2 text-xs font-black !text-white">
             前往創作工具
@@ -4536,6 +4719,7 @@ export default function StickerPromptGenerator() {
   );
   const [targetCount, setTargetCount] = useState<LineStickerCount>(16);
   const [copiedBatchIndex, setCopiedBatchIndex] = useState<number | null>(null);
+  const [copiedGeminiIndex, setCopiedGeminiIndex] = useState<number | null>(null);
   const [type, setType] = useState<TemplateKey>("businessPersonal");
   const [grid, setGrid] = useState<GridType>("4x4");
   const [nameMode, setNameMode] = useState<NameMode>("none");
@@ -4543,11 +4727,26 @@ export default function StickerPromptGenerator() {
   const [textSize, setTextSize] = useState<TextSize>("large");
   const [textColor, setTextColor] = useState<TextColor>("colorfulWhite");
   const [textPosition, setTextPosition] = useState<TextPosition>("mixed");
+  const [fontStyle, setFontStyle] = useState<FontStyle>("roundBold");
   const [stickerStylePreset, setStickerStylePreset] =
     useState<StickerStylePreset>("friendly");
   const [photoMode, setPhotoMode] = useState<PhotoMode>("original");
   const [role, setRole] = useState(templates.businessPersonal.role);
+  const [businessAvatar, setBusinessAvatar] = useState<BusinessAvatarSelection>(savedBusinessAvatar);
+  const [businessSignature, setBusinessSignature] = useState(savedBusinessSignature);
+  useEffect(() => {
+    try {
+      localStorage.setItem(BUSINESS_AVATAR_STORAGE_KEY, JSON.stringify(businessAvatar));
+      localStorage.setItem(BUSINESS_AVATAR_STORAGE_KEY + "-signature", businessSignature);
+    } catch { /* 無痕模式或儲存受限時仍可正常使用 */ }
+  }, [businessAvatar, businessSignature]);
   const [style, setStyle] = useState(templates.businessPersonal.style);
+  const [sharedCharacter, setSharedCharacter] = useState<StickerCharacterLock>(() =>
+    defaultCharacterLock(templates.businessPersonal.label, templates.businessPersonal.role),
+  );
+  const [characterReference, setCharacterReference] = useState<{ name: string; url: string; scope: string } | null>(null);
+  const [lockedProfile, setLockedProfile] = useState<LockedCharacterProfile | null>(null);
+  const characterReferenceInput = useRef<HTMLInputElement>(null);
   const [texts, setTexts] = useState(
     getDefaultTextWithName("businessPersonal", "4x4", "none", "小宇"),
   );
@@ -4704,10 +4903,53 @@ export default function StickerPromptGenerator() {
     [type, texts, targetCount, nameMode, customName],
   );
   const saleRisks = useMemo(() => stickerSaleTextRisks(flowTexts), [flowTexts]);
-  const motherSheetPlan = useMemo(
-    () => getMotherSheetPlan(targetCount),
-    [targetCount],
+  const motherSheetPlan = useMemo(() => getMotherSheetPlan(targetCount), [targetCount]);
+  const referenceScope = JSON.stringify({
+    type, targetCount, effectiveRole: role, style, sharedCharacter, fontStyle, textSize, textColor,
+    textPosition, stickerStylePreset, photoMode, businessAvatar, businessSignature,
+  });
+  const activeReference = characterReference?.scope === referenceScope ? characterReference : null;
+  useEffect(() => () => {
+    if (characterReference?.url) URL.revokeObjectURL(characterReference.url);
+  }, [characterReference?.url]);
+  function clearCharacterReference() {
+    setCharacterReference(null);
+    if (characterReferenceInput.current) characterReferenceInput.current.value = "";
+  }
+  function chooseCharacterReference(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!["image/png", "image/jpeg", "image/webp"].includes(file.type) || file.size > 15 * 1024 * 1024) {
+      alert("請選擇 15MB 以下 PNG、JPG 或 WebP 的第 1 張完整母圖。");
+      event.target.value = "";
+      return;
+    }
+    setCharacterReference({ name: file.name, url: URL.createObjectURL(file), scope: referenceScope });
+    event.target.value = "";
+  }
+  // 所有母圖沿用同一角色設定，不會因為 24／40 張分批產生就更換長相。
+  // 真人似顏繪優先忠實參考本人照片，不額外覆蓋髮型及臉部特徵。
+  const effectiveRole = useMemo(
+    () => type === "businessPersonal" && photoMode === "original"
+      ? `${role}\n\n${businessAvatarPrompt(businessAvatar, businessSignature)}`
+      : role,
+    [type, role, photoMode, businessAvatar, businessSignature],
   );
+  const characterLockText = useMemo(() => lockCharacterPrompt(
+    { ...sharedCharacter, identity: `${sharedCharacter.identity}\n工作與動作設定：${effectiveRole}` },
+    style,
+    { font: optionPrompt(FONT_STYLE_OPTIONS, fontStyle),
+      size: optionPrompt(TEXT_SIZE_OPTIONS, textSize),
+      color: optionPrompt(TEXT_COLOR_OPTIONS, textColor),
+      position: stickerPlacementRule(textPosition) },
+  ), [sharedCharacter, effectiveRole, style, fontStyle, textSize, textColor, textPosition]);
+  const profileScope = `${type}:${targetCount}`;
+  const currentProfile: LockedCharacterProfile = {
+    scope: profileScope, role: effectiveRole, style, textSize, textColor, textPosition,
+    fontStyle, stickerStylePreset, photoMode, characterLockText,
+  };
+  const activeProfile = lockedProfile?.scope === profileScope ? lockedProfile : null;
+  const promptProfile = activeProfile ?? currentProfile;
   const flowPrompts = useMemo(
     () =>
       motherSheetPlan.map((item, index) => {
@@ -4716,16 +4958,22 @@ export default function StickerPromptGenerator() {
           ...item,
           prompt: buildFlowPrompt(
             templates[type].label,
-            role,
-            style,
+            promptProfile.role,
+            promptProfile.style,
             item.grid,
             batchTexts,
-            textSize,
-            textColor,
-            textPosition,
-            stickerStylePreset,
-            photoMode,
+            promptProfile.textSize,
+            promptProfile.textColor,
+            promptProfile.textPosition,
+            promptProfile.fontStyle,
+            promptProfile.stickerStylePreset,
+            promptProfile.photoMode,
             index + 1,
+            stickerMode,
+            stickerPlatform,
+            item.startIndex,
+            flowTexts,
+            promptProfile.characterLockText,
           ),
         };
       }),
@@ -4733,13 +4981,17 @@ export default function StickerPromptGenerator() {
       motherSheetPlan,
       flowTexts,
       type,
-      role,
-      style,
-      textSize,
-      textColor,
-      textPosition,
-      stickerStylePreset,
-      photoMode,
+      promptProfile.role,
+      promptProfile.style,
+      promptProfile.textSize,
+      promptProfile.textColor,
+      promptProfile.textPosition,
+      promptProfile.fontStyle,
+      promptProfile.stickerStylePreset,
+      promptProfile.photoMode,
+      stickerMode,
+      stickerPlatform,
+      promptProfile.characterLockText,
     ],
   );
 
@@ -4749,25 +5001,27 @@ export default function StickerPromptGenerator() {
     () =>
       buildPrompt(
         templates[type].label,
-        role,
+        effectiveRole,
         style,
         grid,
         texts,
         textSize,
         textColor,
         textPosition,
+        fontStyle,
         stickerStylePreset,
         photoMode,
       ),
     [
       type,
-      role,
+      effectiveRole,
       style,
       grid,
       texts,
       textSize,
       textColor,
       textPosition,
+      fontStyle,
       stickerStylePreset,
       photoMode,
     ],
@@ -4776,19 +5030,22 @@ export default function StickerPromptGenerator() {
     () =>
       buildStablePrompt(
         templates[type].label,
-        role,
+        effectiveRole,
         style,
         grid,
         stickerStylePreset,
         photoMode,
       ),
-    [type, role, style, grid, stickerStylePreset, photoMode],
+    [type, effectiveRole, style, grid, stickerStylePreset, photoMode],
   );
 
   function handleTypeChange(nextType: TemplateKey) {
     setType(nextType);
     setRole(templates[nextType].role);
     setStyle(templates[nextType].style);
+    setSharedCharacter(defaultCharacterLock(templates[nextType].label, templates[nextType].role));
+    clearCharacterReference();
+    setLockedProfile(null);
     setTexts(
       getDefaultFlowTexts(nextType, targetCount, nameMode, customName),
     );
@@ -4840,14 +5097,26 @@ export default function StickerPromptGenerator() {
     saveLineStickerProject({ ...project, stage });
   }
 
-  async function copyFlowPrompt(index: number) {
+  async function copyFlowPrompt(index: number, provider: "chatgpt" | "gemini" = "chatgpt") {
     if (saleRisks.length) return;
     const item = flowPrompts[index];
     if (!item) return;
-    await navigator.clipboard.writeText(item.prompt);
+    const referenceHint = index > 0 && activeReference
+      ? `\n【本次已在 RXV 選取參考圖：${activeReference.name}】請親手在同一個 ChatGPT 對話附加此圖片；本網站僅複製文字，不會自動附圖或上傳。`
+      : "";
+    const completePrompt = item.prompt + referenceHint;
+    await navigator.clipboard.writeText(
+      provider === "gemini" ? buildGeminiStrictMotherSheetPrompt(completePrompt, item.grid) : completePrompt,
+    );
+    if (index === 0 && !activeProfile) setLockedProfile(currentProfile);
     persistFlowProject(2);
-    setCopiedBatchIndex(index);
-    window.setTimeout(() => setCopiedBatchIndex(null), 1800);
+    if (provider === "gemini") {
+      setCopiedGeminiIndex(index);
+      window.setTimeout(() => setCopiedGeminiIndex(null), 1800);
+    } else {
+      setCopiedBatchIndex(index);
+      window.setTimeout(() => setCopiedBatchIndex(null), 1800);
+    }
   }
 
   function applySaleFriendlyTexts() {
@@ -4865,6 +5134,7 @@ export default function StickerPromptGenerator() {
       : nextMode === "animated"
         ? 16
         : targetCount;
+    if (nextCount !== targetCount) { clearCharacterReference(); setLockedProfile(null); }
     setTargetCount(nextCount as LineStickerCount);
     const firstGrid = getMotherSheetPlan(nextCount as LineStickerCount)[0]?.grid;
     if (firstGrid) setGrid(firstGrid);
@@ -4879,6 +5149,7 @@ export default function StickerPromptGenerator() {
   }
 
   function handleTargetCount(nextCount: LineStickerCount) {
+    if (nextCount !== targetCount) { clearCharacterReference(); setLockedProfile(null); }
     setTargetCount(nextCount);
     const firstGrid = getMotherSheetPlan(nextCount)[0]?.grid;
     if (firstGrid) setGrid(firstGrid);
@@ -4894,51 +5165,45 @@ export default function StickerPromptGenerator() {
         keywords="LINE貼圖提示詞, LINE貼圖咒語, AI貼圖, 貼圖生圖提示詞, RxV"
       />
 
-      <main className="min-h-screen bg-gradient-to-b from-violet-50 via-white to-blue-50 px-4 py-8">
-        <div className="mx-auto w-full max-w-[1480px]">
+      <main className="min-h-screen bg-[#F8F7F3] px-3 py-6 sm:px-6">
+        <div className="mx-auto w-full max-w-3xl">
           <LineStickerFlowSteps activeStep={copiedBatchIndex !== null || copied || copiedStable ? 2 : 1} mode={stickerMode} />
-
-          <section id="sticker-start" className="scroll-mt-24 rounded-3xl border border-violet-100 bg-white p-6 shadow-sm sm:p-8">
-            <div className="flex flex-wrap gap-2">
-              <span className="rounded-full bg-violet-600 px-3 py-1 text-xs font-black !text-white">
-                線上試用
-              </span>
-              <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-700">
-                一鍵複製
-              </span>
-              <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-black text-amber-700">
-                4×2／4×4／4×5
-              </span>
+          <header className="mb-6">
+            <p className="text-xs font-semibold tracking-[0.15em] text-violet-700">RXV STICKER STUDIO</p>
+            <h1 className="mt-2 text-2xl font-bold leading-tight text-slate-900 sm:text-3xl">把你的想法，做成專屬貼圖</h1>
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
+              先選喜歡的主題、文字與畫風，再用 ChatGPT 畫出完整母圖。
+              回 RXV 上傳後，自動切割整理，不用一張一張裁圖。
+            </p>
+            <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs font-medium text-slate-600">
+              <span>✓ 繁體中文</span><span>✓ LINE／WhatsApp</span><span>✓ 靜態／動態</span>
             </div>
-            <h1 className="mt-5 text-3xl font-black leading-tight text-slate-900 sm:text-4xl">
-              LINE 貼圖一鍵製作｜第 1 步
-            </h1>
-            <p className="mt-4 text-sm leading-relaxed text-slate-600 sm:text-base">
-              先選擇「靜態」或「動態」貼圖，再選主題與張數。系統會自動準備要貼到 ChatGPT 的生圖指令；完成後照著第 2、3、4、5 步一路做完，不需要自己找下一個工具。
-            </p>
-            <p className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold leading-7 text-amber-800">
-              操作方式：① 選貼圖類型與張數 → ② 複製生圖指令到 ChatGPT → ③ 下載母圖並傳回本站 → ④ 系統自動裁切、去背與檢查 → ⑤ 下載靜態貼圖，或繼續一鍵製作動態貼圖。
-            </p>
-          </section>
+          </header>
+          <div className="mb-5"><StickerExistingMotherSheetShortcut compact /></div>
+          <div id="sticker-start" className="scroll-mt-24" />
 
-          <section className="mt-6 grid gap-6 xl:grid-cols-[0.82fr_1.18fr]">
-            <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-              <h2 className="text-xl font-black text-slate-900">
-                步驟 1｜選擇要做的貼圖
+          <section className="mt-6 flex flex-col gap-6" aria-label="依順序操作第 1、2 步">
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+              <h2 className="text-xl font-bold text-slate-900">
+                第 1 步｜選擇角色、文字與畫風
               </h2>
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                先選 LINE 或 WhatsApp，再選靜態／動態與張數；同一批母圖可重複用於兩個平台。
+                先選貼圖平台、靜態／動態和張數，再往下挑主題並修改文字。所有項目都有預設值。
               </p>
-              <div className="mt-4 grid grid-cols-2 gap-3">
+              <p className="mt-3 text-sm font-medium leading-6 text-slate-600">
+                接下來先選平台，再選靜態／動態與張數。
+                {" "}<a href="#sticker-customize" className="font-semibold text-violet-700 underline underline-offset-2">直接調整文字、字型 ↓</a>
+              </p>
+              <div className="mt-4 grid w-full max-w-[520px] grid-cols-2 items-stretch gap-3" role="group" aria-label="選擇貼圖平台">
                 {(["line", "whatsapp"] as const).map((platform) => (
                   <button key={platform} type="button" aria-pressed={stickerPlatform === platform}
                     onClick={() => setStickerPlatform(platform)}
-                    className={`min-h-12 rounded-2xl border-2 px-4 py-3 text-sm font-black transition ${stickerPlatform === platform ? "border-emerald-500 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-white text-slate-700"}`}>
+                    className={`inline-flex min-h-12 w-full min-w-0 items-center justify-center rounded-xl border-2 px-3 py-3 text-center text-sm font-bold leading-5 shadow-sm transition-all duration-150 hover:border-violet-500 hover:bg-violet-100 hover:text-violet-900 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 ${stickerPlatform === platform ? "border-violet-600 bg-violet-600 !text-white shadow-md hover:bg-violet-700 hover:!text-white" : "border-violet-200 bg-violet-50 text-violet-900"}`}>
                     {stickerPlatform === platform ? "✓ " : ""}{platform === "line" ? "LINE 貼圖" : "WhatsApp 貼圖"}
                   </button>
                 ))}
               </div>
-              <div className="mt-3 grid grid-cols-2 gap-3">
+              <div className="mt-3 grid w-full max-w-[520px] grid-cols-2 items-stretch gap-3" role="group" aria-label="選擇靜態或動態貼圖">
                 {([
                   ["static", "靜態貼圖", "下載 LINE PNG 或 WhatsApp WebP"],
                   ["animated", "動態貼圖", "接到動畫製作，輸出 APNG 或動畫 WebP"],
@@ -4947,14 +5212,17 @@ export default function StickerPromptGenerator() {
                     key={mode}
                     type="button"
                     onClick={() => handleStickerMode(mode)}
-                    className={`rounded-2xl border p-4 text-left transition ${
+                    aria-pressed={stickerMode === mode}
+                    className={`min-h-[100px] w-full min-w-0 rounded-xl border-2 p-3 text-left shadow-sm transition-all duration-150 hover:border-violet-500 hover:bg-violet-100 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 ${
                       stickerMode === mode
-                        ? "border-violet-500 bg-violet-50 ring-2 ring-violet-100"
-                        : "border-slate-200 bg-slate-50 hover:border-violet-200"
+                        ? "border-violet-600 bg-violet-600 !text-white shadow-md hover:bg-violet-700"
+                        : "border-violet-200 bg-violet-50 text-violet-900"
                     }`}
                   >
-                    <span className="block text-sm font-black text-slate-900">{title}</span>
-                    <span className="mt-1 block text-xs leading-5 text-slate-500">{desc}</span>
+                    <span className={`block text-sm font-bold ${stickerMode === mode ? "text-white" : "text-violet-950"}`}>
+                      {stickerMode === mode ? "✓ " : ""}{title}
+                    </span>
+                    <span className={`mt-1 block text-xs leading-5 ${stickerMode === mode ? "text-violet-100" : "text-slate-600"}`}>{desc}</span>
                   </button>
                 ))}
               </div>
@@ -4967,16 +5235,18 @@ export default function StickerPromptGenerator() {
               <label className="mt-5 block text-xs font-black text-slate-500">
                 貼圖張數
               </label>
-              <div className="mt-2 flex flex-wrap gap-2">
+              <p className="mt-2 text-xs font-bold leading-5 text-violet-800">下一步請按下方張數按鈕，例如「8 張」或「16 張」；第一次建議從 8 張開始。</p>
+              <div className="mt-2 flex max-w-[520px] flex-wrap gap-2" role="group" aria-label="選擇貼圖張數">
                 {allowedCounts.map((count) => (
                   <button
                     key={count}
                     type="button"
                     onClick={() => handleTargetCount(count)}
-                    className={`min-w-[64px] rounded-xl px-4 py-3 text-sm font-black transition ${
+                    aria-pressed={targetCount === count}
+                    className={`inline-flex min-h-11 w-[76px] shrink-0 items-center justify-center rounded-xl border-2 px-2 py-2.5 text-sm font-bold shadow-sm transition-all duration-150 hover:border-violet-500 hover:bg-violet-100 hover:text-violet-900 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 ${
                       targetCount === count
-                        ? "bg-violet-600 text-white shadow"
-                        : "bg-slate-100 text-slate-600 hover:bg-violet-100"
+                        ? "border-violet-600 bg-violet-600 text-white shadow-md hover:bg-violet-700 hover:text-white"
+                        : "border-violet-200 bg-violet-50 text-violet-900"
                     }`}
                   >
                     {count} 張
@@ -4996,7 +5266,7 @@ export default function StickerPromptGenerator() {
               </p>
 
               <div className="mt-5 flex items-center justify-between gap-3">
-                <label className="block text-xs font-black text-slate-500">
+                <label className="block text-sm font-semibold text-slate-700">
                   貼圖類型
                 </label>
                 <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">
@@ -5004,7 +5274,7 @@ export default function StickerPromptGenerator() {
                   {filteredTemplateEntries.length} 筆
                 </span>
               </div>
-              <div className="mt-2 rounded-3xl border border-violet-100 bg-violet-50/70 p-4">
+              <div className="mt-2 rounded-xl bg-slate-50 p-3">
                 <label className="block text-xs font-black text-violet-700">
                   搜尋職業／主題
                 </label>
@@ -5024,9 +5294,7 @@ export default function StickerPromptGenerator() {
                     清除
                   </button>
                 </div>
-                <p className="mt-2 text-xs font-bold leading-6 text-violet-700">
-                  輸入關鍵字後，下方只會顯示符合的貼圖類型，並自動切換到第一筆結果。可搜尋：招牌、廣告、工程、物流、老師。
-                </p>
+                <p className="mt-2 text-xs text-slate-500">搜尋後可從下方選擇對應主題。</p>
               </div>
 
               <select
@@ -5038,7 +5306,7 @@ export default function StickerPromptGenerator() {
                 onChange={(e) =>
                   handleTypeChange(e.target.value as TemplateKey)
                 }
-                className="mt-3 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
+                className="mt-3 w-full max-w-lg rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
               >
                 {filteredTemplateEntries.map(([key, item]) => (
                   <option key={key} value={key}>
@@ -5052,10 +5320,12 @@ export default function StickerPromptGenerator() {
                 </p>
               )}
 
-              <p className="mt-3 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-xs font-bold leading-6 text-emerald-800">
-                選擇貼圖類型後，系統會自動帶入常用貼圖文字。可在下方「貼圖文字」欄位確認或微調。
-              </p>
 
+
+              <section id="sticker-customize" aria-label="自訂貼圖文字、字型及角色設定" className="scroll-mt-24 mt-5 border-t border-slate-200 pt-5">
+                <h3 className="text-base font-semibold text-slate-900">自訂文字、字型與角色（可直接修改）</h3>
+                <p className="mt-1 text-xs leading-5 text-slate-500">保留預設也可以；字型設定會加入 AI 指令，產圖後仍需檢查文字。</p>
+                <div className="mt-3">
               <label className="mt-5 block text-xs font-black text-slate-500">
                 角色來源
               </label>
@@ -5088,7 +5358,7 @@ export default function StickerPromptGenerator() {
                 onChange={(e) =>
                   handleNameModeChange(e.target.value as NameMode)
                 }
-                className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
+                className="mt-2 w-full max-w-lg rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
               >
                 {NAME_MODE_OPTIONS.map((item) => (
                   <option key={item.value} value={item.value}>
@@ -5106,7 +5376,7 @@ export default function StickerPromptGenerator() {
                     value={customName}
                     onChange={(e) => handleCustomNameChange(e.target.value)}
                     placeholder="例如：小宇、雙果花、舒菓蜜、小芳早餐店"
-                    className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
+                    className="mt-2 w-full max-w-lg rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
                   />
                   <p className="mt-2 rounded-2xl bg-violet-50 px-4 py-3 text-xs font-bold leading-6 text-violet-700">
                     加入名稱後，貼圖文字會變成「小宇已收到」、「小宇幫您確認」這類更有個人記憶點的版本；店家也可改成「雙果花已收到」、「舒菓蜜感謝支持」。
@@ -5122,7 +5392,7 @@ export default function StickerPromptGenerator() {
                   <select
                     value={textSize}
                     onChange={(e) => setTextSize(e.target.value as TextSize)}
-                    className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
+                    className="mt-2 w-full max-w-lg rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
                   >
                     {TEXT_SIZE_OPTIONS.map((item) => (
                       <option key={item.value} value={item.value}>
@@ -5133,12 +5403,26 @@ export default function StickerPromptGenerator() {
                 </div>
                 <div>
                   <label className="block text-xs font-black text-slate-500">
+                    字型風格（可選）
+                  </label>
+                  <select
+                    value={fontStyle}
+                    onChange={(e) => setFontStyle(e.target.value as FontStyle)}
+                    className="mt-2 w-full max-w-lg rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
+                  >
+                    {FONT_STYLE_OPTIONS.map((item) => (
+                      <option key={item.value} value={item.value}>{item.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-black text-slate-500">
                     文字顏色
                   </label>
                   <select
                     value={textColor}
                     onChange={(e) => setTextColor(e.target.value as TextColor)}
-                    className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
+                    className="mt-2 w-full max-w-lg rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
                   >
                     {TEXT_COLOR_OPTIONS.map((item) => (
                       <option key={item.value} value={item.value}>
@@ -5149,14 +5433,14 @@ export default function StickerPromptGenerator() {
                 </div>
                 <div>
                   <label className="block text-xs font-black text-slate-500">
-                    文字位置
+                    文字位置（確定文字要放哪裡）
                   </label>
                   <select
                     value={textPosition}
                     onChange={(e) =>
                       setTextPosition(e.target.value as TextPosition)
                     }
-                    className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
+                    className="mt-2 w-full max-w-lg rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
                   >
                     {TEXT_POSITION_OPTIONS.map((item) => (
                       <option key={item.value} value={item.value}>
@@ -5164,6 +5448,13 @@ export default function StickerPromptGenerator() {
                       </option>
                     ))}
                   </select>
+                  <p className="mt-2 text-xs font-bold leading-6 text-amber-800">
+                    {textPosition === "mixed"
+                      ? "左右交錯＝第 1 格文字左、人物右；第 2 格人物左、文字右；之後依序交替。不是文字全部放上面。"
+                      : textPosition === "top"
+                        ? "已選上方：每格文字必須在人物上方。"
+                        : "已選下方：每格文字必須在人物下方。"}
+                  </p>
                 </div>
                 <div>
                   <label className="block text-xs font-black text-slate-500">
@@ -5176,7 +5467,7 @@ export default function StickerPromptGenerator() {
                         e.target.value as StickerStylePreset,
                       )
                     }
-                    className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
+                    className="mt-2 w-full max-w-lg rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
                   >
                     {STICKER_STYLE_OPTIONS.map((item) => (
                       <option key={item.value} value={item.value}>
@@ -5187,6 +5478,81 @@ export default function StickerPromptGenerator() {
                 </div>
               </div>
 
+
+              {type === "businessPersonal" && photoMode === "original" && (
+                <section className="mt-6 rounded-xl border border-violet-200 bg-violet-50/50 p-4" aria-label="業務專屬角色設計">
+                  <h4 className="text-base font-bold text-violet-950">設計我的專屬業務角色</h4>
+                  <p className="mt-1 text-sm leading-6 text-slate-700">
+                    首次進來會自動搭配一組外觀，可再自行修改；設定會保存在這台裝置的瀏覽器，方便下次製作同一角色。整套母圖都會沿用相同造型。
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setBusinessAvatar(randomBusinessAvatar())}
+                    className="mt-3 inline-flex min-h-11 items-center justify-center rounded-lg border-2 border-violet-300 bg-white px-4 py-2 text-sm font-bold text-violet-800 shadow-sm transition-colors hover:border-violet-600 hover:bg-violet-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
+                  >
+                    換一組不同的角色搭配 ↻
+                  </button>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    {(Object.keys(BUSINESS_AVATAR_OPTIONS) as BusinessAvatarKey[]).map((key) => (
+                      <label key={key} className="block text-sm font-medium text-slate-700">
+                        {BUSINESS_AVATAR_LABELS[key]}
+                        <select
+                          value={businessAvatar[key]}
+                          onChange={(e) => setBusinessAvatar((previous) => ({ ...previous, [key]: e.target.value }))}
+                          className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-800 focus:border-violet-500"
+                        >
+                          {BUSINESS_AVATAR_OPTIONS[key].map((value) => (
+                            <option key={value} value={value}>{value}</option>
+                          ))}
+                        </select>
+                      </label>
+                    ))}
+                  </div>
+                  <label className="mt-4 block text-sm font-medium text-slate-700">
+                    個人辨識特徵（選填）
+                    <input
+                      value={businessSignature}
+                      onChange={(e) => setBusinessSignature(e.target.value)}
+                      maxLength={180}
+                      placeholder="例如：左臉小酒窩、溫柔笑眼、珍珠髮夾"
+                      className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-800 focus:border-violet-500"
+                    />
+                  </label>
+                  <p className="mt-2 text-xs leading-5 text-slate-600">
+                    固定角色外觀有助於辨識，但無法保證與其他使用者絕不重複。若希望與本人相似，請在「角色來源」改選真人似顏繪並自行提供有授權的照片。
+                  </p>
+                </section>
+              )}
+
+              <section aria-label="整套貼圖共用角色設定" className="mt-6 rounded-xl border border-violet-200 bg-violet-50/40 p-4">
+                <h3 className="text-base font-bold text-violet-950">整套貼圖共用角色設定｜第 1、2 張使用相同角色</h3>
+                <p className="mt-1 text-xs leading-6 text-slate-700">
+                  設定一次，所有母圖都會完整帶入。以下資料可自行修改，切換母圖不會重選人物。
+                </p>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  {([
+                    ["identity", "角色性別、年齡、職業與形象"],
+                    ["face", "臉型、眼睛、五官與膚色"],
+                    ["hair", "髮型、髮色與瀏海"],
+                    ["clothing", "固定服裝與顏色"],
+                    ["accessory", "固定配件"],
+                    ["palette", "角色主題配色"],
+                    ["proportions", "Q 版頭身比例"],
+                    ["drawing", "插畫風格與描邊粗細"],
+                    ["shading", "上色、陰影與裝飾"],
+                  ] as const).map(([key, label]) => (
+                    <label key={key} className="block text-xs font-semibold leading-5 text-slate-700">
+                      {label}
+                      <textarea rows={2} value={sharedCharacter[key]}
+                        onChange={(event) => setSharedCharacter((previous) => ({ ...previous, [key]: event.target.value }))}
+                        className="mt-1 w-full resize-y rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm leading-6 text-slate-800 focus:border-violet-500" />
+                    </label>
+                  ))}
+                </div>
+                <p className="mt-3 text-xs leading-5 text-slate-600">
+                  文字字型、大小、描邊、配色、位置及插畫風格也會共用本頁設定，不會因切換母圖而更改。
+                </p>
+              </section>
 
               <label className="mt-5 block text-xs font-black text-slate-500">
                 角色設定
@@ -5243,51 +5609,147 @@ export default function StickerPromptGenerator() {
               <textarea
                 value={texts}
                 onChange={(e) => setTexts(e.target.value)}
-                rows={24}
-                className="mt-3 min-h-[520px] w-full resize-y rounded-2xl border border-slate-200 bg-white px-4 py-4 text-base leading-8 text-slate-700 outline-none focus:border-violet-400"
+                rows={Math.min(requiredCount + 1, 12)}
+                className="mt-3 min-h-[200px] max-h-[440px] w-full resize-y overflow-auto rounded-xl border border-slate-200 bg-white px-4 py-4 text-base leading-8 text-slate-700 outline-none focus:border-violet-400"
               />
+                </div>
+              </section>
+              <div className="mt-6 border-t border-violet-100 pt-5">
+                <StickerNextActionHint>已完成上方的主題、張數、文字與風格設定？下一步請按下方「前往第 2 步｜複製畫圖指令」。如果不想自訂，保留預設值也可以直接前往。</StickerNextActionHint>
+                <a href="#sticker-copy" className="inline-flex min-h-12 w-auto max-w-full items-center justify-center rounded-xl bg-violet-600 px-5 py-3 text-sm font-black text-white shadow hover:bg-violet-700">
+                  前往第 2 步｜複製畫圖指令 ↓
+                </a>
+              </div>
             </div>
 
-            <div id="sticker-copy" className="scroll-mt-24 rounded-3xl border border-violet-100 bg-white p-5 shadow-sm">
+            <div id="sticker-copy" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
               <div className="flex flex-col gap-3">
                 <div>
                   <p className="text-xs font-black tracking-wide text-violet-600">步驟 2</p>
                   <h2 className="mt-1 text-xl font-black text-slate-900">
-                    複製到 ChatGPT 生圖
+                    第 2 步｜複製指令，用 ChatGPT 或 Gemini 畫圖
                   </h2>
                   <p className="mt-2 text-sm leading-6 text-slate-600">
-                    按順序複製下方指令到 ChatGPT。每個按鈕會產生一張母圖，完成後把圖片下載到電腦或手機。
+                    請優先使用已實測的 ChatGPT。先按紫色按鈕複製指令，再按「開啟 ChatGPT 畫圖」貼上（電腦 Ctrl+V／手機長按貼上）並送出；Gemini 為實驗性選項，可能不遵守格數。AI 畫好後請下載「整張大圖」，不用自己切成小張。
                   </p>
                 </div>
               </div>
 
-              <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold leading-7 text-emerald-800">
-                這次需要產生 {motherSheetPlan.length} 張母圖，共 {targetCount} 張貼圖。請一張一張產生，不要把不同母圖再合成一張。
-              </div>
+              <p className="mt-3 text-sm font-medium leading-6 text-slate-700">
+                這次需畫 {motherSheetPlan.length} 張完整母圖（共 {targetCount} 張貼圖）。請逐張產生，不要合併不同母圖。
+              </p>
 
+              <div className="mt-4 border-t border-slate-200 pt-4">
+                <p className="text-sm font-semibold text-slate-900">複製下方指令，再開啟 AI 工具貼上</p>
+                <p className="mt-1 text-xs leading-5 text-slate-600">推薦 ChatGPT；Gemini 可以試驗但可能不遵守格數。本站不會自動把文字貼進 AI。</p>
+                <StickerAIProviderLinks />
+              </div>
+              <div className="mt-4 border-t border-slate-200 pt-4">
+                <p className="text-sm font-black text-violet-900">即將複製的貼圖設定</p>
+                {activeProfile && (
+                  <div className="mt-2 flex flex-wrap items-center gap-3 rounded-lg border border-violet-200 bg-violet-50 p-3">
+                    <p className="flex-1 text-xs font-semibold leading-6 text-violet-900">
+                      已鎖定第 1 張使用的角色、畫風與文字樣式。第 2 張會沿用這一份設定；
+                      若要改人物、服裝、字型或配色，須解鎖並重新生成第 1 張。
+                    </p>
+                    <button type="button" onClick={() => { setLockedProfile(null); clearCharacterReference(); }}
+                      className="min-h-10 rounded-lg border border-violet-300 bg-white px-3 py-2 text-xs font-bold text-violet-900 hover:bg-violet-100">
+                      解鎖並重新製作第 1 張
+                    </button>
+                  </div>
+                )}
+                <div className="mt-2 flex flex-wrap gap-2 text-xs font-medium text-slate-700">
+                  {[
+                    `平台：${stickerPlatform === "line" ? "LINE" : "WhatsApp"}`,
+                    `貼圖模式：${stickerMode === "static" ? "靜態" : "動態"}`,
+                    `數量：${targetCount} 張`,
+                    `文字位置：${optionLabel(TEXT_POSITION_OPTIONS, promptProfile.textPosition)}`,
+                    `字型：${optionLabel(FONT_STYLE_OPTIONS, promptProfile.fontStyle)}`,
+                    `字大小：${optionLabel(TEXT_SIZE_OPTIONS, promptProfile.textSize)}`,
+                    `顏色／文字效果：${optionLabel(TEXT_COLOR_OPTIONS, promptProfile.textColor)}`,
+                    `貼圖風格：${optionLabel(STICKER_STYLE_OPTIONS, promptProfile.stickerStylePreset)}`,
+                    `角色來源：${optionLabel(PHOTO_MODE_OPTIONS, promptProfile.photoMode)}`,
+                    `名稱：${optionLabel(NAME_MODE_OPTIONS, nameMode)}`,
+                    ...(activeProfile ? ["角色：已鎖定第 1 張設定"] : type === "businessPersonal" && photoMode === "original" ? [`角色：${businessAvatar.persona}`, `髮型：${businessAvatar.hair}`, `服裝：${businessAvatar.clothes}`, `配色：${businessAvatar.palette}`] : []),
+                  ].map((label) => (
+                    <span key={label} className="rounded-md bg-slate-100 px-2.5 py-1.5">{label}</span>
+                  ))}
+                </div>
+                <p className="mt-2 text-xs leading-6 text-slate-600">角色內容、畫風描述及每句短句也會以目前欄位輸入的內容為準。這些只是給 AI 的指令，不會直接修改已產出的圖片。</p>
+                <p className="mt-1 text-xs font-black leading-5 text-amber-800">請確認以上選項正確，再按下方「複製 ChatGPT 指令」；若剛調整文字位置，請重新複製新指令並重新生圖。</p>
+              </div>
               <div className="mt-4 space-y-4">
                 {flowPrompts.map((item, index) => (
-                  <div key={`${item.grid}-${index}`} className="rounded-3xl border border-violet-100 bg-violet-50/50 p-4">
+                  <div key={`${item.grid}-${index}`}>
+                    {index === 1 && motherSheetPlan.length > 1 ? (
+                      <section aria-label="選擇第 1 張角色參考圖" className="mb-4 rounded-xl border border-violet-200 bg-violet-50/40 p-4">
+                        <h3 className="text-base font-bold text-slate-900">第 3 步｜鎖定角色：選擇第 1 張參考圖</h3>
+                        <p className="mt-2 text-sm leading-6 text-slate-700">
+                          請先在 ChatGPT 產生第 1 張母圖，再選回本站預覽。不需要 Supabase／R2，上傳到 AI 時仍須手動附圖。
+                        </p>
+                        <input ref={characterReferenceInput} type="file" accept="image/png,image/jpeg,image/webp"
+                          onChange={chooseCharacterReference} className="sr-only" aria-label="第 1 張母圖參考圖片" />
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <button type="button" onClick={() => characterReferenceInput.current?.click()}
+                            className="inline-flex min-h-11 items-center rounded-lg bg-violet-600 px-4 py-2 text-sm font-bold text-white hover:bg-violet-700">
+                            {activeReference ? "更換第 1 張參考圖" : "選擇第 1 張參考圖"}
+                          </button>
+                          {activeReference && (
+                            <button type="button" onClick={clearCharacterReference}
+                              className="inline-flex min-h-11 items-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-100">
+                              清除參考圖
+                            </button>
+                          )}
+                        </div>
+                        {activeReference ? (
+                          <div className="mt-3">
+                            <img src={activeReference.url} alt="第 1 張母圖角色參考預覽"
+                              className="max-h-60 w-auto max-w-full rounded-lg border border-slate-200 bg-white object-contain" />
+                            <p className="mt-2 break-all text-xs text-slate-600">已選擇：{activeReference.name}（尚未傳給 ChatGPT）</p>
+                          </div>
+                        ) : (
+                          <p className="mt-3 text-xs leading-6 text-amber-800">未選參考圖：仍可複製提示詞，但僅靠文字無法保證完全一致。</p>
+                        )}
+                        <p className="mt-3 text-sm font-semibold leading-6 text-violet-900">
+                          第 4 步複製指令後，請在同一個 ChatGPT 對話親手附上第 1 張母圖再送出。
+                        </p>
+                      </section>
+                    ) : null}
+                    <div className="rounded-xl border border-slate-200 bg-white p-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div>
                         <p className="text-sm font-black text-slate-900">
-                          第 {index + 1} 張母圖｜{item.grid.replace("x", "×")}
+                          {motherSheetPlan.length > 1 ? (index === 0 ? "第 2 步｜生成第 1 張" : "第 4 步｜生成第 2 張") : "第 2 步｜生成母圖"}｜{item.grid.replace("x", "×")}
                         </p>
                         <p className="mt-1 text-xs font-bold text-slate-500">
                           貼圖 {item.startIndex + 1}～{item.endIndex}
                         </p>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => copyFlowPrompt(index)}
-                        disabled={saleRisks.length > 0}
-                        title={saleRisks.length ? "請先修正促銷／導流風險短句" : undefined}
-                        className="rounded-2xl bg-violet-600 px-4 py-3 text-sm font-black !text-white shadow hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-                      >
-                        {copiedBatchIndex === index
-                          ? "已複製"
-                          : `第 2 步｜複製第 ${index + 1} 張 AI 生圖指令`}
-                      </button>
+                      <div className="w-fit max-w-full">
+                        <StickerNextActionHint>{index === 0
+                          ? "複製第 1 張提示詞到 ChatGPT 生成完整母圖。"
+                          : "複製第 2 張提示詞，回同一個 ChatGPT 對話並親手附上第 1 張母圖。網站不會自動附圖。"}</StickerNextActionHint>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => copyFlowPrompt(index, "chatgpt")}
+                          disabled={saleRisks.length > 0}
+                          className="inline-flex min-h-11 w-fit max-w-full items-center justify-center rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-black !text-white shadow hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                        >
+                          {copiedBatchIndex === index ? "✓ 已複製 ChatGPT 指令" : `第 ${motherSheetPlan.length > 1 && index > 0 ? 4 : 2} 步｜複製第 ${index + 1} 張畫圖指令（ChatGPT）`}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => copyFlowPrompt(index, "gemini")}
+                          disabled={saleRisks.length > 0}
+                          className="inline-flex min-h-11 w-fit max-w-full items-center justify-center rounded-xl border border-blue-300 bg-white px-4 py-2.5 text-sm font-black text-blue-800 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {copiedGeminiIndex === index ? "✓ 已複製 Gemini 強化版" : "複製 Gemini 排版強化版"}
+                        </button>
+                      </div>
+                      <p className="mt-2 text-xs leading-5 text-amber-800">ChatGPT 已有成功製作貼圖的案例。Gemini 多次測試仍可能出現錯誤欄數、重複文字或橫幅；即使複製強化版也不能保證。若 4×4 不是 4 欄 × 4 列、共 16 格，請重新用 ChatGPT 產圖。</p>
+                      <StickerAIProviderLinks compact />
+                      </div>
                     </div>
                     <details className="mt-3 rounded-2xl border border-violet-100 bg-white">
                       <summary className="cursor-pointer px-4 py-3 text-xs font-black text-violet-700">
@@ -5297,16 +5759,18 @@ export default function StickerPromptGenerator() {
                         {item.prompt}
                       </pre>
                     </details>
+                    </div>
                   </div>
                 ))}
               </div>
 
+              <div className="mt-4"><StickerNextActionHint>已從 ChatGPT 或 Gemini 下載完整大圖？請按下方「第 3 步｜已下載整張大圖，回 RXV 上傳」。</StickerNextActionHint></div>
               <Link
-                to="/tools/line-sticker?flow=1"
+                to="/tools/line-sticker?flow=1#mother-upload"
                 onClick={() => persistFlowProject(3)}
                 className="mt-5 inline-flex min-h-[52px] items-center justify-center rounded-2xl bg-blue-600 px-5 py-3 text-center text-sm font-black !text-white shadow-lg transition hover:bg-blue-700"
               >
-                第 3 步｜我已存好圖片，前往上傳母圖 →
+                第 3 步｜已下載整張大圖，回 RXV 上傳 →
               </Link>
 
               <CoupangDynamicAd
@@ -5322,7 +5786,7 @@ export default function StickerPromptGenerator() {
                 <summary className="cursor-pointer px-4 py-3 text-sm font-black text-slate-700">
                   進階功能
                 </summary>
-                <div className="grid gap-2 border-t border-slate-200 p-4 sm:grid-cols-2">
+                <div className="flex flex-wrap items-center gap-2 border-t border-slate-200 p-4">
                   <button
                     onClick={copyPrompt}
                     type="button"
@@ -5340,7 +5804,7 @@ export default function StickerPromptGenerator() {
                 </div>
               </details>
 
-              <div className="mt-5 rounded-3xl border border-orange-200 bg-orange-50 p-5">
+              <div className="hidden mt-5 rounded-3xl border border-orange-200 bg-orange-50 p-5">
                 <h3 className="text-lg font-black text-slate-900">
                   想要更多主題與店家職業版？
                 </h3>
@@ -5355,7 +5819,7 @@ export default function StickerPromptGenerator() {
                   href={KOFI_SHOP_URL}
                   target="_blank"
                   rel="noreferrer"
-                  className="mt-3 inline-flex w-full items-center justify-center rounded-2xl bg-orange-500 px-5 py-3 text-sm font-black !text-white shadow-md hover:bg-orange-600 hover:!text-white"
+                  className="mt-3 inline-flex w-auto max-w-full items-center justify-center rounded-2xl bg-orange-500 px-5 py-3 text-sm font-black !text-white shadow-md hover:bg-orange-600 hover:!text-white"
                   style={{ color: "#ffffff" }}
                 >
                   購買進階版 Excel 模板包
@@ -5365,14 +5829,14 @@ export default function StickerPromptGenerator() {
                   onClick={() =>
                     navigator.clipboard.writeText("rxv0227@gmail.com")
                   }
-                  className="mt-3 inline-flex w-full items-center justify-center rounded-2xl bg-slate-900 px-5 py-3 text-sm font-black !text-white shadow-md hover:bg-slate-800 hover:!text-white"
+                  className="mt-3 inline-flex w-auto max-w-full items-center justify-center rounded-2xl bg-slate-900 px-5 py-3 text-sm font-black !text-white shadow-md hover:bg-slate-800 hover:!text-white"
                   style={{ color: "#ffffff" }}
                 >
                   複製客製服務 Email
                 </button>
               </div>
 
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <div className="mt-5 flex flex-wrap items-center gap-3">
                 <Link
                   to="/tools/sticker-splitter"
                   className="inline-flex min-h-[48px] items-center justify-center whitespace-nowrap rounded-2xl bg-violet-600 px-4 py-3 text-sm font-black leading-none !text-white shadow-md transition hover:bg-violet-700 hover:!text-white active:scale-[0.98] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-xl hover:brightness-110"
@@ -5391,7 +5855,8 @@ export default function StickerPromptGenerator() {
             </div>
           </section>
 
-          <SupportSection />
+          <div className="mt-6"><StickerCustomInquiry /></div>
+          {false && <SupportSection />}
 
           <section className="mt-6 rounded-3xl border border-pink-100 bg-gradient-to-br from-pink-50 via-white to-amber-50 p-5 shadow-sm">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
@@ -5403,16 +5868,14 @@ export default function StickerPromptGenerator() {
                   店家與職業專用 LINE 貼圖提示詞
                 </h2>
                 <p className="mt-2 text-sm leading-7 text-slate-600">
-                  先在網站試用更多熱門職業範例；想要 100+
-                  職業、每個職業多組情境文字、角色與排版變化，可購買進階版 Excel
-                  模板包，適合接案或大量製作。
+                  下面提供可直接套用的職業與店家貼圖範例。選一個範例，系統會自動填入角色及常見回覆文字，不用從零開始設定。
                 </p>
               </div>
               <a
                 href={KOFI_SHOP_URL}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex min-h-[44px] items-center justify-center rounded-2xl bg-orange-500 px-4 py-3 text-sm font-black !text-white shadow-md transition hover:-translate-y-0.5 hover:bg-orange-600 hover:shadow-lg"
+                className="hidden min-h-[44px] items-center justify-center rounded-2xl bg-orange-500 px-4 py-3 text-sm font-black !text-white shadow-md transition hover:-translate-y-0.5 hover:bg-orange-600 hover:shadow-lg"
                 style={{ color: "#ffffff" }}
               >
                 購買進階版模板
