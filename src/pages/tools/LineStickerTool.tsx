@@ -2338,7 +2338,7 @@ export default function LineStickerTool() {
               第 3～4 步｜上傳母圖，自動整理貼圖
             </h1>
             <p className="text-slate-500 text-sm mt-1">
-              將 Google Gemini 或其他 AI 畫出的「一整張母圖」存到手機或電腦，直接上傳這裡；不用自己切成 8 或 16 張，RXV 會自動切割、去背並整理。已有單張貼圖也可以直接上傳。
+              將 ChatGPT 或 Google Gemini 畫出的「一整張母圖」存到手機或電腦，直接上傳這裡；不用自己切成 8 或 16 張，RXV 會自動切割、去背並整理。已有單張貼圖也可以直接上傳。
             </p>
             <p className="text-slate-500 text-sm mt-2">
               {t("line_sticker_hero_desc")}
@@ -2347,7 +2347,7 @@ export default function LineStickerTool() {
 
           <section className="mb-5 rounded-2xl border border-indigo-100 bg-white p-4 shadow-sm">
             <h2 className="text-sm font-black text-slate-900">一般客戶照著做就可以：5 個步驟</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-700">① 選貼圖種類與張數 → ② 複製指令到 Google Gemini 產生完整大圖 → ③ 回本站上傳大圖 → ④ 預覽自動切割、去背結果 → ⑤ 下載 ZIP；動態貼圖再進入動畫流程。</p>
+            <p className="mt-2 text-sm leading-6 text-slate-700">① 選貼圖種類與張數 → ② 複製指令到 ChatGPT 或 Google Gemini 產生完整大圖 → ③ 回本站上傳大圖 → ④ 預覽自動切割、去背結果 → ⑤ 下載 ZIP；動態貼圖再進入動畫流程。</p>
             <p className="mt-2 text-xs leading-5 text-slate-500">裁切、去白底與尺寸整理都由本站處理；若去背不理想，再選擇外部進階工具。完成 ZIP 不代表 LINE 必定審核通過。</p>
             <Link to="/tools/line-sticker-guide" className="mt-3 inline-flex items-center rounded-lg bg-indigo-50 px-3 py-2 text-xs font-black text-indigo-700 hover:bg-indigo-100">查看完整圖文教學</Link>
             {exportCheckResult ? <p role="status" className="mt-3 rounded-xl bg-emerald-50 p-3 text-sm font-bold leading-6 text-emerald-800">{exportCheckResult}</p> : null}
@@ -2473,7 +2473,7 @@ export default function LineStickerTool() {
             <section className="mb-6 rounded-2xl border border-violet-100 bg-violet-50 p-4">
               <p className="text-sm font-black text-slate-900">還沒有貼圖母圖？</p>
               <p className="mt-1 text-xs leading-5 text-slate-600">
-                建議先從第 1 步開始，系統會幫你準備 ChatGPT 生圖指令。
+                建議先從第 1 步開始，系統會幫你準備可貼到 ChatGPT 或 Google Gemini 的生圖指令。
               </p>
               <Link
                 to="/tools/sticker-prompt"
@@ -3106,7 +3106,7 @@ export default function LineStickerTool() {
               </h3>
             </div>
             <p className="mb-6 text-sm text-slate-500 leading-relaxed">
-              一般流程只要用 ChatGPT 生圖，再回本站上傳母圖，即可自動分割、去背和輸出 ZIP。以下 PhotoRoom 是選用的外部進階工具，不需申請或付費才能完成本站貼圖製作。
+              一般流程可用 ChatGPT 或 Google Gemini 生圖，再回本站上傳母圖，即可自動分割、去背和輸出 ZIP。以下 PhotoRoom 是選用的外部進階工具，不需申請或付費才能完成本站貼圖製作。
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -3128,7 +3128,7 @@ export default function LineStickerTool() {
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                  可用來測試可愛貼紙角色、商品圖與品牌素材；可先使用 Google Gemini 產圖；若中文字不清楚，可換 ChatGPT 生圖或後製加字。
+                  可用來測試可愛貼紙角色、商品圖與品牌素材；可用 ChatGPT 或 Google Gemini 產圖；若中文字不清楚，可改用另一工具或後製加字。
                 </p>
                 <span
                   className="mt-4 inline-flex w-fit rounded-lg bg-blue-600 px-3 py-2 text-xs font-black !text-white group-hover:bg-blue-700"
