@@ -4,7 +4,7 @@ import SEO from "@/components/SEO";
 import CoupangDynamicAd from "@/components/CoupangDynamicAd";
 import LineStickerAuthorCard from "@/components/LineStickerAuthorCard";
 import LineStickerFlowSteps from "@/components/LineStickerFlowSteps";
-import { StickerExistingMotherSheetShortcut, StickerCustomInquiry, StickerNextActionHint } from "@/components/StickerBeginnerActions";
+import { StickerExistingMotherSheetShortcut, StickerCustomInquiry, StickerNextActionHint, StickerAIProviderLinks } from "@/components/StickerBeginnerActions";
 import {
   createLineStickerProject,
   getAllowedCounts,
@@ -4459,7 +4459,7 @@ function RecommendedToolsSection() {
         </h2>
       </div>
       <p className="mt-3 text-sm leading-relaxed text-slate-600">
-        初次使用建議先在 Google Gemini 畫母圖；ChatGPT 也可作為備選。PhotoRoom
+        生圖可任選 ChatGPT 或 Google Gemini；目前已有 ChatGPT 製作示範。PhotoRoom
         適合測試貼紙角色素材、商品圖去背與品牌素材，最後回到 RxV 整理貼圖尺寸與
         ZIP。
       </p>
@@ -4916,10 +4916,10 @@ export default function StickerPromptGenerator() {
               LINE 貼圖一鍵製作｜第 1 步
             </h1>
             <p className="mt-4 text-sm leading-relaxed text-slate-600 sm:text-base">
-              先選 LINE／WhatsApp、靜態或動態、張數和主題。系統會自動準備畫圖指令；第 2 步複製後，貼到 Google Gemini 畫出完整大圖，再回本站自動切圖。
+              先選 LINE／WhatsApp、靜態或動態、張數和主題。系統會準備畫圖指令；第 2 步複製後，選 ChatGPT 或 Google Gemini 貼上畫出完整大圖，再回本站自動切圖。
             </p>
             <p className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold leading-7 text-amber-800">
-              操作方式：① 選好貼圖 → ② 複製指令，在 Google Gemini 貼上並產圖 → ③ 將整張大圖下載、上傳 RXV → ④ RXV 自動切圖、去背、檢查 → ⑤ 下載 ZIP（動態另選動畫效果）。
+              操作方式：① 選好貼圖 → ② 複製指令，選 ChatGPT 或 Google Gemini 畫圖 → ③ 下載整張大圖、回 RXV 上傳 → ④ RXV 自動切圖、去背、檢查 → ⑤ 下載 ZIP（動態另選動畫效果）。
             </p>
           </section>
 
@@ -5262,10 +5262,10 @@ export default function StickerPromptGenerator() {
                 <div>
                   <p className="text-xs font-black tracking-wide text-violet-600">步驟 2</p>
                   <h2 className="mt-1 text-xl font-black text-slate-900">
-                    第 2 步｜複製指令，到 Google Gemini 畫圖
+                    第 2 步｜複製指令，用 ChatGPT 或 Gemini 畫圖
                   </h2>
                   <p className="mt-2 text-sm leading-6 text-slate-600">
-                    先按紫色按鈕複製指令，再點「開啟 Google Gemini」，貼上（電腦 Ctrl+V／手機長按貼上）並送出。AI 畫好後，請下載「整張大圖」，不要自己切成小張。
+                    先按下方紫色按鈕複製指令，再自由選擇「開啟 ChatGPT 畫圖」或「開啟 Google Gemini 畫圖」，貼上（電腦 Ctrl+V／手機長按貼上）並送出。AI 畫好後請下載「整張大圖」，不用自己切成小張。
                   </p>
                 </div>
               </div>
@@ -5276,12 +5276,9 @@ export default function StickerPromptGenerator() {
 
               <div className="mt-4 rounded-2xl border border-sky-200 bg-sky-50 p-4">
                 <p className="text-sm font-black text-sky-900">第一次使用，照這三個動作就好</p>
-                <p className="mt-2 text-sm leading-7 text-slate-700">① 按下方「複製第 1 張指令」 → ② 開啟 Google Gemini → ③ 在 Gemini 對話框貼上並送出。</p>
-                <a href="https://gemini.google.com/app" target="_blank" rel="noopener noreferrer"
-                  className="mt-3 inline-flex min-h-11 items-center justify-center rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-black !text-white hover:bg-blue-800">
-                  第 2 步｜開啟 Google Gemini 畫圖 ↗
-                </a>
-                <p className="mt-2 text-xs leading-6 text-slate-600">本站只幫你複製文字，不會自動貼進 Gemini。也可以用 ChatGPT 等支援生圖的工具。Gemini 若要求登入，請先用自己的 Google 帳號登入。</p>
+                <p className="mt-2 text-sm leading-7 text-slate-700">① 先按下方「複製第 1 張畫圖指令」 → ② 選 ChatGPT 或 Google Gemini → ③ 在所選工具的對話框貼上並送出。</p>
+                <StickerAIProviderLinks />
+                <p className="mt-2 text-xs leading-6 text-slate-600">RXV 只複製文字，不會自動幫你貼到其他平台。若要求登入，請使用自己的帳號。</p>
               </div>
               <div className="mt-4 space-y-4">
                 {flowPrompts.map((item, index) => (
@@ -5296,7 +5293,7 @@ export default function StickerPromptGenerator() {
                         </p>
                       </div>
                       <div className="w-full sm:w-auto">
-                        <StickerNextActionHint>請先按下方「複製第 {index + 1} 張畫圖指令」，再按上面的「開啟 Google Gemini 畫圖」。</StickerNextActionHint>
+                        <StickerNextActionHint>請先按下方「複製第 {index + 1} 張畫圖指令」，再選下方 ChatGPT 或 Google Gemini 按鈕。</StickerNextActionHint>
                       <button
                         type="button"
                         onClick={() => copyFlowPrompt(index)}
@@ -5308,11 +5305,7 @@ export default function StickerPromptGenerator() {
                           ? "已複製"
                           : `第 2 步｜複製第 ${index + 1} 張畫圖指令`}
                       </button>
-                      <p className="mt-2 text-xs font-black leading-5 text-emerald-800">已按複製？下一步請按下面的「開啟 Google Gemini」，到對話框貼上文字並送出。</p>
-                      <a href="https://gemini.google.com/app" target="_blank" rel="noopener noreferrer"
-                        className="mt-2 inline-flex min-h-11 items-center justify-center rounded-xl border border-emerald-200 bg-white px-4 py-2 text-xs font-black text-emerald-800 hover:bg-emerald-50">
-                        開啟 Google Gemini，貼上指令 ↗
-                      </a>
+                      <StickerAIProviderLinks compact />
                       </div>
                     </div>
                     <details className="mt-3 rounded-2xl border border-violet-100 bg-white">
@@ -5327,7 +5320,7 @@ export default function StickerPromptGenerator() {
                 ))}
               </div>
 
-              <div className="mt-4"><StickerNextActionHint>已經在 Gemini 下載完整大圖？請按下方「第 3 步｜已下載整張大圖，回 RXV 上傳」。</StickerNextActionHint></div>
+              <div className="mt-4"><StickerNextActionHint>已從 ChatGPT 或 Gemini 下載完整大圖？請按下方「第 3 步｜已下載整張大圖，回 RXV 上傳」。</StickerNextActionHint></div>
               <Link
                 to="/tools/line-sticker?flow=1#mother-upload"
                 onClick={() => persistFlowProject(3)}
