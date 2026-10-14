@@ -419,3 +419,25 @@ test("參考圖僅在多母圖顯示，瀏覽器本地預覽及清理物件 URL"
   assert.match(source,/移除參考圖/);
   assert.doesNotMatch(source,/supabase\.storage\.upload\(referenceImage/);
 });
+
+test("預覽下方直接放第 5 步下載／動畫操作，不再被 FAQ 與廣告隔開", () => {
+  const page = read("src/pages/tools/LineStickerTool.tsx");
+  const previewStart = page.indexOf('className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3"');
+  const mainPicker = page.indexOf('id="main-character-sticker"');
+  const download = page.indexOf('id="sticker-download"');
+  const footer = page.indexOf('aria-label="第 5 步：貼圖下載或動態製作"');
+  const ad = page.indexOf('subId="rxv_sticker_inline"');
+  const faq = page.indexOf('id="line-sticker-quick-guide"');
+
+  assert.ok(previewStart >= 0);
+  assert.ok(previewStart < mainPicker && mainPicker < download && download < footer);
+  assert.ok(footer < ad && ad < faq, "下載流程應早於推薦工具與 FAQ");
+  assert.equal(page.split('id="sticker-download"').length - 1, 1, "第五步錨點不可重複");
+  assert.equal(page.split('aria-label="第 5 步：貼圖下載或動態製作"').length - 1, 1);
+  assert.match(page, /value=\{Math\.min\(mainImageIndex,/);
+  assert.match(page, /onChange=\{\(event\) => setMainImageIndex\(Number\(event\.target\.value\)\)\}/);
+  assert.match(page, /想換人物髮型／服裝？回第 1 步設定/);
+  assert.match(page, /重新設定人物不會直接改變已上傳的圖片/);
+  assert.match(page, /files\.slice\(0, stickerCount\)\.map/);
+  assert.match(page, /onClick=\{continueToAnimated\}/);
+});
