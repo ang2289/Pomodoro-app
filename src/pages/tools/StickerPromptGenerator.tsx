@@ -3323,6 +3323,20 @@ function randomBusinessAvatar(): BusinessAvatarSelection {
     palette: choose(BUSINESS_AVATAR_OPTIONS.palette),
   };
 }
+const BUSINESS_AVATAR_STORAGE_KEY = "rxv-sticker-business-avatar-v1";
+function savedBusinessAvatar(): BusinessAvatarSelection {
+  try {
+    const saved = JSON.parse(localStorage.getItem(BUSINESS_AVATAR_STORAGE_KEY) || "null") as Partial<BusinessAvatarSelection> | null;
+    if (saved && (Object.keys(BUSINESS_AVATAR_OPTIONS) as BusinessAvatarKey[]).every((key) =>
+      typeof saved[key] === "string" && (BUSINESS_AVATAR_OPTIONS[key] as readonly string[]).includes(saved[key])
+    )) return saved as BusinessAvatarSelection;
+  } catch { /* 瀏覽器禁用儲存時改用隨機搭配 */ }
+  return randomBusinessAvatar();
+}
+function savedBusinessSignature(): string {
+  try { return (localStorage.getItem(BUSINESS_AVATAR_STORAGE_KEY + "-signature") || "").slice(0, 180); }
+  catch { return ""; }
+}
 function businessAvatarPrompt(choice: BusinessAvatarSelection, signature: string) {
   const detail = signature.trim().slice(0, 180);
   return `專屬業務個人品牌角色（請保持同套貼圖完全一致）：
@@ -4697,8 +4711,14 @@ export default function StickerPromptGenerator() {
     useState<StickerStylePreset>("friendly");
   const [photoMode, setPhotoMode] = useState<PhotoMode>("original");
   const [role, setRole] = useState(templates.businessPersonal.role);
-  const [businessAvatar, setBusinessAvatar] = useState<BusinessAvatarSelection>(randomBusinessAvatar);
-  const [businessSignature, setBusinessSignature] = useState("");
+  const [businessAvatar, setBusinessAvatar] = useState<BusinessAvatarSelection>(savedBusinessAvatar);
+  const [businessSignature, setBusinessSignature] = useState(savedBusinessSignature);
+  useEffect(() => {
+    try {
+      localStorage.setItem(BUSINESS_AVATAR_STORAGE_KEY, JSON.stringify(businessAvatar));
+      localStorage.setItem(BUSINESS_AVATAR_STORAGE_KEY + "-signature", businessSignature);
+    } catch { /* 無痕模式或儲存受限時仍可正常使用 */ }
+  }, [businessAvatar, businessSignature]);
   const [style, setStyle] = useState(templates.businessPersonal.style);
   const [texts, setTexts] = useState(
     getDefaultTextWithName("businessPersonal", "4x4", "none", "小宇"),
@@ -5387,7 +5407,7 @@ export default function StickerPromptGenerator() {
                 <section className="mt-6 rounded-xl border border-violet-200 bg-violet-50/50 p-4" aria-label="業務專屬角色設計">
                   <h4 className="text-base font-bold text-violet-950">設計我的專屬業務角色</h4>
                   <p className="mt-1 text-sm leading-6 text-slate-700">
-                    每次進來會自動搭配一組外觀，也能自行修改。角色設定會帶入整套母圖，避免大家都畫成同一位男業務。
+                    首次進來會自動搭配一組外觀，可再自行修改；設定會保存在這台裝置的瀏覽器，方便下次製作同一角色。整套母圖都會沿用相同造型。
                   </p>
                   <button
                     type="button"
