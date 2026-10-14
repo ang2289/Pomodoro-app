@@ -4770,6 +4770,39 @@ export default function StickerPromptGenerator() {
     useState<StickerStylePreset>("friendly");
   const [photoMode, setPhotoMode] = useState<PhotoMode>("original");
   const [role, setRole] = useState(templates.businessPersonal.role);
+  const [identity, setIdentity] = useState<StickerIdentity>(() => defaultStickerIdentity(templates.businessPersonal.role, templates.businessPersonal.style));
+  const [referenceImage, setReferenceImage] = useState<{ name: string; url: string; series: string } | null>(null);
+  const referenceUrlRef = useRef<string | null>(null);
+  const referenceSeriesRef = useRef("businessPersonal:16");
+  const seriesKey = `${type}:${targetCount}`;
+  const activeReferenceImage = referenceImage?.series === seriesKey ? referenceImage : null;
+  function clearReferenceImage() {
+    if (referenceUrlRef.current) URL.revokeObjectURL(referenceUrlRef.current);
+    referenceUrlRef.current = null;
+    setReferenceImage(null);
+  }
+  function chooseReferenceImage(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (!["image/png", "image/jpeg", "image/webp"].includes(file.type) || file.size > 15 * 1024 * 1024) {
+      window.alert("請選擇 15MB 以下的 PNG、JPG 或 WebP 母圖。");
+      return;
+    }
+    clearReferenceImage();
+    const url = URL.createObjectURL(file);
+    referenceUrlRef.current = url;
+    setReferenceImage({ name: file.name, url, series: seriesKey });
+  }
+  useEffect(() => {
+    if (referenceSeriesRef.current !== seriesKey) {
+      referenceSeriesRef.current = seriesKey;
+      clearReferenceImage();
+    }
+  }, [seriesKey]);
+  useEffect(() => () => {
+    if (referenceUrlRef.current) URL.revokeObjectURL(referenceUrlRef.current);
+  }, []);
   const [businessAvatar, setBusinessAvatar] = useState<BusinessAvatarSelection>(savedBusinessAvatar);
   const [businessSignature, setBusinessSignature] = useState(savedBusinessSignature);
   useEffect(() => {
@@ -4941,6 +4974,23 @@ export default function StickerPromptGenerator() {
   );
   // 所有母圖沿用同一角色設定，不會因為 24／40 張分批產生就更換長相。
   // 真人似顏繪優先忠實參考本人照片，不額外覆蓋髮型及臉部特徵。
+  const lockedIdentity = useMemo(
+    () => type === "businessPersonal" && photoMode === "original"
+      ? {
+          ...identity,
+          appearance: businessAvatar.persona,
+          hair: businessAvatar.hair,
+          outfit: businessAvatar.clothes,
+          accessories: `${businessAvatar.accessory}；${businessSignature.trim() || "不額外增加固定配件"}`,
+          coloring: `${identity.coloring}；固定色系：${businessAvatar.palette}`,
+        }
+      : identity,
+    [type, photoMode, identity, businessAvatar, businessSignature],
+  );
+  const identityLock = useMemo(
+    () => makeStickerIdentityLock(lockedIdentity, fontStyle, textSize, textColor, textPosition),
+    [lockedIdentity, fontStyle, textSize, textColor, textPosition],
+  );
   const effectiveRole = useMemo(
     () => type === "businessPersonal" && photoMode === "original"
       ? `${role}\n\n${businessAvatarPrompt(businessAvatar, businessSignature)}`
@@ -4968,6 +5018,8 @@ export default function StickerPromptGenerator() {
             index + 1,
             stickerMode,
             stickerPlatform,
+            item.startIndex,
+            identityLock,
           ),
         };
       }),
@@ -4985,6 +5037,7 @@ export default function StickerPromptGenerator() {
       photoMode,
       stickerMode,
       stickerPlatform,
+      identityLock,
     ],
   );
 
@@ -5036,6 +5089,7 @@ export default function StickerPromptGenerator() {
     setType(nextType);
     setRole(templates[nextType].role);
     setStyle(templates[nextType].style);
+    setIdentity(defaultStickerIdentity(templates[nextType].role, templates[nextType].style));
     setTexts(
       getDefaultFlowTexts(nextType, targetCount, nameMode, customName),
     );
@@ -5512,7 +5566,14 @@ export default function StickerPromptGenerator() {
               </label>
               <textarea
                 value={role}
-                onChange={(e) => setRole(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setRole(value);
+                  setIdentity(previous => ({
+                    ...previous,
+                    appearance: previous.appearance === role ? value : previous.appearance,
+                  }));
+                }}
                 rows={5}
                 className="mt-2 min-h-[140px] w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm leading-7 text-slate-700 outline-none focus:border-violet-400"
               />
@@ -5522,7 +5583,16 @@ export default function StickerPromptGenerator() {
               </label>
               <textarea
                 value={style}
-                onChange={(e) => setStyle(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setStyle(value);
+                  setIdentity(previous => ({
+                    ...previous,
+                    illustration: previous.illustration.startsWith(style)
+                      ? previous.illustration.replace(style, value)
+                      : previous.illustration,
+                  }));
+                }}
                 rows={4}
                 className="mt-2 min-h-[110px] w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm leading-7 text-slate-700 outline-none focus:border-violet-400"
               />
