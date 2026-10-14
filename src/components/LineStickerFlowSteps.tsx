@@ -76,7 +76,7 @@ export default function LineStickerFlowSteps({
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <div className="flex flex-col gap-2" aria-label="由上而下的五步驟導覽">
         {steps.map((item) => {
           const active = item.step === activeStep;
           const previous = item.step < activeStep;
@@ -86,31 +86,24 @@ export default function LineStickerFlowSteps({
               to={paths[item.step - 1]}
               aria-current={active ? "step" : undefined}
               aria-label={`第 ${item.step} 步：${item.title}，前往操作`}
-              className={`block rounded-2xl border p-3 transition hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-violet-600 ${
+              className={`flex min-h-12 flex-wrap items-center gap-3 rounded-xl border px-3 py-2.5 transition hover:shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-violet-600 ${
                 active
-                  ? "border-violet-500 bg-violet-50 ring-2 ring-violet-100"
+                  ? "border-violet-500 bg-violet-50 ring-1 ring-violet-100"
                   : previous
                     ? "border-slate-200 bg-white"
                     : "border-slate-200 bg-slate-50"
               }`}
             >
-              <div className="flex items-center gap-2">
-                <span
-                  className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-black ${
-                    active
-                      ? "bg-violet-600 text-white"
-                      : previous
-                        ? "bg-slate-200 text-slate-700"
-                        : "bg-slate-100 text-slate-500"
-                  }`}
-                >
-                  {item.step}
-                </span>
-                <span className="min-w-[5.5rem] flex-1 whitespace-normal break-keep text-xs font-black leading-5 text-slate-900">第 {item.step} 步｜{item.title}</span>
+              <span className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-black ${
+                active ? "bg-violet-600 text-white" : previous ? "bg-slate-200 text-slate-700" : "bg-slate-100 text-slate-500"
+              }`}>{item.step}</span>
+              <div className="min-w-0 flex-1">
+                <span className="block text-sm font-black text-slate-900">第 {item.step} 步｜{item.title}</span>
+                <span className="mt-0.5 block text-xs leading-5 text-slate-600">{item.desc}</span>
               </div>
-              <p className="mt-2 min-w-0 break-words text-[11px] leading-5 text-slate-500">{item.desc}</p>
-              <span className="mt-2 block text-[11px] leading-5 text-slate-600">想前往這一步？請按下方紫色文字。</span>
-              <span className="mt-1 inline-block text-[11px] font-bold text-violet-700">前往第 {item.step} 步 →</span>
+              <span className="shrink-0 text-xs font-black text-violet-700">
+                {active ? "目前步驟 ↓" : `前往第 ${item.step} 步 →`}
+              </span>
             </Link>
           );
         })}
