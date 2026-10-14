@@ -29,7 +29,7 @@ test("每段新手流程明確同時提供 ChatGPT 與 Google Gemini，且保留
   assert.match(prompt, /<StickerAIProviderLinks \/>/);
   assert.match(prompt, /<StickerAIProviderLinks compact \/>/);
   assert.match(guide, /<StickerAIProviderLinks \/>/);
-  assert.match(prompt, /請先按下方「複製第/);
+  assert.match(prompt, /複製第 1 張提示詞到 ChatGPT/);
   assert.match(prompt, /已從 ChatGPT 或 Gemini 下載完整大圖/);
   assert.match(prompt, /flow=1#mother-upload/);
   assert.match(progress, /ChatGPT（推薦）/);
