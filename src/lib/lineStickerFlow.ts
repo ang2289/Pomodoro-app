@@ -34,25 +34,41 @@ export function getAllowedCounts(mode: LineStickerMode): LineStickerCount[] {
   return mode === "animated" ? [8, 16, 24] : [8, 16, 24, 32, 40];
 }
 
-export function getMotherSheetPlan(count: LineStickerCount): MotherSheetPlanItem[] {
-  if (count === 8) return [{ grid: "4x2", count: 8, startIndex: 0, endIndex: 8 }];
-  if (count === 16) return [{ grid: "4x4", count: 16, startIndex: 0, endIndex: 16 }];
-  if (count === 24) {
-    return [
-      { grid: "4x4", count: 16, startIndex: 0, endIndex: 16 },
-      { grid: "4x2", count: 8, startIndex: 16, endIndex: 24 },
-    ];
+/** 共用母圖分頁配置。擴充張數時優先沿用 4 欄與既有 8／16／20 格版型。 */
+const PRESET_MOTHER_SHEET_PAGES: Record<number, readonly MotherSheetGrid[]> = {
+  8: ["4x2"],
+  16: ["4x4"],
+  24: ["4x4", "4x2"],
+  32: ["4x4", "4x4"],
+  40: ["4x5", "4x5"],
+};
+const MOTHER_SHEET_CAPACITY: Record<MotherSheetGrid, number> = {
+  "4x2": 8,
+  "4x4": 16,
+  "4x5": 20,
+};
+
+export function getMotherSheetPlan(count: LineStickerCount | number): MotherSheetPlanItem[] {
+  if (!Number.isSafeInteger(count) || count < 8 || count % 8 !== 0) {
+    throw new Error("貼圖總數需為 8 的倍數且至少 8 張。");
   }
-  if (count === 32) {
-    return [
-      { grid: "4x4", count: 16, startIndex: 0, endIndex: 16 },
-      { grid: "4x4", count: 16, startIndex: 16, endIndex: 32 },
-    ];
+  const knownPages = PRESET_MOTHER_SHEET_PAGES[count];
+  const pages: MotherSheetGrid[] = knownPages ? [...knownPages] : [];
+  if (!knownPages) {
+    let remaining = count;
+    while (remaining) {
+      const grid: MotherSheetGrid = remaining >= 16 ? "4x4" : "4x2";
+      pages.push(grid);
+      remaining -= MOTHER_SHEET_CAPACITY[grid];
+    }
   }
-  return [
-    { grid: "4x5", count: 20, startIndex: 0, endIndex: 20 },
-    { grid: "4x5", count: 20, startIndex: 20, endIndex: 40 },
-  ];
+  let startIndex = 0;
+  return pages.map((grid) => {
+    const size = MOTHER_SHEET_CAPACITY[grid];
+    const page = { grid, count: size, startIndex, endIndex: startIndex + size };
+    startIndex += size;
+    return page;
+  });
 }
 
 function makeProjectId() {
