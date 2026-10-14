@@ -4729,6 +4729,11 @@ export default function StickerPromptGenerator() {
     } catch { /* 無痕模式或儲存受限時仍可正常使用 */ }
   }, [businessAvatar, businessSignature]);
   const [style, setStyle] = useState(templates.businessPersonal.style);
+  const [sharedCharacter, setSharedCharacter] = useState<StickerCharacterLock>(() =>
+    defaultCharacterLock(templates.businessPersonal.label, templates.businessPersonal.role),
+  );
+  const [characterReference, setCharacterReference] = useState<{ name: string; url: string; scope: string } | null>(null);
+  const characterReferenceInput = useRef<HTMLInputElement>(null);
   const [texts, setTexts] = useState(
     getDefaultTextWithName("businessPersonal", "4x4", "none", "小宇"),
   );
@@ -4885,10 +4890,26 @@ export default function StickerPromptGenerator() {
     [type, texts, targetCount, nameMode, customName],
   );
   const saleRisks = useMemo(() => stickerSaleTextRisks(flowTexts), [flowTexts]);
-  const motherSheetPlan = useMemo(
-    () => getMotherSheetPlan(targetCount),
-    [targetCount],
-  );
+  const motherSheetPlan = useMemo(() => getMotherSheetPlan(targetCount), [targetCount]);
+  const referenceScope = `${type}:${targetCount}`;
+  const activeReference = characterReference?.scope === referenceScope ? characterReference : null;
+  useEffect(() => () => {
+    if (characterReference?.url) URL.revokeObjectURL(characterReference.url);
+  }, [characterReference?.url]);
+  function clearCharacterReference() {
+    setCharacterReference(null);
+    if (characterReferenceInput.current) characterReferenceInput.current.value = "";
+  }
+  function chooseCharacterReference(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!["image/png", "image/jpeg", "image/webp"].includes(file.type) || file.size > 15 * 1024 * 1024) {
+      alert("請選擇 15MB 以下 PNG、JPG 或 WebP 的第 1 張完整母圖。");
+      event.target.value = "";
+      return;
+    }
+    setCharacterReference({ name: file.name, url: URL.createObjectURL(file), scope: referenceScope });
+  }
   // 所有母圖沿用同一角色設定，不會因為 24／40 張分批產生就更換長相。
   // 真人似顏繪優先忠實參考本人照片，不額外覆蓋髮型及臉部特徵。
   const effectiveRole = useMemo(
@@ -4897,6 +4918,14 @@ export default function StickerPromptGenerator() {
       : role,
     [type, role, photoMode, businessAvatar, businessSignature],
   );
+  const characterLockText = useMemo(() => lockCharacterPrompt(
+    { ...sharedCharacter, identity: `${sharedCharacter.identity}\n工作與動作設定：${effectiveRole}` },
+    style,
+    { font: optionPrompt(FONT_STYLE_OPTIONS, fontStyle),
+      size: optionPrompt(TEXT_SIZE_OPTIONS, textSize),
+      color: optionPrompt(TEXT_COLOR_OPTIONS, textColor),
+      position: stickerPlacementRule(textPosition) },
+  ), [sharedCharacter, effectiveRole, style, fontStyle, textSize, textColor, textPosition]);
   const flowPrompts = useMemo(
     () =>
       motherSheetPlan.map((item, index) => {
@@ -4918,6 +4947,9 @@ export default function StickerPromptGenerator() {
             index + 1,
             stickerMode,
             stickerPlatform,
+            item.startIndex,
+            flowTexts,
+            characterLockText,
           ),
         };
       }),
@@ -4935,6 +4967,7 @@ export default function StickerPromptGenerator() {
       photoMode,
       stickerMode,
       stickerPlatform,
+      characterLockText,
     ],
   );
 
@@ -4986,6 +5019,8 @@ export default function StickerPromptGenerator() {
     setType(nextType);
     setRole(templates[nextType].role);
     setStyle(templates[nextType].style);
+    setSharedCharacter(defaultCharacterLock(templates[nextType].label, templates[nextType].role));
+    clearCharacterReference();
     setTexts(
       getDefaultFlowTexts(nextType, targetCount, nameMode, customName),
     );
@@ -5069,6 +5104,7 @@ export default function StickerPromptGenerator() {
       : nextMode === "animated"
         ? 16
         : targetCount;
+    if (nextCount !== targetCount) clearCharacterReference();
     setTargetCount(nextCount as LineStickerCount);
     const firstGrid = getMotherSheetPlan(nextCount as LineStickerCount)[0]?.grid;
     if (firstGrid) setGrid(firstGrid);
@@ -5083,6 +5119,7 @@ export default function StickerPromptGenerator() {
   }
 
   function handleTargetCount(nextCount: LineStickerCount) {
+    if (nextCount !== targetCount) clearCharacterReference();
     setTargetCount(nextCount);
     const firstGrid = getMotherSheetPlan(nextCount)[0]?.grid;
     if (firstGrid) setGrid(firstGrid);
