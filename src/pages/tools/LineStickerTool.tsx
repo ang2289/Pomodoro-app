@@ -1735,9 +1735,18 @@ export default function LineStickerTool() {
   const unsafeMotherSheets = useMemo(
     () => motherSheetDetections.flatMap((item) => {
       const grid = !flowProject && motherSheetGrid !== "auto" ? motherSheetGrid : item.grid;
-      return item.safetyByGrid[grid].blocked.map((message) => `${item.file.name}：${message}`);
+      const errors = item.safetyByGrid[grid].blocked.map((message) => `${item.file.name}：${message}`);
+      const requiresSquare4x4 = grid === "4x4" || expectedMotherSheetPlan.every((step) => step.grid === "4x4");
+      const aspect = item.width / Math.max(1, item.height);
+      // 4×4 每格應為近似正方形。4×2 有舊母圖採正方形畫布，不強制其比例。
+      if (requiresSquare4x4 && (aspect < 0.82 || aspect > 1.22)) {
+        errors.unshift(
+          `${item.file.name}：圖片 ${item.width}×${item.height}（長寬比 ${aspect.toFixed(2)}），不符合 4×4 母圖建議的 1:1 正方形版型。請回 ChatGPT／Gemini 重新產生正方形 4×4 母圖；不可強行改判格數硬切。`,
+        );
+      }
+      return errors;
     }),
-    [motherSheetDetections, motherSheetGrid, flowProject],
+    [motherSheetDetections, motherSheetGrid, flowProject, expectedMotherSheetPlan],
   );
 
   const overrideMotherSheetGrid = useCallback(
@@ -2654,7 +2663,7 @@ export default function LineStickerTool() {
                         🔎 母圖辨識結果
                       </p>
                       <p className="mt-1 text-xs leading-5 text-slate-500">
-                        系統會看實際內容排列，不只看圖片長寬；正方形畫布也可能是 4×2。若判錯，可在下方直接手動修正。
+                        系統會看內容排列與圖片比例。4×4（16 格）應使用接近 1:1 的正方形母圖；Gemini 若產生橫幅、漏格或額外英文，請先重新產圖。其他格數可檢查後手動修正，但不要將錯誤橫幅硬切成 4×4。
                       </p>
                     </div>
                     <button
