@@ -3214,12 +3214,12 @@ const TEXT_POSITION_OPTIONS: Array<{
   label: string;
   prompt: string;
 }> = [
-  { value: "top", label: "上方", prompt: "文字固定放在每格貼圖上方" },
-  { value: "bottom", label: "下方", prompt: "文字固定放在每格貼圖下方" },
+  { value: "top", label: "上方", prompt: "每格文字只能置於上方，人物與道具放在文字下方，禁止把文字改放左側、右側或底部" },
+  { value: "bottom", label: "下方", prompt: "每格文字只能置於下方，人物與道具放在文字上方，禁止把文字改放左側、右側或頂部" },
   {
     value: "mixed",
     label: "左右交錯",
-    prompt: "文字可依角色動作在上方、下方或左右交錯安排，但不可遮住角色與商品",
+    prompt: "左右交錯是強制左右分欄，不是上下交錯：第1、3、5、7等奇數格把完整文字放在格子左側、人物放右側；第2、4、6、8等偶數格文字放右側、人物放左側。每格保留足夠側邊空間，長句可在指定左／右區域換行；嚴禁將文字統一放在角色頭頂、格子上方或底部",
   },
 ];
 
@@ -3279,11 +3279,26 @@ const PHOTO_MODE_OPTIONS: Array<{
   },
 ];
 
+function optionLabel<T extends string>(
+  options: Array<{ value: T; label: string }>,
+  value: T,
+) {
+  return options.find((item) => item.value === value)?.label ?? "預設";
+}
+
 function optionPrompt<T extends string>(
   options: Array<{ value: T; label: string; prompt: string }>,
   value: T,
 ) {
   return options.find((item) => item.value === value)?.prompt ?? "";
+}
+
+function textPositionForCell(textPosition: TextPosition, index: number) {
+  if (textPosition === "top") return "文字放正上方、人物放下方";
+  if (textPosition === "bottom") return "文字放正下方、人物放上方";
+  return index % 2 === 0
+    ? "文字放左側、人物放右側（禁止文字在頂部）"
+    : "人物放左側、文字放右側（禁止文字在頂部）";
 }
 
 function buildRolePrompt(role: string, photoMode: PhotoMode) {
@@ -4103,7 +4118,7 @@ function buildPrompt(
   const rolePrompt = buildRolePrompt(role, photoMode);
   const photoReminder = buildPhotoReminder(photoMode);
 
-  return `請設計一張 LINE ${label}大圖，白色背景，${style}。\n\n商用販售安全：每格只能出現下方指定的主要貼圖短句，禁止在卡片、紙袋、花籃、店招、制服、道具額外產生任何文字、英文 NEW、價格、網址、QR Code、商標、店家 Logo、品牌字樣或促銷宣傳；角色、衣服與道具皆需為原創，不可仿畫知名品牌角色。圖文清晰易讀、避免多手多腳、勿遮住文字。\n\n${rolePrompt}\n\n風格加強：${stickerStylePrompt}。\n\n真人／原創設定：${photoModePrompt}。${photoReminder}\n\n請畫成 ${gridInfo.layoutText}。每格貼圖都要獨立清楚、平均排列。每一格的角色＋文字＋裝飾只佔該格中央約 70%～74%，上下左右至少保留約 13%～15% 的純白安全留白，格與格之間必須看得到明顯白色空間，方便後續平均切割。角色與文字都要完整置中在各自格子內，不可超出邊界、不可跨格、不可互相重疊；每格最外圈至少 13% 純白，格線附近不可有花瓣、陰影或字；若空間不足，寧可把角色與文字整體縮小，也不要貼邊。\n\n文字設定：請使用繁體中文，字型風格為「${fontStylePrompt}」，${textSizePrompt}，${textColorPrompt}，${textPositionPrompt}。文字必須清楚好讀，文字與頭髮、臉、手勢、手機、文件等主體至少保留明顯空隙，不可壓在人物或道具上；文字四周也要保留白邊，不要貼近格子邊界，不要切到字，不可出現序號、數字、標題、格號或列表符號。\n\n每張貼圖都要有不同表情與動作，整體風格一致、乾淨可愛、適合 LINE 貼圖使用。\n\n貼圖文字如下：\n${numberedTexts}`;
+  return `請設計一張 LINE ${label}大圖，白色背景，${style}。\n\n商用販售安全：每格只能出現下方指定的主要貼圖短句，禁止在卡片、紙袋、花籃、店招、制服、道具額外產生任何文字、英文 NEW、價格、網址、QR Code、商標、店家 Logo、品牌字樣或促銷宣傳；角色、衣服與道具皆需為原創，不可仿畫知名品牌角色。圖文清晰易讀、避免多手多腳、勿遮住文字。\n\n${rolePrompt}\n\n風格加強：${stickerStylePrompt}。\n\n真人／原創設定：${photoModePrompt}。${photoReminder}\n\n請畫成 ${gridInfo.layoutText}。每格貼圖都要獨立清楚、平均排列。每一格的角色＋文字＋裝飾只佔該格中央約 70%～74%，上下左右至少保留約 13%～15% 的純白安全留白，格與格之間必須看得到明顯白色空間，方便後續平均切割。角色與文字都要完整置中在各自格子內，不可超出邊界、不可跨格、不可互相重疊；每格最外圈至少 13% 純白，格線附近不可有花瓣、陰影或字；若空間不足，寧可把角色與文字整體縮小，也不要貼邊。\n\n文字設定（優先於其他畫風描述）：請使用繁體中文。字型造型遵守「${fontStylePrompt}」；文字大小遵守「${textSizePrompt}」；填色、描邊與文字效果遵守「${textColorPrompt}」；**文字所在區域必須嚴格遵守「${textPositionPrompt}」**。若背景情境或貼圖風格暗示不同的位置，仍以本次「文字位置」選項為準；不能因為傳統貼圖習慣就把所有文字置頂。文字必須清楚好讀，文字與頭髮、臉、手勢、手機、文件等主體至少保留明顯空隙，不可壓在人物或道具上；文字四周也要保留白邊，不要貼近格子邊界，不要切到字，不可出現序號、數字、標題、格號或列表符號。\n\n每張貼圖都要有不同表情與動作，整體風格一致、乾淨可愛、適合 LINE 貼圖使用。\n\n貼圖文字如下：\n${numberedTexts}`;
 }
 
 function buildStablePrompt(
@@ -4265,7 +4280,7 @@ function buildFlowPrompt(
   const ratio = grid === "4x2" ? "2:1 橫向" : grid === "4x4" ? "1:1 正方形" : "4:5 直向";
   const rowAssignment = Array.from({ length: rows }, (_, row) => {
     const cells = batchTexts.slice(row * columns, (row + 1) * columns);
-    return `第 ${row + 1} 列（由左至右）：${cells.map((text, column) => `第 ${column + 1} 格「${text}」`).join("、")}`;
+    return `第 ${row + 1} 列（由左至右）：${cells.map((text, column) => `第 ${column + 1} 格「${text}」〔${textPositionForCell(textPosition, row * columns + column)}〕`).join("、")}`;
   }).join("\n");
 
   return `請直接生成圖片，不要先提供企劃、說明或提示詞。
@@ -4275,13 +4290,14 @@ function buildFlowPrompt(
 ${base}
 
 最終版型僅此一種：${columns} 欄 × ${rows} 列（${grid.replace("x", "×")}、共 ${columns * rows} 格），畫布採用 ${ratio} 比例。禁止改成其他列數、欄數、橫幅或任意拼貼。
-每格短句位置必須依下表由左到右、由上到下排列，${columns * rows} 句各出現一次，不可遺漏、不可重複、不可更換成其他文字：
+每格短句位置必須依下表由左到右、由上到下排列，${columns * rows} 句各出現一次，不可遺漏、不可重複、不可更換成其他文字。每一格的「文字／人物相對位置」是強制條件，不能因圖像排版習慣而擅自改成上方標題：
 ${rowAssignment}
 
 重要規則：
 - 只輸出一張完整母圖；每一列固定 ${columns} 格，總共固定 ${rows} 列。
 - 只能使用以上 ${grid.replace("x", "×")} 排列，不要自行選擇其他格數。
 - 每格只能有指定的單句繁體中文，不能在手牌、道具、卡片、緞帶、招牌、背景另寫英文、中文、數字或其他字樣。
+- 左右交錯時，奇數格文字在左、偶數格文字在右，人物必須在相反側；長句可在各自指定側換行，但不得將文字移到頭頂或整排上方。其他文字位置設定則嚴格依上方選項執行。
 - 每格只能是一張獨立貼圖，人物與文字不可跨格。
 - 格與格之間保留明顯白色空間，不要畫格線。
 - 背景使用純白色，方便下一步自動去背與裁切。
@@ -5236,7 +5252,7 @@ export default function StickerPromptGenerator() {
                 </div>
                 <div>
                   <label className="block text-xs font-black text-slate-500">
-                    文字位置
+                    文字位置（確定文字要放哪裡）
                   </label>
                   <select
                     value={textPosition}
@@ -5251,6 +5267,13 @@ export default function StickerPromptGenerator() {
                       </option>
                     ))}
                   </select>
+                  <p className="mt-2 text-xs font-bold leading-6 text-amber-800">
+                    {textPosition === "mixed"
+                      ? "左右交錯＝第 1 格文字左、人物右；第 2 格人物左、文字右；之後依序交替。不是文字全部放上面。"
+                      : textPosition === "top"
+                        ? "已選上方：每格文字必須在人物上方。"
+                        : "已選下方：每格文字必須在人物下方。"}
+                  </p>
                 </div>
                 <div>
                   <label className="block text-xs font-black text-slate-500">
@@ -5359,6 +5382,24 @@ export default function StickerPromptGenerator() {
                 <p className="mt-2 text-sm leading-7 text-slate-700">① 先按下方「複製第 1 張畫圖指令」：ChatGPT 選一般版、Gemini 選強化版 → ② 開啟所選平台 → ③ 貼上並送出。</p>
                 <StickerAIProviderLinks />
                 <p className="mt-2 text-xs leading-6 text-slate-600">RXV 只複製文字，不會自動幫你貼到其他平台。若要求登入，請使用自己的帳號。</p>
+              </div>
+              <div className="mt-4 rounded-2xl border border-violet-200 bg-white p-4">
+                <p className="text-sm font-black text-violet-900">即將複製的貼圖設定（修改第 1 步選項後會同步更新）</p>
+                <div className="mt-2 flex flex-wrap gap-2 text-xs font-bold text-slate-700">
+                  {[
+                    `文字位置：${optionLabel(TEXT_POSITION_OPTIONS, textPosition)}`,
+                    `字型：${optionLabel(FONT_STYLE_OPTIONS, fontStyle)}`,
+                    `字大小：${optionLabel(TEXT_SIZE_OPTIONS, textSize)}`,
+                    `顏色／文字效果：${optionLabel(TEXT_COLOR_OPTIONS, textColor)}`,
+                    `貼圖風格：${optionLabel(STICKER_STYLE_OPTIONS, stickerStylePreset)}`,
+                    `角色來源：${optionLabel(PHOTO_MODE_OPTIONS, photoMode)}`,
+                    `名稱：${optionLabel(NAME_MODE_OPTIONS, nameMode)}`,
+                  ].map((label) => (
+                    <span key={label} className="rounded-lg bg-violet-50 px-3 py-2">{label}</span>
+                  ))}
+                </div>
+                <p className="mt-2 text-xs leading-6 text-slate-600">角色內容、畫風描述及每句短句也會以目前欄位輸入的內容為準。這些只是給 AI 的指令，不會直接修改已產出的圖片。</p>
+                <p className="mt-1 text-xs font-black leading-5 text-amber-800">請確認以上選項正確，再按下方「複製 ChatGPT 指令」；若剛調整文字位置，請重新複製新指令並重新生圖。</p>
               </div>
               <div className="mt-4 space-y-4">
                 {flowPrompts.map((item, index) => (
