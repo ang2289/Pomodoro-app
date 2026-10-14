@@ -2412,7 +2412,7 @@ export default function LineStickerTool() {
 
           <section className="mb-5 rounded-2xl border border-sky-200 bg-white p-4 shadow-sm">
             <h2 className="text-sm font-black text-slate-900">輸出平台｜同一張母圖可製作 LINE 或 WhatsApp 貼圖</h2>
-            <div className="mt-3 flex flex-wrap items-center gap-3">
+            <div className="mt-3 grid w-full max-w-[520px] grid-cols-2 items-stretch gap-3" role="group" aria-label="選擇貼圖輸出平台">
               <button type="button" onClick={() => {
                   setExportPlatform("line");
                   setWhatsAppReadyZip(null);
@@ -2421,8 +2421,8 @@ export default function LineStickerTool() {
                   setDownloadCompleted(false);
                 }}
                 aria-pressed={exportPlatform === "line"}
-                className={`inline-flex min-h-12 w-auto max-w-full shrink-0 items-center justify-center rounded-xl border-2 px-4 py-2 text-sm font-black transition-colors ${exportPlatform === "line" ? "border-emerald-500 bg-emerald-50 text-emerald-800 shadow-sm" : "border-slate-300 bg-white text-slate-700 hover:border-emerald-300 hover:bg-emerald-50"}`}>
-                {exportPlatform === "line" ? "✓ 已選 LINE · PNG／APNG" : "LINE · PNG／APNG"}
+                className={`inline-flex min-h-12 w-full min-w-0 items-center justify-center rounded-xl border-2 px-3 py-3 text-center text-sm font-bold leading-5 shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:border-violet-500 hover:bg-violet-100 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 active:translate-y-0 ${exportPlatform === "line" ? "border-violet-600 bg-violet-600 text-white shadow-md hover:bg-violet-700 hover:text-white" : "border-violet-200 bg-violet-50 text-violet-900"}`}>
+                {exportPlatform === "line" ? "✓ LINE · PNG／APNG" : "LINE · PNG／APNG"}
               </button>
               <button type="button" onClick={() => {
                   setExportPlatform("whatsapp");
@@ -2432,8 +2432,8 @@ export default function LineStickerTool() {
                   setDownloadCompleted(false);
                 }}
                 aria-pressed={exportPlatform === "whatsapp"}
-                className={`inline-flex min-h-12 w-auto max-w-full shrink-0 items-center justify-center rounded-xl border-2 px-4 py-2 text-sm font-black transition-colors ${exportPlatform === "whatsapp" ? "border-emerald-500 bg-emerald-50 text-emerald-800 shadow-sm" : "border-slate-300 bg-white text-slate-700 hover:border-emerald-300 hover:bg-emerald-50"}`}>
-                {exportPlatform === "whatsapp" ? "✓ 已選 WhatsApp · WebP" : "WhatsApp · 靜態 WebP"}
+                className={`inline-flex min-h-12 w-full min-w-0 items-center justify-center rounded-xl border-2 px-3 py-3 text-center text-sm font-bold leading-5 shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:border-violet-500 hover:bg-violet-100 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 active:translate-y-0 ${exportPlatform === "whatsapp" ? "border-violet-600 bg-violet-600 text-white shadow-md hover:bg-violet-700 hover:text-white" : "border-violet-200 bg-violet-50 text-violet-900"}`}>
+                {exportPlatform === "whatsapp" ? "✓ WhatsApp · WebP" : "WhatsApp · WebP"}
               </button>
             </div>
             <p className="mt-2 text-xs leading-6 text-slate-600">
@@ -2906,12 +2906,13 @@ export default function LineStickerTool() {
                     已從第 1 步帶入：{stickerCount} 張，不需要再選一次
                   </div>
                 ) : (
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2" role="group" aria-label="選擇貼圖張數">
                     {STICKER_SIZES.map((n) => (
                       <button
                         key={n}
                         onClick={() => setStickerCount(n)}
-                        className={`min-w-[52px] shrink-0 whitespace-nowrap rounded-lg px-3 py-2 text-xs font-bold transition-all ${stickerCount === n ? "bg-blue-600 text-white shadow-md" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}
+                        aria-pressed={stickerCount === n}
+                        className={`inline-flex min-h-11 w-[68px] shrink-0 items-center justify-center rounded-lg border-2 px-2 py-2 text-xs font-bold shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:border-violet-500 hover:bg-violet-100 hover:text-violet-900 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 active:translate-y-0 ${stickerCount === n ? "border-violet-600 bg-violet-600 text-white shadow-md hover:bg-violet-700 hover:text-white" : "border-violet-200 bg-violet-50 text-violet-900"}`}
                       >
                         {n}
                       </button>
