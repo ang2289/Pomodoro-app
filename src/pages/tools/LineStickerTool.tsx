@@ -190,10 +190,10 @@ function StickerWorkflowAssist() {
         </a>
       </div>
 
-      <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+      <div className="mt-4 flex flex-wrap items-center gap-3">
         <Link
           to="/tools/sticker-prompt"
-          className="inline-flex flex-1 items-center justify-center rounded-2xl bg-violet-600 px-5 py-3 text-sm font-black !text-white shadow-md transition hover:bg-violet-700 hover:!text-white active:scale-[0.98] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-xl hover:brightness-110"
+          className="inline-flex w-fit max-w-full items-center justify-center rounded-2xl bg-violet-600 px-5 py-3 text-sm font-black !text-white shadow-md transition hover:bg-violet-700 hover:!text-white active:scale-[0.98] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-xl hover:brightness-110"
         >
           ✨ 先產生貼圖提示詞
         </Link>
@@ -201,14 +201,14 @@ function StickerWorkflowAssist() {
           href={PHOTOROOM_BG_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex flex-1 items-center justify-center rounded-2xl bg-purple-600 px-5 py-3 text-sm font-black !text-white shadow-md transition hover:bg-purple-700 hover:!text-white duration-200 ease-out hover:-translate-y-0.5 hover:shadow-xl hover:brightness-110 active:scale-[0.98]"
+          className="inline-flex w-fit max-w-full items-center justify-center rounded-2xl bg-purple-600 px-5 py-3 text-sm font-black !text-white shadow-md transition hover:bg-purple-700 hover:!text-white duration-200 ease-out hover:-translate-y-0.5 hover:shadow-xl hover:brightness-110 active:scale-[0.98]"
           style={{ color: "#ffffff" }}
         >
           🪄 PhotoRoom 去背
         </a>
         <Link
           to="/tools/sticker-splitter"
-          className="inline-flex flex-1 items-center justify-center rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-black !text-white shadow-md transition hover:bg-emerald-700 hover:!text-white duration-200 ease-out hover:-translate-y-0.5 hover:shadow-xl hover:brightness-110 active:scale-[0.98]"
+          className="inline-flex w-fit max-w-full items-center justify-center rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-black !text-white shadow-md transition hover:bg-emerald-700 hover:!text-white duration-200 ease-out hover:-translate-y-0.5 hover:shadow-xl hover:brightness-110 active:scale-[0.98]"
           style={{ color: "#ffffff" }}
         >
           🔪 本站圖片分割工具
