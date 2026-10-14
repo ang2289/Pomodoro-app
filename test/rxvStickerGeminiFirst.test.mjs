@@ -159,8 +159,8 @@ test("第 2 步顯示全部已選設定，母圖提示詞逐格指定位置並�
   assert.match(source, /optionLabel\(PHOTO_MODE_OPTIONS, photoMode\)/);
   assert.match(source, /modeInstructions = mode === "animated"/);
   assert.match(source, /platform === "whatsapp" \? "WhatsApp" : "LINE"/);
-  assert.match(source, /stickerMode,\s*stickerPlatform,\s*item.startIndex,\s*flowTexts,\s*characterLockText,/);
-  assert.match(source, /motherSheetPlan,[\s\S]*?textPosition,\s*fontStyle,[\s\S]*?stickerMode,\s*stickerPlatform,\s*characterLockText/);
+  assert.match(source, /stickerMode,\s*stickerPlatform,\s*item.startIndex,\s*flowTexts,\s*promptProfile.characterLockText,/);
+  assert.match(source, /motherSheetPlan,[\s\S]*?promptProfile.textPosition,\s*promptProfile.fontStyle,[\s\S]*?stickerMode,\s*stickerPlatform,\s*promptProfile.characterLockText/);
   assert.doesNotMatch(source, /人物從第一格到最後一格保持完全同一組新郎新娘/);
 });
 
@@ -286,7 +286,7 @@ test("業務個人品牌角色可選外觀並固定整套母圖，不再所有�
   assert.match(source, /businessAvatarPrompt\(businessAvatar, businessSignature\)/);
   assert.match(source, /const effectiveRole = useMemo/);
   assert.match(source, /type === "businessPersonal" && photoMode === "original"/);
-  assert.match(source, /effectiveRole,\s*style,\s*item.grid,/);
+  assert.match(source, /promptProfile.role,\s*promptProfile.style,\s*item.grid,/);
   assert.match(source, /effectiveRole,\s*style,\s*grid,\s*texts,/);
   assert.match(source, /effectiveRole,\s*style,\s*grid,\s*stickerStylePreset,/);
   assert.match(source, /localStorage\.setItem\(BUSINESS_AVATAR_STORAGE_KEY/);
@@ -435,4 +435,21 @@ test("第二張角色參考圖僅保留瀏覽器本機，選圖、清除與跨�
   assert.match(prompt, /const characterLockText = useMemo/);
   assert.match(prompt, /characterLockText,/);
   assert.match(prompt, /lockCharacterPrompt\(/);
+});
+
+test("複製第 1 張後自動鎖住整套角色、服裝與文字風格，第二張無法意外改設定", () => {
+  const source = read("src/pages/tools/StickerPromptGenerator.tsx");
+  assert.match(source, /const \[lockedProfile, setLockedProfile\] = useState/);
+  assert.match(source, /if \(index === 0 && !activeProfile\) setLockedProfile\(currentProfile\)/);
+  assert.match(source, /const promptProfile = activeProfile \?\? currentProfile/);
+  assert.match(source, /promptProfile\.role/);
+  assert.match(source, /promptProfile\.style/);
+  assert.match(source, /promptProfile\.textColor/);
+  assert.match(source, /promptProfile\.textPosition/);
+  assert.match(source, /promptProfile\.characterLockText/);
+  assert.match(source, /解鎖並重新製作第 1 張/);
+  assert.match(source, /setLockedProfile\(null\)/);
+  assert.match(source, /已在 RXV 選取參考圖/);
+  assert.match(source, /本網站僅複製文字，不會自動附圖或上傳/);
+  assert.match(source, /const referenceScope = JSON\.stringify/);
 });
