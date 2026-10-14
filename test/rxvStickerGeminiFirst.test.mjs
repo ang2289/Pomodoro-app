@@ -1,6 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import vm from "node:vm";
+import ts from "typescript";
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
@@ -125,4 +127,43 @@ test("自訂文字和字型在新手頁預設顯示，並且設定實際寫入�
   assert.match(prompt, /文字大小/);
   assert.match(prompt, /文字顏色/);
   assert.match(prompt, /文字位置/);
+});
+
+test("左右交錯一定要左右排列，三種文字位置的實際規則都依照選項", () => {
+  const source = read("src/pages/tools/StickerPromptGenerator.tsx");
+  const matched = source.match(/function textPositionForCell\(textPosition: TextPosition, index: number\) \{[\s\S]*?\n\}/);
+  assert.ok(matched, "應存在可驗證的逐格位置規則");
+  const javascript = ts.transpileModule(matched[0], {
+    compilerOptions: { target: ts.ScriptTarget.ES2022 },
+  }).outputText;
+  const position = vm.runInNewContext(javascript + "\ntextPositionForCell", {});
+  for (let index = 0; index < 16; index += 1) {
+    const mixed = position("mixed", index);
+    if (index % 2 === 0) {
+      assert.match(mixed, /文字放左側、人物放右側/);
+    } else {
+      assert.match(mixed, /人物放左側、文字放右側/);
+    }
+    assert.match(position("top", index), /文字放正上方/);
+    assert.match(position("bottom", index), /文字放正下方/);
+  }
+  assert.doesNotMatch(source, /文字可依角色動作在上方、下方或左右交錯安排/);
+});
+
+test("第 2 步顯示全部已選設定，母圖提示詞逐格指定位置並支援平台及動靜態", () => {
+  const source = read("src/pages/tools/StickerPromptGenerator.tsx");
+  assert.match(source, /textPositionForCell\(textPosition, row \* columns \+ column\)/);
+  assert.match(source, /文字所在區域必須嚴格遵守/);
+  assert.match(source, /即將複製的貼圖設定/);
+  assert.match(source, /optionLabel\(TEXT_POSITION_OPTIONS, textPosition\)/);
+  assert.match(source, /optionLabel\(FONT_STYLE_OPTIONS, fontStyle\)/);
+  assert.match(source, /optionLabel\(TEXT_SIZE_OPTIONS, textSize\)/);
+  assert.match(source, /optionLabel\(TEXT_COLOR_OPTIONS, textColor\)/);
+  assert.match(source, /optionLabel\(STICKER_STYLE_OPTIONS, stickerStylePreset\)/);
+  assert.match(source, /optionLabel\(PHOTO_MODE_OPTIONS, photoMode\)/);
+  assert.match(source, /modeInstructions = mode === "animated"/);
+  assert.match(source, /platform === "whatsapp" \? "WhatsApp" : "LINE"/);
+  assert.match(source, /stickerMode,\s*stickerPlatform,\s*\),/);
+  assert.match(source, /\[\s*motherSheetPlan,[\s\S]*?textPosition,\s*fontStyle,[\s\S]*?stickerMode,\s*stickerPlatform,\s*\]/);
+  assert.doesNotMatch(source, /人物從第一格到最後一格保持完全同一組新郎新娘/);
 });
