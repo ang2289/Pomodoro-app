@@ -3258,12 +3258,12 @@ const STICKER_STYLE_OPTIONS: Array<{
 // 每個新專案隨機產生一組角色外觀（只在載入時執行一次），可再手動選擇及鎖定。
 const BUSINESS_AVATAR_OPTIONS = {
   persona: [
-    "30 歲左右、幹練的台灣女性業務",
-    "40 歲左右、沉穩溫暖的台灣男性顧問",
-    "20 多歲、活潑有親和力的台灣女性業務",
-    "35 歲左右、斯文可靠的台灣男性業務",
-    "50 歲左右、成熟專業的台灣女性顧問",
-    "30 歲左右、中性俐落形象的台灣業務",
+    "親切可靠的台灣業務顧問",
+    "講究效率的台灣房仲服務專員",
+    "活潑友善的台灣客戶服務顧問",
+    "沉穩細心的台灣專業業務",
+    "風格獨特的台灣個人品牌顧問",
+    "溫暖健談的台灣業務代表",
   ],
   hair: [
     "俐落黑色短髮、側分瀏海",
@@ -3306,7 +3306,7 @@ const BUSINESS_AVATAR_OPTIONS = {
 type BusinessAvatarKey = keyof typeof BUSINESS_AVATAR_OPTIONS;
 type BusinessAvatarSelection = Record<BusinessAvatarKey, string>;
 const BUSINESS_AVATAR_LABELS: Record<BusinessAvatarKey, string> = {
-  persona: "人物形象",
+  persona: "職業形象",
   hair: "髮型與髮色",
   clothes: "服裝搭配",
   accessory: "記憶點配件",
@@ -3346,6 +3346,63 @@ function businessAvatarPrompt(choice: BusinessAvatarSelection, signature: string
 - 固定配件：${choice.accessory}
 - 角色配色：${choice.palette}
 ${detail ? `- 自訂辨識特徵：${detail}（只改造型，不得變成道具上額外文字或商標）\n` : ""}全部格子以及後續第 2 張母圖都必須維持同一張臉、髮型、服裝、配件及配色，不能一格變一個人；僅改表情與手勢。這是一位獨立設計的原創人物，避免套用常見的棕髮白襯衫深色背心模板。`;
+}
+
+// 不將性別、年齡與個性寫死在每個職業模板；新手能直接選擇並套用到整套母圖。
+const ORIGINAL_CHARACTER_OPTIONS = {
+  gender: [
+    "依主題預設", "女性", "男性", "中性／不指定性別",
+  ],
+  age: [
+    "依主題預設", "幼兒（4～6 歲）", "兒童（7～12 歲）", "青少年（13～17 歲）",
+    "年輕成人（18～30 歲）", "中年（31～55 歲）", "熟齡（56～70 歲）", "長者（70 歲以上）",
+  ],
+  personality: [
+    "依主題預設", "活潑開朗", "溫柔療癒", "沉穩可靠", "幽默調皮",
+    "親切熱情", "知性優雅", "自信俐落", "害羞內向", "天真好奇", "酷帥冷靜",
+  ],
+  face: [
+    "依主題預設", "圓臉笑眼", "鵝蛋臉杏眼", "方圓臉與濃眉", "細長眼與微笑嘴角",
+    "小雀斑與小巧鼻子", "酒窩與大眼睛", "溫柔下垂眼",
+  ],
+} as const;
+type OriginalCharacterKey = keyof typeof ORIGINAL_CHARACTER_OPTIONS;
+type OriginalCharacterTraits = Record<OriginalCharacterKey, string>;
+const ORIGINAL_CHARACTER_LABELS: Record<OriginalCharacterKey,string> = {
+  gender:"性別與人物形象",
+  age:"年齡層",
+  personality:"角色性格",
+  face:"臉型／五官特色",
+};
+const ORIGINAL_CHARACTER_DEFAULT: OriginalCharacterTraits = {
+  gender:"依主題預設", age:"依主題預設", personality:"依主題預設", face:"依主題預設",
+};
+function randomOriginalCharacter(): OriginalCharacterTraits {
+  const random = (items: readonly string[]) => items[1 + Math.floor(Math.random() * (items.length - 1))] || items[1] || items[0];
+  return {
+    gender:random(ORIGINAL_CHARACTER_OPTIONS.gender),
+    age:random(ORIGINAL_CHARACTER_OPTIONS.age),
+    personality:random(ORIGINAL_CHARACTER_OPTIONS.personality),
+    face:random(ORIGINAL_CHARACTER_OPTIONS.face),
+  };
+}
+function applyOriginalCharacterTraits(
+  base: StickerIdentity,
+  choice: OriginalCharacterTraits,
+  profession: string,
+): StickerIdentity {
+  const picked = (key: OriginalCharacterKey) => choice[key] !== "依主題預設";
+  // 新手的簡單選擇優先於該職業模板原有的性別、年齡及五官預設。
+  return {
+    ...base,
+    appearance: picked("gender") || picked("age")
+      ? `職業與主題：${profession}；主角性別：${picked("gender") ? choice.gender : "依主題預設"}；主角年齡：${picked("age") ? choice.age : "依主題預設"}。若其他段落出現不同性別或年齡，以上選擇優先。`
+      : base.appearance,
+    face: picked("face") ? `${choice.face}；固定臉型、五官比例及膚色，全套一致` : base.face,
+    accessories: picked("personality")
+      ? `${base.accessories}；人物性格固定為「${choice.personality}」，以表情、眼神、姿態表現，不擅自加入文字`
+      : base.accessories,
+  };
 }
 
 const PHOTO_MODE_OPTIONS: Array<{
@@ -4829,6 +4886,7 @@ export default function StickerPromptGenerator() {
   }, []);
   const [businessAvatar, setBusinessAvatar] = useState<BusinessAvatarSelection>(savedBusinessAvatar);
   const [businessSignature, setBusinessSignature] = useState(savedBusinessSignature);
+  const [characterTraits, setCharacterTraits] = useState<OriginalCharacterTraits>(randomOriginalCharacter);
   useEffect(() => {
     try {
       localStorage.setItem(BUSINESS_AVATAR_STORAGE_KEY, JSON.stringify(businessAvatar));
@@ -4998,8 +5056,8 @@ export default function StickerPromptGenerator() {
   );
   // 所有母圖沿用同一角色設定，不會因為 24／40 張分批產生就更換長相。
   // 真人似顏繪優先忠實參考本人照片，不額外覆蓋髮型及臉部特徵。
-  const lockedIdentity = useMemo(
-    () => type === "businessPersonal" && photoMode === "original"
+  const lockedIdentity = useMemo(() => {
+    const businessBase: StickerIdentity = type === "businessPersonal" && photoMode === "original"
       ? {
           ...identity,
           appearance: businessAvatar.persona,
@@ -5008,9 +5066,13 @@ export default function StickerPromptGenerator() {
           accessories: `${businessAvatar.accessory}；${businessSignature.trim() || "不額外增加固定配件"}`,
           coloring: `${identity.coloring}；固定色系：${businessAvatar.palette}`,
         }
-      : identity,
-    [type, photoMode, identity, businessAvatar, businessSignature],
-  );
+      : identity;
+    // 真人參考、多人角色與動物主題不強制套用單一人物的性別與年齡。
+    const multipleOrNonHuman = /情侶|夫妻|新郎|新娘|兩位|一家|全家|寵物|貓咪|狗狗|兔子|佛像|觀音|動物|怪獸|機器人/.test(role);
+    return photoMode === "original" && !multipleOrNonHuman
+      ? applyOriginalCharacterTraits(businessBase, characterTraits, templates[type].label)
+      : businessBase;
+  }, [type, photoMode, role, identity, businessAvatar, businessSignature, characterTraits]);
   const identityLock = useMemo(
     () => makeStickerIdentityLock(lockedIdentity, fontStyle, textSize, textColor, textPosition),
     [lockedIdentity, fontStyle, textSize, textColor, textPosition],
@@ -5114,6 +5176,7 @@ export default function StickerPromptGenerator() {
     setRole(templates[nextType].role);
     setStyle(templates[nextType].style);
     setIdentity(defaultStickerIdentity(templates[nextType].role, templates[nextType].style));
+    setCharacterTraits({ ...ORIGINAL_CHARACTER_DEFAULT });
     setTexts(
       getDefaultFlowTexts(nextType, targetCount, nameMode, customName),
     );
@@ -5539,6 +5602,34 @@ export default function StickerPromptGenerator() {
                 </div>
               </div>
 
+
+              {photoMode === "original" && !/情侶|夫妻|新郎|新娘|兩位|一家|全家|寵物|貓咪|狗狗|兔子|佛像|觀音|動物|怪獸|機器人/.test(role) && (
+                <section className="mt-5 rounded-xl border border-slate-200 bg-white p-4" aria-label="自選角色性別、年齡、個性與五官">
+                  <h4 className="text-base font-bold text-slate-900">我的角色要長什麼樣子？</h4>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">男生、女生、中性、年輕、長者、兒童都能選。也能選性格和臉型，讓作品更有自己的特色。</p>
+                  <button type="button"
+                    onClick={() => setCharacterTraits(randomOriginalCharacter())}
+                    className="mt-3 inline-flex min-h-11 items-center justify-center rounded-lg border-2 border-violet-300 bg-violet-50 px-4 py-2 text-sm font-semibold text-violet-800 transition-colors hover:border-violet-600 hover:bg-violet-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
+                  >幫我隨機搭配不同角色 ↻</button>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    {(Object.keys(ORIGINAL_CHARACTER_OPTIONS) as OriginalCharacterKey[]).map((key) => (
+                      <label key={key} className="text-sm font-medium text-slate-700">
+                        {ORIGINAL_CHARACTER_LABELS[key]}
+                        <select value={characterTraits[key]}
+                          onChange={(e) => setCharacterTraits(previous => ({...previous, [key]: e.target.value}))}
+                          className="mt-1.5 min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-violet-500">
+                          {ORIGINAL_CHARACTER_OPTIONS[key].map(item => <option key={item} value={item}>{item}</option>)}
+                        </select>
+                      </label>
+                    ))}
+                  </div>
+                  <p className="mt-3 text-xs leading-5 text-slate-600">
+                    想更特別？下方還能設定髮型、服裝、固定配件、配色、Q 版頭身比及線條畫風。
+                    以上只修改新的生圖提示詞，已生成的圖片不會自動變更。
+                    年齡、性別和個性可能影響角色畫法，但不能保證每位使用者都畫出完全獨一無二的人物。
+                  </p>
+                </section>
+              )}
 
               {type === "businessPersonal" && photoMode === "original" && (
                 <section className="mt-6 rounded-xl border border-violet-200 bg-violet-50/50 p-4" aria-label="業務專屬角色設計">
