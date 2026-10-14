@@ -3162,6 +3162,110 @@ export default function LineStickerTool() {
                   />
                 ))}
               </div>
+              <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <h4 className="text-sm font-bold text-slate-900">選擇代表人物／主圖</h4>
+                <p className="mt-1 text-xs leading-6 text-slate-600">
+                  請選一張最能代表主角的貼圖，系統會用於 LINE 的 main.png、tab.png。
+                  這裡是選「哪張貼圖當封面」，不會自動換掉圖片裡的人物。
+                </p>
+                <div className="mt-3 flex flex-wrap items-center gap-3">
+                  <label htmlFor="main-character-sticker" className="text-sm font-semibold text-slate-700">代表圖</label>
+                  <select
+                    id="main-character-sticker"
+                    value={Math.min(mainImageIndex, Math.max(0, Math.min(files.length, stickerCount) - 1))}
+                    onChange={(event) => setMainImageIndex(Number(event.target.value))}
+                    className="min-h-11 w-44 max-w-full rounded-lg border-2 border-violet-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-violet-600"
+                  >
+                    {files.slice(0, stickerCount).map((item, index) => (
+                      <option key={item.id} value={index}>{`第 ${String(index + 1).padStart(2, "0")} 張貼圖`}</option>
+                    ))}
+                  </select>
+                  <Link
+                    to="/tools/sticker-prompt#sticker-customize"
+                    className="inline-flex min-h-11 items-center justify-center rounded-lg border border-violet-200 bg-white px-4 py-2 text-sm font-semibold text-violet-800 transition-colors hover:border-violet-500 hover:bg-violet-50"
+                  >
+                    想換人物髮型／服裝？回第 1 步設定 →
+                  </Link>
+                </div>
+                <p className="mt-2 text-xs text-slate-500">重新設定人物不會直接改變已上傳的圖片，需重新到 ChatGPT 生圖並上傳。</p>
+              </div>
+        <div id="sticker-download" className="scroll-mt-24" />
+        <footer aria-label="第 5 步：貼圖下載或動態製作" className="mx-auto mt-6 max-w-3xl rounded-2xl border border-slate-200 bg-white px-3 py-4 shadow-sm sm:px-4">
+          <div className="mx-auto">
+            <p className="mb-2 text-center text-xs font-bold leading-5 text-slate-700">
+              {canDownload
+                ? (flowProject?.mode === "animated"
+                    ? "下一步請按下方「第 5 步｜製作動態貼圖」按鈕。"
+                    : "下一步請按下方「步驟 5｜下載貼圖 ZIP」按鈕。")
+                : "下一步：先到上方第 3 步上傳整張母圖，完成切割預覽後才能下載。"}
+            </p>
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+            <div className="hidden sm:block">
+              <p className="text-[10px] font-bold text-slate-400 uppercase leading-none">
+                {t("line_sticker_status_label")}
+              </p>
+              <p
+                className={`text-sm font-black leading-none mt-1 ${canDownload ? "text-emerald-500" : "text-amber-500"}`}
+              >
+                {canDownload
+                  ? t("line_sticker_ready")
+                  : t("line_sticker_need_more", { count: needMore })}
+              </p>
+            </div>
+
+            {flowProject?.mode === "animated" ? (
+              <>
+                <button
+                  onClick={exportPlatform === "whatsapp" ? generateWhatsAppZip : generateZip}
+                  disabled={!canDownload || loading}
+                  className={`hidden min-h-[52px] rounded-2xl px-4 py-3 text-xs font-black sm:inline-flex sm:items-center sm:justify-center ${
+                    !canDownload || loading
+                      ? "cursor-not-allowed bg-slate-100 text-slate-400"
+                      : "border border-blue-200 bg-white text-blue-700 hover:bg-blue-50"
+                  }`}
+                >
+                  {exportPlatform === "whatsapp" ? "另存 WhatsApp 靜態 ZIP" : "另存 LINE 靜態備份 ZIP"}
+                </button>
+                <button
+                  onClick={continueToAnimated}
+                  disabled={!canDownload || loading}
+                  className={`inline-flex min-h-12 w-auto max-w-full shrink-0 items-center justify-center rounded-2xl px-4 py-2.5 text-center text-sm font-black leading-5 shadow-lg transition active:scale-[0.97] sm:min-h-[52px] ${
+                    !canDownload || loading
+                      ? "cursor-not-allowed bg-slate-200 text-slate-400 shadow-none"
+                      : "bg-violet-600 text-white hover:bg-violet-700"
+                  }`}
+                >
+                  {loading
+                    ? "正在準備下一步…"
+                    : canDownload
+                      ? (exportPlatform === "whatsapp"
+                          ? "第 5 步｜製作 WhatsApp 動態 WebP"
+                          : "第 5 步｜自動製作 LINE 動態貼圖")
+                      : `還差 ${needMore} 張`}
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={exportPlatform === "whatsapp" ? generateWhatsAppZip : generateZip}
+                disabled={!canDownload || loading}
+                className={`inline-flex min-h-12 w-auto max-w-full shrink-0 items-center justify-center rounded-2xl px-4 py-2.5 text-center text-sm font-black leading-5 shadow-lg transition-all active:scale-[0.97] sm:min-h-[52px] ${!canDownload || loading ? "cursor-not-allowed bg-slate-200 text-slate-400 shadow-none" : "bg-blue-600 text-white hover:bg-blue-700 shadow-lg"}`}
+              >
+                {loading
+                  ? t("line_sticker_processing")
+                  : canDownload
+                    ? downloadCompleted
+                      ? `✓ 再次下載 ${exportPlatform === "whatsapp" ? "WhatsApp WebP" : "LINE"} ZIP`
+                      : `步驟 5｜下載 ${stickerCount} 張 ${exportPlatform === "whatsapp" ? "WhatsApp WebP" : "LINE 上架"} ZIP`
+                    : mattingModeStale
+                      ? "去背已變更｜請重新確認切割"
+                      : mayHaveUploadedMotherSheetAsSingle
+                         ? "可能傳錯區域｜請使用上方整張母圖切割"
+                         : `已載入 ${files.length}/${stickerCount} 張｜尚差 ${needMore} 張`}
+              </button>
+            )}
+          </div>
+          </div>
+        </footer>
             </section>
           )}
 
@@ -3513,83 +3617,7 @@ export default function LineStickerTool() {
           </section>
         </div>
 
-        <div id="sticker-download" className="scroll-mt-24" />
-        <footer aria-label="第 5 步：貼圖下載或動態製作" className="mx-auto mt-6 max-w-3xl rounded-2xl border border-slate-200 bg-white px-3 py-4 shadow-sm sm:px-4">
-          <div className="mx-auto">
-            <p className="mb-2 text-center text-xs font-bold leading-5 text-slate-700">
-              {canDownload
-                ? (flowProject?.mode === "animated"
-                    ? "下一步請按下方「第 5 步｜製作動態貼圖」按鈕。"
-                    : "下一步請按下方「步驟 5｜下載貼圖 ZIP」按鈕。")
-                : "下一步：先到上方第 3 步上傳整張母圖，完成切割預覽後才能下載。"}
-            </p>
-          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
-            <div className="hidden sm:block">
-              <p className="text-[10px] font-bold text-slate-400 uppercase leading-none">
-                {t("line_sticker_status_label")}
-              </p>
-              <p
-                className={`text-sm font-black leading-none mt-1 ${canDownload ? "text-emerald-500" : "text-amber-500"}`}
-              >
-                {canDownload
-                  ? t("line_sticker_ready")
-                  : t("line_sticker_need_more", { count: needMore })}
-              </p>
-            </div>
 
-            {flowProject?.mode === "animated" ? (
-              <>
-                <button
-                  onClick={exportPlatform === "whatsapp" ? generateWhatsAppZip : generateZip}
-                  disabled={!canDownload || loading}
-                  className={`hidden min-h-[52px] rounded-2xl px-4 py-3 text-xs font-black sm:inline-flex sm:items-center sm:justify-center ${
-                    !canDownload || loading
-                      ? "cursor-not-allowed bg-slate-100 text-slate-400"
-                      : "border border-blue-200 bg-white text-blue-700 hover:bg-blue-50"
-                  }`}
-                >
-                  {exportPlatform === "whatsapp" ? "另存 WhatsApp 靜態 ZIP" : "另存 LINE 靜態備份 ZIP"}
-                </button>
-                <button
-                  onClick={continueToAnimated}
-                  disabled={!canDownload || loading}
-                  className={`inline-flex min-h-12 w-auto max-w-full shrink-0 items-center justify-center rounded-2xl px-4 py-2.5 text-center text-sm font-black leading-5 shadow-lg transition active:scale-[0.97] sm:min-h-[52px] ${
-                    !canDownload || loading
-                      ? "cursor-not-allowed bg-slate-200 text-slate-400 shadow-none"
-                      : "bg-violet-600 text-white hover:bg-violet-700"
-                  }`}
-                >
-                  {loading
-                    ? "正在準備下一步…"
-                    : canDownload
-                      ? (exportPlatform === "whatsapp"
-                          ? "第 5 步｜製作 WhatsApp 動態 WebP"
-                          : "第 5 步｜自動製作 LINE 動態貼圖")
-                      : `還差 ${needMore} 張`}
-                </button>
-              </>
-            ) : (
-              <button
-                onClick={exportPlatform === "whatsapp" ? generateWhatsAppZip : generateZip}
-                disabled={!canDownload || loading}
-                className={`inline-flex min-h-12 w-auto max-w-full shrink-0 items-center justify-center rounded-2xl px-4 py-2.5 text-center text-sm font-black leading-5 shadow-lg transition-all active:scale-[0.97] sm:min-h-[52px] ${!canDownload || loading ? "cursor-not-allowed bg-slate-200 text-slate-400 shadow-none" : "bg-blue-600 text-white hover:bg-blue-700 shadow-lg"}`}
-              >
-                {loading
-                  ? t("line_sticker_processing")
-                  : canDownload
-                    ? downloadCompleted
-                      ? `✓ 再次下載 ${exportPlatform === "whatsapp" ? "WhatsApp WebP" : "LINE"} ZIP`
-                      : `步驟 5｜下載 ${stickerCount} 張 ${exportPlatform === "whatsapp" ? "WhatsApp WebP" : "LINE 上架"} ZIP`
-                    : mattingModeStale
-                      ? "去背已變更｜請重新確認切割"
-                      : mayHaveUploadedMotherSheetAsSingle
-                         ? "可能傳錯區域｜請使用上方整張母圖切割"
-                         : `已載入 ${files.length}/${stickerCount} 張｜尚差 ${needMore} 張`}
-              </button>
-            )}
-          </div>
-          </div>
-        </footer>
         <div className="mx-auto mt-6 max-w-[1480px]">
           <StickerCustomInquiry compact />
         </div>
