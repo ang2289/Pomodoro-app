@@ -95,6 +95,7 @@ export default function NewUserStickerGuide({ compact = false }: Props) {
               <p className="text-sm font-black leading-5 text-slate-900">{step.title}</p>
             </div>
             <p className="mt-2 flex-1 text-xs leading-6 text-slate-600">{step.description}</p>
+            <p className="mt-2 text-[11px] font-bold leading-5 text-sky-900">下一步請按：「{step.action}」</p>
             <Link
               to={step.href}
               className="mt-3 inline-flex min-h-11 w-fit items-center justify-center rounded-xl border border-sky-200 bg-white px-3 py-2 text-xs font-black text-sky-800 transition hover:border-sky-400 hover:bg-sky-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-700"
