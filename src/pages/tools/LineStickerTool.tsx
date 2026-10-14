@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import type { ChangeEvent, PointerEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import SEO from "@/components/SEO";
 import LineStickerAuthorCard from "@/components/LineStickerAuthorCard";
@@ -1583,6 +1583,7 @@ function PreviewCard({
 export default function LineStickerTool() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const [flowProject] = useState<LineStickerProject | null>(() => {
     if (typeof window === "undefined") return null;
     const enabled = new URLSearchParams(window.location.search).get("flow") === "1";
@@ -1602,6 +1603,7 @@ export default function LineStickerTool() {
   };
   const saleTextRisks = useMemo(() => stickerSaleTextRisks(flowProject?.texts ?? []), [flowProject]);
   const [files, setFiles] = useState<ImagePreview[]>([]);
+  const isFirstVisit = !flowProject && !new URLSearchParams(location.search).has("existing") && !location.hash && files.length === 0;
   const [stickerCount, setStickerCount] = useState<8 | 16 | 24 | 32 | 40>(
     () => flowProject?.count ?? 8,
   );
@@ -2328,18 +2330,39 @@ export default function LineStickerTool() {
         jsonLd={faqJsonLd}
       />
 
-      <div className="min-h-screen bg-slate-50 px-4 py-8 pb-52 sm:pb-44">
+      <div className="min-h-screen bg-slate-50 px-4 py-8 pb-12">
         <div className="mx-auto max-w-[1480px]">
           <LineStickerFlowSteps
             activeStep={
-              downloadCompleted && flowProject?.mode !== "animated"
-                ? 5
-                : files.length >= stickerCount
-                  ? 4
-                  : 3
+              isFirstVisit ? 1
+                : downloadCompleted && flowProject?.mode !== "animated"
+                  ? 5
+                  : files.length >= stickerCount
+                    ? 4
+                    : 3
             }
             mode={flowProject?.mode ?? "static"}
           />
+
+          {isFirstVisit ? (
+            <section className="mb-6 rounded-2xl border border-sky-200 bg-sky-50 p-5" aria-label="第一次使用先選開始方式">
+              <h2 className="text-lg font-black text-sky-900">第一次使用？從第 1 步開始，不需要先上傳圖片</h2>
+              <p className="mt-2 text-sm leading-7 text-slate-700">
+                沒有母圖：先選主題、文字和風格，複製指令到 ChatGPT 畫圖，下載整張大圖後再回 RXV 上傳。
+                已經有母圖：才使用下方「直接上傳」捷徑。
+              </p>
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <Link to="/tools/sticker-prompt#sticker-start"
+                  className="inline-flex min-h-12 w-fit max-w-full items-center justify-center rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-black !text-white hover:bg-violet-700">
+                  第 1 步｜沒有母圖，開始製作 →
+                </Link>
+                <Link to="/tools/line-sticker?existing=1#mother-upload"
+                  className="inline-flex min-h-12 w-fit max-w-full items-center justify-center rounded-xl border border-emerald-300 bg-white px-4 py-2.5 text-sm font-black text-emerald-800 hover:bg-emerald-50">
+                  我已有母圖｜直接上傳 →
+                </Link>
+              </div>
+            </section>
+          ) : null}
 
           <header className="mb-6">
             <div className="mb-3 inline-flex rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-black text-sky-700">上架檢查強化版 · 2026.10.10</div>
@@ -3447,10 +3470,7 @@ export default function LineStickerTool() {
         </div>
 
         <div id="sticker-download" className="scroll-mt-24" />
-        <div className="mx-auto mb-4 max-w-[1480px]">
-          <StickerCustomInquiry compact />
-        </div>
-        <footer aria-label="第 5 步：貼圖下載或動態製作" className="fixed bottom-2 left-1/2 z-50 w-[calc(100%-1rem)] max-w-3xl -translate-x-1/2 rounded-2xl border border-slate-200 bg-white/95 px-3 py-3 shadow-xl backdrop-blur-xl sm:bottom-4 sm:px-4">
+        <footer aria-label="第 5 步：貼圖下載或動態製作" className="mx-auto mt-6 max-w-3xl rounded-2xl border border-slate-200 bg-white px-3 py-4 shadow-sm sm:px-4">
           <div className="mx-auto">
             <p className="mb-2 text-center text-xs font-bold leading-5 text-slate-700">
               {canDownload
@@ -3524,6 +3544,9 @@ export default function LineStickerTool() {
           </div>
           </div>
         </footer>
+        <div className="mx-auto mt-6 max-w-[1480px]">
+          <StickerCustomInquiry compact />
+        </div>
       </div>
     </>
   );
