@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import SEO from "@/components/SEO";
 import LineStickerAuthorCard from "@/components/LineStickerAuthorCard";
+import { StickerExistingMotherSheetShortcut, StickerCustomInquiry, StickerNextActionHint } from "@/components/StickerBeginnerActions";
 
 const SUPPORT_TW_URL = "https://p.ecpay.com.tw/FD7CD6D";
 const SUPPORT_KOFI_URL = "https://ko-fi.com/ang2289";
@@ -269,6 +270,8 @@ export default function LineStickerGuide() {
 
           <LineStickerAuthorCard />
 
+          <StickerNextActionHint>還沒有圖片，請按上方「第 1 步｜開始選主題」；已有完整母圖，請直接使用下面的上傳捷徑。</StickerNextActionHint>
+          <div className="mt-4"><StickerExistingMotherSheetShortcut /></div>
           <IllustratedDemoSection />
 
           <section className="mt-8 grid gap-4 md:grid-cols-5">
@@ -376,6 +379,7 @@ export default function LineStickerGuide() {
             </div>
           </section>
 
+          <StickerCustomInquiry />
           {false && <GuideSupportSection />}
 
           <GuideRecommendedToolsSection />
