@@ -333,3 +333,106 @@ test("單張上傳與整張母圖清楚區分，1/16 不誤導新手以為文字
   assert.match(upload, /目前只載入 1 張獨立貼圖/);
   assert.doesNotMatch(upload, /第 3 步｜點這裡上傳圖片（可一次多選）/);
 });
+
+test("8／16／24／32／40 張分頁精確，並支援未來 48 張同一規則", () => {
+  const source = read("src/lib/lineStickerFlow.ts");
+  const a = source.indexOf("const PRESET_MOTHER_SHEET_PAGES:");
+  const b = source.indexOf("function makeProjectId()", a);
+  assert.ok(a >= 0 && b > a);
+  const code = ts.transpileModule(
+    source.slice(a, b).replace("export function getMotherSheetPlan", "function getMotherSheetPlan"),
+    { compilerOptions: { target: ts.ScriptTarget.ES2022 } },
+  ).outputText;
+  const plan = vm.runInNewContext(code + "\ngetMotherSheetPlan", {});
+  for (const [count, grids] of [
+    [8, ["4x2"]], [16, ["4x4"]], [24, ["4x4", "4x2"]],
+    [32, ["4x4", "4x4"]], [40, ["4x5", "4x5"]],
+    [48, ["4x4", "4x4", "4x4"]],
+  ]) {
+    const pages = plan(count);
+    assert.deepEqual(Array.from(pages, p => p.grid), grids);
+    assert.equal(pages[0].startIndex, 0);
+    assert.equal(pages.at(-1).endIndex, count);
+    assert.equal(pages.reduce((sum, page) => sum + page.count, 0), count);
+    pages.forEach((page, index) => {
+      assert.equal(page.endIndex - page.startIndex, page.count);
+      if (index) assert.equal(page.startIndex, pages[index - 1].endIndex);
+    });
+  }
+  assert.throws(() => plan(17), /8 的倍數/);
+});
+
+test("角色與文字鎖定每張使用同一設定，包含美甲師服裝、五官及文字樣式", () => {
+  const source = read("src/lib/stickerCharacterLock.ts");
+  function compile(name) {
+    const expression = new RegExp("export function " + name + "[\\s\\S]*?\\n\\}");
+    const section = source.match(expression)?.[0];
+    assert.ok(section, "missing " + name);
+    return ts.transpileModule(section.replace("export function", "function"), {
+      compilerOptions: { target: ts.ScriptTarget.ES2022 },
+    }).outputText;
+  }
+  const funcs = compile("defaultCharacterLock") + compile("lockCharacterPrompt");
+  const ctx = vm.runInNewContext(funcs + "\n({ defaultCharacterLock, lockCharacterPrompt })", {});
+  const details = ctx.defaultCharacterLock("美甲師", "專業的美甲師");
+  assert.match(details.clothing, /圍裙/);
+  details.hair = "紫色雙馬尾";
+  details.clothing = "湖水綠圍裙";
+  details.accessory = "銀色髮夾";
+  const style = "固定 Q 版粗線條與細緻高光";
+  const typography = { font:"圓體", size:"大字", color:"粉字粗白邊", position:"文字正上方" };
+  const sheetOne = ctx.lockCharacterPrompt(details, style, typography);
+  const sheetTwo = ctx.lockCharacterPrompt(details, style, typography);
+  assert.equal(sheetOne, sheetTwo);
+  for (const token of ["紫色雙馬尾", "湖水綠圍裙", "銀色髮夾", "粉字粗白邊", "臉部", "頭身比例", "描邊"]) {
+    assert.ok(sheetOne.includes(token), token);
+  }
+  assert.match(sheetOne, /不得自行重新設計角色/);
+});
+
+test("單一文字位置套用到每格，跨第 2 張母圖不反轉、不同位置互斥", () => {
+  const source = read("src/lib/stickerCharacterLock.ts");
+  function part(name) {
+    const section = source.match(new RegExp("export function " + name + "[\\s\\S]*?\\n\\}"))?.[0];
+    assert.ok(section);
+    return ts.transpileModule(section.replace("export function", "function"), { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText;
+  }
+  const ctx = vm.runInNewContext(
+    part("stickerPlacement") + part("stickerPlacementRule") + part("stickerRowMap") +
+      "\n({ stickerPlacement, stickerPlacementRule, stickerRowMap })",
+    {},
+  );
+  const texts = Array.from({length:40},(_,i)=>"短句" + (i + 1));
+  const sheet = { grid: "4x5", startIndex:20, endIndex:40 };
+  const mixed = ctx.stickerRowMap(sheet, texts, "mixed");
+  assert.match(mixed, /整套第 21 張.*文字只放左側/);
+  assert.match(mixed, /整套第 22 張.*文字只放右側/);
+  assert.match(mixed, /整套第 40 張.*文字只放右側/);
+  const top = ctx.stickerRowMap(sheet, texts, "top");
+  assert.doesNotMatch(top, /文字只放左側|文字只放右側/);
+  assert.match(top, /整套第 40 張.*文字只放正上方/);
+  const bottom = ctx.stickerRowMap(sheet, texts, "bottom");
+  assert.doesNotMatch(bottom, /文字只放正上方|文字只放左側/);
+  assert.match(bottom, /文字只放正下方/);
+  assert.doesNotMatch(ctx.stickerPlacementRule("top"), /交錯/);
+  assert.doesNotMatch(ctx.stickerPlacementRule("bottom"), /交錯/);
+});
+
+test("第二張角色參考圖僅保留瀏覽器本機，選圖、清除與跨張數安全", () => {
+  const prompt = read("src/pages/tools/StickerPromptGenerator.tsx");
+  assert.match(prompt, /motherSheetPlan.length > 1/);
+  assert.match(prompt, /第 3 步｜鎖定角色/);
+  assert.match(prompt, /第 4 步｜生成第 2 張/);
+  assert.match(prompt, /accept="image\/png,image\/jpeg,image\/webp"/);
+  assert.match(prompt, /URL.createObjectURL\(file\)/);
+  assert.match(prompt, /URL.revokeObjectURL\(characterReference.url\)/);
+  assert.match(prompt, /characterReference\?\.scope === referenceScope/);
+  assert.match(prompt, /clearCharacterReference\(\)/);
+  assert.match(prompt, /已選擇：\{activeReference.name\}/);
+  assert.match(prompt, /沒有附上參考圖也能複製本提示詞/);
+  assert.match(prompt, /不會自動把圖片傳送給 ChatGPT/);
+  assert.match(prompt, /第 1 張母圖/);
+  assert.match(prompt, /const characterLockText = useMemo/);
+  assert.match(prompt, /characterLockText,/);
+  assert.match(prompt, /lockCharacterPrompt\(/);
+});
