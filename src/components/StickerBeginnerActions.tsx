@@ -46,3 +46,27 @@ export function StickerCustomInquiry({ compact = false }: { compact?: boolean })
 export function StickerNextActionHint({ children }: { children: ReactNode }) {
   return <p className="mb-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-black leading-6 text-amber-900">下一步：{children}</p>;
 }
+
+/** 兩個 AI 生圖入口同時提供：ChatGPT 是已實際使用的流程，Gemini 為可選方案。 */
+export function StickerAIProviderLinks({ compact = false }: { compact?: boolean }) {
+  return (
+    <div className={compact ? "mt-2" : "mt-3"}>
+      <p className="mb-2 text-xs font-black leading-6 text-slate-800">下一步請選一個生圖工具：ChatGPT 或 Google Gemini，兩個都可以。</p>
+      <div className="grid gap-2 sm:grid-cols-2">
+        <a
+          href="https://chatgpt.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex min-h-11 items-center justify-center rounded-xl bg-emerald-700 px-4 py-2.5 text-center text-sm font-black !text-white hover:bg-emerald-800"
+        >開啟 ChatGPT 畫圖 ↗</a>
+        <a
+          href="https://gemini.google.com/app"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex min-h-11 items-center justify-center rounded-xl border border-blue-300 bg-white px-4 py-2.5 text-center text-sm font-black text-blue-800 hover:bg-blue-50"
+        >開啟 Google Gemini 畫圖 ↗</a>
+      </div>
+      {!compact && <p className="mt-2 text-xs leading-6 text-slate-600">先複製 RXV 的畫圖指令，再到任一工具貼上並送出。畫好後下載完整大圖，回 RXV 上傳切割；各服務的使用額度依其規定。</p>}
+    </div>
+  );
+}
