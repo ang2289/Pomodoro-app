@@ -4212,7 +4212,7 @@ function buildPrompt(
   const rolePrompt = buildRolePrompt(role, photoMode);
   const photoReminder = buildPhotoReminder(photoMode);
 
-  return `請設計一張 ${platform === "whatsapp" ? "WhatsApp" : "LINE"} ${label}大圖，白色背景，${style}。\n\n商用販售安全：每格只能出現下方指定的主要貼圖短句，禁止在卡片、紙袋、花籃、店招、制服、道具額外產生任何文字、英文 NEW、價格、網址、QR Code、商標、店家 Logo、品牌字樣或促銷宣傳；角色、衣服與道具皆需為原創，不可仿畫知名品牌角色。圖文清晰易讀、避免多手多腳、勿遮住文字。\n\n${rolePrompt}\n\n風格加強：${stickerStylePrompt}。\n\n真人／原創設定：${photoModePrompt}。${photoReminder}\n\n請畫成 ${gridInfo.layoutText}。每格貼圖都要獨立清楚、平均排列。每一格的角色＋文字＋裝飾只佔該格中央約 70%～74%，上下左右至少保留約 13%～15% 的純白安全留白，格與格之間必須看得到明顯白色空間，方便後續平均切割。角色與文字都要完整置中在各自格子內，不可超出邊界、不可跨格、不可互相重疊；每格最外圈至少 13% 純白，格線附近不可有花瓣、陰影或字；若空間不足，寧可把角色與文字整體縮小，也不要貼邊。\n\n文字設定（優先於其他畫風描述）：請使用繁體中文。字型造型遵守「${fontStylePrompt}」；文字大小遵守「${textSizePrompt}」；填色、描邊與文字效果遵守「${textColorPrompt}」；**文字所在區域必須嚴格遵守「${textPositionPrompt}」**。若背景情境或貼圖風格暗示不同的位置，仍以本次「文字位置」選項為準；不能因為傳統貼圖習慣就把所有文字置頂。文字必須清楚好讀，文字與頭髮、臉、手勢、手機、文件等主體至少保留明顯空隙，不可壓在人物或道具上；文字四周也要保留白邊，不要貼近格子邊界，不要切到字，不可出現序號、數字、標題、格號或列表符號。\n\n每張貼圖都要有不同表情與動作，整體風格一致、乾淨可愛、適合 LINE 貼圖使用。\n\n貼圖文字如下：\n${numberedTexts}`;
+  return `請設計一張 ${platform === "whatsapp" ? "WhatsApp" : "LINE"} ${label}大圖，白色背景，${style}。\n\n商用販售安全：每格只能出現下方指定的主要貼圖短句，禁止在卡片、紙袋、花籃、店招、制服、道具額外產生任何文字、英文 NEW、價格、網址、QR Code、商標、店家 Logo、品牌字樣或促銷宣傳；角色、衣服與道具皆需為原創，不可仿畫知名品牌角色。圖文清晰易讀、避免多手多腳、勿遮住文字。\n\n${rolePrompt}\n\n風格加強：${stickerStylePrompt}。\n\n真人／原創設定：${photoModePrompt}。${photoReminder}\n\n請畫成 ${gridInfo.layoutText}。每格貼圖都要獨立清楚、平均排列。每一格的角色＋文字＋裝飾只佔該格中央約 70%～74%，上下左右至少保留約 13%～15% 的純白安全留白，格與格之間必須看得到明顯白色空間，方便後續平均切割。角色與文字都要完整置中在各自格子內，不可超出邊界、不可跨格、不可互相重疊；每格最外圈至少 13% 純白，格線附近不可有花瓣、陰影或字；若空間不足，寧可把角色與文字整體縮小，也不要貼邊。\n\n文字設定（優先於其他畫風描述）：請使用繁體中文。字型造型遵守「${fontStylePrompt}」；文字大小遵守「${textSizePrompt}」；填色、描邊與文字效果遵守「${textColorPrompt}」；**文字所在區域必須嚴格遵守「${textPositionPrompt}」**。若背景情境或貼圖風格暗示不同的位置，仍以本次「文字位置」選項為準；不可自行改變為其他排版。文字必須清楚好讀，文字與頭髮、臉、手勢、手機、文件等主體至少保留明顯空隙，不可壓在人物或道具上；文字四周也要保留白邊，不要貼近格子邊界，不要切到字，不可出現序號、數字、標題、格號或列表符號。\n\n每張貼圖都要有不同表情與動作，整體風格一致、乾淨可愛、適合 LINE 貼圖使用。\n\n貼圖文字如下：\n${numberedTexts}`;
 }
 
 function buildStablePrompt(
@@ -4364,15 +4364,39 @@ const IDENTITY_FIELDS: Array<{ key: keyof StickerIdentity; label: string; hint: 
 ];
 
 function defaultStickerIdentity(role: string, style: string): StickerIdentity {
+  // 主題名稱決定整套穩定預設，切換母圖或重繪頁面不會再隨機更換。
+  const hash = [...role].reduce((sum, c) => (sum * 31 + c.charCodeAt(0)) >>> 0, 17);
+  const isMultiOrNonHuman = /情侶|夫妻|新郎|新娘|兩位|一家|全家|寵物|貓咪|狗狗|兔子|佛像|觀音|動物|怪獸|機器人/.test(role);
+  const age = [25, 30, 35, 40, 45][hash % 5];
+  const gender = /男性|男生|男孩|男士|先生/.test(role) ? "男性"
+    : /女性|女生|女孩|女士|媽媽/.test(role) ? "女性"
+    : hash % 2 === 0 ? "女性" : "男性";
+  const face = [
+    "圓臉、杏仁形深棕大眼、小巧鼻樑、自然暖膚色",
+    "鵝蛋臉、圓潤黑棕眼、淡笑眉、自然明亮膚色",
+    "柔和方圓臉、清澈琥珀眼、微笑嘴角、暖米膚色",
+    "小圓臉、弧形眉毛、深棕圓眼、柔和自然膚色",
+  ][hash % 4];
+  const hair = [
+    "黑色側分短髮、整齊瀏海",
+    "深棕色微捲齊肩髮、側分瀏海",
+    "栗棕色低馬尾、輕薄空氣瀏海",
+    "深黑色中長直髮、柔和斜瀏海",
+    "咖啡色俐落短髮、自然蓬鬆瀏海",
+  ][hash % 5];
+  const palette = /美甲|美睫|美容|粉色|花藝/.test(role + style)
+    ? "奶茶粉、霧玫瑰與米白"
+    : ["霧藍與暖米白", "森林綠與淺杏色", "柔和紫與奶油白", "湖水綠與米白", "杏色與深藍"][hash % 5];
+  const roleDetails = isMultiOrNonHuman ? role : `${role}；主角固定為約 ${age} 歲台灣${gender}原創 Q 版人物`;
   return {
-    appearance: role,
-    face: "東亞／台灣原創 Q 版臉孔，固定臉型、眼睛、五官比例與自然膚色",
-    hair: "同套維持首次選定的髮型、髮色與瀏海，不得自行更改",
-    outfit: "完整沿用角色設定中的固定服裝、圍裙、制服及配色，剪裁和花紋不變",
-    accessories: "固定配件與辨識特徵不變，職業道具可依動作更換",
+    appearance: roleDetails,
+    face: isMultiOrNonHuman ? "依原角色設定，固定每位主角各自的眼睛、臉型、五官比例與膚色" : face,
+    hair: isMultiOrNonHuman ? "每位主角各自維持相同造型、髮色與頭部特徵" : hair,
+    outfit: `依主題保持固定的工作服／圍裙／制服款式與剪裁，固定配色：${palette}；不可任意更換`,
+    accessories: "固定配件須沿用角色設定，不增加額外品牌；手持職業道具可依動作更換",
     proportions: "2.5～3 頭身，大頭小身體，頭身比與五官比例一致",
     illustration: `${style}；相同線條粗細、輪廓筆觸、柔和陰影`,
-    coloring: "維持相同主色系、上色方法、陰影方向、光澤與裝飾密度；純白背景",
+    coloring: `固定主色系：${palette}；相同上色方法、陰影方向、光澤與裝飾密度；純白背景`,
   };
 }
 function makeStickerIdentityLock(
