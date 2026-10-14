@@ -109,7 +109,8 @@ export default function LineStickerFlowSteps({
                 <span className="min-w-[5.5rem] flex-1 whitespace-normal break-keep text-xs font-black leading-5 text-slate-900">第 {item.step} 步｜{item.title}</span>
               </div>
               <p className="mt-2 min-w-0 break-words text-[11px] leading-5 text-slate-500">{item.desc}</p>
-              <span className="mt-2 inline-block text-[11px] font-bold text-violet-700">前往第 {item.step} 步 →</span>
+              <span className="mt-2 block text-[11px] leading-5 text-slate-600">想前往這一步？請按下方紫色文字。</span>
+              <span className="mt-1 inline-block text-[11px] font-bold text-violet-700">前往第 {item.step} 步 →</span>
             </Link>
           );
         })}
