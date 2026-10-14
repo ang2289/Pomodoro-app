@@ -12,7 +12,7 @@ test("新手可以直接跳到第 3 步上傳母圖，不需做提示詞", () =>
   const homepage = read("src/components/NewUserStickerGuide.tsx");
   assert.match(starter, /已經有貼圖大圖？不用再產生提示詞/);
   assert.match(starter, /\/tools\/line-sticker\?existing=1#mother-upload/);
-  assert.match(prompt, /<StickerExistingMotherSheetShortcut \/>/);
+  assert.match(prompt, /<StickerExistingMotherSheetShortcut compact \/>/);
   assert.match(homepage, /<StickerExistingMotherSheetShortcut compact \/>/);
 });
 
@@ -32,7 +32,7 @@ test("每段新手流程明確同時提供 ChatGPT 與 Google Gemini，且保留
   assert.match(prompt, /請先按下方「複製第/);
   assert.match(prompt, /已從 ChatGPT 或 Gemini 下載完整大圖/);
   assert.match(prompt, /flow=1#mother-upload/);
-  assert.match(progress, /ChatGPT／Gemini 畫圖/);
+  assert.match(progress, /ChatGPT（推薦）/);
   assert.match(starter, /用 ChatGPT／Gemini 畫圖/);
   assert.match(starter, /下一步請按/);
 });
@@ -87,7 +87,7 @@ test("貼圖工具主要按鈕依內容寬度排列，不再整列滿版", () =>
   // 全幅上傳預覽、圖片拖曳區和表單控件保留原樣。
   assert.match(upload, /aspect-\[520\/450\] w-full cursor-grab/);
   assert.match(animated, /min-h-\[230px\] w-full flex-col/);
-  assert.match(prompt, /min-h-\[520px\] w-full resize-y/);
+  assert.match(prompt, /min-h-\[200px\] max-h-\[440px\] w-full resize-y/);
 });
 
 test("Gemini 4×4 橫幅與多餘英文需要專用指令，切圖前應阻擋異常長寬比", () => {
@@ -103,7 +103,7 @@ test("Gemini 4×4 橫幅與多餘英文需要專用指令，切圖前應阻擋�
   assert.match(upload, /requiresSquare4x4/);
   assert.match(upload, /aspect < 0\.82 \|\| aspect > 1\.22/);
   assert.match(upload, /unsafeMotherSheets\.length > 0/);
-  assert.match(steps, /ChatGPT 已有符合 4×4/);
+  assert.match(steps, /ChatGPT（推薦）/);
   assert.match(prompt, /const rowAssignment = Array.from/);
   assert.match(prompt, /最終版型僅此一種/);
   assert.match(prompt, /每格短句位置必須依下表/);
@@ -114,8 +114,8 @@ test("Gemini 4×4 橫幅與多餘英文需要專用指令，切圖前應阻擋�
 test("自訂文字和字型在新手頁預設顯示，並且設定實際寫入兩種 AI 生圖提示詞", () => {
   const prompt = read("src/pages/tools/StickerPromptGenerator.tsx");
   assert.match(prompt, /id="sticker-customize"/);
-  assert.match(prompt, /前往自訂文字／字型設定/);
-  assert.match(prompt, /自訂貼圖內容｜文字、字型、顏色、角色都可以選/);
+  assert.match(prompt, /直接調整文字、字型/);
+  assert.match(prompt, /自訂文字、字型與角色（可直接修改）/);
   assert.match(prompt, /字型風格（可選）/);
   assert.match(prompt, /value=\{fontStyle\}/);
   assert.match(prompt, /onChange=\{\(e\) => setFontStyle/);
@@ -186,7 +186,7 @@ test("第一次進貼圖工具從第 1 步開始，只有明確選擇已有圖�
   assert.doesNotMatch(prompt, /xl:grid-cols-\[0\.82fr_1\.18fr\]/);
   assert.match(prompt, /前往第 2 步｜複製畫圖指令 ↓/);
   assert.match(prompt, /to="\/tools\/line-sticker\?flow=1#mother-upload"/);
-  assert.match(progress, /flex flex-col gap-2" aria-label="由上而下的五步驟導覽"/);
+  assert.match(progress, /<ol className="flex flex-wrap items-center gap-2" aria-label="貼圖操作流程"/);
   assert.match(guide, /mt-4 flex flex-col gap-2/);
   assert.doesNotMatch(guide, /lg:grid-cols-5/);
   assert.doesNotMatch(upload, /className="fixed bottom-2 left-1\/2/);
@@ -206,4 +206,21 @@ test("24 張高清動態展示每張約兩秒且畫面卡頓會阻止下載", ()
   assert.match(renderer, /actualCaptureMs > idealCaptureMs \+ maxAllowedLagMs/);
   assert.match(renderer, /避免產生前段長時間靜止的影片/);
   assert.match(code, /只有影格變化時才重畫/);
+});
+
+test("新手頁面保持窄版與極簡進度列，不再用滿版彩色卡片堆疊", () => {
+  const prompt = read("src/pages/tools/StickerPromptGenerator.tsx");
+  const steps = read("src/components/LineStickerFlowSteps.tsx");
+  const help = read("src/components/StickerBeginnerActions.tsx");
+  assert.match(prompt, /mx-auto w-full max-w-3xl/);
+  assert.doesNotMatch(prompt, /max-w-\[1480px\]/);
+  assert.match(prompt, /min-h-screen bg-slate-50/);
+  assert.match(steps, /<nav/);
+  assert.match(steps, /<ol className="flex flex-wrap items-center gap-2"/);
+  assert.doesNotMatch(steps, /先知道一件事：不是一張張畫貼圖/);
+  assert.match(prompt, /w-fit max-w-full flex-none items-center/);
+  assert.match(prompt, /rows=\{Math\.min\(requiredCount \+ 1, 12\)\}/);
+  assert.match(prompt, /id="sticker-customize"/);
+  assert.match(help, /下一步：\{children\}/);
+  assert.doesNotMatch(help, /rounded-xl bg-amber-50 px-3 py-2 text-xs font-black/);
 });
