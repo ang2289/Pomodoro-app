@@ -5561,6 +5561,31 @@ export default function StickerPromptGenerator() {
                 </section>
               )}
 
+              <section className="mt-6 rounded-xl border border-violet-200 bg-white p-4" aria-label="整套貼圖共用角色設定">
+                <h4 className="text-base font-bold text-slate-900">整套角色／畫風鎖定（第 1、2 張都共用）</h4>
+                <p className="mt-1 text-xs leading-6 text-slate-600">
+                  以下已依主題自動設定。需要不同臉型、髮型、服裝或畫風可直接改一次，全部母圖立即同步；產生第 2 張時不會重新選角色。
+                </p>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  {IDENTITY_FIELDS.map((field) => (
+                    <label key={field.key} className="text-xs font-semibold text-slate-700">
+                      {field.label}
+                      <textarea
+                        value={identity[field.key]}
+                        onChange={(e) => setIdentity(previous => ({ ...previous, [field.key]: e.target.value }))}
+                        placeholder={field.hint}
+                        rows={2}
+                        maxLength={500}
+                        className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-normal leading-6 text-slate-800 focus:border-violet-500"
+                      />
+                    </label>
+                  ))}
+                </div>
+                <p className="mt-2 text-xs leading-5 text-slate-500">
+                  文字字型、大小、顏色與位置直接沿用上方所選值，與這份角色設定一起鎖定。真人照片模式仍需在 AI 生圖時自行附上有授權的照片。
+                </p>
+              </section>
+
               <label className="mt-5 block text-xs font-black text-slate-500">
                 角色設定
               </label>
@@ -5692,17 +5717,51 @@ export default function StickerPromptGenerator() {
               <div className="mt-4 space-y-4">
                 {flowPrompts.map((item, index) => (
                   <div key={`${item.grid}-${index}`} className="rounded-xl border border-slate-200 bg-white p-4">
+                    {index === 1 && (
+                      <section className="mb-5 rounded-xl border border-violet-200 bg-violet-50 p-4" aria-label="第 3 步：鎖定角色參考圖">
+                        <h3 className="text-base font-bold text-slate-900">第 3 步｜選擇第 1 張母圖作為角色參考</h3>
+                        <p className="mt-2 text-sm leading-6 text-slate-700">
+                          先用 ChatGPT 畫好第 1 張，再選下方圖片；第 2 張請沿用同一個 ChatGPT 對話，
+                          複製提示詞後自行附上這張參考圖片。網站不會自動把圖交給 ChatGPT。
+                        </p>
+                        <label className="mt-3 inline-flex min-h-11 w-fit cursor-pointer items-center justify-center rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-violet-700">
+                          {activeReferenceImage ? "更換第 1 張參考圖" : "選擇第 1 張參考圖"}
+                          <input type="file" accept="image/png,image/jpeg,image/webp"
+                            onChange={chooseReferenceImage} className="sr-only" aria-label="選擇第 1 張參考圖" />
+                        </label>
+                        {activeReferenceImage ? (
+                          <div className="mt-3 flex flex-wrap items-start gap-3">
+                            <img src={activeReferenceImage.url} alt="第 1 張母圖參考縮圖" className="h-28 w-28 rounded-lg border border-slate-200 bg-white object-contain" />
+                            <div className="min-w-0 flex-1">
+                              <p className="break-all text-xs font-medium text-slate-700">{activeReferenceImage.name}</p>
+                              <p className="mt-1 text-xs text-emerald-800">已選本機參考圖；仍請在 ChatGPT 對話自行附上這張圖片。</p>
+                              <button type="button" onClick={clearReferenceImage}
+                                className="mt-2 inline-flex min-h-10 items-center justify-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">
+                                移除參考圖
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="mt-3 text-xs font-medium leading-6 text-amber-800">
+                            尚未選擇參考圖：仍可複製第 2 張提示詞，但只用文字無法保證五官、服裝與畫風完全一致。
+                          </p>
+                        )}
+                      </section>
+                    )}
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div>
                         <p className="text-sm font-black text-slate-900">
-                          第 {index + 1} 張母圖｜{item.grid.replace("x", "×")}
+                          第 {index === 0 ? 2 : 4} 步｜第 {index + 1} 張母圖｜{item.grid.replace("x", "×")}
                         </p>
                         <p className="mt-1 text-xs font-bold text-slate-500">
                           貼圖 {item.startIndex + 1}～{item.endIndex}
                         </p>
                       </div>
                       <div className="w-fit max-w-full">
-                        <StickerNextActionHint>請先按下方「複製第 {index + 1} 張畫圖指令」，ChatGPT 用一般版、Gemini 請用強化版，再選下方對應 AI 平台按鈕。</StickerNextActionHint>
+                        <StickerNextActionHint>
+                        請複製第 {index + 1} 張畫圖指令，貼到 ChatGPT。
+                        {index > 0 ? "務必在同一個對話附上第 1 張母圖；這個按鈕只會複製文字，不會傳送圖片。" : "畫好後請先保存母圖。"}
+                      </StickerNextActionHint>
                       <div className="flex flex-wrap items-center gap-2">
                         <button
                           type="button"
@@ -5710,7 +5769,7 @@ export default function StickerPromptGenerator() {
                           disabled={saleRisks.length > 0}
                           className="inline-flex min-h-11 w-fit max-w-full items-center justify-center rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-black !text-white shadow hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-slate-300"
                         >
-                          {copiedBatchIndex === index ? "✓ 已複製 ChatGPT 指令" : `第 2 步｜複製第 ${index + 1} 張畫圖指令（ChatGPT）`}
+                          {copiedBatchIndex === index ? "✓ 已複製 ChatGPT 指令" : `複製第 ${index + 1} 張提示詞（ChatGPT）`}
                         </button>
                         <button
                           type="button"
