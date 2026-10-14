@@ -115,16 +115,16 @@ function LineStickerGuideEntry() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-wrap content-center items-start gap-3">
           <Link
             to="/tools/line-sticker-guide"
-            className="inline-flex items-center justify-center rounded-2xl bg-blue-600 px-5 py-3 text-sm font-black !text-white shadow-md transition hover:bg-blue-700 hover:!text-white active:scale-[0.98] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-xl hover:brightness-110"
+            className="inline-flex w-auto max-w-full shrink-0 items-center justify-center rounded-2xl bg-blue-600 px-5 py-3 text-sm font-black !text-white shadow-md transition hover:bg-blue-700 hover:!text-white active:scale-[0.98] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-xl hover:brightness-110"
           >
             📘 查看完整教學
           </Link>
           <a
             href="#line-sticker-quick-guide"
-            className="inline-flex items-center justify-center rounded-2xl border border-blue-200 bg-white px-5 py-3 text-sm font-black text-blue-700 shadow-sm transition hover:bg-blue-50 duration-200 ease-out hover:-translate-y-0.5 hover:shadow-lg hover:ring-2 hover:ring-blue-100 duration-200 ease-out hover:-translate-y-0.5 hover:shadow-xl hover:brightness-110 active:scale-[0.98]"
+            className="inline-flex w-auto max-w-full shrink-0 items-center justify-center rounded-2xl border border-blue-200 bg-white px-5 py-3 text-sm font-black text-blue-700 shadow-sm transition hover:bg-blue-50 duration-200 ease-out hover:-translate-y-0.5 hover:shadow-lg hover:ring-2 hover:ring-blue-100 duration-200 ease-out hover:-translate-y-0.5 hover:shadow-xl hover:brightness-110 active:scale-[0.98]"
           >
             先看本頁快速教學
           </a>
@@ -2319,7 +2319,7 @@ export default function LineStickerTool() {
         jsonLd={faqJsonLd}
       />
 
-      <div className="min-h-screen bg-slate-50 px-4 py-8 pb-24 sm:pb-32">
+      <div className="min-h-screen bg-slate-50 px-4 py-8 pb-52 sm:pb-44">
         <div className="mx-auto max-w-[1480px]">
           <LineStickerFlowSteps
             activeStep={
@@ -2365,7 +2365,7 @@ export default function LineStickerTool() {
 
           <section className="mb-5 rounded-2xl border border-sky-200 bg-white p-4 shadow-sm">
             <h2 className="text-sm font-black text-slate-900">輸出平台｜同一張母圖可製作 LINE 或 WhatsApp 貼圖</h2>
-            <div className="mt-3 grid grid-cols-2 gap-3">
+            <div className="mt-3 flex flex-wrap items-center gap-3">
               <button type="button" onClick={() => {
                   setExportPlatform("line");
                   setWhatsAppReadyZip(null);
@@ -2374,7 +2374,7 @@ export default function LineStickerTool() {
                   setDownloadCompleted(false);
                 }}
                 aria-pressed={exportPlatform === "line"}
-                className={`min-h-12 rounded-xl border-2 px-3 py-2 text-sm font-black transition-colors ${exportPlatform === "line" ? "border-emerald-500 bg-emerald-50 text-emerald-800 shadow-sm" : "border-slate-300 bg-white text-slate-700 hover:border-emerald-300 hover:bg-emerald-50"}`}>
+                className={`inline-flex min-h-12 w-auto max-w-full shrink-0 items-center justify-center rounded-xl border-2 px-4 py-2 text-sm font-black transition-colors ${exportPlatform === "line" ? "border-emerald-500 bg-emerald-50 text-emerald-800 shadow-sm" : "border-slate-300 bg-white text-slate-700 hover:border-emerald-300 hover:bg-emerald-50"}`}>
                 {exportPlatform === "line" ? "✓ 已選 LINE · PNG／APNG" : "LINE · PNG／APNG"}
               </button>
               <button type="button" onClick={() => {
@@ -2385,7 +2385,7 @@ export default function LineStickerTool() {
                   setDownloadCompleted(false);
                 }}
                 aria-pressed={exportPlatform === "whatsapp"}
-                className={`min-h-12 rounded-xl border-2 px-3 py-2 text-sm font-black transition-colors ${exportPlatform === "whatsapp" ? "border-emerald-500 bg-emerald-50 text-emerald-800 shadow-sm" : "border-slate-300 bg-white text-slate-700 hover:border-emerald-300 hover:bg-emerald-50"}`}>
+                className={`inline-flex min-h-12 w-auto max-w-full shrink-0 items-center justify-center rounded-xl border-2 px-4 py-2 text-sm font-black transition-colors ${exportPlatform === "whatsapp" ? "border-emerald-500 bg-emerald-50 text-emerald-800 shadow-sm" : "border-slate-300 bg-white text-slate-700 hover:border-emerald-300 hover:bg-emerald-50"}`}>
                 {exportPlatform === "whatsapp" ? "✓ 已選 WhatsApp · WebP" : "WhatsApp · 靜態 WebP"}
               </button>
             </div>
@@ -2435,11 +2435,11 @@ export default function LineStickerTool() {
               <p className="mt-3 text-sm leading-6 text-slate-600">
                 這一組已完成。要做下一組不用回首頁，直接按「再做一組新貼圖」會清除本次流程並回到第 1 步。
               </p>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div className="mt-4 flex flex-wrap items-center gap-3">
                 <button
                   type="button"
                   onClick={startNewStickerFlow}
-                  className="min-h-12 rounded-2xl bg-violet-600 px-5 py-3 text-sm font-black text-white shadow-md transition hover:-translate-y-0.5 hover:bg-violet-700 hover:shadow-lg"
+                  className="inline-flex min-h-12 w-auto max-w-full items-center justify-center rounded-2xl bg-violet-600 px-5 py-3 text-sm font-black text-white shadow-md transition hover:-translate-y-0.5 hover:bg-violet-700 hover:shadow-lg"
                 >
                   ✨ 再做一組新貼圖｜回到第 1 步
                 </button>
@@ -2447,7 +2447,7 @@ export default function LineStickerTool() {
                   type="button"
                   onClick={generateZip}
                   disabled={loading}
-                  className="min-h-12 rounded-2xl border border-blue-200 bg-blue-50 px-5 py-3 text-sm font-black text-blue-800 transition hover:bg-blue-100 disabled:opacity-50"
+                  className="inline-flex min-h-12 w-auto max-w-full items-center justify-center rounded-2xl border border-blue-200 bg-blue-50 px-5 py-3 text-sm font-black text-blue-800 transition hover:bg-blue-100 disabled:opacity-50"
                 >
                   ⬇ 再下載一次同一個 ZIP
                 </button>
@@ -2568,7 +2568,7 @@ export default function LineStickerTool() {
                       。可一次多選，檔案順序不限，系統會依圖片比例自動配對。
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="flex flex-wrap gap-2">
 
                       {(["auto", "4x2", "4x4", "4x5"] as const).map((grid) => (
                         <button
@@ -2637,7 +2637,7 @@ export default function LineStickerTool() {
                     type="button"
                     disabled={loading}
                     onClick={() => motherSheetInputRef.current?.click()}
-                    className="rounded-xl bg-violet-600 px-4 py-3 text-sm font-black text-white shadow-md transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-2"
+                    className="inline-flex min-h-12 w-fit max-w-full items-center justify-center rounded-xl bg-violet-600 px-4 py-3 text-center text-sm font-black text-white shadow-md transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-2"
                   >
                     {loading && motherSheetDetectionStatus !== "cutting"
                       ? "正在判斷母圖格數…"
@@ -2812,7 +2812,7 @@ export default function LineStickerTool() {
                         !motherSheetPlanCheck.valid)
                     }
                     onClick={confirmMotherSheetSplit}
-                    className="mt-4 min-h-12 w-full rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-black text-white shadow-md transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                    className="mt-4 inline-flex min-h-12 w-auto max-w-full items-center justify-center rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-black text-white shadow-md transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
                   >
                     {loading && motherSheetDetectionStatus === "cutting"
                       ? "正在切圖、去背與安全整理…"
@@ -2864,7 +2864,7 @@ export default function LineStickerTool() {
                       <button
                         key={n}
                         onClick={() => setStickerCount(n)}
-                        className={`flex-1 min-w-[46px] whitespace-nowrap rounded-lg px-2 py-2 text-xs font-bold transition-all ${stickerCount === n ? "bg-blue-600 text-white shadow-md" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}
+                        className={`min-w-[52px] shrink-0 whitespace-nowrap rounded-lg px-3 py-2 text-xs font-bold transition-all ${stickerCount === n ? "bg-blue-600 text-white shadow-md" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}
                       >
                         {n}
                       </button>
@@ -2877,9 +2877,9 @@ export default function LineStickerTool() {
                 <p className="text-[11px] font-black text-slate-400 uppercase mb-3">
                   {t("line_sticker_step_crop")}
                 </p>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="flex flex-wrap gap-2">
                   <button
-                    onClick={() => setCropMode("contain-safe")}
+                    onClick={() => setCropMode("contain-safe") }
                     className={`whitespace-nowrap rounded-lg px-2 py-2 text-[11px] font-black leading-none transition-all ${cropMode === "contain-safe" ? "bg-blue-600 text-white shadow-md" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}
                   >
                     文字保護
@@ -2924,7 +2924,7 @@ export default function LineStickerTool() {
                     <button
                       type="button"
                       onClick={() => updateGlobalScale(cropScale)}
-                      className="mt-2 w-full rounded-lg bg-white px-3 py-2 text-[11px] font-black text-blue-600 hover:bg-blue-50"
+                      className="mt-2 inline-flex w-auto max-w-full items-center justify-center rounded-lg bg-white px-3 py-2 text-[11px] font-black text-blue-600 hover:bg-blue-50"
                     >
                       套用目前縮放到全部貼圖
                     </button>
@@ -3171,11 +3171,11 @@ export default function LineStickerTool() {
               <p className="mb-3 text-sm font-bold text-slate-700">
                 覺得 LINE 貼圖工具實用？分享給正在做貼圖、商品圖或品牌素材的朋友。
               </p>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <button type="button" onClick={() => openToolShare("line")} className="rounded-full bg-emerald-500 px-4 py-2 text-sm font-bold !text-white shadow-md transition-all hover:-translate-y-0.5 hover:bg-emerald-600 hover:shadow-lg" style={{ color: "#ffffff" }}>LINE 分享</button>
                 <button type="button" onClick={() => openToolShare("facebook")} className="rounded-full bg-blue-600 px-4 py-2 text-sm font-bold !text-white shadow-md transition-all hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-lg" style={{ color: "#ffffff" }}>FB 分享</button>
                 <button type="button" onClick={() => openToolShare("x")} className="rounded-full bg-slate-900 px-4 py-2 text-sm font-bold !text-white shadow-md transition-all hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-lg" style={{ color: "#ffffff" }}>X 分享</button>
-                <button type="button" onClick={copyToolShareLink} className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-800 shadow-md transition-all hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-50 hover:text-blue-700 hover:shadow-lg">複製連結</button>
+                <button type="button" onClick={copyToolShareLink} className="inline-flex w-fit max-w-full shrink-0 items-center justify-center rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-800 shadow-md transition-all hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-50 hover:text-blue-700 hover:shadow-lg">複製連結</button>
               </div>
             </div>
           </section>
@@ -3441,16 +3441,16 @@ export default function LineStickerTool() {
         <div className="mx-auto mb-4 max-w-[1480px]">
           <StickerCustomInquiry compact />
         </div>
-        <footer aria-label="第 5 步：貼圖下載或動態製作" className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white/85 px-3 py-2 backdrop-blur-xl sm:p-4">
-          <div className="mx-auto max-w-[1480px]">
-            <p className="mb-1 text-center text-[11px] font-bold text-slate-700">
+        <footer aria-label="第 5 步：貼圖下載或動態製作" className="fixed bottom-2 left-1/2 z-50 w-[calc(100%-1rem)] max-w-3xl -translate-x-1/2 rounded-2xl border border-slate-200 bg-white/95 px-3 py-3 shadow-xl backdrop-blur-xl sm:bottom-4 sm:px-4">
+          <div className="mx-auto">
+            <p className="mb-2 text-center text-xs font-bold leading-5 text-slate-700">
               {canDownload
                 ? (flowProject?.mode === "animated"
                     ? "下一步請按下方「第 5 步｜製作動態貼圖」按鈕。"
                     : "下一步請按下方「步驟 5｜下載貼圖 ZIP」按鈕。")
                 : "下一步：先到上方第 3 步上傳整張母圖，完成切割預覽後才能下載。"}
             </p>
-          <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
             <div className="hidden sm:block">
               <p className="text-[10px] font-bold text-slate-400 uppercase leading-none">
                 {t("line_sticker_status_label")}
@@ -3480,7 +3480,7 @@ export default function LineStickerTool() {
                 <button
                   onClick={continueToAnimated}
                   disabled={!canDownload || loading}
-                  className={`h-12 min-h-12 flex-1 whitespace-nowrap rounded-2xl px-3 text-[15px] font-black shadow-lg transition active:scale-[0.97] sm:min-h-[52px] sm:text-sm ${
+                  className={`inline-flex min-h-12 w-auto max-w-full shrink-0 items-center justify-center rounded-2xl px-4 py-2.5 text-center text-sm font-black leading-5 shadow-lg transition active:scale-[0.97] sm:min-h-[52px] ${
                     !canDownload || loading
                       ? "cursor-not-allowed bg-slate-200 text-slate-400 shadow-none"
                       : "bg-violet-600 text-white hover:bg-violet-700"
@@ -3499,7 +3499,7 @@ export default function LineStickerTool() {
               <button
                 onClick={exportPlatform === "whatsapp" ? generateWhatsAppZip : generateZip}
                 disabled={!canDownload || loading}
-                className={`h-12 min-h-12 flex-1 whitespace-nowrap rounded-2xl px-3 py-0 text-[15px] font-black leading-none tracking-tight shadow-lg transition-all active:scale-[0.97] sm:h-auto sm:min-h-[52px] sm:py-3.5 sm:text-sm ${!canDownload || loading ? "cursor-not-allowed bg-slate-200 text-slate-400 shadow-none" : "bg-blue-600 text-white hover:bg-blue-700 shadow-lg"}`}
+                className={`inline-flex min-h-12 w-auto max-w-full shrink-0 items-center justify-center rounded-2xl px-4 py-2.5 text-center text-sm font-black leading-5 shadow-lg transition-all active:scale-[0.97] sm:min-h-[52px] ${!canDownload || loading ? "cursor-not-allowed bg-slate-200 text-slate-400 shadow-none" : "bg-blue-600 text-white hover:bg-blue-700 shadow-lg"}`}
               >
                 {loading
                   ? t("line_sticker_processing")
