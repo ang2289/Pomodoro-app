@@ -839,7 +839,7 @@ const templates: Record<TemplateKey, Template> = {
   },
   businessPersonal: {
     label: "業務個人品牌貼圖",
-    role: "一位親切又專業的年輕業務角色，穿襯衫與西裝背心，拿手機、文件夾、筆記本與成長圖表，表情有收到、確認、追進度、感謝與安心服務",
+    role: "一位親切專業的原創台灣業務角色，搭配手機、文件夾、筆記本、業務洽談或服務道具，表情包含收到、確認、追進度、感謝與安心服務。角色的年齡、外觀、髮型、服裝和配色須依下方專屬角色設定，不預設任何固定男業務、西裝背心或棕髮造型",
     style:
       "Q版可愛、親切專業、有個人品牌記憶點、適合業務回覆客戶與長期經營關係",
     texts: [
@@ -3255,6 +3255,85 @@ const STICKER_STYLE_OPTIONS: Array<{
   },
 ];
 
+// 每個新專案隨機產生一組角色外觀（只在載入時執行一次），可再手動選擇及鎖定。
+const BUSINESS_AVATAR_OPTIONS = {
+  persona: [
+    "30 歲左右、幹練的台灣女性業務",
+    "40 歲左右、沉穩溫暖的台灣男性顧問",
+    "20 多歲、活潑有親和力的台灣女性業務",
+    "35 歲左右、斯文可靠的台灣男性業務",
+    "50 歲左右、成熟專業的台灣女性顧問",
+    "30 歲左右、中性俐落形象的台灣業務",
+  ],
+  hair: [
+    "俐落黑色短髮、側分瀏海",
+    "深棕色微捲中長髮",
+    "自然黑色鮑伯短髮",
+    "栗棕色高馬尾",
+    "短銀灰髮、整齊髮線",
+    "黑色蓬鬆微捲短髮",
+    "柔和深棕齊肩直髮",
+    "茶棕色低包頭",
+  ],
+  clothes: [
+    "霧藍色西裝外套搭白襯衫",
+    "米白色針織外套搭淺卡其長褲",
+    "墨綠色正式外套搭淺色內搭",
+    "酒紅色俐落襯衫搭深色西裝褲",
+    "杏色西裝外套搭淺棕上衣",
+    "淡紫色柔和西裝外套搭白色內搭",
+    "深藍色西裝外套搭淡藍襯衫",
+    "淺灰色休閒西裝搭暖色領巾",
+  ],
+  accessory: [
+    "圓形細框眼鏡",
+    "小型幾何耳飾",
+    "別緻的素色領巾",
+    "原創幾何胸針（無文字與商標）",
+    "小巧腕錶",
+    "特色帆布側背包（無文字與商標）",
+  ],
+  palette: [
+    "湖水綠與奶油白",
+    "珊瑚粉與深海藍",
+    "薰衣草紫與暖米色",
+    "森林綠與淡金色",
+    "霧藍與杏色",
+    "酒紅與米白",
+  ],
+} as const;
+
+type BusinessAvatarKey = keyof typeof BUSINESS_AVATAR_OPTIONS;
+type BusinessAvatarSelection = Record<BusinessAvatarKey, string>;
+const BUSINESS_AVATAR_LABELS: Record<BusinessAvatarKey, string> = {
+  persona: "人物形象",
+  hair: "髮型與髮色",
+  clothes: "服裝搭配",
+  accessory: "記憶點配件",
+  palette: "主題配色",
+};
+function randomBusinessAvatar(): BusinessAvatarSelection {
+  const choose = (options: readonly string[]) =>
+    options[Math.floor(Math.random() * options.length)] || options[0] || "";
+  return {
+    persona: choose(BUSINESS_AVATAR_OPTIONS.persona),
+    hair: choose(BUSINESS_AVATAR_OPTIONS.hair),
+    clothes: choose(BUSINESS_AVATAR_OPTIONS.clothes),
+    accessory: choose(BUSINESS_AVATAR_OPTIONS.accessory),
+    palette: choose(BUSINESS_AVATAR_OPTIONS.palette),
+  };
+}
+function businessAvatarPrompt(choice: BusinessAvatarSelection, signature: string) {
+  const detail = signature.trim().slice(0, 180);
+  return `專屬業務個人品牌角色（請保持同套貼圖完全一致）：
+- 人物形象：${choice.persona}
+- 髮型與髮色：${choice.hair}
+- 固定服裝：${choice.clothes}
+- 固定配件：${choice.accessory}
+- 角色配色：${choice.palette}
+${detail ? `- 自訂辨識特徵：${detail}（只改造型，不得變成道具上額外文字或商標）\n` : ""}全部格子以及後續第 2 張母圖都必須維持同一張臉、髮型、服裝、配件及配色，不能一格變一個人；僅改表情與手勢。這是一位獨立設計的原創人物，避免套用常見的棕髮白襯衫深色背心模板。`;
+}
+
 const PHOTO_MODE_OPTIONS: Array<{
   value: PhotoMode;
   label: string;
@@ -4618,6 +4697,8 @@ export default function StickerPromptGenerator() {
     useState<StickerStylePreset>("friendly");
   const [photoMode, setPhotoMode] = useState<PhotoMode>("original");
   const [role, setRole] = useState(templates.businessPersonal.role);
+  const [businessAvatar, setBusinessAvatar] = useState<BusinessAvatarSelection>(randomBusinessAvatar);
+  const [businessSignature, setBusinessSignature] = useState("");
   const [style, setStyle] = useState(templates.businessPersonal.style);
   const [texts, setTexts] = useState(
     getDefaultTextWithName("businessPersonal", "4x4", "none", "小宇"),
@@ -4779,6 +4860,14 @@ export default function StickerPromptGenerator() {
     () => getMotherSheetPlan(targetCount),
     [targetCount],
   );
+  // 所有母圖沿用同一角色設定，不會因為 24／40 張分批產生就更換長相。
+  // 真人似顏繪優先忠實參考本人照片，不額外覆蓋髮型及臉部特徵。
+  const effectiveRole = useMemo(
+    () => type === "businessPersonal" && photoMode === "original"
+      ? `${role}\n\n${businessAvatarPrompt(businessAvatar, businessSignature)}`
+      : role,
+    [type, role, photoMode, businessAvatar, businessSignature],
+  );
   const flowPrompts = useMemo(
     () =>
       motherSheetPlan.map((item, index) => {
@@ -4787,7 +4876,7 @@ export default function StickerPromptGenerator() {
           ...item,
           prompt: buildFlowPrompt(
             templates[type].label,
-            role,
+            effectiveRole,
             style,
             item.grid,
             batchTexts,
@@ -4807,7 +4896,7 @@ export default function StickerPromptGenerator() {
       motherSheetPlan,
       flowTexts,
       type,
-      role,
+      effectiveRole,
       style,
       textSize,
       textColor,
@@ -4826,7 +4915,7 @@ export default function StickerPromptGenerator() {
     () =>
       buildPrompt(
         templates[type].label,
-        role,
+        effectiveRole,
         style,
         grid,
         texts,
@@ -4839,7 +4928,7 @@ export default function StickerPromptGenerator() {
       ),
     [
       type,
-      role,
+      effectiveRole,
       style,
       grid,
       texts,
@@ -4855,13 +4944,13 @@ export default function StickerPromptGenerator() {
     () =>
       buildStablePrompt(
         templates[type].label,
-        role,
+        effectiveRole,
         style,
         grid,
         stickerStylePreset,
         photoMode,
       ),
-    [type, role, style, grid, stickerStylePreset, photoMode],
+    [type, effectiveRole, style, grid, stickerStylePreset, photoMode],
   );
 
   function handleTypeChange(nextType: TemplateKey) {
@@ -5294,6 +5383,51 @@ export default function StickerPromptGenerator() {
               </div>
 
 
+              {type === "businessPersonal" && photoMode === "original" && (
+                <section className="mt-6 rounded-xl border border-violet-200 bg-violet-50/50 p-4" aria-label="業務專屬角色設計">
+                  <h4 className="text-base font-bold text-violet-950">設計我的專屬業務角色</h4>
+                  <p className="mt-1 text-sm leading-6 text-slate-700">
+                    每次進來會自動搭配一組外觀，也能自行修改。角色設定會帶入整套母圖，避免大家都畫成同一位男業務。
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setBusinessAvatar(randomBusinessAvatar())}
+                    className="mt-3 inline-flex min-h-11 items-center justify-center rounded-lg border-2 border-violet-300 bg-white px-4 py-2 text-sm font-bold text-violet-800 shadow-sm transition-colors hover:border-violet-600 hover:bg-violet-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
+                  >
+                    換一組不同的角色搭配 ↻
+                  </button>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    {(Object.keys(BUSINESS_AVATAR_OPTIONS) as BusinessAvatarKey[]).map((key) => (
+                      <label key={key} className="block text-sm font-medium text-slate-700">
+                        {BUSINESS_AVATAR_LABELS[key]}
+                        <select
+                          value={businessAvatar[key]}
+                          onChange={(e) => setBusinessAvatar((previous) => ({ ...previous, [key]: e.target.value }))}
+                          className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-800 focus:border-violet-500"
+                        >
+                          {BUSINESS_AVATAR_OPTIONS[key].map((value) => (
+                            <option key={value} value={value}>{value}</option>
+                          ))}
+                        </select>
+                      </label>
+                    ))}
+                  </div>
+                  <label className="mt-4 block text-sm font-medium text-slate-700">
+                    個人辨識特徵（選填）
+                    <input
+                      value={businessSignature}
+                      onChange={(e) => setBusinessSignature(e.target.value)}
+                      maxLength={180}
+                      placeholder="例如：左臉小酒窩、溫柔笑眼、珍珠髮夾"
+                      className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-800 focus:border-violet-500"
+                    />
+                  </label>
+                  <p className="mt-2 text-xs leading-5 text-slate-600">
+                    固定角色外觀有助於辨識，但無法保證與其他使用者絕不重複。若希望與本人相似，請在「角色來源」改選真人似顏繪並自行提供有授權的照片。
+                  </p>
+                </section>
+              )}
+
               <label className="mt-5 block text-xs font-black text-slate-500">
                 角色設定
               </label>
@@ -5398,6 +5532,7 @@ export default function StickerPromptGenerator() {
                     `貼圖風格：${optionLabel(STICKER_STYLE_OPTIONS, stickerStylePreset)}`,
                     `角色來源：${optionLabel(PHOTO_MODE_OPTIONS, photoMode)}`,
                     `名稱：${optionLabel(NAME_MODE_OPTIONS, nameMode)}`,
+                    ...(type === "businessPersonal" && photoMode === "original" ? [`角色：${businessAvatar.persona}`, `髮型：${businessAvatar.hair}`, `服裝：${businessAvatar.clothes}`, `配色：${businessAvatar.palette}`] : []),
                   ].map((label) => (
                     <span key={label} className="rounded-md bg-slate-100 px-2.5 py-1.5">{label}</span>
                   ))}
