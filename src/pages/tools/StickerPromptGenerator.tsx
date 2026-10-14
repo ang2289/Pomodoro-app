@@ -4247,15 +4247,28 @@ function buildFlowPrompt(
     stickerStyle,
     photoMode,
   );
+  const columns = 4;
+  const rows = grid === "4x2" ? 2 : grid === "4x4" ? 4 : 5;
+  const ratio = grid === "4x2" ? "2:1 橫向" : grid === "4x4" ? "1:1 正方形" : "4:5 直向";
+  const rowAssignment = Array.from({ length: rows }, (_, row) => {
+    const cells = batchTexts.slice(row * columns, (row + 1) * columns);
+    return `第 ${row + 1} 列（由左至右）：${cells.map((text, column) => `第 ${column + 1} 格「${text}」`).join("、")}`;
+  }).join("\n");
+
   return `請直接生成圖片，不要先提供企劃、說明或提示詞。
 
 這是 LINE 貼圖母圖第 ${batchNumber} 張。請嚴格依指定格數排列，這次只生成一張完整母圖。
 
 ${base}
 
+最終版型僅此一種：${columns} 欄 × ${rows} 列（${grid.replace("x", "×")}、共 ${columns * rows} 格），畫布採用 ${ratio} 比例。禁止改成其他列數、欄數、橫幅或任意拼貼。
+每格短句位置必須依下表由左到右、由上到下排列，${columns * rows} 句各出現一次，不可遺漏、不可重複、不可更換成其他文字：
+${rowAssignment}
+
 重要規則：
-- 只輸出一張完整母圖。
-- 嚴格按照指定 4×2、4×4 或 4×5 格數。
+- 只輸出一張完整母圖；每一列固定 ${columns} 格，總共固定 ${rows} 列。
+- 只能使用以上 ${grid.replace("x", "×")} 排列，不要自行選擇其他格數。
+- 每格只能有指定的單句繁體中文，不能在手牌、道具、卡片、緞帶、招牌、背景另寫英文、中文、數字或其他字樣。
 - 每格只能是一張獨立貼圖，人物與文字不可跨格。
 - 格與格之間保留明顯白色空間，不要畫格線。
 - 背景使用純白色，方便下一步自動去背與裁切。
