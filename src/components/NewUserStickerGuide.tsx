@@ -15,8 +15,8 @@ const steps = [
   },
   {
     number: 2,
-    title: "貼到 Google Gemini 畫圖",
-    description: "在第 2 步按「複製」，開啟 Google Gemini 貼上指令，請 AI 畫出一張完整的大圖。",
+    title: "用 ChatGPT／Gemini 畫圖",
+    description: "第 2 步先按「複製」，再開啟 ChatGPT 或 Google Gemini 貼上指令，畫出一張完整大圖。",
     action: "第 2 步｜複製畫圖指令",
     href: "/tools/sticker-prompt#sticker-copy",
   },
@@ -59,7 +59,7 @@ export default function NewUserStickerGuide({ compact = false }: Props) {
         不會畫圖也可以：先畫一張大圖，再自動切成貼圖
       </h2>
       <p className="mt-2 text-sm leading-7 text-slate-700">
-        RXV 不是直接替你畫圖：先用本站準備「給 AI 的畫圖指令」，以 Google Gemini 畫好一張貼圖大圖，
+        RXV 不是直接替你畫圖：先用本站準備「給 AI 的畫圖指令」，再用 ChatGPT 或 Google Gemini 畫好一張貼圖大圖，
         再把圖片傳回 RXV 自動切割、整理與下載。
       </p>
       <div className="mt-4 flex flex-col items-center gap-3 rounded-2xl bg-sky-50 p-3 sm:flex-row sm:justify-center sm:p-4">
@@ -123,7 +123,7 @@ export default function NewUserStickerGuide({ compact = false }: Props) {
       <div className="mt-4"><StickerExistingMotherSheetShortcut compact /></div>
       <div className="mt-3"><StickerCustomInquiry compact /></div>
       <p className="mt-3 rounded-xl bg-emerald-50 px-3 py-2 text-xs leading-6 text-emerald-900">
-        生圖請到 Google Gemini（建議先用）或 ChatGPT；Google「搜尋」不會自動產圖。第 2 步會提供複製按鈕與前往 Gemini 的連結。
+        ChatGPT 是目前已有實際操作的生圖方式，Google Gemini 也是可選工具。第 2 步有複製指令及兩個生圖平台入口；Google「搜尋」不是 Gemini。
       </p>
       <p className="mt-3 text-xs leading-5 text-slate-500">
         WhatsApp ZIP 需要搭配支援的貼圖 APP 匯入；LINE 上架仍須由 LINE Creators Market 審核。
