@@ -70,7 +70,7 @@ test("貼圖工具主要按鈕依內容寬度排列，不再整列滿版", () =>
   const guide = read("src/pages/tools/LineStickerGuide.tsx");
 
   assert.match(upload, /w-fit max-w-full shrink-0 items-center justify-center rounded-full/);
-  assert.match(upload, /mt-6 max-w-3xl rounded-2xl/);
+  assert.match(upload, /mt-5 mb-5 max-w-3xl rounded-2xl/);
   assert.doesNotMatch(upload, /className="fixed bottom-2 left-1\/2/);
   assert.match(upload, /inline-flex min-h-12 w-auto max-w-full shrink-0/);
   assert.doesNotMatch(upload, /h-12 min-h-12 flex-1 whitespace-nowrap/);
