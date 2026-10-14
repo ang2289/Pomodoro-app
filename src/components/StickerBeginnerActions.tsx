@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import type { ReactNode } from "react";
 
 /** 新手主流程：已有母圖可直接上傳；需要協助可私訊，不先顯示任何收費方案。 */
 export function StickerExistingMotherSheetShortcut({ compact = false }: { compact?: boolean }) {
@@ -42,6 +43,6 @@ export function StickerCustomInquiry({ compact = false }: { compact?: boolean })
   );
 }
 
-export function StickerNextActionHint({ children }: { children: React.ReactNode }) {
+export function StickerNextActionHint({ children }: { children: ReactNode }) {
   return <p className="mb-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-black leading-6 text-amber-900">下一步：{children}</p>;
 }
