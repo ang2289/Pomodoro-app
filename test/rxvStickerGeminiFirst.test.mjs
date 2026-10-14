@@ -119,7 +119,7 @@ test("自訂文字和字型在新手頁預設顯示，並且設定實際寫入�
   assert.match(prompt, /value=\{fontStyle\}/);
   assert.match(prompt, /onChange=\{\(e\) => setFontStyle/);
   assert.match(prompt, /fontStylePrompt = optionPrompt\(FONT_STYLE_OPTIONS, fontStyle\)/);
-  assert.match(prompt, /字型風格為「\$\{fontStylePrompt\}」/);
+  assert.match(prompt, /字型造型遵守「\$\{fontStylePrompt\}」/);
   assert.match(prompt, /fontStyle,\s*stickerStylePreset,\s*photoMode,\s*index \+ 1,/);
   assert.match(prompt, /fontStyle,\s*stickerStyle,\s*photoMode,/);
   assert.doesNotMatch(prompt, /想換角色、修改文字或指定畫風？展開進階設定/);
