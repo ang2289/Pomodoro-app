@@ -345,7 +345,7 @@ test("五種張數採共用母圖配置及全域起訖序號", () => {
   const match = source.match(/const MOTHER_SHEET_GRIDS:[\s\S]*?\nfunction makeProjectId\(/);
   assert.ok(match, "需以共用母圖版型表格產生分頁");
   const code = match[0].replace(/\nfunction makeProjectId\($/, "");
-  const compiled = ts.transpileModule(code, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.None } }).outputText;
+  const compiled = ts.transpileModule(code.replace("export function getMotherSheetPlan", "function getMotherSheetPlan"), { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.None } }).outputText;
   const plans = vm.runInNewContext(compiled + "\ngetMotherSheetPlan", {});
   const expected = [
     [8, [["4x2", 0, 8]]],
