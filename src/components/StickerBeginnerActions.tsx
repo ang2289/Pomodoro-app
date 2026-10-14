@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import type { ReactNode } from "react";
 
-/** 新手主流程：已有母圖可直接上傳；需要協助可私訊，不先顯示任何收費方案。 */
+/** 新手主流程：已有母圖可直接上傳；需要協助可私訊，不呈現價目表。 */
 export function StickerExistingMotherSheetShortcut({ compact = false }: { compact?: boolean }) {
   return (
     <div className={`rounded-2xl border border-emerald-200 bg-emerald-50 ${compact ? "p-3" : "p-4"}`}>
