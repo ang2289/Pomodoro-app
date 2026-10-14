@@ -34,25 +34,33 @@ export function getAllowedCounts(mode: LineStickerMode): LineStickerCount[] {
   return mode === "animated" ? [8, 16, 24] : [8, 16, 24, 32, 40];
 }
 
+// 一套共通版型設定；新增張數時只需加入版型配置，分頁索引自動累加。
+const MOTHER_SHEET_GRIDS: Record<LineStickerCount, MotherSheetGrid[]> = {
+  8: ["4x2"],
+  16: ["4x4"],
+  24: ["4x4", "4x2"],
+  32: ["4x4", "4x4"],
+  40: ["4x5", "4x5"],
+};
+const MOTHER_SHEET_GRID_SIZE: Record<MotherSheetGrid, number> = {
+  "4x2": 8,
+  "4x4": 16,
+  "4x5": 20,
+};
 export function getMotherSheetPlan(count: LineStickerCount): MotherSheetPlanItem[] {
-  if (count === 8) return [{ grid: "4x2", count: 8, startIndex: 0, endIndex: 8 }];
-  if (count === 16) return [{ grid: "4x4", count: 16, startIndex: 0, endIndex: 16 }];
-  if (count === 24) {
-    return [
-      { grid: "4x4", count: 16, startIndex: 0, endIndex: 16 },
-      { grid: "4x2", count: 8, startIndex: 16, endIndex: 24 },
-    ];
-  }
-  if (count === 32) {
-    return [
-      { grid: "4x4", count: 16, startIndex: 0, endIndex: 16 },
-      { grid: "4x4", count: 16, startIndex: 16, endIndex: 32 },
-    ];
-  }
-  return [
-    { grid: "4x5", count: 20, startIndex: 0, endIndex: 20 },
-    { grid: "4x5", count: 20, startIndex: 20, endIndex: 40 },
-  ];
+  let startIndex = 0;
+  const plan = MOTHER_SHEET_GRIDS[count].map((grid) => {
+    const item: MotherSheetPlanItem = {
+      grid,
+      count: MOTHER_SHEET_GRID_SIZE[grid],
+      startIndex,
+      endIndex: startIndex + MOTHER_SHEET_GRID_SIZE[grid],
+    };
+    startIndex = item.endIndex;
+    return item;
+  });
+  if (startIndex !== count) throw new Error("母圖版型總張數設定不符");
+  return plan;
 }
 
 function makeProjectId() {
