@@ -14,6 +14,7 @@ import CoupangDynamicAd from "@/components/CoupangDynamicAd";
 import {
   clearAnimatedStickerHandoff,
   clearLineStickerProject,
+  findMatchingMotherSheetCount,
   getMotherSheetPlan,
   readLineStickerProject,
   saveAnimatedStickerHandoff,
@@ -1584,7 +1585,7 @@ export default function LineStickerTool() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const [flowProject] = useState<LineStickerProject | null>(() => {
+  const [flowProject, setFlowProject] = useState<LineStickerProject | null>(() => {
     if (typeof window === "undefined") return null;
     const enabled = new URLSearchParams(window.location.search).get("flow") === "1";
     return enabled ? readLineStickerProject() : null;
@@ -1734,11 +1735,43 @@ export default function LineStickerTool() {
     () => checkMotherSheetPlan(motherSheetDetections, expectedMotherSheetPlan),
     [motherSheetDetections, expectedMotherSheetPlan],
   );
+  // 僅提示完全符合其他張數方案的組合；須使用者確認才變更，且不清空所選母圖。
+  const suggestedMotherSheetCount = useMemo(() => {
+    if (!motherSheetDetections.length || files.length) return null;
+    const matched = findMatchingMotherSheetCount(
+      motherSheetDetections.map((item) => item.grid),
+      flowProject?.mode ?? "static",
+    );
+    return matched !== (flowProject?.count ?? stickerCount) ? matched : null;
+  }, [motherSheetDetections, files.length, flowProject, stickerCount]);
+  const applyDetectedMotherSheetCount = useCallback(() => {
+    if (!suggestedMotherSheetCount || loading) return;
+    // 現有文字絕不覆寫；變更 16→24 時，新增的 8 句尚未知曉，先保留空白。
+    const nextTexts = flowProject
+      ? Array.from({ length: suggestedMotherSheetCount }, (_, index) => flowProject.texts[index] ?? "")
+      : [];
+    if (flowProject) {
+      const changed = updateLineStickerProject({
+        count: suggestedMotherSheetCount,
+        texts: nextTexts,
+        stage: 3,
+      });
+      if (changed) setFlowProject(changed);
+    }
+    setStickerCount(suggestedMotherSheetCount);
+    setDownloadCompleted(false);
+    const result = checkMotherSheetPlan(
+      motherSheetDetections,
+      getMotherSheetPlan(suggestedMotherSheetCount),
+    );
+    setMotherSheetDetectionStatus(result.valid ? "ready" : "invalid");
+    setError(result.valid ? null : result.message);
+  }, [suggestedMotherSheetCount, loading, flowProject, motherSheetDetections]);
   const unsafeMotherSheets = useMemo(
     () => motherSheetDetections.flatMap((item) => {
       const grid = !flowProject && motherSheetGrid !== "auto" ? motherSheetGrid : item.grid;
       const errors = item.safetyByGrid[grid].blocked.map((message) => `${item.file.name}：${message}`);
-      const requiresSquare4x4 = grid === "4x4" || expectedMotherSheetPlan.every((step) => step.grid === "4x4");
+      const requiresSquare4x4 = grid === "4x4";
       const aspect = item.width / Math.max(1, item.height);
       // 4×4 每格應為近似正方形。4×2 有舊母圖採正方形畫布，不強制其比例。
       if (requiresSquare4x4 && (aspect < 0.82 || aspect > 1.22)) {
@@ -1748,7 +1781,7 @@ export default function LineStickerTool() {
       }
       return errors;
     }),
-    [motherSheetDetections, motherSheetGrid, flowProject, expectedMotherSheetPlan],
+    [motherSheetDetections, motherSheetGrid, flowProject],
   );
 
   const overrideMotherSheetGrid = useCallback(
@@ -2746,6 +2779,28 @@ export default function LineStickerTool() {
                       {formatMotherSheetGrid(motherSheetGrid)}。
                     </div>
                   )}
+
+                  {suggestedMotherSheetCount && (flowProject || motherSheetGrid === "auto") ? (
+                    <section role="status" className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                      <p className="text-sm font-bold text-amber-950">
+                        母圖辨識為 {motherSheetPlanCheck.actualCount} 張，但目前還選著 {motherSheetPlanCheck.expectedCount} 張
+                      </p>
+                      <p className="mt-1 text-xs leading-6 text-amber-900">
+                        這兩張的 4×4（16 格）與 4×2（8 格）本身可以是正確組合。
+                        請確認是否要依辨識結果改成 {suggestedMotherSheetCount} 張；
+                        不會清空已選母圖，也不會強制將橫圖改判為 4×4。
+                        原專案已輸入的短句會保留；新增的短句不會憑空產生，請以原圖逐張檢查。
+                      </p>
+                      <button
+                        type="button"
+                        disabled={loading}
+                        onClick={applyDetectedMotherSheetCount}
+                        className="mt-3 inline-flex min-h-11 items-center justify-center rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-violet-700 disabled:opacity-60"
+                      >
+                        改用 {suggestedMotherSheetCount} 張｜保留已選母圖
+                      </button>
+                    </section>
+                  ) : null}
 
                   {unsafeMotherSheets.length ? (
                     <div role="alert" className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-bold leading-6 text-rose-800">
