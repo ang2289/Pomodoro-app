@@ -139,6 +139,7 @@ type TemplateKey =
 type GridType = "4x2" | "4x4" | "4x5" | "5x4";
 type NameMode = "none" | "person" | "shop";
 type TextSize = "small" | "medium" | "large";
+type FontStyle = "roundBold" | "handwritten" | "boldSans" | "elegant" | "brush";
 type TextColor =
   | "blackWhite"
   | "blueWhite"
@@ -3118,6 +3119,14 @@ const TEXT_SIZE_OPTIONS: Array<{
   },
 ];
 
+const FONT_STYLE_OPTIONS: Array<{ value: FontStyle; label: string; prompt: string }> = [
+  { value: "roundBold", label: "可愛圓體（推薦）", prompt: "圓潤飽滿的可愛粗體字型，筆畫清楚、字距適中" },
+  { value: "handwritten", label: "童趣手寫體", prompt: "活潑自然的手寫字型，字體偏粗、筆畫完整，避免潦草難讀" },
+  { value: "boldSans", label: "清楚黑體", prompt: "端正醒目的粗黑體字型，筆畫俐落，手機小圖也易讀" },
+  { value: "elegant", label: "優雅婚禮字", prompt: "優雅柔和但仍清楚可讀的繁體中文字型，適合婚禮與祝福情境" },
+  { value: "brush", label: "活潑筆刷字", prompt: "手繪筆刷感的粗體字型，筆畫流暢而不凌亂，保持繁體中文辨識度" },
+];
+
 const TEXT_COLOR_OPTIONS: Array<{
   value: TextColor;
   label: string;
@@ -4074,6 +4083,7 @@ function buildPrompt(
   textSize: TextSize,
   textColor: TextColor,
   textPosition: TextPosition,
+  fontStyle: FontStyle,
   stickerStyle: StickerStylePreset,
   photoMode: PhotoMode,
 ) {
@@ -4086,13 +4096,14 @@ function buildPrompt(
   const textSizePrompt = optionPrompt(TEXT_SIZE_OPTIONS, textSize);
   const textColorPrompt = optionPrompt(TEXT_COLOR_OPTIONS, textColor);
   const textPositionPrompt = optionPrompt(TEXT_POSITION_OPTIONS, textPosition);
+  const fontStylePrompt = optionPrompt(FONT_STYLE_OPTIONS, fontStyle);
   const stickerStylePrompt = optionPrompt(STICKER_STYLE_OPTIONS, stickerStyle);
   const photoModePrompt = optionPrompt(PHOTO_MODE_OPTIONS, photoMode);
 
   const rolePrompt = buildRolePrompt(role, photoMode);
   const photoReminder = buildPhotoReminder(photoMode);
 
-  return `請設計一張 LINE ${label}大圖，白色背景，${style}。\n\n商用販售安全：每格只能出現下方指定的主要貼圖短句，禁止在卡片、紙袋、花籃、店招、制服、道具額外產生任何文字、英文 NEW、價格、網址、QR Code、商標、店家 Logo、品牌字樣或促銷宣傳；角色、衣服與道具皆需為原創，不可仿畫知名品牌角色。圖文清晰易讀、避免多手多腳、勿遮住文字。\n\n${rolePrompt}\n\n風格加強：${stickerStylePrompt}。\n\n真人／原創設定：${photoModePrompt}。${photoReminder}\n\n請畫成 ${gridInfo.layoutText}。每格貼圖都要獨立清楚、平均排列。每一格的角色＋文字＋裝飾只佔該格中央約 70%～74%，上下左右至少保留約 13%～15% 的純白安全留白，格與格之間必須看得到明顯白色空間，方便後續平均切割。角色與文字都要完整置中在各自格子內，不可超出邊界、不可跨格、不可互相重疊；每格最外圈至少 13% 純白，格線附近不可有花瓣、陰影或字；若空間不足，寧可把角色與文字整體縮小，也不要貼邊。\n\n文字設定：請使用繁體中文，字體粗體，${textSizePrompt}，${textColorPrompt}，${textPositionPrompt}。文字必須清楚好讀，文字與頭髮、臉、手勢、手機、文件等主體至少保留明顯空隙，不可壓在人物或道具上；文字四周也要保留白邊，不要貼近格子邊界，不要切到字，不可出現序號、數字、標題、格號或列表符號。\n\n每張貼圖都要有不同表情與動作，整體風格一致、乾淨可愛、適合 LINE 貼圖使用。\n\n貼圖文字如下：\n${numberedTexts}`;
+  return `請設計一張 LINE ${label}大圖，白色背景，${style}。\n\n商用販售安全：每格只能出現下方指定的主要貼圖短句，禁止在卡片、紙袋、花籃、店招、制服、道具額外產生任何文字、英文 NEW、價格、網址、QR Code、商標、店家 Logo、品牌字樣或促銷宣傳；角色、衣服與道具皆需為原創，不可仿畫知名品牌角色。圖文清晰易讀、避免多手多腳、勿遮住文字。\n\n${rolePrompt}\n\n風格加強：${stickerStylePrompt}。\n\n真人／原創設定：${photoModePrompt}。${photoReminder}\n\n請畫成 ${gridInfo.layoutText}。每格貼圖都要獨立清楚、平均排列。每一格的角色＋文字＋裝飾只佔該格中央約 70%～74%，上下左右至少保留約 13%～15% 的純白安全留白，格與格之間必須看得到明顯白色空間，方便後續平均切割。角色與文字都要完整置中在各自格子內，不可超出邊界、不可跨格、不可互相重疊；每格最外圈至少 13% 純白，格線附近不可有花瓣、陰影或字；若空間不足，寧可把角色與文字整體縮小，也不要貼邊。\n\n文字設定：請使用繁體中文，字型風格為「${fontStylePrompt}」，${textSizePrompt}，${textColorPrompt}，${textPositionPrompt}。文字必須清楚好讀，文字與頭髮、臉、手勢、手機、文件等主體至少保留明顯空隙，不可壓在人物或道具上；文字四周也要保留白邊，不要貼近格子邊界，不要切到字，不可出現序號、數字、標題、格號或列表符號。\n\n每張貼圖都要有不同表情與動作，整體風格一致、乾淨可愛、適合 LINE 貼圖使用。\n\n貼圖文字如下：\n${numberedTexts}`;
 }
 
 function buildStablePrompt(
@@ -4231,6 +4242,7 @@ function buildFlowPrompt(
   textSize: TextSize,
   textColor: TextColor,
   textPosition: TextPosition,
+  fontStyle: FontStyle,
   stickerStyle: StickerStylePreset,
   photoMode: PhotoMode,
   batchNumber: number,
@@ -4244,6 +4256,7 @@ function buildFlowPrompt(
     textSize,
     textColor,
     textPosition,
+    fontStyle,
     stickerStyle,
     photoMode,
   );
@@ -4577,6 +4590,7 @@ export default function StickerPromptGenerator() {
   const [textSize, setTextSize] = useState<TextSize>("large");
   const [textColor, setTextColor] = useState<TextColor>("colorfulWhite");
   const [textPosition, setTextPosition] = useState<TextPosition>("mixed");
+  const [fontStyle, setFontStyle] = useState<FontStyle>("roundBold");
   const [stickerStylePreset, setStickerStylePreset] =
     useState<StickerStylePreset>("friendly");
   const [photoMode, setPhotoMode] = useState<PhotoMode>("original");
@@ -4757,6 +4771,7 @@ export default function StickerPromptGenerator() {
             textSize,
             textColor,
             textPosition,
+            fontStyle,
             stickerStylePreset,
             photoMode,
             index + 1,
@@ -4772,6 +4787,7 @@ export default function StickerPromptGenerator() {
       textSize,
       textColor,
       textPosition,
+      fontStyle,
       stickerStylePreset,
       photoMode,
     ],
@@ -4790,6 +4806,7 @@ export default function StickerPromptGenerator() {
         textSize,
         textColor,
         textPosition,
+        fontStyle,
         stickerStylePreset,
         photoMode,
       ),
@@ -4802,6 +4819,7 @@ export default function StickerPromptGenerator() {
       textSize,
       textColor,
       textPosition,
+      fontStyle,
       stickerStylePreset,
       photoMode,
     ],
@@ -5097,11 +5115,15 @@ export default function StickerPromptGenerator() {
               )}
 
               <p className="mt-3 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-xs font-bold leading-6 text-emerald-800">
-                選擇貼圖類型後，系統會自動帶入常用貼圖文字。可在下方「貼圖文字」欄位確認或微調。
+                下一步請往下選擇「字型風格、文字大小、文字顏色、文字位置」，並確認「貼圖文字」。系統已帶入常用句子，全部都可自行修改；不想調整也能直接使用預設值。
               </p>
 
-              <details className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                <summary className="cursor-pointer text-sm font-black text-slate-800">想換角色、修改文字或指定畫風？展開進階設定（可跳過）</summary>
+              <section aria-label="自訂貼圖文字、字型及角色設定" className="mt-5 rounded-2xl border border-violet-200 bg-violet-50/50 p-4">
+                <div className="rounded-xl bg-white px-4 py-3">
+                  <h3 className="text-base font-black text-violet-900">自訂貼圖內容｜文字、字型、顏色、角色都可以選</h3>
+                  <p className="mt-2 text-sm font-bold leading-7 text-slate-700">以下設定已全部顯示，不用另外展開。請先選擇喜歡的字型與文字效果，再檢查最下方的貼圖短句；每個選項都有預設值，不修改也可以直接進入第 2 步。</p>
+                  <p className="mt-1 text-xs leading-6 text-slate-500">字型風格會加入 ChatGPT／Gemini 生圖指令，屬 AI 繪圖參考，不保證與真實字型完全一致，完成後仍請檢查繁體中文字。</p>
+                </div>
                 <div className="mt-3">
               <label className="mt-5 block text-xs font-black text-slate-500">
                 角色來源
@@ -5161,7 +5183,7 @@ export default function StickerPromptGenerator() {
                 </div>
               )}
 
-              <div className="mt-5 grid gap-4">
+              <div className="mt-5 grid gap-4 sm:grid-cols-2">
                 <div>
                   <label className="block text-xs font-black text-slate-500">
                     文字大小
@@ -5175,6 +5197,20 @@ export default function StickerPromptGenerator() {
                       <option key={item.value} value={item.value}>
                         {item.label}
                       </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-black text-slate-500">
+                    字型風格（可選）
+                  </label>
+                  <select
+                    value={fontStyle}
+                    onChange={(e) => setFontStyle(e.target.value as FontStyle)}
+                    className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
+                  >
+                    {FONT_STYLE_OPTIONS.map((item) => (
+                      <option key={item.value} value={item.value}>{item.label}</option>
                     ))}
                   </select>
                 </div>
@@ -5294,7 +5330,7 @@ export default function StickerPromptGenerator() {
                 className="mt-3 min-h-[520px] w-full resize-y rounded-2xl border border-slate-200 bg-white px-4 py-4 text-base leading-8 text-slate-700 outline-none focus:border-violet-400"
               />
                 </div>
-              </details>
+              </section>
             </div>
 
             <div id="sticker-copy" className="scroll-mt-24 rounded-3xl border border-violet-100 bg-white p-5 shadow-sm">
