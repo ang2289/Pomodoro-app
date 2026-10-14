@@ -5008,7 +5008,7 @@ export default function StickerPromptGenerator() {
             </p>
           </section>
 
-          <section className="mt-6 grid gap-6 xl:grid-cols-[0.82fr_1.18fr]">
+          <section className="mt-6 flex flex-col gap-6" aria-label="依順序操作第 1、2 步">
             <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
               <h2 className="text-xl font-black text-slate-900">
                 第 1 步｜先選貼圖（建議第一次選 8 張）
@@ -5214,7 +5214,7 @@ export default function StickerPromptGenerator() {
                 </div>
               )}
 
-              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <div className="mt-5 grid gap-4">
                 <div>
                   <label className="block text-xs font-black text-slate-500">
                     文字大小
@@ -5369,6 +5369,12 @@ export default function StickerPromptGenerator() {
               />
                 </div>
               </section>
+              <div className="mt-6 border-t border-violet-100 pt-5">
+                <StickerNextActionHint>已完成上方的主題、張數、文字與風格設定？下一步請按下方「前往第 2 步｜複製畫圖指令」。如果不想自訂，保留預設值也可以直接前往。</StickerNextActionHint>
+                <a href="#sticker-copy" className="inline-flex min-h-12 w-auto max-w-full items-center justify-center rounded-xl bg-violet-600 px-5 py-3 text-sm font-black text-white shadow hover:bg-violet-700">
+                  前往第 2 步｜複製畫圖指令 ↓
+                </a>
+              </div>
             </div>
 
             <div id="sticker-copy" className="scroll-mt-24 rounded-3xl border border-violet-100 bg-white p-5 shadow-sm">
