@@ -63,6 +63,25 @@ export function getMotherSheetPlan(count: LineStickerCount): MotherSheetPlanItem
   return plan;
 }
 
+/**
+ * 依每張母圖自己的版型尋找完整方案。只用格數組合判斷，不因舊專案
+ * 曾選 16 張，就把另一張 4×2 橫圖當成 4×4 正方形。
+ * 回傳 null 表示沒有完整相符的方案，絕不在背景自動改變貼圖張數。
+ */
+export function findMatchingMotherSheetCount(
+  grids: MotherSheetGrid[],
+  mode: LineStickerMode,
+): LineStickerCount | null {
+  const actual = [...grids].sort();
+  for (const count of getAllowedCounts(mode)) {
+    const expected = getMotherSheetPlan(count).map((item) => item.grid).sort();
+    if (expected.length === actual.length && expected.every((grid, index) => grid === actual[index])) {
+      return count;
+    }
+  }
+  return null;
+}
+
 function makeProjectId() {
   return `line-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
