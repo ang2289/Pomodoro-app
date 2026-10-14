@@ -56,3 +56,33 @@ test("最近的重要動畫和圖片流量修復仍保留", () => {
   assert.match(gallery, /loading="lazy"/);
   assert.match(upload, /WhatsAppMobileZipHandoff/);
 });
+
+
+test("貼圖工具主要按鈕依內容寬度排列，不再整列滿版", () => {
+  const upload = read("src/pages/tools/LineStickerTool.tsx");
+  const prompt = read("src/pages/tools/StickerPromptGenerator.tsx");
+  const actions = read("src/components/StickerBeginnerActions.tsx");
+  const animated = read("src/pages/tools/AnimatedLineStickerTool.tsx");
+  const whatsapp = read("src/components/WhatsAppMobileZipHandoff.tsx");
+  const creator = read("src/components/LineStickerAuthorCard.tsx");
+  const guide = read("src/pages/tools/LineStickerGuide.tsx");
+
+  assert.match(upload, /w-fit max-w-full shrink-0 items-center justify-center rounded-full/);
+  assert.match(upload, /w-\\[calc\\(100%-1rem\\)\\] max-w-3xl/);
+  assert.match(upload, /inline-flex min-h-12 w-auto max-w-full shrink-0/);
+  assert.doesNotMatch(upload, /h-12 min-h-12 flex-1 whitespace-nowrap/);
+  assert.match(prompt, /mt-4 flex flex-wrap items-center gap-3/);
+  assert.match(prompt, /w-fit max-w-full/);
+  assert.match(actions, /flex flex-wrap items-center gap-2/);
+  assert.match(actions, /開啟 ChatGPT 畫圖/);
+  assert.match(actions, /開啟 Google Gemini 畫圖/);
+  assert.match(animated, /mt-4 flex flex-wrap items-center gap-3/);
+  assert.match(whatsapp, /min-h-12 w-fit max-w-full/);
+  assert.match(creator, /flex flex-wrap items-start gap-3/);
+  assert.match(guide, /min-w-\\[200px\\] max-w-\\[265px\\]/);
+
+  // 全幅上傳預覽、圖片拖曳區和表單控件保留原樣。
+  assert.match(upload, /aspect-\\[520\\/450\\] w-full cursor-grab/);
+  assert.match(animated, /min-h-\\[230px\\] w-full flex-col/);
+  assert.match(prompt, /min-h-\\[520px\\] w-full resize-y/);
+});
