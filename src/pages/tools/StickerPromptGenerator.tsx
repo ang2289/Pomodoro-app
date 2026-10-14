@@ -4101,6 +4101,7 @@ function buildPrompt(
   fontStyle: FontStyle,
   stickerStyle: StickerStylePreset,
   photoMode: PhotoMode,
+  platform: "line" | "whatsapp" = "line",
 ) {
   const gridInfo = gridOptions[grid];
   const lines = normalizeLines(textArea, gridInfo.count);
@@ -4118,7 +4119,7 @@ function buildPrompt(
   const rolePrompt = buildRolePrompt(role, photoMode);
   const photoReminder = buildPhotoReminder(photoMode);
 
-  return `請設計一張 LINE ${label}大圖，白色背景，${style}。\n\n商用販售安全：每格只能出現下方指定的主要貼圖短句，禁止在卡片、紙袋、花籃、店招、制服、道具額外產生任何文字、英文 NEW、價格、網址、QR Code、商標、店家 Logo、品牌字樣或促銷宣傳；角色、衣服與道具皆需為原創，不可仿畫知名品牌角色。圖文清晰易讀、避免多手多腳、勿遮住文字。\n\n${rolePrompt}\n\n風格加強：${stickerStylePrompt}。\n\n真人／原創設定：${photoModePrompt}。${photoReminder}\n\n請畫成 ${gridInfo.layoutText}。每格貼圖都要獨立清楚、平均排列。每一格的角色＋文字＋裝飾只佔該格中央約 70%～74%，上下左右至少保留約 13%～15% 的純白安全留白，格與格之間必須看得到明顯白色空間，方便後續平均切割。角色與文字都要完整置中在各自格子內，不可超出邊界、不可跨格、不可互相重疊；每格最外圈至少 13% 純白，格線附近不可有花瓣、陰影或字；若空間不足，寧可把角色與文字整體縮小，也不要貼邊。\n\n文字設定（優先於其他畫風描述）：請使用繁體中文。字型造型遵守「${fontStylePrompt}」；文字大小遵守「${textSizePrompt}」；填色、描邊與文字效果遵守「${textColorPrompt}」；**文字所在區域必須嚴格遵守「${textPositionPrompt}」**。若背景情境或貼圖風格暗示不同的位置，仍以本次「文字位置」選項為準；不能因為傳統貼圖習慣就把所有文字置頂。文字必須清楚好讀，文字與頭髮、臉、手勢、手機、文件等主體至少保留明顯空隙，不可壓在人物或道具上；文字四周也要保留白邊，不要貼近格子邊界，不要切到字，不可出現序號、數字、標題、格號或列表符號。\n\n每張貼圖都要有不同表情與動作，整體風格一致、乾淨可愛、適合 LINE 貼圖使用。\n\n貼圖文字如下：\n${numberedTexts}`;
+  return `請設計一張 ${platform === "whatsapp" ? "WhatsApp" : "LINE"} ${label}大圖，白色背景，${style}。\n\n商用販售安全：每格只能出現下方指定的主要貼圖短句，禁止在卡片、紙袋、花籃、店招、制服、道具額外產生任何文字、英文 NEW、價格、網址、QR Code、商標、店家 Logo、品牌字樣或促銷宣傳；角色、衣服與道具皆需為原創，不可仿畫知名品牌角色。圖文清晰易讀、避免多手多腳、勿遮住文字。\n\n${rolePrompt}\n\n風格加強：${stickerStylePrompt}。\n\n真人／原創設定：${photoModePrompt}。${photoReminder}\n\n請畫成 ${gridInfo.layoutText}。每格貼圖都要獨立清楚、平均排列。每一格的角色＋文字＋裝飾只佔該格中央約 70%～74%，上下左右至少保留約 13%～15% 的純白安全留白，格與格之間必須看得到明顯白色空間，方便後續平均切割。角色與文字都要完整置中在各自格子內，不可超出邊界、不可跨格、不可互相重疊；每格最外圈至少 13% 純白，格線附近不可有花瓣、陰影或字；若空間不足，寧可把角色與文字整體縮小，也不要貼邊。\n\n文字設定（優先於其他畫風描述）：請使用繁體中文。字型造型遵守「${fontStylePrompt}」；文字大小遵守「${textSizePrompt}」；填色、描邊與文字效果遵守「${textColorPrompt}」；**文字所在區域必須嚴格遵守「${textPositionPrompt}」**。若背景情境或貼圖風格暗示不同的位置，仍以本次「文字位置」選項為準；不能因為傳統貼圖習慣就把所有文字置頂。文字必須清楚好讀，文字與頭髮、臉、手勢、手機、文件等主體至少保留明顯空隙，不可壓在人物或道具上；文字四周也要保留白邊，不要貼近格子邊界，不要切到字，不可出現序號、數字、標題、格號或列表符號。\n\n每張貼圖都要有不同表情與動作，整體風格一致、乾淨可愛、適合 LINE 貼圖使用。\n\n貼圖文字如下：\n${numberedTexts}`;
 }
 
 function buildStablePrompt(
@@ -4261,6 +4262,8 @@ function buildFlowPrompt(
   stickerStyle: StickerStylePreset,
   photoMode: PhotoMode,
   batchNumber: number,
+  mode: LineStickerMode,
+  platform: "line" | "whatsapp",
 ) {
   const base = buildPrompt(
     label,
@@ -4274,7 +4277,11 @@ function buildFlowPrompt(
     fontStyle,
     stickerStyle,
     photoMode,
+    platform,
   );
+  const modeInstructions = mode === "animated"
+    ? "本次選擇「動態貼圖」：母圖仍是一張靜止的原始圖，但每格角色四周多留移動空間；人物與文字保持視覺距離，避免後續製作位移動畫時被裁切。不要把多格合成動畫影格，也不要加入時間軸文字。"
+    : "本次選擇「靜態貼圖」：每格構圖清晰完整，方便後續直接裁切成獨立貼圖。";
   const columns = 4;
   const rows = grid === "4x2" ? 2 : grid === "4x4" ? 4 : 5;
   const ratio = grid === "4x2" ? "2:1 橫向" : grid === "4x4" ? "1:1 正方形" : "4:5 直向";
@@ -4285,7 +4292,7 @@ function buildFlowPrompt(
 
   return `請直接生成圖片，不要先提供企劃、說明或提示詞。
 
-這是 LINE 貼圖母圖第 ${batchNumber} 張。請嚴格依指定格數排列，這次只生成一張完整母圖。
+這是 ${platform === "whatsapp" ? "WhatsApp" : "LINE"} 貼圖母圖第 ${batchNumber} 張。${modeInstructions} 請嚴格依指定格數排列，這次只生成一張完整母圖。
 
 ${base}
 
@@ -4317,7 +4324,7 @@ function buildGeminiStrictMotherSheetPrompt(originalPrompt: string, grid: GridTy
 請使用「${layout}」，只輸出一張完整母圖。不可產生橫幅海報、長方形四列拼貼、橫向分鏡或改變畫布比例。
 畫面精確均分，每一格獨立且主體置中，四邊與每格之間保留純白安全間距；不加分隔線，不能跨格或裁到任何字、頭髮、手腳、裙擺與道具。
 只准出現下方逐格指定的繁體中文主句。所有道具（卡片、花籃、紅包、標語、招牌、旗幟）都不能有額外英文、中文、數字或圖形字樣；禁止 JUST MARRIED、THANK YOU、WEDDING DAY、WITNESS 等額外文字。
-人物從第一格到最後一格保持完全同一組新郎新娘（相同髮型、臉、衣服、膚色、Q 版頭身比），只改表情、手勢與動作，不增加其他主角。
+人物從第一格到最後一格都必須保持與下方「主角設定」相同的角色（相同髮型、臉部特徵、服裝、膚色、Q 版頭身比），僅變換表情、手勢與動作；不可擅自改變職業、增加其他主角或改成婚禮新人。
 必須完整呈現指定格數；若畫布無法符合比例與格數，請重新生成符合版型的一張圖，勿交付錯誤比例。
 
 【以下是每格人物、風格及文字內容，請完整遵守】
@@ -4791,6 +4798,8 @@ export default function StickerPromptGenerator() {
             stickerStylePreset,
             photoMode,
             index + 1,
+            stickerMode,
+            stickerPlatform,
           ),
         };
       }),
@@ -4806,6 +4815,8 @@ export default function StickerPromptGenerator() {
       fontStyle,
       stickerStylePreset,
       photoMode,
+      stickerMode,
+      stickerPlatform,
     ],
   );
 
@@ -5387,6 +5398,9 @@ export default function StickerPromptGenerator() {
                 <p className="text-sm font-black text-violet-900">即將複製的貼圖設定（修改第 1 步選項後會同步更新）</p>
                 <div className="mt-2 flex flex-wrap gap-2 text-xs font-bold text-slate-700">
                   {[
+                    `平台：${stickerPlatform === "line" ? "LINE" : "WhatsApp"}`,
+                    `貼圖模式：${stickerMode === "static" ? "靜態" : "動態"}`,
+                    `數量：${targetCount} 張`,
                     `文字位置：${optionLabel(TEXT_POSITION_OPTIONS, textPosition)}`,
                     `字型：${optionLabel(FONT_STYLE_OPTIONS, fontStyle)}`,
                     `字大小：${optionLabel(TEXT_SIZE_OPTIONS, textSize)}`,
