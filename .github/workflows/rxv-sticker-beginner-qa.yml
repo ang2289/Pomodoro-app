@@ -1,0 +1,31 @@
+name: RXV Sticker Beginner QA
+
+on:
+  push:
+    branches:
+      - codex/sticker-gemini-first-beginner-ux-20261014
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout complete branch history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install project dependencies
+        run: npm ci
+      - name: Beginner onboarding and integration regression
+        run: node --test test/rxvStickerOnboarding.test.mjs test/rxvStickerGeminiFirst.test.mjs
+      - name: TypeScript, sitemap and Vite production build
+        run: npm run build
