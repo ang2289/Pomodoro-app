@@ -65,8 +65,8 @@ export function stickerPlacement(position: StickerTextPosition, globalIndex: num
 }
 
 export function stickerPlacementRule(position: StickerTextPosition): string {
-  if (position === "top") return "所有格文字僅能置於正上方，人物在下方；禁止左右交錯、底部文字。";
-  if (position === "bottom") return "所有格文字僅能置於正下方，人物在上方；禁止左右交錯、頂部文字。";
+  if (position === "top") return "所有格文字僅能置於正上方，人物在下方；禁止改放側邊或底部。";
+  if (position === "bottom") return "所有格文字僅能置於正下方，人物在上方；禁止改放側邊或頂部。";
   return "整套貼圖依全域編號交錯：奇數張文字左、人物右；偶數張文字右、人物左。只可在指定側換行，禁止上方或下方標題。";
 }
 
