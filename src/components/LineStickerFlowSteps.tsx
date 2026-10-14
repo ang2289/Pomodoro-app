@@ -70,7 +70,7 @@ export default function LineStickerFlowSteps({
         })}
       </div>
       <p className="mt-2 text-xs leading-5 text-slate-500">
-        從第 1 步開始即可；已完成母圖的人可直接進入上傳。
+        先在第 1 階段用 ChatGPT（推薦）畫母圖；已有母圖可直接從第 2 階段上傳。
         {" "}<Link to="/tools/line-sticker-guide" className="font-semibold text-violet-700 underline underline-offset-2">查看完整教學</Link>
       </p>
     </nav>
