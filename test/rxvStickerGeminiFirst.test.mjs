@@ -191,3 +191,19 @@ test("第一次進貼圖工具從第 1 步開始，只有明確選擇已有圖�
   assert.doesNotMatch(guide, /lg:grid-cols-5/);
   assert.doesNotMatch(upload, /className="fixed bottom-2 left-1\/2/);
 });
+
+test("24 張高清動態展示每張約兩秒且畫面卡頓會阻止下載", () => {
+  const code = read("src/pages/tools/AnimatedLineStickerTool.tsx");
+  const start = code.indexOf("async function createBatchShowcaseVideo(");
+  const end = code.indexOf("const AnimatedLineStickerTool:", start);
+  assert.ok(start >= 0 && end > start);
+  const renderer = code.slice(start, end);
+  assert.match(renderer, /const clipDurationMs = 2000/);
+  assert.match(renderer, /const maxAllowedLagMs = 800/);
+  assert.match(renderer, /frame < current\.length/);
+  assert.match(renderer, /drawShowcaseFrame\(current\[frame\], index\)/);
+  assert.doesNotMatch(renderer, /frame < 60/);
+  assert.match(renderer, /actualCaptureMs > idealCaptureMs \+ maxAllowedLagMs/);
+  assert.match(renderer, /避免產生前段長時間靜止的影片/);
+  assert.match(code, /只有影格變化時才重畫/);
+});
