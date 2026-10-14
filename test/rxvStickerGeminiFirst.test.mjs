@@ -29,7 +29,7 @@ test("每段新手流程明確同時提供 ChatGPT 與 Google Gemini，且保留
   assert.match(prompt, /<StickerAIProviderLinks \/>/);
   assert.match(prompt, /<StickerAIProviderLinks compact \/>/);
   assert.match(guide, /<StickerAIProviderLinks \/>/);
-  assert.match(prompt, /請先按下方「複製第/);
+  assert.match(prompt, /請複製第/);
   assert.match(prompt, /已從 ChatGPT 或 Gemini 下載完整大圖/);
   assert.match(prompt, /flow=1#mother-upload/);
   assert.match(progress, /ChatGPT（推薦）/);
@@ -153,7 +153,7 @@ test("左右交錯一定要左右排列，三種文字位置的實際規則都�
 
 test("第 2 步顯示全部已選設定，母圖提示詞逐格指定位置並支援平台及動靜態", () => {
   const source = read("src/pages/tools/StickerPromptGenerator.tsx");
-  assert.match(source, /textPositionForCell\(textPosition, row \* columns \+ column\)/);
+  assert.match(source, /textPositionForCell\(textPosition, startIndex \+ row \* columns \+ column\)/);
   assert.match(source, /文字所在區域必須嚴格遵守/);
   assert.match(source, /即將複製的貼圖設定/);
   assert.match(source, /optionLabel\(TEXT_POSITION_OPTIONS, textPosition\)/);
@@ -164,8 +164,8 @@ test("第 2 步顯示全部已選設定，母圖提示詞逐格指定位置並�
   assert.match(source, /optionLabel\(PHOTO_MODE_OPTIONS, photoMode\)/);
   assert.match(source, /modeInstructions = mode === "animated"/);
   assert.match(source, /platform === "whatsapp" \? "WhatsApp" : "LINE"/);
-  assert.match(source, /stickerMode,\s*stickerPlatform,\s*\),/);
-  assert.match(source, /\[\s*motherSheetPlan,[\s\S]*?textPosition,\s*fontStyle,[\s\S]*?stickerMode,\s*stickerPlatform,\s*\]/);
+  assert.match(source, /stickerMode,\s*stickerPlatform,\s*item\.startIndex,\s*identityLock,\s*\),/);
+  assert.match(source, /\[\s*motherSheetPlan,[\s\S]*?textPosition,\s*fontStyle,[\s\S]*?stickerMode,\s*stickerPlatform,\s*identityLock,\s*\]/);
   assert.doesNotMatch(source, /人物從第一格到最後一格保持完全同一組新郎新娘/);
 });
 
@@ -337,4 +337,85 @@ test("單張上傳與整張母圖清楚區分，1/16 不誤導新手以為文字
   assert.match(upload, /aria-label="已切好的單張貼圖補充上傳區"/);
   assert.match(upload, /目前只載入 1 張獨立貼圖/);
   assert.doesNotMatch(upload, /第 3 步｜點這裡上傳圖片（可一次多選）/);
+});
+
+
+test("五種張數採共用母圖配置及全域起訖序號", () => {
+  const source = read("src/lib/lineStickerFlow.ts");
+  const match = source.match(/const MOTHER_SHEET_GRIDS:[\s\S]*?\nfunction makeProjectId\(/);
+  assert.ok(match, "需以共用母圖版型表格產生分頁");
+  const code = match[0].replace(/\nfunction makeProjectId\($/, "");
+  const compiled = ts.transpileModule(code, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.None } }).outputText;
+  const plans = vm.runInNewContext(compiled + "\ngetMotherSheetPlan", {});
+  const expected = [
+    [8, [["4x2", 0, 8]]],
+    [16, [["4x4", 0, 16]]],
+    [24, [["4x4", 0, 16], ["4x2", 16, 24]]],
+    [32, [["4x4", 0, 16], ["4x4", 16, 32]]],
+    [40, [["4x5", 0, 20], ["4x5", 20, 40]]],
+  ];
+  for (const [count, expectedItems] of expected) {
+    const actual = plans(count).map(({grid, startIndex, endIndex}) => [grid, startIndex, endIndex]);
+    assert.deepEqual(JSON.parse(JSON.stringify(actual)), expectedItems, count + " 張");
+  }
+});
+test("兩張母圖的角色與字型鎖定相同，文字位置三種模式互斥", () => {
+  const source = read("src/pages/tools/StickerPromptGenerator.tsx");
+  assert.match(source, /function makeStickerIdentityLock/);
+  assert.match(source, /identityLock,\s*\),/);
+  assert.match(source, /第 1 張已完成母圖/);
+  assert.match(source, /同一個 ChatGPT 對話/);
+  assert.match(source, /整套貼圖共用角色設定/);
+  assert.match(source, /type StickerIdentity/);
+  assert.match(source, /startIndex \+ row \* columns \+ column/);
+  assert.doesNotMatch(source, /- 左右交錯時，奇數格文字在左、偶數格文字在右，人物必須在相反側/);
+  const fnMatch = source.match(/function buildFlowPrompt\([\s\S]*?\n\}/);
+  assert.ok(fnMatch);
+  const textPositionMatch = source.match(/function textPositionForCell\([\s\S]*?\n\}/);
+  assert.ok(textPositionMatch);
+  const sandbox = {
+    buildPrompt: () => "共用基本角色文字",
+    textPositionForCell: vm.runInNewContext(
+      ts.transpileModule(textPositionMatch[0], { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText + "\ntextPositionForCell"
+    ),
+  };
+  const fn = vm.runInNewContext(
+    ts.transpileModule(fnMatch[0], { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText + "\nbuildFlowPrompt",
+    sandbox,
+  );
+  for (const [grid,startIndex,items] of [["4x2",16,8],["4x4",16,16],["4x5",20,20]]) {
+    for (const position of ["top","bottom","mixed"]) {
+      const lock = "LOCK_KEY:眼睛固定_服裝固定_字色固定_描邊固定";
+      const generated = fn("美甲師", "固定人物", "固定畫風", grid, Array.from({length:items},(_,i)=>"短句"+(startIndex+i+1)), "large","colorfulWhite",position,"roundBold","cuteQ","original",2,"animated","line",startIndex,lock);
+      assert.ok(generated.includes(lock));
+      assert.ok(generated.includes("同一個 ChatGPT 對話"));
+      const matrix = generated.split("每格短句位置必須依下表")[1].split("重要規則：")[0];
+      if (position === "top") {
+        assert.match(matrix,/文字放正上方/);
+        assert.doesNotMatch(matrix,/文字放左側|文字放右側/);
+      } else if (position === "bottom") {
+        assert.match(matrix,/文字放正下方/);
+        assert.doesNotMatch(matrix,/文字放左側|文字放右側/);
+      } else {
+        assert.match(matrix,/文字放左側、人物放右側/);
+        assert.match(matrix,/人物放左側、文字放右側/);
+        assert.doesNotMatch(matrix,/文字放正上方|文字放正下方/);
+      }
+      assert.match(generated,/13%～15%/);
+      assert.match(generated,/每格主體與文字共佔中央約 70%～74%/);
+    }
+  }
+});
+test("參考圖僅在多母圖顯示，瀏覽器本地預覽及清理物件 URL", () => {
+  const source = read("src/pages/tools/StickerPromptGenerator.tsx");
+  assert.match(source,/index === 1 && \(/);
+  assert.match(source,/選擇第 1 張參考圖/);
+  assert.match(source,/URL\.createObjectURL\(file\)/);
+  assert.match(source,/URL\.revokeObjectURL\(referenceUrlRef\.current\)/);
+  assert.match(source,/image\/png,image\/jpeg,image\/webp/);
+  assert.match(source,/尚未選擇參考圖/);
+  assert.match(source,/網站不會自動把圖交給 ChatGPT/);
+  assert.match(source,/referenceSeriesRef\.current !== seriesKey/);
+  assert.match(source,/移除參考圖/);
+  assert.doesNotMatch(source,/supabase\.storage\.upload\(referenceImage/);
 });
