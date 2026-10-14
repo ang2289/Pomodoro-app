@@ -10,7 +10,7 @@ export function StickerExistingMotherSheetShortcut({ compact = false }: { compac
       <p className="mt-3 text-xs font-black text-emerald-900">下一步請按下方「第 3 步｜我已有母圖，直接上傳」按鈕。</p>
       <Link
         to="/tools/line-sticker?existing=1#mother-upload"
-        className="mt-2 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-emerald-700 px-4 py-2.5 text-center text-sm font-black !text-white hover:bg-emerald-800 sm:w-auto"
+        className="mt-2 inline-flex min-h-11 w-auto max-w-full items-center justify-center rounded-xl bg-emerald-700 px-4 py-2.5 text-center text-sm font-black !text-white hover:bg-emerald-800 sm:w-auto"
       >
         第 3 步｜我已有母圖，直接上傳 →
       </Link>
@@ -24,7 +24,7 @@ export function StickerCustomInquiry({ compact = false }: { compact?: boolean })
       <h3 className="text-base font-black text-sky-900">想製作自己的專屬角色或店家貼圖？</h3>
       <p className="mt-1 text-sm leading-6 text-slate-700">可以私訊詢問客製貼圖。請告訴我們用途、預計張數（8／16／24 等）、靜態或動態，以及喜歡的風格；有參考圖片也可以一起傳。</p>
       <p className="mt-3 text-xs font-black text-sky-900">下一步請按下方「到 Facebook 私訊」或「用 LINE 私訊」按鈕。</p>
-      <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+      <div className="mt-2 flex flex-wrap items-center gap-2">
         <a
           href="https://www.facebook.com/profile.php?id=61588964893446"
           target="_blank"
@@ -52,18 +52,18 @@ export function StickerAIProviderLinks({ compact = false }: { compact?: boolean 
   return (
     <div className={compact ? "mt-2" : "mt-3"}>
       <p className="mb-2 text-xs font-black leading-6 text-slate-800">下一步請選一個生圖工具：ChatGPT 或 Google Gemini，兩個都可以。</p>
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div className="flex flex-wrap items-center gap-2">
         <a
           href="https://chatgpt.com/"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex min-h-11 items-center justify-center rounded-xl bg-emerald-700 px-4 py-2.5 text-center text-sm font-black !text-white hover:bg-emerald-800"
+          className="inline-flex min-h-11 w-fit max-w-full items-center justify-center rounded-xl bg-emerald-700 px-4 py-2.5 text-center text-sm font-black !text-white hover:bg-emerald-800"
         >開啟 ChatGPT 畫圖 ↗</a>
         <a
           href="https://gemini.google.com/app"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex min-h-11 items-center justify-center rounded-xl border border-blue-300 bg-white px-4 py-2.5 text-center text-sm font-black text-blue-800 hover:bg-blue-50"
+          className="inline-flex min-h-11 w-fit max-w-full items-center justify-center rounded-xl border border-blue-300 bg-white px-4 py-2.5 text-center text-sm font-black text-blue-800 hover:bg-blue-50"
         >開啟 Google Gemini 畫圖 ↗</a>
       </div>
       {!compact && <p className="mt-2 text-xs leading-6 text-slate-600">先複製 RXV 的畫圖指令，再到任一工具貼上並送出。畫好後下載完整大圖，回 RXV 上傳切割；各服務的使用額度依其規定。</p>}
