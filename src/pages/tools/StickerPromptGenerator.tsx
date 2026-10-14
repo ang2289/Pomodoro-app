@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { Link } from "react-router-dom";
 import SEO from "@/components/SEO";
 import CoupangDynamicAd from "@/components/CoupangDynamicAd";
@@ -14,6 +14,7 @@ import {
   type LineStickerMode,
 } from "@/lib/lineStickerFlow";
 import { stickerSaleTextRisks, suggestSaleFriendlyLines } from "@/lib/stickerCommercialSafety";
+import { defaultCharacterLock, lockCharacterPrompt, stickerPlacement, stickerPlacementRule, stickerRowMap, type StickerCharacterLock } from "@/lib/stickerCharacterLock";
 
 type TemplateKey =
   | "couple"
@@ -3387,11 +3388,7 @@ function optionPrompt<T extends string>(
 }
 
 function textPositionForCell(textPosition: TextPosition, index: number) {
-  if (textPosition === "top") return "文字放正上方、人物放下方";
-  if (textPosition === "bottom") return "文字放正下方、人物放上方";
-  return index % 2 === 0
-    ? "文字放左側、人物放右側（禁止文字在頂部）"
-    : "人物放左側、文字放右側（禁止文字在頂部）";
+  return stickerPlacement(textPosition, index);
 }
 
 function buildRolePrompt(role: string, photoMode: PhotoMode) {
@@ -4204,7 +4201,7 @@ function buildPrompt(
 
   const textSizePrompt = optionPrompt(TEXT_SIZE_OPTIONS, textSize);
   const textColorPrompt = optionPrompt(TEXT_COLOR_OPTIONS, textColor);
-  const textPositionPrompt = optionPrompt(TEXT_POSITION_OPTIONS, textPosition);
+  const textPositionPrompt = stickerPlacementRule(textPosition);
   const fontStylePrompt = optionPrompt(FONT_STYLE_OPTIONS, fontStyle);
   const stickerStylePrompt = optionPrompt(STICKER_STYLE_OPTIONS, stickerStyle);
   const photoModePrompt = optionPrompt(PHOTO_MODE_OPTIONS, photoMode);
@@ -4357,6 +4354,9 @@ function buildFlowPrompt(
   batchNumber: number,
   mode: LineStickerMode,
   platform: "line" | "whatsapp",
+  globalStartIndex: number,
+  allTexts: string[],
+  sharedLock: string,
 ) {
   const base = buildPrompt(
     label,
@@ -4378,16 +4378,24 @@ function buildFlowPrompt(
   const columns = 4;
   const rows = grid === "4x2" ? 2 : grid === "4x4" ? 4 : 5;
   const ratio = grid === "4x2" ? "2:1 橫向" : grid === "4x4" ? "1:1 正方形" : "4:5 直向";
-  const rowAssignment = Array.from({ length: rows }, (_, row) => {
-    const cells = batchTexts.slice(row * columns, (row + 1) * columns);
-    return `第 ${row + 1} 列（由左至右）：${cells.map((text, column) => `第 ${column + 1} 格「${text}」〔${textPositionForCell(textPosition, row * columns + column)}〕`).join("、")}`;
-  }).join("\n");
+  const rowAssignment = stickerRowMap(
+    { grid: grid as "4x2" | "4x4" | "4x5", startIndex: globalStartIndex, endIndex: globalStartIndex + batchTexts.length },
+    allTexts,
+    textPosition,
+  );
 
   return `請直接生成圖片，不要先提供企劃、說明或提示詞。
 
 這是 ${platform === "whatsapp" ? "WhatsApp" : "LINE"} 貼圖母圖第 ${batchNumber} 張。${modeInstructions} 請嚴格依指定格數排列，這次只生成一張完整母圖。
 
 ${base}
+
+${sharedLock}
+
+${batchNumber > 1 ? `【第 ${batchNumber} 張母圖，延續同一套角色】
+請沿用第 1 張母圖的臉型、五官、髮型、服裝、配件、筆觸、描邊、陰影、字型及配色。
+建議沿用同一個 ChatGPT 對話，並在生圖時親手附上已完成的第 1 張母圖作為視覺參考。RXV 不會自動把圖片傳送給 ChatGPT。
+沒有附上參考圖也能複製本提示詞，但只有文字不能保證外觀完全一致。僅更換本張指定短句、動作與職業道具，不重複第 1 張的文字。` : "【第 1 張母圖】建立整套貼圖的角色與畫風基準，後續母圖須沿用同一份設定。"}
 
 最終版型僅此一種：${columns} 欄 × ${rows} 列（${grid.replace("x", "×")}、共 ${columns * rows} 格），畫布採用 ${ratio} 比例。禁止改成其他列數、欄數、橫幅或任意拼貼。
 每格短句位置必須依下表由左到右、由上到下排列，${columns * rows} 句各出現一次，不可遺漏、不可重複、不可更換成其他文字。每一格的「文字／人物相對位置」是強制條件，不能因圖像排版習慣而擅自改成上方標題：
@@ -4397,8 +4405,9 @@ ${rowAssignment}
 - 只輸出一張完整母圖；每一列固定 ${columns} 格，總共固定 ${rows} 列。
 - 只能使用以上 ${grid.replace("x", "×")} 排列，不要自行選擇其他格數。
 - 每格只能有指定的單句繁體中文，不能在手牌、道具、卡片、緞帶、招牌、背景另寫英文、中文、數字或其他字樣。
-- 左右交錯時，奇數格文字在左、偶數格文字在右，人物必須在相反側；長句可在各自指定側換行，但不得將文字移到頭頂或整排上方。其他文字位置設定則嚴格依上方選項執行。
-- 每格只能是一張獨立貼圖，人物與文字不可跨格。
+- 本套文字位置規則：${stickerPlacementRule(textPosition)} 長句可在指定區域換行或整體縮小；不得變更所選位置。
+- 每格只能是一張獨立貼圖，人物與文字不可跨格；圖文主體只佔中央約 70%～74%，四邊至少約 13%～15% 純白留白，長句可換行或縮小，勿貼邊。
+- 同一套不得更換人物、頭身比例、描邊粗細與文字風格；不要多手多腳或畫出多餘手指。
 - 格與格之間保留明顯白色空間，不要畫格線。
 - 背景使用純白色，方便下一步自動去背與裁切。
 - 不要做成海報、漫畫分鏡或額外拼貼。
