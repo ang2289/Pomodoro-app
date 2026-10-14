@@ -274,7 +274,7 @@ export default function LineStickerGuide() {
           <div className="mt-4"><StickerExistingMotherSheetShortcut /></div>
           <IllustratedDemoSection />
 
-          <section className="mt-8 grid gap-4 md:grid-cols-5">
+          <section className="mt-8 flex flex-col gap-4">
             {steps.map((step, index) => (
               <div
                 key={step.title}
