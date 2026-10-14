@@ -2571,7 +2571,7 @@ const AnimatedLineStickerTool: React.FC = () => {
         <LineStickerFlowSteps activeStep={5} mode="animated" />
         <section id="animated-sticker-batch" className="scroll-mt-24 mb-5 rounded-2xl border border-emerald-200 bg-white p-4">
           <p className="text-sm font-black text-slate-900">輸出平台｜動態貼圖</p>
-          <div className="mt-3 grid grid-cols-2 gap-3">
+          <div className="mt-3 flex flex-wrap items-center gap-3">
             {(["line", "whatsapp"] as const).map((platform) => (
               <button key={platform} type="button" aria-pressed={exportPlatform === platform}
                 disabled={batchBusy || batchVideoBusy}
@@ -2581,7 +2581,7 @@ const AnimatedLineStickerTool: React.FC = () => {
                   updateLineStickerProject({ platform });
                   setBatchMessage("");
                 }}
-                className={`min-h-12 rounded-xl border-2 px-3 py-2 text-sm font-black ${exportPlatform === platform ? "border-emerald-500 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-white text-slate-700"}`}>
+                className={`inline-flex min-h-12 w-auto max-w-full items-center justify-center rounded-xl border-2 px-4 py-2 text-sm font-black ${exportPlatform === platform ? "border-emerald-500 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-white text-slate-700"}`}>
                 {exportPlatform === platform ? "✓ " : ""}{platform === "line" ? "LINE 動態 APNG" : "WhatsApp 動態 WebP"}
               </button>
             ))}
@@ -2811,7 +2811,7 @@ const AnimatedLineStickerTool: React.FC = () => {
                 type="button"
                 disabled={!autoSourceFile || autoGenerating || autoPreviewGenerating}
                 onClick={applyAutoMotion}
-                className="mt-2 inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-violet-600 px-4 py-3 text-sm font-black !text-white shadow-md transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                className="mt-2 inline-flex min-h-12 w-auto max-w-full items-center justify-center rounded-2xl bg-violet-600 px-4 py-3 text-sm font-black !text-white shadow-md transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-slate-300"
               >
                 {autoGenerating
                   ? t("animated_line_sticker.auto_generating_button")
@@ -3160,7 +3160,7 @@ const AnimatedLineStickerTool: React.FC = () => {
                   type="button"
                   disabled={batchBusy || ![8, 16, 24].includes(batchSources.length)}
                   onClick={exportPlatform === "whatsapp" ? exportWhatsAppAnimatedPack : exportBatchUploadPack}
-                  className="mt-4 inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-black !text-white shadow-md transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                  className="mt-4 inline-flex min-h-12 w-auto max-w-full items-center justify-center rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-black !text-white shadow-md transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
                 >
                   {batchBusy
                     ? (exportPlatform === "whatsapp" ? "正在壓縮 WhatsApp 動畫 WebP…" : t("animated_line_sticker.batch_generating_button"))
@@ -3437,7 +3437,7 @@ const AnimatedLineStickerTool: React.FC = () => {
               <button
                 type="button"
                 onClick={clearFrames}
-                className="inline-flex min-h-11 w-full items-center justify-center whitespace-nowrap rounded-xl border border-rose-200 bg-white px-4 py-2 text-sm font-bold leading-none text-rose-700 hover:bg-rose-50 sm:w-auto"
+                className="inline-flex min-h-11 w-auto max-w-full items-center justify-center rounded-xl border border-rose-200 bg-white px-4 py-2 text-sm font-bold leading-none text-rose-700 hover:bg-rose-50 sm:w-auto"
               >
                 {t("animated_line_sticker.clear_button")}
               </button>
@@ -3574,13 +3574,13 @@ const AnimatedLineStickerTool: React.FC = () => {
                   type="button"
                   disabled={!canExportApng || busy}
                   onClick={exportManualStoryboardPack}
-                  className="mt-4 inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-violet-600 px-4 py-3 text-sm font-black !text-white shadow-md transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                  className="mt-4 inline-flex min-h-12 w-auto max-w-full items-center justify-center rounded-2xl bg-violet-600 px-4 py-3 text-sm font-black !text-white shadow-md transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-slate-300"
                 >
                   {busy ? "處理中…" : "📦 一鍵製作＋打包自備分鏡"}
                 </button>
               ) : null}
 
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div className="mt-4 flex flex-wrap items-center gap-3">
                 <button
                   type="button"
                   disabled={!canExportApng || busy}
@@ -3625,7 +3625,7 @@ const AnimatedLineStickerTool: React.FC = () => {
                   type="button"
                   disabled={!canExport || busy}
                   onClick={exportSmallImages}
-                  className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-black leading-none !text-white shadow-md transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-300 sm:col-span-2"
+                  className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-black leading-none !text-white shadow-md transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-300"
                 >
                   {busy ? t("animated_line_sticker.processing") : "下載小圖 ZIP（main＋tab）"}
                 </button>
