@@ -186,7 +186,7 @@ test("第一次進貼圖工具從第 1 步開始，只有明確選擇已有圖�
   assert.doesNotMatch(prompt, /xl:grid-cols-\[0\.82fr_1\.18fr\]/);
   assert.match(prompt, /前往第 2 步｜複製畫圖指令 ↓/);
   assert.match(prompt, /to="\/tools\/line-sticker\?flow=1#mother-upload"/);
-  assert.match(progress, /<ol className="flex flex-wrap items-center gap-2" aria-label="貼圖操作流程"/);
+  assert.match(progress, /grid grid-cols-3 overflow-hidden rounded-xl/);
   assert.match(guide, /mt-4 flex flex-col gap-2/);
   assert.doesNotMatch(guide, /lg:grid-cols-5/);
   assert.doesNotMatch(upload, /className="fixed bottom-2 left-1\/2/);
@@ -214,9 +214,9 @@ test("新手頁面保持窄版與極簡進度列，不再用滿版彩色卡片�
   const help = read("src/components/StickerBeginnerActions.tsx");
   assert.match(prompt, /mx-auto w-full max-w-3xl/);
   assert.doesNotMatch(prompt, /max-w-\[1480px\]/);
-  assert.match(prompt, /min-h-screen bg-slate-50/);
+  assert.match(prompt, /min-h-screen bg-\[#F8F7F3\]/);
   assert.match(steps, /<nav/);
-  assert.match(steps, /<ol className="flex flex-wrap items-center gap-2"/);
+  assert.match(steps, /grid grid-cols-3 overflow-hidden rounded-xl/);
   assert.doesNotMatch(steps, /先知道一件事：不是一張張畫貼圖/);
   assert.match(prompt, /min-h-12 w-full min-w-0 items-center justify-center/);
   assert.match(prompt, /rows=\{Math\.min\(requiredCount \+ 1, 12\)\}/);
@@ -255,4 +255,27 @@ test("每組貼圖選擇按鈕同寬，選取、懸停、鍵盤焦點狀態清�
   assert.ok(prompt.includes("w-[76px] shrink-0"));
   assert.ok(prompt.includes('max-w-[520px] flex-wrap gap-2" role="group" aria-label="選擇貼圖張數"'));
   assert.ok(upload.includes("w-[68px] shrink-0"));
+});
+
+test("三階段參考版型與貼圖錨點不會產生捲動爭用", () => {
+  const prompt = read("src/pages/tools/StickerPromptGenerator.tsx");
+  const flow = read("src/components/LineStickerFlowSteps.tsx");
+  const scroll = read("src/components/ScrollToTop.tsx");
+
+  assert.match(prompt, /把你的想法，做成專屬貼圖/);
+  assert.match(prompt, /RXV STICKER STUDIO/);
+  assert.match(prompt, /min-h-screen bg-\[#F8F7F3\]/);
+  assert.match(flow, /grid grid-cols-3 overflow-hidden rounded-xl/);
+  assert.match(flow, /第 1～2 步/);
+  assert.match(flow, /第 3～4 步/);
+  assert.match(flow, /原第 5 步/);
+  assert.match(flow, /useLayoutEffect/);
+  assert.match(flow, /scrollIntoView\(\{ behavior: "auto", block: "start" \}\)/);
+  assert.doesNotMatch(flow, /scrollIntoView\(\{ behavior: "smooth"/);
+  assert.match(scroll, /lastPathname\.current === pathname/);
+  assert.match(scroll, /if \(isStickerRoute && hash\) return/);
+  assert.doesNotMatch(scroll, /behavior: 'smooth'/);
+  assert.match(prompt, /id="sticker-customize"/);
+  assert.match(prompt, /字型風格（可選）/);
+  assert.match(prompt, /WhatsApp 貼圖/);
 });
