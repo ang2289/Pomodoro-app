@@ -2599,7 +2599,7 @@ const AnimatedLineStickerTool: React.FC = () => {
         <LineStickerFlowSteps activeStep={5} mode="animated" />
         <section id="animated-sticker-batch" className="scroll-mt-24 mb-5 rounded-2xl border border-emerald-200 bg-white p-4">
           <p className="text-sm font-black text-slate-900">輸出平台｜動態貼圖</p>
-          <div className="mt-3 flex flex-wrap items-center gap-3">
+          <div className="mt-3 grid w-full max-w-[520px] grid-cols-2 items-stretch gap-3" role="group" aria-label="選擇動態貼圖輸出平台">
             {(["line", "whatsapp"] as const).map((platform) => (
               <button key={platform} type="button" aria-pressed={exportPlatform === platform}
                 disabled={batchBusy || batchVideoBusy}
@@ -2609,7 +2609,7 @@ const AnimatedLineStickerTool: React.FC = () => {
                   updateLineStickerProject({ platform });
                   setBatchMessage("");
                 }}
-                className={`inline-flex min-h-12 w-auto max-w-full items-center justify-center rounded-xl border-2 px-4 py-2 text-sm font-black ${exportPlatform === platform ? "border-emerald-500 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-white text-slate-700"}`}>
+                className={`inline-flex min-h-12 w-full min-w-0 items-center justify-center rounded-xl border-2 px-3 py-3 text-center text-sm font-bold leading-5 shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:border-violet-500 hover:bg-violet-100 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 ${exportPlatform === platform ? "border-violet-600 bg-violet-600 text-white shadow-md hover:bg-violet-700 hover:text-white" : "border-violet-200 bg-violet-50 text-violet-900"}`}>
                 {exportPlatform === platform ? "✓ " : ""}{platform === "line" ? "LINE 動態 APNG" : "WhatsApp 動態 WebP"}
               </button>
             ))}
