@@ -4931,6 +4931,7 @@ export default function StickerPromptGenerator() {
               <p className="mt-2 text-sm leading-6 text-slate-600">
                 先選 LINE 或 WhatsApp、靜態或動態，再選張數與主題。第一次建議試做 8 張；不知道怎麼選，保持預設值也可以。
               </p>
+              <StickerNextActionHint>先選下方「LINE 貼圖」或「WhatsApp 貼圖」按鈕，再選靜態／動態及張數。第一次使用也可保留預設值。</StickerNextActionHint>
               <div className="mt-4 grid grid-cols-2 gap-3">
                 {(["line", "whatsapp"] as const).map((platform) => (
                   <button key={platform} type="button" aria-pressed={stickerPlatform === platform}
@@ -4969,6 +4970,7 @@ export default function StickerPromptGenerator() {
               <label className="mt-5 block text-xs font-black text-slate-500">
                 貼圖張數
               </label>
+              <p className="mt-2 text-xs font-bold leading-5 text-violet-800">下一步請按下方張數按鈕，例如「8 張」或「16 張」；第一次建議從 8 張開始。</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {allowedCounts.map((count) => (
                   <button
@@ -5327,7 +5329,7 @@ export default function StickerPromptGenerator() {
 
               <div className="mt-4"><StickerNextActionHint>已經在 Gemini 下載完整大圖？請按下方「第 3 步｜已下載整張大圖，回 RXV 上傳」。</StickerNextActionHint></div>
               <Link
-                to="/tools/line-sticker?flow=1"
+                to="/tools/line-sticker?flow=1#mother-upload"
                 onClick={() => persistFlowProject(3)}
                 className="mt-5 inline-flex min-h-[52px] items-center justify-center rounded-2xl bg-blue-600 px-5 py-3 text-center text-sm font-black !text-white shadow-lg transition hover:bg-blue-700"
               >
