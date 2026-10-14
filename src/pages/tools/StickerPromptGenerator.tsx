@@ -4,6 +4,7 @@ import SEO from "@/components/SEO";
 import CoupangDynamicAd from "@/components/CoupangDynamicAd";
 import LineStickerAuthorCard from "@/components/LineStickerAuthorCard";
 import LineStickerFlowSteps from "@/components/LineStickerFlowSteps";
+import { StickerExistingMotherSheetShortcut, StickerCustomInquiry, StickerNextActionHint } from "@/components/StickerBeginnerActions";
 import {
   createLineStickerProject,
   getAllowedCounts,
@@ -4897,6 +4898,7 @@ export default function StickerPromptGenerator() {
       <main className="min-h-screen bg-gradient-to-b from-violet-50 via-white to-blue-50 px-4 py-8">
         <div className="mx-auto w-full max-w-[1480px]">
           <LineStickerFlowSteps activeStep={copiedBatchIndex !== null || copied || copiedStable ? 2 : 1} mode={stickerMode} />
+          <div className="mb-4"><StickerExistingMotherSheetShortcut /></div>
 
           <section id="sticker-start" className="scroll-mt-24 rounded-3xl border border-violet-100 bg-white p-6 shadow-sm sm:p-8">
             <div className="flex flex-wrap gap-2">
@@ -5291,6 +5293,8 @@ export default function StickerPromptGenerator() {
                           貼圖 {item.startIndex + 1}～{item.endIndex}
                         </p>
                       </div>
+                      <div className="w-full sm:w-auto">
+                        <StickerNextActionHint>請先按下方「複製第 {index + 1} 張畫圖指令」，再按上面的「開啟 Google Gemini 畫圖」。</StickerNextActionHint>
                       <button
                         type="button"
                         onClick={() => copyFlowPrompt(index)}
@@ -5302,6 +5306,7 @@ export default function StickerPromptGenerator() {
                           ? "已複製"
                           : `第 2 步｜複製第 ${index + 1} 張畫圖指令`}
                       </button>
+                      </div>
                     </div>
                     <details className="mt-3 rounded-2xl border border-violet-100 bg-white">
                       <summary className="cursor-pointer px-4 py-3 text-xs font-black text-violet-700">
@@ -5315,6 +5320,7 @@ export default function StickerPromptGenerator() {
                 ))}
               </div>
 
+              <div className="mt-4"><StickerNextActionHint>已經在 Gemini 下載完整大圖？請按下方「第 3 步｜已下載整張大圖，回 RXV 上傳」。</StickerNextActionHint></div>
               <Link
                 to="/tools/line-sticker?flow=1"
                 onClick={() => persistFlowProject(3)}
@@ -5405,6 +5411,7 @@ export default function StickerPromptGenerator() {
             </div>
           </section>
 
+          <div className="mt-6"><StickerCustomInquiry /></div>
           {false && <SupportSection />}
 
           <section className="mt-6 rounded-3xl border border-pink-100 bg-gradient-to-br from-pink-50 via-white to-amber-50 p-5 shadow-sm">
