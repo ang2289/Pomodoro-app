@@ -107,3 +107,22 @@ test("Gemini 4×4 橫幅與多餘英文需要專用指令，切圖前應阻擋�
   assert.doesNotMatch(prompt, /嚴格按照指定 4×2、4×4 或 4×5 格數/);
   assert.match(read("src/components/StickerBeginnerActions.tsx"), /實驗性選項/);
 });
+
+test("自訂文字和字型在新手頁預設顯示，並且設定實際寫入兩種 AI 生圖提示詞", () => {
+  const prompt = read("src/pages/tools/StickerPromptGenerator.tsx");
+  assert.match(prompt, /id="sticker-customize"/);
+  assert.match(prompt, /前往自訂文字／字型設定/);
+  assert.match(prompt, /自訂貼圖內容｜文字、字型、顏色、角色都可以選/);
+  assert.match(prompt, /字型風格（可選）/);
+  assert.match(prompt, /value=\{fontStyle\}/);
+  assert.match(prompt, /onChange=\{\(e\) => setFontStyle/);
+  assert.match(prompt, /fontStylePrompt = optionPrompt\(FONT_STYLE_OPTIONS, fontStyle\)/);
+  assert.match(prompt, /字型風格為「\$\{fontStylePrompt\}」/);
+  assert.match(prompt, /fontStyle,\s*stickerStylePreset,\s*photoMode,\s*index \+ 1,/);
+  assert.match(prompt, /fontStyle,\s*stickerStyle,\s*photoMode,/);
+  assert.doesNotMatch(prompt, /想換角色、修改文字或指定畫風？展開進階設定/);
+  assert.match(prompt, /一行一句，可自行修改/);
+  assert.match(prompt, /文字大小/);
+  assert.match(prompt, /文字顏色/);
+  assert.match(prompt, /文字位置/);
+});
