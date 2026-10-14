@@ -3177,7 +3177,7 @@ export default function LineStickerTool() {
                     className="min-h-11 w-44 max-w-full rounded-lg border-2 border-violet-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-violet-600"
                   >
                     {files.slice(0, stickerCount).map((item, index) => (
-                      <option key={item.id} value={index}>{`第 ${String(index + 1).padStart(2, "0")} 張貼圖`}</option>
+                      <option key={item.url} value={index}>{`第 ${String(index + 1).padStart(2, "0")} 張貼圖`}</option>
                     ))}
                   </select>
                   <Link
