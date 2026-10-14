@@ -323,3 +323,18 @@ test("角色描述組合保持每格一致，能帶入個人外觀但不額外�
   assert.doesNotMatch(format(choice, ""), /自訂辨識特徵：/);
   assert.doesNotMatch(format(choice, "a".repeat(300)), /a{181}/);
 });
+
+test("單張上傳與整張母圖清楚區分，1/16 不誤導新手以為文字太多", () => {
+  const upload = read("src/pages/tools/LineStickerTool.tsx");
+  assert.match(upload, /const mayHaveUploadedMotherSheetAsSingle =/);
+  assert.match(upload, /files\.length === 1 && stickerCount > 1 && motherSheetDetections\.length === 0/);
+  assert.match(upload, /您可能把整張母圖傳到「單張貼圖」區了/);
+  assert.match(upload, /這不是「字太多」的判定/);
+  assert.match(upload, /改用整張母圖自動切割/);
+  assert.match(upload, /onClick=\{\(\) => motherSheetInputRef\.current\?\.click\(\)\}/);
+  assert.match(upload, /備用功能：已切好的單張貼圖上傳/);
+  assert.match(upload, /我已切成單張｜選擇 PNG／WebP（可多選）/);
+  assert.match(upload, /aria-label="已切好的單張貼圖補充上傳區"/);
+  assert.match(upload, /目前只載入 1 張獨立貼圖/);
+  assert.doesNotMatch(upload, /第 3 步｜點這裡上傳圖片（可一次多選）/);
+});
