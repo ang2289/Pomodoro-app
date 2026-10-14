@@ -104,7 +104,7 @@ test("Gemini 4×4 橫幅與多餘英文需要專用指令，切圖前應阻擋�
   assert.match(upload, /aspect < 0\.82 \|\| aspect > 1\.22/);
   assert.match(upload, /unsafeMotherSheets\.length > 0/);
   assert.match(steps, /ChatGPT（推薦）/);
-  assert.match(prompt, /const rowAssignment = Array.from/);
+  assert.match(prompt, /const rowAssignment = stickerRowMap/);
   assert.match(prompt, /最終版型僅此一種/);
   assert.match(prompt, /每格短句位置必須依下表/);
   assert.doesNotMatch(prompt, /嚴格按照指定 4×2、4×4 或 4×5 格數/);
@@ -130,30 +130,25 @@ test("自訂文字和字型在新手頁預設顯示，並且設定實際寫入�
   assert.match(prompt, /文字位置/);
 });
 
-test("左右交錯一定要左右排列，三種文字位置的實際規則都依照選項", () => {
-  const source = read("src/pages/tools/StickerPromptGenerator.tsx");
-  const matched = source.match(/function textPositionForCell\(textPosition: TextPosition, index: number\) \{[\s\S]*?\n\}/);
-  assert.ok(matched, "應存在可驗證的逐格位置規則");
-  const javascript = ts.transpileModule(matched[0], {
+test("互斥文字位置共用一套規則，全域第 17～40 格不重新計算", () => {
+  const source = read("src/lib/stickerCharacterLock.ts");
+  const segment = source.match(/export function stickerPlacement\(position: StickerTextPosition, globalIndex: number\): string \{[\s\S]*?\n\}/);
+  assert.ok(segment);
+  const javascript = ts.transpileModule(segment[0].replace("export function", "function"), {
     compilerOptions: { target: ts.ScriptTarget.ES2022 },
   }).outputText;
-  const position = vm.runInNewContext(javascript + "\ntextPositionForCell", {});
-  for (let index = 0; index < 16; index += 1) {
-    const mixed = position("mixed", index);
-    if (index % 2 === 0) {
-      assert.match(mixed, /文字放左側、人物放右側/);
-    } else {
-      assert.match(mixed, /人物放左側、文字放右側/);
-    }
-    assert.match(position("top", index), /文字放正上方/);
-    assert.match(position("bottom", index), /文字放正下方/);
+  const position = vm.runInNewContext(javascript + "\nstickerPlacement", {});
+  for (let index = 0; index < 40; index += 1) {
+    assert.match(position("mixed", index), index % 2 === 0 ? /文字只放左側/ : /文字只放右側/);
+    assert.match(position("top", index), /文字只放正上方/);
+    assert.match(position("bottom", index), /文字只放正下方/);
   }
-  assert.doesNotMatch(source, /文字可依角色動作在上方、下方或左右交錯安排/);
+  assert.doesNotMatch(read("src/pages/tools/StickerPromptGenerator.tsx"), /- 左右交錯時，奇數格文字在左、偶數格文字在右/);
 });
 
 test("第 2 步顯示全部已選設定，母圖提示詞逐格指定位置並支援平台及動靜態", () => {
   const source = read("src/pages/tools/StickerPromptGenerator.tsx");
-  assert.match(source, /textPositionForCell\(textPosition, row \* columns \+ column\)/);
+  assert.match(source, /stickerRowMap\(/);
   assert.match(source, /文字所在區域必須嚴格遵守/);
   assert.match(source, /即將複製的貼圖設定/);
   assert.match(source, /optionLabel\(TEXT_POSITION_OPTIONS, textPosition\)/);
@@ -164,8 +159,8 @@ test("第 2 步顯示全部已選設定，母圖提示詞逐格指定位置並�
   assert.match(source, /optionLabel\(PHOTO_MODE_OPTIONS, photoMode\)/);
   assert.match(source, /modeInstructions = mode === "animated"/);
   assert.match(source, /platform === "whatsapp" \? "WhatsApp" : "LINE"/);
-  assert.match(source, /stickerMode,\s*stickerPlatform,\s*\),/);
-  assert.match(source, /\[\s*motherSheetPlan,[\s\S]*?textPosition,\s*fontStyle,[\s\S]*?stickerMode,\s*stickerPlatform,\s*\]/);
+  assert.match(source, /stickerMode,\s*stickerPlatform,\s*item.startIndex,\s*flowTexts,\s*characterLockText,/);
+  assert.match(source, /motherSheetPlan,[\s\S]*?textPosition,\s*fontStyle,[\s\S]*?stickerMode,\s*stickerPlatform,\s*characterLockText/);
   assert.doesNotMatch(source, /人物從第一格到最後一格保持完全同一組新郎新娘/);
 });
 
