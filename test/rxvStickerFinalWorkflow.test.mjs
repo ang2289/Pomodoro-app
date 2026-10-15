@@ -47,3 +47,12 @@ test("正常產生 ZIP 成功後才顯示完成提示", () => {
   const indexComplete = animated.indexOf('setCompletedPlatform("line")');
   assert.ok(indexDownload >= 0 && indexComplete > indexDownload, "LINE animated completion must follow downloadable ZIP");
 });
+
+test("兩張不同格數母圖不被上一個全域 4×4 選項強制覆蓋", () => {
+  const source = read("src/pages/tools/LineStickerTool.tsx");
+  assert.match(source, /if \(detections\.length > 1\) setMotherSheetGrid\("auto"\)/);
+  assert.match(source, /const useAutoPlan = Boolean\(flowProject\) \|\| motherSheetGrid === "auto" \|\| motherSheetDetections\.length > 1/);
+  assert.match(source, /motherSheetDetections\.length === 1 \? motherSheetGrid : item\.grid/);
+  assert.match(source, /多張母圖可能混用 4×4 \+ 4×2/);
+  assert.match(source, /不會強迫橫圖變成正方形/);
+});
