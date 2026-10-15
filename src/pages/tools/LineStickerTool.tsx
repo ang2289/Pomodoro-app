@@ -2241,6 +2241,7 @@ export default function LineStickerTool() {
     mainImageIndex,
     qualityErrorCount,
     flowProject,
+    selectedStickerMode,
     t,
   ]);
 
@@ -2328,6 +2329,7 @@ export default function LineStickerTool() {
     getScaleForIndex,
     getOffsetForIndex,
     flowProject,
+    selectedStickerMode,
   ]);
 
   const startNewStickerFlow = useCallback(async () => {
@@ -2393,6 +2395,8 @@ export default function LineStickerTool() {
     getScaleForIndex,
     getOffsetForIndex,
     navigate,
+    flowProject,
+    selectedStickerMode,
     t,
   ]);
 
@@ -2596,7 +2600,7 @@ export default function LineStickerTool() {
                 </button>
                 <button
                   type="button"
-                  onClick={generateZip}
+                  onClick={exportPlatform === "whatsapp" ? generateWhatsAppZip : generateZip}
                   disabled={loading}
                   className="inline-flex min-h-12 w-auto max-w-full items-center justify-center rounded-2xl border border-blue-200 bg-blue-50 px-5 py-3 text-sm font-black text-blue-800 transition hover:bg-blue-100 disabled:opacity-50"
                 >
