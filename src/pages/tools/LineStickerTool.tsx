@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import type { ChangeEvent, PointerEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import SEO from "@/components/SEO";
+import SEO, { getBaseUrl } from "@/components/SEO";
 import LineStickerAuthorCard from "@/components/LineStickerAuthorCard";
 import LineStickerFlowSteps from "@/components/LineStickerFlowSteps";
 import { StickerCustomInquiry, StickerNextActionHint } from "@/components/StickerBeginnerActions";
@@ -1664,7 +1664,7 @@ export default function LineStickerTool() {
       : "已選靜態：上傳母圖 → 安全切圖 → 最後產生 PNG 上架 ZIP。");
   }, [flowProject, stickerCount, files.length]);
   const getToolShareData = useCallback(() => {
-    const url = typeof window !== "undefined" ? window.location.href : "";
+    const url = `${getBaseUrl().replace(/\/$/, "")}/tools/line-sticker`;
     const title = "RxV LINE 貼圖整理工具";
     const text = "免費 LINE 貼圖五大步驟，自動分割母圖、去白底、整理主圖及 ZIP；PhotoRoom 是選用工具。";
     return { url, title, text };
