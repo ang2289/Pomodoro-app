@@ -3423,7 +3423,8 @@ function applyOriginalCharacterTraits(
   choice: OriginalCharacterTraits,
   profession: string,
 ): StickerIdentity {
-  const picked = (key: OriginalCharacterKey) => choice[key] !== "依主題預設";
+  // 相容舊版只含性別／年齡／個性／臉型的資料；未指定的新版欄位不可寫入 undefined。
+  const picked = (key: OriginalCharacterKey) => Boolean(choice[key]) && choice[key] !== "依主題預設";
   // 新手的簡單選擇優先於該職業模板原有的性別、年齡及五官預設。
   return {
     ...base,
