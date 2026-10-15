@@ -1612,7 +1612,7 @@ export default function LineStickerTool() {
   );
   const [directStickerMode, setDirectStickerMode] = useState<LineStickerMode>("static");
   const selectedStickerMode: LineStickerMode = flowProject?.mode ?? directStickerMode;
-  const [actionHint, setActionHint] = useState("下一步：先選靜態或動態、張數，再按第 3 步上傳母圖。");
+  const [actionHint, setActionHint] = useState("下一步請按下方靜態或動態按鈕，選好張數後，再按第 3 步上傳母圖。");
   const [mainImageIndex, setMainImageIndex] = useState<number>(0);
   const [exportPlatform, setExportPlatform] = useState<"line" | "whatsapp">(() =>
     readLineStickerProject()?.platform === "whatsapp" ? "whatsapp" : "line"
