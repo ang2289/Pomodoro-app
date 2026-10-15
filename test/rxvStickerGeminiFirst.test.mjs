@@ -523,3 +523,35 @@ test("安全檢查只檢查各母圖自己的 4×4 比例，張數變更須先�
   assert.match(upload, /setStickerCount\(suggestedMotherSheetCount\)/);
   assert.match(upload, /getMotherSheetPlan\(flowProject\?\.count \?\? stickerCount\)/);
 });
+
+
+test("已有母圖按鈕位於選擇張數下方，會帶入靜態動態、平台與張數後直達第 3 步", () => {
+  const prompt = read("src/pages/tools/StickerPromptGenerator.tsx");
+  const upload = read("src/pages/tools/LineStickerTool.tsx");
+  const flow = read("src/lib/lineStickerFlow.ts");
+
+  const countPicker = prompt.indexOf('aria-label="選擇貼圖張數"');
+  const existingShortcut = prompt.indexOf('aria-label="已做好母圖的快速入口"');
+  const themePicker = prompt.indexOf("貼圖類型", existingShortcut);
+  assert.ok(countPicker >= 0 && existingShortcut > countPicker && themePicker > existingShortcut);
+  const shortcut = prompt.slice(existingShortcut, themePicker);
+  assert.match(shortcut, /我已有母圖｜跳至第 3 步上傳、切割與打包/);
+  assert.match(shortcut, /to="\/tools\/line-sticker\?flow=1#mother-upload"/);
+  assert.match(shortcut, /onClick=\{\(\) => persistFlowProject\(3\)\}/);
+  assert.match(shortcut, /stickerMode === "animated"/);
+  assert.match(shortcut, /stickerPlatform === "line"/);
+  assert.match(shortcut, /targetCount/);
+
+  assert.match(prompt, /mode: stickerMode,\s*platform: stickerPlatform,\s*count: targetCount,/);
+  assert.match(prompt, /saveLineStickerProject\(\{ \.\.\.project, stage \}\)/);
+  assert.match(upload, /get\("flow"\) === "1"/);
+  assert.match(upload, /enabled \? readLineStickerProject\(\) : null/);
+  assert.match(upload, /flowProject\?\.count \?\? 8/);
+  assert.match(upload, /mode=\{flowProject\?\.mode \?\? "static"\}/);
+  assert.match(upload, /flowProject\?\.mode === "animated" \? \(/);
+  assert.match(upload, /id="mother-upload"/);
+
+  assert.match(flow, /mode: input\.mode/);
+  assert.match(flow, /platform: input\.platform \?\? "line"/);
+  assert.match(flow, /count: input\.count/);
+});
