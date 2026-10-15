@@ -1795,7 +1795,7 @@ export default function LineStickerTool() {
   }, [suggestedMotherSheetCount, loading, flowProject, motherSheetDetections]);
   const unsafeMotherSheets = useMemo(
     () => motherSheetDetections.flatMap((item) => {
-      const grid = !flowProject && motherSheetGrid !== "auto" ? motherSheetGrid : item.grid;
+      const grid = !flowProject && motherSheetGrid !== "auto" && motherSheetDetections.length === 1 ? motherSheetGrid : item.grid;
       const errors = item.safetyByGrid[grid].blocked.map((message) => `${item.file.name}：${message}`);
       const requiresSquare4x4 = grid === "4x4";
       const aspect = item.width / Math.max(1, item.height);
@@ -1830,7 +1830,7 @@ export default function LineStickerTool() {
             : item,
         );
 
-        if (flowProject || motherSheetGrid === "auto") {
+        if (flowProject || motherSheetGrid === "auto" || motherSheetDetections.length > 1) {
           const plan = getMotherSheetPlan(flowProject?.count ?? stickerCount);
           const check = checkMotherSheetPlan(next, plan);
           setMotherSheetDetectionStatus(check.valid ? "ready" : "invalid");
@@ -1873,9 +1873,13 @@ export default function LineStickerTool() {
         );
 
         setMotherSheetDetections(detections);
-        setActionHint("下一步（第 4 步）：確認格數與原圖安全留白，再按綠色「確認格數，開始自動切圖」。");
+        // 多張母圖可能混用 4×4 + 4×2，不能把上方的單張手動格數強制套到全部。
+        if (detections.length > 1) setMotherSheetGrid("auto");
+        setActionHint(detections.length > 1
+          ? "已切換為逐張自動辨識格數：一張 4×4 加一張 4×2 可組成 24 張，不會強迫橫圖變成正方形。下一步請確認張數並安全切圖。"
+          : "下一步（第 4 步）：確認格數與原圖安全留白，再按綠色「確認格數，開始自動切圖」。");
 
-        if (!flowProject && motherSheetGrid !== "auto") {
+        if (!flowProject && motherSheetGrid !== "auto" && detections.length === 1) {
           setMotherSheetDetectionStatus("ready");
           return;
         }
@@ -1903,7 +1907,7 @@ export default function LineStickerTool() {
   const confirmMotherSheetSplit = useCallback(async () => {
     if (!motherSheetDetections.length || loading) return;
 
-    const useAutoPlan = Boolean(flowProject) || motherSheetGrid === "auto";
+    const useAutoPlan = Boolean(flowProject) || motherSheetGrid === "auto" || motherSheetDetections.length > 1;
     const plan = getMotherSheetPlan(flowProject?.count ?? stickerCount);
     const check = checkMotherSheetPlan(motherSheetDetections, plan);
 
@@ -2741,7 +2745,11 @@ export default function LineStickerTool() {
                         <button
                           key={grid}
                           type="button"
-                          onClick={() => setMotherSheetGrid(grid)}
+                          onClick={() => {
+                            if (motherSheetDetections.length > 1 && grid !== "auto") return;
+                            setMotherSheetGrid(grid);
+                          }}
+                          disabled={motherSheetDetections.length > 1 && grid !== "auto"}
                           className={`rounded-xl px-3 py-2 text-xs font-black ${
                             motherSheetGrid === grid
                               ? "bg-violet-600 text-white"
@@ -2892,7 +2900,7 @@ export default function LineStickerTool() {
                   ) : null}
                   <div id="mother-split" className="scroll-mt-24 mt-4 grid gap-3 xl:grid-cols-2">
                     {motherSheetDetections.map((item, index) => {
-                      const safetyGrid = !flowProject && motherSheetGrid !== "auto" ? motherSheetGrid : item.grid;
+                      const safetyGrid = !flowProject && motherSheetGrid !== "auto" && motherSheetDetections.length === 1 ? motherSheetGrid : item.grid;
                       const plannedGrid =
                         expectedMotherSheetPlan[index]?.grid ?? null;
                       const matchesPlan =
