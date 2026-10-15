@@ -1812,6 +1812,13 @@ export default function LineStickerTool() {
 
   const overrideMotherSheetGrid = useCallback(
     (id: string, grid: MotherSheetGrid) => {
+      const selected = motherSheetDetections.find((item) => item.id === id);
+      const aspect = selected ? selected.width / Math.max(1, selected.height) : 1;
+      if (selected && grid === "4x4" && (aspect < 0.82 || aspect > 1.22)) {
+        setError(`${selected.file.name} 是 ${selected.width}×${selected.height} 的橫向母圖。若畫面實際是 4 欄 2 列，請選 4×2（8 張），不必把橫圖硬切成 4×4。`);
+        setActionHint("下一步：保留 4×2，確認整套母圖張數相符再切圖。");
+        return;
+      }
       setMotherSheetDetections((previous) => {
         const next = previous.map((item) =>
           item.id === id
@@ -1836,7 +1843,7 @@ export default function LineStickerTool() {
         return next;
       });
     },
-    [flowProject, motherSheetGrid, stickerCount],
+    [flowProject, motherSheetGrid, stickerCount, motherSheetDetections],
   );
 
   const handleMotherSheetChange = useCallback(
@@ -1866,6 +1873,7 @@ export default function LineStickerTool() {
         );
 
         setMotherSheetDetections(detections);
+        setActionHint("下一步（第 4 步）：確認格數與原圖安全留白，再按綠色「確認格數，開始自動切圖」。");
 
         if (!flowProject && motherSheetGrid !== "auto") {
           setMotherSheetDetectionStatus("ready");
@@ -1992,6 +2000,7 @@ export default function LineStickerTool() {
           : "安全切割完成：已尋找各格之間的留白通道，並自動去背、置中與補足約 13% 透明留白。請逐張預覽後再打包。",
       );
       setMotherSheetDetectionStatus("ready");
+      setActionHint("下一步（第 5 步）：逐張檢查預覽、選好主圖，再按最後一步產生 ZIP；動態則接續製作動畫。");
       if (flowProject) updateLineStickerProject({ stage: 4 });
     } catch (cause) {
       setMotherSheetDetectionStatus("invalid");
@@ -2210,10 +2219,11 @@ export default function LineStickerTool() {
       }
       saveAs(content, ZIP_FILENAME);
       setExportCheckResult(`已檢查 ${stickerCount} 張貼圖＋main＋tab：透明背景、尺寸、檔名與每張容量符合工具可驗證的 LINE 基本規格；下載後仍請人工檢查文字及著作權。`);
-      if (flowProject?.mode !== "animated") {
-        updateLineStickerProject({ stage: 5 });
-        setDownloadCompleted(true);
-      }
+      if (selectedStickerMode !== "animated") updateLineStickerProject({ stage: 5 });
+      setDownloadCompleted(true);
+      setActionHint(selectedStickerMode === "animated"
+        ? "已另存靜態 PNG 上架 ZIP。這份靜態版可獨立送 LINE 審核；下一步請繼續製作動態 APNG。"
+        : "靜態 PNG 上架 ZIP 已下載。下一步：前往 LINE Creators Market 登錄資料、上傳 ZIP 並送審，或再做下一組。");
     } catch (err) {
       const message =
         err instanceof Error ? err.message : t("line_sticker_pack_failed");
@@ -2300,7 +2310,8 @@ export default function LineStickerTool() {
       setWhatsAppReadyZip({ blob, filename });
       setExportCheckResult(`WhatsApp 靜態貼圖已輸出 ${stickerCount} 張（${sizes.length} 組），512×512 WebP、每張≤100KB、附貼圖集縮圖。此 ZIP 是素材包，仍須在 WhatsApp 或相容貼圖 APP 匯入。`);
       setDownloadCompleted(true);
-      if (flowProject?.mode !== "animated") updateLineStickerProject({ stage: 5 });
+      if (selectedStickerMode !== "animated") updateLineStickerProject({ stage: 5 });
+      setActionHint("WhatsApp 靜態 WebP ZIP 已下載。下一步：使用相容 APP 建立並匯入貼圖集。");
     } catch (err) {
       setError(err instanceof Error ? err.message : "WhatsApp 貼圖產生失敗。");
     } finally {
@@ -2361,8 +2372,9 @@ export default function LineStickerTool() {
           }),
         );
       }
-      await saveAnimatedStickerHandoff(prepared, flowProject?.mode === "animated" ? flowProject : null);
+      await saveAnimatedStickerHandoff(prepared, selectedStickerMode === "animated" ? flowProject : null);
       updateLineStickerProject({ stage: 5 });
+      setActionHint("已進入動畫工具。下一步：確認效果，按產生 APNG 上架 ZIP 才正式完成。");
       navigate("/tools/animated-line-sticker?from=line-sticker");
     } catch (cause) {
       setError(
@@ -2530,7 +2542,7 @@ export default function LineStickerTool() {
             </div>
             <p className="mt-2 text-xs leading-6 text-slate-600">
               {exportPlatform === "whatsapp"
-                ? (flowProject?.mode === "animated"
+                ? (selectedStickerMode === "animated"
                     ? "已選 WhatsApp 動態：完成切割後按底部「下一步」，即可製作真正的 512×512 動畫 WebP ZIP（每張≤500KB）。"
                     : "WhatsApp 靜態：下載 512×512、單張≤100KB 的透明 WebP ZIP；匯入貼圖集需透過 WhatsApp 或相容貼圖 APP。")
                 : "LINE：靜態輸出 PNG 上架 ZIP，動態輸出 APNG；可以接續下一步製作動態貼圖。"}
@@ -3277,7 +3289,7 @@ export default function LineStickerTool() {
             <h3 className="mb-2 text-center text-base font-bold text-violet-900">第 5 步｜確認預覽後，下載或製作動態貼圖</h3>
             <p className="mb-2 text-center text-xs font-bold leading-5 text-slate-700">
               {canDownload
-                ? (flowProject?.mode === "animated"
+                ? (selectedStickerMode === "animated"
                     ? "下一步請按下方「第 5 步｜製作動態貼圖」按鈕。"
                     : "下一步請按下方「步驟 5｜下載貼圖 ZIP」按鈕。")
                 : "下一步：先到上方第 3 步上傳整張母圖，完成切割預覽後才能下載。"}
@@ -3296,7 +3308,7 @@ export default function LineStickerTool() {
               </p>
             </div>
 
-            {flowProject?.mode === "animated" ? (
+            {selectedStickerMode === "animated" ? (
               <>
                 <button
                   onClick={exportPlatform === "whatsapp" ? generateWhatsAppZip : generateZip}
