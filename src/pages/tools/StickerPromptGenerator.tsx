@@ -5388,6 +5388,26 @@ export default function StickerPromptGenerator() {
                         ? "系統會準備 2 張 4×4，共 32 張。"
                         : "系統會準備 2 張 4×5，共 40 張。"}
               </p>
+              <div className="mt-4 max-w-[520px] rounded-xl border border-violet-200 bg-violet-50/40 px-4 py-4" aria-label="已做好母圖的快速入口">
+                <h3 className="text-sm font-bold text-slate-900">已經有自己做好的母圖？</h3>
+                <p className="mt-1.5 text-xs leading-6 text-slate-600">
+                  不用再產生提示詞。保持上方選好的 {stickerPlatform === "line" ? "LINE" : "WhatsApp"}、
+                  {stickerMode === "animated" ? "動態" : "靜態"}與 {targetCount} 張，
+                  直接進入第 3 步上傳完整母圖，讓 RXV 自動分割、去背與打包。
+                </p>
+                <Link
+                  to="/tools/line-sticker?flow=1#mother-upload"
+                  onClick={() => persistFlowProject(3)}
+                  className="mt-3 inline-flex min-h-12 w-fit max-w-full items-center justify-center rounded-xl bg-violet-600 px-4 py-3 text-center text-sm font-bold !text-white shadow-sm transition-colors hover:bg-violet-700 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
+                >
+                  我已有母圖｜跳至第 3 步上傳、切割與打包 →
+                </Link>
+                {stickerMode === "animated" ? (
+                  <p className="mt-2 text-xs font-medium leading-5 text-violet-800">
+                    已選動態貼圖：母圖切割完成後，可以在第 5 步繼續製作動態貼圖，不會強制改成靜態。
+                  </p>
+                ) : null}
+              </div>
 
               <div className="mt-5 flex items-center justify-between gap-3">
                 <label className="block text-sm font-semibold text-slate-700">
