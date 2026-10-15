@@ -4,7 +4,7 @@ import SEO from "@/components/SEO";
 import CoupangDynamicAd from "@/components/CoupangDynamicAd";
 import LineStickerAuthorCard from "@/components/LineStickerAuthorCard";
 import LineStickerFlowSteps from "@/components/LineStickerFlowSteps";
-import { StickerExistingMotherSheetShortcut, StickerCustomInquiry, StickerNextActionHint, StickerAIProviderLinks } from "@/components/StickerBeginnerActions";
+import { StickerCustomInquiry, StickerNextActionHint, StickerAIProviderLinks } from "@/components/StickerBeginnerActions";
 import {
   createLineStickerProject,
   getAllowedCounts,
@@ -5303,7 +5303,12 @@ export default function StickerPromptGenerator() {
               <span>✓ 繁體中文</span><span>✓ LINE／WhatsApp</span><span>✓ 靜態／動態</span>
             </div>
           </header>
-          <div className="mb-5"><StickerExistingMotherSheetShortcut compact /></div>
+          <p className="mb-5 text-sm text-slate-600">
+            已經有完整母圖？
+            <a href="#sticker-count" className="ml-2 font-bold text-violet-700 underline underline-offset-2 hover:text-violet-900">
+              先選靜態／動態與張數，再直接進入上傳 →
+            </a>
+          </p>
           <div id="sticker-start" className="scroll-mt-24" />
 
           <section className="mt-6 flex flex-col gap-6" aria-label="依順序操作第 1、2 步">
@@ -5356,7 +5361,7 @@ export default function StickerPromptGenerator() {
                   ? (stickerMode === "animated" ? "WhatsApp 動態：512×512 動畫 WebP、每張上限 500KB；由下一步自動處理。" : "WhatsApp 靜態：512×512 WebP、每張上限 100KB。")
                   : (stickerMode === "animated" ? "LINE 動態：產生符合 LINE 規格的 APNG ZIP。" : "LINE 靜態：產生 PNG 上架 ZIP。")}
               </p>
-              <label className="mt-5 block text-xs font-black text-slate-500">
+              <label id="sticker-count" className="mt-5 block scroll-mt-24 text-xs font-black text-slate-500">
                 貼圖張數
               </label>
               <p className="mt-2 text-xs font-bold leading-5 text-violet-800">下一步請按下方張數按鈕，例如「8 張」或「16 張」；第一次建議從 8 張開始。</p>
