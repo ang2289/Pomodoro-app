@@ -3299,7 +3299,6 @@ export default function LineStickerTool() {
                   />
                 ))}
               </div>
-        <div id="sticker-download" className="scroll-mt-24" />
 
               <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
                 <h4 className="text-sm font-bold text-slate-900">選擇代表人物／主圖</h4>
@@ -3328,6 +3327,7 @@ export default function LineStickerTool() {
                 </div>
                 <p className="mt-2 text-xs text-slate-500">重新設定人物不會直接改變已上傳的圖片，需重新到 ChatGPT 生圖並上傳。</p>
               </div>
+        <div id="sticker-download" className="scroll-mt-24" />
         <footer aria-label="第 5 步：貼圖下載或動態製作" className="mx-auto mt-5 mb-5 max-w-3xl rounded-2xl border-2 border-violet-200 bg-white px-3 py-4 shadow-sm sm:px-4">
           <div className="mx-auto">
             <h3 className="mb-2 text-center text-base font-bold text-violet-900">第 5 步｜確認預覽後，下載或製作動態貼圖</h3>
