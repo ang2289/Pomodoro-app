@@ -38,7 +38,7 @@ export function WhatsAppMobileZipHandoff({ archive }: { archive: WhatsAppZipArch
       </p>
       {canShareFile ? (
         <button type="button" onClick={handOffZip}
-          className="mt-3 min-h-12 w-full rounded-xl bg-violet-700 px-4 py-3 text-sm font-black text-white hover:bg-violet-800">
+          className="mt-3 inline-flex min-h-12 w-fit max-w-full items-center justify-center rounded-xl bg-violet-700 px-4 py-3 text-center text-sm font-black text-white hover:bg-violet-800">
           將這份 ZIP 分享到 RXV 貼圖工廠
         </button>
       ) : archive ? (
@@ -52,7 +52,7 @@ export function WhatsAppMobileZipHandoff({ archive }: { archive: WhatsAppZipArch
           link.remove();
           window.setTimeout(() => URL.revokeObjectURL(url), 15_000);
           setStatus("ZIP 已再次下載。請開啟 RXV 貼圖工廠 APP → WA 匯入 → 選擇 ZIP，然後加入 WhatsApp。");
-        }} className="mt-3 min-h-12 w-full rounded-xl bg-violet-700 px-4 py-3 text-sm font-black text-white">
+        }} className="mt-3 inline-flex min-h-12 w-fit max-w-full items-center justify-center rounded-xl bg-violet-700 px-4 py-3 text-center text-sm font-black text-white">
           下載 ZIP，使用 RXV APP 匯入
         </button>
       ) : (

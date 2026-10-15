@@ -1511,28 +1511,56 @@ async function createBatchShowcaseVideo(
     let next: Promise<ImageBitmap[]> | null = prepared[1]
       ? Promise.all(prepared[1].map((file) => createImageBitmap(file)))
       : null;
+    // 預熱首次高清繪製（在錄影開始前執行），避免第一張讓錄影多出數十秒靜止畫面。
     drawShowcaseFrame(current[0], 0);
+    await waitMs(80);
+    drawShowcaseFrame(current[Math.min(1, current.length - 1)], 0);
     recorder.start(500);
-    // 一張貼圖 60 禎（2 秒 × 30FPS），動畫原始 8 禎每禎約停留 7~8 畫格。
+
+    // 每張貼圖約 2 秒、來源 8 禎。只在原始動畫禎改變時重畫高清畫布，
+    // 不再把同一張 1080×1920 畫面重複畫 60 次：舊做法在部分 Edge 電腦
+    // 前兩張耗時 30／20 秒，導致 24 張展示影片被拖長為近 100 秒。
+    // 影片時長由瀏覽器實際錄影時鐘決定；繪製太慢時應報錯，不下載錯誤影片。
+    const clipDurationMs = 2000;
+    const maxAllowedLagMs = 800;
+    const captureStartedAt = performance.now();
     for (let index = 0; index < sources.length; index += 1) {
-      const startedAt = performance.now();
-      for (let frame = 0; frame < 60; frame += 1) {
-        const bitmap = current[Math.min(7, Math.floor(frame * current.length / 60))];
-        drawShowcaseFrame(bitmap, index);
-        const remaining = startedAt + ((frame + 1) * 1000) / 30 - performance.now();
-        if (remaining > 0) await waitMs(remaining);
-        else await waitMs(0);
+      const slotStartedAt = captureStartedAt + index * clipDurationMs;
+      const delayUntilStart = slotStartedAt - performance.now();
+      if (delayUntilStart > 0) await waitMs(delayUntilStart);
+      if (performance.now() - slotStartedAt > maxAllowedLagMs) {
+        throw new Error(`高清 MP4 產生速度不足：第 ${index + 1} 張尚未開始就延遲超過 0.8 秒。請關閉其他耗資源分頁後重新製作。`);
       }
+      if (!current.length) throw new Error(`第 ${index + 1} 張沒有可錄製的動畫影格。`);
+      for (let frame = 0; frame < current.length; frame += 1) {
+        const frameAt = slotStartedAt + (frame * clipDurationMs) / current.length;
+        const remaining = frameAt - performance.now();
+        if (remaining > 0) await waitMs(remaining);
+        if (performance.now() - frameAt > maxAllowedLagMs) {
+          throw new Error(`高清 MP4 第 ${index + 1} 張動畫繪製延遲，停止輸出避免產生前段長時間靜止的影片。請減少同時開啟的程式後重試。`);
+        }
+        drawShowcaseFrame(current[frame], index);
+      }
+      const untilNext = slotStartedAt + clipDurationMs - performance.now();
+      if (untilNext > 0) await waitMs(untilNext);
       current.forEach((bitmap) => bitmap.close());
       onProgress(index + 1, sources.length);
       if (index + 1 < sources.length) {
-        // 提前在上一張播放時解碼下一組影格，降低張與張間的錄影停頓。
+        // 準備下一張時也計入實際錄影時間，避免解碼卡頓但繼續錄製靜止畫面。
         if (!next) throw new Error("下一組動畫影格預載失敗。");
         current = await next;
         next = prepared[index + 2]
           ? Promise.all(prepared[index + 2].map((file) => createImageBitmap(file)))
           : null;
+        if (performance.now() - (slotStartedAt + clipDurationMs) > maxAllowedLagMs) {
+          throw new Error(`準備第 ${index + 2} 張動畫耗時過長。影片錄製已停止，避免出現長時間停格；請重新整理網頁並關閉其他大型程式後重試。`);
+        }
       }
+    }
+    const actualCaptureMs = performance.now() - captureStartedAt;
+    const idealCaptureMs = sources.length * clipDurationMs;
+    if (actualCaptureMs > idealCaptureMs + maxAllowedLagMs) {
+      throw new Error("影片錄製超過預定時長，為避免匯出卡住的 MP4，已停止下載。");
     }
     if (recorder.state === "recording") {
       recorder.requestData();
@@ -2571,7 +2599,7 @@ const AnimatedLineStickerTool: React.FC = () => {
         <LineStickerFlowSteps activeStep={5} mode="animated" />
         <section id="animated-sticker-batch" className="scroll-mt-24 mb-5 rounded-2xl border border-emerald-200 bg-white p-4">
           <p className="text-sm font-black text-slate-900">輸出平台｜動態貼圖</p>
-          <div className="mt-3 grid grid-cols-2 gap-3">
+          <div className="mt-3 grid w-full max-w-[520px] grid-cols-2 items-stretch gap-3" role="group" aria-label="選擇動態貼圖輸出平台">
             {(["line", "whatsapp"] as const).map((platform) => (
               <button key={platform} type="button" aria-pressed={exportPlatform === platform}
                 disabled={batchBusy || batchVideoBusy}
@@ -2581,7 +2609,7 @@ const AnimatedLineStickerTool: React.FC = () => {
                   updateLineStickerProject({ platform });
                   setBatchMessage("");
                 }}
-                className={`min-h-12 rounded-xl border-2 px-3 py-2 text-sm font-black ${exportPlatform === platform ? "border-emerald-500 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-white text-slate-700"}`}>
+                className={`inline-flex min-h-12 w-full min-w-0 items-center justify-center rounded-xl border-2 px-3 py-3 text-center text-sm font-bold leading-5 shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:border-violet-500 hover:bg-violet-100 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 ${exportPlatform === platform ? "border-violet-600 bg-violet-600 text-white shadow-md hover:bg-violet-700 hover:text-white" : "border-violet-200 bg-violet-50 text-violet-900"}`}>
                 {exportPlatform === platform ? "✓ " : ""}{platform === "line" ? "LINE 動態 APNG" : "WhatsApp 動態 WebP"}
               </button>
             ))}
@@ -2811,7 +2839,7 @@ const AnimatedLineStickerTool: React.FC = () => {
                 type="button"
                 disabled={!autoSourceFile || autoGenerating || autoPreviewGenerating}
                 onClick={applyAutoMotion}
-                className="mt-2 inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-violet-600 px-4 py-3 text-sm font-black !text-white shadow-md transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                className="mt-2 inline-flex min-h-12 w-auto max-w-full items-center justify-center rounded-2xl bg-violet-600 px-4 py-3 text-sm font-black !text-white shadow-md transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-slate-300"
               >
                 {autoGenerating
                   ? t("animated_line_sticker.auto_generating_button")
@@ -3160,7 +3188,7 @@ const AnimatedLineStickerTool: React.FC = () => {
                   type="button"
                   disabled={batchBusy || ![8, 16, 24].includes(batchSources.length)}
                   onClick={exportPlatform === "whatsapp" ? exportWhatsAppAnimatedPack : exportBatchUploadPack}
-                  className="mt-4 inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-black !text-white shadow-md transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                  className="mt-4 inline-flex min-h-12 w-auto max-w-full items-center justify-center rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-black !text-white shadow-md transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
                 >
                   {batchBusy
                     ? (exportPlatform === "whatsapp" ? "正在壓縮 WhatsApp 動畫 WebP…" : t("animated_line_sticker.batch_generating_button"))
@@ -3396,7 +3424,7 @@ const AnimatedLineStickerTool: React.FC = () => {
             <section className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 p-4">
               <h3 className="text-base font-black text-rose-900">完成後另存高清影片｜整套動態展示</h3>
               <p className="mt-1 text-xs leading-6 text-rose-800">
-                將 {batchAnimatedPreviews.length} 張依序播放，每張約 2 秒；先產生 640×540 動畫影格，再以固定約 30FPS 重畫至 1080×1920 直式影片，避免舊版約 3FPS 的跳格現象。MP4 僅供展示，貼圖上架請用對應的 ZIP。
+                將 {batchAnimatedPreviews.length} 張依序播放，每張約 2 秒；先產生 640×540 動畫影格，再使用最高 30FPS 的錄製串流，只有影格變化時才重畫 1080×1920 高清畫面，避免前兩張耗時過久造成停格。MP4 僅供展示，貼圖上架請用對應的 ZIP。
               </p>
               <button type="button" disabled={batchVideoBusy || batchBusy}
                 onClick={exportBatchHdVideo}
@@ -3437,7 +3465,7 @@ const AnimatedLineStickerTool: React.FC = () => {
               <button
                 type="button"
                 onClick={clearFrames}
-                className="inline-flex min-h-11 w-full items-center justify-center whitespace-nowrap rounded-xl border border-rose-200 bg-white px-4 py-2 text-sm font-bold leading-none text-rose-700 hover:bg-rose-50 sm:w-auto"
+                className="inline-flex min-h-11 w-auto max-w-full items-center justify-center rounded-xl border border-rose-200 bg-white px-4 py-2 text-sm font-bold leading-none text-rose-700 hover:bg-rose-50 sm:w-auto"
               >
                 {t("animated_line_sticker.clear_button")}
               </button>
@@ -3574,13 +3602,13 @@ const AnimatedLineStickerTool: React.FC = () => {
                   type="button"
                   disabled={!canExportApng || busy}
                   onClick={exportManualStoryboardPack}
-                  className="mt-4 inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-violet-600 px-4 py-3 text-sm font-black !text-white shadow-md transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                  className="mt-4 inline-flex min-h-12 w-auto max-w-full items-center justify-center rounded-2xl bg-violet-600 px-4 py-3 text-sm font-black !text-white shadow-md transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-slate-300"
                 >
                   {busy ? "處理中…" : "📦 一鍵製作＋打包自備分鏡"}
                 </button>
               ) : null}
 
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div className="mt-4 flex flex-wrap items-center gap-3">
                 <button
                   type="button"
                   disabled={!canExportApng || busy}
@@ -3625,7 +3653,7 @@ const AnimatedLineStickerTool: React.FC = () => {
                   type="button"
                   disabled={!canExport || busy}
                   onClick={exportSmallImages}
-                  className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-black leading-none !text-white shadow-md transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-300 sm:col-span-2"
+                  className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-black leading-none !text-white shadow-md transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-300"
                 >
                   {busy ? t("animated_line_sticker.processing") : "下載小圖 ZIP（main＋tab）"}
                 </button>
