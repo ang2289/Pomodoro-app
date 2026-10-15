@@ -1,3 +1,5 @@
+import { auditStickerFrames, LINE_RECOMMENDED_DISTINCT_FRAMES } from "./animatedStickerFrameQuality";
+
 export type AutoMotionPreset =
   | "auto"
   | "salute"
@@ -280,8 +282,10 @@ function splitLayers(source: HTMLCanvasElement, renderScale = 1): {
 
   const textIds = new Set(textCandidates.map((component) => component.id));
   const characterIds = new Set([character.id]);
+  // Preserve every small detached detail (punctuation, hair, gloves,
+  // accessories, decoration). Filtering by area used to drop these pixels.
   const accentIds = new Set(
-    meaningful
+    components
       .filter((component) => !textIds.has(component.id) && component.id !== character.id)
       .map((component) => component.id),
   );
@@ -314,7 +318,7 @@ function drawLayer(
   context.restore();
 }
 
-function getTransforms(preset: AutoMotionPreset, frameIndex: number) {
+export function getTransforms(preset: AutoMotionPreset, frameIndex: number) {
   // v2：整體把動作幅度放大約 35%～80%，讓手機上預覽也能一眼看出差異。
   const textScale = [1, 0.9, 1.12, 1.03, 1, 1.055, 0.97, 1][frameIndex];
   const textY = [0, 7, -6, -2, 0, -2, 2, 0][frameIndex];
@@ -322,11 +326,12 @@ function getTransforms(preset: AutoMotionPreset, frameIndex: number) {
   const bounceScaleY = [1, 0.91, 1.08, 1.025, 1, 1.035, 0.98, 1][frameIndex];
   const shakeRotation = [0, -5.5, 5.5, -3.2, 0, 3.5, -2, 0][frameIndex];
   const nodRotation = [0, -2.2, 3.8, 6.2, 3.2, -1.8, 1.2, 0][frameIndex];
-  const accentOpacity = [0.35, 0.78, 1, 0.5, 1, 0.75, 0.38, 0.35][frameIndex];
+  // Never fade original accent layers: detached sleeves, hair and text dots
+  // must remain fully opaque throughout the animation.
 
   const text: Transform = {};
   const character: Transform = {};
-  const accents: Transform = { opacity: accentOpacity };
+  const accents: Transform = { opacity: 1 };
 
   if (preset === "auto" || preset === "textPop") {
     text.scaleX = textScale;
@@ -347,7 +352,9 @@ function getTransforms(preset: AutoMotionPreset, frameIndex: number) {
     character.dy = [0, 3, 6, 10, 5, -2, 1, 0][frameIndex];
   }
   if (preset === "sparkle") {
-    text.scaleX = [1, 1.025, 1.06, 1.025, 1, 1.04, 1, 1][frameIndex];
+    // Keep at least six actual poses even without repair. The former
+    // [1,1.025,1.06,1.025,1,1.04,1,1] contained only four distinct states.
+    text.scaleX = [1, 1.035, 1.07, 1.045, 1, 1.06, 1.022, 1][frameIndex];
     text.scaleY = text.scaleX;
   }
   if (preset === "pulse") {
@@ -380,19 +387,21 @@ function getTransforms(preset: AutoMotionPreset, frameIndex: number) {
     character.scaleY = character.scaleX;
   }
   if (preset === "slideLeft") {
-    character.dx = [12, 8, 4, -2, 1, 0, 0, 0][frameIndex];
-    text.dx = [8, 5, 2, 0, 0, 0, 0, 0][frameIndex];
+    character.dx = [12, 8, 4, -2, 1, 0, 8, 12][frameIndex];
+    text.dx = [8, 5, 2, 0, 0, 0, 4, 8][frameIndex];
   }
   if (preset === "slideRight") {
-    character.dx = [-12, -8, -4, 2, -1, 0, 0, 0][frameIndex];
-    text.dx = [-8, -5, -2, 0, 0, 0, 0, 0][frameIndex];
+    character.dx = [-12, -8, -4, 2, -1, 0, -8, -12][frameIndex];
+    text.dx = [-8, -5, -2, 0, 0, 0, -4, -8][frameIndex];
   }
   if (preset === "breathe") {
-    const sx = [1, 1.025, 1.045, 1.06, 1.045, 1.025, 1, 1][frameIndex];
-    const sy = [1, 1.04, 1.075, 1.095, 1.075, 1.04, 1, 1][frameIndex];
+    // 7 distinct smooth poses: no repeated rising/falling scale states.
+    // Modest scaling also helps preserve outlines, hair and shirt edges.
+    const sx = [1, 1.025, 1.048, 1.07, 1.055, 1.036, 1.014, 1][frameIndex];
+    const sy = [1, 1.031, 1.058, 1.079, 1.063, 1.042, 1.016, 1][frameIndex];
     character.scaleX = sx;
     character.scaleY = sy;
-    character.dy = [0, -2, -4, -5, -3, -1, 0, 0][frameIndex];
+    character.dy = [0, -1, -3, -4, -3, -2, -1, 0][frameIndex];
   }
   return { text, character, accents };
 }
@@ -439,13 +448,18 @@ function renderFrames(
 ): HTMLCanvasElement[] {
   const layers = splitLayers(source, renderScale);
   const fallback = !layers.segmented;
-  return Array.from({ length: FRAME_COUNT }, (_, frameIndex) => {
+  const outputWidth = OUTPUT_WIDTH * renderScale;
+  const outputHeight = OUTPUT_HEIGHT * renderScale;
+  // 先在加大畫布上繪製旋轉、位移與特效，再以整組影格的聯集統一縮放。
+  // 不能在原始 320x270 畫布上直接繪製，否則裁切掉的頭髮／文字無法補回。
+  const overscan = 80 * renderScale;
+  const rawFrames = Array.from({ length: FRAME_COUNT }, (_, frameIndex) => {
     const canvas = document.createElement("canvas");
-    canvas.width = OUTPUT_WIDTH * renderScale;
-    canvas.height = OUTPUT_HEIGHT * renderScale;
+    canvas.width = outputWidth + overscan * 2;
+    canvas.height = outputHeight + overscan * 2;
     const context = canvas.getContext("2d");
     if (!context) throw new Error("無法建立動畫影格。");
-    context.clearRect(0, 0, OUTPUT_WIDTH, OUTPUT_HEIGHT);
+    context.translate(overscan, overscan);
     const transforms = getTransforms(preset, frameIndex);
     if (fallback) {
       drawLayer(context, layers.character, {
@@ -462,6 +476,102 @@ function renderFrames(
     drawMotionMarks(context, preset, frameIndex, renderScale);
     return canvas;
   });
+
+  // 所有影格共用同一個裁切框和縮放率，避免動畫播放時突然跳動或忽大忽小。
+  let left = rawFrames[0].width;
+  let top = rawFrames[0].height;
+  let right = 0;
+  let bottom = 0;
+  for (const canvas of rawFrames) {
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    if (!context) throw new Error("無法檢查動畫影格。");
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
+    const bounds = detectBoundsFromData(pixels.data, canvas.width, canvas.height);
+    if (!bounds) continue;
+    left = Math.min(left, bounds.left);
+    top = Math.min(top, bounds.top);
+    right = Math.max(right, bounds.right);
+    bottom = Math.max(bottom, bounds.bottom);
+  }
+  if (right <= left || bottom <= top) throw new Error("動畫內容為空，請檢查原始貼圖。");
+
+  const safePadding = 16 * renderScale;
+  const scale = Math.min(
+    1,
+    (outputWidth - safePadding * 2) / (right - left),
+    (outputHeight - safePadding * 2) / (bottom - top),
+  );
+  const offsetX = outputWidth / 2 - ((left + right) / 2) * scale;
+  const offsetY = outputHeight / 2 - ((top + bottom) / 2) * scale;
+  return rawFrames.map((rawFrame) => {
+    const canvas = document.createElement("canvas");
+    canvas.width = outputWidth;
+    canvas.height = outputHeight;
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("無法建立安全動畫影格。");
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = "high";
+    context.setTransform(scale, 0, 0, scale, offsetX, offsetY);
+    context.drawImage(rawFrame, 0, 0);
+    return canvas;
+  });
+}
+
+/**
+ * Preserve the original first/last loop pose. If an auto preset has fewer
+ * than five visibly different frames (e.g. subtle breathe on a small image),
+ * apply small offsets to intermediate frames only. Do not add random noise or
+ * change text/color/alpha content to fabricate uniqueness.
+ */
+function ensureVisibleMotion(canvases: HTMLCanvasElement[], renderScale: number) {
+  const read = (canvas: HTMLCanvasElement) => {
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) throw new Error("無法檢查動畫影格。");
+    return ctx.getImageData(0, 0, canvas.width, canvas.height);
+  };
+  const initial = auditStickerFrames(canvases.map(read));
+  if (initial.distinct >= LINE_RECOMMENDED_DISTINCT_FRAMES) return { canvases, repaired: false };
+
+  const offsets: Array<[number, number]> = [
+    [0, 0], [2, -2], [-3, 1], [3, 2], [-2, -3], [4, -1], [-4, 2], [0, 0],
+  ];
+  const adjusted = [...canvases];
+  for (let pass = 0; pass < 2; pass++) {
+    const audit = auditStickerFrames(adjusted.map(read));
+    if (audit.distinct >= LINE_RECOMMENDED_DISTINCT_FRAMES) break;
+    for (const index of audit.duplicateIndices) {
+      // Frame 0 is the baseline; frame 7 closes the loop smoothly.
+      if (index === 0 || index === adjusted.length - 1) continue;
+      const old = adjusted[index];
+      const shifted = document.createElement("canvas");
+      shifted.width = old.width;
+      shifted.height = old.height;
+      const ctx = shifted.getContext("2d");
+      if (!ctx) throw new Error("無法修正動態畫格。");
+      const [dx, dy] = offsets[index % offsets.length];
+      const shiftX = dx * renderScale * (pass + 1);
+      const shiftY = dy * renderScale * (pass + 1);
+      // Refuse a repair if any visible character or text pixel would be
+      // clipped by the canvas edge. Keep a small safety margin as well.
+      const pixels = read(canvases[index]);
+      const bounds = detectBoundsFromData(pixels.data, pixels.width, pixels.height);
+      const margin = 4 * renderScale;
+      if (!bounds ||
+        bounds.left + shiftX < margin ||
+        bounds.top + shiftY < margin ||
+        bounds.right + shiftX > old.width - margin ||
+        bounds.bottom + shiftY > old.height - margin) continue;
+      // Every pass starts from the original, never from a previously shifted
+      // bitmap, to avoid progressively blurring fonts or costume details.
+      ctx.drawImage(canvases[index], shiftX, shiftY);
+      adjusted[index] = shifted;
+    }
+  }
+  const final = auditStickerFrames(adjusted.map(read));
+  if (final.distinct < LINE_RECOMMENDED_DISTINCT_FRAMES) {
+    throw new Error(`此圖片只有 ${final.distinct} 個有效動態畫格，無法自動補足。請更換動作效果或重新上傳。`);
+  }
+  return { canvases: adjusted, repaired: true };
 }
 
 function canvasToPngFile(canvas: HTMLCanvasElement, name: string): Promise<File> {
@@ -476,19 +586,34 @@ function canvasToPngFile(canvas: HTMLCanvasElement, name: string): Promise<File>
   });
 }
 
+export async function generateAutoAnimationWithQuality(
+  sourceFile: File,
+  preset: AutoMotionPreset,
+  renderScale: 1 | 2 = 1,
+): Promise<{ files: File[]; distinctFrames: number; repaired: boolean }> {
+  const image = await loadImage(sourceFile);
+  const normalized = normalizeSource(image, renderScale);
+  const result = ensureVisibleMotion(renderFrames(normalized, preset, renderScale), renderScale);
+  const rendered = result.canvases.map((canvas) => {
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) throw new Error("無法檢查動畫畫格。");
+    return ctx.getImageData(0, 0, canvas.width, canvas.height);
+  });
+  const distinctFrames = auditStickerFrames(rendered).distinct;
+  const files = await Promise.all(
+    result.canvases.map((canvas, index) => canvasToPngFile(
+      canvas,
+      `auto_frame_${String(index + 1).padStart(3, "0")}.png`,
+    )),
+  );
+  return { files, distinctFrames, repaired: result.repaired };
+}
+
 export async function generateAutoAnimationFrameFiles(
   sourceFile: File,
   preset: AutoMotionPreset,
   renderScale: 1 | 2 = 1,
 ): Promise<File[]> {
-  // LINE APNG 固定 1 倍 320x270；高清展示才以 2 倍 640x540 先繪製再合成。
-  const image = await loadImage(sourceFile);
-  const normalized = normalizeSource(image, renderScale);
-  const frames = renderFrames(normalized, preset, renderScale);
-  return Promise.all(
-    frames.map((canvas, index) => canvasToPngFile(
-      canvas,
-      `auto_frame_${String(index + 1).padStart(3, "0")}.png`,
-    )),
-  );
+  // LINE APNG stays 320×270; HD preview uses 640×540.
+  return (await generateAutoAnimationWithQuality(sourceFile, preset, renderScale)).files;
 }

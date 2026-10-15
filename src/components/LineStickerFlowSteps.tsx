@@ -1,3 +1,5 @@
+import { useLayoutEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
 import type { LineStickerMode, LineStickerStage } from "@/lib/lineStickerFlow";
 
 type Props = {
@@ -6,95 +8,71 @@ type Props = {
   compact?: boolean;
 };
 
-const BASE_STEPS = [
-  { step: 1 as const, title: "選擇貼圖", desc: "選類型、主題與張數" },
-  { step: 2 as const, title: "ChatGPT 生圖", desc: "複製指令並產生母圖" },
-  { step: 3 as const, title: "上傳圖片", desc: "把母圖傳回本站" },
-  { step: 4 as const, title: "自動整理", desc: "切圖、去背、尺寸檢查" },
-];
-
 export default function LineStickerFlowSteps({
   activeStep,
   mode = "static",
   compact = false,
 }: Props) {
-  const steps = [
-    ...BASE_STEPS,
+  const location = useLocation();
+
+  // 初次進入含 hash 的頁面直接定位，不使用平滑動畫，避免開發模式與回頂端操作造成畫面往返跳動。
+  useLayoutEffect(() => {
+    if (!location.hash) return;
+    let anchorId = location.hash.slice(1);
+    try { anchorId = decodeURIComponent(anchorId); } catch { /* 保留原始 hash */ }
+    const target = document.getElementById(anchorId)
+      ?? (anchorId === "mother-split" ? document.getElementById("mother-upload") : null);
+    target?.scrollIntoView({ behavior: "auto", block: "start" });
+  }, [location.pathname, location.hash]);
+
+  const phases = [
+    { step: 1 as const, title: "選設定、畫母圖", desc: "原第 1～2 步", path: "/tools/sticker-prompt#sticker-start" },
+    { step: 2 as const, title: "上傳、自動整理", desc: "原第 3～4 步", path: "/tools/line-sticker?existing=1#mother-upload" },
     {
-      step: 5 as const,
-      title: mode === "animated" ? "製作動態貼圖" : "下載完成",
-      desc: mode === "animated" ? "自動套動畫並打包" : "下載 LINE 上架檔案",
+      step: 3 as const,
+      title: mode === "animated" ? "製作動態、下載" : "下載上架 ZIP",
+      desc: "原第 5 步",
+      path: mode === "animated"
+        ? "/tools/animated-line-sticker#animated-sticker-batch"
+        : "/tools/line-sticker#sticker-download",
     },
   ];
+  const activePhase = activeStep <= 2 ? 1 : activeStep <= 4 ? 2 : 3;
 
   return (
-    <section
-      className={`${compact ? "mb-4" : "mb-6"} rounded-3xl border border-violet-100 bg-white p-4 shadow-sm sm:p-5`}
-      aria-label="LINE 貼圖製作步驟"
-    >
-      <div className="mb-4">
-        <p className="text-xs font-black tracking-wide text-violet-600">LINE 貼圖一鍵製作</p>
-        <h2 className="mt-1 text-lg font-black text-slate-900 sm:text-xl">
-          跟著 1 → 2 → 3 → 4 → 5 完成
-        </h2>
-        <p className="mt-1 text-xs leading-5 text-slate-500">
-          目前做到哪一步會自動標示，不需要記工具名稱。
-        </p>
-      </div>
-
-      <div className="mb-4 rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 via-white to-violet-50 px-4 py-3">
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-          <div className="min-w-0">
-            <p className="text-sm font-black text-amber-900">
-              🎁 LINE 貼圖新功能試用期間免費
-            </p>
-            <p className="mt-1 text-xs leading-5 text-slate-600">
-              目前靜態貼圖整理、母圖切割、動畫效果與整套輸出都可免費使用。
-            </p>
-            <p className="mt-1 text-[11px] leading-5 text-slate-500">
-              RxV 貼圖工廠 APP 即將推出；未來部分進階批次與動態功能可能改由 APP／Pro 提供，基本免費工具仍會保留。
-            </p>
-          </div>
-          <span className="w-fit shrink-0 rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-black text-emerald-700">
-            目前免費開放
-          </span>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        {steps.map((item) => {
-          const active = item.step === activeStep;
-          const done = item.step < activeStep;
+    <nav className={`${compact ? "mb-4" : "mb-6"}`} aria-label="貼圖製作三階段與五步驟導覽">
+      <div className="grid grid-cols-3 overflow-hidden rounded-xl border border-slate-200 bg-white">
+        {phases.map((phase) => {
+          const active = phase.step === activePhase;
           return (
-            <div
-              key={item.step}
-              className={`rounded-2xl border p-3 transition ${
+            <Link
+              key={phase.step}
+              to={phase.path}
+              aria-current={active ? "step" : undefined}
+              aria-label={`第 ${phase.step} 階段：${phase.title}，${phase.desc}`}
+              className={`flex min-w-0 flex-col items-center justify-center gap-1 border-r border-slate-200 px-1.5 py-3 text-center transition-colors last:border-r-0 sm:flex-row sm:gap-2 sm:px-3 sm:py-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-violet-600 ${
                 active
-                  ? "border-violet-500 bg-violet-50 ring-2 ring-violet-100"
-                  : done
-                    ? "border-emerald-200 bg-emerald-50"
-                    : "border-slate-200 bg-slate-50"
+                  ? "bg-violet-50 text-violet-900"
+                  : "bg-white text-slate-600 hover:bg-slate-50"
               }`}
             >
-              <div className="flex items-center gap-2">
-                <span
-                  className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-black ${
-                    active
-                      ? "bg-violet-600 text-white"
-                      : done
-                        ? "bg-emerald-600 text-white"
-                        : "bg-slate-100 text-slate-500"
-                  }`}
-                >
-                  {done ? "✓" : item.step}
-                </span>
-                <span className="min-w-[5.5rem] flex-1 whitespace-normal break-keep text-xs font-black leading-5 text-slate-900">{item.title}</span>
-              </div>
-              <p className="mt-2 min-w-0 break-words text-[11px] leading-5 text-slate-500">{item.desc}</p>
-            </div>
+              <span className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                active ? "bg-violet-600 text-white" : "bg-slate-100 text-slate-600"
+              }`}>
+                {String(phase.step).padStart(2, "0")}
+              </span>
+              <span className="min-w-0">
+                <span className="block text-[11px] font-semibold leading-5 sm:text-sm">{phase.title}</span>
+                <span className="hidden text-[11px] leading-5 text-slate-500 sm:block">{phase.desc}</span>
+              </span>
+            </Link>
           );
         })}
       </div>
-    </section>
+      <p className="mt-2 text-xs leading-5 text-slate-500">
+        先在第 1 階段用 ChatGPT（推薦）畫母圖；已有母圖可直接從第 2 階段上傳。
+        {" "}<Link to="/tools/line-sticker-guide" className="font-semibold text-violet-700 underline underline-offset-2">查看完整教學</Link>
+      </p>
+    </nav>
   );
 }

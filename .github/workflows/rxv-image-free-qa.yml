@@ -1,0 +1,23 @@
+name: RXV Image Free QA
+on:
+  push:
+    branches:
+      - codex/rxv-r2-batch-free-rollback-20261013
+  workflow_dispatch:
+jobs:
+  offline-qa:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Syntax check (no R2 calls)
+        run: |
+          node --check scripts/lib/rxv-image-free-core.mjs
+          node --check scripts/rxv-images-batch-free.mjs
+          node --check test/rxvImageFreeCatalog.test.mjs
+      - name: Unit tests (no R2 calls)
+        run: node --test test/rxvImageFreeCatalog.test.mjs

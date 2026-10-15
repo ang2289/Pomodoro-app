@@ -17,8 +17,7 @@ import CoupangDynamicAd from "@/components/CoupangDynamicAd";
 import { isLoggedIn, getCurrentUserId } from "@/lib/auth";
 import { getCurrentCreditSummary } from "@/lib/accountApi";
 
-// ===== 圖片素材庫：免費試用 + NT$399 完整素材包 =====
-// 免費圖片可直接下載；其餘圖片作為完整版素材庫展示。
+// 圖片庫公開頁：高畫質原圖免費下載，並引導至 LINE 與 MP4 工具。
 
 async function forceDownloadImage(downloadUrl: string, filename: string) {
   if (!downloadUrl) throw new Error("這張圖片目前沒有可用的下載網址");
@@ -167,7 +166,7 @@ function getImageCost(_planType: PlanType): number {
   return 0;
 }
 
-// 下載按鈕：免費圖片直接下載；完整版圖片導向 NT$399 素材包。
+// 圖片正在更新免費下載設定時，不提供舊版付費購買入口。
 function getDownloadButton(
   _t: (k: string) => string,
   planType: PlanType,
@@ -177,16 +176,23 @@ function getDownloadButton(
 ): { buttonText: string; action: "download" | "bundle" } {
   return planType === "free"
     ? { buttonText: "免費下載", action: "download" }
-    : { buttonText: "取得完整版", action: "bundle" };
+    : { buttonText: "暫不可下載", action: "bundle" };
 }
 
 // 首批顯示 24 張，避免客戶誤以為圖片很少；後續按鈕再載入更多。
 const PAGE_SIZE = 24;
+const IMAGE_TO_MP4_TOOL_PATH = "/tools/image-to-mp4";
 
 export default function ImagesPage() {
   const { t } = useTranslation();
   const [downloadToastId, setDownloadToastId] = useState(0);
   const navigate = useNavigate();
+  const trackMp4ToolClick = (entryPoint: string) => {
+    trackEvent("image_to_mp4_tool_click", {
+      source_page: "images",
+      entry_point: entryPoint,
+    });
+  };
   const sharePageUrl = typeof window !== "undefined" ? window.location.href : "";
 
   const openShareWindow = (url: string) => {
@@ -238,7 +244,7 @@ export default function ImagesPage() {
     allImages.length > 0
       ? allImages.length.toLocaleString("zh-TW")
       : "2,858+";
-  const sharePageText = `RxV 圖片素材庫：${libraryTotalLabel} 張完整版素材包，適合社群、網站、影片與商業設計。`;
+  const sharePageText = `RxV 免費圖片素材庫：${libraryTotalLabel} 張高畫質圖片可免費下載，適合社群、網站、影片與商業設計。`;
   const [manifestLoaded, setManifestLoaded] = useState(false);
   const [previewImage, setPreviewImage] = useState<ImageAsset | null>(null);
   const [categories, setCategories] = useState<ImageCategory[]>([]);
@@ -256,36 +262,13 @@ export default function ImagesPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [totalImages, setTotalImages] = useState<number | null>(null);
 
-  // RXV_PRO_PACK_LIVE_COUNTS：由目前網站 manifest 已載入資料即時計算，不另外打 API。
-  const getProfessionalPackCount = (aliases: string[], fallback: number) => {
-    if (allImages.length === 0 || categories.length === 0) return fallback;
-    const categoryIds = new Set(
-      categories
-        .filter((category) => aliases.includes(String(category.name || '').trim()))
-        .map((category) => category.id),
-    );
-    if (categoryIds.size === 0) return fallback;
-    const count = allImages.filter(
-      (image) => image.category_id && categoryIds.has(image.category_id),
-    ).length;
-    return count > 0 ? count : fallback;
-  };
-
-  const professionalPackCounts = {
-    realEstate: getProfessionalPackCount(['房仲／房地產', '房仲/房地產'], 115),
-    hairSalon: getProfessionalPackCount(['美髮／沙龍', '美髮/沙龍'], 133),
-    manicure: getProfessionalPackCount(['美甲'], 133),
-    beautySpa: getProfessionalPackCount(['美容SPA', '美容 SPA', '美容／SPA'], 135),
-    dental: getProfessionalPackCount(['牙醫'], 104),
-  };
-
   // 下載成功只顯示短暫小提示，避免連續下載時一直要求客戶手動關閉。
   useEffect(() => {
     if (!downloadToastId) return;
 
     const timer = window.setTimeout(() => {
       setDownloadToastId(0);
-    }, 2200);
+    }, 8000);
 
     return () => window.clearTimeout(timer);
   }, [downloadToastId]);
@@ -520,14 +503,13 @@ export default function ImagesPage() {
     loadImages(0, false);
   }, [selectedCategoryId, manifestLoaded, allImages]);
 
-  const goToBundleCheckout = () => {
-    trackEvent("image_bundle_checkout_click", { product_code: "image-bundle-full", amount_ntd: 199 });
-    navigate("/payment/bank-transfer?product=image-bundle-full");
+  const notifyImagePendingFreeDownload = () => {
+    alert("這張圖片的免費下載資訊正在更新，請稍後重新整理頁面。");
   };
 
   const handleDownload = async (image: ImageAsset) => {
     if (image.planType !== "free") {
-      goToBundleCheckout();
+      notifyImagePendingFreeDownload();
       return;
     }
 
@@ -544,7 +526,7 @@ export default function ImagesPage() {
 
   const handleButtonClick = (image: ImageAsset) => {
     if (image.planType === "bundle") {
-      goToBundleCheckout();
+      notifyImagePendingFreeDownload();
       return;
     }
     void handleDownload(image);
@@ -586,61 +568,48 @@ export default function ImagesPage() {
           <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl mb-3">
             🖼️ {t("image_library")}
           </h1>
-          <div className="mb-6 rounded-3xl border border-amber-300 bg-gradient-to-br from-amber-50 via-white to-emerald-50 px-5 py-6 text-center shadow-sm">
-            <span className="inline-flex rounded-full bg-amber-500 px-3 py-1 text-sm font-black text-white">完整素材庫限時方案</span>
-            <h2 className="mt-3 text-2xl font-black text-slate-950 sm:text-3xl">{libraryTotalLabel} 張高畫質圖片素材庫完整版</h2>
-            <p className="mt-2 text-sm leading-relaxed text-slate-700 sm:text-base">
-              食物、花卉、商業圖、社群背景、桌布、節慶與更多分類，持續增加。適合網站、社群貼文、廣告、YouTube／短影音與商業設計使用。
+          <section className="mb-6 rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-sky-50 px-5 py-7 text-center shadow-sm sm:p-8">
+            <span className="inline-flex rounded-full bg-emerald-100 px-4 py-1.5 text-sm font-black text-emerald-800">
+              免費圖片素材庫・免登入下載
+            </span>
+            <h2 className="mt-3 text-2xl font-black text-slate-950 sm:text-3xl">
+              {libraryTotalLabel} 張高畫質圖片，開放免費下載
+            </h2>
+            <p className="mx-auto mt-3 max-w-3xl text-sm leading-7 text-slate-700 sm:text-base">
+              花卉、療癒、房仲、美髮、美甲等素材，可用於網站、社群貼文與短影音創作；
+              下載圖片後還能利用 RXV 免費工具製作 LINE 貼圖或 MP4。
             </p>
-            <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
-              <div className="flex flex-wrap items-baseline justify-center gap-x-3 gap-y-1">
-                <span className="text-lg font-bold text-slate-500 line-through">原價 NT$399</span>
-                <span className="text-3xl font-black text-rose-600">限時優惠 NT$199</span>
-              </div>
-              <Link
-                to="/payment/bank-transfer?product=image-bundle-full"
-                className="inline-flex min-h-[48px] items-center justify-center rounded-xl bg-emerald-600 px-6 py-3 font-black !text-white shadow-md transition hover:-translate-y-0.5 hover:bg-emerald-700"
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+              <a
+                href="#rxv-image-list"
+                className="inline-flex min-h-[48px] items-center justify-center rounded-xl bg-emerald-700 px-5 py-3 text-sm font-black !text-white shadow-sm transition hover:bg-emerald-800"
               >
-                立即取得完整素材庫
+                ↓ 瀏覽免費圖片
+              </a>
+              <Link
+                to="/tools/line-sticker"
+                onClick={() => trackEvent("image_to_sticker_tool_click", { source_page: "images", entry_point: "free_library_hero" })}
+                className="inline-flex min-h-[48px] items-center justify-center rounded-xl border border-cyan-200 bg-white px-5 py-3 text-sm font-black text-cyan-800 shadow-sm transition hover:bg-cyan-50"
+              >
+                LINE 貼圖免費製作
+              </Link>
+              <Link
+                to={IMAGE_TO_MP4_TOOL_PATH}
+                onClick={() => trackMp4ToolClick("free_library_hero")}
+                className="inline-flex min-h-[48px] items-center justify-center rounded-xl border border-sky-200 bg-white px-5 py-3 text-sm font-black text-sky-800 shadow-sm transition hover:bg-sky-50"
+              >
+                🎬 圖片轉 MP4
               </Link>
             </div>
-            <p className="mt-3 text-sm font-bold text-rose-700">首波限時優惠 NT$199，優惠結束後恢復原價 NT$399。</p>
-            <p className="mt-3 text-xs leading-relaxed text-slate-600">網站保留部分圖片免費下載試用；完整版素材不可轉售、轉包或作為素材庫再次販售。</p>
-          </div>
-
-          <p className="text-base sm:text-lg text-gray-600">
-            先免費試用喜歡的圖片；需要大量素材時，可一次取得完整素材庫。
-          </p>
+            <p className="mt-4 text-xs leading-6 text-slate-600">
+              免費下載不代表可以直接轉售圖片原檔、重新包成素材庫；請依網站授權說明使用。
+            </p>
+          </section>
         </div>
-
-        {/* RXV_PRO_PACK_ENTRY */}
-        <section className="mb-6 rounded-3xl border border-violet-200 bg-gradient-to-br from-violet-50 via-white to-emerald-50 p-5 shadow-sm sm:p-6">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <span className="inline-flex rounded-full bg-violet-100 px-3 py-1.5 text-sm font-black text-violet-800">專業職業主題包｜NT$99／包</span>
-              <h2 className="mt-3 text-2xl font-black text-slate-950">只買自己行業真正會用到的圖</h2>
-              <p className="mt-2 max-w-3xl text-sm leading-7 text-slate-700 sm:text-base">房仲、美髮、美甲、美容 SPA、牙醫等職業情境另外整理成專業小包，檔名直接標示用途。專業小包為獨立商品，不包含在 NT$199 綜合素材庫方案內。</p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <span className="rounded-full border border-emerald-200 bg-white px-3 py-2 text-sm font-black text-emerald-800">房仲帶看宣傳圖片包｜{professionalPackCounts.realEstate} 張｜NT$99</span>
-                <span className="rounded-full border border-fuchsia-200 bg-white px-3 py-2 text-sm font-black text-fuchsia-800">美髮沙龍職業圖片包｜{professionalPackCounts.hairSalon} 張｜NT$99</span>
-                <span className="rounded-full border border-rose-200 bg-white px-3 py-2 text-sm font-black text-rose-800">美甲職業圖片包｜{professionalPackCounts.manicure} 張｜NT$99</span>
-                <span className="rounded-full border border-amber-200 bg-white px-3 py-2 text-sm font-black text-amber-800">美容 SPA 職業圖片包｜{professionalPackCounts.beautySpa} 張｜NT$99</span>
-                <span className="rounded-full border border-sky-200 bg-white px-3 py-2 text-sm font-black text-sky-800">牙醫職業圖片包｜{professionalPackCounts.dental} 張｜NT$99</span>
-              </div>
-            </div>
-            <Link
-              to="/image-packs"
-              className="inline-flex min-h-[50px] shrink-0 items-center justify-center rounded-xl bg-violet-600 px-6 py-3 font-black !text-white shadow-md transition hover:-translate-y-0.5 hover:bg-violet-700"
-              style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}
-            >
-              查看 5 款 NT$99 專業圖片包
-            </Link>
-          </div>
-        </section>
 
         <CoupangDynamicAd subId="rxv_images_dynamic" desktopWidth={1000} desktopHeight={180} />
 
-        {/* 分類篩選：手機版改成橫向滑動，避免按鈕全部擠在一起。 */}        {/* 分類篩選：手機版改成橫向滑動，避免按鈕全部擠在一起。 */}
+        {/* 分類篩選：手機版橫向滑動，避免按鈕擠在一起。 */}
         {!loadingCategories && categories.length > 0 && (
           <div className="mb-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between gap-3">
@@ -683,7 +652,7 @@ export default function ImagesPage() {
         )}
 
         {/* 圖片總數與載入狀態 */}
-        <div className="mb-6 rounded-2xl border border-blue-100 bg-white px-5 py-4 shadow-sm">
+        <div id="rxv-image-list" className="mb-6 scroll-mt-6 rounded-2xl border border-blue-100 bg-white px-5 py-4 shadow-sm">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-sm font-bold text-blue-700">
@@ -696,17 +665,34 @@ export default function ImagesPage() {
                     ? "正在統計圖片數量…"
                     : selectedCategoryId
                       ? `「${selectedCategoryName}」共有 ${totalImages} 張素材，目前先顯示 ${images.length} 張。`
-                      : `目前素材庫已累積 ${totalImages} 張素材，本頁先顯示 ${images.length} 張；免費圖片可直接下載，其餘可加入 NT$199 完整素材庫。`}
+                      : `目前素材庫已累積 ${totalImages} 張免費圖片，本頁先顯示 ${images.length} 張；點圖片右下角的下載按鈕即可保存原圖。`}
               </p>
             </div>
             {totalImages !== null && totalImages > 0 && (
               <div className="w-fit rounded-full bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700">
-                部分圖片免費下載
+                全部圖片免費下載
               </div>
             )}
           </div>
         </div>
 
+
+        {/* RXV_IMAGE_TO_MP4_PUBLIC_CTA: browser-only video creation; never link local-only backend. */}
+        <section className="mb-6 flex flex-col gap-3 rounded-2xl border border-sky-200 bg-gradient-to-r from-sky-50 via-white to-violet-50 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-5">
+          <div>
+            <h2 className="text-lg font-black text-slate-900">下載圖片後，免費轉成 MP4 短影片</h2>
+            <p className="mt-1 text-sm leading-relaxed text-slate-600">
+              將剛下載的圖片匯入工具，可製作多圖輪播、加入音樂與字幕；直接在瀏覽器製作，不需安裝軟體。
+            </p>
+          </div>
+          <Link
+            to={IMAGE_TO_MP4_TOOL_PATH}
+            onClick={() => trackMp4ToolClick("library_above_images")}
+            className="inline-flex min-h-[48px] shrink-0 items-center justify-center rounded-xl bg-sky-700 px-5 py-3 text-sm font-black !text-white shadow-md transition hover:bg-sky-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-sky-300"
+          >
+            🎬 免費圖片轉 MP4
+          </Link>
+        </section>
 
         {loading && (
           <div className="text-center py-12">
@@ -729,9 +715,9 @@ export default function ImagesPage() {
           <>
             {!selectedCategoryId && images.some((image) => image.planType === "free") && (
               <section className="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
-                <h2 className="text-lg font-black text-emerald-950">免費高畫質素材試下載</h2>
+                <h2 className="text-lg font-black text-emerald-950">免費高畫質圖片素材</h2>
                 <p className="mt-1 text-sm leading-relaxed text-emerald-900">
-                  先免費下載喜歡的圖片試用，滿意再一次取得 {libraryTotalLabel} 張完整素材庫。
+                  已開放 {libraryTotalLabel} 張圖片免費下載；選擇喜歡的圖片，下載後可製作貼圖或 MP4。
                 </p>
                 <p className="mt-2 text-sm font-bold text-emerald-700">下方優先顯示免費高畫質下載素材；可繼續載入查看全部 37 張免費素材。</p>
               </section>
@@ -775,7 +761,7 @@ export default function ImagesPage() {
                       }}
                       role="button"
                       tabIndex={0}
-                      aria-label={image.planType === "free" ? `下載${usageTitle}圖片` : `取得${usageTitle}完整素材庫`}
+                      aria-label={image.planType === "free" ? `下載${usageTitle}圖片` : `${usageTitle}圖片暫不可下載`}
                     >
                       <img
                         src={image.previewUrl}
@@ -792,7 +778,7 @@ export default function ImagesPage() {
 
                       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/35 via-transparent to-transparent opacity-0 transition duration-300 group-hover:opacity-100" />
                       <span className="pointer-events-none absolute bottom-3 left-3 rounded-full bg-slate-950/70 px-3 py-1.5 text-xs font-black !text-white opacity-0 shadow-sm backdrop-blur transition duration-300 group-hover:opacity-100" style={{ color: "#ffffff", WebkitTextFillColor: "#ffffff" }}>
-                        {image.planType === "free" ? "免費下載" : "完整版素材"}
+                        {image.planType === "free" ? "免費下載" : "暫不可下載"}
                       </span>
                       <button
                         type="button"
@@ -801,8 +787,8 @@ export default function ImagesPage() {
                           handleButtonClick(image);
                         }}
                         className={`absolute bottom-3 right-3 z-10 ${downloadIconClass}`}
-                        aria-label={image.planType === "free" ? `下載${usageTitle}圖片` : `取得${usageTitle}完整素材庫`}
-                        title={image.planType === "free" ? "免費下載圖片" : "取得完整素材庫"}
+                        aria-label={image.planType === "free" ? `下載${usageTitle}圖片` : `${usageTitle}圖片暫不可下載`}
+                        title={image.planType === "free" ? "免費下載圖片" : "免費下載資訊更新中"}
                       >
                         {image.planType === "free" ? "↓" : "🔒"}
                       </button>
@@ -837,7 +823,7 @@ export default function ImagesPage() {
             </div>
           </>
         )}
-        {/* 小店家工具推薦：移到圖片列表下方，先讓使用者專注瀏覽 NT$399 圖片素材庫。 */}
+        {/* 小店家工具推薦：移到圖片列表下方，先讓使用者專注瀏覽免費圖片。 */}
         <section className="mb-8 grid gap-4 lg:grid-cols-2">
           <article className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-cyan-50 p-5 shadow-sm">
             <span className="inline-flex rounded-full bg-emerald-600 px-3 py-1 text-xs font-black !text-white" style={{ color: "#ffffff", WebkitTextFillColor: "#ffffff" }}>
@@ -851,7 +837,7 @@ export default function ImagesPage() {
               可製作白底商品圖、高級商業圖、社群宣傳圖與外送平台主圖。
             </p>
             <p className="mt-3 text-sm font-black text-emerald-700">
-              白底商品圖約 NT$19 起｜高級商業圖約 NT$29 起
+              商品圖工具採點數方案，使用條件請以工具頁說明為準。
             </p>
             <Link
               to="/tools/product-image-generator"
@@ -874,7 +860,7 @@ export default function ImagesPage() {
               由工作室協助人工排版；確認預覽後再送印。
             </p>
             <p className="mt-3 text-sm font-black text-violet-700">
-              人工排版名片 200 張 NT$349 起
+              可洽詢客製名片設計、排版與印刷服務。
             </p>
             <p className="mt-1 text-xs font-bold text-violet-700">
               符合方案加贈一頁式品牌／公司介紹網站
@@ -893,7 +879,21 @@ export default function ImagesPage() {
           <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
             🎨 免費圖片可以這樣使用
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
+            <Link
+              to={IMAGE_TO_MP4_TOOL_PATH}
+              onClick={() => trackMp4ToolClick("after_image_list")}
+              className="rounded-xl border border-sky-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-sky-400 hover:shadow-lg focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-sky-200"
+            >
+              <div className="mb-2 text-2xl">🎬</div>
+              <h4 className="mb-2 font-semibold text-slate-900">圖片轉 MP4 短影片</h4>
+              <p className="mb-4 text-sm text-gray-600">
+                將下載的圖片上傳，免費製作輪播影片，加入音樂、字幕和 QR Code。
+              </p>
+              <span className="inline-flex min-h-[40px] items-center justify-center rounded-lg bg-sky-700 px-4 py-2 text-sm font-bold text-white">
+                前往圖片轉 MP4 工具
+              </span>
+            </Link>
             <div
               onClick={() => navigate("/tools/line-sticker")}
               className="cursor-pointer rounded-xl bg-white p-5 border shadow-sm hover:shadow-md hover:border-cyan-400 transition duration-200 ease-out hover:-translate-y-0.5 hover:shadow-lg hover:ring-2 hover:ring-blue-100"
@@ -1012,11 +1012,11 @@ export default function ImagesPage() {
           </div>
         </div>
 
-        {/* 免費試用與完整版使用說明 */}
+        {/* 免費圖片授權使用說明 */}
         <div className="mt-12 rounded-lg border bg-white p-6 text-sm leading-relaxed text-gray-700">
           <h3 className="mb-3 text-base font-semibold">圖片素材使用說明</h3>
           <ul className="list-disc space-y-2 pl-5">
-            <li>標示「免費下載」的圖片可直接下載試用；其餘圖片屬於 NT$199 完整素材庫。</li>
+            <li>本站圖片庫開放免費下載，可用於一般社群、網站與內容創作；下載前請確認適用的授權條件。</li>
             <li>
               圖片可作為社群貼文、短影音封面、商品圖靈感、LINE
               貼圖測試、個人創作練習與一般商用設計使用。
@@ -1042,7 +1042,7 @@ export default function ImagesPage() {
             </li>
           </ul>
           <p className="mt-3 text-xs text-gray-500">
-            RxV 會持續新增圖片；完整版素材庫以網站目前可販售內容為準。
+            RxV 會持續新增免費圖片，並提供 LINE 貼圖與 MP4 影片製作工具。
           </p>
         </div>
       </div>
@@ -1082,25 +1082,37 @@ export default function ImagesPage() {
                 <p className="mt-1 text-sm text-slate-500">
                   {previewImage.planType === "free"
                     ? "免費圖片，可直接下載"
-                    : "完整版素材，可預覽；高畫質原圖包含於 NT$199 完整素材庫"}
+                    : "免費下載資訊更新中，請稍後重新整理頁面"}
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={() => {
-                  void handleButtonClick(previewImage);
-                }}
-                className={`inline-flex min-h-[46px] items-center justify-center rounded-xl px-5 py-3 text-sm font-black !text-white shadow-sm ${
-                  previewImage.planType === "free"
-                    ? "bg-emerald-600 hover:bg-emerald-700"
-                    : "bg-amber-600 hover:bg-amber-700"
-                }`}
-              >
-                {previewImage.planType === "free"
-                  ? "免費下載"
-                  : "取得 NT$199 完整素材庫"}
-              </button>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Link
+                  to={IMAGE_TO_MP4_TOOL_PATH}
+                  onClick={() => {
+                    trackMp4ToolClick("image_preview");
+                    setPreviewImage(null);
+                  }}
+                  className="inline-flex min-h-[46px] items-center justify-center rounded-xl border border-sky-300 bg-sky-50 px-5 py-3 text-sm font-black text-sky-800 transition hover:bg-sky-100 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-sky-200"
+                >
+                  🎬 圖片轉 MP4
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    void handleButtonClick(previewImage);
+                  }}
+                  className={`inline-flex min-h-[46px] items-center justify-center rounded-xl px-5 py-3 text-sm font-black !text-white shadow-sm ${
+                    previewImage.planType === "free"
+                      ? "bg-emerald-600 hover:bg-emerald-700"
+                      : "bg-amber-600 hover:bg-amber-700"
+                  }`}
+                >
+                  {previewImage.planType === "free"
+                    ? "免費下載"
+                    : "暫不可下載"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1109,10 +1121,20 @@ export default function ImagesPage() {
       {downloadToastId > 0 && (
         <div
           aria-live="polite"
-          className="pointer-events-none fixed bottom-4 left-1/2 z-[100] -translate-x-1/2 rounded-full border border-emerald-200 bg-white/95 px-4 py-2.5 text-sm font-black text-emerald-800 shadow-lg backdrop-blur"
-          style={{ maxWidth: "calc(100vw - 32px)" }}
+          className="fixed bottom-4 left-1/2 z-[100] flex w-max -translate-x-1/2 flex-col items-center gap-2 rounded-2xl border border-emerald-200 bg-white/95 px-4 py-3 text-sm font-black text-emerald-800 shadow-lg backdrop-blur sm:flex-row"
+          style={{ maxWidth: "calc(100vw - 24px)" }}
         >
-          ✓ 圖片已開始下載
+          <span role="status">✓ 圖片已開始下載</span>
+          <Link
+            to={IMAGE_TO_MP4_TOOL_PATH}
+            onClick={() => {
+              trackMp4ToolClick("download_success");
+              setDownloadToastId(0);
+            }}
+            className="inline-flex min-h-[40px] items-center justify-center rounded-xl bg-sky-700 px-4 py-2 text-center text-sm font-black !text-white transition hover:bg-sky-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-sky-300"
+          >
+            🎬 立即將圖片轉 MP4
+          </Link>
         </div>
       )}
     </div>
