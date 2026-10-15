@@ -2579,7 +2579,7 @@ export default function LineStickerTool() {
                     第 5 步完成
                   </p>
                   <h2 className="text-lg font-black text-slate-900">
-                    LINE 上架 ZIP 已下載
+                    LINE 靜態上架 ZIP 已下載
                   </h2>
                 </div>
               </div>
@@ -2602,10 +2602,22 @@ export default function LineStickerTool() {
                 >
                   ⬇ 再下載一次同一個 ZIP
                 </button>
+                {exportPlatform === "line" ? <a href="https://creator.line.me/zh-hant/" target="_blank" rel="noopener noreferrer"
+                  className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-black text-white hover:bg-emerald-700">前往 LINE 官方上架後台 ↗</a> : null}
+                <button type="button" onClick={() => openToolShare("line")}
+                  className="inline-flex min-h-12 items-center justify-center rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-sm font-black text-emerald-800">分享到 LINE</button>
+                <button type="button" onClick={() => openToolShare("facebook")}
+                  className="inline-flex min-h-12 items-center justify-center rounded-2xl border border-blue-200 bg-white px-4 py-3 text-sm font-black text-blue-800">分享到 FB</button>
               </div>
+              <p className="mt-3 text-xs leading-6 text-slate-600">分享的是工具網址，不會公開您的貼圖檔。官方上架須另外登入 LINE Creators Market、建立作品、上傳 ZIP 並送審。</p>
             </section>
           ) : null}
 
+          {downloadCompleted && selectedStickerMode === "animated" ? (
+            <p role="status" className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-bold leading-7 text-emerald-900">
+              已另存靜態 PNG ZIP：這一份可獨立上架為 LINE 靜態貼圖，不只是動態備份。下一步：繼續按紫色「製作 LINE 動態貼圖」，另做 APNG ZIP。
+            </p>
+          ) : null}
           {flowProject ? (
             <section className="mb-6 rounded-3xl border border-blue-200 bg-blue-50 p-5">
               <p className="text-xs font-black text-blue-600">已接續第 1～2 步</p>
@@ -3290,8 +3302,8 @@ export default function LineStickerTool() {
             <p className="mb-2 text-center text-xs font-bold leading-5 text-slate-700">
               {canDownload
                 ? (selectedStickerMode === "animated"
-                    ? "下一步請按下方「第 5 步｜製作動態貼圖」按鈕。"
-                    : "下一步請按下方「步驟 5｜下載貼圖 ZIP」按鈕。")
+                    ? "下一步請按紫色「前往動畫製作」；真正動態 ZIP 需到動畫製作頁，再按「產生上架 ZIP」才會打包。"
+                    : "最後一步：按下方藍色「產生並下載上架 ZIP」，按了才會打包成可送審檔案。")
                 : "下一步：先到上方第 3 步上傳整張母圖，完成切割預覽後才能下載。"}
             </p>
           <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
@@ -3313,13 +3325,13 @@ export default function LineStickerTool() {
                 <button
                   onClick={exportPlatform === "whatsapp" ? generateWhatsAppZip : generateZip}
                   disabled={!canDownload || loading}
-                  className={`hidden min-h-[52px] rounded-2xl px-4 py-3 text-xs font-black sm:inline-flex sm:items-center sm:justify-center ${
+                  className={`inline-flex min-h-[52px] items-center justify-center rounded-2xl px-4 py-3 text-xs font-black ${
                     !canDownload || loading
                       ? "cursor-not-allowed bg-slate-100 text-slate-400"
                       : "border border-blue-200 bg-white text-blue-700 hover:bg-blue-50"
                   }`}
                 >
-                  {exportPlatform === "whatsapp" ? "另存 WhatsApp 靜態 ZIP" : "另存 LINE 靜態備份 ZIP"}
+                  {exportPlatform === "whatsapp" ? "另存 WhatsApp 靜態 ZIP" : "另存 LINE 靜態上架 ZIP（可獨立送審）"}
                 </button>
                 <button
                   onClick={continueToAnimated}
@@ -3334,8 +3346,8 @@ export default function LineStickerTool() {
                     ? "正在準備下一步…"
                     : canDownload
                       ? (exportPlatform === "whatsapp"
-                          ? "第 5 步｜製作 WhatsApp 動態 WebP"
-                          : "第 5 步｜自動製作 LINE 動態貼圖")
+                          ? "第 5 步｜前往製作 WhatsApp 動態 WebP"
+                          : "第 5 步｜前往製作 LINE 動態貼圖（下一頁打包）")
                       : `還差 ${needMore} 張`}
                 </button>
               </>
@@ -3350,7 +3362,7 @@ export default function LineStickerTool() {
                   : canDownload
                     ? downloadCompleted
                       ? `✓ 再次下載 ${exportPlatform === "whatsapp" ? "WhatsApp WebP" : "LINE"} ZIP`
-                      : `步驟 5｜下載 ${stickerCount} 張 ${exportPlatform === "whatsapp" ? "WhatsApp WebP" : "LINE 上架"} ZIP`
+                      : `最後一步｜產生並下載 ${stickerCount} 張 ${exportPlatform === "whatsapp" ? "WhatsApp WebP 素材" : "LINE 靜態上架"} ZIP`
                     : mattingModeStale
                       ? "去背已變更｜請重新確認切割"
                       : mayHaveUploadedMotherSheetAsSingle
@@ -3359,6 +3371,15 @@ export default function LineStickerTool() {
               </button>
             )}
           </div>
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-2 border-t border-violet-100 pt-3">
+            <button type="button" onClick={startNewStickerFlow} disabled={loading}
+              className="inline-flex min-h-11 items-center justify-center rounded-xl border border-violet-300 bg-violet-50 px-4 py-2 text-xs font-black text-violet-900 hover:bg-violet-100 disabled:opacity-50">再做新的一組｜從第 1 步重做</button>
+            {downloadCompleted && exportPlatform === "line" ? <a href="https://creator.line.me/zh-hant/" target="_blank" rel="noopener noreferrer"
+              className="inline-flex min-h-11 items-center justify-center rounded-xl bg-emerald-600 px-4 py-2 text-xs font-black text-white hover:bg-emerald-700">前往 LINE 官方上架後台 ↗</a> : null}
+            {downloadCompleted ? <button type="button" onClick={() => openToolShare("line")}
+              className="inline-flex min-h-11 items-center justify-center rounded-xl border border-blue-200 bg-white px-4 py-2 text-xs font-black text-blue-800">分享製作工具</button> : null}
+          </div>
+          <p role="status" aria-live="polite" className="mt-3 rounded-xl bg-violet-50 p-3 text-center text-xs font-bold leading-6 text-violet-900">{actionHint}</p>
           </div>
         </footer>
               <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
