@@ -2087,6 +2087,7 @@ const AnimatedLineStickerTool: React.FC = () => {
 
   const clearBatchSources = () => {
     if (batchBusy || batchVideoBusy) return;
+    setCompletedPlatform(null);
     setSourceCaptions([]);
     setHandoffLoaded(false);
     setHandoffTheme("");
@@ -2612,6 +2613,7 @@ const AnimatedLineStickerTool: React.FC = () => {
                 disabled={batchBusy || batchVideoBusy}
                 onClick={() => {
                   setExportPlatform(platform);
+                  setCompletedPlatform(null);
                   setWhatsAppReadyZip(null);
                   updateLineStickerProject({ platform });
                   setBatchMessage("");
@@ -3245,13 +3247,13 @@ const AnimatedLineStickerTool: React.FC = () => {
                         </a>
                       )}
                       <button type="button" onClick={() => {
-                        const url = encodeURIComponent(window.location.origin + "/tools/line-sticker");
+                        const url = encodeURIComponent(`${getBaseUrl().replace(/\/$/, "")}/tools/line-sticker`);
                         window.open(`https://social-plugins.line.me/lineit/share?url=${url}`, "_blank", "noopener,noreferrer");
                       }} className="min-h-11 rounded-xl border border-blue-200 bg-white px-4 py-2 text-sm font-black text-blue-800 hover:bg-blue-50">
                         分享工具到 LINE
                       </button>
                       <button type="button" onClick={() => {
-                        const url = encodeURIComponent(window.location.origin + "/tools/line-sticker");
+                        const url = encodeURIComponent(`${getBaseUrl().replace(/\/$/, "")}/tools/line-sticker`);
                         window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, "_blank", "noopener,noreferrer");
                       }} className="min-h-11 rounded-xl border border-blue-200 bg-white px-4 py-2 text-sm font-black text-blue-800 hover:bg-blue-50">
                         分享工具到 FB
