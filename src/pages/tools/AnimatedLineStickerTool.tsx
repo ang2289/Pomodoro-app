@@ -9,6 +9,8 @@ import LineStickerFlowSteps from "@/components/LineStickerFlowSteps";
 import { stickerSaleTextRisks } from "@/lib/stickerCommercialSafety";
 import {
   loadAnimatedStickerHandoffBundle,
+  clearAnimatedStickerHandoff,
+  clearLineStickerProject,
   readLineStickerProject,
   updateLineStickerProject,
 } from "@/lib/lineStickerFlow";
@@ -1611,6 +1613,7 @@ const AnimatedLineStickerTool: React.FC = () => {
   const [batchProgress, setBatchProgress] = useState(0);
   const [batchStatus, setBatchStatus] = useState("");
   const [batchMessage, setBatchMessage] = useState("");
+  const [completedPlatform, setCompletedPlatform] = useState<"line" | "whatsapp" | null>(null);
   const [batchVideoBusy, setBatchVideoBusy] = useState(false);
   const [batchVideoProgress, setBatchVideoProgress] = useState(0);
   const [batchVideoMessage, setBatchVideoMessage] = useState("");
@@ -2084,6 +2087,7 @@ const AnimatedLineStickerTool: React.FC = () => {
 
   const clearBatchSources = () => {
     if (batchBusy || batchVideoBusy) return;
+    setCompletedPlatform(null);
     setSourceCaptions([]);
     setHandoffLoaded(false);
     setHandoffTheme("");
@@ -2112,6 +2116,7 @@ const AnimatedLineStickerTool: React.FC = () => {
     setBatchBusy(true);
     setBatchProgress(0);
     setBatchMessage("");
+    setCompletedPlatform(null);
     setBatchStatus("準備 WhatsApp 動畫 WebP…");
     const zipFiles: { name: string; data: Uint8Array }[] = [];
     const previews: Array<Omit<BatchAnimatedPreview, "url">> = [];
@@ -2164,6 +2169,7 @@ const AnimatedLineStickerTool: React.FC = () => {
       const filename = `rxv-whatsapp-animated-${batchSources.length}-webp.zip`;
       downloadBlob(zip, filename);
       setWhatsAppReadyZip({ blob: zip, filename });
+      setCompletedPlatform("whatsapp");
       setBatchStatus("WhatsApp 動畫 ZIP 製作完成");
       setBatchMessage(`完成 ${batchSources.length} 張 512×512 動態 WebP（每張≤500KB，共 ${packCounts.length} 組）。此 ZIP 是供相容貼圖 APP 匯入的素材包，不能直接當作 WhatsApp 一鍵安裝檔案。`);
       window.setTimeout(() => batchPreviewSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
@@ -2183,6 +2189,7 @@ const AnimatedLineStickerTool: React.FC = () => {
     setBatchProgress(0);
     setBatchMessage("");
     clearBatchAnimatedPreviews();
+    setCompletedPlatform(null);
     const files: { name: string; data: Uint8Array }[] = [];
     const completedPreviews: Array<Omit<BatchAnimatedPreview, "url">> = [];
     let mainData: Uint8Array | null = null;
@@ -2304,6 +2311,7 @@ const AnimatedLineStickerTool: React.FC = () => {
       );
 
       setBatchProgress(100);
+      setCompletedPlatform("line");
       setBatchStatus(t("animated_line_sticker.batch_status_done"));
       replaceBatchAnimatedPreviews(completedPreviews);
       window.setTimeout(() => {
@@ -2605,6 +2613,7 @@ const AnimatedLineStickerTool: React.FC = () => {
                 disabled={batchBusy || batchVideoBusy}
                 onClick={() => {
                   setExportPlatform(platform);
+                  setCompletedPlatform(null);
                   setWhatsAppReadyZip(null);
                   updateLineStickerProject({ platform });
                   setBatchMessage("");
@@ -3184,6 +3193,9 @@ const AnimatedLineStickerTool: React.FC = () => {
                   </p>
                 </div>
 
+                <p className="mt-4 rounded-xl border border-indigo-200 bg-white p-3 text-sm font-black leading-6 text-indigo-900">
+                  最後一步：只有按下「產生並下載上架 ZIP」，才會真正產生貼圖 ZIP；前面的動畫試播與預覽不等於已完成打包。
+                </p>
                 <button
                   type="button"
                   disabled={batchBusy || ![8, 16, 24].includes(batchSources.length)}
@@ -3192,7 +3204,7 @@ const AnimatedLineStickerTool: React.FC = () => {
                 >
                   {batchBusy
                     ? (exportPlatform === "whatsapp" ? "正在壓縮 WhatsApp 動畫 WebP…" : t("animated_line_sticker.batch_generating_button"))
-                    : (exportPlatform === "whatsapp" ? "產生 WhatsApp 動態 WebP ZIP（真動畫）" : t("animated_line_sticker.batch_generate_button"))}
+                    : (exportPlatform === "whatsapp" ? "最後一步｜產生並下載 WhatsApp 動態 WebP ZIP" : "最後一步｜產生並下載 LINE 動態 APNG 上架 ZIP")}
                 </button>
 
                 <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-200">
@@ -3210,6 +3222,46 @@ const AnimatedLineStickerTool: React.FC = () => {
                     {batchMessage}
                   </p>
                 ) : null}
+                {completedPlatform === exportPlatform && (
+                  <section role="status" aria-live="polite" className="mt-5 rounded-2xl border-2 border-emerald-200 bg-emerald-50 p-4">
+                    <h3 className="text-base font-black text-emerald-900">
+                      第 5 步完成｜{exportPlatform === "line" ? "LINE 動態 APNG 上架 ZIP 已下載" : "WhatsApp 動態 WebP 素材 ZIP 已下載"}
+                    </h3>
+                    <p className="mt-2 text-sm font-bold leading-6 text-slate-700">
+                      {exportPlatform === "line"
+                        ? "此 ZIP 是 LINE 動態貼圖的送審素材，仍需自行前往官方後台建立作品、上傳並等待審核；不代表已經上架。"
+                        : "此 ZIP 是 WhatsApp 動態貼圖素材包，需使用相容 APP 匯入，不能直接點 ZIP 安裝。"}
+                    </p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <button type="button" onClick={async () => {
+                        clearLineStickerProject();
+                        try { await clearAnimatedStickerHandoff(); } catch { /* local cache is optional */ }
+                        window.location.assign("/tools/sticker-prompt?new=1");
+                      }} className="min-h-11 rounded-xl bg-violet-600 px-4 py-2 text-sm font-black text-white hover:bg-violet-700">
+                        再做新的一組｜從第 1 步重做
+                      </button>
+                      {exportPlatform === "line" && (
+                        <a href="https://creator.line.me/zh-hant/" target="_blank" rel="noopener noreferrer"
+                          className="inline-flex min-h-11 items-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-black text-white hover:bg-emerald-700">
+                          前往 LINE 官方上架後台 ↗
+                        </a>
+                      )}
+                      <button type="button" onClick={() => {
+                        const url = encodeURIComponent(`${getBaseUrl().replace(/\/$/, "")}/tools/line-sticker`);
+                        window.open(`https://social-plugins.line.me/lineit/share?url=${url}`, "_blank", "noopener,noreferrer");
+                      }} className="min-h-11 rounded-xl border border-blue-200 bg-white px-4 py-2 text-sm font-black text-blue-800 hover:bg-blue-50">
+                        分享工具到 LINE
+                      </button>
+                      <button type="button" onClick={() => {
+                        const url = encodeURIComponent(`${getBaseUrl().replace(/\/$/, "")}/tools/line-sticker`);
+                        window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, "_blank", "noopener,noreferrer");
+                      }} className="min-h-11 rounded-xl border border-blue-200 bg-white px-4 py-2 text-sm font-black text-blue-800 hover:bg-blue-50">
+                        分享工具到 FB
+                      </button>
+                    </div>
+                    <p className="mt-2 text-xs leading-5 text-slate-600">分享的是 RXV 工具連結，不會自動公開您的貼圖圖片或 ZIP。</p>
+                  </section>
+                )}
               </div>
             </div>
 

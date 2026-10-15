@@ -3365,6 +3365,26 @@ const ORIGINAL_CHARACTER_OPTIONS = {
     "依主題預設", "圓臉笑眼", "鵝蛋臉杏眼", "方圓臉與濃眉", "細長眼與微笑嘴角",
     "小雀斑與小巧鼻子", "酒窩與大眼睛", "溫柔下垂眼",
   ],
+  hair: [
+    "依主題預設", "黑色短髮與側分瀏海", "栗棕色雙辮子", "銀白短捲髮", "深棕鮑伯頭",
+    "黑色高馬尾", "自然黑色中長捲髮", "灰棕俐落油頭", "柔和金棕齊肩髮",
+  ],
+  outfit: [
+    "依主題預設", "粉色休閒服", "湖水綠連帽上衣", "奶茶色圍裙", "靛藍襯衫",
+    "紫色針織衫", "台灣復古花布上衣", "橘紅工裝背心", "森林綠休閒套裝",
+  ],
+  signature: [
+    "依主題預設", "圓框眼鏡", "愛心髮夾", "小圍巾", "原創星星胸針",
+    "小巧側背包", "無配件（靠五官辨識）", "素色鴨舌帽", "特色蝴蝶結",
+  ],
+  palette: [
+    "依主題預設", "珊瑚粉與米白", "霧藍與暖杏色", "湖水綠與奶油黃",
+    "酒紅與淺卡其", "薰衣草紫與珍珠白", "森林綠與橙色", "懷舊紅與薄荷綠",
+  ],
+  proportions: [
+    "依主題預設", "2.5 頭身圓潤短手腳", "3 頭身精緻 Q 版",
+    "2 頭身超大頭娃娃", "3 頭身細緻手腳",
+  ],
 } as const;
 type OriginalCharacterKey = keyof typeof ORIGINAL_CHARACTER_OPTIONS;
 type OriginalCharacterTraits = Record<OriginalCharacterKey, string>;
@@ -3373,9 +3393,16 @@ const ORIGINAL_CHARACTER_LABELS: Record<OriginalCharacterKey,string> = {
   age:"年齡層",
   personality:"角色性格",
   face:"臉型／五官特色",
+  hair:"髮型／髮色",
+  outfit:"服裝／制服",
+  signature:"招牌配件",
+  palette:"主色系",
+  proportions:"Q 版頭身比例",
 };
 const ORIGINAL_CHARACTER_DEFAULT: OriginalCharacterTraits = {
   gender:"依主題預設", age:"依主題預設", personality:"依主題預設", face:"依主題預設",
+  hair:"依主題預設", outfit:"依主題預設", signature:"依主題預設",
+  palette:"依主題預設", proportions:"依主題預設",
 };
 function randomOriginalCharacter(): OriginalCharacterTraits {
   const random = (items: readonly string[]) => items[1 + Math.floor(Math.random() * (items.length - 1))] || items[1] || items[0];
@@ -3384,6 +3411,11 @@ function randomOriginalCharacter(): OriginalCharacterTraits {
     age:random(ORIGINAL_CHARACTER_OPTIONS.age),
     personality:random(ORIGINAL_CHARACTER_OPTIONS.personality),
     face:random(ORIGINAL_CHARACTER_OPTIONS.face),
+    hair:random(ORIGINAL_CHARACTER_OPTIONS.hair),
+    outfit:random(ORIGINAL_CHARACTER_OPTIONS.outfit),
+    signature:random(ORIGINAL_CHARACTER_OPTIONS.signature),
+    palette:random(ORIGINAL_CHARACTER_OPTIONS.palette),
+    proportions:random(ORIGINAL_CHARACTER_OPTIONS.proportions),
   };
 }
 function applyOriginalCharacterTraits(
@@ -3391,7 +3423,8 @@ function applyOriginalCharacterTraits(
   choice: OriginalCharacterTraits,
   profession: string,
 ): StickerIdentity {
-  const picked = (key: OriginalCharacterKey) => choice[key] !== "依主題預設";
+  // 相容舊版只含性別／年齡／個性／臉型的資料；未指定的新版欄位不可寫入 undefined。
+  const picked = (key: OriginalCharacterKey) => Boolean(choice[key]) && choice[key] !== "依主題預設";
   // 新手的簡單選擇優先於該職業模板原有的性別、年齡及五官預設。
   return {
     ...base,
@@ -3399,9 +3432,15 @@ function applyOriginalCharacterTraits(
       ? `職業與主題：${profession}；主角性別：${picked("gender") ? choice.gender : "依主題預設"}；主角年齡：${picked("age") ? choice.age : "依主題預設"}。若其他段落出現不同性別或年齡，以上選擇優先。`
       : base.appearance,
     face: picked("face") ? `${choice.face}；固定臉型、五官比例及膚色，全套一致` : base.face,
-    accessories: picked("personality")
-      ? `${base.accessories}；人物性格固定為「${choice.personality}」，以表情、眼神、姿態表現，不擅自加入文字`
-      : base.accessories,
+    hair: picked("hair") ? `${choice.hair}，所有格子與後續母圖固定同一髮型、髮色` : base.hair,
+    outfit: picked("outfit") ? `${choice.outfit}，所有格子及後續母圖維持服裝一致` : base.outfit,
+    accessories: [
+      base.accessories,
+      picked("signature") ? `主角專屬辨識配件：${choice.signature}；整套固定，不能自行更換` : "",
+      picked("personality") ? `人物性格固定為「${choice.personality}」，以表情、眼神、姿態表現，不擅自加入文字` : "",
+    ].filter(Boolean).join("；"),
+    proportions: picked("proportions") ? `${choice.proportions}，整套人物身形比例相同` : base.proportions,
+    coloring: picked("palette") ? `${base.coloring}；主要配色固定為「${choice.palette}」，整套母圖不可換色` : base.coloring,
   };
 }
 
@@ -5631,7 +5670,7 @@ export default function StickerPromptGenerator() {
               {photoMode === "original" && !/情侶|夫妻|新郎|新娘|兩位|一家|全家|寵物|貓咪|狗狗|兔子|佛像|觀音|動物|怪獸|機器人/.test(role) && (
                 <section className="mt-5 rounded-xl border border-slate-200 bg-white p-4" aria-label="自選角色性別、年齡、個性與五官">
                   <h4 className="text-base font-bold text-slate-900">我的角色要長什麼樣子？</h4>
-                  <p className="mt-1 text-sm leading-6 text-slate-600">男生、女生、中性、年輕、長者、兒童都能選。也能選性格和臉型，讓作品更有自己的特色。</p>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">可以選男性／女性／中性、兒童／年輕／長者、性格、五官、髮型、服裝、招牌配件、配色與頭身比例；整套母圖會鎖定同一人物。</p>
                   <button type="button"
                     onClick={() => setCharacterTraits(randomOriginalCharacter())}
                     className="mt-3 inline-flex min-h-11 items-center justify-center rounded-lg border-2 border-violet-300 bg-violet-50 px-4 py-2 text-sm font-semibold text-violet-800 transition-colors hover:border-violet-600 hover:bg-violet-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"

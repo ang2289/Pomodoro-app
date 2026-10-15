@@ -421,7 +421,7 @@ test("參考圖僅在多母圖顯示，瀏覽器本地預覽及清理物件 URL"
   assert.doesNotMatch(source,/supabase\.storage\.upload\(referenceImage/);
 });
 
-test("預覽下方直接放第 5 步下載／動畫操作，不再被 FAQ 與廣告隔開", () => {
+test("主圖須在最後打包前選定，預覽、主圖、下載操作不被 FAQ 或廣告隔開", () => {
   const page = read("src/pages/tools/LineStickerTool.tsx");
   const previewStart = page.indexOf('className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3"');
   const mainPicker = page.indexOf('id="main-character-sticker"');
@@ -431,7 +431,7 @@ test("預覽下方直接放第 5 步下載／動畫操作，不再被 FAQ 與廣
   const faq = page.indexOf('id="line-sticker-quick-guide"');
 
   assert.ok(previewStart >= 0);
-  assert.ok(previewStart < download && download < footer && footer < mainPicker, "第 5 步應緊接預覽格後，早於選用的代表圖設定");
+  assert.ok(previewStart < mainPicker && mainPicker < download && download < footer, "必須先選主圖再執行最後一步 ZIP 打包");
   assert.ok(footer < ad && ad < faq, "下載流程應早於推薦工具與 FAQ");
   assert.equal(page.split('id="sticker-download"').length - 1, 1, "第五步錨點不可重複");
   assert.equal(page.split('aria-label="第 5 步：貼圖下載或動態製作"').length - 1, 1);
@@ -550,8 +550,8 @@ test("已有母圖按鈕位於選擇張數下方，會帶入靜態動態、平�
   assert.match(upload, /get\("flow"\) === "1"/);
   assert.match(upload, /enabled \? readLineStickerProject\(\) : null/);
   assert.match(upload, /flowProject\?\.count \?\? 8/);
-  assert.match(upload, /mode=\{flowProject\?\.mode \?\? "static"\}/);
-  assert.match(upload, /flowProject\?\.mode === "animated" \? \(/);
+  assert.match(upload, /mode=\{selectedStickerMode\}/);
+  assert.match(upload, /selectedStickerMode === "animated" \? \(/);
   assert.match(upload, /id="mother-upload"/);
 
   assert.match(flow, /mode: input\.mode/);
