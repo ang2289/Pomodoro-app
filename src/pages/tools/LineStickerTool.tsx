@@ -15,11 +15,13 @@ import {
   clearAnimatedStickerHandoff,
   clearLineStickerProject,
   findMatchingMotherSheetCount,
+  getAllowedCounts,
   getMotherSheetPlan,
   readLineStickerProject,
   saveAnimatedStickerHandoff,
   updateLineStickerProject,
   type LineStickerProject,
+  type LineStickerMode,
   type MotherSheetGrid,
 } from "@/lib/lineStickerFlow";
 import { RelatedTools } from "@/components/seo/RelatedTools";
@@ -1608,6 +1610,9 @@ export default function LineStickerTool() {
   const [stickerCount, setStickerCount] = useState<8 | 16 | 24 | 32 | 40>(
     () => flowProject?.count ?? 8,
   );
+  const [directStickerMode, setDirectStickerMode] = useState<LineStickerMode>("static");
+  const selectedStickerMode: LineStickerMode = flowProject?.mode ?? directStickerMode;
+  const [actionHint, setActionHint] = useState("下一步：先選靜態或動態、張數，再按第 3 步上傳母圖。");
   const [mainImageIndex, setMainImageIndex] = useState<number>(0);
   const [exportPlatform, setExportPlatform] = useState<"line" | "whatsapp">(() =>
     readLineStickerProject()?.platform === "whatsapp" ? "whatsapp" : "line"
@@ -1637,6 +1642,27 @@ export default function LineStickerTool() {
   const [exportCheckResult, setExportCheckResult] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const motherSheetInputRef = useRef<HTMLInputElement>(null);
+  const changeStickerMode = useCallback((mode: LineStickerMode) => {
+    if (mode === "animated" && stickerCount > 24 && files.length) {
+      setActionHint("動態最多 24 張。請先完成這組靜態圖，或清除後再選動態。");
+      return;
+    }
+    const count = mode === "animated" && stickerCount > 24 ? 24 : stickerCount;
+    if (flowProject) {
+      const next = updateLineStickerProject({ mode, count, stage: files.length ? 4 : 3 });
+      if (next) setFlowProject(next);
+    } else setDirectStickerMode(mode);
+    if (count !== stickerCount) {
+      setStickerCount(count);
+      setMotherSheetDetections([]);
+      setMotherSheetDetectionStatus("idle");
+    }
+    setDownloadCompleted(false);
+    setExportCheckResult(null);
+    setActionHint(mode === "animated"
+      ? "已選動態：上傳母圖 → 安全切圖 → 前往動畫製作 → 最後產生 APNG ZIP；也可以另存靜態上架 ZIP。"
+      : "已選靜態：上傳母圖 → 安全切圖 → 最後產生 PNG 上架 ZIP。");
+  }, [flowProject, stickerCount, files.length]);
   const getToolShareData = useCallback(() => {
     const url = typeof window !== "undefined" ? window.location.href : "";
     const title = "RxV LINE 貼圖整理工具";
@@ -1740,7 +1766,7 @@ export default function LineStickerTool() {
     if (!motherSheetDetections.length || files.length) return null;
     const matched = findMatchingMotherSheetCount(
       motherSheetDetections.map((item) => item.grid),
-      flowProject?.mode ?? "static",
+      selectedStickerMode,
     );
     return matched !== (flowProject?.count ?? stickerCount) ? matched : null;
   }, [motherSheetDetections, files.length, flowProject, stickerCount]);
@@ -2408,13 +2434,13 @@ export default function LineStickerTool() {
           <LineStickerFlowSteps
             activeStep={
               isFirstVisit ? 1
-                : downloadCompleted && flowProject?.mode !== "animated"
+                : downloadCompleted && selectedStickerMode !== "animated"
                   ? 5
                   : files.length >= stickerCount
                     ? 4
                     : 3
             }
-            mode={flowProject?.mode ?? "static"}
+            mode={selectedStickerMode}
           />
 
           <header className="mb-6">
@@ -2502,7 +2528,7 @@ export default function LineStickerTool() {
 
           </section>
 
-          {downloadCompleted && flowProject?.mode !== "animated" ? (
+          {downloadCompleted && selectedStickerMode !== "animated" ? (
             <section className="mb-6 rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-blue-50 p-5 shadow-sm">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-600 text-sm font-black text-white">
