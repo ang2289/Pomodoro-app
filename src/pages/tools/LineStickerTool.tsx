@@ -1769,7 +1769,7 @@ export default function LineStickerTool() {
       selectedStickerMode,
     );
     return matched !== (flowProject?.count ?? stickerCount) ? matched : null;
-  }, [motherSheetDetections, files.length, flowProject, stickerCount]);
+  }, [motherSheetDetections, files.length, flowProject, stickerCount, selectedStickerMode]);
   const applyDetectedMotherSheetCount = useCallback(() => {
     if (!suggestedMotherSheetCount || loading) return;
     // 現有文字絕不覆寫；變更 16→24 時，新增的 8 句尚未知曉，先保留空白。
@@ -2456,6 +2456,34 @@ export default function LineStickerTool() {
             </p>
           </header>
 
+          <section aria-label="設定貼圖類型與張數" className="mb-5 rounded-2xl border-2 border-violet-200 bg-violet-50 p-4 shadow-sm">
+            <h2 className="text-base font-black text-violet-900">第 3 步開始也能選｜這次要做靜態或動態？</h2>
+            <p className="mt-1 text-sm leading-6 text-slate-700">已有母圖可以直接開始，不需要回第 1 步。選動態時先上傳靜止母圖，後面再產生真正會動的貼圖。</p>
+            <div className="mt-3 grid max-w-xl grid-cols-2 gap-2" role="group" aria-label="貼圖種類">
+              {(["static", "animated"] as LineStickerMode[]).map(mode => (
+                <button key={mode} type="button" aria-pressed={selectedStickerMode === mode} onClick={() => changeStickerMode(mode)}
+                  className={`min-h-12 rounded-xl border-2 px-2 py-3 text-sm font-black ${selectedStickerMode === mode ? "border-violet-600 bg-violet-600 text-white" : "border-violet-300 bg-white text-violet-900"}`}>
+                  {selectedStickerMode === mode ? "✓ " : ""}{mode === "static" ? "靜態貼圖｜PNG" : "動態貼圖｜APNG"}
+                </button>
+              ))}
+            </div>
+            <label htmlFor="step3-count" className="mt-4 block text-sm font-black text-slate-800">張數</label>
+            <select id="step3-count" value={stickerCount} onChange={event => {
+              const count = Number(event.target.value) as 8 | 16 | 24 | 32 | 40;
+              setStickerCount(count);
+              if (flowProject) {
+                const next = updateLineStickerProject({ count, stage: 3 });
+                if (next) setFlowProject(next);
+              }
+              setMotherSheetDetections([]);
+              setMotherSheetDetectionStatus("idle");
+              setDownloadCompleted(false);
+              setActionHint(`已選 ${count} 張。下一步：按紫色上傳按鈕選擇整張母圖並辨識格數。`);
+            }} className="mt-2 min-h-11 w-56 rounded-lg border border-violet-200 bg-white px-3 py-2 text-sm font-bold">
+              {getAllowedCounts(selectedStickerMode).map(count => <option key={count} value={count}>{count} 張</option>)}
+            </select>
+            <p role="status" aria-live="polite" className="mt-3 rounded-xl border border-sky-200 bg-white p-3 text-sm font-bold leading-6 text-sky-900">{actionHint}</p>
+          </section>
           <section className="mb-5 rounded-2xl border border-indigo-100 bg-white p-4 shadow-sm">
             <h2 className="text-sm font-black text-slate-900">一般客戶照著做就可以：5 個步驟</h2>
             <p className="mt-2 text-sm leading-6 text-slate-700">① 選貼圖種類與張數 → ② 複製指令到 ChatGPT 或 Google Gemini 產生完整大圖 → ③ 回本站上傳大圖 → ④ 預覽自動切割、去背結果 → ⑤ 下載 ZIP；動態貼圖再進入動畫流程。</p>
