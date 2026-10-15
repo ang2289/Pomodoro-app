@@ -12,7 +12,8 @@ test("新手可以直接跳到第 3 步上傳母圖，不需做提示詞", () =>
   const homepage = read("src/components/NewUserStickerGuide.tsx");
   assert.match(starter, /已經有貼圖大圖？不用再產生提示詞/);
   assert.match(starter, /\/tools\/line-sticker\?existing=1#mother-upload/);
-  assert.match(prompt, /<StickerExistingMotherSheetShortcut compact \/>/);
+  assert.match(prompt, /href="#sticker-count"/);
+  assert.match(prompt, /先選靜態／動態與張數，再直接進入上傳/);
   assert.match(homepage, /<StickerExistingMotherSheetShortcut compact \/>/);
 });
 
@@ -541,6 +542,8 @@ test("已有母圖按鈕位於選擇張數下方，會帶入靜態動態、平�
   assert.match(shortcut, /stickerMode === "animated"/);
   assert.match(shortcut, /stickerPlatform === "line"/);
   assert.match(shortcut, /targetCount/);
+  assert.match(prompt, /id="sticker-count"/);
+  assert.doesNotMatch(prompt, /<StickerExistingMotherSheetShortcut compact \/>/);
 
   assert.match(prompt, /mode: stickerMode,\s*platform: stickerPlatform,\s*count: targetCount,/);
   assert.match(prompt, /saveLineStickerProject\(\{ \.\.\.project, stage \}\)/);
