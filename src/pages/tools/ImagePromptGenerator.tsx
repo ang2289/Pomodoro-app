@@ -812,6 +812,8 @@ const ORIGINAL_PRESETS: Record<string, Preset> = {
     description: "適合發自然光、療癒、Vlog 感的短影音開頭。",
   },
 
+};
+
 // 100 組中文風格沿用本頁原本的「主題選擇 → 右側立即產生提示詞」流程。
 // 這裡的內部 ID 不會呈現在使用者的下拉選單或複製提示詞中。
 const STYLE_100_GROUP_SETTINGS: Record<string, Pick<Preset, "purpose" | "style" | "mood" | "composition" | "ratio">> = {
