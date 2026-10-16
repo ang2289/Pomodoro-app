@@ -4,6 +4,7 @@ import SEO from "@/components/SEO";
 import LineStickerAuthorCard from "@/components/LineStickerAuthorCard";
 import ToolAdSlot from "@/components/ToolAdSlot";
 import { AI_IMAGE_100_GROUPS, AI_IMAGE_100_STYLES } from "@/data/aiImage100Styles";
+import { AI_IMAGE_100_PRESET_SETTINGS } from "@/data/aiImage100PresetSettings";
 
 const LINE_STICKER_STORE_URL = "https://store.line.me/stickershop/product/33968282/zh-Hant";
 const SUPPORT_TW_URL = "https://p.ecpay.com.tw/FD7CD6D";
@@ -816,35 +817,22 @@ const ORIGINAL_PRESETS: Record<string, Preset> = {
 
 // 100 組中文風格沿用本頁原本的「主題選擇 → 右側立即產生提示詞」流程。
 // 這裡的內部 ID 不會呈現在使用者的下拉選單或複製提示詞中。
-const STYLE_100_GROUP_SETTINGS: Record<string, Pick<Preset, "purpose" | "style" | "mood" | "composition" | "ratio">> = {
-  micro: { purpose: "爆款互動圖", style: "迷你分身故事風", mood: "可愛到想留言", composition: "主角＋迷你分身圍繞", ratio: "9:16" },
-  ads: { purpose: "商品宣傳圖", style: "商業廣告風", mood: "高級精緻", composition: "商品置中展示", ratio: "4:5" },
-  portrait: { purpose: "角色／吉祥物圖", style: "Q版可愛風", mood: "可愛療癒", composition: "半身構圖", ratio: "4:5" },
-  fashion: { purpose: "品牌形象圖", style: "高級質感風", mood: "高級精緻", composition: "半身構圖", ratio: "4:5" },
-  fantasy: { purpose: "夢幻桌布圖", style: "夢幻唯美風", mood: "神秘夢幻", composition: "主體置中", ratio: "9:16" },
-  food: { purpose: "美食甜點圖", style: "明亮商品攝影風", mood: "食慾感十足", composition: "桌面情境構圖", ratio: "4:5" },
-  pets: { purpose: "角色／吉祥物圖", style: "寵物療癒貼圖風", mood: "可愛療癒", composition: "單一主角清楚展示", ratio: "1:1" },
-  festival: { purpose: "節日賀圖", style: "夢幻唯美風", mood: "溫暖柔和", composition: "賀卡式構圖", ratio: "9:16" },
-  social: { purpose: "封面／縮圖", style: "高對比吸睛風", mood: "吸睛強烈", composition: "上方留白方便加字", ratio: "9:16" },
-  story: { purpose: "故事感場景圖", style: "電影感風格", mood: "溫暖柔和", composition: "沉浸式寬景構圖", ratio: "9:16" },
-};
+// 每組主題使用獨立最佳預設；既有選項及右側即時預覽流程完全保留。
 const STYLE_100_PRESETS: Record<string, Preset> = Object.fromEntries(
-  AI_IMAGE_100_STYLES.map(({ id, title, scene, groupKey, groupLabel }) => {
-    const defaults = STYLE_100_GROUP_SETTINGS[groupKey];
-    const isPhotoPortrait = groupKey === "portrait" && !["chibi", "clayportrait", "plushportrait", "storybook"].includes(id);
+  AI_IMAGE_100_STYLES.map(({ id, title, scene, groupLabel }) => {
+    const tuning = AI_IMAGE_100_PRESET_SETTINGS[id];
+    if (!tuning) throw new Error(`缺少中文生圖風格預設：${id}`);
+    const { focus, ...selection } = tuning;
     const preset: Preset = {
-      ...defaults,
+      ...selection,
       label: title,
-      subject: scene,
-      style: isPhotoPortrait ? "韓系清新風" : defaults.style,
-      mood: isPhotoPortrait ? "清新自然" : defaults.mood,
-      enhancements: ["主題清楚", "高畫質細節", "更適合社群分享", "更有故事感"],
-      avoids: ["不要文字", "不要 Logo", "不要浮水印", "不要怪異手部或肢體", "不要抄襲特定作品風格"],
-      description: `100 組中文生圖風格｜${groupLabel}：${scene}。選取後，右側提示詞會立即更新。`,
+      subject: `${scene}。畫面重點：${focus}。`,
+      description: `中文生圖主題｜${groupLabel}：${scene}。已自動套入最適合此主題的風格、氛圍、構圖、比例及品質設定，也可以自行調整。`,
     };
     return [`rxv100_${id}`, preset];
   }),
 );
+
 const PRESETS: Record<string, Preset> = { ...ORIGINAL_PRESETS, ...STYLE_100_PRESETS };
 
 function CreatorSupportSection({ toolName = "這個免費工具" }: { toolName?: string }) {
@@ -983,7 +971,9 @@ export default function ImagePromptGenerator() {
       : "";
     const avoidText = avoids.length ? `避免：${avoids.join("、")}。` : "";
 
-    const isBusinessPreset = presetKey.startsWith("business");
+    const isBusinessPreset = presetKey.startsWith("business") ||
+      (presetKey.startsWith("rxv100_") &&
+        ["商品宣傳圖", "品牌形象圖", "美食甜點圖"].includes(purpose));
     const businessNote = isBusinessPreset
       ? "\n\n商業用途重點：畫面要能用於小店商品宣傳、作品集示範、社群貼文或開發店家提案。請讓商品／服務主體一眼清楚，保留可後續加字的乾淨空間，避免看起來像未授權平台截圖。"
       : "";
