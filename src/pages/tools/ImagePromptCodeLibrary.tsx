@@ -167,7 +167,7 @@ export default function ImagePromptCodeLibrary() {
   const selected = CATALOG.find((item) => item.code === chosen) ?? CATALOG[0];
   const result = useMemo(() => makePrompt(selected, ratio, subject, Boolean(preview)), [selected, ratio, subject, preview]);
   const filtered = useMemo(() => CATALOG.filter((item) => {
-    const q = keyword.trim().toLowerCase().replaceAll("/", "");
+    const q = keyword.trim().toLowerCase().split("/").join("");
     return (category === "all" || item.group === category) &&
       (!q || [item.code, item.title, item.scene, item.category].some((v) => v.toLowerCase().includes(q)));
   }), [keyword, category]);
