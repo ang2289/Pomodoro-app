@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import SEO from "@/components/SEO";
 import LineStickerAuthorCard from "@/components/LineStickerAuthorCard";
@@ -939,6 +939,8 @@ export default function ImagePromptGenerator() {
   const [avoids, setAvoids] = useState<string[]>(PRESETS[presetKey].avoids);
   const [copied, setCopied] = useState(false);
   const [copyStatus, setCopyStatus] = useState<"success" | "manual" | null>(null);
+  const [shareCopied, setShareCopied] = useState(false);
+  const [shareCopyError, setShareCopyError] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const resultTextareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -999,6 +1001,12 @@ export default function ImagePromptGenerator() {
     enhancements,
     avoids,
   ]);
+
+  // 主題或任一設定改變時，先前剪貼簿內容已非最新提示詞。
+  useEffect(() => {
+    setCopied(false);
+    setCopyStatus(null);
+  }, [resultPrompt]);
 
   // 在 Clipboard API 不支援或遭瀏覽器拒絕時，嘗試舊式複製；
   // 兩種方式皆失敗則直接選取提示詞，方便使用者手動複製。
@@ -1068,13 +1076,10 @@ export default function ImagePromptGenerator() {
   };
 
   const copyShareText = async () => {
-    try {
-      await navigator.clipboard.writeText(fullShareText);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1800);
-    } catch {
-      // ignore
-    }
+    const success = await copyPromptText(fullShareText);
+    setShareCopied(success);
+    setShareCopyError(!success);
+    if (success) window.setTimeout(() => setShareCopied(false), 1800);
   };
 
   return (
@@ -1431,7 +1436,7 @@ export default function ImagePromptGenerator() {
               )}
               {copyStatus === "manual" && (
                 <p role="alert" className="rounded-xl bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
-                  瀏覽器未允許自動複製。已幫妳選取下方文字，請按 Ctrl+C（電腦）或長按「複製」（手機）。
+                  瀏覽器未允許自動複製。已選取下方提示詞；電腦請按 Ctrl+C，手機請長按並選擇「複製」。
                 </p>
               )}
             </div>
@@ -1753,9 +1758,15 @@ export default function ImagePromptGenerator() {
               onClick={copyShareText}
               className="inline-flex min-h-[48px] items-center justify-center rounded-2xl bg-teal-600 px-4 py-3 text-sm font-bold !text-white shadow transition hover:-translate-y-0.5 hover:bg-teal-700 hover:!text-white hover:shadow-lg"
             >
-              複製分享文
+              {shareCopied ? "已複製分享文" : "複製分享文"}
             </button>
           </div>
+          {shareCopyError && (
+            <div className="mt-3 rounded-xl bg-amber-100 p-3 text-sm text-amber-900" role="alert">
+              瀏覽器未允許複製分享文，請點下方文字框後手動複製。
+              <textarea aria-label="手動複製的分享文字" readOnly rows={3} value={fullShareText} onFocus={(e) => e.currentTarget.select()} className="mt-2 w-full rounded-lg border border-amber-200 bg-white p-3 text-slate-900" />
+            </div>
+          )}
         </section>
       </div>
     </>
