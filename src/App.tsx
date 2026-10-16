@@ -170,7 +170,6 @@ import EmotionalValueStickerPrompt from './pages/tools/EmotionalValueStickerProm
 import StickerShowcaseGallery from './pages/tools/StickerShowcaseGallery'
 import AnimatedLineStickerTool from './pages/tools/AnimatedLineStickerTool'
 import ImagePromptGenerator from './pages/tools/ImagePromptGenerator'
-import ImagePromptCodeLibrary from './pages/tools/ImagePromptCodeLibrary'
 import PetPromptPage from './pages/tools/PetPromptPage'
 import StickerImageSplitter from './pages/tools/StickerImageSplitter'
 import ScamCheckPage from './pages/tools/ScamCheckPage'
@@ -718,7 +717,7 @@ function App() {
             <Route path="tools/animated-sticker-prompt" element={<Navigate to="/tools/sticker-prompt?mode=animated" replace />} />
             <Route path="tools/animated-line-sticker" element={<AdminOnlyAnimatedLineStickerRoute />} />
             <Route path="tools/image-prompt" element={<ImagePromptGenerator />} />
-            <Route path="tools/prompt-codes" element={<ImagePromptCodeLibrary />} />
+            <Route path="tools/prompt-codes" element={<ImagePromptGenerator />} />
             <Route path="tools/pet-prompt" element={<PetPromptPage />} />
             <Route path="tools/sticker-splitter" element={<StickerImageSplitter />} />
             <Route path="tools/scam-check" element={<ScamCheckPage />} />
