@@ -934,7 +934,7 @@ export default function ImagePromptGenerator() {
     if (typeof window !== "undefined") {
       const search = new URLSearchParams(window.location.search);
       const legacyCode = search.get("code");
-      const candidate = `rxv100_${legacyCode ?? ""}`;
+      const candidate: PresetKey = `rxv100_${legacyCode ?? ""}`;
       if (legacyCode && PRESETS[candidate]) return candidate;
     }
     return "businessDessertProduct";
