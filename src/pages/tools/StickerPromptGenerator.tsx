@@ -176,7 +176,8 @@ type ProfessionCategory =
   | "familyLifestyle"
   | "healingLifestyle";
 
-type PhotoMode = "original" | "realPerson" | "realPersonPureQ";
+type PhotoMode = "original" | "realPerson" | "realPersonPureQ" | "realPhoto" | "petPhoto";
+type IllustrationStyle = "cute2d" | "doll3d" | "anime" | "korean" | "clay" | "plush" | "watercolor" | "storybook" | "comic" | "pastel" | "sticker" | "semiReal";
 
 const SUPPORT_TW_URL = "https://p.ecpay.com.tw/FD7CD6D";
 const SUPPORT_KOFI_URL = "https://ko-fi.com/ang2289";
@@ -3466,6 +3467,31 @@ const PHOTO_MODE_OPTIONS: Array<{
     prompt:
       "可依真人照片整理成純 Q 版可愛風格，保留髮型、臉型、五官重點與整體氣質，但臉部與比例可更 Q、更討喜，適合想保有本人感覺又希望畫面更可愛的人；請使用本人或已取得同意的照片，避免侵犯肖像權",
   },
+  {
+    value: "realPhoto",
+    label: "真人照片保留原貌（寶寶／家人）",
+    prompt: "使用本人、寶寶或家人的授權照片，完全保留原始照片的五官、真實臉蛋與表情；以照片剪貼、去背與裝飾排版製作貼圖，不重新繪製人物、不改臉、不憑空生成新表情或動作；若沒有附上照片，請先要求提供照片",
+  },
+  {
+    value: "petPhoto",
+    label: "寵物照片製作專屬貼圖",
+    prompt: "依使用者提供且有權使用的寵物照片，固定同一隻寵物的品種、毛色、斑紋、耳型、眼睛與鼻子，製作可愛寵物貼圖；若沒有附上照片，請先要求提供照片，不要自行臆造",
+  },
+];
+
+const ILLUSTRATION_STYLE_OPTIONS: Array<{ value: IllustrationStyle; label: string; prompt: string }> = [
+  { value: "cute2d", label: "2D 可愛 Q 版", prompt: "清爽 2D Q 版插畫，大頭小身、輪廓明確、適合手機貼圖" },
+  { value: "doll3d", label: "3D 公仔娃娃風", prompt: "精緻原創 3D 公仔娃娃質感、柔和打光、立體細節、乾淨白底" },
+  { value: "anime", label: "日系動漫風", prompt: "日系動漫人物插畫、簡潔線條與明亮配色，不模仿特定作品角色" },
+  { value: "korean", label: "韓系療癒插畫風", prompt: "韓系溫柔線條、自然淡色與療癒氛圍" },
+  { value: "clay", label: "黏土公仔風", prompt: "手作黏土模型質感、圓潤柔軟、細膩立體陰影" },
+  { value: "plush", label: "毛絨玩偶風", prompt: "原創毛絨玩偶質感、柔軟絨毛、圓潤比例" },
+  { value: "watercolor", label: "水彩手繪風", prompt: "透明水彩暈染、手繪筆觸、留白乾淨" },
+  { value: "storybook", label: "童話繪本風", prompt: "童話繪本插畫、細緻柔和筆觸與溫馨故事感" },
+  { value: "comic", label: "Q 版漫畫風", prompt: "原創 Q 版漫畫、俐落勾線、表情誇張且清晰" },
+  { value: "pastel", label: "粉彩奶油風", prompt: "柔和粉彩與奶油色、圓潤可愛、畫面清爽" },
+  { value: "sticker", label: "可愛貼紙風", prompt: "厚實清楚的貼紙輪廓與簡潔陰影、色彩明亮" },
+  { value: "semiReal", label: "精緻半寫實風", prompt: "精緻半寫實插畫、自然五官比例、柔和寫實光影" },
 ];
 
 function optionLabel<T extends string>(
@@ -3491,6 +3517,14 @@ function textPositionForCell(textPosition: TextPosition, index: number) {
 }
 
 function buildRolePrompt(role: string, photoMode: PhotoMode) {
+  if (photoMode === "realPhoto") {
+    return "請以使用者附上的同一張或同一組真人照片作為每格人物來源。直接沿用原照片中的真實臉部與表情，只做去背、裁切、縮放、留白、文字與可愛裝飾，不要重繪、改變五官、膚色、年齡、身材或衣著，也不要虛構照片中不存在的表情或姿勢。若只有一張照片，可以重複使用該張照片搭配不同文字與裝飾；如未附照片，不要產生虛構人物，先請使用者提供照片。";
+  }
+
+  if (photoMode === "petPhoto") {
+    return `請以上傳的寵物照片作為同一隻寵物的唯一外觀參考。固定品種、毛色、斑紋、眼睛、耳朵、口鼻、體型與辨識特徵；依選定畫風製作原創寵物 Q 版貼圖，不可每格換成不同動物。參考貼圖主題：${role}。沒有寵物照片時，請先要求上傳照片，不要自行創造一隻替代寵物。`;
+  }
+
   if (photoMode === "realPerson") {
     return `請以使用者提供的真人照片作為主角參考，轉成可愛 Q 版似顏繪 LINE 貼圖角色。務必保留真人的髮型、臉型、五官比例、眼睛形狀、鼻子位置、嘴型比例與整體氣質，不要重新創造成另一個人。職業服裝、配件與動作可參考：${role}。若沒有提供照片，請先以親切專業的原創角色替代。`;
   }
@@ -3503,6 +3537,12 @@ function buildRolePrompt(role: string, photoMode: PhotoMode) {
 }
 
 function buildPhotoReminder(photoMode: PhotoMode) {
+  if (photoMode === "realPhoto") {
+    return "真人原貌模式：只使用本人或監護人／權利人同意使用的照片，尤其寶寶與兒童照片請注意隱私。AI 生成不能保證臉孔完全不變；若要求絕對維持原貌，應使用原照片直接裁切、去背及排版並逐張檢查。";
+  }
+  if (photoMode === "petPhoto") {
+    return "寵物照片模式：請使用有權使用的寵物照片；同一套貼圖必須維持同一隻寵物，固定斑紋與毛色。";
+  }
   if (photoMode === "realPerson") {
     return "真人似顏繪 Q 版注意：請使用本人或已取得同意的照片；生成時要保留本人辨識度，但避免加入真實姓名、公司 Logo、商標或未授權元素。";
   }
@@ -4308,7 +4348,7 @@ function buildPrompt(
   const rolePrompt = buildRolePrompt(role, photoMode);
   const photoReminder = buildPhotoReminder(photoMode);
 
-  return `請設計一張 ${platform === "whatsapp" ? "WhatsApp" : "LINE"} ${label}大圖，白色背景，${style}。\n\n商用販售安全：每格只能出現下方指定的主要貼圖短句，禁止在卡片、紙袋、花籃、店招、制服、道具額外產生任何文字、英文 NEW、價格、網址、QR Code、商標、店家 Logo、品牌字樣或促銷宣傳；角色、衣服與道具皆需為原創，不可仿畫知名品牌角色。圖文清晰易讀、避免多手多腳、勿遮住文字。\n\n${rolePrompt}\n\n風格加強：${stickerStylePrompt}。\n\n真人／原創設定：${photoModePrompt}。${photoReminder}\n\n請畫成 ${gridInfo.layoutText}。每格貼圖都要獨立清楚、平均排列。每一格的角色＋文字＋裝飾只佔該格中央約 70%～74%，上下左右至少保留約 13%～15% 的純白安全留白，格與格之間必須看得到明顯白色空間，方便後續平均切割。角色與文字都要完整置中在各自格子內，不可超出邊界、不可跨格、不可互相重疊；每格最外圈至少 13% 純白，格線附近不可有花瓣、陰影或字；若空間不足，寧可把角色與文字整體縮小，也不要貼邊。\n\n文字設定（優先於其他畫風描述）：請使用繁體中文。字型造型遵守「${fontStylePrompt}」；文字大小遵守「${textSizePrompt}」；填色、描邊與文字效果遵守「${textColorPrompt}」；**文字所在區域必須嚴格遵守「${textPositionPrompt}」**。若背景情境或貼圖風格暗示不同的位置，仍以本次「文字位置」選項為準；不可自行改變為其他排版。文字必須清楚好讀，文字與頭髮、臉、手勢、手機、文件等主體至少保留明顯空隙，不可壓在人物或道具上；文字四周也要保留白邊，不要貼近格子邊界，不要切到字，不可出現序號、數字、標題、格號或列表符號。\n\n每張貼圖都要有不同表情與動作，整體風格一致、乾淨可愛、適合 LINE 貼圖使用。\n\n貼圖文字如下：\n${numberedTexts}`;
+  return `請設計一張 ${platform === "whatsapp" ? "WhatsApp" : "LINE"} ${label}大圖，白色背景，${style}。\n\n商用販售安全：每格只能出現下方指定的主要貼圖短句，禁止在卡片、紙袋、花籃、店招、制服、道具額外產生任何文字、英文 NEW、價格、網址、QR Code、商標、店家 Logo、品牌字樣或促銷宣傳；${photoMode === "realPhoto" ? "只能使用已獲授權的真實照片，不得模仿未授權人物或加入品牌元素。" : "角色、衣服與道具皆需為原創，不可仿畫知名品牌角色。"}圖文清晰易讀、避免多手多腳、勿遮住文字。\n\n${rolePrompt}\n\n風格加強：${stickerStylePrompt}。\n\n真人／原創設定：${photoModePrompt}。${photoReminder}\n\n請畫成 ${gridInfo.layoutText}。每格貼圖都要獨立清楚、平均排列。每一格的角色＋文字＋裝飾只佔該格中央約 70%～74%，上下左右至少保留約 13%～15% 的純白安全留白，格與格之間必須看得到明顯白色空間，方便後續平均切割。角色與文字都要完整置中在各自格子內，不可超出邊界、不可跨格、不可互相重疊；每格最外圈至少 13% 純白，格線附近不可有花瓣、陰影或字；若空間不足，寧可把角色與文字整體縮小，也不要貼邊。\n\n文字設定（優先於其他畫風描述）：請使用繁體中文。字型造型遵守「${fontStylePrompt}」；文字大小遵守「${textSizePrompt}」；填色、描邊與文字效果遵守「${textColorPrompt}」；**文字所在區域必須嚴格遵守「${textPositionPrompt}」**。若背景情境或貼圖風格暗示不同的位置，仍以本次「文字位置」選項為準；不可自行改變為其他排版。文字必須清楚好讀，文字與頭髮、臉、手勢、手機、文件等主體至少保留明顯空隙，不可壓在人物或道具上；文字四周也要保留白邊，不要貼近格子邊界，不要切到字，不可出現序號、數字、標題、格號或列表符號。\n\n${photoMode === "realPhoto" ? "每格可用不同照片、文字與裝飾，但不可以生成真人原照片中沒有的表情或動作；保持照片自然真實。" : "每張貼圖都要有不同表情與動作，整體風格一致、乾淨可愛、適合 LINE 貼圖使用。"}\n\n貼圖文字如下：\n${numberedTexts}`;
 }
 
 function buildStablePrompt(
@@ -4335,13 +4375,13 @@ ${rolePrompt}
 
 請畫成 ${gridInfo.layoutText}。每格是一個獨立角色動作；角色只佔單格中央約 70%～74%，上下左右至少保留約 13%～15% 純白安全留白，格與格之間要有明顯白色空間，方便後續平均切割。若角色太大，請整體縮小，不可貼邊或跨格。
 
-角色要保持同一人物、同一髮型、同一服裝、同一臉部特徵，每格只改變表情與動作。若選擇真人 Q 版，請以同一張真人照片為基準，不要每格變成不同人。
+角色維持相同的辨識特徵；真人／寵物 Q 版須以相同參考照片為準，不可每格換主角。${photoMode === "realPhoto" ? "真人原貌模式只能貼上原始照片、調整版面及裝飾，不得自行創造表情、衣著與動作。" : "插畫模式每格可更換表情與動作，但要保持角色一致。"}
 
 不要加入任何文字，不要加入標題，不要浮水印，不要背景裝飾，不要合併格子，不要做成海報，不要做成上下兩張總表。
 
 每格動作可包含：揮手、點頭、開心、驚訝、害羞、加油、比愛心、抱抱、睡覺、哭哭、生氣、疑問、感謝、拿手機、吃東西、說再見、忙碌、等待、收到、拍手。
 
-畫風：可愛 Q 版、大頭小身體、乾淨、表情清楚、適合 LINE 貼圖。
+畫風：${photoMode === "realPhoto" ? "真實原照片剪貼與裝飾，不要 Q 版化或重繪真人。" : "依前述指定畫風，人物與文字清晰，適合 LINE 貼圖。 "}
 
 小提醒：這是穩定無文字版，適合 Gemini、豆包等工具先產生角色草稿，再回到 RxV 工具切割、加字與打包。`;
 }
@@ -4562,7 +4602,9 @@ function buildFlowPrompt(
 ${identityLock}
 
 ${batchNumber > 1
-  ? "這是同一套貼圖的後續母圖。請在同一個 ChatGPT 對話附上第 1 張已完成母圖，作為角色、服裝、配色、線條粗細與字體的視覺參考。不得複製第一張的動作或短句，僅延續畫風。沒有參考圖時仍使用上方完整角色設定，但只靠文字無法保證完全一致。"
+  ? photoMode === "realPhoto"
+    ? "這是同一套真人原貌貼圖的後續母圖。請於同一個 ChatGPT 對話再次附上原始真人照片及第 1 張母圖供排版參考，使用相同原照片，不得改變真人容貌；只更換文字與裝飾。"
+    : "這是同一套貼圖的後續母圖。請在同一個 ChatGPT 對話附上第 1 張已完成母圖，作為角色、服裝、配色、線條粗細與字體的視覺參考。不得複製第一張的動作或短句，僅延續畫風。沒有參考圖時仍使用上方完整角色設定，但只靠文字無法保證完全一致."
   : "這是整套角色與畫風的基準母圖；完成後請保存原圖，以便生成後續母圖。"}
 
 ${base}
@@ -4889,6 +4931,7 @@ export default function StickerPromptGenerator() {
   const [stickerStylePreset, setStickerStylePreset] =
     useState<StickerStylePreset>("friendly");
   const [photoMode, setPhotoMode] = useState<PhotoMode>("original");
+  const [illustrationStyle, setIllustrationStyle] = useState<IllustrationStyle>("cute2d");
   const [role, setRole] = useState(templates.businessPersonal.role);
   const [identity, setIdentity] = useState<StickerIdentity>(() => defaultStickerIdentity(templates.businessPersonal.role, templates.businessPersonal.style));
   const [referenceImage, setReferenceImage] = useState<{ name: string; url: string; series: string } | null>(null);
@@ -4933,6 +4976,10 @@ export default function StickerPromptGenerator() {
     } catch { /* 無痕模式或儲存受限時仍可正常使用 */ }
   }, [businessAvatar, businessSignature]);
   const [style, setStyle] = useState(templates.businessPersonal.style);
+  const selectedStylePrompt = optionPrompt(ILLUSTRATION_STYLE_OPTIONS, illustrationStyle);
+  const visualStyle = photoMode === "realPhoto"
+    ? "保留真實原貌的照片剪貼貼圖，原照片不可插畫化、不可改臉，僅白底去背、縮放、留白、裝飾與文字排版"
+    : `${style}；指定畫風：${selectedStylePrompt}`;
   const [texts, setTexts] = useState(
     getDefaultTextWithName("businessPersonal", "4x4", "none", "小宇"),
   );
@@ -5112,10 +5159,28 @@ export default function StickerPromptGenerator() {
       ? applyOriginalCharacterTraits(businessBase, characterTraits, templates[type].label)
       : businessBase;
   }, [type, photoMode, role, identity, businessAvatar, businessSignature, characterTraits]);
-  const identityLock = useMemo(
-    () => makeStickerIdentityLock(lockedIdentity, fontStyle, textSize, textColor, textPosition),
-    [lockedIdentity, fontStyle, textSize, textColor, textPosition],
-  );
+  const identityLock = useMemo(() => {
+    const photoIdentity = photoMode === "realPhoto"
+      ? "每格只使用使用者附上的相同真人原始照片（可多張），保持真實五官、表情與衣著，不生成新人物、不改臉、不重新繪畫。"
+      : photoMode === "petPhoto"
+        ? "所有母圖以同一隻寵物的授權照片為參考，毛色、斑紋、眼睛、耳型與體型必須一致，不混入其他寵物。"
+        : photoMode !== "original"
+          ? "所有母圖依相同真人授權照片建立同一位 Q 版角色，優先保留照片中的真實髮型與五官；不得套用預設陌生人物的臉型與髮型。"
+          : "";
+    if (photoIdentity) {
+      return `【整套貼圖共用角色／畫風鎖定｜每張母圖完整重複】
+- 角色來源：${optionLabel(PHOTO_MODE_OPTIONS, photoMode)}
+- 人物／寵物一致性：${photoIdentity}
+- 畫風：${photoMode === "realPhoto" ? "真實照片原貌，不可風格轉換" : selectedStylePrompt}
+- 字型：${optionPrompt(FONT_STYLE_OPTIONS, fontStyle)}
+- 字體大小：${optionPrompt(TEXT_SIZE_OPTIONS, textSize)}
+- 字色與描邊：${optionPrompt(TEXT_COLOR_OPTIONS, textColor)}
+- 文字位置：${optionPrompt(TEXT_POSITION_OPTIONS, textPosition)}
+所有貼圖須用同一主角，不得自行換臉、換寵物或增加未授權人物。禁止把設定文字印在畫面上。`;
+    }
+    return `${makeStickerIdentityLock(lockedIdentity, fontStyle, textSize, textColor, textPosition)}
+- 使用者選定畫風：${selectedStylePrompt}；整套母圖一致，不得隨意改變。`;
+  }, [lockedIdentity, fontStyle, textSize, textColor, textPosition, photoMode, selectedStylePrompt]);
   const effectiveRole = useMemo(
     () => type === "businessPersonal" && photoMode === "original"
       ? `${role}\n\n${businessAvatarPrompt(businessAvatar, businessSignature)}`
@@ -5131,7 +5196,7 @@ export default function StickerPromptGenerator() {
           prompt: buildFlowPrompt(
             templates[type].label,
             effectiveRole,
-            style,
+            visualStyle,
             item.grid,
             batchTexts,
             textSize,
@@ -5153,7 +5218,7 @@ export default function StickerPromptGenerator() {
       flowTexts,
       type,
       effectiveRole,
-      style,
+      visualStyle,
       textSize,
       textColor,
       textPosition,
@@ -5173,7 +5238,7 @@ export default function StickerPromptGenerator() {
       buildPrompt(
         templates[type].label,
         effectiveRole,
-        style,
+        visualStyle,
         grid,
         texts,
         textSize,
@@ -5186,7 +5251,7 @@ export default function StickerPromptGenerator() {
     [
       type,
       effectiveRole,
-      style,
+      visualStyle,
       grid,
       texts,
       textSize,
@@ -5202,12 +5267,12 @@ export default function StickerPromptGenerator() {
       buildStablePrompt(
         templates[type].label,
         effectiveRole,
-        style,
+        visualStyle,
         grid,
         stickerStylePreset,
         photoMode,
       ),
-    [type, effectiveRole, style, grid, stickerStylePreset, photoMode],
+    [type, effectiveRole, visualStyle, grid, stickerStylePreset, photoMode],
   );
 
   function handleTypeChange(nextType: TemplateKey) {
@@ -5529,14 +5594,36 @@ export default function StickerPromptGenerator() {
                 ))}
               </select>
               <p className="mt-3 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-xs font-bold leading-6 text-sky-800">
-                <span className="mr-1 rounded-full bg-sky-600 px-2 py-0.5 text-[11px] font-black !text-white">
-                  說明
-                </span>
-                可選原創角色，也可用自己的照片做成真人 Q
-                版職業貼圖。若你覺得似顏繪太像本人，也可以改選「真人照片轉純 Q
-                版（更可愛化）」版本，會保留本人感覺但整體更
-                Q、更討喜。請使用本人或已取得同意的照片，避免侵犯肖像權。
+                {photoMode === "original"
+                  ? "不需照片：選擇人物特色即可建立原創角色。"
+                  : photoMode === "realPhoto"
+                    ? "寶寶、兒童或家人可用真人原貌模式。請在 ChatGPT／Gemini 自行附上有授權的真人照片；本站僅產生指令，沒有上傳或保存照片。AI 仍可能變臉，正式使用前須逐張確認，要求完全原貌時請改用原照片裁切與排版。"
+                    : photoMode === "petPhoto"
+                      ? "請在 AI 生圖工具另外附上有權使用的貓狗或其他寵物照片，整套使用同一隻寵物。本站不會自動傳送或儲存照片。"
+                      : "請在 ChatGPT／Gemini 另外附上本人或已獲授權的照片。似顏繪 Q 版較接近真人；超萌 Q 版則有更大的頭身比例。本站只產生提示詞，不會自動上傳照片。"}
               </p>
+              <label className="mt-5 block text-xs font-black text-slate-500">畫風選擇</label>
+              {photoMode === "realPhoto" ? (
+                <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
+                  真人原貌照片風（固定）：只調整照片去背、裝飾與排版，不套用插畫或 3D 畫風。
+                </div>
+              ) : (
+                <>
+                  <select
+                    value={illustrationStyle}
+                    onChange={(e) => setIllustrationStyle(e.target.value as IllustrationStyle)}
+                    aria-label="選擇 12 種畫風"
+                    className="mt-2 w-full rounded-2xl border-2 border-violet-300 bg-white px-4 py-3 pr-10 text-sm font-bold text-violet-900 focus:border-violet-500"
+                  >
+                    {ILLUSTRATION_STYLE_OPTIONS.map((item) => (
+                      <option key={item.value} value={item.value}>{item.label}</option>
+                    ))}
+                  </select>
+                  <p className="mt-2 text-xs leading-6 text-slate-600">
+                    畫風將寫進每張母圖的提示詞，與原有的「貼圖風格」氛圍加強是不同設定。3D 公仔娃娃是畫風，不是獨立角色模式。
+                  </p>
+                </>
+              )}
 
               <label className="mt-5 block text-xs font-black text-slate-500">
                 是否加入人名／店名
@@ -5646,7 +5733,7 @@ export default function StickerPromptGenerator() {
                 </div>
                 <div>
                   <label className="block text-xs font-black text-slate-500">
-                    貼圖風格
+                    貼圖氛圍加強（可選）
                   </label>
                   <select
                     value={stickerStylePreset}
@@ -5743,9 +5830,11 @@ export default function StickerPromptGenerator() {
               <section className="mt-6 rounded-xl border border-violet-200 bg-white p-4" aria-label="整套貼圖共用角色設定">
                 <h4 className="text-base font-bold text-slate-900">整套角色／畫風鎖定（第 1、2 張都共用）</h4>
                 <p className="mt-1 text-xs leading-6 text-slate-600">
-                  以下已依主題自動設定。需要不同臉型、髮型、服裝或畫風可直接改一次，全部母圖立即同步；產生第 2 張時不會重新選角色。
+                  {photoMode === "original"
+                    ? "以下已依主題自動設定。可直接修改人物外觀並鎖定整套母圖。"
+                    : "照片模式會優先鎖定所附照片的本人或寵物外貌；不再套用預設陌生人物的臉型、髮型及服裝。畫風依上方選擇。"}
                 </p>
-                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                {photoMode === "original" && <div className="mt-3 grid gap-3 sm:grid-cols-2">
                   {IDENTITY_FIELDS.map((field) => (
                     <label key={field.key} className="text-xs font-semibold text-slate-700">
                       {field.label}
@@ -5759,9 +5848,9 @@ export default function StickerPromptGenerator() {
                       />
                     </label>
                   ))}
-                </div>
+                </div>}
                 <p className="mt-2 text-xs leading-5 text-slate-500">
-                  文字字型、大小、顏色與位置直接沿用上方所選值，與這份角色設定一起鎖定。真人照片模式仍需在 AI 生圖時自行附上有授權的照片。
+                  文字字型、大小、顏色與位置直接沿用上方所選值。照片模式請在 AI 生圖時另外附上有權使用的照片。
                 </p>
               </section>
 
@@ -5882,8 +5971,9 @@ export default function StickerPromptGenerator() {
                     `字型：${optionLabel(FONT_STYLE_OPTIONS, fontStyle)}`,
                     `字大小：${optionLabel(TEXT_SIZE_OPTIONS, textSize)}`,
                     `顏色／文字效果：${optionLabel(TEXT_COLOR_OPTIONS, textColor)}`,
-                    `貼圖風格：${optionLabel(STICKER_STYLE_OPTIONS, stickerStylePreset)}`,
+                    `氛圍加強：${optionLabel(STICKER_STYLE_OPTIONS, stickerStylePreset)}`,
                     `角色來源：${optionLabel(PHOTO_MODE_OPTIONS, photoMode)}`,
+                    `畫風：${photoMode === "realPhoto" ? "真實照片保留原貌" : optionLabel(ILLUSTRATION_STYLE_OPTIONS, illustrationStyle)}`,
                     `名稱：${optionLabel(NAME_MODE_OPTIONS, nameMode)}`,
                     ...(type === "businessPersonal" && photoMode === "original" ? [`角色：${businessAvatar.persona}`, `髮型：${businessAvatar.hair}`, `服裝：${businessAvatar.clothes}`, `配色：${businessAvatar.palette}`] : []),
                   ].map((label) => (
