@@ -6,7 +6,7 @@ import ToolAdSlot from "@/components/ToolAdSlot";
 type PromptEntry = { code: string; title: string; scene: string; group: string; category: string };
 type PromptGroup = { key: string; label: string; summary: string; items: Array<[string, string, string]> };
 
-// 每一個代碼都是 RXV 網站自訂的風格捷徑，不是 ChatGPT 官方指令。
+// 代碼僅作為內部穩定識別及舊分享網址相容，對使用者全部顯示繁體中文風格名稱。
 const GROUPS: PromptGroup[] = [
   { key: "micro", label: "迷你微型世界", summary: "巨物與小人國的奇趣反差", items: [
     ["miniworkers", "迷你工人", "一群微型工人在巨大的咖啡杯旁檢修蒸氣與金屬管線，精細模型世界"],
@@ -141,7 +141,6 @@ function makePrompt(entry: PromptEntry, ratio: string, subject: string, photo: b
     : "不使用參考照片，請創造完全原創的視覺內容。";
   return [
     "請直接生成一張完整圖片，不要先提供企劃、步驟或解說。",
-    "風格密碼：/" + entry.code + "（RXV 網站自訂提示詞名稱，不是 AI 平台的系統指令）",
     "主題風格：" + entry.title + "｜" + entry.category,
     "場景細節：" + entry.scene + "。",
     subject.trim() ? "我的指定主體：" + subject.trim() + "。" : "",
@@ -169,7 +168,7 @@ export default function ImagePromptCodeLibrary() {
   const filtered = useMemo(() => CATALOG.filter((item) => {
     const q = keyword.trim().toLowerCase().split("/").join("");
     return (category === "all" || item.group === category) &&
-      (!q || [item.code, item.title, item.scene, item.category].some((v) => v.toLowerCase().includes(q)));
+      (!q || [item.title, item.scene, item.category].some((v) => v.toLowerCase().includes(q)));
   }), [keyword, category]);
 
   const copy = async (value: string, success: string) => {
@@ -216,13 +215,13 @@ export default function ImagePromptCodeLibrary() {
 
   return (
     <>
-      <SEO title="100 組 AI 生圖風格密碼｜免費提示詞一鍵複製｜RXV" description="免費使用 RXV 自訂 100 組 AI 生圖風格密碼，支援微型世界、超現實廣告、Q版人像、商品攝影與台灣生活風格，選擇比例、上傳參考照片並一鍵複製完整提示詞。" canonical="/tools/prompt-codes" />
+      <SEO title="100 組 AI 生圖中文風格｜免費提示詞一鍵複製｜RXV" description="免費使用 RXV 精選 100 組中文 AI 生圖風格，包含迷你微型世界、創意商品廣告、Q版人像、商品攝影與台灣生活風格；選風格、調整比例並一鍵複製完整提示詞。" canonical="/tools/prompt-codes" />
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
         <section className="rounded-3xl border border-violet-100 bg-gradient-to-br from-violet-50 via-white to-sky-50 p-5 shadow-sm sm:p-8">
           <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-bold text-violet-800">免費使用・不用註冊・無額外 AI API 費用</span>
-          <h1 className="mt-4 text-3xl font-extrabold text-slate-900 sm:text-4xl">100 組 AI 生圖風格密碼</h1>
-          <p className="mt-3 text-base leading-7 text-slate-700">不用背英文指令！選風格、輸入主題、複製提示詞，再到 ChatGPT 貼上產生圖片。</p>
-          <p className="mt-2 text-sm text-slate-600">這裡的 /密碼 是 RXV 自訂的風格捷徑，不是 ChatGPT 官方指令。實際生圖仍依使用者所選 AI 平台的方案及額度。</p>
+          <h1 className="mt-4 text-3xl font-extrabold text-slate-900 sm:text-4xl">100 組 AI 生圖中文風格</h1>
+          <p className="mt-3 text-base leading-7 text-slate-700">全部使用中文名稱，不用背英文！選擇喜歡的圖片風格、輸入主題、一鍵複製提示詞，再到 ChatGPT 貼上生圖。</p>
+          <p className="mt-2 text-sm text-slate-600">提示詞免費產生，不需要註冊；實際生成圖片仍依所選 AI 平台的方案及使用額度。</p>
           <div className="mt-5 flex flex-wrap gap-3">
             <a href="#code-browser" className="rounded-xl bg-violet-700 px-5 py-3 font-bold !text-white hover:bg-violet-800">第 1 步｜挑選風格</a>
             <Link to="/tools/image-prompt" className="rounded-xl border border-violet-200 bg-white px-5 py-3 font-bold text-violet-700 hover:bg-violet-50">回原版生圖工具</Link>
@@ -230,22 +229,21 @@ export default function ImagePromptCodeLibrary() {
         </section>
 
         <section id="code-browser" className="mt-7 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
-          <h2 className="text-xl font-extrabold text-slate-900">第 1 步｜搜尋或選擇風格密碼</h2>
-          <p className="mt-2 text-sm text-slate-600">共 {CATALOG.length} 組原創風格組合，輸入 /miniworkers、/surrealad 或中文名稱都能搜尋。</p>
+          <h2 className="text-xl font-extrabold text-slate-900">第 1 步｜選擇喜歡的中文風格</h2>
+          <p className="mt-2 text-sm text-slate-600">共 {CATALOG.length} 組精選圖片風格，可以用中文關鍵字搜尋，也可以直接點選分類與風格。</p>
           <label className="mt-4 block text-sm font-bold text-slate-700" htmlFor="prompt-code-search">搜尋風格</label>
-          <input id="prompt-code-search" type="search" autoComplete="off" value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="搜尋 /miniworkers、Q版、商品、台灣..." className="mt-2 min-h-[48px] w-full rounded-xl border border-slate-300 bg-white px-4 text-slate-900 outline-none focus:border-violet-500" />
+          <input id="prompt-code-search" type="search" autoComplete="off" value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="例如：迷你工人、夢幻、花藝、商品、台灣…" className="mt-2 min-h-[48px] w-full rounded-xl border border-slate-300 bg-white px-4 text-slate-900 outline-none focus:border-violet-500" />
           <div className="mt-4 flex flex-wrap gap-2" aria-label="風格分類">
             <button type="button" onClick={() => setCategory("all")} aria-pressed={category === "all"} className={`rounded-full border px-4 py-2 text-sm font-bold ${category === "all" ? "border-violet-700 bg-violet-700 text-white" : "border-slate-200 bg-white text-slate-700"}`}>全部 100 組</button>
             {GROUPS.map((group) => <button key={group.key} type="button" aria-pressed={category === group.key} onClick={() => setCategory(group.key)} className={`rounded-full border px-4 py-2 text-sm font-bold ${category === group.key ? "border-violet-700 bg-violet-700 text-white" : "border-slate-200 bg-white text-slate-700"}`}>{group.label}</button>)}
           </div>
           <p className="mt-4 text-sm font-medium text-slate-600" aria-live="polite">符合條件：{filtered.length} 組</p>
-          {filtered.length === 0 ? <div className="mt-4 rounded-xl bg-slate-50 p-5 text-slate-600">沒有找到相符密碼，請換個關鍵字或切換「全部 100 組」。</div> : null}
+          {filtered.length === 0 ? <div className="mt-4 rounded-xl bg-slate-50 p-5 text-slate-600">沒有找到相符風格，請換個中文關鍵字或切換「全部 100 組」。</div> : null}
           <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((item) => (
-              <button key={item.code} type="button" onClick={() => { setChosen(item.code); setMessage("已選取 /" + item.code + "，可往下自訂並複製提示詞。"); document.getElementById("code-result")?.scrollIntoView({ behavior: "smooth", block: "start" }); }} aria-pressed={chosen === item.code} className={`rounded-2xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md ${chosen === item.code ? "border-violet-500 bg-violet-50 ring-2 ring-violet-200" : "border-slate-200 bg-white hover:border-violet-200"}`}>
+              <button key={item.code} type="button" onClick={() => { setChosen(item.code); setMessage("已選取「" + item.title + "」，可往下自訂並複製提示詞。"); document.getElementById("code-result")?.scrollIntoView({ behavior: "smooth", block: "start" }); }} aria-pressed={chosen === item.code} className={`rounded-2xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md ${chosen === item.code ? "border-violet-500 bg-violet-50 ring-2 ring-violet-200" : "border-slate-200 bg-white hover:border-violet-200"}`}>
                 <span className="text-xs font-bold text-violet-700">{item.category}</span>
                 <div className="mt-1 text-lg font-extrabold text-slate-900">{item.title}</div>
-                <div className="mt-1 break-all font-mono text-sm font-bold text-violet-700">/{item.code}</div>
                 <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-600">{item.scene}</p>
                 <span className="mt-3 inline-block text-xs font-bold text-violet-700">{chosen === item.code ? "已選取" : "選擇這組 →"}</span>
               </button>
@@ -259,7 +257,6 @@ export default function ImagePromptCodeLibrary() {
             <div className="mt-4 rounded-xl bg-violet-50 p-4">
               <div className="text-sm text-violet-800">目前選擇</div>
               <div className="mt-1 text-lg font-extrabold text-slate-900">{selected.title}</div>
-              <div className="font-mono text-sm text-violet-700">/{selected.code}</div>
             </div>
             <label className="mt-5 block text-sm font-bold text-slate-700" htmlFor="prompt-subject">想畫的主題（選填）</label>
             <textarea id="prompt-subject" rows={3} maxLength={300} value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="例如：台灣飲料店的珍珠奶茶、穿白襯衫的女性、我家的橘貓…" className="mt-2 w-full rounded-xl border border-slate-300 bg-white p-3 text-slate-900 outline-none focus:border-violet-500" />
@@ -286,8 +283,8 @@ export default function ImagePromptCodeLibrary() {
         <ToolAdSlot />
         <section className="mt-8 rounded-3xl border border-slate-200 bg-white p-6">
           <h2 className="text-xl font-bold text-slate-900">常見問題</h2>
-          <h3 className="mt-4 font-bold text-slate-800">輸入 /miniworkers 就會自己生圖嗎？</h3>
-          <p className="mt-2 text-sm leading-7 text-slate-600">不會。斜線代碼僅用於在 RXV 網站快速選擇風格，請複製網站產生的完整提示詞到 AI 生圖工具使用。</p>
+          <h3 className="mt-4 font-bold text-slate-800">選好中文風格後，會直接生成圖片嗎？</h3>
+          <p className="mt-2 text-sm leading-7 text-slate-600">網站會自動組成完整圖片提示詞；按「一鍵複製提示詞」，再貼到 ChatGPT 或其他 AI 生圖工具就能要求生圖。</p>
           <h3 className="mt-4 font-bold text-slate-800">一定要上傳照片嗎？</h3>
           <p className="mt-2 text-sm leading-7 text-slate-600">不用。若想以自己的照片為參考，先選取本機照片，再到 ChatGPT 上傳同一張照片並貼上提示詞即可。</p>
           <h3 className="mt-4 font-bold text-slate-800">網站會直接產出圖片嗎？</h3>
