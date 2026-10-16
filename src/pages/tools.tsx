@@ -108,6 +108,13 @@ export default function ToolsPage() {
       badges: ["free", "hot"],
     },
     {
+      title: "100 組 AI 生圖風格密碼",
+      desc: "免費挑選微型工人、超現實廣告、Q版角色等 100 種風格，一鍵複製完整圖片提示詞。",
+      icon: "✨",
+      to: "/tools/prompt-codes",
+      badges: ["free", "ai", "hot"],
+    },
+    {
       title: "AI 生圖提示詞產生器",
       desc: "快速產生商品宣傳圖、社群圖、LINE 貼圖、角色圖與封面圖提示詞。",
       icon: "🖼️",
