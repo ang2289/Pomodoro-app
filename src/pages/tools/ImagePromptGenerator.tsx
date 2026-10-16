@@ -1046,7 +1046,7 @@ export default function ImagePromptGenerator() {
 
         <section className="mt-5 flex flex-col gap-3 rounded-2xl border border-violet-200 bg-violet-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-base font-extrabold text-slate-900">新功能｜100 組 AI 生圖風格密碼</h2>
+            <h2 className="text-base font-extrabold text-slate-900">新功能｜100 組 AI 生圖中文風格</h2>
             <p className="mt-1 text-sm leading-6 text-slate-700">迷你工人、超現實廣告、Q版似顏繪等 10 大分類，免註冊、一鍵複製完整提示詞。</p>
           </div>
           <Link to="/tools/prompt-codes" className="inline-flex min-h-[44px] shrink-0 items-center justify-center rounded-xl bg-violet-700 px-5 py-2.5 text-sm font-bold !text-white hover:bg-violet-800">立即挑選 100 組風格 →</Link>
