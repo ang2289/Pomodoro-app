@@ -24,6 +24,7 @@ const { spawn, execFile } = require("node:child_process");
 const axios = require("axios");
 const express = require("express");
 const { registerRxvV403Helper } = require("./rxv-v40-3-helper.cjs");
+const { registerPinterestOneClickV1 } = require("./pinterest-oneclick-v1.cjs");
 const { createTikTokOfficialApi } = require("./tiktok-official-api.cjs");
 let DatabaseSync = null;
 try {
@@ -7053,6 +7054,9 @@ tiktokOfficial.registerRoutes(app);
 
 // V40.3: TikTok one-click scheduling + Shopee mobile publishing assistant.
 registerRxvV403Helper(app, { root: ROOT, dbPath: AFFILIATE_DB_PATH });
+
+// V40.4: Pinterest zero-cost one-click helper. Prepares every field and always leaves final publish to the user.
+registerPinterestOneClickV1(app, { root: ROOT });
 
 function ensureDirSync(dir) {
   fs.mkdirSync(dir, { recursive: true });
