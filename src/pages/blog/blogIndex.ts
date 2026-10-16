@@ -128,6 +128,14 @@ export const extraPosts: Omit<BlogPostItem, "isSEO" | "date">[] = [
     image: "📦",
   },
   {
+    title: "大型垃圾別急著花錢載走",
+    path: "/blog/bulky-waste-water-fee-guide",
+    category: "生活",
+    subtitle: "水費垃圾處理費 × 清潔隊大型家具清運",
+    description: "整理水費代徵的一般廢棄物清除處理費、家戶大型垃圾與裝修廢棄物差別，先問清潔隊再決定是否花錢清運。",
+    image: "♻️",
+  },
+  {
     title: "2026 蝦皮垃圾袋推薦",
     path: "/blog/shopee-trash-bag-recommendation-2026",
     category: "教學",
