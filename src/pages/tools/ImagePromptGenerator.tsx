@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import SEO from "@/components/SEO";
 import LineStickerAuthorCard from "@/components/LineStickerAuthorCard";
 import ToolAdSlot from "@/components/ToolAdSlot";
+import { AI_IMAGE_100_GROUPS, AI_IMAGE_100_STYLES } from "@/data/aiImage100Styles";
 
 const LINE_STICKER_STORE_URL = "https://store.line.me/stickershop/product/33968282/zh-Hant";
 const SUPPORT_TW_URL = "https://p.ecpay.com.tw/FD7CD6D";
@@ -58,7 +59,8 @@ type PresetKey =
   | "festivalValentineGreeting"
   | "festivalMothersDayGreeting"
   | "festivalFathersDayGreeting"
-  | "festivalHalloweenGreeting";
+  | "festivalHalloweenGreeting"
+  | `rxv100_${string}`;
 
 type Preset = {
   label: string;
@@ -205,7 +207,7 @@ const AVOID_OPTIONS = [
   "不要誤導成實際商品",
 ];
 
-const PRESETS: Record<PresetKey, Preset> = {
+const ORIGINAL_PRESETS: Record<string, Preset> = {
 
   taiwanesePhrasePoster: {
     label: "台語／台灣人口頭禪貼圖宣傳圖",
@@ -809,7 +811,39 @@ const PRESETS: Record<PresetKey, Preset> = {
     avoids: ["不要文字", "不要 Logo", "不要浮水印", "不要低解析截圖感"],
     description: "適合發自然光、療癒、Vlog 感的短影音開頭。",
   },
+
+// 100 組中文風格沿用本頁原本的「主題選擇 → 右側立即產生提示詞」流程。
+// 這裡的內部 ID 不會呈現在使用者的下拉選單或複製提示詞中。
+const STYLE_100_GROUP_SETTINGS: Record<string, Pick<Preset, "purpose" | "style" | "mood" | "composition" | "ratio">> = {
+  micro: { purpose: "爆款互動圖", style: "迷你分身故事風", mood: "可愛到想留言", composition: "主角＋迷你分身圍繞", ratio: "9:16" },
+  ads: { purpose: "商品宣傳圖", style: "商業廣告風", mood: "高級精緻", composition: "商品置中展示", ratio: "4:5" },
+  portrait: { purpose: "角色／吉祥物圖", style: "Q版可愛風", mood: "可愛療癒", composition: "半身構圖", ratio: "4:5" },
+  fashion: { purpose: "品牌形象圖", style: "高級質感風", mood: "高級精緻", composition: "半身構圖", ratio: "4:5" },
+  fantasy: { purpose: "夢幻桌布圖", style: "夢幻唯美風", mood: "神秘夢幻", composition: "主體置中", ratio: "9:16" },
+  food: { purpose: "美食甜點圖", style: "明亮商品攝影風", mood: "食慾感十足", composition: "桌面情境構圖", ratio: "4:5" },
+  pets: { purpose: "角色／吉祥物圖", style: "寵物療癒貼圖風", mood: "可愛療癒", composition: "單一主角清楚展示", ratio: "1:1" },
+  festival: { purpose: "節日賀圖", style: "夢幻唯美風", mood: "溫暖柔和", composition: "賀卡式構圖", ratio: "9:16" },
+  social: { purpose: "封面／縮圖", style: "高對比吸睛風", mood: "吸睛強烈", composition: "上方留白方便加字", ratio: "9:16" },
+  story: { purpose: "故事感場景圖", style: "電影感風格", mood: "溫暖柔和", composition: "沉浸式寬景構圖", ratio: "9:16" },
 };
+const STYLE_100_PRESETS: Record<string, Preset> = Object.fromEntries(
+  AI_IMAGE_100_STYLES.map(({ id, title, scene, groupKey, groupLabel }) => {
+    const defaults = STYLE_100_GROUP_SETTINGS[groupKey];
+    const isPhotoPortrait = groupKey === "portrait" && !["chibi", "clayportrait", "plushportrait", "storybook"].includes(id);
+    const preset: Preset = {
+      ...defaults,
+      label: title,
+      subject: scene,
+      style: isPhotoPortrait ? "韓系清新風" : defaults.style,
+      mood: isPhotoPortrait ? "清新自然" : defaults.mood,
+      enhancements: ["主題清楚", "高畫質細節", "更適合社群分享", "更有故事感"],
+      avoids: ["不要文字", "不要 Logo", "不要浮水印", "不要怪異手部或肢體", "不要抄襲特定作品風格"],
+      description: `100 組中文生圖風格｜${groupLabel}：${scene}。選取後，右側提示詞會立即更新。`,
+    };
+    return [`rxv100_${id}`, preset];
+  }),
+);
+const PRESETS: Record<string, Preset> = { ...ORIGINAL_PRESETS, ...STYLE_100_PRESETS };
 
 function CreatorSupportSection({ toolName = "這個免費工具" }: { toolName?: string }) {
   return (
@@ -894,17 +928,25 @@ function ToggleChip({
 }
 
 export default function ImagePromptGenerator() {
-  const [presetKey, setPresetKey] = useState<PresetKey>("businessDessertProduct");
-  const [purpose, setPurpose] = useState(PRESETS.businessDessertProduct.purpose);
-  const [subject, setSubject] = useState(PRESETS.businessDessertProduct.subject);
-  const [style, setStyle] = useState(PRESETS.businessDessertProduct.style);
-  const [mood, setMood] = useState(PRESETS.businessDessertProduct.mood);
-  const [composition, setComposition] = useState(PRESETS.businessDessertProduct.composition);
-  const [ratio, setRatio] = useState(PRESETS.businessDessertProduct.ratio);
+  const [presetKey, setPresetKey] = useState<PresetKey>(() => {
+    if (typeof window !== "undefined") {
+      const search = new URLSearchParams(window.location.search);
+      const legacyCode = search.get("code");
+      const candidate = `rxv100_${legacyCode ?? ""}`;
+      if (legacyCode && PRESETS[candidate]) return candidate;
+    }
+    return "businessDessertProduct";
+  });
+  const [purpose, setPurpose] = useState(PRESETS[presetKey].purpose);
+  const [subject, setSubject] = useState(PRESETS[presetKey].subject);
+  const [style, setStyle] = useState(PRESETS[presetKey].style);
+  const [mood, setMood] = useState(PRESETS[presetKey].mood);
+  const [composition, setComposition] = useState(PRESETS[presetKey].composition);
+  const [ratio, setRatio] = useState(PRESETS[presetKey].ratio);
   const [enhancements, setEnhancements] = useState<string[]>(
-    PRESETS.businessDessertProduct.enhancements,
+    PRESETS[presetKey].enhancements,
   );
-  const [avoids, setAvoids] = useState<string[]>(PRESETS.businessDessertProduct.avoids);
+  const [avoids, setAvoids] = useState<string[]>(PRESETS[presetKey].avoids);
   const [copied, setCopied] = useState(false);
 
   const applyPreset = (key: PresetKey) => {
@@ -1044,14 +1086,6 @@ export default function ImagePromptGenerator() {
           </div>
         </section>
 
-        <section className="mt-5 flex flex-col gap-3 rounded-2xl border border-violet-200 bg-violet-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-base font-extrabold text-slate-900">新功能｜100 組 AI 生圖中文風格</h2>
-            <p className="mt-1 text-sm leading-6 text-slate-700">迷你工人、超現實廣告、Q版似顏繪等 10 大分類，免註冊、一鍵複製完整提示詞。</p>
-          </div>
-          <Link to="/tools/prompt-codes" className="inline-flex min-h-[44px] shrink-0 items-center justify-center rounded-xl bg-violet-700 px-5 py-2.5 text-sm font-bold !text-white hover:bg-violet-800">立即挑選 100 組風格 →</Link>
-        </section>
-
         <section id="prompt-workspace" className="mt-6 grid gap-6 xl:grid-cols-2">
           <div className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
             <div className="flex items-center justify-between gap-3">
@@ -1066,13 +1100,20 @@ export default function ImagePromptGenerator() {
                 先選主題／職業
               </span>
               <p className="mb-3 rounded-2xl bg-orange-50 px-4 py-3 text-sm leading-6 text-orange-800">
-                先從這裡選想做的圖片類型。店家商品圖、外送平台圖、品牌包裝、作品集示範、社團吸睛圖、古風女神、寵物貼圖或短影音開場圖都可以直接選。
+                這裡已整合 100 組中文生圖風格及原有主題。選擇後，右側立即顯示完整提示詞；也可繼續調整用途、比例及效果。
               </p>
               <select
                 value={presetKey}
                 onChange={(e) => applyPreset(e.target.value as PresetKey)}
                 className="w-full min-h-[54px] rounded-2xl border border-violet-200 bg-white px-4 py-3.5 text-[15px] font-bold text-slate-900 shadow-sm outline-none transition focus:border-violet-400"
               >
+                {AI_IMAGE_100_GROUPS.map((group) => (
+                  <optgroup key={group.key} label={`100 組中文風格｜${group.label}`}>
+                    {group.items.map(([id, title]) => (
+                      <option key={id} value={`rxv100_${id}`}>{title}</option>
+                    ))}
+                  </optgroup>
+                ))}
                 <optgroup label="商業用｜店家商品圖與品牌圖">
                   {([
                     "businessDessertProduct",
