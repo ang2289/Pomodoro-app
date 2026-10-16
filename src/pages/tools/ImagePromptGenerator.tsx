@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import SEO from "@/components/SEO";
 import LineStickerAuthorCard from "@/components/LineStickerAuthorCard";
@@ -938,6 +938,9 @@ export default function ImagePromptGenerator() {
   );
   const [avoids, setAvoids] = useState<string[]>(PRESETS[presetKey].avoids);
   const [copied, setCopied] = useState(false);
+  const [copyStatus, setCopyStatus] = useState<"success" | "manual" | null>(null);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const resultTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   const applyPreset = (key: PresetKey) => {
     const preset = PRESETS[key];
@@ -997,13 +1000,48 @@ export default function ImagePromptGenerator() {
     avoids,
   ]);
 
-  const handleCopy = async () => {
+  // 在 Clipboard API 不支援或遭瀏覽器拒絕時，嘗試舊式複製；
+  // 兩種方式皆失敗則直接選取提示詞，方便使用者手動複製。
+  const copyPromptText = async (text: string): Promise<boolean> => {
     try {
-      await navigator.clipboard.writeText(resultPrompt);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1800);
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
     } catch {
-      // ignore
+      // 試用 fallback，避免靜默失敗。
+    }
+
+    const temporary = document.createElement("textarea");
+    temporary.value = text;
+    temporary.setAttribute("readonly", "");
+    temporary.style.position = "fixed";
+    temporary.style.top = "-1000px";
+    document.body.appendChild(temporary);
+    let success = false;
+    try {
+      temporary.focus();
+      temporary.select();
+      success = document.execCommand("copy");
+    } catch {
+      success = false;
+    } finally {
+      temporary.remove();
+    }
+    return success;
+  };
+
+  const handleCopy = async () => {
+    const success = await copyPromptText(resultPrompt);
+    if (success) {
+      setCopied(true);
+      setCopyStatus("success");
+      window.setTimeout(() => setCopied(false), 1800);
+    } else {
+      setCopied(false);
+      setCopyStatus("manual");
+      resultTextareaRef.current?.focus();
+      resultTextareaRef.current?.select();
     }
   };
 
@@ -1251,7 +1289,27 @@ export default function ImagePromptGenerator() {
               />
             </label>
 
-            <div className="mt-5 grid gap-5 lg:grid-cols-1 2xl:grid-cols-3">
+            <div className="mt-5 flex flex-wrap gap-2 xl:hidden">
+              <a
+                href="#prompt-result"
+                className="inline-flex min-h-[44px] flex-1 items-center justify-center rounded-xl bg-violet-600 px-4 py-2.5 text-center text-sm font-bold !text-white hover:bg-violet-700"
+              >
+                查看目前提示詞 ↓
+              </a>
+              <button
+                type="button"
+                aria-expanded={advancedOpen}
+                aria-controls="prompt-advanced-settings"
+                onClick={() => setAdvancedOpen((prev) => !prev)}
+                className="min-h-[44px] flex-1 rounded-xl border border-violet-300 bg-white px-4 py-2.5 text-sm font-bold text-violet-700 hover:bg-violet-50"
+              >
+                {advancedOpen ? "收起進階設定" : "展開進階設定"}
+              </button>
+            </div>
+            <p className="mt-2 text-xs text-slate-600 xl:hidden">不需調整也可以直接複製；100 組主題已各自帶入適合的設定。</p>
+
+            <div id="prompt-advanced-settings" className={`${advancedOpen ? "block" : "hidden"} xl:block`}>
+              <div className="mt-5 grid gap-5 lg:grid-cols-1 2xl:grid-cols-3">
               <label className="block">
                 <span className="mb-2 block text-sm font-bold text-slate-800">
                   風格
@@ -1337,26 +1395,48 @@ export default function ImagePromptGenerator() {
                 ))}
               </div>
             </div>
+            </div>
           </div>
 
-          <div className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-            <div className="flex items-center justify-between gap-3">
+          <div id="prompt-result" className="scroll-mt-20 rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200 sm:p-6">
+            <div className="flex flex-col gap-3">
               <div>
                 <h2 className="text-2xl font-bold text-slate-900">產生結果</h2>
                 <p className="mt-1 text-sm text-slate-500">
                   可直接複製到 AI 生圖工具使用
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={handleCopy}
-                className="shrink-0 rounded-2xl bg-violet-600 px-5 py-3 text-sm font-bold !text-white shadow transition hover:-translate-y-0.5 hover:bg-violet-700 hover:!text-white hover:shadow-lg"
-              >
-                {copied ? "已複製提示詞" : "一鍵複製提示詞"}
-              </button>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={handleCopy}
+                  className="min-h-[48px] rounded-xl bg-violet-600 px-5 py-3 text-sm font-bold !text-white shadow hover:bg-violet-700"
+                >
+                  {copied ? "已複製提示詞" : "① 一鍵複製提示詞"}
+                </button>
+                <a
+                  href="https://chatgpt.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-h-[48px] items-center justify-center rounded-xl border border-violet-300 bg-white px-5 py-3 text-center text-sm font-bold text-violet-700 hover:bg-violet-50"
+                >
+                  ② 開啟 ChatGPT 生圖 ↗
+                </a>
+              </div>
+              <p className="text-sm leading-6 text-slate-600">先複製提示詞，再開啟 ChatGPT 貼上並傳送；如有參考照片，請在 ChatGPT 另外上傳。</p>
+              {copyStatus === "success" && (
+                <p role="status" aria-live="polite" className="rounded-xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
+                  提示詞已複製，可以開啟 ChatGPT 貼上生圖。
+                </p>
+              )}
+              {copyStatus === "manual" && (
+                <p role="alert" className="rounded-xl bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
+                  瀏覽器未允許自動複製。已幫妳選取下方文字，請按 Ctrl+C（電腦）或長按「複製」（手機）。
+                </p>
+              )}
             </div>
 
-            <div className="mt-5 rounded-3xl border border-slate-200 bg-slate-50 p-4">
+            <div className="mt-5 rounded-3xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-bold text-violet-700">
                   {PRESETS[presetKey].label}
@@ -1366,10 +1446,13 @@ export default function ImagePromptGenerator() {
                 </span>
               </div>
               <textarea
+                ref={resultTextareaRef}
+                aria-label="完整 AI 生圖提示詞，可選取複製"
                 readOnly
                 value={resultPrompt}
-                rows={26}
-                className="min-h-[580px] w-full resize-y min-h-[54px] rounded-2xl border border-slate-200 bg-white px-5 py-5 text-base leading-8 text-slate-900 outline-none"
+                rows={12}
+                onFocus={(e) => e.currentTarget.select()}
+                className="min-h-[320px] w-full resize-y rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm leading-7 text-slate-900 outline-none sm:min-h-[460px] sm:px-5 sm:py-5 sm:text-base sm:leading-8 xl:min-h-[580px]"
               />
             </div>
 
