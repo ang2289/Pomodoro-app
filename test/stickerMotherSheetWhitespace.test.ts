@@ -28,7 +28,7 @@ test("每格四邊均為純白禁止繪製區，不能只加大整張母圖的�
 test("動態母圖規則保留未來活動空間，且不變成動畫影格",()=>{
   const animated = buildMotherSheetWhitespaceRules("4x2", "animated");
   assert.match(animated, /2:1 橫向/);
-  assert.match(animated, /三條縱向和 1 條橫向/);
+  assert.match(animated, /3 條縱向和 1 條橫向/);
   assert.match(animated, /額外避免把手指、頭髮、特效放在安全內框邊緣/);
   assert.match(animated, /不產生動畫影格或時間軸/);
 });
