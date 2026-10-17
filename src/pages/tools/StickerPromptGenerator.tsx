@@ -5622,11 +5622,41 @@ export default function StickerPromptGenerator() {
                   </option>
                 ))}
               </select>
+              {photoMode === "realPhoto" && (
+                <fieldset className="mt-4 rounded-2xl border-2 border-violet-200 bg-white p-4">
+                  <legend className="px-1 text-sm font-black text-violet-900">您希望如何製作真人貼圖？</legend>
+                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                    {REAL_PHOTO_SUBMODE_OPTIONS.map((item) => (
+                      <label key={item.value} className={`cursor-pointer rounded-xl border-2 p-3 transition-colors ${realPhotoSubMode === item.value ? "border-violet-600 bg-violet-50" : "border-slate-200 hover:border-violet-300"}`}>
+                        <input
+                          type="radio"
+                          name="real-photo-submode"
+                          value={item.value}
+                          checked={realPhotoSubMode === item.value}
+                          onChange={() => {
+                            setRealPhotoSubMode(item.value);
+                            if (item.value === "expressive") setTextPosition("top");
+                          }}
+                          className="mr-2 accent-violet-600"
+                        />
+                        <span className="text-sm font-bold text-slate-900">{item.label}</span>
+                        {item.value === "expressive" && <span className="ml-2 rounded-full bg-violet-100 px-2 py-1 text-[11px] font-bold text-violet-900">建議寶寶選這個</span>}
+                        <span className="mt-1 block text-xs leading-6 text-slate-600">{item.description}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-xs font-semibold leading-6 text-amber-900">
+                    {realPhotoSubMode === "expressive"
+                      ? "AI 會依照片延伸新的表情與動作，可能產生與原照片不同的細節。若必須完全維持原貌，請改選照片原貌模式。"
+                      : "使用原照片去背、裁切和排版，不讓 AI 重畫臉部。若只有一張照片，可重複貼圖搭配不同文字；想要不同表情，請提供更多原始照片或改選延伸多表情。"}
+                  </p>
+                </fieldset>
+              )}
               <p className="mt-3 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-xs font-bold leading-6 text-sky-800">
                 {photoMode === "original"
                   ? "不需照片：選擇人物特色即可建立原創角色。"
                   : photoMode === "realPhoto"
-                    ? "寶寶、兒童或家人可用真人原貌模式。請在 ChatGPT／Gemini 自行附上有授權的真人照片；本站僅產生指令，沒有上傳或保存照片。AI 仍可能變臉，正式使用前須逐張確認，要求完全原貌時請改用原照片裁切與排版。"
+                    ? "真人照片模式：請在 ChatGPT／Gemini 自行附上授權照片，至少 1 張；需要不同表情時建議提供多張。本站只產生文字指令，不會替您上傳照片。寶寶照片需取得監護人適當授權並注意隱私。"
                     : photoMode === "petPhoto"
                       ? "請在 AI 生圖工具另外附上有權使用的貓狗或其他寵物照片，整套使用同一隻寵物。本站不會自動傳送或儲存照片。"
                       : "請在 ChatGPT／Gemini 另外附上本人或已獲授權的照片。似顏繪 Q 版較接近真人；超萌 Q 版則有更大的頭身比例。本站只產生提示詞，不會自動上傳照片。"}
@@ -5634,7 +5664,9 @@ export default function StickerPromptGenerator() {
               <label className="mt-5 block text-xs font-black text-slate-500">畫風選擇</label>
               {photoMode === "realPhoto" ? (
                 <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
-                  真人原貌照片風（固定）：只調整照片去背、裝飾與排版，不套用插畫或 3D 畫風。
+                  {realPhotoSubMode === "unchanged"
+                    ? "真人照片原貌風（固定）：不重新繪製人物，只調整去背、裁切、裝飾及排版。"
+                    : "真人照片寫實延伸風（固定）：保留本人身份特徵，可延伸自然多表情與動作，不轉 Q 版或漫畫。"}
                 </div>
               ) : (
                 <>
@@ -5990,6 +6022,14 @@ export default function StickerPromptGenerator() {
                 <StickerAIProviderLinks />
               </div>
               <div className="mt-4 border-t border-slate-200 pt-4">
+                {photoMode !== "original" && (
+                  <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950" role="note">
+                    <strong>複製指令後，請在 AI 對話親自附上參考照片：</strong>
+                    <p>第 1 張母圖：{photoMode === "petPhoto" ? "同一隻寵物的照片" : "原始真人照片（至少 1 張；多張不同表情更佳）"}。</p>
+                    <p>第 2 張與後續母圖：{photoMode === "realPhoto" ? "必須同時附上原始真人照片＋第 1 張母圖" : "請同時附上原始參考照片及第 1 張母圖"}，並沿用相同 AI 對話。</p>
+                    <p className="mt-1 text-xs">本站沒有接收或傳送照片的功能；未附照片時請先附上，不可直接要求 AI 自行猜測人物。</p>
+                  </div>
+                )}
                 <p className="text-sm font-black text-violet-900">即將複製的貼圖設定（修改第 1 步選項後會同步更新）</p>
                 <div className="mt-2 flex flex-wrap gap-2 text-xs font-medium text-slate-700">
                   {[
@@ -6002,7 +6042,7 @@ export default function StickerPromptGenerator() {
                     `顏色／文字效果：${optionLabel(TEXT_COLOR_OPTIONS, textColor)}`,
                     `氛圍加強：${optionLabel(STICKER_STYLE_OPTIONS, stickerStylePreset)}`,
                     `角色來源：${optionLabel(PHOTO_MODE_OPTIONS, photoMode)}`,
-                    `畫風：${photoMode === "realPhoto" ? "真實照片保留原貌" : optionLabel(ILLUSTRATION_STYLE_OPTIONS, illustrationStyle)}`,
+                    `畫風：${photoMode === "realPhoto" ? realPhotoPolicy(realPhotoSubMode).label : optionLabel(ILLUSTRATION_STYLE_OPTIONS, illustrationStyle)}`,
                     `名稱：${optionLabel(NAME_MODE_OPTIONS, nameMode)}`,
                     ...(type === "businessPersonal" && photoMode === "original" ? [`角色：${businessAvatar.persona}`, `髮型：${businessAvatar.hair}`, `服裝：${businessAvatar.clothes}`, `配色：${businessAvatar.palette}`] : []),
                   ].map((label) => (
@@ -6020,7 +6060,7 @@ export default function StickerPromptGenerator() {
                         <h3 className="text-base font-bold text-slate-900">第 3 步｜選擇第 1 張母圖作為角色參考</h3>
                         <p className="mt-2 text-sm leading-6 text-slate-700">
                           先用 ChatGPT 畫好第 1 張，再選下方圖片；第 2 張請沿用同一個 ChatGPT 對話，
-                          複製提示詞後自行附上這張參考圖片。網站不會自動把圖交給 ChatGPT。
+                          複製提示詞後{photoMode === "realPhoto" ? "同時附上原始真人照片＋第 1 張母圖。" : "自行附上第 1 張母圖及原始照片（照片模式）。"}網站不會自動把圖交給 ChatGPT。
                         </p>
                         <label className="mt-3 inline-flex min-h-11 w-fit cursor-pointer items-center justify-center rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-violet-700">
                           {activeReferenceImage ? "更換第 1 張參考圖" : "選擇第 1 張參考圖"}
@@ -6058,7 +6098,13 @@ export default function StickerPromptGenerator() {
                       <div className="w-fit max-w-full">
                         <StickerNextActionHint>
                         請複製第 {index + 1} 張畫圖指令，貼到 ChatGPT。
-                        {index > 0 ? "務必在同一個對話附上第 1 張母圖；這個按鈕只會複製文字，不會傳送圖片。" : "畫好後請先保存母圖。"}
+                        {index > 0
+                           ? photoMode === "realPhoto"
+                             ? "同一個 AI 對話必須同時附上原始真人照片＋第 1 張母圖；按鈕只會複製文字，不會傳送圖片。"
+                             : "務必在同一個對話附上第 1 張母圖；照片模式還要附原始照片。這個按鈕不會傳送圖片。"
+                           : photoMode === "realPhoto"
+                             ? "請先在 ChatGPT 附上原始真人照片，再貼上提示詞；畫好後保存母圖。"
+                             : "畫好後請先保存母圖。"}
                       </StickerNextActionHint>
                       <div className="flex flex-wrap items-center gap-2">
                         <button
