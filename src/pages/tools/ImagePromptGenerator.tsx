@@ -1,8 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import SEO from "@/components/SEO";
 import LineStickerAuthorCard from "@/components/LineStickerAuthorCard";
 import ToolAdSlot from "@/components/ToolAdSlot";
+import { AI_IMAGE_100_GROUPS, AI_IMAGE_100_STYLES } from "@/data/aiImage100Styles";
+import { AI_IMAGE_100_PRESET_SETTINGS } from "@/data/aiImage100PresetSettings";
 
 const LINE_STICKER_STORE_URL = "https://store.line.me/stickershop/product/33968282/zh-Hant";
 const SUPPORT_TW_URL = "https://p.ecpay.com.tw/FD7CD6D";
@@ -58,7 +60,8 @@ type PresetKey =
   | "festivalValentineGreeting"
   | "festivalMothersDayGreeting"
   | "festivalFathersDayGreeting"
-  | "festivalHalloweenGreeting";
+  | "festivalHalloweenGreeting"
+  | `rxv100_${string}`;
 
 type Preset = {
   label: string;
@@ -205,7 +208,7 @@ const AVOID_OPTIONS = [
   "不要誤導成實際商品",
 ];
 
-const PRESETS: Record<PresetKey, Preset> = {
+const ORIGINAL_PRESETS: Record<string, Preset> = {
 
   taiwanesePhrasePoster: {
     label: "台語／台灣人口頭禪貼圖宣傳圖",
@@ -809,7 +812,28 @@ const PRESETS: Record<PresetKey, Preset> = {
     avoids: ["不要文字", "不要 Logo", "不要浮水印", "不要低解析截圖感"],
     description: "適合發自然光、療癒、Vlog 感的短影音開頭。",
   },
+
 };
+
+// 100 組中文風格沿用本頁原本的「主題選擇 → 右側立即產生提示詞」流程。
+// 這裡的內部 ID 不會呈現在使用者的下拉選單或複製提示詞中。
+// 每組主題使用獨立最佳預設；既有選項及右側即時預覽流程完全保留。
+const STYLE_100_PRESETS: Record<string, Preset> = Object.fromEntries(
+  AI_IMAGE_100_STYLES.map(({ id, title, scene, groupLabel }) => {
+    const tuning = AI_IMAGE_100_PRESET_SETTINGS[id];
+    if (!tuning) throw new Error(`缺少中文生圖風格預設：${id}`);
+    const { focus, ...selection } = tuning;
+    const preset: Preset = {
+      ...selection,
+      label: title,
+      subject: `${scene}。畫面重點：${focus}。`,
+      description: `中文生圖主題｜${groupLabel}：${scene}。已自動套入最適合此主題的風格、氛圍、構圖、比例及品質設定，也可以自行調整。`,
+    };
+    return [`rxv100_${id}`, preset];
+  }),
+);
+
+const PRESETS: Record<string, Preset> = { ...ORIGINAL_PRESETS, ...STYLE_100_PRESETS };
 
 function CreatorSupportSection({ toolName = "這個免費工具" }: { toolName?: string }) {
   return (
@@ -894,18 +918,32 @@ function ToggleChip({
 }
 
 export default function ImagePromptGenerator() {
-  const [presetKey, setPresetKey] = useState<PresetKey>("businessDessertProduct");
-  const [purpose, setPurpose] = useState(PRESETS.businessDessertProduct.purpose);
-  const [subject, setSubject] = useState(PRESETS.businessDessertProduct.subject);
-  const [style, setStyle] = useState(PRESETS.businessDessertProduct.style);
-  const [mood, setMood] = useState(PRESETS.businessDessertProduct.mood);
-  const [composition, setComposition] = useState(PRESETS.businessDessertProduct.composition);
-  const [ratio, setRatio] = useState(PRESETS.businessDessertProduct.ratio);
+  const [presetKey, setPresetKey] = useState<PresetKey>(() => {
+    if (typeof window !== "undefined") {
+      const search = new URLSearchParams(window.location.search);
+      const legacyCode = search.get("code");
+      const candidate: PresetKey = `rxv100_${legacyCode ?? ""}`;
+      if (legacyCode && PRESETS[candidate]) return candidate;
+    }
+    return "businessDessertProduct";
+  });
+  const [purpose, setPurpose] = useState(PRESETS[presetKey].purpose);
+  const [subject, setSubject] = useState(PRESETS[presetKey].subject);
+  const [style, setStyle] = useState(PRESETS[presetKey].style);
+  const [mood, setMood] = useState(PRESETS[presetKey].mood);
+  const [composition, setComposition] = useState(PRESETS[presetKey].composition);
+  const [ratio, setRatio] = useState(PRESETS[presetKey].ratio);
   const [enhancements, setEnhancements] = useState<string[]>(
-    PRESETS.businessDessertProduct.enhancements,
+    PRESETS[presetKey].enhancements,
   );
-  const [avoids, setAvoids] = useState<string[]>(PRESETS.businessDessertProduct.avoids);
+  const [avoids, setAvoids] = useState<string[]>(PRESETS[presetKey].avoids);
   const [copied, setCopied] = useState(false);
+  const [copyStatus, setCopyStatus] = useState<"success" | "manual" | null>(null);
+  const [shareCopied, setShareCopied] = useState(false);
+  const [shareCopyError, setShareCopyError] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const resultTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const quickTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   const applyPreset = (key: PresetKey) => {
     const preset = PRESETS[key];
@@ -939,7 +977,9 @@ export default function ImagePromptGenerator() {
       : "";
     const avoidText = avoids.length ? `避免：${avoids.join("、")}。` : "";
 
-    const isBusinessPreset = presetKey.startsWith("business");
+    const isBusinessPreset = presetKey.startsWith("business") ||
+      (presetKey.startsWith("rxv100_") &&
+        ["商品宣傳圖", "品牌形象圖", "美食甜點圖"].includes(purpose));
     const businessNote = isBusinessPreset
       ? "\n\n商業用途重點：畫面要能用於小店商品宣傳、作品集示範、社群貼文或開發店家提案。請讓商品／服務主體一眼清楚，保留可後續加字的乾淨空間，避免看起來像未授權平台截圖。"
       : "";
@@ -963,13 +1003,57 @@ export default function ImagePromptGenerator() {
     avoids,
   ]);
 
-  const handleCopy = async () => {
+  // 主題或任一設定改變時，先前剪貼簿內容已非最新提示詞。
+  useEffect(() => {
+    setCopied(false);
+    setCopyStatus(null);
+  }, [resultPrompt]);
+
+  // 在 Clipboard API 不支援或遭瀏覽器拒絕時，嘗試舊式複製；
+  // 兩種方式皆失敗則直接選取提示詞，方便使用者手動複製。
+  const copyPromptText = async (text: string): Promise<boolean> => {
     try {
-      await navigator.clipboard.writeText(resultPrompt);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1800);
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
     } catch {
-      // ignore
+      // 試用 fallback，避免靜默失敗。
+    }
+
+    const temporary = document.createElement("textarea");
+    temporary.value = text;
+    temporary.setAttribute("readonly", "");
+    temporary.style.position = "fixed";
+    temporary.style.top = "-1000px";
+    document.body.appendChild(temporary);
+    let success = false;
+    try {
+      temporary.focus();
+      temporary.select();
+      success = document.execCommand("copy");
+    } catch {
+      success = false;
+    } finally {
+      temporary.remove();
+    }
+    return success;
+  };
+
+  const handleCopy = async () => {
+    const success = await copyPromptText(resultPrompt);
+    if (success) {
+      setCopied(true);
+      setCopyStatus("success");
+      window.setTimeout(() => setCopied(false), 1800);
+    } else {
+      setCopied(false);
+      setCopyStatus("manual");
+      const visibleTextarea = [quickTextareaRef.current, resultTextareaRef.current].find(
+        (element) => element && element.getClientRects().length > 0,
+      );
+      visibleTextarea?.focus();
+      visibleTextarea?.select();
     }
   };
 
@@ -996,13 +1080,10 @@ export default function ImagePromptGenerator() {
   };
 
   const copyShareText = async () => {
-    try {
-      await navigator.clipboard.writeText(fullShareText);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1800);
-    } catch {
-      // ignore
-    }
+    const success = await copyPromptText(fullShareText);
+    setShareCopied(success);
+    setShareCopyError(!success);
+    if (success) window.setTimeout(() => setShareCopied(false), 1800);
   };
 
   return (
@@ -1044,7 +1125,7 @@ export default function ImagePromptGenerator() {
           </div>
         </section>
 
-        <section id="prompt-workspace" className="mt-6 grid gap-6 xl:grid-cols-2">
+        <section id="prompt-workspace" className="mt-6 grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.08fr)] lg:gap-5">
           <div className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-2xl font-bold text-slate-900">選擇設定</h2>
@@ -1058,13 +1139,20 @@ export default function ImagePromptGenerator() {
                 先選主題／職業
               </span>
               <p className="mb-3 rounded-2xl bg-orange-50 px-4 py-3 text-sm leading-6 text-orange-800">
-                先從這裡選想做的圖片類型。店家商品圖、外送平台圖、品牌包裝、作品集示範、社團吸睛圖、古風女神、寵物貼圖或短影音開場圖都可以直接選。
+                內含 100 組中文生圖風格與原有主題。選完即可看到提示詞；需要時再展開細部設定。
               </p>
               <select
                 value={presetKey}
                 onChange={(e) => applyPreset(e.target.value as PresetKey)}
                 className="w-full min-h-[54px] rounded-2xl border border-violet-200 bg-white px-4 py-3.5 text-[15px] font-bold text-slate-900 shadow-sm outline-none transition focus:border-violet-400"
               >
+                {AI_IMAGE_100_GROUPS.map((group) => (
+                  <optgroup key={group.key} label={`100 組中文風格｜${group.label}`}>
+                    {group.items.map(([id, title]) => (
+                      <option key={id} value={`rxv100_${id}`}>{title}</option>
+                    ))}
+                  </optgroup>
+                ))}
                 <optgroup label="商業用｜店家商品圖與品牌圖">
                   {([
                     "businessDessertProduct",
@@ -1161,7 +1249,38 @@ export default function ImagePromptGenerator() {
               </p>
             </label>
 
-            <div className="mt-6 grid gap-5 sm:grid-cols-2">
+            {/* 在窄螢幕也能緊接著主題選單看到提示詞，不必滑完整個設定區。 */}
+            <div className="mt-4 rounded-2xl border border-violet-200 bg-violet-50/70 p-3 sm:p-4 lg:hidden">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="text-base font-extrabold text-slate-900">即時提示詞｜{PRESETS[presetKey].label}</h3>
+                <span className="text-xs font-semibold text-violet-700">自動更新</span>
+              </div>
+              <textarea
+                ref={quickTextareaRef}
+                aria-label="主題下方的完整生圖提示詞"
+                readOnly
+                value={resultPrompt}
+                rows={6}
+                onFocus={(e) => e.currentTarget.select()}
+                className="mt-3 min-h-[150px] w-full resize-y rounded-xl border border-violet-200 bg-white p-3 text-sm leading-6 text-slate-800"
+              />
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={handleCopy}
+                  className="min-h-[48px] rounded-xl bg-violet-700 px-4 py-3 text-sm font-bold !text-white hover:bg-violet-800"
+                >
+                  {copied ? "已複製提示詞" : "一鍵複製提示詞"}
+                </button>
+                <a href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[48px] items-center justify-center rounded-xl border border-violet-200 bg-white px-4 py-3 text-sm font-bold text-violet-700 hover:bg-violet-100">
+                  開啟 ChatGPT 生圖 ↗
+                </a>
+              </div>
+              {copyStatus === "success" && <p role="status" className="mt-2 text-sm font-semibold text-emerald-700">複製成功！請貼到 ChatGPT。</p>}
+              {copyStatus === "manual" && <p role="alert" className="mt-2 text-sm font-semibold text-amber-800">自動複製未成功，已選取提示詞；請手動複製。</p>}
+            </div>
+
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <label className="block">
                 <span className="mb-2 block text-sm font-bold text-slate-800">
                   用途
@@ -1210,7 +1329,27 @@ export default function ImagePromptGenerator() {
               />
             </label>
 
-            <div className="mt-5 grid gap-5 lg:grid-cols-1 2xl:grid-cols-3">
+            <div className="mt-4 flex flex-wrap gap-2 lg:hidden">
+              <a
+                href="#prompt-result"
+                className="inline-flex min-h-[44px] flex-1 items-center justify-center rounded-xl bg-violet-600 px-4 py-2.5 text-center text-sm font-bold !text-white hover:bg-violet-700"
+              >
+                查看目前提示詞 ↓
+              </a>
+              <button
+                type="button"
+                aria-expanded={advancedOpen}
+                aria-controls="prompt-advanced-settings"
+                onClick={() => setAdvancedOpen((prev) => !prev)}
+                className="min-h-[44px] flex-1 rounded-xl border border-violet-300 bg-white px-4 py-2.5 text-sm font-bold text-violet-700 hover:bg-violet-50"
+              >
+                {advancedOpen ? "收起進階設定" : "展開進階設定"}
+              </button>
+            </div>
+            <p className="mt-2 text-xs text-slate-600 lg:hidden">不需調整也可以直接複製；100 組主題已各自帶入適合的設定。</p>
+
+            <div id="prompt-advanced-settings" className={`${advancedOpen ? "block" : "hidden"} lg:block`}>
+              <div className="mt-5 grid gap-5 lg:grid-cols-1 2xl:grid-cols-3">
               <label className="block">
                 <span className="mb-2 block text-sm font-bold text-slate-800">
                   風格
@@ -1296,26 +1435,48 @@ export default function ImagePromptGenerator() {
                 ))}
               </div>
             </div>
+            </div>
           </div>
 
-          <div className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-            <div className="flex items-center justify-between gap-3">
+          <div id="prompt-result" className="scroll-mt-20 rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200 sm:p-5 lg:sticky lg:top-4 lg:self-start">
+            <div className="flex flex-col gap-3">
               <div>
                 <h2 className="text-2xl font-bold text-slate-900">產生結果</h2>
                 <p className="mt-1 text-sm text-slate-500">
                   可直接複製到 AI 生圖工具使用
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={handleCopy}
-                className="shrink-0 rounded-2xl bg-violet-600 px-5 py-3 text-sm font-bold !text-white shadow transition hover:-translate-y-0.5 hover:bg-violet-700 hover:!text-white hover:shadow-lg"
-              >
-                {copied ? "已複製提示詞" : "一鍵複製提示詞"}
-              </button>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={handleCopy}
+                  className="min-h-[48px] rounded-xl bg-violet-600 px-5 py-3 text-sm font-bold !text-white shadow hover:bg-violet-700"
+                >
+                  {copied ? "已複製提示詞" : "① 一鍵複製提示詞"}
+                </button>
+                <a
+                  href="https://chatgpt.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-h-[48px] items-center justify-center rounded-xl border border-violet-300 bg-white px-5 py-3 text-center text-sm font-bold text-violet-700 hover:bg-violet-50"
+                >
+                  ② 開啟 ChatGPT 生圖 ↗
+                </a>
+              </div>
+              <p className="text-sm leading-6 text-slate-600">先複製提示詞，再開啟 ChatGPT 貼上並傳送；如有參考照片，請在 ChatGPT 另外上傳。</p>
+              {copyStatus === "success" && (
+                <p role="status" aria-live="polite" className="rounded-xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
+                  提示詞已複製，可以開啟 ChatGPT 貼上生圖。
+                </p>
+              )}
+              {copyStatus === "manual" && (
+                <p role="alert" className="rounded-xl bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
+                  瀏覽器未允許自動複製。已選取下方提示詞；電腦請按 Ctrl+C，手機請長按並選擇「複製」。
+                </p>
+              )}
             </div>
 
-            <div className="mt-5 rounded-3xl border border-slate-200 bg-slate-50 p-4">
+            <div className="mt-5 rounded-3xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-bold text-violet-700">
                   {PRESETS[presetKey].label}
@@ -1325,14 +1486,19 @@ export default function ImagePromptGenerator() {
                 </span>
               </div>
               <textarea
+                ref={resultTextareaRef}
+                aria-label="完整 AI 生圖提示詞，可選取複製"
                 readOnly
                 value={resultPrompt}
-                rows={26}
-                className="min-h-[580px] w-full resize-y min-h-[54px] rounded-2xl border border-slate-200 bg-white px-5 py-5 text-base leading-8 text-slate-900 outline-none"
+                rows={12}
+                onFocus={(e) => e.currentTarget.select()}
+                className="min-h-[240px] w-full resize-y rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm leading-7 text-slate-900 outline-none sm:px-4 sm:py-4 sm:text-base sm:leading-7 lg:h-[280px] lg:min-h-[240px]"
               />
             </div>
 
-            <div className="mt-6 grid gap-4">
+            <details className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
+              <summary className="cursor-pointer text-sm font-bold text-slate-700">更多說明與範例（選擇展開）</summary>
+              <div className="mt-4 grid gap-4">
               <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
                 <h3 className="text-sm font-bold text-emerald-800">
                   這頁適合誰？
@@ -1386,7 +1552,8 @@ export default function ImagePromptGenerator() {
                   </div>
                 ))}
               </div>
-            </div>
+              </div>
+            </details>
           </div>
         </section>
 
@@ -1629,9 +1796,15 @@ export default function ImagePromptGenerator() {
               onClick={copyShareText}
               className="inline-flex min-h-[48px] items-center justify-center rounded-2xl bg-teal-600 px-4 py-3 text-sm font-bold !text-white shadow transition hover:-translate-y-0.5 hover:bg-teal-700 hover:!text-white hover:shadow-lg"
             >
-              複製分享文
+              {shareCopied ? "已複製分享文" : "複製分享文"}
             </button>
           </div>
+          {shareCopyError && (
+            <div className="mt-3 rounded-xl bg-amber-100 p-3 text-sm text-amber-900" role="alert">
+              瀏覽器未允許複製分享文，請點下方文字框後手動複製。
+              <textarea aria-label="手動複製的分享文字" readOnly rows={3} value={fullShareText} onFocus={(e) => e.currentTarget.select()} className="mt-2 w-full rounded-lg border border-amber-200 bg-white p-3 text-slate-900" />
+            </div>
+          )}
         </section>
       </div>
     </>
