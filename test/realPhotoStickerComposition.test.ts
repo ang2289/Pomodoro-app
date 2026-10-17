@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
 import ts from "typescript";
-import { buildExpressiveCellPlan, realPhotoPolicy } from "../src/lib/realPhotoStickerPrompts";
+import { REAL_PHOTO_VARIETY, buildExpressiveCellPlan, realPhotoPolicy } from "../src/lib/realPhotoStickerPrompts";
 
 /**
  * 直接編譯並執行目前 TSX 內的提示詞建構函式，驗證實際組裝字串。
@@ -28,6 +28,7 @@ const options = [{value:"original",prompt:"使用原創角色"},{value:"realPers
 const mock = {
   realPhotoPolicy,
   buildExpressiveCellPlan,
+  REAL_PHOTO_VARIETY,
   optionPrompt: (o: {value:string;prompt:string}[], v:string) => o.find(x=>x.value===v)?.prompt || "使用者指定格式",
   gridOptions: {
     "4x2": {count:8,layoutText:"4x2 排列，共 8 張貼圖"},
