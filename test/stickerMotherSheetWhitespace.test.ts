@@ -40,7 +40,7 @@ test("留白重繪指令必須保留母圖的角色、文字、格數及每格�
   assert.match(redo, /不是只加大整張畫布的外邊/);
   assert.match(redo, /原有的繁體中文短句、人物身份/);
   assert.match(redo, /4 欄 × 4 列/);
-  assert.match(redo, /每格四周/);
+  assert.match(redo, /整格尺寸 15% 的純白禁止繪製區/);
   assert.match(redo, /中央 70%/);
   const followup=buildMotherSheetWhitespaceRetryPrompt("4x2","animated");
   assert.match(followup,/第 1 張母圖/);
