@@ -86,14 +86,21 @@ const PROFILES = [
 
 export function buildExpressiveCellPlan(lines: string[], startIndex = 0): string {
   const used = new Set<number>();
+  // 24 張方案：第 1 張 16 格使用 0～15；第 2 張 8 格使用 16～23。
+  // 即使兩張有相近短句，也不會重複同一組「表情＋動作」。
+  const pool = startIndex === 0 && lines.length === 16
+    ? PROFILES.map((_, i) => i).slice(0, 16)
+    : startIndex === 16 && lines.length === 8
+      ? PROFILES.map((_, i) => i).slice(16, 24)
+      : PROFILES.map((_, i) => i);
   return lines.map((sentence, localIndex) => {
     const globalIndex = startIndex + localIndex;
-    const matches = PROFILES.map((profile, index) => ({ index, match: profile.words.test(sentence) }))
-      .filter(({ match, index }) => match && !used.has(index));
+    const matches = pool.filter(index => PROFILES[index].words.test(sentence) && !used.has(index));
     const idx = matches.length
-      ? matches.reduce((best, item) => Math.abs(item.index - (globalIndex % PROFILES.length)) < Math.abs(best.index - (globalIndex % PROFILES.length)) ? item : best).index
-      : Array.from({length: PROFILES.length}, (_, n) => (globalIndex + n) % PROFILES.length).find(n => !used.has(n))
-        ?? globalIndex % PROFILES.length;
+      ? matches.reduce((best, index) => Math.abs(index - (globalIndex % PROFILES.length)) < Math.abs(best - (globalIndex % PROFILES.length)) ? index : best)
+      : pool.find(index => index >= globalIndex % PROFILES.length && !used.has(index))
+        ?? pool.find(index => !used.has(index))
+        ?? pool[globalIndex % pool.length];
     used.add(idx);
     const {expression, action} = PROFILES[idx];
     return `第 ${globalIndex + 1} 格「${sentence}」：${expression}＋${action}；頭部角度、眼神及手勢須與相鄰格有區別，演出符合短句語意及人物年齡。`;
