@@ -5443,11 +5443,8 @@ export default function StickerPromptGenerator() {
               <span>✓ 繁體中文</span><span>✓ LINE／WhatsApp</span><span>✓ 靜態／動態</span>
             </div>
           </header>
-          <p className="mb-5 text-sm text-slate-600">
-            已經有完整母圖？
-            <a href="#sticker-count" className="ml-2 font-bold text-violet-700 underline underline-offset-2 hover:text-violet-900">
-              先選靜態／動態與張數，再直接進入上傳 →
-            </a>
+          <p className="mb-5 text-sm font-semibold leading-6 text-slate-700">
+            第一次使用請照著第 1 → 第 2 → 第 3 步操作：先選平台與張數，再往下挑主題、角色及畫風。
           </p>
           <div id="sticker-start" className="scroll-mt-24" />
 
@@ -5533,28 +5530,47 @@ export default function StickerPromptGenerator() {
                         ? "系統會準備 2 張 4×4，共 32 張。"
                         : "系統會準備 2 張 4×5，共 40 張。"}
               </p>
-              <div className="mt-4 max-w-[520px] rounded-xl border border-violet-200 bg-violet-50/40 px-4 py-4" aria-label="已做好母圖的快速入口">
-                <h3 className="text-sm font-bold text-slate-900">已經有自己做好的母圖？</h3>
-                <p className="mt-1.5 text-xs leading-6 text-slate-600">
-                  不用再產生提示詞。保持上方選好的 {stickerPlatform === "line" ? "LINE" : "WhatsApp"}、
-                  {stickerMode === "animated" ? "動態" : "靜態"}與 {targetCount} 張，
-                  直接進入第 3 步上傳完整母圖，讓 RXV 自動分割、去背與打包。
-                </p>
-                <Link
-                  to="/tools/line-sticker?flow=1#mother-upload"
-                  onClick={() => persistFlowProject(3)}
-                  className="mt-3 inline-flex min-h-12 w-fit max-w-full items-center justify-center rounded-xl bg-violet-600 px-4 py-3 text-center text-sm font-bold !text-white shadow-sm transition-colors hover:bg-violet-700 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
-                >
-                  我已有母圖｜跳至第 3 步上傳、切割與打包 →
-                </Link>
-                {stickerMode === "animated" ? (
-                  <p className="mt-2 text-xs font-medium leading-5 text-violet-800">
-                    已選動態貼圖：母圖切割完成後，可以在第 5 步繼續製作動態貼圖，不會強制改成靜態。
+              <div className="mt-5 max-w-[520px] space-y-3" aria-label="依製作進度選擇下一步">
+                <div className="rounded-2xl border-2 border-violet-300 bg-violet-50 p-4">
+                  <h3 className="text-base font-black text-violet-950">第一次製作貼圖？從這裡繼續</h3>
+                  <p className="mt-1 text-sm leading-6 text-slate-700">
+                    不需要先有母圖。下一步選主題、角色與畫風，系統會幫您準備能複製到 AI 生圖工具的提示詞。
                   </p>
-                ) : null}
+                  <a
+                    href="#sticker-theme"
+                    className="mt-3 inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-violet-600 px-4 py-3 text-center text-sm font-black !text-white shadow-sm transition-colors hover:bg-violet-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
+                  >
+                    繼續第 1 步｜選主題、角色與畫風 ↓
+                  </a>
+                  <p className="mt-2 text-xs leading-5 text-violet-900">只有寶寶、真人或寵物的單張照片？請走這個流程，接下來可選照片模式。</p>
+                </div>
+                <details className="group rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                  <summary className="cursor-pointer text-sm font-bold text-slate-700 marker:text-slate-500">
+                    我已製作完成整張貼圖母圖｜直接上傳（進階）
+                  </summary>
+                  <p className="mt-2 text-xs leading-6 text-slate-600">
+                    「完整母圖」是已經排好 4×4（16 格）、4×2（8 格）等多張貼圖內容的整張大圖；不是只有一張寶寶或真人照片。若已備妥完整母圖或全部單張貼圖 PNG，可以跳過 AI 提示詞。
+                  </p>
+                  <p className="mt-2 text-xs leading-6 text-slate-600">
+                    沿用上方選好的 {stickerPlatform === "line" ? "LINE" : "WhatsApp"}、
+                    {stickerMode === "animated" ? "動態" : "靜態"}、共 {targetCount} 張。下一步將進入第 3 步上傳、切割與打包。
+                  </p>
+                  <Link
+                    to="/tools/line-sticker?flow=1#mother-upload"
+                    onClick={() => persistFlowProject(3)}
+                    className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl border-2 border-slate-300 bg-white px-3 py-2.5 text-center text-sm font-bold text-slate-800 transition-colors hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
+                  >
+                    已有完整母圖｜前往第 3 步上傳 →
+                  </Link>
+                  {stickerMode === "animated" ? (
+                    <p className="mt-2 text-xs font-medium leading-5 text-slate-600">
+                      動態貼圖仍需於第 5 步製作動畫，不會強制轉成靜態。
+                    </p>
+                  ) : null}
+                </details>
               </div>
 
-              <div className="mt-5 flex items-center justify-between gap-3">
+              <div id="sticker-theme" className="mt-5 flex scroll-mt-24 items-center justify-between gap-3">
                 <label className="block text-sm font-semibold text-slate-700">
                   貼圖類型
                 </label>
