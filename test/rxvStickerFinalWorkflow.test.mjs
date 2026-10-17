@@ -51,6 +51,19 @@ test("正常產生 ZIP 成功後才顯示完成提示", () => {
   assert.ok(indexDownload >= 0 && indexComplete > indexDownload, "LINE animated completion must follow downloadable ZIP");
 });
 
+test("Windows CRLF 與 Linux LF 的 ZIP 完成順序檢查結果一致", () => {
+  const source = read("src/pages/tools/AnimatedLineStickerTool.tsx");
+  const simulatedCRLF = source.replace(/\n/g, "\r\n");
+  const normalize = (text) => text.replace(/\r\n/g, "\n");
+  const expected = 'downloadBlob(\n        zip,\n        `rxv-line-animated-sticker-upload-pack-';
+  for (const variant of [source, simulatedCRLF]) {
+    const normalized = normalize(variant);
+    const downloaded = normalized.indexOf(expected);
+    const completed = normalized.indexOf('setCompletedPlatform("line")');
+    assert.ok(downloaded >= 0 && completed > downloaded);
+  }
+});
+
 test("兩張不同格數母圖不被上一個全域 4×4 選項強制覆蓋", () => {
   const source = read("src/pages/tools/LineStickerTool.tsx");
   assert.match(source, /if \(detections\.length > 1\) setMotherSheetGrid\("auto"\)/);
