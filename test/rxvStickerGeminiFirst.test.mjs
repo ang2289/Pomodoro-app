@@ -12,8 +12,11 @@ test("新手可以直接跳到第 3 步上傳母圖，不需做提示詞", () =>
   const homepage = read("src/components/NewUserStickerGuide.tsx");
   assert.match(starter, /已經有貼圖大圖？不用再產生提示詞/);
   assert.match(starter, /\/tools\/line-sticker\?existing=1#mother-upload/);
-  assert.match(prompt, /href="#sticker-count"/);
-  assert.match(prompt, /先選靜態／動態與張數，再直接進入上傳/);
+  // 保留第 3 步上傳捷徑，但不能搶走第一次製作的主要操作入口。
+  assert.match(prompt, /href="#sticker-theme"/);
+  assert.match(prompt, /第一次製作貼圖？從這裡繼續/);
+  assert.match(prompt, /我已製作完成整張貼圖母圖｜直接上傳（進階）/);
+  assert.match(prompt, /to="\/tools\/line-sticker\?flow=1#mother-upload"/);
   assert.match(homepage, /<StickerExistingMotherSheetShortcut compact \/>/);
 });
 
@@ -532,11 +535,16 @@ test("已有母圖按鈕位於選擇張數下方，會帶入靜態動態、平�
   const flow = read("src/lib/lineStickerFlow.ts");
 
   const countPicker = prompt.indexOf('aria-label="選擇貼圖張數"');
-  const existingShortcut = prompt.indexOf('aria-label="已做好母圖的快速入口"');
-  const themePicker = prompt.indexOf("貼圖類型", existingShortcut);
-  assert.ok(countPicker >= 0 && existingShortcut > countPicker && themePicker > existingShortcut);
-  const shortcut = prompt.slice(existingShortcut, themePicker);
-  assert.match(shortcut, /我已有母圖｜跳至第 3 步上傳、切割與打包/);
+  const beginnerEntry = prompt.indexOf('aria-label="依製作進度選擇下一步"');
+  const existingShortcut = prompt.indexOf('我已製作完成整張貼圖母圖｜直接上傳（進階）');
+  const themePicker = prompt.indexOf('id="sticker-theme"', existingShortcut);
+  assert.ok(countPicker >= 0 && beginnerEntry > countPicker && existingShortcut > beginnerEntry && themePicker > existingShortcut);
+  const shortcut = prompt.slice(beginnerEntry, themePicker);
+  assert.match(shortcut, /第一次製作貼圖？從這裡繼續/);
+  assert.match(shortcut, /href="#sticker-theme"/);
+  assert.match(shortcut, /<details/);
+  assert.match(shortcut, /不是只有一張寶寶或真人照片/);
+  assert.match(shortcut, /已有完整母圖｜前往第 3 步上傳/);
   assert.match(shortcut, /to="\/tools\/line-sticker\?flow=1#mother-upload"/);
   assert.match(shortcut, /onClick=\{\(\) => persistFlowProject\(3\)\}/);
   assert.match(shortcut, /stickerMode === "animated"/);
