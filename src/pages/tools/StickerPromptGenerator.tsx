@@ -21,6 +21,7 @@ import {
   realPhotoPolicy,
   type RealPhotoSubMode,
 } from "@/lib/realPhotoStickerPrompts";
+import { buildMotherSheetWhitespaceRules } from "@/lib/stickerMotherSheetWhitespace";
 
 type TemplateKey =
   | "couple"
@@ -4340,6 +4341,7 @@ function buildPrompt(
   subMode: RealPhotoSubMode = "unchanged",
   platform: "line" | "whatsapp" = "line",
   startIndex = 0,
+  stickerMode: LineStickerMode = "static",
 ) {
   const gridInfo = gridOptions[grid];
   const lines = normalizeLines(textArea, gridInfo.count);
@@ -4365,8 +4367,9 @@ function buildPrompt(
   const individualPlan = photoMode === "realPhoto" && subMode === "expressive"
     ? `\n\n【逐格表情與動作設計｜不可省略】\n${buildExpressiveCellPlan(lines, startIndex)}\n每格須依上面指定的表情、頭部角度及動作區別角色演出。`
     : "";
+  const whitespaceRules = buildMotherSheetWhitespaceRules(grid, stickerMode);
 
-  return `請設計一張 ${platform === "whatsapp" ? "WhatsApp" : "LINE"} ${label}大圖，白色背景，${style}。\n\n商用販售安全：每格只能出現下方指定的主要貼圖短句，禁止在卡片、紙袋、花籃、店招、制服、道具額外產生任何文字、英文 NEW、價格、網址、QR Code、商標、店家 Logo、品牌字樣或促銷宣傳；${photoMode === "realPhoto" ? (subMode === "expressive" ? "以有權使用的真實照片作為唯一人物身份參考，可依指令生成自然的新表情與動作，不得模仿陌生人或加入未授權品牌。" : "只能使用已獲授權的原始真人照片，不得模仿未授權人物或加入品牌元素。") : "角色、衣服與道具皆需為原創，不可仿畫知名品牌角色。"}圖文清晰易讀、避免多手多腳、勿遮住文字。\n\n${rolePrompt}\n\n風格加強：${safeStylePrompt}。\n\n真人／原創設定：${photoModePrompt}。${photoReminder}\n\n請畫成 ${gridInfo.layoutText}。每格貼圖都要獨立清楚、平均排列。每一格的角色＋文字＋裝飾只佔該格中央約 70%～74%，上下左右至少保留約 13%～15% 的純白安全留白，格與格之間必須看得到明顯白色空間，方便後續平均切割。角色與文字都要完整置中在各自格子內，不可超出邊界、不可跨格、不可互相重疊；每格最外圈至少 13% 純白，格線附近不可有花瓣、陰影或字；若空間不足，寧可把角色與文字整體縮小，也不要貼邊。\n\n文字設定（優先於其他畫風描述）：請使用繁體中文。字型造型遵守「${fontStylePrompt}」；文字大小遵守「${textSizePrompt}」；填色、描邊與文字效果遵守「${textColorPrompt}」；**文字所在區域必須嚴格遵守「${textPositionPrompt}」**。若背景情境或貼圖風格暗示不同的位置，仍以本次「文字位置」選項為準；不可自行改變為其他排版。文字必須清楚好讀，文字與頭髮、臉、手勢、手機、文件等主體至少保留明顯空隙，不可壓在人物或道具上；文字四周也要保留白邊，不要貼近格子邊界，不要切到字，不可出現序號、數字、標題、格號或列表符號。\n\n${photoPerformance}${individualPlan}\n\n貼圖文字如下：\n${numberedTexts}`;
+  return `請設計一張 ${platform === "whatsapp" ? "WhatsApp" : "LINE"} ${label}大圖，白色背景，${style}。\n\n商用販售安全：每格只能出現下方指定的主要貼圖短句，禁止在卡片、紙袋、花籃、店招、制服、道具額外產生任何文字、英文 NEW、價格、網址、QR Code、商標、店家 Logo、品牌字樣或促銷宣傳；${photoMode === "realPhoto" ? (subMode === "expressive" ? "以有權使用的真實照片作為唯一人物身份參考，可依指令生成自然的新表情與動作，不得模仿陌生人或加入未授權品牌。" : "只能使用已獲授權的原始真人照片，不得模仿未授權人物或加入品牌元素。") : "角色、衣服與道具皆需為原創，不可仿畫知名品牌角色。"}圖文清晰易讀、避免多手多腳、勿遮住文字。\n\n${rolePrompt}\n\n${whitespaceRules}\n\n風格加強：${safeStylePrompt}。\n\n真人／原創設定：${photoModePrompt}。${photoReminder}\n\n請畫成 ${gridInfo.layoutText}。每格貼圖都要獨立清楚、平均排列。每一格的角色＋文字＋裝飾只佔該格中央約 70%～74%，上下左右至少保留約 13%～15% 的純白安全留白，格與格之間必須看得到明顯白色空間，方便後續平均切割。角色與文字都要完整置中在各自格子內，不可超出邊界、不可跨格、不可互相重疊；每格最外圈至少 13% 純白，格線附近不可有花瓣、陰影或字；若空間不足，寧可把角色與文字整體縮小，也不要貼邊。\n\n文字設定（優先於其他畫風描述）：請使用繁體中文。字型造型遵守「${fontStylePrompt}」；文字大小遵守「${textSizePrompt}」；填色、描邊與文字效果遵守「${textColorPrompt}」；**文字所在區域必須嚴格遵守「${textPositionPrompt}」**。若背景情境或貼圖風格暗示不同的位置，仍以本次「文字位置」選項為準；不可自行改變為其他排版。文字必須清楚好讀，文字與頭髮、臉、手勢、手機、文件等主體至少保留明顯空隙，不可壓在人物或道具上；文字四周也要保留白邊，不要貼近格子邊界，不要切到字，不可出現序號、數字、標題、格號或列表符號。\n\n${photoPerformance}${individualPlan}\n\n貼圖文字如下：\n${numberedTexts}`;
 }
 
 function buildStablePrompt(
@@ -4384,10 +4387,13 @@ function buildStablePrompt(
   const photoModePrompt = photoMode === "realPhoto" ? policy.summary : optionPrompt(PHOTO_MODE_OPTIONS, photoMode);
   const rolePrompt = buildRolePrompt(role, photoMode, subMode);
   const photoReminder = buildPhotoReminder(photoMode, subMode);
+  const whitespaceRules = buildMotherSheetWhitespaceRules(grid);
 
   return `請設計一張 LINE ${label}${photoMode === "realPhoto" && subMode === "unchanged" ? "真人照片原貌排版" : "角色表情"}草稿大圖，白色背景，${style}。
 
 ${rolePrompt}
+
+${whitespaceRules}
 
 風格加強：${stickerStylePrompt}。
 
@@ -4606,6 +4612,7 @@ function buildFlowPrompt(
     subMode,
     platform,
     startIndex,
+    mode,
   );
   const modeInstructions = mode === "animated"
     ? "本次選擇「動態貼圖」：母圖仍是一張靜止的原始圖，但每格角色四周多留移動空間；人物與文字保持視覺距離，避免後續製作位移動畫時被裁切。不要把多格合成動畫影格，也不要加入時間軸文字。"
@@ -6019,6 +6026,9 @@ export default function StickerPromptGenerator() {
               <div className="mt-4 border-t border-slate-200 pt-4">
                 <p className="text-sm font-semibold text-slate-900">複製下方指令，再開啟 AI 工具貼上</p>
                 <p className="mt-1 text-xs leading-5 text-slate-600">推薦 ChatGPT；Gemini 可以試驗但可能不遵守格數。本站不會自動把文字貼進 AI。</p>
+                <p className="mt-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold leading-6 text-emerald-950">
+                  已加入母圖安全白邊強化：每格四周各留 15% 純白禁止繪製區，圖文縮在中央 70% 安全內框。若舊母圖貼邊，請重新生成，勿直接硬切；AI 仍可能不遵守，請在第 3 步檢查結果。
+                </p>
                 <StickerAIProviderLinks />
               </div>
               <div className="mt-4 border-t border-slate-200 pt-4">
