@@ -22,7 +22,7 @@ test("每格四邊均為純白禁止繪製區，不能只加大整張母圖的�
     assert.ok(rules.includes(keyword), keyword);
   }
   assert.match(rules, /文字也必須「放在中央 70% 安全內框內」/);
-  assert.match(rules, /三條縱向和 3 條橫向/);
+  assert.match(rules, /3 條縱向和 3 條橫向/);
 });
 
 test("動態母圖規則保留未來活動空間，且不變成動畫影格",()=>{
