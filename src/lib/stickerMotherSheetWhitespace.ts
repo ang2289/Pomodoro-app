@@ -2,7 +2,7 @@
  * 白邊規則獨立集中：AI 母圖先留出每格切割通道，才能安全去背、切圖、動畫。
  * 注意：這只是提示詞，無法替代切割頁的實際像素檢查。
  */
-export type SafeMotherGrid = "4x2" | "4x4" | "4x5";
+export type SafeMotherGrid = "4x2" | "4x4" | "4x5" | "5x4";
 export type SafeMotherMode = "static" | "animated";
 
 export const MOTHER_SHEET_SAFE_MARGIN_PERCENT = 15;
@@ -15,6 +15,8 @@ export function motherSheetGeometry(grid: SafeMotherGrid) {
       return { columns: 4, rows: 4, ratio: "1:1 正方形" };
     case "4x5":
       return { columns: 4, rows: 5, ratio: "4:5 直向" };
+    case "5x4":
+      return { columns: 5, rows: 4, ratio: "5:4 橫向" };
   }
 }
 
