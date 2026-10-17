@@ -24,7 +24,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
       - name: A/B real photo policy and prompt regression
-        run: npx tsx --test test/realPhotoStickerPrompt.test.ts && node --test test/realPhotoStickerWiring.test.mjs
+        run: npx tsx --test test/realPhotoStickerPrompt.test.ts test/realPhotoStickerComposition.test.ts && node --test test/realPhotoStickerWiring.test.mjs
       - name: Existing sticker prompt regressions
         run: node --test test/rxvStickerOnboarding.test.mjs test/rxvStickerGeminiFirst.test.mjs test/rxvStickerFinalWorkflow.test.mjs
       - name: TypeScript and full Vite build
