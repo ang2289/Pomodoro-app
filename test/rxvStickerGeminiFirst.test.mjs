@@ -122,8 +122,8 @@ test("自訂文字和字型在新手頁預設顯示，並且設定實際寫入�
   assert.match(prompt, /onChange=\{\(e\) => setFontStyle/);
   assert.match(prompt, /fontStylePrompt = optionPrompt\(FONT_STYLE_OPTIONS, fontStyle\)/);
   assert.match(prompt, /字型造型遵守「\$\{fontStylePrompt\}」/);
-  assert.match(prompt, /fontStyle,\s*stickerStylePreset,\s*photoMode,\s*index \+ 1,/);
-  assert.match(prompt, /fontStyle,\s*stickerStyle,\s*photoMode,/);
+  assert.match(prompt, /fontStyle,\s*stickerStylePreset,\s*photoMode,\s*realPhotoSubMode,\s*index \+ 1,/);
+  assert.match(prompt, /fontStyle,\s*stickerStyle,\s*photoMode,\s*subMode,/);
   assert.doesNotMatch(prompt, /想換角色、修改文字或指定畫風？展開進階設定/);
   assert.match(prompt, /一行一句，可自行修改/);
   assert.match(prompt, /文字大小/);
@@ -292,9 +292,9 @@ test("業務個人品牌角色可選外觀並固定整套母圖，不再所有�
   assert.match(source, /businessAvatarPrompt\(businessAvatar, businessSignature\)/);
   assert.match(source, /const effectiveRole = useMemo/);
   assert.match(source, /type === "businessPersonal" && photoMode === "original"/);
-  assert.match(source, /effectiveRole,\s*style,\s*item.grid,/);
-  assert.match(source, /effectiveRole,\s*style,\s*grid,\s*texts,/);
-  assert.match(source, /effectiveRole,\s*style,\s*grid,\s*stickerStylePreset,/);
+  assert.match(source, /effectiveRole,\s*visualStyle,\s*item.grid,/);
+  assert.match(source, /effectiveRole,\s*visualStyle,\s*grid,\s*texts,/);
+  assert.match(source, /effectiveRole,\s*visualStyle,\s*grid,\s*stickerStylePreset,/);
   assert.match(source, /localStorage\.setItem\(BUSINESS_AVATAR_STORAGE_KEY/);
   assert.match(source, /個人辨識特徵（選填）/);
   assert.match(source, /後續第 2 張母圖都必須維持同一張臉/);
@@ -387,7 +387,7 @@ test("兩張母圖的角色與字型鎖定相同，文字位置三種模式互�
   for (const [grid,startIndex,items] of [["4x2",16,8],["4x4",16,16],["4x5",20,20]]) {
     for (const position of ["top","bottom","mixed"]) {
       const lock = "LOCK_KEY:眼睛固定_服裝固定_字色固定_描邊固定";
-      const generated = fn("美甲師", "固定人物", "固定畫風", grid, Array.from({length:items},(_,i)=>"短句"+(startIndex+i+1)), "large","colorfulWhite",position,"roundBold","cuteQ","original",2,"animated","line",startIndex,lock);
+      const generated = fn("美甲師", "固定人物", "固定畫風", grid, Array.from({length:items},(_,i)=>"短句"+(startIndex+i+1)), "large","colorfulWhite",position,"roundBold","cuteQ","original","unchanged",2,"animated","line",startIndex,lock);
       assert.ok(generated.includes(lock));
       assert.ok(generated.includes("同一個 ChatGPT 對話"));
       const matrix = generated.split("每格短句位置必須依下表")[1].split("重要規則：")[0];
