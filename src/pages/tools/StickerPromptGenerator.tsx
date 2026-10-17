@@ -14,6 +14,13 @@ import {
   type LineStickerMode,
 } from "@/lib/lineStickerFlow";
 import { stickerSaleTextRisks, suggestSaleFriendlyLines } from "@/lib/stickerCommercialSafety";
+import {
+  REAL_PHOTO_SUBMODE_OPTIONS,
+  REAL_PHOTO_VARIETY,
+  buildExpressiveCellPlan,
+  realPhotoPolicy,
+  type RealPhotoSubMode,
+} from "@/lib/realPhotoStickerPrompts";
 
 type TemplateKey =
   | "couple"
@@ -3470,7 +3477,7 @@ const PHOTO_MODE_OPTIONS: Array<{
   {
     value: "realPhoto",
     label: "真人照片保留原貌（寶寶／家人）",
-    prompt: "使用本人、寶寶或家人的授權照片，完全保留原始照片的五官、真實臉蛋與表情；以照片剪貼、去背與裝飾排版製作貼圖，不重新繪製人物、不改臉、不憑空生成新表情或動作；若沒有附上照片，請先要求提供照片",
+    prompt: "使用本人、寶寶或家人的授權照片；可選「完全保留原貌」或「由照片延伸多表情」子模式，兩種指令分開產生",
   },
   {
     value: "petPhoto",
@@ -3516,9 +3523,9 @@ function textPositionForCell(textPosition: TextPosition, index: number) {
     : "人物放左側、文字放右側（禁止文字在頂部）";
 }
 
-function buildRolePrompt(role: string, photoMode: PhotoMode) {
+function buildRolePrompt(role: string, photoMode: PhotoMode, subMode: RealPhotoSubMode = "unchanged") {
   if (photoMode === "realPhoto") {
-    return "請以使用者附上的同一張或同一組真人照片作為每格人物來源。直接沿用原照片中的真實臉部與表情，只做去背、裁切、縮放、留白、文字與可愛裝飾，不要重繪、改變五官、膚色、年齡、身材或衣著，也不要虛構照片中不存在的表情或姿勢。若只有一張照片，可以重複使用該張照片搭配不同文字與裝飾；如未附照片，不要產生虛構人物，先請使用者提供照片。";
+    return realPhotoPolicy(subMode).role;
   }
 
   if (photoMode === "petPhoto") {
@@ -3536,9 +3543,9 @@ function buildRolePrompt(role: string, photoMode: PhotoMode) {
   return `主角是：${role}。`;
 }
 
-function buildPhotoReminder(photoMode: PhotoMode) {
+function buildPhotoReminder(photoMode: PhotoMode, subMode: RealPhotoSubMode = "unchanged") {
   if (photoMode === "realPhoto") {
-    return "真人原貌模式：只使用本人或監護人／權利人同意使用的照片，尤其寶寶與兒童照片請注意隱私。AI 生成不能保證臉孔完全不變；若要求絕對維持原貌，應使用原照片直接裁切、去背及排版並逐張檢查。";
+    return realPhotoPolicy(subMode).reminder;
   }
   if (photoMode === "petPhoto") {
     return "寵物照片模式：請使用有權使用的寵物照片；同一套貼圖必須維持同一隻寵物，固定斑紋與毛色。";
@@ -4330,7 +4337,9 @@ function buildPrompt(
   fontStyle: FontStyle,
   stickerStyle: StickerStylePreset,
   photoMode: PhotoMode,
+  subMode: RealPhotoSubMode = "unchanged",
   platform: "line" | "whatsapp" = "line",
+  startIndex = 0,
 ) {
   const gridInfo = gridOptions[grid];
   const lines = normalizeLines(textArea, gridInfo.count);
@@ -4343,12 +4352,21 @@ function buildPrompt(
   const textPositionPrompt = optionPrompt(TEXT_POSITION_OPTIONS, textPosition);
   const fontStylePrompt = optionPrompt(FONT_STYLE_OPTIONS, fontStyle);
   const stickerStylePrompt = optionPrompt(STICKER_STYLE_OPTIONS, stickerStyle);
-  const photoModePrompt = optionPrompt(PHOTO_MODE_OPTIONS, photoMode);
+  const photoPolicy = realPhotoPolicy(subMode);
+  const photoModePrompt = photoMode === "realPhoto"
+    ? photoPolicy.summary : optionPrompt(PHOTO_MODE_OPTIONS, photoMode);
 
-  const rolePrompt = buildRolePrompt(role, photoMode);
-  const photoReminder = buildPhotoReminder(photoMode);
+  const rolePrompt = buildRolePrompt(role, photoMode, subMode);
+  const photoReminder = buildPhotoReminder(photoMode, subMode);
+  const safeStylePrompt = photoMode === "realPhoto" ? photoPolicy.flavor : stickerStylePrompt;
+  const photoPerformance = photoMode === "realPhoto"
+    ? photoPolicy.variation
+    : "每張貼圖都要有不同表情與動作，整體風格一致、乾淨可愛、適合 LINE 貼圖使用。";
+  const individualPlan = photoMode === "realPhoto" && subMode === "expressive"
+    ? `\n\n【逐格表情與動作設計｜不可省略】\n${buildExpressiveCellPlan(lines, startIndex)}\n每格須依上面指定的表情、頭部角度及動作區別角色演出。`
+    : "";
 
-  return `請設計一張 ${platform === "whatsapp" ? "WhatsApp" : "LINE"} ${label}大圖，白色背景，${style}。\n\n商用販售安全：每格只能出現下方指定的主要貼圖短句，禁止在卡片、紙袋、花籃、店招、制服、道具額外產生任何文字、英文 NEW、價格、網址、QR Code、商標、店家 Logo、品牌字樣或促銷宣傳；${photoMode === "realPhoto" ? "只能使用已獲授權的真實照片，不得模仿未授權人物或加入品牌元素。" : "角色、衣服與道具皆需為原創，不可仿畫知名品牌角色。"}圖文清晰易讀、避免多手多腳、勿遮住文字。\n\n${rolePrompt}\n\n風格加強：${stickerStylePrompt}。\n\n真人／原創設定：${photoModePrompt}。${photoReminder}\n\n請畫成 ${gridInfo.layoutText}。每格貼圖都要獨立清楚、平均排列。每一格的角色＋文字＋裝飾只佔該格中央約 70%～74%，上下左右至少保留約 13%～15% 的純白安全留白，格與格之間必須看得到明顯白色空間，方便後續平均切割。角色與文字都要完整置中在各自格子內，不可超出邊界、不可跨格、不可互相重疊；每格最外圈至少 13% 純白，格線附近不可有花瓣、陰影或字；若空間不足，寧可把角色與文字整體縮小，也不要貼邊。\n\n文字設定（優先於其他畫風描述）：請使用繁體中文。字型造型遵守「${fontStylePrompt}」；文字大小遵守「${textSizePrompt}」；填色、描邊與文字效果遵守「${textColorPrompt}」；**文字所在區域必須嚴格遵守「${textPositionPrompt}」**。若背景情境或貼圖風格暗示不同的位置，仍以本次「文字位置」選項為準；不可自行改變為其他排版。文字必須清楚好讀，文字與頭髮、臉、手勢、手機、文件等主體至少保留明顯空隙，不可壓在人物或道具上；文字四周也要保留白邊，不要貼近格子邊界，不要切到字，不可出現序號、數字、標題、格號或列表符號。\n\n${photoMode === "realPhoto" ? "每格可用不同照片、文字與裝飾，但不可以生成真人原照片中沒有的表情或動作；保持照片自然真實。" : "每張貼圖都要有不同表情與動作，整體風格一致、乾淨可愛、適合 LINE 貼圖使用。"}\n\n貼圖文字如下：\n${numberedTexts}`;
+  return `請設計一張 ${platform === "whatsapp" ? "WhatsApp" : "LINE"} ${label}大圖，白色背景，${style}。\n\n商用販售安全：每格只能出現下方指定的主要貼圖短句，禁止在卡片、紙袋、花籃、店招、制服、道具額外產生任何文字、英文 NEW、價格、網址、QR Code、商標、店家 Logo、品牌字樣或促銷宣傳；${photoMode === "realPhoto" ? (subMode === "expressive" ? "以有權使用的真實照片作為唯一人物身份參考，可依指令生成自然的新表情與動作，不得模仿陌生人或加入未授權品牌。" : "只能使用已獲授權的原始真人照片，不得模仿未授權人物或加入品牌元素。") : "角色、衣服與道具皆需為原創，不可仿畫知名品牌角色。"}圖文清晰易讀、避免多手多腳、勿遮住文字。\n\n${rolePrompt}\n\n風格加強：${safeStylePrompt}。\n\n真人／原創設定：${photoModePrompt}。${photoReminder}\n\n請畫成 ${gridInfo.layoutText}。每格貼圖都要獨立清楚、平均排列。每一格的角色＋文字＋裝飾只佔該格中央約 70%～74%，上下左右至少保留約 13%～15% 的純白安全留白，格與格之間必須看得到明顯白色空間，方便後續平均切割。角色與文字都要完整置中在各自格子內，不可超出邊界、不可跨格、不可互相重疊；每格最外圈至少 13% 純白，格線附近不可有花瓣、陰影或字；若空間不足，寧可把角色與文字整體縮小，也不要貼邊。\n\n文字設定（優先於其他畫風描述）：請使用繁體中文。字型造型遵守「${fontStylePrompt}」；文字大小遵守「${textSizePrompt}」；填色、描邊與文字效果遵守「${textColorPrompt}」；**文字所在區域必須嚴格遵守「${textPositionPrompt}」**。若背景情境或貼圖風格暗示不同的位置，仍以本次「文字位置」選項為準；不可自行改變為其他排版。文字必須清楚好讀，文字與頭髮、臉、手勢、手機、文件等主體至少保留明顯空隙，不可壓在人物或道具上；文字四周也要保留白邊，不要貼近格子邊界，不要切到字，不可出現序號、數字、標題、格號或列表符號。\n\n${photoPerformance}${individualPlan}\n\n貼圖文字如下：\n${numberedTexts}`;
 }
 
 function buildStablePrompt(
@@ -4358,14 +4376,16 @@ function buildStablePrompt(
   grid: GridType,
   stickerStyle: StickerStylePreset,
   photoMode: PhotoMode,
+  subMode: RealPhotoSubMode = "unchanged",
 ) {
   const gridInfo = gridOptions[grid];
-  const stickerStylePrompt = optionPrompt(STICKER_STYLE_OPTIONS, stickerStyle);
-  const photoModePrompt = optionPrompt(PHOTO_MODE_OPTIONS, photoMode);
-  const rolePrompt = buildRolePrompt(role, photoMode);
-  const photoReminder = buildPhotoReminder(photoMode);
+  const policy = realPhotoPolicy(subMode);
+  const stickerStylePrompt = photoMode === "realPhoto" ? policy.flavor : optionPrompt(STICKER_STYLE_OPTIONS, stickerStyle);
+  const photoModePrompt = photoMode === "realPhoto" ? policy.summary : optionPrompt(PHOTO_MODE_OPTIONS, photoMode);
+  const rolePrompt = buildRolePrompt(role, photoMode, subMode);
+  const photoReminder = buildPhotoReminder(photoMode, subMode);
 
-  return `請設計一張 LINE ${label}角色表情草稿大圖，白色背景，${style}。
+  return `請設計一張 LINE ${label}${photoMode === "realPhoto" && subMode === "unchanged" ? "真人照片原貌排版" : "角色表情"}草稿大圖，白色背景，${style}。
 
 ${rolePrompt}
 
@@ -4373,15 +4393,15 @@ ${rolePrompt}
 
 真人／原創設定：${photoModePrompt}。${photoReminder}
 
-請畫成 ${gridInfo.layoutText}。每格是一個獨立角色動作；角色只佔單格中央約 70%～74%，上下左右至少保留約 13%～15% 純白安全留白，格與格之間要有明顯白色空間，方便後續平均切割。若角色太大，請整體縮小，不可貼邊或跨格。
+請畫成 ${gridInfo.layoutText}。每格是一張獨立貼圖；角色只佔單格中央約 70%～74%，上下左右至少保留約 13%～15% 純白安全留白，格與格之間要有明顯白色空間，方便後續平均切割。若角色太大，請整體縮小，不可貼邊或跨格。
 
-角色維持相同的辨識特徵；真人／寵物 Q 版須以相同參考照片為準，不可每格換主角。${photoMode === "realPhoto" ? "真人原貌模式只能貼上原始照片、調整版面及裝飾，不得自行創造表情、衣著與動作。" : "插畫模式每格可更換表情與動作，但要保持角色一致。"}
+角色維持相同的辨識特徵；真人／寵物照片模式須以相同參考照片為準，不可每格換主角。${photoMode === "realPhoto" ? policy.stable : "插畫模式每格可更換表情與動作，但要保持角色一致。"}
 
 不要加入任何文字，不要加入標題，不要浮水印，不要背景裝飾，不要合併格子，不要做成海報，不要做成上下兩張總表。
 
-每格動作可包含：揮手、點頭、開心、驚訝、害羞、加油、比愛心、抱抱、睡覺、哭哭、生氣、疑問、感謝、拿手機、吃東西、說再見、忙碌、等待、收到、拍手。
+${photoMode === "realPhoto" ? (subMode === "expressive" ? REAL_PHOTO_VARIETY : "每格沿用原始照片既有姿勢與表情，不以動作清單要求 AI 產生新姿勢。") : "每格動作可包含：揮手、點頭、開心、驚訝、害羞、加油、比愛心、抱抱、睡覺、哭哭、生氣、疑問、感謝、拿手機、吃東西、說再見、忙碌、等待、收到、拍手。"}
 
-畫風：${photoMode === "realPhoto" ? "真實原照片剪貼與裝飾，不要 Q 版化或重繪真人。" : "依前述指定畫風，人物與文字清晰，適合 LINE 貼圖。 "}
+畫風：${photoMode === "realPhoto" ? policy.visual : "依前述指定畫風，人物與文字清晰，適合 LINE 貼圖。"}
 
 小提醒：這是穩定無文字版，適合 Gemini、豆包等工具先產生角色草稿，再回到 RxV 工具切割、加字與打包。`;
 }
@@ -4564,6 +4584,7 @@ function buildFlowPrompt(
   fontStyle: FontStyle,
   stickerStyle: StickerStylePreset,
   photoMode: PhotoMode,
+  subMode: RealPhotoSubMode,
   batchNumber: number,
   mode: LineStickerMode,
   platform: "line" | "whatsapp",
@@ -4582,7 +4603,9 @@ function buildFlowPrompt(
     fontStyle,
     stickerStyle,
     photoMode,
+    subMode,
     platform,
+    startIndex,
   );
   const modeInstructions = mode === "animated"
     ? "本次選擇「動態貼圖」：母圖仍是一張靜止的原始圖，但每格角色四周多留移動空間；人物與文字保持視覺距離，避免後續製作位移動畫時被裁切。不要把多格合成動畫影格，也不要加入時間軸文字。"
@@ -4603,7 +4626,7 @@ ${identityLock}
 
 ${batchNumber > 1
   ? photoMode === "realPhoto"
-    ? "這是同一套真人原貌貼圖的後續母圖。請於同一個 ChatGPT 對話再次附上原始真人照片及第 1 張母圖供排版參考，使用相同原照片，不得改變真人容貌；只更換文字與裝飾。"
+    ? realPhotoPolicy(subMode).secondSheet
     : "這是同一套貼圖的後續母圖。請在同一個 ChatGPT 對話附上第 1 張已完成母圖，作為角色、服裝、配色、線條粗細與字體的視覺參考。不得複製第一張的動作或短句，僅延續畫風。沒有參考圖時仍使用上方完整角色設定，但只靠文字無法保證完全一致."
   : "這是整套角色與畫風的基準母圖；完成後請保存原圖，以便生成後續母圖。"}
 
@@ -4627,7 +4650,7 @@ ${rowAssignment}
 }
 
 /** Gemini 容易將 4×4 表格生為橫幅，提供可單獨複製的畫布／禁字強化版。 */
-function buildGeminiStrictMotherSheetPrompt(originalPrompt: string, grid: GridType) {
+function buildGeminiStrictMotherSheetPrompt(originalPrompt: string, grid: GridType, photoMode: PhotoMode, subMode: RealPhotoSubMode) {
   const layout = grid === "4x4"
     ? "1:1 正方形畫布，4 欄 × 4 列，共 16 個等寬等高正方形格子"
     : grid === "4x2"
@@ -4638,7 +4661,7 @@ function buildGeminiStrictMotherSheetPrompt(originalPrompt: string, grid: GridTy
 請使用「${layout}」，只輸出一張完整母圖。不可產生橫幅海報、長方形四列拼貼、橫向分鏡或改變畫布比例。
 畫面精確均分，每格完整圖文作為一組置於中央安全範圍；文字本身的上、下或左右位置完全依照下方已選定的文字位置規則，不能自行改版。四邊與每格之間保留純白安全間距；不加分隔線，不能跨格或裁到任何字、頭髮、手腳、裙擺與道具。
 只准出現下方逐格指定的繁體中文主句。所有道具（卡片、花籃、紅包、標語、招牌、旗幟）都不能有額外英文、中文、數字或圖形字樣；禁止 JUST MARRIED、THANK YOU、WEDDING DAY、WITNESS 等額外文字。
-人物從第一格到最後一格都必須保持與下方「主角設定」相同的角色（相同髮型、臉部特徵、服裝、膚色、Q 版頭身比），僅變換表情、手勢與動作；不可擅自改變職業、增加其他主角或改成婚禮新人。
+${photoMode === "realPhoto" ? realPhotoPolicy(subMode).stable : "人物從第一格到最後一格都必須保持與下方「主角設定」相同的角色（相同髮型、臉部特徵、服裝、膚色與已選的頭身比例），可依短句變換表情與動作；不可擅自改變職業、增加其他主角或改成婚禮新人。"}
 必須完整呈現指定格數；若畫布無法符合比例與格數，請重新生成符合版型的一張圖，勿交付錯誤比例。
 
 【以下是每格人物、風格及文字內容，請完整遵守】
@@ -4931,6 +4954,7 @@ export default function StickerPromptGenerator() {
   const [stickerStylePreset, setStickerStylePreset] =
     useState<StickerStylePreset>("friendly");
   const [photoMode, setPhotoMode] = useState<PhotoMode>("original");
+  const [realPhotoSubMode, setRealPhotoSubMode] = useState<RealPhotoSubMode>("unchanged");
   const [illustrationStyle, setIllustrationStyle] = useState<IllustrationStyle>("cute2d");
   const [role, setRole] = useState(templates.businessPersonal.role);
   const [identity, setIdentity] = useState<StickerIdentity>(() => defaultStickerIdentity(templates.businessPersonal.role, templates.businessPersonal.style));
@@ -4978,7 +5002,7 @@ export default function StickerPromptGenerator() {
   const [style, setStyle] = useState(templates.businessPersonal.style);
   const selectedStylePrompt = optionPrompt(ILLUSTRATION_STYLE_OPTIONS, illustrationStyle);
   const visualStyle = photoMode === "realPhoto"
-    ? "保留真實原貌的照片剪貼貼圖，原照片不可插畫化、不可改臉，僅白底去背、縮放、留白、裝飾與文字排版"
+    ? realPhotoPolicy(realPhotoSubMode).visual
     : `${style}；指定畫風：${selectedStylePrompt}`;
   const [texts, setTexts] = useState(
     getDefaultTextWithName("businessPersonal", "4x4", "none", "小宇"),
@@ -5161,7 +5185,7 @@ export default function StickerPromptGenerator() {
   }, [type, photoMode, role, identity, businessAvatar, businessSignature, characterTraits]);
   const identityLock = useMemo(() => {
     const photoIdentity = photoMode === "realPhoto"
-      ? "每格只使用使用者附上的相同真人原始照片（可多張），保持真實五官、表情與衣著，不生成新人物、不改臉、不重新繪畫。"
+      ? realPhotoPolicy(realPhotoSubMode).identity
       : photoMode === "petPhoto"
         ? "所有母圖以同一隻寵物的授權照片為參考，毛色、斑紋、眼睛、耳型與體型必須一致，不混入其他寵物。"
         : photoMode !== "original"
@@ -5171,7 +5195,7 @@ export default function StickerPromptGenerator() {
       return `【整套貼圖共用角色／畫風鎖定｜每張母圖完整重複】
 - 角色來源：${optionLabel(PHOTO_MODE_OPTIONS, photoMode)}
 - 人物／寵物一致性：${photoIdentity}
-- 畫風：${photoMode === "realPhoto" ? "真實照片原貌，不可風格轉換" : selectedStylePrompt}
+- 畫風：${photoMode === "realPhoto" ? realPhotoPolicy(realPhotoSubMode).visual : selectedStylePrompt}
 - 字型：${optionPrompt(FONT_STYLE_OPTIONS, fontStyle)}
 - 字體大小：${optionPrompt(TEXT_SIZE_OPTIONS, textSize)}
 - 字色與描邊：${optionPrompt(TEXT_COLOR_OPTIONS, textColor)}
@@ -5180,7 +5204,7 @@ export default function StickerPromptGenerator() {
     }
     return `${makeStickerIdentityLock(lockedIdentity, fontStyle, textSize, textColor, textPosition)}
 - 使用者選定畫風：${selectedStylePrompt}；整套母圖一致，不得隨意改變。`;
-  }, [lockedIdentity, fontStyle, textSize, textColor, textPosition, photoMode, selectedStylePrompt]);
+  }, [lockedIdentity, fontStyle, textSize, textColor, textPosition, photoMode, realPhotoSubMode, selectedStylePrompt]);
   const effectiveRole = useMemo(
     () => type === "businessPersonal" && photoMode === "original"
       ? `${role}\n\n${businessAvatarPrompt(businessAvatar, businessSignature)}`
@@ -5205,6 +5229,7 @@ export default function StickerPromptGenerator() {
             fontStyle,
             stickerStylePreset,
             photoMode,
+            realPhotoSubMode,
             index + 1,
             stickerMode,
             stickerPlatform,
@@ -5225,6 +5250,7 @@ export default function StickerPromptGenerator() {
       fontStyle,
       stickerStylePreset,
       photoMode,
+      realPhotoSubMode,
       stickerMode,
       stickerPlatform,
       identityLock,
@@ -5247,6 +5273,7 @@ export default function StickerPromptGenerator() {
         fontStyle,
         stickerStylePreset,
         photoMode,
+        realPhotoSubMode,
       ),
     [
       type,
@@ -5260,6 +5287,7 @@ export default function StickerPromptGenerator() {
       fontStyle,
       stickerStylePreset,
       photoMode,
+      realPhotoSubMode,
     ],
   );
   const stablePrompt = useMemo(
@@ -5271,8 +5299,9 @@ export default function StickerPromptGenerator() {
         grid,
         stickerStylePreset,
         photoMode,
+        realPhotoSubMode,
       ),
-    [type, effectiveRole, visualStyle, grid, stickerStylePreset, photoMode],
+    [type, effectiveRole, visualStyle, grid, stickerStylePreset, photoMode, realPhotoSubMode],
   );
 
   function handleTypeChange(nextType: TemplateKey) {
@@ -5337,7 +5366,7 @@ export default function StickerPromptGenerator() {
     const item = flowPrompts[index];
     if (!item) return;
     await navigator.clipboard.writeText(
-      provider === "gemini" ? buildGeminiStrictMotherSheetPrompt(item.prompt, item.grid) : item.prompt,
+      provider === "gemini" ? buildGeminiStrictMotherSheetPrompt(item.prompt, item.grid, photoMode, realPhotoSubMode) : item.prompt,
     );
     persistFlowProject(2);
     if (provider === "gemini") {
