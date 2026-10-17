@@ -943,6 +943,7 @@ export default function ImagePromptGenerator() {
   const [shareCopyError, setShareCopyError] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const resultTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const quickTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   const applyPreset = (key: PresetKey) => {
     const preset = PRESETS[key];
@@ -1048,8 +1049,11 @@ export default function ImagePromptGenerator() {
     } else {
       setCopied(false);
       setCopyStatus("manual");
-      resultTextareaRef.current?.focus();
-      resultTextareaRef.current?.select();
+      const visibleTextarea = [quickTextareaRef.current, resultTextareaRef.current].find(
+        (element) => element && element.getClientRects().length > 0,
+      );
+      visibleTextarea?.focus();
+      visibleTextarea?.select();
     }
   };
 
@@ -1121,7 +1125,7 @@ export default function ImagePromptGenerator() {
           </div>
         </section>
 
-        <section id="prompt-workspace" className="mt-6 grid gap-6 xl:grid-cols-2">
+        <section id="prompt-workspace" className="mt-6 grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.08fr)] lg:gap-5">
           <div className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-2xl font-bold text-slate-900">選擇設定</h2>
@@ -1135,7 +1139,7 @@ export default function ImagePromptGenerator() {
                 先選主題／職業
               </span>
               <p className="mb-3 rounded-2xl bg-orange-50 px-4 py-3 text-sm leading-6 text-orange-800">
-                這裡已整合 100 組中文生圖風格及原有主題。選擇後，右側立即顯示完整提示詞；也可繼續調整用途、比例及效果。
+                內含 100 組中文生圖風格與原有主題。選完即可看到提示詞；需要時再展開細部設定。
               </p>
               <select
                 value={presetKey}
@@ -1245,7 +1249,38 @@ export default function ImagePromptGenerator() {
               </p>
             </label>
 
-            <div className="mt-6 grid gap-5 sm:grid-cols-2">
+            {/* 在窄螢幕也能緊接著主題選單看到提示詞，不必滑完整個設定區。 */}
+            <div className="mt-4 rounded-2xl border border-violet-200 bg-violet-50/70 p-3 sm:p-4 lg:hidden">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="text-base font-extrabold text-slate-900">即時提示詞｜{PRESETS[presetKey].label}</h3>
+                <span className="text-xs font-semibold text-violet-700">自動更新</span>
+              </div>
+              <textarea
+                ref={quickTextareaRef}
+                aria-label="主題下方的完整生圖提示詞"
+                readOnly
+                value={resultPrompt}
+                rows={6}
+                onFocus={(e) => e.currentTarget.select()}
+                className="mt-3 min-h-[150px] w-full resize-y rounded-xl border border-violet-200 bg-white p-3 text-sm leading-6 text-slate-800"
+              />
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={handleCopy}
+                  className="min-h-[48px] rounded-xl bg-violet-700 px-4 py-3 text-sm font-bold !text-white hover:bg-violet-800"
+                >
+                  {copied ? "已複製提示詞" : "一鍵複製提示詞"}
+                </button>
+                <a href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[48px] items-center justify-center rounded-xl border border-violet-200 bg-white px-4 py-3 text-sm font-bold text-violet-700 hover:bg-violet-100">
+                  開啟 ChatGPT 生圖 ↗
+                </a>
+              </div>
+              {copyStatus === "success" && <p role="status" className="mt-2 text-sm font-semibold text-emerald-700">複製成功！請貼到 ChatGPT。</p>}
+              {copyStatus === "manual" && <p role="alert" className="mt-2 text-sm font-semibold text-amber-800">自動複製未成功，已選取提示詞；請手動複製。</p>}
+            </div>
+
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <label className="block">
                 <span className="mb-2 block text-sm font-bold text-slate-800">
                   用途
@@ -1294,7 +1329,7 @@ export default function ImagePromptGenerator() {
               />
             </label>
 
-            <div className="mt-5 flex flex-wrap gap-2 xl:hidden">
+            <div className="mt-4 flex flex-wrap gap-2 lg:hidden">
               <a
                 href="#prompt-result"
                 className="inline-flex min-h-[44px] flex-1 items-center justify-center rounded-xl bg-violet-600 px-4 py-2.5 text-center text-sm font-bold !text-white hover:bg-violet-700"
@@ -1311,9 +1346,9 @@ export default function ImagePromptGenerator() {
                 {advancedOpen ? "收起進階設定" : "展開進階設定"}
               </button>
             </div>
-            <p className="mt-2 text-xs text-slate-600 xl:hidden">不需調整也可以直接複製；100 組主題已各自帶入適合的設定。</p>
+            <p className="mt-2 text-xs text-slate-600 lg:hidden">不需調整也可以直接複製；100 組主題已各自帶入適合的設定。</p>
 
-            <div id="prompt-advanced-settings" className={`${advancedOpen ? "block" : "hidden"} xl:block`}>
+            <div id="prompt-advanced-settings" className={`${advancedOpen ? "block" : "hidden"} lg:block`}>
               <div className="mt-5 grid gap-5 lg:grid-cols-1 2xl:grid-cols-3">
               <label className="block">
                 <span className="mb-2 block text-sm font-bold text-slate-800">
@@ -1403,7 +1438,7 @@ export default function ImagePromptGenerator() {
             </div>
           </div>
 
-          <div id="prompt-result" className="scroll-mt-20 rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200 sm:p-6">
+          <div id="prompt-result" className="scroll-mt-20 rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200 sm:p-5 lg:sticky lg:top-4 lg:self-start">
             <div className="flex flex-col gap-3">
               <div>
                 <h2 className="text-2xl font-bold text-slate-900">產生結果</h2>
@@ -1457,11 +1492,13 @@ export default function ImagePromptGenerator() {
                 value={resultPrompt}
                 rows={12}
                 onFocus={(e) => e.currentTarget.select()}
-                className="min-h-[320px] w-full resize-y rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm leading-7 text-slate-900 outline-none sm:min-h-[460px] sm:px-5 sm:py-5 sm:text-base sm:leading-8 xl:min-h-[580px]"
+                className="min-h-[240px] w-full resize-y rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm leading-7 text-slate-900 outline-none sm:px-4 sm:py-4 sm:text-base sm:leading-7 lg:h-[280px] lg:min-h-[240px]"
               />
             </div>
 
-            <div className="mt-6 grid gap-4">
+            <details className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
+              <summary className="cursor-pointer text-sm font-bold text-slate-700">更多說明與範例（選擇展開）</summary>
+              <div className="mt-4 grid gap-4">
               <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
                 <h3 className="text-sm font-bold text-emerald-800">
                   這頁適合誰？
@@ -1515,7 +1552,8 @@ export default function ImagePromptGenerator() {
                   </div>
                 ))}
               </div>
-            </div>
+              </div>
+            </details>
           </div>
         </section>
 
