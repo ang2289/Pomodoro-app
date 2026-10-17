@@ -42,3 +42,15 @@ test("原有原創／Q 版、張數、LINE／WhatsApp 功能仍在", () => {
   assert.match(source, /ILLUSTRATION_STYLE_OPTIONS\.map/);
   assert.match(source, /buildFlowPrompt\(/);
 });
+test("第一次使用者優先進入設定，完整母圖捷徑為摺疊進階選項", () => {
+  assert.match(source, /第一次製作貼圖？從這裡繼續/);
+  assert.match(source, /href="#sticker-theme"/);
+  assert.match(source, /id="sticker-theme"/);
+  assert.match(source, /只有寶寶、真人或寵物的單張照片/);
+  assert.match(source, /不是只有一張寶寶或真人照片/);
+  assert.match(source, /<details className="group rounded-xl/);
+  assert.match(source, /已製作完成整張貼圖母圖/);
+  assert.match(source, /to="\/tools\/line-sticker\?flow=1#mother-upload"/);
+  assert.match(source, /onClick=\{\(\) => persistFlowProject\(3\)\}/);
+  assert.match(source, /動態貼圖仍需於第 5 步製作動畫/);
+});
