@@ -2,7 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
+// Normalize CRLF on Windows to LF before exact multiline source checks.
+// Runtime ZIP generation remains unchanged; only the test reader is adjusted.
+const read = (path) =>
+  readFileSync(new URL(`../${path}`, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 
 test("角色區分可選性別年齡性格與固定的獨特造型", () => {
   const source = read("src/pages/tools/StickerPromptGenerator.tsx");
