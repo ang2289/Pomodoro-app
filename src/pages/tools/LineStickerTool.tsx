@@ -34,6 +34,7 @@ import JSZip from "jszip";
 import { WhatsAppMobileZipHandoff, type WhatsAppZipArchive } from "@/components/WhatsAppMobileZipHandoff";
 import { createWhatsAppTrayPng, createWhatsAppWebpSticker, partitionWhatsAppPacks } from "@/lib/whatsAppStickerExport";
 import { stickerSaleTextRisks } from "@/lib/stickerCommercialSafety";
+import { buildMotherSheetWhitespaceRetryPrompt } from "@/lib/stickerMotherSheetWhitespace";
 import { saveAs } from "file-saver";
 import { removeStickerWhiteBackground, type StickerWhiteRemovalMode } from "@/lib/stickerWhiteBackground";
 
@@ -2896,6 +2897,28 @@ export default function LineStickerTool() {
                     <div role="alert" className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-bold leading-6 text-rose-800">
                       <p className="font-black">無法保證安全切割：請修正以下母圖或格數，暫不允許硬切。</p>
                       {unsafeMotherSheets.slice(0, 6).map((reason, index) => <p key={index}>{reason}</p>)}
+                      <p className="mt-3 font-semibold">若分隔線的白色太少，請依原照片與現有母圖重新排版。下列按鈕會複製「整張母圖重新生成、每格四周 15% 純白留白」的修正指令；請到原本 AI 對話貼上，並附上要修改的母圖。只在整張圖片外加白框無法修復格子之間的碰撞。</p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {motherSheetDetections.map((item, index) => (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={async () => {
+                              try {
+                                await navigator.clipboard.writeText(
+                                  buildMotherSheetWhitespaceRetryPrompt(item.grid, selectedStickerMode),
+                                );
+                                setActionHint(`已複製第 ${index + 1} 張（${item.grid.replace("x", "×")}）留白修正指令。下一步：回原 AI 對話附上這張母圖、貼上指令後重新生成；照片模式請一併附原始照片。`);
+                              } catch {
+                                setActionHint("無法複製指令，請允許瀏覽器使用剪貼簿，或到第 2 步查看完整提示詞。");
+                              }
+                            }}
+                            className="inline-flex min-h-11 items-center justify-center rounded-xl border border-rose-300 bg-white px-3 py-2 text-xs font-black text-rose-900 hover:bg-rose-100"
+                          >
+                            複製母圖 ${index + 1}（${item.grid.replace("x", "×")}）留白重繪指令
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   ) : null}
                   <div id="mother-split" className="scroll-mt-24 mt-4 grid gap-3 xl:grid-cols-2">
