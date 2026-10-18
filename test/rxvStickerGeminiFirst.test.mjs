@@ -39,7 +39,7 @@ test("每段新手流程明確同時提供 ChatGPT 與 Google Gemini，且保留
   assert.match(prompt, /① 複製第/);
   assert.match(prompt, /已從 ChatGPT 或 Gemini 下載完整大圖/);
   assert.match(prompt, /flow=1#mother-upload/);
-  assert.match(progress, /ChatGPT（推薦）/);
+  assert.match(progress, /AI 畫母圖/);
   assert.match(starter, /用 ChatGPT／Gemini 畫圖/);
   assert.match(starter, /下一步請按/);
 });
@@ -111,7 +111,7 @@ test("Gemini 4×4 橫幅與多餘英文需要專用指令，切圖前應阻擋�
   assert.match(upload, /requiresSquare4x4/);
   assert.match(upload, /aspect < 0\.82 \|\| aspect > 1\.22/);
   assert.match(upload, /unsafeMotherSheets\.length > 0/);
-  assert.match(steps, /ChatGPT（推薦）/);
+  assert.match(steps, /AI 畫母圖/);
   assert.match(prompt, /const rowAssignment = Array.from/);
   assert.match(prompt, /最終版型僅此一種/);
   assert.match(prompt, /每格短句位置必須依下表/);
@@ -194,7 +194,7 @@ test("第一次進貼圖工具從第 1 步開始，只有明確選擇已有圖�
   assert.doesNotMatch(prompt, /xl:grid-cols-\[0\.82fr_1\.18fr\]/);
   assert.match(prompt, /前往第 2 步｜複製畫圖指令 ↓/);
   assert.match(prompt, /to="\/tools\/line-sticker\?flow=1#mother-upload"/);
-  assert.match(progress, /grid grid-cols-3 overflow-hidden rounded-xl/);
+  assert.match(progress, /grid grid-cols-5 gap-1\\.5/);
   assert.match(guide, /mt-4 flex flex-col gap-2/);
   assert.doesNotMatch(guide, /lg:grid-cols-5/);
   assert.doesNotMatch(upload, /className="fixed bottom-2 left-1\/2/);
@@ -224,7 +224,7 @@ test("新手頁面保持窄版與極簡進度列，不再用滿版彩色卡片�
   assert.doesNotMatch(prompt, /max-w-\[1480px\]/);
   assert.match(prompt, /min-h-screen bg-\[#F8F7F3\]/);
   assert.match(steps, /<nav/);
-  assert.match(steps, /grid grid-cols-3 overflow-hidden rounded-xl/);
+  assert.match(steps, /grid grid-cols-5 gap-1\\.5/);
   assert.doesNotMatch(steps, /先知道一件事：不是一張張畫貼圖/);
   assert.match(prompt, /min-h-12 w-full min-w-0 items-center justify-center/);
   assert.match(prompt, /rows=\{Math\.min\(requiredCount \+ 1, 12\)\}/);
@@ -439,7 +439,8 @@ test("主圖須在最後打包前選定，預覽、主圖、下載操作不被 F
 
   assert.ok(previewStart >= 0);
   assert.ok(previewStart < mainPicker && mainPicker < download && download < footer, "必須先選主圖再執行最後一步 ZIP 打包");
-  assert.ok(footer < ad && ad < faq, "下載流程應早於推薦工具與 FAQ");
+  assert.equal(ad, -1, "LINE 貼圖頁暫停分潤廣告，不能插在下載與 FAQ 中間");
+  assert.ok(footer < faq, "下載流程應早於 FAQ");
   assert.equal(page.split('id="sticker-download"').length - 1, 1, "第五步錨點不可重複");
   assert.equal(page.split('aria-label="第 5 步：貼圖下載或動態製作"').length - 1, 1);
   assert.match(page, /value=\{Math\.min\(mainImageIndex,/);
