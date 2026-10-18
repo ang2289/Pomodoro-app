@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 export const FREE_STICKER_EXCEL_PATH = "/downloads/RXV_LINE_Sticker_Prompts_Free_100.xlsx";
 export const STICKER_SALES_EMAIL = "rxv0227@gmail.com";
@@ -80,6 +81,10 @@ export default function StickerExcelOffers({ compact = false }: { compact?: bool
             貼圖創作者與接案者。
           </p>
           <div className="mt-auto space-y-2 pt-4">
+            <Link to="/tools/sticker-excel-preview"
+              className="inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-violet-300 bg-white px-4 py-3 text-center text-sm font-black text-violet-800 hover:bg-violet-100">
+              先操作試看｜選職業與情境 →
+            </Link>
             <a href={STICKER_SALES_FACEBOOK} target="_blank" rel="noopener noreferrer"
               className="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-blue-700 px-4 py-3 text-center text-sm font-black !text-white hover:bg-blue-800">
               Messenger 私訊訂購｜NT$160
