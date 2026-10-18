@@ -82,7 +82,7 @@ test("paid Excel preview route provides functioning controlled selectors, layout
   assert.match(preview, /本頁僅使用 6 種職業、4 種情境/);
   assert.match(preview, /STICKER_SALES_FACEBOOK/);
   assert.match(preview, /STICKER_SALES_MAILTO/);
-  assert.doesNotMatch(preview, /\\/downloads\\/[^"']*\\.zip/);
+  assert.ok(!preview.includes('href="/downloads/'));
   assert.doesNotMatch(preview, /1330-records|allProfessions|secretPremiumData/);
   assert.match(preview, /不是免費開放全部 1,330 組資料/);
 });
