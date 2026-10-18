@@ -6063,7 +6063,7 @@ export default function StickerPromptGenerator() {
                 {flowPrompts.map((item, index) => (
                   <div key={`${item.grid}-${index}`} className="rounded-xl border border-slate-200 bg-white p-4">
                     {index > 0 && (
-                      <section className="mb-5 rounded-xl border border-violet-200 bg-violet-50 p-4" aria-label="第 3 步：鎖定角色參考圖">
+                      <section className="mb-5 rounded-xl border border-violet-200 bg-violet-50 p-4" aria-label="第 2 張母圖角色參考圖">
                         <h3 className="text-base font-bold text-slate-900">製作第 2 張前｜準備角色參考照片</h3>
                         <p className="mt-2 text-sm leading-6 text-slate-700">
                           先用 ChatGPT 畫好第 1 張，再選下方圖片；第 2 張請沿用同一個 ChatGPT 對話，
@@ -6156,7 +6156,7 @@ export default function StickerPromptGenerator() {
                           </div>
                         ) : (
                           <p role="status" className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm font-semibold leading-7 text-emerald-900">
-                            ✓ 第 {index + 1} 張指令已複製！請切回第 1 張的原 ChatGPT 對話，附上第 1 張母圖及需要的原始照片，貼上指令並送出；**不要另開新對話**。
+                            ✓ 第 {index + 1} 張指令已複製！請切回第 1 張的原 ChatGPT 對話，附上第 1 張母圖及需要的原始照片，貼上指令並送出；<strong>請不要另開新對話</strong>。
                           </p>
                         )
                       ) : (
@@ -6182,14 +6182,7 @@ export default function StickerPromptGenerator() {
               <details className="mt-5 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
                 <summary className="cursor-pointer text-sm font-bold text-slate-700">查看這次貼圖設定與安全留白說明（可展開）</summary>
                 <div className="mt-3 space-y-3">
-                  <div className="mt-4 border-t border-slate-200 pt-4">
-                    <p className="text-sm font-semibold text-slate-900">複製下方指令，再開啟 AI 工具貼上</p>
-                    <p className="mt-1 text-xs leading-5 text-slate-600">推薦 ChatGPT；Gemini 可以試驗但可能不遵守格數。本站不會自動把文字貼進 AI。</p>
-                    <p className="mt-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold leading-6 text-emerald-950">
-                      已加入母圖安全白邊強化：每格四周各留 15% 純白禁止繪製區，圖文縮在中央 70% 安全內框。若舊母圖貼邊，請重新生成，勿直接硬切；AI 仍可能不遵守，請在第 3 步檢查結果。
-                    </p>
-                    <StickerAIProviderLinks />
-                  </div>
+
                   <div className="mt-4 border-t border-slate-200 pt-4">
                     {photoMode !== "original" && (
                       <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950" role="note">
