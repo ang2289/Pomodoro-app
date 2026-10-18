@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import SEO from "@/components/SEO";
-import CoupangDynamicAd from "@/components/CoupangDynamicAd";
+
 import LineStickerAuthorCard from "@/components/LineStickerAuthorCard";
 import LineStickerFlowSteps from "@/components/LineStickerFlowSteps";
 import { StickerCustomInquiry, StickerNextActionHint } from "@/components/StickerBeginnerActions";
@@ -5450,6 +5450,9 @@ export default function StickerPromptGenerator() {
               先選喜歡的主題、文字與畫風，再用 ChatGPT 畫出完整母圖。
               回 RXV 上傳後，自動切割整理，不用一張一張裁圖。
             </p>
+            <Link to="/tools/line-sticker-start" className="mt-3 inline-flex min-h-11 items-center rounded-xl border border-violet-200 bg-white px-4 py-2 text-sm font-black text-violet-800 hover:bg-violet-50">
+              第一次使用？先看寶寶、花店成果與五步驟圖片教學 →
+            </Link>
             <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs font-medium text-slate-600">
               <span>✓ 繁體中文</span><span>✓ LINE／WhatsApp</span><span>✓ 靜態／動態</span>
             </div>
@@ -6233,14 +6236,7 @@ export default function StickerPromptGenerator() {
                 第 3 步｜已下載整張大圖，回 RXV 上傳 →
               </Link>
 
-              <CoupangDynamicAd
-                subId="rxv_sticker_prompt_after_prompt"
-                desktopWidth={1100}
-                desktopHeight={190}
-                mobileWidth={320}
-                mobileHeight={150}
-                className="mt-5 rounded-2xl border border-violet-100 bg-white px-2 py-3 sm:px-5"
-              />
+
 
               <details className="mt-4 rounded-2xl border border-slate-200 bg-slate-50">
                 <summary className="cursor-pointer px-4 py-3 text-sm font-black text-slate-700">
