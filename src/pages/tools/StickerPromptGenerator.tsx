@@ -6041,7 +6041,8 @@ export default function StickerPromptGenerator() {
                     第 2 步｜複製指令，用 ChatGPT 或 Gemini 畫圖
                   </h2>
                   <p className="mt-2 text-sm leading-6 text-slate-600">
-                    這裡不會自動把指令帶進 ChatGPT。請先按「複製第 1 張指令」，成功後再開啟 AI 貼上（電腦 Ctrl+V／手機長按貼上）；完成第 1 張並下載後，回同一個 AI 對話畫第 2 張。
+                    這裡不會自動把指令帶進 ChatGPT。請先按「複製第 1 張指令」，成功後再開啟 AI 貼上（電腦 Ctrl+V／手機長按貼上）；
+                    {motherSheetPlan.length > 1 ? "完成第 1 張並下載後，回同一個 AI 對話畫第 2 張。" : "完成後下載整張母圖，再前往第 3 步上傳。"}
                   </p>
                 </div>
               </div>
@@ -6055,7 +6056,7 @@ export default function StickerPromptGenerator() {
               </p>
               {photoMode !== "original" && (
                 <p className="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-6 text-amber-950">
-                  真人／寵物照片須自行附在 AI 對話：第 1 張附原始照片；第 2 張附原始照片＋第 1 張母圖。本站只複製文字，不會傳送照片。
+                  真人／寵物照片須自行附在 AI 對話：第 1 張附原始照片；{motherSheetPlan.length > 1 ? "第 2 張附原始照片＋第 1 張母圖。" : "只有一張母圖時無須再製作第 2 張。"}本站只複製文字，不會傳送照片。
                 </p>
               )}
               {flowCopyError && <p role="alert" className="mt-3 rounded-xl border border-rose-300 bg-rose-50 p-3 text-sm font-bold text-rose-900">{flowCopyError}</p>}
@@ -6121,7 +6122,7 @@ export default function StickerPromptGenerator() {
                             <a href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-emerald-700 px-4 py-3 text-center text-sm font-black !text-white hover:bg-emerald-800 sm:w-auto">
                               ② 開啟 ChatGPT 畫第 1 張 ↗
                             </a>
-                            <p className="mt-2 text-xs leading-6 text-emerald-950">③ AI 完成後下載完整母圖，再回此頁製作第 2 張。真人／寵物模式需另外上傳原始照片。</p>
+                            <p className="mt-2 text-xs leading-6 text-emerald-950">③ AI 完成後下載完整母圖，再回此頁{motherSheetPlan.length > 1 ? "製作第 2 張" : "前往第 3 步上傳"}。真人／寵物模式需另外上傳原始照片。</p>
                           </div>
                         ) : (
                           <p role="status" className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm font-semibold leading-7 text-emerald-900">
