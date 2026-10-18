@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - codex/sticker-5-character-modes-12-styles-20261017
+      - feature/rxv-sticker-excel-orders-20261018
   pull_request:
     branches:
       - main
@@ -26,6 +27,6 @@ jobs:
       - name: A/B real photo policy and prompt regression
         run: npx tsx --test test/realPhotoStickerPrompt.test.ts test/realPhotoStickerComposition.test.ts test/stickerMotherSheetWhitespace.test.ts && node --test test/realPhotoStickerWiring.test.mjs
       - name: Existing sticker prompt regressions
-        run: node --test test/rxvStickerOnboarding.test.mjs test/rxvStickerGeminiFirst.test.mjs test/rxvStickerFinalWorkflow.test.mjs test/stickerStarterLanding.test.mjs
+        run: node --test test/rxvStickerOnboarding.test.mjs test/rxvStickerGeminiFirst.test.mjs test/rxvStickerFinalWorkflow.test.mjs test/stickerStarterLanding.test.mjs test/stickerExcelOffers.test.mjs
       - name: TypeScript and full Vite build
         run: npm run build
