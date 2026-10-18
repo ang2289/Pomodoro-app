@@ -721,6 +721,7 @@ function App() {
             <Route path="tools/animated-sticker-prompt" element={<Navigate to="/tools/sticker-prompt?mode=animated" replace />} />
             <Route path="tools/animated-line-sticker" element={<AdminOnlyAnimatedLineStickerRoute />} />
             <Route path="tools/image-prompt" element={<ImagePromptGenerator />} />
+            <Route path="tools/prompt-codes" element={<ImagePromptGenerator />} />
             <Route path="tools/pet-prompt" element={<PetPromptPage />} />
             <Route path="tools/sticker-splitter" element={<StickerImageSplitter />} />
             <Route path="tools/scam-check" element={<ScamCheckPage />} />
