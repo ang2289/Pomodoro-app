@@ -44,7 +44,7 @@ export default function StickerExcelOffers({ compact = false }: { compact?: bool
   }
 
   return (
-    <section id={compact ? undefined : "rxv-sticker-excel-download"} aria-label="LINE 貼圖 Excel 免費下載與進階訂購"
+    <section id="rxv-sticker-excel-download" aria-label="LINE 貼圖 Excel 免費下載與進階訂購"
       className={compact ? "mt-7 scroll-mt-24 rounded-3xl border border-violet-100 bg-white p-4 sm:p-5" : "scroll-mt-24 rounded-3xl border border-violet-100 bg-white p-5 sm:p-7"}>
       <div className="mb-4">
         <p className="text-xs font-bold text-violet-700">RXV LINE 貼圖 AI 提示詞模板</p>
