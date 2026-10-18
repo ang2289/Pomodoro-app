@@ -36,7 +36,7 @@ test("每段新手流程明確同時提供 ChatGPT 與 Google Gemini，且保留
   assert.match(prompt, /preparedFlowPrompt\[\`chatgpt-\$\{index\}\`\] === item\.prompt/);
   assert.match(prompt, /preparedFlowPrompt\[\`gemini-\$\{index\}\`\] === item\.prompt/);
   assert.match(guide, /<StickerAIProviderLinks \/>/);
-  assert.match(prompt, /請複製第/);
+  assert.match(prompt, /① 複製第/);
   assert.match(prompt, /已從 ChatGPT 或 Gemini 下載完整大圖/);
   assert.match(prompt, /flow=1#mother-upload/);
   assert.match(progress, /ChatGPT（推薦）/);
@@ -104,7 +104,8 @@ test("Gemini 4×4 橫幅與多餘英文需要專用指令，切圖前應阻擋�
   assert.match(prompt, /function buildGeminiStrictMotherSheetPrompt/);
   assert.match(prompt, /1:1 正方形畫布/);
   assert.match(prompt, /JUST MARRIED/);
-  assert.match(prompt, /複製 Gemini 排版強化版/);
+  assert.match(prompt, /改用 Google Gemini（進階／實驗性）/);
+  assert.match(prompt, /複製第 \$\{index \+ 1\} 張 Gemini 指令/);
   assert.match(prompt, /copyFlowPrompt\(index, "chatgpt"\)/);
   assert.match(prompt, /copyFlowPrompt\(index, "gemini"\)/);
   assert.match(upload, /requiresSquare4x4/);
