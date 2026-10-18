@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import SEO from "@/components/SEO";
 import LineStickerFlowSteps from "@/components/LineStickerFlowSteps";
+import StickerExcelOffers from "@/components/StickerExcelOffers";
 
 /**
  * 新手導流頁：先看真實製作範例，再進入現有五步驟工具。
@@ -201,6 +202,8 @@ export default function LineStickerStarterPage() {
               ))}
             </div>
           </section>
+
+          <StickerExcelOffers />
 
           <section id="examples" className="scroll-mt-24 space-y-4" aria-label="九組貼圖示範作品">
             <div className="px-1">
