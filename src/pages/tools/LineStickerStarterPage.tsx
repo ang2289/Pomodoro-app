@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import SEO from "@/components/SEO";
 import LineStickerFlowSteps from "@/components/LineStickerFlowSteps";
@@ -142,6 +142,94 @@ function StickerImage({src, alt, shape = "square"}: {src: string; alt: string; s
   );
 }
 
+/**
+ * Native browser media playback, with an explicit action for visitors whose
+ * browser has not yet loaded media metadata. MP4 files are static public assets.
+ * Switching examples remounts this component, so a prior error does not leak.
+ */
+function StickerDemoVideo({ item }: { item: DemoCase }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [duration, setDuration] = useState<number | null>(null);
+  const [error, setError] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  if (!item.video) return null;
+
+  const playVideo = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (video.error) video.load();
+    setError(false);
+    void video.play().then(() => {
+      setIsPlaying(true);
+    }).catch(() => {
+      setError(true);
+    });
+  };
+
+  const retryVideo = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    setError(false);
+    setDuration(null);
+    video.load();
+    void video.play().then(() => {
+      setIsPlaying(true);
+    }).catch(() => setError(true));
+  };
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-rose-100 bg-[#fff9fc] p-3">
+      <p className="mb-2 text-xs font-bold text-slate-900">動態貼圖製作成果（影片示範）</p>
+      <video
+        ref={videoRef}
+        controls
+        playsInline
+        preload="metadata"
+        poster={item.videoPoster}
+        className="mx-auto max-h-[330px] w-full rounded-xl bg-white object-contain"
+        aria-label={item.name + "動態影片展示"}
+        onLoadedMetadata={(event) => {
+          const seconds = event.currentTarget.duration;
+          if (Number.isFinite(seconds) && seconds > 0) {
+            setDuration(Math.round(seconds));
+            setError(false);
+          }
+        }}
+        onPlaying={() => { setIsPlaying(true); setError(false); }}
+        onPause={() => setIsPlaying(false)}
+        onError={() => { setError(true); setIsPlaying(false); }}
+      >
+        <source src={item.video} type="video/mp4" />
+        您的瀏覽器無法播放此影片。
+      </video>
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <button type="button" onClick={playVideo}
+          className="inline-flex min-h-11 items-center justify-center rounded-xl bg-violet-700 px-4 py-2 text-sm font-bold text-white hover:bg-violet-800">
+          {isPlaying ? "重新播放影片" : "▶ 播放示範影片"}
+        </button>
+        <a href={item.video} target="_blank" rel="noopener noreferrer"
+          className="inline-flex min-h-11 items-center justify-center rounded-xl border border-violet-200 bg-white px-4 py-2 text-sm font-semibold text-violet-800 hover:bg-violet-50">
+          另開影片檔案 ↗
+        </a>
+        {duration !== null && (
+          <span className="text-xs font-semibold text-slate-600">影片長度：約 {duration} 秒</span>
+        )}
+      </div>
+      {error && (
+        <div role="alert" className="mt-2 rounded-lg border border-orange-200 bg-orange-50 p-3 text-xs leading-6 text-orange-900">
+          影片載入或播放失敗。請按「重新載入影片」重試；
+          若仍無法播放，可點「另開影片檔案」檢查瀏覽器是否能直接讀取 MP4。
+          <button type="button" onClick={retryVideo}
+            className="ml-2 inline-flex min-h-10 items-center rounded-lg border border-orange-300 bg-white px-3 font-bold text-orange-900">
+            重新載入影片
+          </button>
+        </div>
+      )}
+      <p className="mt-2 text-[11px] leading-5 text-slate-500">影片只示範動畫效果，不代表已通過 LINE 審核。</p>
+    </div>
+  );
+}
+
 export default function LineStickerStarterPage() {
   const [selectedId, setSelectedId] = useState("baby");
   const selected = cases.find((item) => item.id === selectedId) ?? cases[0];
@@ -247,12 +335,7 @@ export default function LineStickerStarterPage() {
                     <figcaption className="mt-2 text-center text-xs font-semibold text-slate-700">母圖 2｜4×2，共 8 格</figcaption>
                   </figure>
                   {selected.video ? (
-                    <div className="overflow-hidden rounded-2xl border border-rose-100 bg-[#fff9fc] p-3">
-                      <p className="mb-2 text-xs font-bold text-slate-900">動態貼圖製作成果（影片示範）</p>
-                      <video controls playsInline preload="none" poster={selected.videoPoster} src={selected.video}
-                        className="mx-auto max-h-[330px] w-full rounded-xl bg-white object-contain" aria-label={selected.name + "動態影片展示"} />
-                      <p className="mt-2 text-[11px] leading-5 text-slate-500">影片只示範動畫效果，不代表已通過 LINE 審核。</p>
-                    </div>
+                    <StickerDemoVideo key={selected.id} item={selected} />
                   ) : (
                     <p className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm leading-6 text-slate-600">本組只有靜態母圖，尚未提供動態影片；仍可於第 5 步製作動畫。</p>
                   )}
