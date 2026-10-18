@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import SEO, { getBaseUrl } from "@/components/SEO";
 import LineStickerAuthorCard from "@/components/LineStickerAuthorCard";
 import LineStickerFlowSteps from "@/components/LineStickerFlowSteps";
+import StickerExcelOffers from "@/components/StickerExcelOffers";
 import { StickerCustomInquiry, StickerNextActionHint } from "@/components/StickerBeginnerActions";
 import {
   analyzeMotherSheetSafety,
@@ -2434,6 +2435,7 @@ export default function LineStickerTool() {
                 </Link>
               </div>
             </section>
+            <StickerExcelOffers compact />
             <div className="mt-6"><StickerCustomInquiry compact /></div>
           </div>
         </main>
@@ -3736,6 +3738,7 @@ export default function LineStickerTool() {
             </div>
           </section>
 
+          <StickerExcelOffers compact />
           <section className="mt-10 border-t border-slate-200 pt-10">
             <h2 className="text-sm font-black text-slate-900 mb-6 uppercase tracking-widest">
               {t("line_sticker_faq_title")}
