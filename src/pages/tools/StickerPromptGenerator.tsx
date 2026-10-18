@@ -6259,38 +6259,6 @@ export default function StickerPromptGenerator() {
                 </div>
               </details>
 
-              <div className="hidden mt-5 rounded-3xl border border-orange-200 bg-orange-50 p-5">
-                <h3 className="text-lg font-black text-slate-900">
-                  想要更多主題與店家職業版？
-                </h3>
-                <p className="mt-2 text-sm leading-7 text-slate-700">
-                  網站工具適合先線上試用；進階版 Excel
-                  模板包已同步網站欄位，包含 146 個職業／店家、1460
-                  組職業情境、日常 100 組、4×4／5×4
-                  排版、名稱套入、文字大小、文字顏色、文字位置、貼圖風格、真人 Q
-                  版方向與自訂補充欄位，適合大量製作、接案與商業貼圖提案。若想指定人物風格、放入自己的名字或店名，也可洽詢客製貼圖服務。
-                </p>
-                <a
-                  href={KOFI_SHOP_URL}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-3 inline-flex w-auto max-w-full items-center justify-center rounded-2xl bg-orange-500 px-5 py-3 text-sm font-black !text-white shadow-md hover:bg-orange-600 hover:!text-white"
-                  style={{ color: "#ffffff" }}
-                >
-                  購買進階版 Excel 模板包
-                </a>
-                <button
-                  type="button"
-                  onClick={() =>
-                    navigator.clipboard.writeText("rxv0227@gmail.com")
-                  }
-                  className="mt-3 inline-flex w-auto max-w-full items-center justify-center rounded-2xl bg-slate-900 px-5 py-3 text-sm font-black !text-white shadow-md hover:bg-slate-800 hover:!text-white"
-                  style={{ color: "#ffffff" }}
-                >
-                  複製客製服務 Email
-                </button>
-              </div>
-
               <div className="mt-5 flex flex-wrap items-center gap-3">
                 <Link
                   to="/tools/sticker-splitter"
@@ -6327,15 +6295,7 @@ export default function StickerPromptGenerator() {
                   下面提供可直接套用的職業與店家貼圖範例。選一個範例，系統會自動填入角色及常見回覆文字，不用從零開始設定。
                 </p>
               </div>
-              <a
-                href={KOFI_SHOP_URL}
-                target="_blank"
-                rel="noreferrer"
-                className="hidden min-h-[44px] items-center justify-center rounded-2xl bg-orange-500 px-4 py-3 text-sm font-black !text-white shadow-md transition hover:-translate-y-0.5 hover:bg-orange-600 hover:shadow-lg"
-                style={{ color: "#ffffff" }}
-              >
-                購買進階版模板
-              </a>
+
             </div>
 
             <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
