@@ -12,8 +12,11 @@ test("新手可以直接跳到第 3 步上傳母圖，不需做提示詞", () =>
   const homepage = read("src/components/NewUserStickerGuide.tsx");
   assert.match(starter, /已經有貼圖大圖？不用再產生提示詞/);
   assert.match(starter, /\/tools\/line-sticker\?existing=1#mother-upload/);
-  assert.match(prompt, /href="#sticker-count"/);
-  assert.match(prompt, /先選靜態／動態與張數，再直接進入上傳/);
+  // 保留第 3 步上傳捷徑，但不能搶走第一次製作的主要操作入口。
+  assert.match(prompt, /href="#sticker-theme"/);
+  assert.match(prompt, /第一次製作貼圖？從這裡繼續/);
+  assert.match(prompt, /我已製作完成整張貼圖母圖｜直接上傳（進階）/);
+  assert.match(prompt, /to="\/tools\/line-sticker\?flow=1#mother-upload"/);
   assert.match(homepage, /<StickerExistingMotherSheetShortcut compact \/>/);
 });
 
@@ -27,13 +30,16 @@ test("每段新手流程明確同時提供 ChatGPT 與 Google Gemini，且保留
   assert.match(buttons, /https:\/\/gemini\.google\.com\/app/);
   assert.match(buttons, /開啟 ChatGPT 畫圖/);
   assert.match(buttons, /開啟 Google Gemini 畫圖/);
-  assert.match(prompt, /<StickerAIProviderLinks \/>/);
-  assert.match(prompt, /<StickerAIProviderLinks compact \/>/);
+  // Prompt page reveals AI link only after the matching sheet instruction was copied.
+  // Existing guide still offers generic provider links separately.
+  assert.doesNotMatch(prompt, /<StickerAIProviderLinks(?: compact)? \/>/);
+  assert.match(prompt, /preparedFlowPrompt\[\`chatgpt-\$\{index\}\`\] === item\.prompt/);
+  assert.match(prompt, /preparedFlowPrompt\[\`gemini-\$\{index\}\`\] === item\.prompt/);
   assert.match(guide, /<StickerAIProviderLinks \/>/);
-  assert.match(prompt, /請複製第/);
+  assert.match(prompt, /① 複製第/);
   assert.match(prompt, /已從 ChatGPT 或 Gemini 下載完整大圖/);
   assert.match(prompt, /flow=1#mother-upload/);
-  assert.match(progress, /ChatGPT（推薦）/);
+  assert.match(progress, /AI 畫母圖/);
   assert.match(starter, /用 ChatGPT／Gemini 畫圖/);
   assert.match(starter, /下一步請按/);
 });
@@ -98,13 +104,14 @@ test("Gemini 4×4 橫幅與多餘英文需要專用指令，切圖前應阻擋�
   assert.match(prompt, /function buildGeminiStrictMotherSheetPrompt/);
   assert.match(prompt, /1:1 正方形畫布/);
   assert.match(prompt, /JUST MARRIED/);
-  assert.match(prompt, /複製 Gemini 排版強化版/);
+  assert.match(prompt, /改用 Google Gemini（進階／實驗性）/);
+  assert.match(prompt, /複製第 \$\{index \+ 1\} 張 Gemini 指令/);
   assert.match(prompt, /copyFlowPrompt\(index, "chatgpt"\)/);
   assert.match(prompt, /copyFlowPrompt\(index, "gemini"\)/);
   assert.match(upload, /requiresSquare4x4/);
   assert.match(upload, /aspect < 0\.82 \|\| aspect > 1\.22/);
   assert.match(upload, /unsafeMotherSheets\.length > 0/);
-  assert.match(steps, /ChatGPT（推薦）/);
+  assert.match(steps, /AI 畫母圖/);
   assert.match(prompt, /const rowAssignment = Array.from/);
   assert.match(prompt, /最終版型僅此一種/);
   assert.match(prompt, /每格短句位置必須依下表/);
@@ -122,8 +129,8 @@ test("自訂文字和字型在新手頁預設顯示，並且設定實際寫入�
   assert.match(prompt, /onChange=\{\(e\) => setFontStyle/);
   assert.match(prompt, /fontStylePrompt = optionPrompt\(FONT_STYLE_OPTIONS, fontStyle\)/);
   assert.match(prompt, /字型造型遵守「\$\{fontStylePrompt\}」/);
-  assert.match(prompt, /fontStyle,\s*stickerStylePreset,\s*photoMode,\s*index \+ 1,/);
-  assert.match(prompt, /fontStyle,\s*stickerStyle,\s*photoMode,/);
+  assert.match(prompt, /fontStyle,\s*stickerStylePreset,\s*photoMode,\s*realPhotoSubMode,\s*index \+ 1,/);
+  assert.match(prompt, /fontStyle,\s*stickerStyle,\s*photoMode,\s*subMode,/);
   assert.doesNotMatch(prompt, /想換角色、修改文字或指定畫風？展開進階設定/);
   assert.match(prompt, /一行一句，可自行修改/);
   assert.match(prompt, /文字大小/);
@@ -187,7 +194,7 @@ test("第一次進貼圖工具從第 1 步開始，只有明確選擇已有圖�
   assert.doesNotMatch(prompt, /xl:grid-cols-\[0\.82fr_1\.18fr\]/);
   assert.match(prompt, /前往第 2 步｜複製畫圖指令 ↓/);
   assert.match(prompt, /to="\/tools\/line-sticker\?flow=1#mother-upload"/);
-  assert.match(progress, /grid grid-cols-3 overflow-hidden rounded-xl/);
+  assert.match(progress, /grid grid-cols-5 gap-1\.5/);
   assert.match(guide, /mt-4 flex flex-col gap-2/);
   assert.doesNotMatch(guide, /lg:grid-cols-5/);
   assert.doesNotMatch(upload, /className="fixed bottom-2 left-1\/2/);
@@ -217,7 +224,7 @@ test("新手頁面保持窄版與極簡進度列，不再用滿版彩色卡片�
   assert.doesNotMatch(prompt, /max-w-\[1480px\]/);
   assert.match(prompt, /min-h-screen bg-\[#F8F7F3\]/);
   assert.match(steps, /<nav/);
-  assert.match(steps, /grid grid-cols-3 overflow-hidden rounded-xl/);
+  assert.match(steps, /grid grid-cols-5 gap-1\.5/);
   assert.doesNotMatch(steps, /先知道一件事：不是一張張畫貼圖/);
   assert.match(prompt, /min-h-12 w-full min-w-0 items-center justify-center/);
   assert.match(prompt, /rows=\{Math\.min\(requiredCount \+ 1, 12\)\}/);
@@ -258,7 +265,7 @@ test("每組貼圖選擇按鈕同寬，選取、懸停、鍵盤焦點狀態清�
   assert.ok(upload.includes("w-[68px] shrink-0"));
 });
 
-test("三階段參考版型與貼圖錨點不會產生捲動爭用", () => {
+test("五步驟小卡版型與貼圖錨點不會產生捲動爭用", () => {
   const prompt = read("src/pages/tools/StickerPromptGenerator.tsx");
   const flow = read("src/components/LineStickerFlowSteps.tsx");
   const scroll = read("src/components/ScrollToTop.tsx");
@@ -266,10 +273,10 @@ test("三階段參考版型與貼圖錨點不會產生捲動爭用", () => {
   assert.match(prompt, /把你的想法，做成專屬貼圖/);
   assert.match(prompt, /RXV STICKER STUDIO/);
   assert.match(prompt, /min-h-screen bg-\[#F8F7F3\]/);
-  assert.match(flow, /grid grid-cols-3 overflow-hidden rounded-xl/);
-  assert.match(flow, /第 1～2 步/);
-  assert.match(flow, /第 3～4 步/);
-  assert.match(flow, /原第 5 步/);
+  assert.match(flow, /grid grid-cols-5 gap-1\.5/);
+  assert.match(flow, /title: "選角色"/);
+  assert.match(flow, /title: "自動切圖"/);
+  assert.match(flow, /title: mode === "animated" \? "製作動態 ZIP"/);
   assert.match(flow, /useLayoutEffect/);
   assert.match(flow, /scrollIntoView\(\{ behavior: "auto", block: "start" \}\)/);
   assert.doesNotMatch(flow, /scrollIntoView\(\{ behavior: "smooth"/);
@@ -292,9 +299,9 @@ test("業務個人品牌角色可選外觀並固定整套母圖，不再所有�
   assert.match(source, /businessAvatarPrompt\(businessAvatar, businessSignature\)/);
   assert.match(source, /const effectiveRole = useMemo/);
   assert.match(source, /type === "businessPersonal" && photoMode === "original"/);
-  assert.match(source, /effectiveRole,\s*style,\s*item.grid,/);
-  assert.match(source, /effectiveRole,\s*style,\s*grid,\s*texts,/);
-  assert.match(source, /effectiveRole,\s*style,\s*grid,\s*stickerStylePreset,/);
+  assert.match(source, /effectiveRole,\s*visualStyle,\s*item.grid,/);
+  assert.match(source, /effectiveRole,\s*visualStyle,\s*grid,\s*texts,/);
+  assert.match(source, /effectiveRole,\s*visualStyle,\s*grid,\s*stickerStylePreset,/);
   assert.match(source, /localStorage\.setItem\(BUSINESS_AVATAR_STORAGE_KEY/);
   assert.match(source, /個人辨識特徵（選填）/);
   assert.match(source, /後續第 2 張母圖都必須維持同一張臉/);
@@ -387,7 +394,7 @@ test("兩張母圖的角色與字型鎖定相同，文字位置三種模式互�
   for (const [grid,startIndex,items] of [["4x2",16,8],["4x4",16,16],["4x5",20,20]]) {
     for (const position of ["top","bottom","mixed"]) {
       const lock = "LOCK_KEY:眼睛固定_服裝固定_字色固定_描邊固定";
-      const generated = fn("美甲師", "固定人物", "固定畫風", grid, Array.from({length:items},(_,i)=>"短句"+(startIndex+i+1)), "large","colorfulWhite",position,"roundBold","cuteQ","original",2,"animated","line",startIndex,lock);
+      const generated = fn("美甲師", "固定人物", "固定畫風", grid, Array.from({length:items},(_,i)=>"短句"+(startIndex+i+1)), "large","colorfulWhite",position,"roundBold","cuteQ","original","unchanged",2,"animated","line",startIndex,lock);
       assert.ok(generated.includes(lock));
       assert.ok(generated.includes("同一個 ChatGPT 對話"));
       const matrix = generated.split("每格短句位置必須依下表")[1].split("重要規則：")[0];
@@ -432,7 +439,8 @@ test("主圖須在最後打包前選定，預覽、主圖、下載操作不被 F
 
   assert.ok(previewStart >= 0);
   assert.ok(previewStart < mainPicker && mainPicker < download && download < footer, "必須先選主圖再執行最後一步 ZIP 打包");
-  assert.ok(footer < ad && ad < faq, "下載流程應早於推薦工具與 FAQ");
+  assert.equal(ad, -1, "LINE 貼圖頁暫停分潤廣告，不能插在下載與 FAQ 中間");
+  assert.ok(footer < faq, "下載流程應早於 FAQ");
   assert.equal(page.split('id="sticker-download"').length - 1, 1, "第五步錨點不可重複");
   assert.equal(page.split('aria-label="第 5 步：貼圖下載或動態製作"').length - 1, 1);
   assert.match(page, /value=\{Math\.min\(mainImageIndex,/);
@@ -532,11 +540,16 @@ test("已有母圖按鈕位於選擇張數下方，會帶入靜態動態、平�
   const flow = read("src/lib/lineStickerFlow.ts");
 
   const countPicker = prompt.indexOf('aria-label="選擇貼圖張數"');
-  const existingShortcut = prompt.indexOf('aria-label="已做好母圖的快速入口"');
-  const themePicker = prompt.indexOf("貼圖類型", existingShortcut);
-  assert.ok(countPicker >= 0 && existingShortcut > countPicker && themePicker > existingShortcut);
-  const shortcut = prompt.slice(existingShortcut, themePicker);
-  assert.match(shortcut, /我已有母圖｜跳至第 3 步上傳、切割與打包/);
+  const beginnerEntry = prompt.indexOf('aria-label="依製作進度選擇下一步"');
+  const existingShortcut = prompt.indexOf('我已製作完成整張貼圖母圖｜直接上傳（進階）');
+  const themePicker = prompt.indexOf('id="sticker-theme"', existingShortcut);
+  assert.ok(countPicker >= 0 && beginnerEntry > countPicker && existingShortcut > beginnerEntry && themePicker > existingShortcut);
+  const shortcut = prompt.slice(beginnerEntry, themePicker);
+  assert.match(shortcut, /第一次製作貼圖？從這裡繼續/);
+  assert.match(shortcut, /href="#sticker-theme"/);
+  assert.match(shortcut, /<details/);
+  assert.match(shortcut, /不是只有一張寶寶或真人照片/);
+  assert.match(shortcut, /已有完整母圖｜前往第 3 步上傳/);
   assert.match(shortcut, /to="\/tools\/line-sticker\?flow=1#mother-upload"/);
   assert.match(shortcut, /onClick=\{\(\) => persistFlowProject\(3\)\}/);
   assert.match(shortcut, /stickerMode === "animated"/);

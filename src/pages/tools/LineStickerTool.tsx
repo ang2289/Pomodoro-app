@@ -5,12 +5,13 @@ import { useTranslation } from "react-i18next";
 import SEO, { getBaseUrl } from "@/components/SEO";
 import LineStickerAuthorCard from "@/components/LineStickerAuthorCard";
 import LineStickerFlowSteps from "@/components/LineStickerFlowSteps";
+import StickerExcelOffers from "@/components/StickerExcelOffers";
 import { StickerCustomInquiry, StickerNextActionHint } from "@/components/StickerBeginnerActions";
 import {
   analyzeMotherSheetSafety,
   type MotherSheetSafetyReview,
 } from "@/lib/lineMotherSheetSafety";
-import CoupangDynamicAd from "@/components/CoupangDynamicAd";
+
 import {
   clearAnimatedStickerHandoff,
   clearLineStickerProject,
@@ -34,6 +35,7 @@ import JSZip from "jszip";
 import { WhatsAppMobileZipHandoff, type WhatsAppZipArchive } from "@/components/WhatsAppMobileZipHandoff";
 import { createWhatsAppTrayPng, createWhatsAppWebpSticker, partitionWhatsAppPacks } from "@/lib/whatsAppStickerExport";
 import { stickerSaleTextRisks } from "@/lib/stickerCommercialSafety";
+import { buildMotherSheetWhitespaceRetryPrompt } from "@/lib/stickerMotherSheetWhitespace";
 import { saveAs } from "file-saver";
 import { removeStickerWhiteBackground, type StickerWhiteRemovalMode } from "@/lib/stickerWhiteBackground";
 
@@ -2416,6 +2418,7 @@ export default function LineStickerTool() {
         <main className="min-h-screen bg-slate-50 px-4 py-8">
           <div className="mx-auto max-w-4xl">
             <h1 className="text-2xl font-black text-slate-900">第一次做 LINE／WhatsApp 貼圖？從第 1 步開始</h1>
+            <Link to="/tools/line-sticker-start" className="mt-3 inline-flex min-h-11 items-center rounded-xl border border-violet-200 bg-white px-4 py-2 text-sm font-bold text-violet-800 hover:bg-violet-50">先看九組成果與五步驟教學 →</Link>
             <p className="mt-3 text-sm leading-7 text-slate-700">沒有圖片也沒關係，按順序選主題及文字 → 複製指令給 ChatGPT → 下載整張大圖 → 回 RXV 上傳切割。整個流程由上往下操作。</p>
             <LineStickerFlowSteps activeStep={1} />
             <section className="rounded-2xl border border-sky-200 bg-sky-50 p-5" aria-label="選擇貼圖製作起點">
@@ -2432,6 +2435,7 @@ export default function LineStickerTool() {
                 </Link>
               </div>
             </section>
+            <StickerExcelOffers compact />
             <div className="mt-6"><StickerCustomInquiry compact /></div>
           </div>
         </main>
@@ -2896,6 +2900,28 @@ export default function LineStickerTool() {
                     <div role="alert" className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-bold leading-6 text-rose-800">
                       <p className="font-black">無法保證安全切割：請修正以下母圖或格數，暫不允許硬切。</p>
                       {unsafeMotherSheets.slice(0, 6).map((reason, index) => <p key={index}>{reason}</p>)}
+                      <p className="mt-3 font-semibold">若分隔線的白色太少，請依原照片與現有母圖重新排版。下列按鈕會複製「整張母圖重新生成、每格四周 15% 純白留白」的修正指令；請到原本 AI 對話貼上，並附上要修改的母圖。只在整張圖片外加白框無法修復格子之間的碰撞。</p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {motherSheetDetections.map((item, index) => (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={async () => {
+                              try {
+                                await navigator.clipboard.writeText(
+                                  buildMotherSheetWhitespaceRetryPrompt(item.grid, selectedStickerMode),
+                                );
+                                setActionHint(`已複製第 ${index + 1} 張（${item.grid.replace("x", "×")}）留白修正指令。下一步：回原 AI 對話附上這張母圖、貼上指令後重新生成；照片模式請一併附原始照片。`);
+                              } catch {
+                                setActionHint("無法複製指令，請允許瀏覽器使用剪貼簿，或到第 2 步查看完整提示詞。");
+                              }
+                            }}
+                            className="inline-flex min-h-11 items-center justify-center rounded-xl border border-rose-300 bg-white px-3 py-2 text-xs font-black text-rose-900 hover:bg-rose-100"
+                          >
+                            複製母圖 ${index + 1}（${item.grid.replace("x", "×")}）留白重繪指令
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   ) : null}
                   <div id="mother-split" className="scroll-mt-24 mt-4 grid gap-3 xl:grid-cols-2">
@@ -3428,7 +3454,7 @@ export default function LineStickerTool() {
 
           {files.length > 0 ? (
             <div className="mb-10">
-              <CoupangDynamicAd subId="rxv_sticker_inline" desktopWidth={1100} desktopHeight={190} mobileWidth={320} mobileHeight={150} />
+              
             </div>
           ) : null}
 
@@ -3712,6 +3738,7 @@ export default function LineStickerTool() {
             </div>
           </section>
 
+          <StickerExcelOffers compact />
           <section className="mt-10 border-t border-slate-200 pt-10">
             <h2 className="text-sm font-black text-slate-900 mb-6 uppercase tracking-widest">
               {t("line_sticker_faq_title")}

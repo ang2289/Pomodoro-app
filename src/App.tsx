@@ -169,6 +169,8 @@ import StickerPromptGenerator from './pages/tools/StickerPromptGenerator'
 import EmotionalValueStickerPrompt from './pages/tools/EmotionalValueStickerPrompt'
 import StickerShowcaseGallery from './pages/tools/StickerShowcaseGallery'
 import AnimatedLineStickerTool from './pages/tools/AnimatedLineStickerTool'
+import LineStickerStarterPage from './pages/tools/LineStickerStarterPage'
+import StickerExcelPreviewPage from './pages/tools/StickerExcelPreviewPage'
 import ImagePromptGenerator from './pages/tools/ImagePromptGenerator'
 import PetPromptPage from './pages/tools/PetPromptPage'
 import StickerImageSplitter from './pages/tools/StickerImageSplitter'
@@ -710,6 +712,8 @@ function App() {
             <Route path="tools/image-convert" element={<ImageConvertPage />} />
             <Route path="tools/image-crop" element={<ImageCropPage />} />
             <Route path="tools/line-sticker" element={<LineStickerTool />} />
+            <Route path="tools/line-sticker-start" element={<LineStickerStarterPage />} />
+            <Route path="tools/sticker-excel-preview" element={<StickerExcelPreviewPage />} />
             <Route path="tools/line-sticker-guide" element={<LineStickerGuide />} />
             <Route path="tools/sticker-prompt" element={<StickerPromptGenerator />} />
             <Route path="tools/emotional-value-sticker-prompt" element={<EmotionalValueStickerPrompt />} />
@@ -717,6 +721,7 @@ function App() {
             <Route path="tools/animated-sticker-prompt" element={<Navigate to="/tools/sticker-prompt?mode=animated" replace />} />
             <Route path="tools/animated-line-sticker" element={<AdminOnlyAnimatedLineStickerRoute />} />
             <Route path="tools/image-prompt" element={<ImagePromptGenerator />} />
+            <Route path="tools/prompt-codes" element={<ImagePromptGenerator />} />
             <Route path="tools/pet-prompt" element={<PetPromptPage />} />
             <Route path="tools/sticker-splitter" element={<StickerImageSplitter />} />
             <Route path="tools/scam-check" element={<ScamCheckPage />} />

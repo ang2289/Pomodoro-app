@@ -123,11 +123,11 @@ export default defineConfig(({ mode }) => {
     },
     host: '0.0.0.0',
     port: devPort,
+    // HMR 必須跟著 Vite 實際監聽的連接埠，不可固定在 3005。
+    // 測試腳本使用 --port 3022/3023 等時，固定 port 會讓瀏覽器連錯伺服器。
+    // 顯示 overlay 以便第一時間辨識執行期錯誤。
     hmr: {
-      overlay: false,
-      host: 'localhost',
-      port: devPort,
-      protocol: 'ws'
+      overlay: true,
     },
     watch: {
       ignored: [
