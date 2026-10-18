@@ -74,7 +74,7 @@ test("複製成功才讓新手開啟 AI；第 2 張沿用同一對話，並保�
   assert.match(source, /setPreparedFlowPrompt\(\(previous\) =>/);
   assert.match(source, /preparedFlowPrompt\[\`chatgpt-\$\{index\}\`\] === item\.prompt/);
   assert.match(source, /preparedFlowPrompt\[\`gemini-\$\{index\}\`\] === item\.prompt/);
-  assert.match(source, /已複製第 \{index \+ 1\} 張指令/);
+  assert.match(source, /已複製第 \$\{index \+ 1\} 張指令/);
   assert.match(source, /請不要另開新對話/);
   assert.match(source, /改用 Google Gemini（進階／實驗性）/);
   assert.match(source, /可選｜在 RXV 預覽第 1 張母圖/);
