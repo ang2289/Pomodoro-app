@@ -71,7 +71,7 @@ export default function LineStickerFlowSteps({
       </div>
       <p className="mt-2 text-xs leading-5 text-slate-600">
         {mode === "animated" ? "動態貼圖只需完成同樣的五步驟：第 5 步內製作動畫、下載 APNG／WebP ZIP，不額外增加第 6 步。" : "下載靜態 ZIP 就完成五步驟。"}
-        {" "}<Link to="/tools/line-sticker-start" className="font-semibold text-violet-700 underline underline-offset-2">看寶寶、花店成果＋圖片教學 →</Link>
+        {" "}<Link to="/tools/line-sticker-start" className="font-semibold text-violet-700 underline underline-offset-2">看九組貼圖成果＋圖片教學 →</Link>
       </p>
     </nav>
   );
