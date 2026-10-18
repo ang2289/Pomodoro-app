@@ -6062,37 +6062,6 @@ export default function StickerPromptGenerator() {
               <div className="mt-4 space-y-4">
                 {flowPrompts.map((item, index) => (
                   <div key={`${item.grid}-${index}`} className="rounded-xl border border-slate-200 bg-white p-4">
-                    {index > 0 && (
-                      <section className="mb-5 rounded-xl border border-violet-200 bg-violet-50 p-4" aria-label="第 2 張母圖角色參考圖">
-                        <h3 className="text-base font-bold text-slate-900">製作第 2 張前｜準備角色參考照片</h3>
-                        <p className="mt-2 text-sm leading-6 text-slate-700">
-                          先用 ChatGPT 畫好第 1 張，再選下方圖片；第 2 張請沿用同一個 ChatGPT 對話，
-                          複製提示詞後{photoMode === "realPhoto" ? "同時附上原始真人照片＋第 1 張母圖。" : "自行附上第 1 張母圖及原始照片（照片模式）。"}網站不會自動把圖交給 ChatGPT。
-                        </p>
-                        <label className="mt-3 inline-flex min-h-11 w-fit cursor-pointer items-center justify-center rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-violet-700">
-                          {activeReferenceImage ? "更換第 1 張參考圖" : "選擇第 1 張參考圖"}
-                          <input type="file" accept="image/png,image/jpeg,image/webp"
-                            onChange={chooseReferenceImage} className="sr-only" aria-label="選擇第 1 張參考圖" />
-                        </label>
-                        {activeReferenceImage ? (
-                          <div className="mt-3 flex flex-wrap items-start gap-3">
-                            <img src={activeReferenceImage.url} alt="第 1 張母圖參考縮圖" className="h-28 w-28 rounded-lg border border-slate-200 bg-white object-contain" />
-                            <div className="min-w-0 flex-1">
-                              <p className="break-all text-xs font-medium text-slate-700">{activeReferenceImage.name}</p>
-                              <p className="mt-1 text-xs text-emerald-800">已選本機參考圖；仍請在 ChatGPT 對話自行附上這張圖片。</p>
-                              <button type="button" onClick={clearReferenceImage}
-                                className="mt-2 inline-flex min-h-10 items-center justify-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">
-                                移除參考圖
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <p className="mt-3 text-xs font-medium leading-6 text-amber-800">
-                            尚未選擇參考圖：仍可複製第 2 張提示詞，但只用文字無法保證五官、服裝與畫風完全一致。
-                          </p>
-                        )}
-                      </section>
-                    )}
                     <div className="space-y-3">
                       <div>
                         <p className="text-base font-black text-slate-900">
@@ -6167,6 +6136,43 @@ export default function StickerPromptGenerator() {
                       <p className="mt-2 text-xs leading-5 text-amber-800">Gemini 可能出現欄數錯誤或重複文字；母圖請保留完整格數與安全白邊，勿直接切錯誤圖片。</p>
                       </div>
                     </div>
+                    {index > 0 && (
+                      <details className="mt-3 rounded-xl border border-violet-200 bg-violet-50 p-3">
+                        <summary className="cursor-pointer text-xs font-bold text-violet-900">
+                          可選｜在 RXV 預覽第 1 張母圖（不會自動傳給 AI）
+                        </summary>
+                        <section className="mt-3" aria-label="第 2 張母圖角色參考圖">
+                        <h3 className="text-base font-bold text-slate-900">製作第 2 張前｜準備角色參考照片</h3>
+                        <p className="mt-2 text-sm leading-6 text-slate-700">
+                          先用 ChatGPT 畫好第 1 張，再選下方圖片；第 2 張請沿用同一個 ChatGPT 對話，
+                          複製提示詞後{photoMode === "realPhoto" ? "同時附上原始真人照片＋第 1 張母圖。" : "自行附上第 1 張母圖及原始照片（照片模式）。"}網站不會自動把圖交給 ChatGPT。
+                        </p>
+                        <label className="mt-3 inline-flex min-h-11 w-fit cursor-pointer items-center justify-center rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-violet-700">
+                          {activeReferenceImage ? "更換第 1 張參考圖" : "選擇第 1 張參考圖"}
+                          <input type="file" accept="image/png,image/jpeg,image/webp"
+                            onChange={chooseReferenceImage} className="sr-only" aria-label="選擇第 1 張參考圖" />
+                        </label>
+                        {activeReferenceImage ? (
+                          <div className="mt-3 flex flex-wrap items-start gap-3">
+                            <img src={activeReferenceImage.url} alt="第 1 張母圖參考縮圖" className="h-28 w-28 rounded-lg border border-slate-200 bg-white object-contain" />
+                            <div className="min-w-0 flex-1">
+                              <p className="break-all text-xs font-medium text-slate-700">{activeReferenceImage.name}</p>
+                              <p className="mt-1 text-xs text-emerald-800">已選本機參考圖；仍請在 ChatGPT 對話自行附上這張圖片。</p>
+                              <button type="button" onClick={clearReferenceImage}
+                                className="mt-2 inline-flex min-h-10 items-center justify-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">
+                                移除參考圖
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="mt-3 text-xs font-medium leading-6 text-amber-800">
+                            尚未選擇參考圖：仍可複製第 2 張提示詞，但只用文字無法保證五官、服裝與畫風完全一致。
+                          </p>
+                        )}
+
+                        </section>
+                      </details>
+                    )}
                     <details className="mt-3 rounded-2xl border border-violet-100 bg-white">
                       <summary className="cursor-pointer px-4 py-3 text-xs font-black text-violet-700">
                         查看這張生圖指令
