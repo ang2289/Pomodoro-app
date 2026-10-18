@@ -4,7 +4,7 @@ import SEO from "@/components/SEO";
 import CoupangDynamicAd from "@/components/CoupangDynamicAd";
 import LineStickerAuthorCard from "@/components/LineStickerAuthorCard";
 import LineStickerFlowSteps from "@/components/LineStickerFlowSteps";
-import { StickerCustomInquiry, StickerNextActionHint, StickerAIProviderLinks } from "@/components/StickerBeginnerActions";
+import { StickerCustomInquiry, StickerNextActionHint } from "@/components/StickerBeginnerActions";
 import {
   createLineStickerProject,
   getAllowedCounts,
@@ -4949,6 +4949,10 @@ export default function StickerPromptGenerator() {
   );
   const [targetCount, setTargetCount] = useState<LineStickerCount>(16);
   const [copiedBatchIndex, setCopiedBatchIndex] = useState<number | null>(null);
+  // The short success animation expires, but the relevant AI handoff stays available
+  // until its actual prompt text changes. No AI service automatically receives the prompt.
+  const [preparedFlowPrompt, setPreparedFlowPrompt] = useState<Record<string, string>>({});
+  const [flowCopyError, setFlowCopyError] = useState<string | null>(null);
   const [copiedGeminiIndex, setCopiedGeminiIndex] = useState<number | null>(null);
   const [type, setType] = useState<TemplateKey>("businessPersonal");
   const [grid, setGrid] = useState<GridType>("4x4");
@@ -5372,16 +5376,23 @@ export default function StickerPromptGenerator() {
     if (saleRisks.length) return;
     const item = flowPrompts[index];
     if (!item) return;
-    await navigator.clipboard.writeText(
-      provider === "gemini" ? buildGeminiStrictMotherSheetPrompt(item.prompt, item.grid, photoMode, realPhotoSubMode) : item.prompt,
-    );
-    persistFlowProject(2);
-    if (provider === "gemini") {
-      setCopiedGeminiIndex(index);
-      window.setTimeout(() => setCopiedGeminiIndex(null), 1800);
-    } else {
-      setCopiedBatchIndex(index);
-      window.setTimeout(() => setCopiedBatchIndex(null), 1800);
+    try {
+      const instruction = provider === "gemini"
+        ? buildGeminiStrictMotherSheetPrompt(item.prompt, item.grid, photoMode, realPhotoSubMode)
+        : item.prompt;
+      await navigator.clipboard.writeText(instruction);
+      persistFlowProject(2);
+      setFlowCopyError(null);
+      setPreparedFlowPrompt((previous) => ({ ...previous, [`${provider}-${index}`]: item.prompt }));
+      if (provider === "gemini") {
+        setCopiedGeminiIndex(index);
+        window.setTimeout(() => setCopiedGeminiIndex(null), 1800);
+      } else {
+        setCopiedBatchIndex(index);
+        window.setTimeout(() => setCopiedBatchIndex(null), 1800);
+      }
+    } catch {
+      setFlowCopyError("無法複製畫圖指令，請允許瀏覽器使用剪貼簿後再按一次。尚未自動開啟 AI。");
     }
   }
 
@@ -6030,60 +6041,30 @@ export default function StickerPromptGenerator() {
                     第 2 步｜複製指令，用 ChatGPT 或 Gemini 畫圖
                   </h2>
                   <p className="mt-2 text-sm leading-6 text-slate-600">
-                    請優先使用已實測的 ChatGPT。先按紫色按鈕複製指令，再按「開啟 ChatGPT 畫圖」貼上（電腦 Ctrl+V／手機長按貼上）並送出；Gemini 為實驗性選項，可能不遵守格數。AI 畫好後請下載「整張大圖」，不用自己切成小張。
+                    這裡不會自動把指令帶進 ChatGPT。請先按「複製第 1 張指令」，成功後再開啟 AI 貼上（電腦 Ctrl+V／手機長按貼上）；完成第 1 張並下載後，回同一個 AI 對話畫第 2 張。
                   </p>
                 </div>
               </div>
 
               <p className="mt-3 text-sm font-medium leading-6 text-slate-700">
-                這次需畫 {motherSheetPlan.length} 張完整母圖（共 {targetCount} 張貼圖）。請逐張產生，不要合併不同母圖。
+                共 {targetCount} 張貼圖，需要 {motherSheetPlan.length} 張完整母圖。請依序完成；每張母圖都是獨立圖片，不要拼貼合併。
               </p>
 
-              <div className="mt-4 border-t border-slate-200 pt-4">
-                <p className="text-sm font-semibold text-slate-900">複製下方指令，再開啟 AI 工具貼上</p>
-                <p className="mt-1 text-xs leading-5 text-slate-600">推薦 ChatGPT；Gemini 可以試驗但可能不遵守格數。本站不會自動把文字貼進 AI。</p>
-                <p className="mt-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold leading-6 text-emerald-950">
-                  已加入母圖安全白邊強化：每格四周各留 15% 純白禁止繪製區，圖文縮在中央 70% 安全內框。若舊母圖貼邊，請重新生成，勿直接硬切；AI 仍可能不遵守，請在第 3 步檢查結果。
+              <p className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold leading-6 text-emerald-950">
+                每格四周各留 15% 純白安全邊，圖文縮在中央 70%；AI 可能未完全遵守，請上傳後讓第 3 步檢查。
+              </p>
+              {photoMode !== "original" && (
+                <p className="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-6 text-amber-950">
+                  真人／寵物照片須自行附在 AI 對話：第 1 張附原始照片；第 2 張附原始照片＋第 1 張母圖。本站只複製文字，不會傳送照片。
                 </p>
-                <StickerAIProviderLinks />
-              </div>
-              <div className="mt-4 border-t border-slate-200 pt-4">
-                {photoMode !== "original" && (
-                  <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950" role="note">
-                    <strong>複製指令後，請在 AI 對話親自附上參考照片：</strong>
-                    <p>第 1 張母圖：{photoMode === "petPhoto" ? "同一隻寵物的照片" : "原始真人照片（至少 1 張；多張不同表情更佳）"}。</p>
-                    <p>第 2 張與後續母圖：{photoMode === "realPhoto" ? "必須同時附上原始真人照片＋第 1 張母圖" : "請同時附上原始參考照片及第 1 張母圖"}，並沿用相同 AI 對話。</p>
-                    <p className="mt-1 text-xs">本站沒有接收或傳送照片的功能；未附照片時請先附上，不可直接要求 AI 自行猜測人物。</p>
-                  </div>
-                )}
-                <p className="text-sm font-black text-violet-900">即將複製的貼圖設定（修改第 1 步選項後會同步更新）</p>
-                <div className="mt-2 flex flex-wrap gap-2 text-xs font-medium text-slate-700">
-                  {[
-                    `平台：${stickerPlatform === "line" ? "LINE" : "WhatsApp"}`,
-                    `貼圖模式：${stickerMode === "static" ? "靜態" : "動態"}`,
-                    `數量：${targetCount} 張`,
-                    `文字位置：${optionLabel(TEXT_POSITION_OPTIONS, textPosition)}`,
-                    `字型：${optionLabel(FONT_STYLE_OPTIONS, fontStyle)}`,
-                    `字大小：${optionLabel(TEXT_SIZE_OPTIONS, textSize)}`,
-                    `顏色／文字效果：${optionLabel(TEXT_COLOR_OPTIONS, textColor)}`,
-                    `氛圍加強：${optionLabel(STICKER_STYLE_OPTIONS, stickerStylePreset)}`,
-                    `角色來源：${optionLabel(PHOTO_MODE_OPTIONS, photoMode)}`,
-                    `畫風：${photoMode === "realPhoto" ? realPhotoPolicy(realPhotoSubMode).label : optionLabel(ILLUSTRATION_STYLE_OPTIONS, illustrationStyle)}`,
-                    `名稱：${optionLabel(NAME_MODE_OPTIONS, nameMode)}`,
-                    ...(type === "businessPersonal" && photoMode === "original" ? [`角色：${businessAvatar.persona}`, `髮型：${businessAvatar.hair}`, `服裝：${businessAvatar.clothes}`, `配色：${businessAvatar.palette}`] : []),
-                  ].map((label) => (
-                    <span key={label} className="rounded-md bg-slate-100 px-2.5 py-1.5">{label}</span>
-                  ))}
-                </div>
-                <p className="mt-2 text-xs leading-6 text-slate-600">角色內容、畫風描述及每句短句也會以目前欄位輸入的內容為準。這些只是給 AI 的指令，不會直接修改已產出的圖片。</p>
-                <p className="mt-1 text-xs font-black leading-5 text-amber-800">請確認以上選項正確，再按下方「複製 ChatGPT 指令」；若剛調整文字位置，請重新複製新指令並重新生圖。</p>
-              </div>
+              )}
+              {flowCopyError && <p role="alert" className="mt-3 rounded-xl border border-rose-300 bg-rose-50 p-3 text-sm font-bold text-rose-900">{flowCopyError}</p>}
               <div className="mt-4 space-y-4">
                 {flowPrompts.map((item, index) => (
                   <div key={`${item.grid}-${index}`} className="rounded-xl border border-slate-200 bg-white p-4">
                     {index > 0 && (
                       <section className="mb-5 rounded-xl border border-violet-200 bg-violet-50 p-4" aria-label="第 3 步：鎖定角色參考圖">
-                        <h3 className="text-base font-bold text-slate-900">第 3 步｜選擇第 1 張母圖作為角色參考</h3>
+                        <h3 className="text-base font-bold text-slate-900">製作第 2 張前｜準備角色參考照片</h3>
                         <p className="mt-2 text-sm leading-6 text-slate-700">
                           先用 ChatGPT 畫好第 1 張，再選下方圖片；第 2 張請沿用同一個 ChatGPT 對話，
                           複製提示詞後{photoMode === "realPhoto" ? "同時附上原始真人照片＋第 1 張母圖。" : "自行附上第 1 張母圖及原始照片（照片模式）。"}網站不會自動把圖交給 ChatGPT。
@@ -6112,18 +6093,18 @@ export default function StickerPromptGenerator() {
                         )}
                       </section>
                     )}
-                    <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="space-y-3">
                       <div>
-                        <p className="text-sm font-black text-slate-900">
-                          第 {index === 0 ? 2 : 4} 步｜第 {index + 1} 張母圖｜{item.grid.replace("x", "×")}
+                        <p className="text-base font-black text-slate-900">
+                          母圖 {index + 1}｜{item.grid.replace("x", "×")}
                         </p>
                         <p className="mt-1 text-xs font-bold text-slate-500">
                           貼圖 {item.startIndex + 1}～{item.endIndex}
                         </p>
                       </div>
-                      <div className="w-fit max-w-full">
+                      <div className="w-full">
                         <StickerNextActionHint>
-                        請複製第 {index + 1} 張畫圖指令，貼到 ChatGPT。
+                        {index === 0 ? "① 先複製第 1 張指令，成功後開啟 ChatGPT 畫圖並下載整張母圖。" : "② 第 1 張已完成後，複製第 2 張指令，回到同一個 AI 對話貼上（不要開新對話）。"}
                         {index > 0
                            ? photoMode === "realPhoto"
                              ? "同一個 AI 對話必須同時附上原始真人照片＋第 1 張母圖；按鈕只會複製文字，不會傳送圖片。"
@@ -6137,21 +6118,53 @@ export default function StickerPromptGenerator() {
                           type="button"
                           onClick={() => copyFlowPrompt(index, "chatgpt")}
                           disabled={saleRisks.length > 0}
-                          className="inline-flex min-h-11 w-fit max-w-full items-center justify-center rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-black !text-white shadow hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                          className="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-violet-600 px-4 py-3 text-sm font-black !text-white shadow hover:bg-violet-700 sm:w-auto disabled:cursor-not-allowed disabled:bg-slate-300"
                         >
-                          {copiedBatchIndex === index ? "✓ 已複製 ChatGPT 指令" : `複製第 ${index + 1} 張提示詞（ChatGPT）`}
+                          {copiedBatchIndex === index ? `✓ 已複製第 ${index + 1} 張指令` : `① 複製第 ${index + 1} 張指令（ChatGPT）`}
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => copyFlowPrompt(index, "gemini")}
-                          disabled={saleRisks.length > 0}
-                          className="inline-flex min-h-11 w-fit max-w-full items-center justify-center rounded-xl border border-blue-300 bg-white px-4 py-2.5 text-sm font-black text-blue-800 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          {copiedGeminiIndex === index ? "✓ 已複製 Gemini 強化版" : "複製 Gemini 排版強化版"}
-                        </button>
+                        <details className="w-full rounded-xl border border-blue-200 bg-blue-50/50 p-3">
+                          <summary className="cursor-pointer text-xs font-semibold text-blue-800">改用 Google Gemini（進階／實驗性）</summary>
+                          <button
+                            type="button"
+                            onClick={() => copyFlowPrompt(index, "gemini")}
+                            disabled={saleRisks.length > 0}
+                            className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-blue-300 bg-white px-4 py-2.5 text-sm font-bold text-blue-800 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {copiedGeminiIndex === index ? "✓ 已複製 Gemini 強化版" : `複製第 ${index + 1} 張 Gemini 指令`}
+                          </button>
+                          {preparedFlowPrompt[`gemini-${index}`] === item.prompt && (
+                            index === 0 ? (
+                              <a href="https://gemini.google.com/app" target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-blue-700 px-3 py-2 text-center text-sm font-bold !text-white hover:bg-blue-800">
+                                ② 已複製｜開啟 Gemini 畫第 1 張 ↗
+                              </a>
+                            ) : (
+                              <p role="status" className="mt-2 rounded-lg bg-blue-100 p-2 text-xs font-semibold leading-6 text-blue-900">
+                                ✓ 已複製 Gemini 第 {index + 1} 張指令。請回到第 1 張的同一個 Gemini 對話，附上第 1 張母圖與需要的原照片，再貼上。
+                              </p>
+                            )
+                          )}
+                        </details>
                       </div>
-                      <p className="mt-2 text-xs leading-5 text-amber-800">ChatGPT 已有成功製作貼圖的案例。Gemini 多次測試仍可能出現錯誤欄數、重複文字或橫幅；即使複製強化版也不能保證。若 4×4 不是 4 欄 × 4 列、共 16 格，請重新用 ChatGPT 產圖。</p>
-                      <StickerAIProviderLinks compact />
+                      {preparedFlowPrompt[`chatgpt-${index}`] === item.prompt ? (
+                        index === 0 ? (
+                          <div role="status" className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3">
+                            <p className="mb-2 text-xs font-bold text-emerald-900">✓ 第 1 張指令已複製。下一步請開啟 ChatGPT，貼上指令並送出。</p>
+                            <a href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-emerald-700 px-4 py-3 text-center text-sm font-black !text-white hover:bg-emerald-800 sm:w-auto">
+                              ② 開啟 ChatGPT 畫第 1 張 ↗
+                            </a>
+                            <p className="mt-2 text-xs leading-6 text-emerald-950">③ AI 完成後下載完整母圖，再回此頁製作第 2 張。真人／寵物模式需另外上傳原始照片。</p>
+                          </div>
+                        ) : (
+                          <p role="status" className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm font-semibold leading-7 text-emerald-900">
+                            ✓ 第 {index + 1} 張指令已複製！請切回第 1 張的原 ChatGPT 對話，附上第 1 張母圖及需要的原始照片，貼上指令並送出；**不要另開新對話**。
+                          </p>
+                        )
+                      ) : (
+                        <p className="mt-2 text-xs font-semibold leading-6 text-slate-500">
+                          {index === 0 ? "先複製第 1 張指令，成功後這裡才會出現 ChatGPT 入口。" : "先完成第 1 張母圖，再複製第 2 張指令，回原 AI 對話貼上。"}
+                        </p>
+                      )}
+                      <p className="mt-2 text-xs leading-5 text-amber-800">Gemini 可能出現欄數錯誤或重複文字；母圖請保留完整格數與安全白邊，勿直接切錯誤圖片。</p>
                       </div>
                     </div>
                     <details className="mt-3 rounded-2xl border border-violet-100 bg-white">
@@ -6166,6 +6179,51 @@ export default function StickerPromptGenerator() {
                 ))}
               </div>
 
+              <details className="mt-5 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <summary className="cursor-pointer text-sm font-bold text-slate-700">查看這次貼圖設定與安全留白說明（可展開）</summary>
+                <div className="mt-3 space-y-3">
+                  <div className="mt-4 border-t border-slate-200 pt-4">
+                    <p className="text-sm font-semibold text-slate-900">複製下方指令，再開啟 AI 工具貼上</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-600">推薦 ChatGPT；Gemini 可以試驗但可能不遵守格數。本站不會自動把文字貼進 AI。</p>
+                    <p className="mt-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold leading-6 text-emerald-950">
+                      已加入母圖安全白邊強化：每格四周各留 15% 純白禁止繪製區，圖文縮在中央 70% 安全內框。若舊母圖貼邊，請重新生成，勿直接硬切；AI 仍可能不遵守，請在第 3 步檢查結果。
+                    </p>
+                    <StickerAIProviderLinks />
+                  </div>
+                  <div className="mt-4 border-t border-slate-200 pt-4">
+                    {photoMode !== "original" && (
+                      <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950" role="note">
+                        <strong>複製指令後，請在 AI 對話親自附上參考照片：</strong>
+                        <p>第 1 張母圖：{photoMode === "petPhoto" ? "同一隻寵物的照片" : "原始真人照片（至少 1 張；多張不同表情更佳）"}。</p>
+                        <p>第 2 張與後續母圖：{photoMode === "realPhoto" ? "必須同時附上原始真人照片＋第 1 張母圖" : "請同時附上原始參考照片及第 1 張母圖"}，並沿用相同 AI 對話。</p>
+                        <p className="mt-1 text-xs">本站沒有接收或傳送照片的功能；未附照片時請先附上，不可直接要求 AI 自行猜測人物。</p>
+                      </div>
+                    )}
+                    <p className="text-sm font-black text-violet-900">即將複製的貼圖設定（修改第 1 步選項後會同步更新）</p>
+                    <div className="mt-2 flex flex-wrap gap-2 text-xs font-medium text-slate-700">
+                      {[
+                        `平台：${stickerPlatform === "line" ? "LINE" : "WhatsApp"}`,
+                        `貼圖模式：${stickerMode === "static" ? "靜態" : "動態"}`,
+                        `數量：${targetCount} 張`,
+                        `文字位置：${optionLabel(TEXT_POSITION_OPTIONS, textPosition)}`,
+                        `字型：${optionLabel(FONT_STYLE_OPTIONS, fontStyle)}`,
+                        `字大小：${optionLabel(TEXT_SIZE_OPTIONS, textSize)}`,
+                        `顏色／文字效果：${optionLabel(TEXT_COLOR_OPTIONS, textColor)}`,
+                        `氛圍加強：${optionLabel(STICKER_STYLE_OPTIONS, stickerStylePreset)}`,
+                        `角色來源：${optionLabel(PHOTO_MODE_OPTIONS, photoMode)}`,
+                        `畫風：${photoMode === "realPhoto" ? realPhotoPolicy(realPhotoSubMode).label : optionLabel(ILLUSTRATION_STYLE_OPTIONS, illustrationStyle)}`,
+                        `名稱：${optionLabel(NAME_MODE_OPTIONS, nameMode)}`,
+                        ...(type === "businessPersonal" && photoMode === "original" ? [`角色：${businessAvatar.persona}`, `髮型：${businessAvatar.hair}`, `服裝：${businessAvatar.clothes}`, `配色：${businessAvatar.palette}`] : []),
+                      ].map((label) => (
+                        <span key={label} className="rounded-md bg-slate-100 px-2.5 py-1.5">{label}</span>
+                      ))}
+                    </div>
+                    <p className="mt-2 text-xs leading-6 text-slate-600">角色內容、畫風描述及每句短句也會以目前欄位輸入的內容為準。這些只是給 AI 的指令，不會直接修改已產出的圖片。</p>
+                    <p className="mt-1 text-xs font-black leading-5 text-amber-800">請確認以上選項正確，再按下方「複製 ChatGPT 指令」；若剛調整文字位置，請重新複製新指令並重新生圖。</p>
+                  </div>
+
+                </div>
+              </details>
               <div className="mt-4"><StickerNextActionHint>已從 ChatGPT 或 Gemini 下載完整大圖？請按下方「第 3 步｜已下載整張大圖，回 RXV 上傳」。</StickerNextActionHint></div>
               <Link
                 to="/tools/line-sticker?flow=1#mother-upload"
