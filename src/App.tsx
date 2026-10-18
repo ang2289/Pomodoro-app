@@ -170,6 +170,7 @@ import EmotionalValueStickerPrompt from './pages/tools/EmotionalValueStickerProm
 import StickerShowcaseGallery from './pages/tools/StickerShowcaseGallery'
 import AnimatedLineStickerTool from './pages/tools/AnimatedLineStickerTool'
 import LineStickerStarterPage from './pages/tools/LineStickerStarterPage'
+import StickerExcelPreviewPage from './pages/tools/StickerExcelPreviewPage'
 import ImagePromptGenerator from './pages/tools/ImagePromptGenerator'
 import PetPromptPage from './pages/tools/PetPromptPage'
 import StickerImageSplitter from './pages/tools/StickerImageSplitter'
@@ -712,6 +713,7 @@ function App() {
             <Route path="tools/image-crop" element={<ImageCropPage />} />
             <Route path="tools/line-sticker" element={<LineStickerTool />} />
             <Route path="tools/line-sticker-start" element={<LineStickerStarterPage />} />
+            <Route path="tools/sticker-excel-preview" element={<StickerExcelPreviewPage />} />
             <Route path="tools/line-sticker-guide" element={<LineStickerGuide />} />
             <Route path="tools/sticker-prompt" element={<StickerPromptGenerator />} />
             <Route path="tools/emotional-value-sticker-prompt" element={<EmotionalValueStickerPrompt />} />
