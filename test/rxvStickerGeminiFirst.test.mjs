@@ -30,8 +30,11 @@ test("每段新手流程明確同時提供 ChatGPT 與 Google Gemini，且保留
   assert.match(buttons, /https:\/\/gemini\.google\.com\/app/);
   assert.match(buttons, /開啟 ChatGPT 畫圖/);
   assert.match(buttons, /開啟 Google Gemini 畫圖/);
-  assert.match(prompt, /<StickerAIProviderLinks \/>/);
-  assert.match(prompt, /<StickerAIProviderLinks compact \/>/);
+  // Prompt page reveals AI link only after the matching sheet instruction was copied.
+  // Existing guide still offers generic provider links separately.
+  assert.doesNotMatch(prompt, /<StickerAIProviderLinks(?: compact)? \/>/);
+  assert.match(prompt, /preparedFlowPrompt\[\`chatgpt-\$\{index\}\`\] === item\.prompt/);
+  assert.match(prompt, /preparedFlowPrompt\[\`gemini-\$\{index\}\`\] === item\.prompt/);
   assert.match(guide, /<StickerAIProviderLinks \/>/);
   assert.match(prompt, /請複製第/);
   assert.match(prompt, /已從 ChatGPT 或 Gemini 下載完整大圖/);
