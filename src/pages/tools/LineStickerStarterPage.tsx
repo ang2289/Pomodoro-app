@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import SEO from "@/components/SEO";
 import LineStickerFlowSteps from "@/components/LineStickerFlowSteps";
@@ -8,32 +9,119 @@ import LineStickerFlowSteps from "@/components/LineStickerFlowSteps";
  * 實體圖片／影片在 public/images/rxv-sticker-guide/，可由獨立本機測試包安全放入。
  */
 const ASSET = "/images/rxv-sticker-guide";
-const cases = [
+type DemoCase = { id: string; name: string; badge: string; text: string; main: string; extra: string; mainAlt: string; extraAlt: string; video?: string; videoPoster?: string; originalPhoto?: string; note?: string; };
+const cases: DemoCase[] = [
   {
-    id: "baby",
-    name: "寶寶真人感貼圖",
-    badge: "真人照片延伸多表情",
-    text: "同一位寶寶，用不同表情與動作回覆聊天。只有一張原始照片，也能製作多表情 AI 生圖指令；生成後仍須人工確認長相與比例。",
-    main: `${ASSET}/baby-4x4.webp`,
-    extra: `${ASSET}/baby-4x2.webp`,
-    video: `${ASSET}/baby-demo.mp4`,
-    videoPoster: `${ASSET}/baby-demo.webp`,
-    mainAlt: "寶寶真人感 LINE 貼圖範例，第一張 4 欄 4 列共 16 格，搭配繁體中文文字",
-    extraAlt: "同位寶寶延續的第二張 4 欄 2 列共 8 格",
+    "id": "baby",
+    "name": "寶寶真人感",
+    "badge": "真人照片延伸多表情",
+    "text": "真人寶寶的多表情日常回覆示範；AI 延伸後仍要確認和照片的相似度。",
+    "main": "/images/rxv-sticker-guide/baby-4x4.webp",
+    "extra": "/images/rxv-sticker-guide/baby-4x2.webp",
+    "video": "/images/rxv-sticker-guide/baby-demo.mp4",
+    "videoPoster": "/images/rxv-sticker-guide/baby-demo.webp",
+    "mainAlt": "寶寶真人感 第一張 4×4 16 格母圖",
+    "extraAlt": "寶寶真人感 第二張 4×2 8 格母圖"
   },
   {
-    id: "florist",
-    name: "花店店家回覆貼圖",
-    badge: "原創 Q 版職業角色",
-    text: "花店可以用自己的 LINE 貼圖回覆訂單、花束完成與配送通知，不用每次重打長篇文字。",
-    main: `${ASSET}/florist-4x4.webp`,
-    extra: `${ASSET}/florist-4x2.webp`,
-    video: `${ASSET}/florist-demo.mp4`,
-    videoPoster: `${ASSET}/florist-demo.webp`,
-    mainAlt: "花店 Q 版職業角色貼圖範例，4 欄 4 列的 16 格繁體中文貼圖",
-    extraAlt: "花店 Q 版貼圖第二張母圖，4 欄 2 列 8 格",
+    "id": "florist",
+    "name": "花店職業",
+    "badge": "原創 Q 版職業角色",
+    "text": "花店接單、花束完成、配送通知與感謝客戶的回覆貼圖。",
+    "main": "/images/rxv-sticker-guide/florist-4x4.webp",
+    "extra": "/images/rxv-sticker-guide/florist-4x2.webp",
+    "video": "/images/rxv-sticker-guide/florist-demo.mp4",
+    "videoPoster": "/images/rxv-sticker-guide/florist-demo.webp",
+    "mainAlt": "花店職業 第一張 4×4 16 格母圖",
+    "extraAlt": "花店職業 第二張 4×2 8 格母圖"
   },
-] as const;
+  {
+    "id": "dog",
+    "name": "萌寵狗狗",
+    "badge": "寵物日常回覆",
+    "text": "同一隻棕白萌犬：早安、晚安、收到、謝謝等 24 張。",
+    "main": "/images/rxv-sticker-guide/dog-4x4.webp",
+    "extra": "/images/rxv-sticker-guide/dog-4x2.webp",
+    "video": "/images/rxv-sticker-guide/dog-demo.mp4",
+    "videoPoster": "/images/rxv-sticker-guide/dog-demo.webp",
+    "mainAlt": "萌寵狗狗 第一張 4×4 16 格母圖",
+    "extraAlt": "萌寵狗狗 第二張 4×2 8 格母圖"
+  },
+  {
+    "id": "cat",
+    "name": "萌寵貓咪",
+    "badge": "原照片轉 Q 版",
+    "text": "對照布偶貓原始照片及 Q 版貼圖，目前沒有動態影片。",
+    "main": "/images/rxv-sticker-guide/cat-4x4.webp",
+    "extra": "/images/rxv-sticker-guide/cat-4x2.webp",
+    "originalPhoto": "/images/rxv-sticker-guide/cat-original.webp",
+    "mainAlt": "萌寵貓咪 第一張 4×4 16 格母圖",
+    "extraAlt": "萌寵貓咪 第二張 4×2 8 格母圖"
+  },
+  {
+    "id": "couple",
+    "name": "甜蜜情侶",
+    "badge": "雙人 Q 版",
+    "text": "情侶日常互動、想你、抱抱、謝謝、陪伴等。",
+    "main": "/images/rxv-sticker-guide/couple-4x4.webp",
+    "extra": "/images/rxv-sticker-guide/couple-4x2.webp",
+    "video": "/images/rxv-sticker-guide/couple-demo.mp4",
+    "videoPoster": "/images/rxv-sticker-guide/couple-demo.webp",
+    "mainAlt": "甜蜜情侶 第一張 4×4 16 格母圖",
+    "extraAlt": "甜蜜情侶 第二張 4×2 8 格母圖"
+  },
+  {
+    "id": "realtor",
+    "name": "房仲服務",
+    "badge": "職業個人品牌",
+    "text": "房仲接洽、看屋安排、進度追蹤與成交祝賀。",
+    "main": "/images/rxv-sticker-guide/realtor-4x4.webp",
+    "extra": "/images/rxv-sticker-guide/realtor-4x2.webp",
+    "video": "/images/rxv-sticker-guide/realtor-demo.mp4",
+    "videoPoster": "/images/rxv-sticker-guide/realtor-demo.webp",
+    "note": "原壓縮檔標示已上架；本頁僅展示製作成果，未核驗目前商店狀態。",
+    "mainAlt": "房仲服務 第一張 4×4 16 格母圖",
+    "extraAlt": "房仲服務 第二張 4×2 8 格母圖"
+  },
+  {
+    "id": "sales",
+    "name": "專業業務",
+    "badge": "業務回覆",
+    "text": "收到、確認、追進度、整理資料與感謝客戶。",
+    "main": "/images/rxv-sticker-guide/sales-4x4.webp",
+    "extra": "/images/rxv-sticker-guide/sales-4x2.webp",
+    "video": "/images/rxv-sticker-guide/sales-demo.mp4",
+    "videoPoster": "/images/rxv-sticker-guide/sales-demo.webp",
+    "mainAlt": "專業業務 第一張 4×4 16 格母圖",
+    "extraAlt": "專業業務 第二張 4×2 8 格母圖"
+  },
+  {
+    "id": "manager",
+    "name": "社區總幹事",
+    "badge": "物業管理",
+    "text": "社區服務、公告提醒、設備報修與行政回覆。",
+    "main": "/images/rxv-sticker-guide/manager-4x4.webp",
+    "extra": "/images/rxv-sticker-guide/manager-4x2.webp",
+    "video": "/images/rxv-sticker-guide/manager-demo.mp4",
+    "videoPoster": "/images/rxv-sticker-guide/manager-demo.webp",
+    "note": "原壓縮檔標示已上架；本頁僅展示製作成果，未核驗目前商店狀態。",
+    "mainAlt": "社區總幹事 第一張 4×4 16 格母圖",
+    "extraAlt": "社區總幹事 第二張 4×2 8 格母圖"
+  },
+  {
+    "id": "breakfast",
+    "name": "早餐店",
+    "badge": "店家客服",
+    "text": "接單、餐點完成、取餐、外送與店家問候。",
+    "main": "/images/rxv-sticker-guide/breakfast-4x4.webp",
+    "extra": "/images/rxv-sticker-guide/breakfast-4x2.webp",
+    "video": "/images/rxv-sticker-guide/breakfast-demo.mp4",
+    "videoPoster": "/images/rxv-sticker-guide/breakfast-demo.webp",
+    "note": "原壓縮檔標示已上架；本頁僅展示製作成果，未核驗目前商店狀態。",
+    "mainAlt": "早餐店 第一張 4×4 16 格母圖",
+    "extraAlt": "早餐店 第二張 4×2 8 格母圖"
+  }
+];
 
 const steps = [
   {n:1, title:"選角色與文字", desc:"選靜態／動態、8／16／24 張和真人／Q 版畫風。", detail:"只需要選一選，不用會設計。", key:"theme"},
@@ -54,11 +142,13 @@ function StickerImage({src, alt, shape = "square"}: {src: string; alt: string; s
 }
 
 export default function LineStickerStarterPage() {
+  const [selectedId, setSelectedId] = useState("baby");
+  const selected = cases.find((item) => item.id === selectedId) ?? cases[0];
   return (
     <>
       <SEO
-        title="LINE 貼圖免費製作教學｜寶寶真人、花店 Q 版 24 張實例｜RxV"
-        description="先看真人寶寶和花店 Q 版貼圖範例、動態影片，再用 RxV 免費五步驟工具做 LINE 或 WhatsApp 靜態／動態貼圖。"
+        title="LINE 貼圖免費製作教學｜寶寶、萌寵、情侶、房仲與店家 24 張範例｜RxV"
+        description="先看九組 LINE 貼圖範例、動態影片，再用 RxV 免費五步驟工具做 LINE 或 WhatsApp 靜態／動態貼圖。"
         path="/tools/line-sticker-start"
         keywords="LINE貼圖教學,LINE動態貼圖,真人寶寶貼圖,花店LINE貼圖,免費貼圖製作,母圖切割"
       />
@@ -74,7 +164,7 @@ export default function LineStickerStarterPage() {
               不會畫圖、不會切圖，也能製作自己的 LINE 貼圖
             </h1>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-700 sm:text-base">
-              先看下方兩套實際作品：寶寶真人感、花店 Q 版。看懂什麼是「母圖」，再依照五個步驟自己製作。
+              先看下方九套作品：寶寶、花店、萌寵、情侶、業務與店家。看懂什麼是「母圖」，再依照五個步驟自己製作。
               RxV 幫您整理提示詞、自動切割、去背與打包；動態貼圖也在第 5 步完成。
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
@@ -82,7 +172,7 @@ export default function LineStickerStarterPage() {
                 免費開始製作我的貼圖 →
               </Link>
               <a href="#examples" className="inline-flex min-h-12 items-center justify-center rounded-xl border border-violet-200 bg-white px-5 py-3 text-sm font-bold text-violet-800 hover:bg-violet-50">
-                先看兩套成果 ↓
+                先看九套成果 ↓
               </a>
             </div>
             <p className="mt-3 text-xs leading-5 text-slate-500">本站工具可免費使用；AI 生圖服務可能有平台使用額度。LINE 上架需自行送審，並非完成 ZIP 就自動通過。</p>
@@ -112,40 +202,68 @@ export default function LineStickerStarterPage() {
             </div>
           </section>
 
-          <section id="examples" className="scroll-mt-24 space-y-4">
+          <section id="examples" className="scroll-mt-24 space-y-4" aria-label="九組貼圖示範作品">
             <div className="px-1">
-              <p className="text-xs font-black text-violet-700">兩套實際製作案例</p>
-              <h2 className="mt-1 text-2xl font-black text-slate-900 sm:text-3xl">先看成果，再選自己喜歡的風格</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-600">一張母圖不是一張貼圖，而是排成 4×4 或 4×2 的大圖；24 張需要兩張母圖，後續由工具切成獨立貼圖。</p>
+              <p className="text-xs font-black text-violet-700">9 組實際製作案例</p>
+              <h2 className="mt-1 text-2xl font-black text-slate-900 sm:text-3xl">先選一組喜歡的貼圖，再看完整成果</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600">點分類卡片，才展開該組 4×4、4×2 母圖及動態影片。24 張需要兩張母圖，由工具切成獨立貼圖。</p>
             </div>
-            {cases.map((item) => (
-              <article key={item.id} className="rounded-3xl border border-rose-100 bg-white p-4 shadow-sm sm:p-6">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="text-xl font-black text-slate-900">{item.name}</h3>
-                  <span className="rounded-full bg-pink-50 px-3 py-1.5 text-xs font-bold text-pink-800">{item.badge}</span>
-                </div>
-                <p className="mt-2 max-w-4xl text-sm leading-7 text-slate-700">{item.text}</p>
-                <div className="mt-4 grid gap-3 md:grid-cols-[1.05fr_1fr]">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5" role="group" aria-label="選擇貼圖示範類型">
+              {cases.map((item) => (
+                <button type="button" key={item.id}
+                  onClick={() => setSelectedId(item.id)}
+                  aria-pressed={selected.id === item.id}
+                  aria-controls="sticker-selected-example"
+                  className={"rounded-2xl border-2 bg-white p-2 text-left transition-colors hover:border-violet-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 " + (selected.id === item.id ? "border-violet-600 shadow-md" : "border-rose-100")}>
+                  <img src={item.main} alt={item.mainAlt} loading="lazy" decoding="async" className="aspect-square w-full rounded-lg bg-white object-contain" />
+                  <span className="mt-2 block text-sm font-black text-slate-900">{item.name}</span>
+                  <span className="mt-1 block text-[11px] leading-5 text-slate-500">{item.badge}</span>
+                </button>
+              ))}
+            </div>
+            <article id="sticker-selected-example" key={selected.id} className="rounded-3xl border border-violet-200 bg-white p-4 shadow-sm sm:p-6" aria-live="polite">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-xl font-black text-slate-900">{selected.name}</h3>
+                <span className="rounded-full bg-pink-50 px-3 py-1.5 text-xs font-bold text-pink-800">{selected.badge}</span>
+              </div>
+              <p className="mt-2 max-w-4xl text-sm leading-7 text-slate-700">{selected.text}</p>
+              {selected.originalPhoto ? (
+                <figure className="mt-4 max-w-[330px] rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <img src={selected.originalPhoto} alt="寵物原始參考照片" loading="lazy" className="max-h-48 w-full object-contain" />
+                  <figcaption className="mt-1 text-xs font-bold text-slate-600">原始照片 → 下面的 Q 版貼圖</figcaption>
+                </figure>
+              ) : null}
+              <div className="mt-4 grid gap-3 md:grid-cols-[1.05fr_1fr]">
+                <figure>
+                  <StickerImage src={selected.main} alt={selected.mainAlt} />
+                  <figcaption className="mt-2 text-center text-xs font-semibold text-slate-700">母圖 1｜4×4，共 16 格</figcaption>
+                </figure>
+                <div className="space-y-4">
                   <figure>
-                    <StickerImage src={item.main} alt={item.mainAlt} />
-                    <figcaption className="mt-2 text-center text-xs font-semibold text-slate-700">母圖 1｜4×4，共 16 格</figcaption>
+                    <StickerImage src={selected.extra} alt={selected.extraAlt} shape="wide" />
+                    <figcaption className="mt-2 text-center text-xs font-semibold text-slate-700">母圖 2｜4×2，共 8 格</figcaption>
                   </figure>
-                  <div className="space-y-4">
-                    <figure>
-                      <StickerImage src={item.extra} alt={item.extraAlt} shape="wide" />
-                      <figcaption className="mt-2 text-center text-xs font-semibold text-slate-700">母圖 2｜4×2，共 8 格</figcaption>
-                    </figure>
+                  {selected.video ? (
                     <div className="overflow-hidden rounded-2xl border border-rose-100 bg-[#fff9fc] p-3">
                       <p className="mb-2 text-xs font-bold text-slate-900">動態貼圖製作成果（影片示範）</p>
-                      <video controls playsInline preload="none" poster={item.videoPoster} src={item.video} className="mx-auto max-h-[330px] w-full rounded-xl bg-white object-contain" aria-label={item.name + "動態影片展示"} />
-                      <p className="mt-2 text-[11px] leading-5 text-slate-500">影片僅示範動畫效果；LINE 實際上架檔案為 APNG，需遵守官方規格與審核。</p>
+                      <video controls playsInline preload="none" poster={selected.videoPoster} src={selected.video}
+                        className="mx-auto max-h-[330px] w-full rounded-xl bg-white object-contain" aria-label={selected.name + "動態影片展示"} />
+                      <p className="mt-2 text-[11px] leading-5 text-slate-500">影片只示範動畫效果，不代表已通過 LINE 審核。</p>
                     </div>
-                  </div>
+                  ) : (
+                    <p className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm leading-6 text-slate-600">本組只有靜態母圖，尚未提供動態影片；仍可於第 5 步製作動畫。</p>
+                  )}
                 </div>
-              </article>
-            ))}
+              </div>
+              {selected.note && <p className="mt-3 text-xs text-slate-500">{selected.note}</p>}
+              <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-slate-100 pt-4">
+                <Link to="/tools/sticker-prompt?new=1#sticker-start" className="inline-flex min-h-12 items-center justify-center rounded-xl bg-violet-700 px-5 py-3 text-sm font-bold !text-white hover:bg-violet-800">
+                  我也想做這種貼圖｜免費開始 →
+                </Link>
+                <span className="text-xs text-slate-500">進入第 1 步後可選擇主題與畫風。</span>
+              </div>
+            </article>
           </section>
-
           <section className="rounded-3xl border border-violet-100 bg-white p-5 sm:p-7">
             <h2 className="text-2xl font-black text-slate-900">第一次製作，這些先知道就好</h2>
             <div className="mt-4 grid gap-3 md:grid-cols-2">
