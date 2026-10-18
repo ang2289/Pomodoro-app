@@ -30,5 +30,7 @@ jobs:
         run: node --test test/rxvStickerOnboarding.test.mjs test/rxvStickerGeminiFirst.test.mjs test/rxvStickerFinalWorkflow.test.mjs test/stickerStarterLanding.test.mjs test/stickerExcelOffers.test.mjs
       - name: AI 100 style presets regression
         run: npx tsx --test test/aiImage100Presets.test.ts
+      - name: Validate free Excel and nine gallery media for release
+        run: node --test test/stickerReleaseAssets.test.mjs
       - name: TypeScript and full Vite build
         run: npm run build
