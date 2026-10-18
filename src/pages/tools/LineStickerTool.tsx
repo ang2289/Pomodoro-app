@@ -2418,7 +2418,7 @@ export default function LineStickerTool() {
         <main className="min-h-screen bg-slate-50 px-4 py-8">
           <div className="mx-auto max-w-4xl">
             <h1 className="text-2xl font-black text-slate-900">第一次做 LINE／WhatsApp 貼圖？從第 1 步開始</h1>
-            <Link to="/tools/line-sticker-start" className="mt-3 inline-flex min-h-11 items-center rounded-xl border border-violet-200 bg-white px-4 py-2 text-sm font-bold text-violet-800 hover:bg-violet-50">先看兩套成果與五步驟教學 →</Link>
+            <Link to="/tools/line-sticker-start" className="mt-3 inline-flex min-h-11 items-center rounded-xl border border-violet-200 bg-white px-4 py-2 text-sm font-bold text-violet-800 hover:bg-violet-50">先看九組成果與五步驟教學 →</Link>
             <p className="mt-3 text-sm leading-7 text-slate-700">沒有圖片也沒關係，按順序選主題及文字 → 複製指令給 ChatGPT → 下載整張大圖 → 回 RXV 上傳切割。整個流程由上往下操作。</p>
             <LineStickerFlowSteps activeStep={1} />
             <section className="rounded-2xl border border-sky-200 bg-sky-50 p-5" aria-label="選擇貼圖製作起點">
