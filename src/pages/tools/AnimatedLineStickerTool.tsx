@@ -2763,7 +2763,7 @@ const AnimatedLineStickerTool: React.FC = () => {
                 </span>
               </div>
               <p className="mt-4 text-xs font-black uppercase tracking-wide text-violet-600">
-                {t("animated_line_sticker.step_1")}
+                第 5 步內操作 A｜選擇素材
               </p>
               <h2 className="mt-1 text-xl font-black text-slate-900 md:text-2xl">
                 {t("animated_line_sticker.auto_title")}
@@ -2798,7 +2798,7 @@ const AnimatedLineStickerTool: React.FC = () => {
 
             <div className="rounded-2xl border border-violet-100 bg-white p-4 shadow-sm">
               <p className="text-xs font-black uppercase tracking-wide text-violet-600">
-                {t("animated_line_sticker.step_2")}
+                第 5 步內操作 B｜選擇動作
               </p>
               <label className="mt-1 block">
                 <span className="text-sm font-black text-slate-800">
@@ -2842,7 +2842,7 @@ const AnimatedLineStickerTool: React.FC = () => {
               </div>
 
               <p className="mt-4 text-xs font-black uppercase tracking-wide text-violet-600">
-                {t("animated_line_sticker.step_3")}
+                第 5 步內操作 C｜產生動畫
               </p>
               <button
                 type="button"
@@ -2880,9 +2880,9 @@ const AnimatedLineStickerTool: React.FC = () => {
 
             <div className="mt-5 grid gap-3 md:grid-cols-3">
               {[
-                [t("animated_line_sticker.step_1"), t("animated_line_sticker.batch_step1")],
-                [t("animated_line_sticker.step_2"), t("animated_line_sticker.batch_step2")],
-                [t("animated_line_sticker.step_3"), t("animated_line_sticker.batch_step3")],
+                ["操作 A｜確認貼圖", t("animated_line_sticker.batch_step1")],
+                ["操作 B｜設定動畫", t("animated_line_sticker.batch_step2")],
+                ["操作 C｜下載 ZIP", t("animated_line_sticker.batch_step3")],
               ].map(([label, desc]) => (
                 <div key={label} className="rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm">
                   <p className="text-xs font-black uppercase tracking-wide text-emerald-600">{label}</p>
