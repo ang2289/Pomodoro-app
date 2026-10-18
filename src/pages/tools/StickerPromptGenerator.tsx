@@ -4,6 +4,7 @@ import SEO from "@/components/SEO";
 
 import LineStickerAuthorCard from "@/components/LineStickerAuthorCard";
 import LineStickerFlowSteps from "@/components/LineStickerFlowSteps";
+import StickerExcelOffers from "@/components/StickerExcelOffers";
 import { StickerCustomInquiry, StickerNextActionHint } from "@/components/StickerBeginnerActions";
 import {
   createLineStickerProject,
@@ -4842,13 +4843,11 @@ function ShowcaseSection() {
                 </Link>
 
                 <a
-                  href="https://ko-fi.com/s/62381d787d"
-                  target="_blank"
-                  rel="noreferrer"
+                  href="#rxv-sticker-excel-download"
                   className="inline-flex w-fit max-w-full items-center justify-center rounded-2xl bg-pink-600 px-4 py-2 text-center text-xs font-black !text-white hover:bg-pink-700"
                   style={{ color: "#ffffff" }}
                 >
-                  購買模板
+                  查看免費 Excel／NT$160 進階模板
                 </a>
               </div>
             </div>
@@ -6311,6 +6310,7 @@ export default function StickerPromptGenerator() {
             </div>
           </section>
 
+          <StickerExcelOffers compact />
           <div className="mt-6"><StickerCustomInquiry /></div>
           {false && <SupportSection />}
 
