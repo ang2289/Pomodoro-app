@@ -265,7 +265,7 @@ test("每組貼圖選擇按鈕同寬，選取、懸停、鍵盤焦點狀態清�
   assert.ok(upload.includes("w-[68px] shrink-0"));
 });
 
-test("三階段參考版型與貼圖錨點不會產生捲動爭用", () => {
+test("五步驟小卡版型與貼圖錨點不會產生捲動爭用", () => {
   const prompt = read("src/pages/tools/StickerPromptGenerator.tsx");
   const flow = read("src/components/LineStickerFlowSteps.tsx");
   const scroll = read("src/components/ScrollToTop.tsx");
@@ -273,10 +273,10 @@ test("三階段參考版型與貼圖錨點不會產生捲動爭用", () => {
   assert.match(prompt, /把你的想法，做成專屬貼圖/);
   assert.match(prompt, /RXV STICKER STUDIO/);
   assert.match(prompt, /min-h-screen bg-\[#F8F7F3\]/);
-  assert.match(flow, /grid grid-cols-3 overflow-hidden rounded-xl/);
-  assert.match(flow, /第 1～2 步/);
-  assert.match(flow, /第 3～4 步/);
-  assert.match(flow, /原第 5 步/);
+  assert.match(flow, /grid grid-cols-5 gap-1\.5/);
+  assert.match(flow, /title: "選角色"/);
+  assert.match(flow, /title: "自動切圖"/);
+  assert.match(flow, /title: mode === "animated" \? "製作動態 ZIP"/);
   assert.match(flow, /useLayoutEffect/);
   assert.match(flow, /scrollIntoView\(\{ behavior: "auto", block: "start" \}\)/);
   assert.doesNotMatch(flow, /scrollIntoView\(\{ behavior: "smooth"/);
