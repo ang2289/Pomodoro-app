@@ -35,7 +35,7 @@ test("全程只有五個明確步驟，動畫是第五步內的操作 A/B/C",()=
   assert.match(animated,/第 5 步內操作 C｜產生動畫/);
   assert.match(animated,/第 5 步完成/);
   assert.match(prompt,/先看寶寶、花店成果與五步驟圖片教學/);
-  assert.match(cutter,/先看兩套成果與五步驟教學/);
+  assert.match(cutter,/先看九組成果與五步驟教學/);
 });
 
 test("貼圖專頁不插入分潤廣告；其他網站廣告設定保留",()=>{
