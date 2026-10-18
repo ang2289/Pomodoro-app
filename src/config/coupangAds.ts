@@ -27,7 +27,9 @@ export const COUPANG_ADS: Record<CoupangAdPlacement, CoupangAdConfig> = {
 
 export const TOOL_COUPANG_AD = { alt: "Coupang Partners 工具推薦" } satisfies Omit<CoupangAdConfig, "subId">;
 export const TOOL_COUPANG_EXCLUDED_PATHS = new Set([
-  "/tools", "/tools/line-sticker", "/tools/commercial-image", "/tools/business-card-order",
+  "/tools", "/tools/line-sticker", "/tools/line-sticker-start", "/tools/sticker-prompt",
+  "/tools/line-sticker-guide", "/tools/sticker-showcase", "/tools/animated-line-sticker",
+  "/tools/commercial-image", "/tools/business-card-order",
   "/tools/ai-summary", "/tools/summary", "/tools/homework-helper", "/tools/ai", "/tools/image",
   "/tools/productivity", "/tools/life",
 ]);
