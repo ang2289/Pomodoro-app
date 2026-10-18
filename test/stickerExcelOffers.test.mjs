@@ -60,3 +60,29 @@ test("nine user examples, dynamic clips and original cat picture stay intact", (
   assert.match(gallery, /cat-original\.webp/);
   assert.match(gallery, /setSelectedId\(item\.id\)/);
 });
+
+test("paid Excel preview route provides functioning controlled selectors, layout and curated preview only", () => {
+  const app = read("src/App.tsx");
+  const offers = read("src/components/StickerExcelOffers.tsx");
+  const preview = read("src/pages/tools/StickerExcelPreviewPage.tsx");
+
+  assert.match(app, /path="tools\/sticker-excel-preview" element=\{<StickerExcelPreviewPage \/>\}/);
+  assert.match(offers, /to="\/tools\/sticker-excel-preview"/);
+  assert.match(offers, /先操作試看｜選職業與情境/);
+
+  assert.match(preview, /useState<string>\("coffee"\)/);
+  assert.match(preview, /useState<string>\("order"\)/);
+  assert.match(preview, /useState<StickerSheet>\("4x4"\)/);
+  assert.match(preview, /onChange=\{\(event\) => setCareerId\(event\.target\.value\)\}/);
+  assert.match(preview, /onChange=\{\(event\) => setScenarioId\(event\.target\.value\)\}/);
+  assert.match(preview, /onChange=\{\(\) => setSheet\(item\.id\)\}/);
+  assert.match(preview, /const count = sheet === "4x4" \? 16 : 20/);
+  assert.match(preview, /cols = sheet === "4x4" \? 4 : 5/);
+  assert.match(preview, /Array\.from\(\{length: count\}/);
+  assert.match(preview, /本頁僅使用 6 種職業、4 種情境/);
+  assert.match(preview, /STICKER_SALES_FACEBOOK/);
+  assert.match(preview, /STICKER_SALES_MAILTO/);
+  assert.doesNotMatch(preview, /\\/downloads\\/[^"']*\\.zip/);
+  assert.doesNotMatch(preview, /1330-records|allProfessions|secretPremiumData/);
+  assert.match(preview, /不是免費開放全部 1,330 組資料/);
+});
