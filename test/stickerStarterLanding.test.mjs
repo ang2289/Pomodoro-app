@@ -56,3 +56,20 @@ test("傳回上傳、靜態／動態、真人 A/B 等原功能不變",()=>{
   assert.match(animated,/exportBatchUploadPack/);
   assert.match(animated,/exportWhatsAppAnimatedPack/);
 });
+
+test("上傳示範 ZIP 新增七個類型，保留原寶寶與花店範例", () => {
+  for (const id of ["baby","florist","dog","cat","couple","realtor","sales","manager","breakfast"]) {
+    assert.ok(page.includes('"id": "' + id + '"'), id);
+    assert.ok(page.includes(id + "-4x4.webp"), id + " 4x4");
+    assert.ok(page.includes(id + "-4x2.webp"), id + " 4x2");
+  }
+  for (const id of ["dog","couple","realtor","sales","manager","breakfast"]) {
+    assert.ok(page.includes(id + "-demo.mp4"), id + " video");
+  }
+  assert.match(page, /cat-original\.webp/);
+  assert.match(page, /setSelectedId\(item\.id\)/);
+  assert.match(page, /aria-pressed=\{selected\.id === item\.id\}/);
+  assert.match(page, /selected\.video \?/);
+  assert.match(page, /本組只有靜態母圖/);
+  assert.match(page, /preload="none"/);
+});
