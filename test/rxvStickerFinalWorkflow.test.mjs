@@ -2,7 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
+// Normalize CRLF on Windows to LF before exact multiline source checks.
+// Runtime ZIP generation remains unchanged; only the test reader is adjusted.
+const read = (path) =>
+  readFileSync(new URL(`../${path}`, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 
 test("角色區分可選性別年齡性格與固定的獨特造型", () => {
   const source = read("src/pages/tools/StickerPromptGenerator.tsx");
@@ -46,6 +49,19 @@ test("正常產生 ZIP 成功後才顯示完成提示", () => {
   const indexDownload = animated.indexOf("downloadBlob(\n        zip,\n        `rxv-line-animated-sticker-upload-pack-");
   const indexComplete = animated.indexOf('setCompletedPlatform("line")');
   assert.ok(indexDownload >= 0 && indexComplete > indexDownload, "LINE animated completion must follow downloadable ZIP");
+});
+
+test("Windows CRLF 與 Linux LF 的 ZIP 完成順序檢查結果一致", () => {
+  const source = read("src/pages/tools/AnimatedLineStickerTool.tsx");
+  const simulatedCRLF = source.replace(/\n/g, "\r\n");
+  const normalize = (text) => text.replace(/\r\n/g, "\n");
+  const expected = 'downloadBlob(\n        zip,\n        `rxv-line-animated-sticker-upload-pack-';
+  for (const variant of [source, simulatedCRLF]) {
+    const normalized = normalize(variant);
+    const downloaded = normalized.indexOf(expected);
+    const completed = normalized.indexOf('setCompletedPlatform("line")');
+    assert.ok(downloaded >= 0 && completed > downloaded);
+  }
 });
 
 test("兩張不同格數母圖不被上一個全域 4×4 選項強制覆蓋", () => {

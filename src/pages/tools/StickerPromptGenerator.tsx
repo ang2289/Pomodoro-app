@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import SEO from "@/components/SEO";
-import CoupangDynamicAd from "@/components/CoupangDynamicAd";
+
 import LineStickerAuthorCard from "@/components/LineStickerAuthorCard";
 import LineStickerFlowSteps from "@/components/LineStickerFlowSteps";
-import { StickerCustomInquiry, StickerNextActionHint, StickerAIProviderLinks } from "@/components/StickerBeginnerActions";
+import { StickerCustomInquiry, StickerNextActionHint } from "@/components/StickerBeginnerActions";
 import {
   createLineStickerProject,
   getAllowedCounts,
@@ -14,6 +14,14 @@ import {
   type LineStickerMode,
 } from "@/lib/lineStickerFlow";
 import { stickerSaleTextRisks, suggestSaleFriendlyLines } from "@/lib/stickerCommercialSafety";
+import {
+  REAL_PHOTO_SUBMODE_OPTIONS,
+  REAL_PHOTO_VARIETY,
+  buildExpressiveCellPlan,
+  realPhotoPolicy,
+  type RealPhotoSubMode,
+} from "@/lib/realPhotoStickerPrompts";
+import { buildMotherSheetWhitespaceRules } from "@/lib/stickerMotherSheetWhitespace";
 
 type TemplateKey =
   | "couple"
@@ -176,7 +184,8 @@ type ProfessionCategory =
   | "familyLifestyle"
   | "healingLifestyle";
 
-type PhotoMode = "original" | "realPerson" | "realPersonPureQ";
+type PhotoMode = "original" | "realPerson" | "realPersonPureQ" | "realPhoto" | "petPhoto";
+type IllustrationStyle = "cute2d" | "doll3d" | "anime" | "korean" | "clay" | "plush" | "watercolor" | "storybook" | "comic" | "pastel" | "sticker" | "semiReal";
 
 const SUPPORT_TW_URL = "https://p.ecpay.com.tw/FD7CD6D";
 const SUPPORT_KOFI_URL = "https://ko-fi.com/ang2289";
@@ -3466,6 +3475,31 @@ const PHOTO_MODE_OPTIONS: Array<{
     prompt:
       "可依真人照片整理成純 Q 版可愛風格，保留髮型、臉型、五官重點與整體氣質，但臉部與比例可更 Q、更討喜，適合想保有本人感覺又希望畫面更可愛的人；請使用本人或已取得同意的照片，避免侵犯肖像權",
   },
+  {
+    value: "realPhoto",
+    label: "真人照片保留原貌（寶寶／家人）",
+    prompt: "使用本人、寶寶或家人的授權照片；可選「完全保留原貌」或「由照片延伸多表情」子模式，兩種指令分開產生",
+  },
+  {
+    value: "petPhoto",
+    label: "寵物照片製作專屬貼圖",
+    prompt: "依使用者提供且有權使用的寵物照片，固定同一隻寵物的品種、毛色、斑紋、耳型、眼睛與鼻子，製作可愛寵物貼圖；若沒有附上照片，請先要求提供照片，不要自行臆造",
+  },
+];
+
+const ILLUSTRATION_STYLE_OPTIONS: Array<{ value: IllustrationStyle; label: string; prompt: string }> = [
+  { value: "cute2d", label: "2D 可愛 Q 版", prompt: "清爽 2D Q 版插畫，大頭小身、輪廓明確、適合手機貼圖" },
+  { value: "doll3d", label: "3D 公仔娃娃風", prompt: "精緻原創 3D 公仔娃娃質感、柔和打光、立體細節、乾淨白底" },
+  { value: "anime", label: "日系動漫風", prompt: "日系動漫人物插畫、簡潔線條與明亮配色，不模仿特定作品角色" },
+  { value: "korean", label: "韓系療癒插畫風", prompt: "韓系溫柔線條、自然淡色與療癒氛圍" },
+  { value: "clay", label: "黏土公仔風", prompt: "手作黏土模型質感、圓潤柔軟、細膩立體陰影" },
+  { value: "plush", label: "毛絨玩偶風", prompt: "原創毛絨玩偶質感、柔軟絨毛、圓潤比例" },
+  { value: "watercolor", label: "水彩手繪風", prompt: "透明水彩暈染、手繪筆觸、留白乾淨" },
+  { value: "storybook", label: "童話繪本風", prompt: "童話繪本插畫、細緻柔和筆觸與溫馨故事感" },
+  { value: "comic", label: "Q 版漫畫風", prompt: "原創 Q 版漫畫、俐落勾線、表情誇張且清晰" },
+  { value: "pastel", label: "粉彩奶油風", prompt: "柔和粉彩與奶油色、圓潤可愛、畫面清爽" },
+  { value: "sticker", label: "可愛貼紙風", prompt: "厚實清楚的貼紙輪廓與簡潔陰影、色彩明亮" },
+  { value: "semiReal", label: "精緻半寫實風", prompt: "精緻半寫實插畫、自然五官比例、柔和寫實光影" },
 ];
 
 function optionLabel<T extends string>(
@@ -3490,7 +3524,15 @@ function textPositionForCell(textPosition: TextPosition, index: number) {
     : "人物放左側、文字放右側（禁止文字在頂部）";
 }
 
-function buildRolePrompt(role: string, photoMode: PhotoMode) {
+function buildRolePrompt(role: string, photoMode: PhotoMode, subMode: RealPhotoSubMode = "unchanged") {
+  if (photoMode === "realPhoto") {
+    return realPhotoPolicy(subMode).role;
+  }
+
+  if (photoMode === "petPhoto") {
+    return `請以上傳的寵物照片作為同一隻寵物的唯一外觀參考。固定品種、毛色、斑紋、眼睛、耳朵、口鼻、體型與辨識特徵；依選定畫風製作原創寵物 Q 版貼圖，不可每格換成不同動物。參考貼圖主題：${role}。沒有寵物照片時，請先要求上傳照片，不要自行創造一隻替代寵物。`;
+  }
+
   if (photoMode === "realPerson") {
     return `請以使用者提供的真人照片作為主角參考，轉成可愛 Q 版似顏繪 LINE 貼圖角色。務必保留真人的髮型、臉型、五官比例、眼睛形狀、鼻子位置、嘴型比例與整體氣質，不要重新創造成另一個人。職業服裝、配件與動作可參考：${role}。若沒有提供照片，請先以親切專業的原創角色替代。`;
   }
@@ -3502,7 +3544,13 @@ function buildRolePrompt(role: string, photoMode: PhotoMode) {
   return `主角是：${role}。`;
 }
 
-function buildPhotoReminder(photoMode: PhotoMode) {
+function buildPhotoReminder(photoMode: PhotoMode, subMode: RealPhotoSubMode = "unchanged") {
+  if (photoMode === "realPhoto") {
+    return realPhotoPolicy(subMode).reminder;
+  }
+  if (photoMode === "petPhoto") {
+    return "寵物照片模式：請使用有權使用的寵物照片；同一套貼圖必須維持同一隻寵物，固定斑紋與毛色。";
+  }
   if (photoMode === "realPerson") {
     return "真人似顏繪 Q 版注意：請使用本人或已取得同意的照片；生成時要保留本人辨識度，但避免加入真實姓名、公司 Logo、商標或未授權元素。";
   }
@@ -4290,7 +4338,10 @@ function buildPrompt(
   fontStyle: FontStyle,
   stickerStyle: StickerStylePreset,
   photoMode: PhotoMode,
+  subMode: RealPhotoSubMode = "unchanged",
   platform: "line" | "whatsapp" = "line",
+  startIndex = 0,
+  stickerMode: LineStickerMode = "static",
 ) {
   const gridInfo = gridOptions[grid];
   const lines = normalizeLines(textArea, gridInfo.count);
@@ -4303,12 +4354,22 @@ function buildPrompt(
   const textPositionPrompt = optionPrompt(TEXT_POSITION_OPTIONS, textPosition);
   const fontStylePrompt = optionPrompt(FONT_STYLE_OPTIONS, fontStyle);
   const stickerStylePrompt = optionPrompt(STICKER_STYLE_OPTIONS, stickerStyle);
-  const photoModePrompt = optionPrompt(PHOTO_MODE_OPTIONS, photoMode);
+  const photoPolicy = realPhotoPolicy(subMode);
+  const photoModePrompt = photoMode === "realPhoto"
+    ? photoPolicy.summary : optionPrompt(PHOTO_MODE_OPTIONS, photoMode);
 
-  const rolePrompt = buildRolePrompt(role, photoMode);
-  const photoReminder = buildPhotoReminder(photoMode);
+  const rolePrompt = buildRolePrompt(role, photoMode, subMode);
+  const photoReminder = buildPhotoReminder(photoMode, subMode);
+  const safeStylePrompt = photoMode === "realPhoto" ? photoPolicy.flavor : stickerStylePrompt;
+  const photoPerformance = photoMode === "realPhoto"
+    ? photoPolicy.variation
+    : "每張貼圖都要有不同表情與動作，整體風格一致、乾淨可愛、適合 LINE 貼圖使用。";
+  const individualPlan = photoMode === "realPhoto" && subMode === "expressive"
+    ? `\n\n【逐格表情與動作設計｜不可省略】\n${buildExpressiveCellPlan(lines, startIndex)}\n每格須依上面指定的表情、頭部角度及動作區別角色演出。`
+    : "";
+  const whitespaceRules = buildMotherSheetWhitespaceRules(grid, stickerMode);
 
-  return `請設計一張 ${platform === "whatsapp" ? "WhatsApp" : "LINE"} ${label}大圖，白色背景，${style}。\n\n商用販售安全：每格只能出現下方指定的主要貼圖短句，禁止在卡片、紙袋、花籃、店招、制服、道具額外產生任何文字、英文 NEW、價格、網址、QR Code、商標、店家 Logo、品牌字樣或促銷宣傳；角色、衣服與道具皆需為原創，不可仿畫知名品牌角色。圖文清晰易讀、避免多手多腳、勿遮住文字。\n\n${rolePrompt}\n\n風格加強：${stickerStylePrompt}。\n\n真人／原創設定：${photoModePrompt}。${photoReminder}\n\n請畫成 ${gridInfo.layoutText}。每格貼圖都要獨立清楚、平均排列。每一格的角色＋文字＋裝飾只佔該格中央約 70%～74%，上下左右至少保留約 13%～15% 的純白安全留白，格與格之間必須看得到明顯白色空間，方便後續平均切割。角色與文字都要完整置中在各自格子內，不可超出邊界、不可跨格、不可互相重疊；每格最外圈至少 13% 純白，格線附近不可有花瓣、陰影或字；若空間不足，寧可把角色與文字整體縮小，也不要貼邊。\n\n文字設定（優先於其他畫風描述）：請使用繁體中文。字型造型遵守「${fontStylePrompt}」；文字大小遵守「${textSizePrompt}」；填色、描邊與文字效果遵守「${textColorPrompt}」；**文字所在區域必須嚴格遵守「${textPositionPrompt}」**。若背景情境或貼圖風格暗示不同的位置，仍以本次「文字位置」選項為準；不可自行改變為其他排版。文字必須清楚好讀，文字與頭髮、臉、手勢、手機、文件等主體至少保留明顯空隙，不可壓在人物或道具上；文字四周也要保留白邊，不要貼近格子邊界，不要切到字，不可出現序號、數字、標題、格號或列表符號。\n\n每張貼圖都要有不同表情與動作，整體風格一致、乾淨可愛、適合 LINE 貼圖使用。\n\n貼圖文字如下：\n${numberedTexts}`;
+  return `請設計一張 ${platform === "whatsapp" ? "WhatsApp" : "LINE"} ${label}大圖，白色背景，${style}。\n\n商用販售安全：每格只能出現下方指定的主要貼圖短句，禁止在卡片、紙袋、花籃、店招、制服、道具額外產生任何文字、英文 NEW、價格、網址、QR Code、商標、店家 Logo、品牌字樣或促銷宣傳；${photoMode === "realPhoto" ? (subMode === "expressive" ? "以有權使用的真實照片作為唯一人物身份參考，可依指令生成自然的新表情與動作，不得模仿陌生人或加入未授權品牌。" : "只能使用已獲授權的原始真人照片，不得模仿未授權人物或加入品牌元素。") : "角色、衣服與道具皆需為原創，不可仿畫知名品牌角色。"}圖文清晰易讀、避免多手多腳、勿遮住文字。\n\n${rolePrompt}\n\n${whitespaceRules}\n\n風格加強：${safeStylePrompt}。\n\n真人／原創設定：${photoModePrompt}。${photoReminder}\n\n請畫成 ${gridInfo.layoutText}。每格貼圖都要獨立清楚、平均排列。每一格的角色＋文字＋裝飾只佔該格中央約 70%～74%，上下左右至少保留約 13%～15% 的純白安全留白，格與格之間必須看得到明顯白色空間，方便後續平均切割。角色與文字都要完整置中在各自格子內，不可超出邊界、不可跨格、不可互相重疊；每格最外圈至少 13% 純白，格線附近不可有花瓣、陰影或字；若空間不足，寧可把角色與文字整體縮小，也不要貼邊。\n\n文字設定（優先於其他畫風描述）：請使用繁體中文。字型造型遵守「${fontStylePrompt}」；文字大小遵守「${textSizePrompt}」；填色、描邊與文字效果遵守「${textColorPrompt}」；**文字所在區域必須嚴格遵守「${textPositionPrompt}」**。若背景情境或貼圖風格暗示不同的位置，仍以本次「文字位置」選項為準；不可自行改變為其他排版。文字必須清楚好讀，文字與頭髮、臉、手勢、手機、文件等主體至少保留明顯空隙，不可壓在人物或道具上；文字四周也要保留白邊，不要貼近格子邊界，不要切到字，不可出現序號、數字、標題、格號或列表符號。\n\n${photoPerformance}${individualPlan}\n\n貼圖文字如下：\n${numberedTexts}`;
 }
 
 function buildStablePrompt(
@@ -4318,30 +4379,35 @@ function buildStablePrompt(
   grid: GridType,
   stickerStyle: StickerStylePreset,
   photoMode: PhotoMode,
+  subMode: RealPhotoSubMode = "unchanged",
 ) {
   const gridInfo = gridOptions[grid];
-  const stickerStylePrompt = optionPrompt(STICKER_STYLE_OPTIONS, stickerStyle);
-  const photoModePrompt = optionPrompt(PHOTO_MODE_OPTIONS, photoMode);
-  const rolePrompt = buildRolePrompt(role, photoMode);
-  const photoReminder = buildPhotoReminder(photoMode);
+  const policy = realPhotoPolicy(subMode);
+  const stickerStylePrompt = photoMode === "realPhoto" ? policy.flavor : optionPrompt(STICKER_STYLE_OPTIONS, stickerStyle);
+  const photoModePrompt = photoMode === "realPhoto" ? policy.summary : optionPrompt(PHOTO_MODE_OPTIONS, photoMode);
+  const rolePrompt = buildRolePrompt(role, photoMode, subMode);
+  const photoReminder = buildPhotoReminder(photoMode, subMode);
+  const whitespaceRules = buildMotherSheetWhitespaceRules(grid);
 
-  return `請設計一張 LINE ${label}角色表情草稿大圖，白色背景，${style}。
+  return `請設計一張 LINE ${label}${photoMode === "realPhoto" && subMode === "unchanged" ? "真人照片原貌排版" : "角色表情"}草稿大圖，白色背景，${style}。
 
 ${rolePrompt}
+
+${whitespaceRules}
 
 風格加強：${stickerStylePrompt}。
 
 真人／原創設定：${photoModePrompt}。${photoReminder}
 
-請畫成 ${gridInfo.layoutText}。每格是一個獨立角色動作；角色只佔單格中央約 70%～74%，上下左右至少保留約 13%～15% 純白安全留白，格與格之間要有明顯白色空間，方便後續平均切割。若角色太大，請整體縮小，不可貼邊或跨格。
+請畫成 ${gridInfo.layoutText}。每格是一張獨立貼圖；角色只佔單格中央約 70%～74%，上下左右至少保留約 13%～15% 純白安全留白，格與格之間要有明顯白色空間，方便後續平均切割。若角色太大，請整體縮小，不可貼邊或跨格。
 
-角色要保持同一人物、同一髮型、同一服裝、同一臉部特徵，每格只改變表情與動作。若選擇真人 Q 版，請以同一張真人照片為基準，不要每格變成不同人。
+角色維持相同的辨識特徵；真人／寵物照片模式須以相同參考照片為準，不可每格換主角。${photoMode === "realPhoto" ? policy.stable : "插畫模式每格可更換表情與動作，但要保持角色一致。"}
 
 不要加入任何文字，不要加入標題，不要浮水印，不要背景裝飾，不要合併格子，不要做成海報，不要做成上下兩張總表。
 
-每格動作可包含：揮手、點頭、開心、驚訝、害羞、加油、比愛心、抱抱、睡覺、哭哭、生氣、疑問、感謝、拿手機、吃東西、說再見、忙碌、等待、收到、拍手。
+${photoMode === "realPhoto" ? (subMode === "expressive" ? REAL_PHOTO_VARIETY : "每格沿用原始照片既有姿勢與表情，不以動作清單要求 AI 產生新姿勢。") : "每格動作可包含：揮手、點頭、開心、驚訝、害羞、加油、比愛心、抱抱、睡覺、哭哭、生氣、疑問、感謝、拿手機、吃東西、說再見、忙碌、等待、收到、拍手。"}
 
-畫風：可愛 Q 版、大頭小身體、乾淨、表情清楚、適合 LINE 貼圖。
+畫風：${photoMode === "realPhoto" ? policy.visual : "依前述指定畫風，人物與文字清晰，適合 LINE 貼圖。"}
 
 小提醒：這是穩定無文字版，適合 Gemini、豆包等工具先產生角色草稿，再回到 RxV 工具切割、加字與打包。`;
 }
@@ -4524,6 +4590,7 @@ function buildFlowPrompt(
   fontStyle: FontStyle,
   stickerStyle: StickerStylePreset,
   photoMode: PhotoMode,
+  subMode: RealPhotoSubMode,
   batchNumber: number,
   mode: LineStickerMode,
   platform: "line" | "whatsapp",
@@ -4542,7 +4609,10 @@ function buildFlowPrompt(
     fontStyle,
     stickerStyle,
     photoMode,
+    subMode,
     platform,
+    startIndex,
+    mode,
   );
   const modeInstructions = mode === "animated"
     ? "本次選擇「動態貼圖」：母圖仍是一張靜止的原始圖，但每格角色四周多留移動空間；人物與文字保持視覺距離，避免後續製作位移動畫時被裁切。不要把多格合成動畫影格，也不要加入時間軸文字。"
@@ -4562,7 +4632,9 @@ function buildFlowPrompt(
 ${identityLock}
 
 ${batchNumber > 1
-  ? "這是同一套貼圖的後續母圖。請在同一個 ChatGPT 對話附上第 1 張已完成母圖，作為角色、服裝、配色、線條粗細與字體的視覺參考。不得複製第一張的動作或短句，僅延續畫風。沒有參考圖時仍使用上方完整角色設定，但只靠文字無法保證完全一致。"
+  ? photoMode === "realPhoto"
+    ? realPhotoPolicy(subMode).secondSheet
+    : "這是同一套貼圖的後續母圖。請在同一個 ChatGPT 對話附上第 1 張已完成母圖，作為角色、服裝、配色、線條粗細與字體的視覺參考。不得複製第一張的動作或短句，僅延續畫風。沒有參考圖時仍使用上方完整角色設定，但只靠文字無法保證完全一致."
   : "這是整套角色與畫風的基準母圖；完成後請保存原圖，以便生成後續母圖。"}
 
 ${base}
@@ -4585,7 +4657,7 @@ ${rowAssignment}
 }
 
 /** Gemini 容易將 4×4 表格生為橫幅，提供可單獨複製的畫布／禁字強化版。 */
-function buildGeminiStrictMotherSheetPrompt(originalPrompt: string, grid: GridType) {
+function buildGeminiStrictMotherSheetPrompt(originalPrompt: string, grid: GridType, photoMode: PhotoMode, subMode: RealPhotoSubMode) {
   const layout = grid === "4x4"
     ? "1:1 正方形畫布，4 欄 × 4 列，共 16 個等寬等高正方形格子"
     : grid === "4x2"
@@ -4596,7 +4668,7 @@ function buildGeminiStrictMotherSheetPrompt(originalPrompt: string, grid: GridTy
 請使用「${layout}」，只輸出一張完整母圖。不可產生橫幅海報、長方形四列拼貼、橫向分鏡或改變畫布比例。
 畫面精確均分，每格完整圖文作為一組置於中央安全範圍；文字本身的上、下或左右位置完全依照下方已選定的文字位置規則，不能自行改版。四邊與每格之間保留純白安全間距；不加分隔線，不能跨格或裁到任何字、頭髮、手腳、裙擺與道具。
 只准出現下方逐格指定的繁體中文主句。所有道具（卡片、花籃、紅包、標語、招牌、旗幟）都不能有額外英文、中文、數字或圖形字樣；禁止 JUST MARRIED、THANK YOU、WEDDING DAY、WITNESS 等額外文字。
-人物從第一格到最後一格都必須保持與下方「主角設定」相同的角色（相同髮型、臉部特徵、服裝、膚色、Q 版頭身比），僅變換表情、手勢與動作；不可擅自改變職業、增加其他主角或改成婚禮新人。
+${photoMode === "realPhoto" ? realPhotoPolicy(subMode).stable : "人物從第一格到最後一格都必須保持與下方「主角設定」相同的角色（相同髮型、臉部特徵、服裝、膚色與已選的頭身比例），可依短句變換表情與動作；不可擅自改變職業、增加其他主角或改成婚禮新人。"}
 必須完整呈現指定格數；若畫布無法符合比例與格數，請重新生成符合版型的一張圖，勿交付錯誤比例。
 
 【以下是每格人物、風格及文字內容，請完整遵守】
@@ -4877,6 +4949,10 @@ export default function StickerPromptGenerator() {
   );
   const [targetCount, setTargetCount] = useState<LineStickerCount>(16);
   const [copiedBatchIndex, setCopiedBatchIndex] = useState<number | null>(null);
+  // The short success animation expires, but the relevant AI handoff stays available
+  // until its actual prompt text changes. No AI service automatically receives the prompt.
+  const [preparedFlowPrompt, setPreparedFlowPrompt] = useState<Record<string, string>>({});
+  const [flowCopyError, setFlowCopyError] = useState<string | null>(null);
   const [copiedGeminiIndex, setCopiedGeminiIndex] = useState<number | null>(null);
   const [type, setType] = useState<TemplateKey>("businessPersonal");
   const [grid, setGrid] = useState<GridType>("4x4");
@@ -4889,6 +4965,8 @@ export default function StickerPromptGenerator() {
   const [stickerStylePreset, setStickerStylePreset] =
     useState<StickerStylePreset>("friendly");
   const [photoMode, setPhotoMode] = useState<PhotoMode>("original");
+  const [realPhotoSubMode, setRealPhotoSubMode] = useState<RealPhotoSubMode>("unchanged");
+  const [illustrationStyle, setIllustrationStyle] = useState<IllustrationStyle>("cute2d");
   const [role, setRole] = useState(templates.businessPersonal.role);
   const [identity, setIdentity] = useState<StickerIdentity>(() => defaultStickerIdentity(templates.businessPersonal.role, templates.businessPersonal.style));
   const [referenceImage, setReferenceImage] = useState<{ name: string; url: string; series: string } | null>(null);
@@ -4933,6 +5011,10 @@ export default function StickerPromptGenerator() {
     } catch { /* 無痕模式或儲存受限時仍可正常使用 */ }
   }, [businessAvatar, businessSignature]);
   const [style, setStyle] = useState(templates.businessPersonal.style);
+  const selectedStylePrompt = optionPrompt(ILLUSTRATION_STYLE_OPTIONS, illustrationStyle);
+  const visualStyle = photoMode === "realPhoto"
+    ? realPhotoPolicy(realPhotoSubMode).visual
+    : `${style}；指定畫風：${selectedStylePrompt}`;
   const [texts, setTexts] = useState(
     getDefaultTextWithName("businessPersonal", "4x4", "none", "小宇"),
   );
@@ -5112,10 +5194,28 @@ export default function StickerPromptGenerator() {
       ? applyOriginalCharacterTraits(businessBase, characterTraits, templates[type].label)
       : businessBase;
   }, [type, photoMode, role, identity, businessAvatar, businessSignature, characterTraits]);
-  const identityLock = useMemo(
-    () => makeStickerIdentityLock(lockedIdentity, fontStyle, textSize, textColor, textPosition),
-    [lockedIdentity, fontStyle, textSize, textColor, textPosition],
-  );
+  const identityLock = useMemo(() => {
+    const photoIdentity = photoMode === "realPhoto"
+      ? realPhotoPolicy(realPhotoSubMode).identity
+      : photoMode === "petPhoto"
+        ? "所有母圖以同一隻寵物的授權照片為參考，毛色、斑紋、眼睛、耳型與體型必須一致，不混入其他寵物。"
+        : photoMode !== "original"
+          ? "所有母圖依相同真人授權照片建立同一位 Q 版角色，優先保留照片中的真實髮型與五官；不得套用預設陌生人物的臉型與髮型。"
+          : "";
+    if (photoIdentity) {
+      return `【整套貼圖共用角色／畫風鎖定｜每張母圖完整重複】
+- 角色來源：${optionLabel(PHOTO_MODE_OPTIONS, photoMode)}
+- 人物／寵物一致性：${photoIdentity}
+- 畫風：${photoMode === "realPhoto" ? realPhotoPolicy(realPhotoSubMode).visual : selectedStylePrompt}
+- 字型：${optionPrompt(FONT_STYLE_OPTIONS, fontStyle)}
+- 字體大小：${optionPrompt(TEXT_SIZE_OPTIONS, textSize)}
+- 字色與描邊：${optionPrompt(TEXT_COLOR_OPTIONS, textColor)}
+- 文字位置：${optionPrompt(TEXT_POSITION_OPTIONS, textPosition)}
+所有貼圖須用同一主角，不得自行換臉、換寵物或增加未授權人物。禁止把設定文字印在畫面上。`;
+    }
+    return `${makeStickerIdentityLock(lockedIdentity, fontStyle, textSize, textColor, textPosition)}
+- 使用者選定畫風：${selectedStylePrompt}；整套母圖一致，不得隨意改變。`;
+  }, [lockedIdentity, fontStyle, textSize, textColor, textPosition, photoMode, realPhotoSubMode, selectedStylePrompt]);
   const effectiveRole = useMemo(
     () => type === "businessPersonal" && photoMode === "original"
       ? `${role}\n\n${businessAvatarPrompt(businessAvatar, businessSignature)}`
@@ -5131,7 +5231,7 @@ export default function StickerPromptGenerator() {
           prompt: buildFlowPrompt(
             templates[type].label,
             effectiveRole,
-            style,
+            visualStyle,
             item.grid,
             batchTexts,
             textSize,
@@ -5140,6 +5240,7 @@ export default function StickerPromptGenerator() {
             fontStyle,
             stickerStylePreset,
             photoMode,
+            realPhotoSubMode,
             index + 1,
             stickerMode,
             stickerPlatform,
@@ -5153,13 +5254,14 @@ export default function StickerPromptGenerator() {
       flowTexts,
       type,
       effectiveRole,
-      style,
+      visualStyle,
       textSize,
       textColor,
       textPosition,
       fontStyle,
       stickerStylePreset,
       photoMode,
+      realPhotoSubMode,
       stickerMode,
       stickerPlatform,
       identityLock,
@@ -5173,7 +5275,7 @@ export default function StickerPromptGenerator() {
       buildPrompt(
         templates[type].label,
         effectiveRole,
-        style,
+        visualStyle,
         grid,
         texts,
         textSize,
@@ -5182,11 +5284,12 @@ export default function StickerPromptGenerator() {
         fontStyle,
         stickerStylePreset,
         photoMode,
+        realPhotoSubMode,
       ),
     [
       type,
       effectiveRole,
-      style,
+      visualStyle,
       grid,
       texts,
       textSize,
@@ -5195,6 +5298,7 @@ export default function StickerPromptGenerator() {
       fontStyle,
       stickerStylePreset,
       photoMode,
+      realPhotoSubMode,
     ],
   );
   const stablePrompt = useMemo(
@@ -5202,12 +5306,13 @@ export default function StickerPromptGenerator() {
       buildStablePrompt(
         templates[type].label,
         effectiveRole,
-        style,
+        visualStyle,
         grid,
         stickerStylePreset,
         photoMode,
+        realPhotoSubMode,
       ),
-    [type, effectiveRole, style, grid, stickerStylePreset, photoMode],
+    [type, effectiveRole, visualStyle, grid, stickerStylePreset, photoMode, realPhotoSubMode],
   );
 
   function handleTypeChange(nextType: TemplateKey) {
@@ -5271,16 +5376,23 @@ export default function StickerPromptGenerator() {
     if (saleRisks.length) return;
     const item = flowPrompts[index];
     if (!item) return;
-    await navigator.clipboard.writeText(
-      provider === "gemini" ? buildGeminiStrictMotherSheetPrompt(item.prompt, item.grid) : item.prompt,
-    );
-    persistFlowProject(2);
-    if (provider === "gemini") {
-      setCopiedGeminiIndex(index);
-      window.setTimeout(() => setCopiedGeminiIndex(null), 1800);
-    } else {
-      setCopiedBatchIndex(index);
-      window.setTimeout(() => setCopiedBatchIndex(null), 1800);
+    try {
+      const instruction = provider === "gemini"
+        ? buildGeminiStrictMotherSheetPrompt(item.prompt, item.grid, photoMode, realPhotoSubMode)
+        : item.prompt;
+      await navigator.clipboard.writeText(instruction);
+      persistFlowProject(2);
+      setFlowCopyError(null);
+      setPreparedFlowPrompt((previous) => ({ ...previous, [`${provider}-${index}`]: item.prompt }));
+      if (provider === "gemini") {
+        setCopiedGeminiIndex(index);
+        window.setTimeout(() => setCopiedGeminiIndex(null), 1800);
+      } else {
+        setCopiedBatchIndex(index);
+        window.setTimeout(() => setCopiedBatchIndex(null), 1800);
+      }
+    } catch {
+      setFlowCopyError("無法複製畫圖指令，請允許瀏覽器使用剪貼簿後再按一次。尚未自動開啟 AI。");
     }
   }
 
@@ -5338,15 +5450,15 @@ export default function StickerPromptGenerator() {
               先選喜歡的主題、文字與畫風，再用 ChatGPT 畫出完整母圖。
               回 RXV 上傳後，自動切割整理，不用一張一張裁圖。
             </p>
+            <Link to="/tools/line-sticker-start" className="mt-3 inline-flex min-h-11 items-center rounded-xl border border-violet-200 bg-white px-4 py-2 text-sm font-black text-violet-800 hover:bg-violet-50">
+              第一次使用？先看寶寶、花店成果與五步驟圖片教學 →
+            </Link>
             <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs font-medium text-slate-600">
               <span>✓ 繁體中文</span><span>✓ LINE／WhatsApp</span><span>✓ 靜態／動態</span>
             </div>
           </header>
-          <p className="mb-5 text-sm text-slate-600">
-            已經有完整母圖？
-            <a href="#sticker-count" className="ml-2 font-bold text-violet-700 underline underline-offset-2 hover:text-violet-900">
-              先選靜態／動態與張數，再直接進入上傳 →
-            </a>
+          <p className="mb-5 text-sm font-semibold leading-6 text-slate-700">
+            第一次使用請照著第 1 → 第 2 → 第 3 步操作：先選平台與張數，再往下挑主題、角色及畫風。
           </p>
           <div id="sticker-start" className="scroll-mt-24" />
 
@@ -5432,28 +5544,47 @@ export default function StickerPromptGenerator() {
                         ? "系統會準備 2 張 4×4，共 32 張。"
                         : "系統會準備 2 張 4×5，共 40 張。"}
               </p>
-              <div className="mt-4 max-w-[520px] rounded-xl border border-violet-200 bg-violet-50/40 px-4 py-4" aria-label="已做好母圖的快速入口">
-                <h3 className="text-sm font-bold text-slate-900">已經有自己做好的母圖？</h3>
-                <p className="mt-1.5 text-xs leading-6 text-slate-600">
-                  不用再產生提示詞。保持上方選好的 {stickerPlatform === "line" ? "LINE" : "WhatsApp"}、
-                  {stickerMode === "animated" ? "動態" : "靜態"}與 {targetCount} 張，
-                  直接進入第 3 步上傳完整母圖，讓 RXV 自動分割、去背與打包。
-                </p>
-                <Link
-                  to="/tools/line-sticker?flow=1#mother-upload"
-                  onClick={() => persistFlowProject(3)}
-                  className="mt-3 inline-flex min-h-12 w-fit max-w-full items-center justify-center rounded-xl bg-violet-600 px-4 py-3 text-center text-sm font-bold !text-white shadow-sm transition-colors hover:bg-violet-700 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
-                >
-                  我已有母圖｜跳至第 3 步上傳、切割與打包 →
-                </Link>
-                {stickerMode === "animated" ? (
-                  <p className="mt-2 text-xs font-medium leading-5 text-violet-800">
-                    已選動態貼圖：母圖切割完成後，可以在第 5 步繼續製作動態貼圖，不會強制改成靜態。
+              <div className="mt-5 max-w-[520px] space-y-3" aria-label="依製作進度選擇下一步">
+                <div className="rounded-2xl border-2 border-violet-300 bg-violet-50 p-4">
+                  <h3 className="text-base font-black text-violet-950">第一次製作貼圖？從這裡繼續</h3>
+                  <p className="mt-1 text-sm leading-6 text-slate-700">
+                    不需要先有母圖。下一步選主題、角色與畫風，系統會幫您準備能複製到 AI 生圖工具的提示詞。
                   </p>
-                ) : null}
+                  <a
+                    href="#sticker-theme"
+                    className="mt-3 inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-violet-600 px-4 py-3 text-center text-sm font-black !text-white shadow-sm transition-colors hover:bg-violet-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
+                  >
+                    繼續第 1 步｜選主題、角色與畫風 ↓
+                  </a>
+                  <p className="mt-2 text-xs leading-5 text-violet-900">只有寶寶、真人或寵物的單張照片？請走這個流程，接下來可選照片模式。</p>
+                </div>
+                <details className="group rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                  <summary className="cursor-pointer text-sm font-bold text-slate-700 marker:text-slate-500">
+                    我已製作完成整張貼圖母圖｜直接上傳（進階）
+                  </summary>
+                  <p className="mt-2 text-xs leading-6 text-slate-600">
+                    「完整母圖」是已經排好 4×4（16 格）、4×2（8 格）等多張貼圖內容的整張大圖；不是只有一張寶寶或真人照片。若已備妥完整母圖或全部單張貼圖 PNG，可以跳過 AI 提示詞。
+                  </p>
+                  <p className="mt-2 text-xs leading-6 text-slate-600">
+                    沿用上方選好的 {stickerPlatform === "line" ? "LINE" : "WhatsApp"}、
+                    {stickerMode === "animated" ? "動態" : "靜態"}、共 {targetCount} 張。下一步將進入第 3 步上傳、切割與打包。
+                  </p>
+                  <Link
+                    to="/tools/line-sticker?flow=1#mother-upload"
+                    onClick={() => persistFlowProject(3)}
+                    className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl border-2 border-slate-300 bg-white px-3 py-2.5 text-center text-sm font-bold text-slate-800 transition-colors hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
+                  >
+                    已有完整母圖｜前往第 3 步上傳 →
+                  </Link>
+                  {stickerMode === "animated" ? (
+                    <p className="mt-2 text-xs font-medium leading-5 text-slate-600">
+                      動態貼圖仍需於第 5 步製作動畫，不會強制轉成靜態。
+                    </p>
+                  ) : null}
+                </details>
               </div>
 
-              <div className="mt-5 flex items-center justify-between gap-3">
+              <div id="sticker-theme" className="mt-5 flex scroll-mt-24 items-center justify-between gap-3">
                 <label className="block text-sm font-semibold text-slate-700">
                   貼圖類型
                 </label>
@@ -5528,15 +5659,69 @@ export default function StickerPromptGenerator() {
                   </option>
                 ))}
               </select>
+              {photoMode === "realPhoto" && (
+                <fieldset className="mt-4 rounded-2xl border-2 border-violet-200 bg-white p-4">
+                  <legend className="px-1 text-sm font-black text-violet-900">您希望如何製作真人貼圖？</legend>
+                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                    {REAL_PHOTO_SUBMODE_OPTIONS.map((item) => (
+                      <label key={item.value} className={`cursor-pointer rounded-xl border-2 p-3 transition-colors ${realPhotoSubMode === item.value ? "border-violet-600 bg-violet-50" : "border-slate-200 hover:border-violet-300"}`}>
+                        <input
+                          type="radio"
+                          name="real-photo-submode"
+                          value={item.value}
+                          checked={realPhotoSubMode === item.value}
+                          onChange={() => {
+                            setRealPhotoSubMode(item.value);
+                            if (item.value === "expressive") setTextPosition("top");
+                          }}
+                          className="mr-2 accent-violet-600"
+                        />
+                        <span className="text-sm font-bold text-slate-900">{item.label}</span>
+                        {item.value === "expressive" && <span className="ml-2 rounded-full bg-violet-100 px-2 py-1 text-[11px] font-bold text-violet-900">建議寶寶選這個</span>}
+                        <span className="mt-1 block text-xs leading-6 text-slate-600">{item.description}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-xs font-semibold leading-6 text-amber-900">
+                    {realPhotoSubMode === "expressive"
+                      ? "AI 會依照片延伸新的表情與動作，可能產生與原照片不同的細節。若必須完全維持原貌，請改選照片原貌模式。"
+                      : "使用原照片去背、裁切和排版，不讓 AI 重畫臉部。若只有一張照片，可重複貼圖搭配不同文字；想要不同表情，請提供更多原始照片或改選延伸多表情。"}
+                  </p>
+                </fieldset>
+              )}
               <p className="mt-3 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-xs font-bold leading-6 text-sky-800">
-                <span className="mr-1 rounded-full bg-sky-600 px-2 py-0.5 text-[11px] font-black !text-white">
-                  說明
-                </span>
-                可選原創角色，也可用自己的照片做成真人 Q
-                版職業貼圖。若你覺得似顏繪太像本人，也可以改選「真人照片轉純 Q
-                版（更可愛化）」版本，會保留本人感覺但整體更
-                Q、更討喜。請使用本人或已取得同意的照片，避免侵犯肖像權。
+                {photoMode === "original"
+                  ? "不需照片：選擇人物特色即可建立原創角色。"
+                  : photoMode === "realPhoto"
+                    ? "真人照片模式：請在 ChatGPT／Gemini 自行附上授權照片，至少 1 張；需要不同表情時建議提供多張。本站只產生文字指令，不會替您上傳照片。寶寶照片需取得監護人適當授權並注意隱私。"
+                    : photoMode === "petPhoto"
+                      ? "請在 AI 生圖工具另外附上有權使用的貓狗或其他寵物照片，整套使用同一隻寵物。本站不會自動傳送或儲存照片。"
+                      : "請在 ChatGPT／Gemini 另外附上本人或已獲授權的照片。似顏繪 Q 版較接近真人；超萌 Q 版則有更大的頭身比例。本站只產生提示詞，不會自動上傳照片。"}
               </p>
+              <label className="mt-5 block text-xs font-black text-slate-500">畫風選擇</label>
+              {photoMode === "realPhoto" ? (
+                <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
+                  {realPhotoSubMode === "unchanged"
+                    ? "真人照片原貌風（固定）：不重新繪製人物，只調整去背、裁切、裝飾及排版。"
+                    : "真人照片寫實延伸風（固定）：保留本人身份特徵，可延伸自然多表情與動作，不轉 Q 版或漫畫。"}
+                </div>
+              ) : (
+                <>
+                  <select
+                    value={illustrationStyle}
+                    onChange={(e) => setIllustrationStyle(e.target.value as IllustrationStyle)}
+                    aria-label="選擇 12 種畫風"
+                    className="mt-2 w-full rounded-2xl border-2 border-violet-300 bg-white px-4 py-3 pr-10 text-sm font-bold text-violet-900 focus:border-violet-500"
+                  >
+                    {ILLUSTRATION_STYLE_OPTIONS.map((item) => (
+                      <option key={item.value} value={item.value}>{item.label}</option>
+                    ))}
+                  </select>
+                  <p className="mt-2 text-xs leading-6 text-slate-600">
+                    畫風將寫進每張母圖的提示詞，與原有的「貼圖風格」氛圍加強是不同設定。3D 公仔娃娃是畫風，不是獨立角色模式。
+                  </p>
+                </>
+              )}
 
               <label className="mt-5 block text-xs font-black text-slate-500">
                 是否加入人名／店名
@@ -5646,7 +5831,7 @@ export default function StickerPromptGenerator() {
                 </div>
                 <div>
                   <label className="block text-xs font-black text-slate-500">
-                    貼圖風格
+                    貼圖氛圍加強（可選）
                   </label>
                   <select
                     value={stickerStylePreset}
@@ -5743,9 +5928,11 @@ export default function StickerPromptGenerator() {
               <section className="mt-6 rounded-xl border border-violet-200 bg-white p-4" aria-label="整套貼圖共用角色設定">
                 <h4 className="text-base font-bold text-slate-900">整套角色／畫風鎖定（第 1、2 張都共用）</h4>
                 <p className="mt-1 text-xs leading-6 text-slate-600">
-                  以下已依主題自動設定。需要不同臉型、髮型、服裝或畫風可直接改一次，全部母圖立即同步；產生第 2 張時不會重新選角色。
+                  {photoMode === "original"
+                    ? "以下已依主題自動設定。可直接修改人物外觀並鎖定整套母圖。"
+                    : "照片模式會優先鎖定所附照片的本人或寵物外貌；不再套用預設陌生人物的臉型、髮型及服裝。畫風依上方選擇。"}
                 </p>
-                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                {photoMode === "original" && <div className="mt-3 grid gap-3 sm:grid-cols-2">
                   {IDENTITY_FIELDS.map((field) => (
                     <label key={field.key} className="text-xs font-semibold text-slate-700">
                       {field.label}
@@ -5759,9 +5946,9 @@ export default function StickerPromptGenerator() {
                       />
                     </label>
                   ))}
-                </div>
+                </div>}
                 <p className="mt-2 text-xs leading-5 text-slate-500">
-                  文字字型、大小、顏色與位置直接沿用上方所選值，與這份角色設定一起鎖定。真人照片模式仍需在 AI 生圖時自行附上有授權的照片。
+                  文字字型、大小、顏色與位置直接沿用上方所選值。照片模式請在 AI 生圖時另外附上有權使用的照片。
                 </p>
               </section>
 
@@ -5857,51 +6044,112 @@ export default function StickerPromptGenerator() {
                     第 2 步｜複製指令，用 ChatGPT 或 Gemini 畫圖
                   </h2>
                   <p className="mt-2 text-sm leading-6 text-slate-600">
-                    請優先使用已實測的 ChatGPT。先按紫色按鈕複製指令，再按「開啟 ChatGPT 畫圖」貼上（電腦 Ctrl+V／手機長按貼上）並送出；Gemini 為實驗性選項，可能不遵守格數。AI 畫好後請下載「整張大圖」，不用自己切成小張。
+                    這裡不會自動把指令帶進 ChatGPT。請先按「複製第 1 張指令」，成功後再開啟 AI 貼上（電腦 Ctrl+V／手機長按貼上）；
+                    {motherSheetPlan.length > 1 ? "完成第 1 張並下載後，回同一個 AI 對話畫第 2 張。" : "完成後下載整張母圖，再前往第 3 步上傳。"}
                   </p>
                 </div>
               </div>
 
               <p className="mt-3 text-sm font-medium leading-6 text-slate-700">
-                這次需畫 {motherSheetPlan.length} 張完整母圖（共 {targetCount} 張貼圖）。請逐張產生，不要合併不同母圖。
+                共 {targetCount} 張貼圖，需要 {motherSheetPlan.length} 張完整母圖。請依序完成；每張母圖都是獨立圖片，不要拼貼合併。
               </p>
 
-              <div className="mt-4 border-t border-slate-200 pt-4">
-                <p className="text-sm font-semibold text-slate-900">複製下方指令，再開啟 AI 工具貼上</p>
-                <p className="mt-1 text-xs leading-5 text-slate-600">推薦 ChatGPT；Gemini 可以試驗但可能不遵守格數。本站不會自動把文字貼進 AI。</p>
-                <StickerAIProviderLinks />
-              </div>
-              <div className="mt-4 border-t border-slate-200 pt-4">
-                <p className="text-sm font-black text-violet-900">即將複製的貼圖設定（修改第 1 步選項後會同步更新）</p>
-                <div className="mt-2 flex flex-wrap gap-2 text-xs font-medium text-slate-700">
-                  {[
-                    `平台：${stickerPlatform === "line" ? "LINE" : "WhatsApp"}`,
-                    `貼圖模式：${stickerMode === "static" ? "靜態" : "動態"}`,
-                    `數量：${targetCount} 張`,
-                    `文字位置：${optionLabel(TEXT_POSITION_OPTIONS, textPosition)}`,
-                    `字型：${optionLabel(FONT_STYLE_OPTIONS, fontStyle)}`,
-                    `字大小：${optionLabel(TEXT_SIZE_OPTIONS, textSize)}`,
-                    `顏色／文字效果：${optionLabel(TEXT_COLOR_OPTIONS, textColor)}`,
-                    `貼圖風格：${optionLabel(STICKER_STYLE_OPTIONS, stickerStylePreset)}`,
-                    `角色來源：${optionLabel(PHOTO_MODE_OPTIONS, photoMode)}`,
-                    `名稱：${optionLabel(NAME_MODE_OPTIONS, nameMode)}`,
-                    ...(type === "businessPersonal" && photoMode === "original" ? [`角色：${businessAvatar.persona}`, `髮型：${businessAvatar.hair}`, `服裝：${businessAvatar.clothes}`, `配色：${businessAvatar.palette}`] : []),
-                  ].map((label) => (
-                    <span key={label} className="rounded-md bg-slate-100 px-2.5 py-1.5">{label}</span>
-                  ))}
-                </div>
-                <p className="mt-2 text-xs leading-6 text-slate-600">角色內容、畫風描述及每句短句也會以目前欄位輸入的內容為準。這些只是給 AI 的指令，不會直接修改已產出的圖片。</p>
-                <p className="mt-1 text-xs font-black leading-5 text-amber-800">請確認以上選項正確，再按下方「複製 ChatGPT 指令」；若剛調整文字位置，請重新複製新指令並重新生圖。</p>
-              </div>
+              <p className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold leading-6 text-emerald-950">
+                每格四周各留 15% 純白安全邊，圖文縮在中央 70%；AI 可能未完全遵守，請上傳後讓第 3 步檢查。
+              </p>
+              {photoMode !== "original" && (
+                <p className="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-6 text-amber-950">
+                  真人／寵物照片須自行附在 AI 對話：第 1 張附原始照片；{motherSheetPlan.length > 1 ? "第 2 張附原始照片＋第 1 張母圖。" : "只有一張母圖時無須再製作第 2 張。"}本站只複製文字，不會傳送照片。
+                </p>
+              )}
+              {flowCopyError && <p role="alert" className="mt-3 rounded-xl border border-rose-300 bg-rose-50 p-3 text-sm font-bold text-rose-900">{flowCopyError}</p>}
               <div className="mt-4 space-y-4">
                 {flowPrompts.map((item, index) => (
                   <div key={`${item.grid}-${index}`} className="rounded-xl border border-slate-200 bg-white p-4">
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-base font-black text-slate-900">
+                          母圖 {index + 1}｜{item.grid.replace("x", "×")}
+                        </p>
+                        <p className="mt-1 text-xs font-bold text-slate-500">
+                          貼圖 {item.startIndex + 1}～{item.endIndex}
+                        </p>
+                      </div>
+                      <div className="w-full">
+                        <StickerNextActionHint>
+                        {index === 0 ? "① 先複製第 1 張指令，成功後開啟 ChatGPT 畫圖並下載整張母圖。" : "② 第 1 張已完成後，複製第 2 張指令，回到同一個 AI 對話貼上（不要開新對話）。"}
+                        {index > 0
+                           ? photoMode === "realPhoto"
+                             ? "同一個 AI 對話必須同時附上原始真人照片＋第 1 張母圖；按鈕只會複製文字，不會傳送圖片。"
+                             : "務必在同一個對話附上第 1 張母圖；照片模式還要附原始照片。這個按鈕不會傳送圖片。"
+                           : photoMode === "realPhoto"
+                             ? "請先在 ChatGPT 附上原始真人照片，再貼上提示詞；畫好後保存母圖。"
+                             : "畫好後請先保存母圖。"}
+                      </StickerNextActionHint>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => copyFlowPrompt(index, "chatgpt")}
+                          disabled={saleRisks.length > 0}
+                          className="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-violet-600 px-4 py-3 text-sm font-black !text-white shadow hover:bg-violet-700 sm:w-auto disabled:cursor-not-allowed disabled:bg-slate-300"
+                        >
+                          {copiedBatchIndex === index ? `✓ 已複製第 ${index + 1} 張指令` : `① 複製第 ${index + 1} 張指令（ChatGPT）`}
+                        </button>
+                        <details className="w-full rounded-xl border border-blue-200 bg-blue-50/50 p-3">
+                          <summary className="cursor-pointer text-xs font-semibold text-blue-800">改用 Google Gemini（進階／實驗性）</summary>
+                          <button
+                            type="button"
+                            onClick={() => copyFlowPrompt(index, "gemini")}
+                            disabled={saleRisks.length > 0}
+                            className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-blue-300 bg-white px-4 py-2.5 text-sm font-bold text-blue-800 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {copiedGeminiIndex === index ? "✓ 已複製 Gemini 強化版" : `複製第 ${index + 1} 張 Gemini 指令`}
+                          </button>
+                          {preparedFlowPrompt[`gemini-${index}`] === item.prompt && (
+                            index === 0 ? (
+                              <a href="https://gemini.google.com/app" target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-blue-700 px-3 py-2 text-center text-sm font-bold !text-white hover:bg-blue-800">
+                                ② 已複製｜開啟 Gemini 畫第 1 張 ↗
+                              </a>
+                            ) : (
+                              <p role="status" className="mt-2 rounded-lg bg-blue-100 p-2 text-xs font-semibold leading-6 text-blue-900">
+                                ✓ 已複製 Gemini 第 {index + 1} 張指令。請回到第 1 張的同一個 Gemini 對話，附上第 1 張母圖與需要的原照片，再貼上。
+                              </p>
+                            )
+                          )}
+                        </details>
+                      </div>
+                      {preparedFlowPrompt[`chatgpt-${index}`] === item.prompt ? (
+                        index === 0 ? (
+                          <div role="status" className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3">
+                            <p className="mb-2 text-xs font-bold text-emerald-900">✓ 第 1 張指令已複製。下一步請開啟 ChatGPT，貼上指令並送出。</p>
+                            <a href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-emerald-700 px-4 py-3 text-center text-sm font-black !text-white hover:bg-emerald-800 sm:w-auto">
+                              ② 開啟 ChatGPT 畫第 1 張 ↗
+                            </a>
+                            <p className="mt-2 text-xs leading-6 text-emerald-950">③ AI 完成後下載完整母圖，再回此頁{motherSheetPlan.length > 1 ? "製作第 2 張" : "前往第 3 步上傳"}。真人／寵物模式需另外上傳原始照片。</p>
+                          </div>
+                        ) : (
+                          <p role="status" className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm font-semibold leading-7 text-emerald-900">
+                            ✓ 第 {index + 1} 張指令已複製！請切回第 1 張的原 ChatGPT 對話，附上第 1 張母圖及需要的原始照片，貼上指令並送出；<strong>請不要另開新對話</strong>。
+                          </p>
+                        )
+                      ) : (
+                        <p className="mt-2 text-xs font-semibold leading-6 text-slate-500">
+                          {index === 0 ? "先複製第 1 張指令，成功後這裡才會出現 ChatGPT 入口。" : "先完成第 1 張母圖，再複製第 2 張指令，回原 AI 對話貼上。"}
+                        </p>
+                      )}
+                      <p className="mt-2 text-xs leading-5 text-amber-800">Gemini 可能出現欄數錯誤或重複文字；母圖請保留完整格數與安全白邊，勿直接切錯誤圖片。</p>
+                      </div>
+                    </div>
                     {index > 0 && (
-                      <section className="mb-5 rounded-xl border border-violet-200 bg-violet-50 p-4" aria-label="第 3 步：鎖定角色參考圖">
-                        <h3 className="text-base font-bold text-slate-900">第 3 步｜選擇第 1 張母圖作為角色參考</h3>
+                      <details className="mt-3 rounded-xl border border-violet-200 bg-violet-50 p-3">
+                        <summary className="cursor-pointer text-xs font-bold text-violet-900">
+                          可選｜在 RXV 預覽第 1 張母圖（不會自動傳給 AI）
+                        </summary>
+                        <section className="mt-3" aria-label="第 2 張母圖角色參考圖">
+                        <h3 className="text-base font-bold text-slate-900">製作第 2 張前｜準備角色參考照片</h3>
                         <p className="mt-2 text-sm leading-6 text-slate-700">
                           先用 ChatGPT 畫好第 1 張，再選下方圖片；第 2 張請沿用同一個 ChatGPT 對話，
-                          複製提示詞後自行附上這張參考圖片。網站不會自動把圖交給 ChatGPT。
+                          複製提示詞後{photoMode === "realPhoto" ? "同時附上原始真人照片＋第 1 張母圖。" : "自行附上第 1 張母圖及原始照片（照片模式）。"}網站不會自動把圖交給 ChatGPT。
                         </p>
                         <label className="mt-3 inline-flex min-h-11 w-fit cursor-pointer items-center justify-center rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-violet-700">
                           {activeReferenceImage ? "更換第 1 張參考圖" : "選擇第 1 張參考圖"}
@@ -5925,44 +6173,10 @@ export default function StickerPromptGenerator() {
                             尚未選擇參考圖：仍可複製第 2 張提示詞，但只用文字無法保證五官、服裝與畫風完全一致。
                           </p>
                         )}
-                      </section>
+
+                        </section>
+                      </details>
                     )}
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div>
-                        <p className="text-sm font-black text-slate-900">
-                          第 {index === 0 ? 2 : 4} 步｜第 {index + 1} 張母圖｜{item.grid.replace("x", "×")}
-                        </p>
-                        <p className="mt-1 text-xs font-bold text-slate-500">
-                          貼圖 {item.startIndex + 1}～{item.endIndex}
-                        </p>
-                      </div>
-                      <div className="w-fit max-w-full">
-                        <StickerNextActionHint>
-                        請複製第 {index + 1} 張畫圖指令，貼到 ChatGPT。
-                        {index > 0 ? "務必在同一個對話附上第 1 張母圖；這個按鈕只會複製文字，不會傳送圖片。" : "畫好後請先保存母圖。"}
-                      </StickerNextActionHint>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => copyFlowPrompt(index, "chatgpt")}
-                          disabled={saleRisks.length > 0}
-                          className="inline-flex min-h-11 w-fit max-w-full items-center justify-center rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-black !text-white shadow hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-                        >
-                          {copiedBatchIndex === index ? "✓ 已複製 ChatGPT 指令" : `複製第 ${index + 1} 張提示詞（ChatGPT）`}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => copyFlowPrompt(index, "gemini")}
-                          disabled={saleRisks.length > 0}
-                          className="inline-flex min-h-11 w-fit max-w-full items-center justify-center rounded-xl border border-blue-300 bg-white px-4 py-2.5 text-sm font-black text-blue-800 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          {copiedGeminiIndex === index ? "✓ 已複製 Gemini 強化版" : "複製 Gemini 排版強化版"}
-                        </button>
-                      </div>
-                      <p className="mt-2 text-xs leading-5 text-amber-800">ChatGPT 已有成功製作貼圖的案例。Gemini 多次測試仍可能出現錯誤欄數、重複文字或橫幅；即使複製強化版也不能保證。若 4×4 不是 4 欄 × 4 列、共 16 格，請重新用 ChatGPT 產圖。</p>
-                      <StickerAIProviderLinks compact />
-                      </div>
-                    </div>
                     <details className="mt-3 rounded-2xl border border-violet-100 bg-white">
                       <summary className="cursor-pointer px-4 py-3 text-xs font-black text-violet-700">
                         查看這張生圖指令
@@ -5975,6 +6189,44 @@ export default function StickerPromptGenerator() {
                 ))}
               </div>
 
+              <details className="mt-5 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <summary className="cursor-pointer text-sm font-bold text-slate-700">查看這次貼圖設定與安全留白說明（可展開）</summary>
+                <div className="mt-3 space-y-3">
+
+                  <div className="mt-4 border-t border-slate-200 pt-4">
+                    {photoMode !== "original" && (
+                      <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950" role="note">
+                        <strong>複製指令後，請在 AI 對話親自附上參考照片：</strong>
+                        <p>第 1 張母圖：{photoMode === "petPhoto" ? "同一隻寵物的照片" : "原始真人照片（至少 1 張；多張不同表情更佳）"}。</p>
+                        <p>第 2 張與後續母圖：{photoMode === "realPhoto" ? "必須同時附上原始真人照片＋第 1 張母圖" : "請同時附上原始參考照片及第 1 張母圖"}，並沿用相同 AI 對話。</p>
+                        <p className="mt-1 text-xs">本站沒有接收或傳送照片的功能；未附照片時請先附上，不可直接要求 AI 自行猜測人物。</p>
+                      </div>
+                    )}
+                    <p className="text-sm font-black text-violet-900">即將複製的貼圖設定（修改第 1 步選項後會同步更新）</p>
+                    <div className="mt-2 flex flex-wrap gap-2 text-xs font-medium text-slate-700">
+                      {[
+                        `平台：${stickerPlatform === "line" ? "LINE" : "WhatsApp"}`,
+                        `貼圖模式：${stickerMode === "static" ? "靜態" : "動態"}`,
+                        `數量：${targetCount} 張`,
+                        `文字位置：${optionLabel(TEXT_POSITION_OPTIONS, textPosition)}`,
+                        `字型：${optionLabel(FONT_STYLE_OPTIONS, fontStyle)}`,
+                        `字大小：${optionLabel(TEXT_SIZE_OPTIONS, textSize)}`,
+                        `顏色／文字效果：${optionLabel(TEXT_COLOR_OPTIONS, textColor)}`,
+                        `氛圍加強：${optionLabel(STICKER_STYLE_OPTIONS, stickerStylePreset)}`,
+                        `角色來源：${optionLabel(PHOTO_MODE_OPTIONS, photoMode)}`,
+                        `畫風：${photoMode === "realPhoto" ? realPhotoPolicy(realPhotoSubMode).label : optionLabel(ILLUSTRATION_STYLE_OPTIONS, illustrationStyle)}`,
+                        `名稱：${optionLabel(NAME_MODE_OPTIONS, nameMode)}`,
+                        ...(type === "businessPersonal" && photoMode === "original" ? [`角色：${businessAvatar.persona}`, `髮型：${businessAvatar.hair}`, `服裝：${businessAvatar.clothes}`, `配色：${businessAvatar.palette}`] : []),
+                      ].map((label) => (
+                        <span key={label} className="rounded-md bg-slate-100 px-2.5 py-1.5">{label}</span>
+                      ))}
+                    </div>
+                    <p className="mt-2 text-xs leading-6 text-slate-600">角色內容、畫風描述及每句短句也會以目前欄位輸入的內容為準。這些只是給 AI 的指令，不會直接修改已產出的圖片。</p>
+                    <p className="mt-1 text-xs font-black leading-5 text-amber-800">請確認以上選項正確，再按下方「複製 ChatGPT 指令」；若剛調整文字位置，請重新複製新指令並重新生圖。</p>
+                  </div>
+
+                </div>
+              </details>
               <div className="mt-4"><StickerNextActionHint>已從 ChatGPT 或 Gemini 下載完整大圖？請按下方「第 3 步｜已下載整張大圖，回 RXV 上傳」。</StickerNextActionHint></div>
               <Link
                 to="/tools/line-sticker?flow=1#mother-upload"
@@ -5984,14 +6236,7 @@ export default function StickerPromptGenerator() {
                 第 3 步｜已下載整張大圖，回 RXV 上傳 →
               </Link>
 
-              <CoupangDynamicAd
-                subId="rxv_sticker_prompt_after_prompt"
-                desktopWidth={1100}
-                desktopHeight={190}
-                mobileWidth={320}
-                mobileHeight={150}
-                className="mt-5 rounded-2xl border border-violet-100 bg-white px-2 py-3 sm:px-5"
-              />
+
 
               <details className="mt-4 rounded-2xl border border-slate-200 bg-slate-50">
                 <summary className="cursor-pointer px-4 py-3 text-sm font-black text-slate-700">
