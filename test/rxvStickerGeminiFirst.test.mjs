@@ -194,7 +194,7 @@ test("第一次進貼圖工具從第 1 步開始，只有明確選擇已有圖�
   assert.doesNotMatch(prompt, /xl:grid-cols-\[0\.82fr_1\.18fr\]/);
   assert.match(prompt, /前往第 2 步｜複製畫圖指令 ↓/);
   assert.match(prompt, /to="\/tools\/line-sticker\?flow=1#mother-upload"/);
-  assert.match(progress, /grid grid-cols-5 gap-1\\.5/);
+  assert.match(progress, /grid grid-cols-5 gap-1\.5/);
   assert.match(guide, /mt-4 flex flex-col gap-2/);
   assert.doesNotMatch(guide, /lg:grid-cols-5/);
   assert.doesNotMatch(upload, /className="fixed bottom-2 left-1\/2/);
@@ -224,7 +224,7 @@ test("新手頁面保持窄版與極簡進度列，不再用滿版彩色卡片�
   assert.doesNotMatch(prompt, /max-w-\[1480px\]/);
   assert.match(prompt, /min-h-screen bg-\[#F8F7F3\]/);
   assert.match(steps, /<nav/);
-  assert.match(steps, /grid grid-cols-5 gap-1\\.5/);
+  assert.match(steps, /grid grid-cols-5 gap-1\.5/);
   assert.doesNotMatch(steps, /先知道一件事：不是一張張畫貼圖/);
   assert.match(prompt, /min-h-12 w-full min-w-0 items-center justify-center/);
   assert.match(prompt, /rows=\{Math\.min\(requiredCount \+ 1, 12\)\}/);
