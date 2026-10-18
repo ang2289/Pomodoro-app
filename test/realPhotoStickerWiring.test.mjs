@@ -54,3 +54,29 @@ test("第一次使用者優先進入設定，完整母圖捷徑為摺疊進階�
   assert.match(source, /onClick=\{\(\) => persistFlowProject\(3\)\}/);
   assert.match(source, /動態貼圖仍需於第 5 步製作動畫/);
 });
+
+test("第 2 步先呈現兩張母圖的複製操作，不再直接開啟空白 ChatGPT", () => {
+  const step2 = source.slice(source.indexOf('id="sticker-copy"'));
+  const copyButton = step2.indexOf('onClick={() => copyFlowPrompt(index, "chatgpt")}');
+  const firstChatLink = step2.indexOf('href="https://chatgpt.com/"');
+  const secondReference = step2.indexOf('可選｜在 RXV 預覽第 1 張母圖');
+  assert.ok(copyButton >= 0 && firstChatLink > copyButton);
+  assert.ok(secondReference > firstChatLink);
+  assert.match(step2, /flowPrompts\.map\(\(item, index\) =>/);
+  assert.match(step2, /母圖 \{index \+ 1\}/);
+  assert.match(step2, /複製第 \$\{index \+ 1\} 張指令（ChatGPT）/);
+  assert.doesNotMatch(step2, /<StickerAIProviderLinks/);
+  assert.match(step2, /查看這次貼圖設定與安全留白說明（可展開）/);
+});
+
+test("複製成功才讓新手開啟 AI；第 2 張沿用同一對話，並保留 Gemini 與照片參考功能", () => {
+  assert.match(source, /await navigator\.clipboard\.writeText\(instruction\)/);
+  assert.match(source, /setPreparedFlowPrompt\(\(previous\) =>/);
+  assert.match(source, /preparedFlowPrompt\[\`chatgpt-\$\{index\}\`\] === item\.prompt/);
+  assert.match(source, /preparedFlowPrompt\[\`gemini-\$\{index\}\`\] === item\.prompt/);
+  assert.match(source, /已複製第 \{index \+ 1\} 張指令/);
+  assert.match(source, /請不要另開新對話/);
+  assert.match(source, /改用 Google Gemini（進階／實驗性）/);
+  assert.match(source, /可選｜在 RXV 預覽第 1 張母圖/);
+  assert.match(source, /第 3 步｜已下載整張大圖，回 RXV 上傳/);
+});
