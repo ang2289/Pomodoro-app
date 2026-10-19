@@ -50,3 +50,17 @@ test("all nine showcase images and seven? dynamic movies are actual binary files
   assert.equal(videoCount,8);
   assert.ok(existsSync(asset("cat-original.webp")));
 });
+
+test("Vercel ignores large MP4 by default, but explicitly includes only eight gallery demo clips", () => {
+  const rules = readFileSync(".vercelignore", "utf8").split(/\r?\n/).map((line) => line.trim());
+  assert.ok(rules.includes("*.mp4"), "Expected default ignore for unrelated large MP4 files");
+  const ids = categories.filter((id) => id !== "cat");
+  for (const id of ids) {
+    assert.ok(
+      rules.includes("!public/images/rxv-sticker-guide/" + id + "-demo.mp4"),
+      `Vercel ignore missing explicit allow-list for ${id} demo MP4`
+    );
+  }
+  // Do not accidentally allow unrelated large media or private sales ZIP files.
+  assert.equal(rules.filter((line) => line.startsWith("!public/images/rxv-sticker-guide/") && line.endsWith(".mp4")).length, 8);
+});
