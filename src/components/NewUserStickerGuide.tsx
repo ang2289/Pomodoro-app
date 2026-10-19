@@ -62,28 +62,33 @@ export default function NewUserStickerGuide({ compact = false }: Props) {
         RXV 不是直接替你畫圖：先用本站準備「給 AI 的畫圖指令」，再用 ChatGPT 或 Google Gemini 畫好一張貼圖大圖，
         再把圖片傳回 RXV 自動切割、整理與下載。
       </p>
-      <div className="mt-4 flex flex-col items-center gap-3 rounded-2xl bg-sky-50 p-3 sm:flex-row sm:justify-center sm:p-4">
-        <div className="flex items-center gap-3">
-          <div className="grid h-20 w-20 shrink-0 grid-cols-4 gap-1 rounded-lg border border-sky-200 bg-white p-2" aria-hidden="true">
+      {/* Each diagram card receives a real width. Avoid shrinking the label to a one-character
+          column when this guide is placed inside the /tools layout or on a narrow device. */}
+      <div
+        aria-label="一張完整 4×4 母圖，透過工具切割成 16 張貼圖"
+        className="mt-4 grid w-full min-w-0 grid-cols-1 items-center justify-items-stretch gap-3 overflow-hidden rounded-2xl bg-sky-50 p-3 sm:p-4 lg:grid-cols-[minmax(0,1fr)_36px_minmax(0,1fr)]"
+      >
+        <div className="grid w-full min-w-0 grid-cols-[68px_minmax(0,1fr)] items-center gap-3 rounded-xl border border-sky-100 bg-white p-3 sm:grid-cols-[80px_minmax(0,1fr)]">
+          <div className="grid h-[68px] w-[68px] shrink-0 grid-cols-4 gap-1 rounded-lg border border-sky-200 bg-sky-50 p-2 sm:h-20 sm:w-20" aria-hidden="true">
             {Array.from({ length: 16 }, (_, index) => (
               <span key={index} className="rounded bg-sky-200" />
             ))}
           </div>
-          <div className="max-w-32 text-sm font-bold text-slate-800">
-            一張大圖（母圖）
-            <p className="mt-1 text-xs font-normal text-slate-600">像 4×4 表格，有 16 個小畫面</p>
+          <div className="min-w-0 w-full text-left">
+            <p className="whitespace-normal break-normal text-sm font-black leading-6 text-slate-900">一張大圖（母圖）</p>
+            <p className="mt-1 whitespace-normal break-normal text-xs leading-5 text-slate-600">像 4×4 表格，有 16 個小畫面</p>
           </div>
         </div>
-        <span className="text-xl font-black text-sky-700" aria-hidden="true">→</span>
-        <div className="flex items-center gap-3">
-          <div className="flex h-20 w-20 shrink-0 flex-wrap content-center justify-center gap-1 rounded-lg border border-emerald-200 bg-white p-2" aria-hidden="true">
+        <span className="justify-self-center rotate-90 text-2xl font-black leading-none text-sky-700 lg:rotate-0" aria-hidden="true">→</span>
+        <div className="grid w-full min-w-0 grid-cols-[68px_minmax(0,1fr)] items-center gap-3 rounded-xl border border-emerald-100 bg-white p-3 sm:grid-cols-[80px_minmax(0,1fr)]">
+          <div className="grid h-[68px] w-[68px] shrink-0 grid-cols-2 content-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 p-2 sm:h-20 sm:w-20" aria-hidden="true">
             {Array.from({ length: 4 }, (_, index) => (
-              <span key={index} className="h-6 w-6 rounded border border-emerald-300 bg-emerald-100" />
+              <span key={index} className="aspect-square rounded border border-emerald-300 bg-emerald-100" />
             ))}
           </div>
-          <div className="max-w-36 text-sm font-bold text-slate-800">
-            自動分成 16 張
-            <p className="mt-1 text-xs font-normal text-slate-600">每格成為一張獨立貼圖</p>
+          <div className="min-w-0 w-full text-left">
+            <p className="whitespace-normal break-normal text-sm font-black leading-6 text-slate-900">自動分成 16 張</p>
+            <p className="mt-1 whitespace-normal break-normal text-xs leading-5 text-slate-600">每格成為一張獨立貼圖</p>
           </div>
         </div>
       </div>
