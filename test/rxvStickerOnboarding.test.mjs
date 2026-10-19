@@ -55,3 +55,19 @@ test("持續保留近期 QA、零成本與減流量修正", () => {
   assert.ok(existsSync(new URL("../scripts/rxv-images-batch-free.mjs", import.meta.url)));
   assert.ok(existsSync(new URL("../.github/workflows/rxv-image-free-qa.yml", import.meta.url)));
 });
+
+test("工具總覽頁的母圖流程圖不會將中文壓成一字一行", () => {
+  const toolsHub = read("src/pages/tools.tsx");
+  const guide = read("src/components/NewUserStickerGuide.tsx");
+  assert.match(toolsHub, /<NewUserStickerGuide \/>/);
+  assert.match(guide, /grid-cols-1 items-center justify-items-stretch/);
+  assert.match(guide, /lg:grid-cols-\[minmax\(0,1fr\)_36px_minmax\(0,1fr\)\]/);
+  assert.equal((guide.match(/grid-cols-\[68px_minmax\(0,1fr\)\]/g) || []).length, 2);
+  assert.equal((guide.match(/min-w-0 w-full text-left/g) || []).length, 2);
+  assert.match(guide, /rotate-90/);
+  assert.match(guide, /lg:rotate-0/);
+  assert.doesNotMatch(guide, /max-w-32/);
+  assert.doesNotMatch(guide, /max-w-36/);
+  assert.match(guide, /一張大圖（母圖）/);
+  assert.match(guide, /自動分成 16 張/);
+});
