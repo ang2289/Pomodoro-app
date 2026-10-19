@@ -7,6 +7,16 @@ out_mp4
 tmp_images
 android
 *.mp4
+# Public LINE sticker gallery: 8 short, approved demo clips.
+# Keep the generic MP4 exclusion for all other large videos.
+!public/images/rxv-sticker-guide/baby-demo.mp4
+!public/images/rxv-sticker-guide/florist-demo.mp4
+!public/images/rxv-sticker-guide/dog-demo.mp4
+!public/images/rxv-sticker-guide/couple-demo.mp4
+!public/images/rxv-sticker-guide/realtor-demo.mp4
+!public/images/rxv-sticker-guide/sales-demo.mp4
+!public/images/rxv-sticker-guide/manager-demo.mp4
+!public/images/rxv-sticker-guide/breakfast-demo.mp4
 *.zip
 *.7z
 *.rar
