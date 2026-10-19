@@ -9,7 +9,7 @@
     "server": "node -r dotenv/config server/image-to-video-server.cjs",
     "dev:all": "concurrently \"npm run dev\" \"npm run server\"",
     "prebuild": "npm run generate-sitemap && npm run generate-image-sitemap && npm run generate-rss",
-    "build": "tsc && vite build --config vite.config.ts",
+    "build": "tsc && vite build --config vite.config.ts && node scripts/checkStickerDemoBuild.mjs",
     "test:group-buy": "tsx --test test/groupBuyRules.test.ts test/groupBuyProductRules.test.ts",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
