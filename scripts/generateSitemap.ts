@@ -61,6 +61,7 @@ const staticPages = [
   "/tools/line-sticker",
   "/services/design-commission",
   "/tools/scam-check",
+  "/tools/bulky-waste",
   "/aids",
   "/finance",
   "/retirement",
