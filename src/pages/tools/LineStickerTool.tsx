@@ -2844,7 +2844,7 @@ export default function LineStickerTool() {
                           setWhiteRemovalMode(event.target.value as StickerWhiteRemovalMode);
                           if (motherSheetDetections.length && files.length) setMattingModeStale(true);
                         }}
-                        className="mt-2 w-full rounded-xl border border-sky-200 bg-white px-3 py-3 text-sm font-bold text-slate-800">
+                        className="mt-2 w-full max-w-[440px] sm:w-auto sm:min-w-[320px] rounded-xl border border-sky-200 bg-white px-3 py-3 text-sm font-bold text-slate-800">
                         <option value="protect">保護白衣／白色字邊（預設推薦）</option>
                         <option value="balanced">均衡清理白底</option>
                         <option value="strong">加強去白底（可能傷到白衣與淺色花朵）</option>
