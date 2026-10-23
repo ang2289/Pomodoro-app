@@ -632,19 +632,24 @@ function drawStickerToTransparentCanvas(
   const maxW = Math.max(1, targetW - padding * 2);
   const maxH = Math.max(1, targetH - padding * 2);
 
-  // 安全模式永遠不允許把內容放大到安全框之外。
-  // 想故意滿版裁切時才使用「滿版」模式。
-  const safeScale = Math.min(1, requestedScale);
-  const scale =
-    Math.min(maxW / sourceBox.width, maxH / sourceBox.height) * safeScale;
+  // 100% 保留所選模式的安全留白；超過 100% 只在可保留至少 4% 硬邊界時放大。
+  // 不再將 smart-safe 的數值固定裁成 100%，否則「全部放大」看似可按卻沒有作用。
+  const hardPadding = Math.max(6, Math.round(Math.min(targetW, targetH) * 0.04));
+  const normalFitScale = Math.min(maxW / sourceBox.width, maxH / sourceBox.height);
+  const hardFitScale = Math.min(
+    (targetW - hardPadding * 2) / sourceBox.width,
+    (targetH - hardPadding * 2) / sourceBox.height,
+  );
+  const scale = Math.min(normalFitScale * requestedScale, hardFitScale);
   const drawW = Math.max(1, Math.round(sourceBox.width * scale));
   const drawH = Math.max(1, Math.round(sourceBox.height * scale));
   const centeredX = Math.round((targetW - drawW) / 2);
   const centeredY = Math.round((targetH - drawH) / 2);
-  const minX = padding;
-  const maxX = Math.max(padding, targetW - padding - drawW);
-  const minY = padding;
-  const maxY = Math.max(padding, targetH - padding - drawH);
+  const actualPadding = requestedScale > 1 ? hardPadding : padding;
+  const minX = actualPadding;
+  const maxX = Math.max(actualPadding, targetW - actualPadding - drawW);
+  const minY = actualPadding;
+  const maxY = Math.max(actualPadding, targetH - actualPadding - drawH);
   const dx = Math.max(minX, Math.min(maxX, centeredX + Math.round(offset.x)));
   const dy = Math.max(minY, Math.min(maxY, centeredY + Math.round(offset.y)));
 
@@ -1533,7 +1538,7 @@ function PreviewCard({
         <div className="pointer-events-none absolute inset-0 rounded-xl border border-sky-200" />
         <div
           className="pointer-events-none absolute rounded-lg border border-dashed border-emerald-400/90"
-          style={{ inset: String(Math.round(smartMargin * 100)) + "%" }}
+          style={{ inset: String(Math.round((itemScale > 100 && cropMode === "smart-safe" ? 0.04 : cropMode === "smart-safe" ? smartMargin : SAFE_PADDING_RATIO) * 100)) + "%" }}
         />
         <span className="pointer-events-none absolute left-3 top-3 rounded-br-md bg-emerald-500/90 px-1.5 py-0.5 text-[9px] font-black text-white">
           安全框
@@ -1586,7 +1591,7 @@ function PreviewCard({
             <input
               type="range"
               min="70"
-              max={cropMode === "crop" ? 130 : 100}
+              max={cropMode === "crop" ? 130 : 120}
               value={itemScale}
               onChange={(e) => onScaleChange(Number(e.target.value))}
               className="mt-2 w-full accent-blue-600"
@@ -2091,19 +2096,38 @@ export default function LineStickerTool() {
   );
 
   const updateItemScale = useCallback((index: number, nextScale: number) => {
-    setItemScales((prev) => ({ ...prev, [index]: nextScale }));
-  }, []);
+    const maxScale = cropMode === "crop" ? 130 : 120;
+    setItemScales((prev) => ({ ...prev, [index]: Math.max(70, Math.min(maxScale, Math.round(nextScale))) }));
+    setReviewedWarnings({});
+  }, [cropMode]);
 
+  // 批次滑桿：把全部設定成同一倍率；接著仍可用單張滑桿獨立微調。
   const updateGlobalScale = useCallback((nextScale: number) => {
-    setCropScale(nextScale);
-    setItemScales((prev) => {
-      const next: Record<number, number> = { ...prev };
-      files.forEach((_, index) => {
-        next[index] = nextScale;
-      });
-      return next;
+    const maxScale = cropMode === "crop" ? 130 : 120;
+    const normalized = Math.max(70, Math.min(maxScale, Math.round(nextScale)));
+    setCropScale(normalized);
+    setItemScales((previous) => {
+      const updated = { ...previous };
+      files.slice(0, stickerCount).forEach((_, index) => { updated[index] = normalized; });
+      return updated;
     });
-  }, [files]);
+    setReviewedWarnings({});
+  }, [cropMode, files, stickerCount]);
+
+  // +/- 5%：所有貼圖一起做相對放大或縮小，不清掉每張已經做過的細部差異。
+  const nudgeAllScales = useCallback((delta: number) => {
+    const maxScale = cropMode === "crop" ? 130 : 120;
+    const normalize = (n: number) => Math.max(70, Math.min(maxScale, Math.round(n)));
+    setItemScales((previous) => {
+      const updated = { ...previous };
+      files.slice(0, stickerCount).forEach((_, index) => {
+        updated[index] = normalize((previous[index] ?? cropScale) + delta);
+      });
+      return updated;
+    });
+    setCropScale((previous) => normalize(previous + delta));
+    setReviewedWarnings({});
+  }, [cropMode, files, stickerCount, cropScale]);
 
   const getOffsetForIndex = useCallback(
     (index: number) => itemOffsets[index] ?? { x: 0, y: 0 },
@@ -2116,11 +2140,11 @@ export default function LineStickerTool() {
 
   const autoSafetyFixAll = useCallback(() => {
     setCropMode("smart-safe");
-    setCropScale(92);
+    setCropScale(100);
     const nextScales: Record<number, number> = {};
     const nextOffsets: Record<number, ItemOffset> = {};
     files.forEach((_, index) => {
-      nextScales[index] = 92;
+      nextScales[index] = 100;
       nextOffsets[index] = { x: 0, y: 0 };
     });
     setItemScales(nextScales);
@@ -2150,7 +2174,7 @@ export default function LineStickerTool() {
       const scale = getScaleForIndex(index);
       const autoSafeLayout =
         cropMode === "smart-safe" &&
-        scale <= 100 &&
+        scale <= 120 &&
         Math.abs(offset.x) <= 1 &&
         Math.abs(offset.y) <= 1;
 
@@ -3197,37 +3221,10 @@ export default function LineStickerTool() {
                   預設「智慧滿版」會依上方選擇的智慧放大程度保留約 {Math.round(MOTHER_FIT_MARGIN[motherSheetFit] * 100)}% 四邊安全空間，並自動限制內容不超出安全框，降低切到文字、頭髮與手勢的風險。
                 </p>
 
-                                {(cropMode === "crop" || cropMode === "smart-safe") && (
-                  <div className="mt-4 rounded-xl bg-slate-50 p-3">
-                    <div className="mb-2 flex items-center justify-between gap-2">
-                      <span className="text-[11px] font-black text-slate-500">
-                        安全縮放
-                      </span>
-                      <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-black text-blue-600">
-                        {cropScale}%
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min={75}
-                      max={cropMode === "crop" ? 135 : 100}
-                      step={1}
-                      value={cropScale}
-                      onChange={(e) => updateGlobalScale(Number(e.target.value))}
-                      className="w-full accent-blue-600"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => updateGlobalScale(cropScale)}
-                      className="mt-2 inline-flex w-auto max-w-full items-center justify-center rounded-lg bg-white px-3 py-2 text-[11px] font-black text-blue-600 hover:bg-blue-50"
-                    >
-                      套用目前縮放到全部貼圖
-                    </button>
-                    <p className="mt-2 text-[11px] leading-relaxed text-slate-500">
-                      安全模式最多 100%，不會讓內容超出安全框；有文字建議 88%～94%。只有選「滿版」才允許放大裁切。
-                    </p>
-                  </div>
-                )}
+                <p className="mt-3 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs leading-6 text-blue-900">
+                  全部一起放大或縮小，請使用下方「全部貼圖批次縮放」；套用後仍可逐張微調。
+                  安全模式最多 120%，超過 100% 時仍保留至少 4% 邊界，不會故意裁字。
+                </p>
               </div>
             </section>
           </div>
@@ -3342,13 +3339,45 @@ export default function LineStickerTool() {
           )}
 
           {files.length > 0 && (
-            <section className="mb-10">
+            <section className="mb-10" aria-label="貼圖批次及個別尺寸調整">
+              <div className="mb-4 rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50 via-white to-rose-50 p-4 sm:p-5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="text-base font-black text-violet-900">全部貼圖批次縮放</h3>
+                  <span className="rounded-full bg-white px-3 py-1 text-sm font-black text-violet-700 shadow-sm">批次基準 {cropScale}%</span>
+                </div>
+                <p className="mt-1 text-xs leading-6 text-slate-600">先一次調整全部 {Math.min(files.length, stickerCount)} 張，再使用下面各張的「單張縮放」微調；不會清除各張位置或主圖選擇。</p>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <button type="button" onClick={() => nudgeAllScales(-5)}
+                    className="inline-flex min-h-11 w-auto max-w-full shrink-0 items-center justify-center rounded-xl border border-violet-200 bg-white px-4 py-2.5 text-sm font-black text-violet-800 hover:bg-violet-50">
+                    全部縮小 −5%
+                  </button>
+                  <button type="button" onClick={() => nudgeAllScales(5)}
+                    className="inline-flex min-h-11 w-auto max-w-full shrink-0 items-center justify-center rounded-xl bg-violet-700 px-4 py-2.5 text-sm font-black text-white hover:bg-violet-800">
+                    全部放大 +5%
+                  </button>
+                  <button type="button" onClick={() => updateGlobalScale(100)}
+                    className="inline-flex min-h-11 w-auto max-w-full shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-black text-slate-700 hover:bg-slate-50">
+                    全部還原 100%
+                  </button>
+                </div>
+                <label className="mt-4 block max-w-xl text-xs font-bold text-slate-800" htmlFor="line-sticker-all-scale">
+                  全部設為相同倍率：{cropScale}%（滑動立即套用）
+                </label>
+                <input id="line-sticker-all-scale" type="range" min="70" max={cropMode === "crop" ? 130 : 120}
+                  step="1" value={cropScale} onChange={(event) => updateGlobalScale(Number(event.target.value))}
+                  className="mt-2 block h-10 w-full max-w-xl cursor-pointer accent-violet-700"
+                  aria-label="全部貼圖一起縮放" />
+                <p className="mt-1 text-[11px] leading-5 text-slate-600">目前是「{cropMode === "crop" ? "滿版裁切" : cropMode === "smart-safe" ? "智慧安全" : "文字保護"}」模式。
+                  {cropMode === "crop" ? "滿版可能裁到文字，請仔細預覽。" : "超過 100% 仍限制在最少 4% 安全留白內；若已到安全上限，繼續放大也不會再變大。"}
+                  按 ±5% 會保留每張既有倍率差異；拉動滑桿會讓全部回到同一倍率。
+                </p>
+              </div>
               <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
                 <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">
                   {t("line_sticker_preview_title")}
                 </h3>
                 <p className="text-xs font-bold text-slate-500">
-                  預覽卡片已放大；可直接拖曳圖片微調位置，也可用下方縮放滑桿調整單張大小。
+                  可先使用上方批次縮放，再拖曳或縮放個別貼圖；此區調整會同步套用到下載 ZIP。
                 </p>
               </div>
               <div className="mb-4 flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-3">
