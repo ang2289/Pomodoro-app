@@ -5,7 +5,8 @@ import SEO from "@/components/SEO";
 import LineStickerAuthorCard from "@/components/LineStickerAuthorCard";
 import LineStickerFlowSteps from "@/components/LineStickerFlowSteps";
 import StickerExcelOffers from "@/components/StickerExcelOffers";
-import { StickerCustomInquiry, StickerNextActionHint } from "@/components/StickerBeginnerActions";
+import { StickerNextActionHint } from "@/components/StickerBeginnerActions";
+import StickerCustomPricing from "@/components/StickerCustomPricing";
 import {
   createLineStickerProject,
   getAllowedCounts,
@@ -6279,7 +6280,7 @@ export default function StickerPromptGenerator() {
           </section>
 
           <StickerExcelOffers compact />
-          <div className="mt-6"><StickerCustomInquiry /></div>
+          <div className="mt-6"><StickerCustomPricing /></div>
           {false && <SupportSection />}
 
           <section className="mt-6 rounded-3xl border border-pink-100 bg-gradient-to-br from-pink-50 via-white to-amber-50 p-5 shadow-sm">
