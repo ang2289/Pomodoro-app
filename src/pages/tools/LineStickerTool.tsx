@@ -6,7 +6,8 @@ import SEO, { getBaseUrl } from "@/components/SEO";
 import LineStickerAuthorCard from "@/components/LineStickerAuthorCard";
 import LineStickerFlowSteps from "@/components/LineStickerFlowSteps";
 import StickerExcelOffers from "@/components/StickerExcelOffers";
-import { StickerCustomInquiry, StickerNextActionHint } from "@/components/StickerBeginnerActions";
+import { StickerNextActionHint } from "@/components/StickerBeginnerActions";
+import StickerCustomPricing from "@/components/StickerCustomPricing";
 import {
   analyzeMotherSheetSafety,
   type MotherSheetSafetyReview,
@@ -240,6 +241,8 @@ const FAQ_KEYS = [
 ] as const;
 
 type LineStickerCropMode = "contain-safe" | "crop" | "smart-safe";
+type MotherSheetFitMode = "conservative" | "standard" | "large";
+const MOTHER_FIT_MARGIN: Record<MotherSheetFitMode, number> = { conservative: 0.13, standard: 0.09, large: 0.06 };
 
 type ImagePreview = {
   file: File;
@@ -1295,7 +1298,7 @@ function removeForeignCellComponents(
  * 已通過留白切割檢查後，重新置中縮放至透明安全框。
  * 避免直接剪去花瓣、文字，也不會因為原圖貼邊就截斷。
  */
-function centerMotherSheetCellWithPadding(source: HTMLCanvasElement): HTMLCanvasElement {
+function centerMotherSheetCellWithPadding(source: HTMLCanvasElement, fitMode: MotherSheetFitMode = "standard"): HTMLCanvasElement {
   const context = source.getContext("2d", { willReadFrequently: true });
   if (!context) throw new Error("無法讀取去背後圖片");
   const { width, height } = source;
@@ -1319,11 +1322,13 @@ function centerMotherSheetCellWithPadding(source: HTMLCanvasElement): HTMLCanvas
   }
   const boxWidth = maxX - minX + 1;
   const boxHeight = maxY - minY + 1;
-  const padding = Math.max(5, Math.round(Math.min(width, height) * 0.13));
-  const scale = Math.min(
+  // Fit the combined alpha bounds, including detached words and decorations.
+  const padding = Math.max(5, Math.round(Math.min(width, height) * MOTHER_FIT_MARGIN[fitMode]));
+  const idealScale = Math.min(
     (width - padding * 2) / boxWidth,
     (height - padding * 2) / boxHeight,
   );
+  const scale = Math.min(3, idealScale); // Resampling cannot restore lost pixels.
   const drawWidth = Math.max(1, Math.round(boxWidth * scale));
   const drawHeight = Math.max(1, Math.round(boxHeight * scale));
   const canvas = document.createElement("canvas");
@@ -1350,6 +1355,7 @@ async function splitMotherSheet(
   removeWhiteBackground: boolean,
   whiteRemovalMode: StickerWhiteRemovalMode,
   safety?: MotherSheetSafetyReview,
+  fitMode: MotherSheetFitMode = "standard",
 ): Promise<File[]> {
   const image = await loadImage(file, t);
   const sourceWidth = image.naturalWidth || image.width;
@@ -1398,8 +1404,9 @@ async function splitMotherSheet(
         // 明確選擇強力模式時才修整白邊：此步可能傷到白色衣服。
         if (whiteRemovalMode === "strong") cleanPaleEdgeHalo(canvas, 1);
       }
-      const output = removeWhiteBackground
-        ? centerMotherSheetCellWithPadding(canvas)
+      // Apply content-based fit to images with an alpha channel. Opaque, un-matted cells are kept intact.
+      const output = removeWhiteBackground || canvasHasTransparency(canvas)
+        ? centerMotherSheetCellWithPadding(canvas, fitMode)
         : canvas;
       const blob = await canvasToBlob(output, t);
       results.push(
@@ -1631,6 +1638,9 @@ export default function LineStickerTool() {
   const [motherSheetGrid, setMotherSheetGrid] = useState<"auto" | MotherSheetGrid>("auto");
   const [autoRemoveWhiteBg, setAutoRemoveWhiteBg] = useState(true);
   const [whiteRemovalMode, setWhiteRemovalMode] = useState<StickerWhiteRemovalMode>("protect");
+  const [motherSheetFit, setMotherSheetFit] = useState<MotherSheetFitMode>(() =>
+    flowProject?.mode === "animated" ? "conservative" : "standard",
+  );
   const [darkStickerPreview, setDarkStickerPreview] = useState(false);
   const [mattingModeStale, setMattingModeStale] = useState(false);
   const [motherSheetSafetyResult, setMotherSheetSafetyResult] = useState<string | null>(null);
@@ -1654,6 +1664,7 @@ export default function LineStickerTool() {
       const next = updateLineStickerProject({ mode, count, stage: files.length ? 4 : 3 });
       if (next) setFlowProject(next);
     } else setDirectStickerMode(mode);
+    setMotherSheetFit(mode === "animated" ? "conservative" : "standard");
     if (count !== stickerCount) {
       setStickerCount(count);
       setMotherSheetDetections([]);
@@ -1955,6 +1966,7 @@ export default function LineStickerTool() {
               autoRemoveWhiteBg,
               whiteRemovalMode,
               safety,
+              motherSheetFit,
             )),
           );
           safetyWarnings.push(...safety.warnings.map((warning) =>
@@ -1974,6 +1986,7 @@ export default function LineStickerTool() {
               autoRemoveWhiteBg,
               whiteRemovalMode,
               safety,
+              motherSheetFit,
             )),
           );
           safetyWarnings.push(...safety.warnings.map((warning) =>
@@ -2000,10 +2013,14 @@ export default function LineStickerTool() {
 
       await validateAndAddFiles(splitFiles);
       setMattingModeStale(false);
+      const safeBorder = Math.round(MOTHER_FIT_MARGIN[motherSheetFit] * 100);
+      const fitInfo = autoRemoveWhiteBg
+        ? `已依透明內容外框智慧放大並保留約 ${safeBorder}% 留白（最多 3 倍）；原始解析度不足時仍可能模糊。`
+        : "已關閉去背，不透明圖片不會強行裁白底。";
       setMotherSheetSafetyResult(
         safetyWarnings.length
-          ? `切割完成：已調整安全分隔線、置中補足約 13% 透明留白。偵測到原圖留白較小：${safetyWarnings.slice(0, 12).join("、")}${safetyWarnings.length > 12 ? `，另有 ${safetyWarnings.length - 12} 張` : ""}。請在下方逐張確認文字和花朵。`
-          : "安全切割完成：已尋找各格之間的留白通道，並自動去背、置中與補足約 13% 透明留白。請逐張預覽後再打包。",
+          ? `安全切割完成：${fitInfo} 原圖留白較小：${safetyWarnings.slice(0, 12).join("、")}${safetyWarnings.length > 12 ? `，另有 ${safetyWarnings.length - 12} 張` : ""}。請逐張確認文字與裝飾。`
+          : `安全切割完成：${fitInfo} 請逐張預覽後再打包。`,
       );
       setMotherSheetDetectionStatus("ready");
       setActionHint("下一步（第 5 步）：逐張檢查預覽、選好主圖，再按最後一步產生 ZIP；動態則接續製作動畫。");
@@ -2019,6 +2036,7 @@ export default function LineStickerTool() {
   }, [
     autoRemoveWhiteBg,
     whiteRemovalMode,
+    motherSheetFit,
     files,
     flowProject,
     loading,
@@ -2436,7 +2454,7 @@ export default function LineStickerTool() {
               </div>
             </section>
             <StickerExcelOffers compact />
-            <div className="mt-6"><StickerCustomInquiry compact /></div>
+            <div className="mt-6"><StickerCustomPricing compact /></div>
           </div>
         </main>
       </>
@@ -2924,7 +2942,21 @@ export default function LineStickerTool() {
                       </div>
                     </div>
                   ) : null}
-                  <div id="mother-split" className="scroll-mt-24 mt-4 grid gap-3 xl:grid-cols-2">
+                                     <section className="mt-4 rounded-xl border border-violet-200 bg-white p-3" aria-label="母圖切割後智慧放大">
+                     <p className="text-sm font-black text-violet-900">切圖後智慧放大成品</p>
+                     <p className="mt-1 text-xs leading-6 text-slate-600">母圖先留白好切割，切完後偵測人物、文字、裝飾的透明外框，再等比例放大與置中。</p>
+                     <div className="mt-2 grid grid-cols-3 gap-2" role="group" aria-label="智慧放大程度">
+                       {(["conservative", "standard", "large"] as const).map((fitMode) => (
+                         <button key={fitMode} type="button" onClick={() => setMotherSheetFit(fitMode)}
+                           aria-pressed={motherSheetFit === fitMode}
+                           className={"min-h-11 rounded-xl border-2 px-2 py-2 text-xs font-black " + (motherSheetFit === fitMode ? "border-violet-600 bg-violet-600 text-white" : "border-violet-100 bg-violet-50 text-violet-900 hover:border-violet-300")}>
+                           {fitMode === "conservative" ? "保守・動態" : fitMode === "standard" ? "標準・推薦" : "放大・靜態"}
+                         </button>
+                       ))}
+                     </div>
+                     <p className="mt-2 text-[11px] leading-5 text-slate-600">保留約 {Math.round(MOTHER_FIT_MARGIN[motherSheetFit] * 100)}% 四邊安全距離；最多放大 3 倍，來源像素太少仍會變模糊。關閉去背且圖片不透明時不會裁切白底。</p>
+                   </section>
+                   <div id="mother-split" className="scroll-mt-24 mt-4 grid gap-3 xl:grid-cols-2">
                     {motherSheetDetections.map((item, index) => {
                       const safetyGrid = !flowProject && motherSheetGrid !== "auto" && motherSheetDetections.length === 1 ? motherSheetGrid : item.grid;
                       const plannedGrid =
@@ -3803,7 +3835,7 @@ export default function LineStickerTool() {
 
 
         <div className="mx-auto mt-6 max-w-[1480px]">
-          <StickerCustomInquiry compact />
+          <StickerCustomPricing compact />
         </div>
       </div>
     </>
