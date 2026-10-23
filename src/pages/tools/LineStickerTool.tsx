@@ -576,6 +576,7 @@ function drawStickerToTransparentCanvas(
   mode: LineStickerCropMode,
   scalePercent = 100,
   offset: ItemOffset = { x: 0, y: 0 },
+  smartMargin = SMART_SAFE_PADDING_RATIO,
 ): void {
   canvas.width = targetW;
   canvas.height = targetH;
@@ -623,7 +624,7 @@ function drawStickerToTransparentCanvas(
   }
 
   const paddingRatio =
-    mode === "smart-safe" ? SMART_SAFE_PADDING_RATIO : SAFE_PADDING_RATIO;
+    mode === "smart-safe" ? smartMargin : SAFE_PADDING_RATIO;
   const padding = Math.max(
     6,
     Math.round(Math.min(targetW, targetH) * paddingRatio),
@@ -696,6 +697,7 @@ function resizeImageToCanvas(
   mode: LineStickerCropMode,
   scalePercent = 100,
   offset: ItemOffset = { x: 0, y: 0 },
+  smartMargin = SMART_SAFE_PADDING_RATIO,
 ): HTMLCanvasElement {
   const canvas = document.createElement("canvas");
   drawStickerToTransparentCanvas(
@@ -706,6 +708,7 @@ function resizeImageToCanvas(
     mode,
     scalePercent,
     offset,
+    smartMargin,
   );
   return canvas;
 }
@@ -1427,6 +1430,7 @@ function PreviewCard({
   cropMode,
   itemScale,
   darkStickerPreview,
+  smartMargin,
   onScaleChange,
   offset,
   onOffsetChange,
@@ -1440,6 +1444,7 @@ function PreviewCard({
   cropMode: LineStickerCropMode;
   itemScale: number;
   darkStickerPreview: boolean;
+  smartMargin: number;
   onScaleChange: (nextScale: number) => void;
   offset: ItemOffset;
   onOffsetChange: (nextOffset: ItemOffset) => void;
@@ -1471,8 +1476,9 @@ function PreviewCard({
       cropMode,
       itemScale,
       offset,
+      smartMargin,
     );
-  }, [cropMode, preview.img, itemScale, offset.x, offset.y]);
+  }, [cropMode, preview.img, itemScale, offset.x, offset.y, smartMargin]);
 
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -1527,9 +1533,9 @@ function PreviewCard({
         <div className="pointer-events-none absolute inset-0 rounded-xl border border-sky-200" />
         <div
           className="pointer-events-none absolute rounded-lg border border-dashed border-emerald-400/90"
-          style={{ inset: "8%" }}
+          style={{ inset: String(Math.round(smartMargin * 100)) + "%" }}
         />
-        <span className="pointer-events-none absolute left-[8%] top-[8%] rounded-br-md bg-emerald-500/90 px-1.5 py-0.5 text-[9px] font-black text-white">
+        <span className="pointer-events-none absolute left-3 top-3 rounded-br-md bg-emerald-500/90 px-1.5 py-0.5 text-[9px] font-black text-white">
           安全框
         </span>
       </div>
@@ -1628,7 +1634,7 @@ export default function LineStickerTool() {
   );
   const [whatsAppReadyZip, setWhatsAppReadyZip] = useState<WhatsAppZipArchive | null>(null);
   const [cropMode, setCropMode] = useState<LineStickerCropMode>("smart-safe");
-  const [cropScale, setCropScale] = useState<number>(92);
+  const [cropScale, setCropScale] = useState<number>(100);
   const [downloadCompleted, setDownloadCompleted] = useState(
     () => flowProject?.mode === "static" && flowProject?.stage === 5,
   );
@@ -1665,6 +1671,9 @@ export default function LineStickerTool() {
       if (next) setFlowProject(next);
     } else setDirectStickerMode(mode);
     setMotherSheetFit(mode === "animated" ? "conservative" : "standard");
+    setCropScale(100);
+    setItemScales({});
+    setItemOffsets({});
     if (count !== stickerCount) {
       setStickerCount(count);
       setMotherSheetDetections([]);
@@ -2133,6 +2142,7 @@ export default function LineStickerTool() {
         cropMode,
         getScaleForIndex(index),
         getOffsetForIndex(index),
+        MOTHER_FIT_MARGIN[motherSheetFit],
       );
       const report = analyzeStickerCanvas(canvas, index);
 
@@ -2140,7 +2150,7 @@ export default function LineStickerTool() {
       const scale = getScaleForIndex(index);
       const autoSafeLayout =
         cropMode === "smart-safe" &&
-        scale <= 92 &&
+        scale <= 100 &&
         Math.abs(offset.x) <= 1 &&
         Math.abs(offset.y) <= 1;
 
@@ -2203,6 +2213,7 @@ export default function LineStickerTool() {
         cropMode,
         mainScale,
         getOffsetForIndex(mainImageIndex),
+        MOTHER_FIT_MARGIN[motherSheetFit],
       );
       const tabCanvas = resizeImageToCanvas(
         targetMainImg,
@@ -2211,6 +2222,7 @@ export default function LineStickerTool() {
         cropMode,
         mainScale,
         getOffsetForIndex(mainImageIndex),
+        MOTHER_FIT_MARGIN[motherSheetFit],
       );
       if (
         !canvasHasTransparency(mainCanvas) ||
@@ -2229,6 +2241,7 @@ export default function LineStickerTool() {
           cropMode,
           getScaleForIndex(i),
           getOffsetForIndex(i),
+          MOTHER_FIT_MARGIN[motherSheetFit],
         );
         if (!canvasHasTransparency(canvas)) {
           throw new Error(
@@ -2291,6 +2304,7 @@ export default function LineStickerTool() {
         cropMode,
         getScaleForIndex(mainIndex),
         getOffsetForIndex(mainIndex),
+        MOTHER_FIT_MARGIN[motherSheetFit],
       );
       if (!canvasHasTransparency(mainCanvas)) {
         throw new Error("WhatsApp 貼圖集封面仍有不透明背景，請先完成去背。");
@@ -2310,6 +2324,7 @@ export default function LineStickerTool() {
             cropMode,
             getScaleForIndex(index),
             getOffsetForIndex(index),
+            MOTHER_FIT_MARGIN[motherSheetFit],
           );
           if (!canvasHasTransparency(canvas)) {
             throw new Error(`第 ${index + 1} 張背景不是透明，請先完成去背。`);
@@ -2387,6 +2402,7 @@ export default function LineStickerTool() {
           cropMode,
           getScaleForIndex(i),
           getOffsetForIndex(i),
+          MOTHER_FIT_MARGIN[motherSheetFit],
         );
         if (!canvasHasTransparency(canvas)) {
           throw new Error(`第 ${i + 1} 張背景仍不是透明，請先確認去背結果。`);
@@ -2947,7 +2963,7 @@ export default function LineStickerTool() {
                      <p className="mt-1 text-xs leading-6 text-slate-600">母圖先留白好切割，切完後偵測人物、文字、裝飾的透明外框，再等比例放大與置中。</p>
                      <div className="mt-2 grid grid-cols-3 gap-2" role="group" aria-label="智慧放大程度">
                        {(["conservative", "standard", "large"] as const).map((fitMode) => (
-                         <button key={fitMode} type="button" onClick={() => setMotherSheetFit(fitMode)}
+                         <button key={fitMode} type="button" onClick={() => { setMotherSheetFit(fitMode); setCropMode("smart-safe"); setCropScale(100); setItemScales({}); setItemOffsets({}); }}
                            aria-pressed={motherSheetFit === fitMode}
                            className={"min-h-11 rounded-xl border-2 px-2 py-2 text-xs font-black " + (motherSheetFit === fitMode ? "border-violet-600 bg-violet-600 text-white" : "border-violet-100 bg-violet-50 text-violet-900 hover:border-violet-300")}>
                            {fitMode === "conservative" ? "保守・動態" : fitMode === "standard" ? "標準・推薦" : "放大・靜態"}
@@ -3178,7 +3194,7 @@ export default function LineStickerTool() {
                 </div>
 
                 <p className="mt-3 rounded-xl bg-emerald-50 px-3 py-2 text-[11px] font-bold leading-5 text-emerald-800">
-                  預設「智慧滿版」會保留約 8% 四邊安全空間，並自動限制拖曳／縮放不超出安全框，降低切到文字、頭髮與手勢的風險。
+                  預設「智慧滿版」會依上方選擇的智慧放大程度保留約 {Math.round(MOTHER_FIT_MARGIN[motherSheetFit] * 100)}% 四邊安全空間，並自動限制內容不超出安全框，降低切到文字、頭髮與手勢的風險。
                 </p>
 
                                 {(cropMode === "crop" || cropMode === "smart-safe") && (
@@ -3355,6 +3371,7 @@ export default function LineStickerTool() {
                     cropMode={cropMode}
                     itemScale={getScaleForIndex(i)}
                     darkStickerPreview={darkStickerPreview}
+                    smartMargin={MOTHER_FIT_MARGIN[motherSheetFit]}
                     onScaleChange={(nextScale) => updateItemScale(i, nextScale)}
                     offset={getOffsetForIndex(i)}
                     onOffsetChange={(nextOffset) => updateItemOffset(i, nextOffset)}
