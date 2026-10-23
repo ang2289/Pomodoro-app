@@ -6,7 +6,8 @@ import SEO, { getBaseUrl } from "@/components/SEO";
 import LineStickerAuthorCard from "@/components/LineStickerAuthorCard";
 import LineStickerFlowSteps from "@/components/LineStickerFlowSteps";
 import StickerExcelOffers from "@/components/StickerExcelOffers";
-import { StickerCustomInquiry, StickerNextActionHint } from "@/components/StickerBeginnerActions";
+import { StickerNextActionHint } from "@/components/StickerBeginnerActions";
+import StickerCustomPricing from "@/components/StickerCustomPricing";
 import {
   analyzeMotherSheetSafety,
   type MotherSheetSafetyReview,
@@ -240,6 +241,8 @@ const FAQ_KEYS = [
 ] as const;
 
 type LineStickerCropMode = "contain-safe" | "crop" | "smart-safe";
+type MotherSheetFitMode = "conservative" | "standard" | "large";
+const MOTHER_FIT_MARGIN: Record<MotherSheetFitMode, number> = { conservative: 0.13, standard: 0.09, large: 0.06 };
 
 type ImagePreview = {
   file: File;
@@ -573,6 +576,7 @@ function drawStickerToTransparentCanvas(
   mode: LineStickerCropMode,
   scalePercent = 100,
   offset: ItemOffset = { x: 0, y: 0 },
+  smartMargin = SMART_SAFE_PADDING_RATIO,
 ): void {
   canvas.width = targetW;
   canvas.height = targetH;
@@ -620,7 +624,7 @@ function drawStickerToTransparentCanvas(
   }
 
   const paddingRatio =
-    mode === "smart-safe" ? SMART_SAFE_PADDING_RATIO : SAFE_PADDING_RATIO;
+    mode === "smart-safe" ? smartMargin : SAFE_PADDING_RATIO;
   const padding = Math.max(
     6,
     Math.round(Math.min(targetW, targetH) * paddingRatio),
@@ -628,19 +632,24 @@ function drawStickerToTransparentCanvas(
   const maxW = Math.max(1, targetW - padding * 2);
   const maxH = Math.max(1, targetH - padding * 2);
 
-  // 安全模式永遠不允許把內容放大到安全框之外。
-  // 想故意滿版裁切時才使用「滿版」模式。
-  const safeScale = Math.min(1, requestedScale);
-  const scale =
-    Math.min(maxW / sourceBox.width, maxH / sourceBox.height) * safeScale;
+  // 100% 保留所選模式的安全留白；超過 100% 只在可保留至少 4% 硬邊界時放大。
+  // 不再將 smart-safe 的數值固定裁成 100%，否則「全部放大」看似可按卻沒有作用。
+  const hardPadding = Math.max(6, Math.round(Math.min(targetW, targetH) * 0.04));
+  const normalFitScale = Math.min(maxW / sourceBox.width, maxH / sourceBox.height);
+  const hardFitScale = Math.min(
+    (targetW - hardPadding * 2) / sourceBox.width,
+    (targetH - hardPadding * 2) / sourceBox.height,
+  );
+  const scale = Math.min(normalFitScale * requestedScale, hardFitScale);
   const drawW = Math.max(1, Math.round(sourceBox.width * scale));
   const drawH = Math.max(1, Math.round(sourceBox.height * scale));
   const centeredX = Math.round((targetW - drawW) / 2);
   const centeredY = Math.round((targetH - drawH) / 2);
-  const minX = padding;
-  const maxX = Math.max(padding, targetW - padding - drawW);
-  const minY = padding;
-  const maxY = Math.max(padding, targetH - padding - drawH);
+  const actualPadding = requestedScale > 1 ? hardPadding : padding;
+  const minX = actualPadding;
+  const maxX = Math.max(actualPadding, targetW - actualPadding - drawW);
+  const minY = actualPadding;
+  const maxY = Math.max(actualPadding, targetH - actualPadding - drawH);
   const dx = Math.max(minX, Math.min(maxX, centeredX + Math.round(offset.x)));
   const dy = Math.max(minY, Math.min(maxY, centeredY + Math.round(offset.y)));
 
@@ -693,6 +702,7 @@ function resizeImageToCanvas(
   mode: LineStickerCropMode,
   scalePercent = 100,
   offset: ItemOffset = { x: 0, y: 0 },
+  smartMargin = SMART_SAFE_PADDING_RATIO,
 ): HTMLCanvasElement {
   const canvas = document.createElement("canvas");
   drawStickerToTransparentCanvas(
@@ -703,6 +713,7 @@ function resizeImageToCanvas(
     mode,
     scalePercent,
     offset,
+    smartMargin,
   );
   return canvas;
 }
@@ -1295,7 +1306,7 @@ function removeForeignCellComponents(
  * 已通過留白切割檢查後，重新置中縮放至透明安全框。
  * 避免直接剪去花瓣、文字，也不會因為原圖貼邊就截斷。
  */
-function centerMotherSheetCellWithPadding(source: HTMLCanvasElement): HTMLCanvasElement {
+function centerMotherSheetCellWithPadding(source: HTMLCanvasElement, fitMode: MotherSheetFitMode = "standard"): HTMLCanvasElement {
   const context = source.getContext("2d", { willReadFrequently: true });
   if (!context) throw new Error("無法讀取去背後圖片");
   const { width, height } = source;
@@ -1319,11 +1330,13 @@ function centerMotherSheetCellWithPadding(source: HTMLCanvasElement): HTMLCanvas
   }
   const boxWidth = maxX - minX + 1;
   const boxHeight = maxY - minY + 1;
-  const padding = Math.max(5, Math.round(Math.min(width, height) * 0.13));
-  const scale = Math.min(
+  // Fit the combined alpha bounds, including detached words and decorations.
+  const padding = Math.max(5, Math.round(Math.min(width, height) * MOTHER_FIT_MARGIN[fitMode]));
+  const idealScale = Math.min(
     (width - padding * 2) / boxWidth,
     (height - padding * 2) / boxHeight,
   );
+  const scale = Math.min(3, idealScale); // Resampling cannot restore lost pixels.
   const drawWidth = Math.max(1, Math.round(boxWidth * scale));
   const drawHeight = Math.max(1, Math.round(boxHeight * scale));
   const canvas = document.createElement("canvas");
@@ -1350,6 +1363,7 @@ async function splitMotherSheet(
   removeWhiteBackground: boolean,
   whiteRemovalMode: StickerWhiteRemovalMode,
   safety?: MotherSheetSafetyReview,
+  fitMode: MotherSheetFitMode = "standard",
 ): Promise<File[]> {
   const image = await loadImage(file, t);
   const sourceWidth = image.naturalWidth || image.width;
@@ -1398,8 +1412,9 @@ async function splitMotherSheet(
         // 明確選擇強力模式時才修整白邊：此步可能傷到白色衣服。
         if (whiteRemovalMode === "strong") cleanPaleEdgeHalo(canvas, 1);
       }
-      const output = removeWhiteBackground
-        ? centerMotherSheetCellWithPadding(canvas)
+      // Apply content-based fit to images with an alpha channel. Opaque, un-matted cells are kept intact.
+      const output = removeWhiteBackground || canvasHasTransparency(canvas)
+        ? centerMotherSheetCellWithPadding(canvas, fitMode)
         : canvas;
       const blob = await canvasToBlob(output, t);
       results.push(
@@ -1420,6 +1435,7 @@ function PreviewCard({
   cropMode,
   itemScale,
   darkStickerPreview,
+  smartMargin,
   onScaleChange,
   offset,
   onOffsetChange,
@@ -1433,6 +1449,7 @@ function PreviewCard({
   cropMode: LineStickerCropMode;
   itemScale: number;
   darkStickerPreview: boolean;
+  smartMargin: number;
   onScaleChange: (nextScale: number) => void;
   offset: ItemOffset;
   onOffsetChange: (nextOffset: ItemOffset) => void;
@@ -1464,8 +1481,9 @@ function PreviewCard({
       cropMode,
       itemScale,
       offset,
+      smartMargin,
     );
-  }, [cropMode, preview.img, itemScale, offset.x, offset.y]);
+  }, [cropMode, preview.img, itemScale, offset.x, offset.y, smartMargin]);
 
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -1520,9 +1538,9 @@ function PreviewCard({
         <div className="pointer-events-none absolute inset-0 rounded-xl border border-sky-200" />
         <div
           className="pointer-events-none absolute rounded-lg border border-dashed border-emerald-400/90"
-          style={{ inset: "8%" }}
+          style={{ inset: String(Math.round((itemScale > 100 && cropMode === "smart-safe" ? 0.04 : cropMode === "smart-safe" ? smartMargin : SAFE_PADDING_RATIO) * 100)) + "%" }}
         />
-        <span className="pointer-events-none absolute left-[8%] top-[8%] rounded-br-md bg-emerald-500/90 px-1.5 py-0.5 text-[9px] font-black text-white">
+        <span className="pointer-events-none absolute left-3 top-3 rounded-br-md bg-emerald-500/90 px-1.5 py-0.5 text-[9px] font-black text-white">
           安全框
         </span>
       </div>
@@ -1554,13 +1572,13 @@ function PreviewCard({
 
       {!isExcluded && (
         <>
-          <div className="mt-3 grid grid-cols-3 gap-2 text-xs font-bold text-slate-600">
-            <button type="button" className="rounded-xl bg-slate-100 px-3 py-2 hover:bg-slate-200" onClick={() => onOffsetChange(clampOffset({ ...offset, y: offset.y - 4 }))}>上移</button>
-            <button type="button" className="rounded-xl bg-slate-100 px-3 py-2 hover:bg-slate-200" onClick={() => onOffsetChange({ x: 0, y: 0 })}>置中</button>
-            <button type="button" className="rounded-xl bg-slate-100 px-3 py-2 hover:bg-slate-200" onClick={() => onOffsetChange(clampOffset({ ...offset, y: offset.y + 4 }))}>下移</button>
-            <button type="button" className="rounded-xl bg-slate-100 px-3 py-2 hover:bg-slate-200" onClick={() => onOffsetChange(clampOffset({ ...offset, x: offset.x - 4 }))}>左移</button>
-            <span className="rounded-xl bg-white px-3 py-2 text-center text-slate-500">{offset.x},{offset.y}</span>
-            <button type="button" className="rounded-xl bg-slate-100 px-3 py-2 hover:bg-slate-200" onClick={() => onOffsetChange(clampOffset({ ...offset, x: offset.x + 4 }))}>右移</button>
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-bold text-slate-600" aria-label="單張貼圖位置微調">
+            <button type="button" className="inline-flex min-h-10 w-auto shrink-0 items-center rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 hover:bg-violet-50" onClick={() => onOffsetChange(clampOffset({ ...offset, y: offset.y - 4 }))}>上移</button>
+            <button type="button" className="inline-flex min-h-10 w-auto shrink-0 items-center rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 hover:bg-violet-50" onClick={() => onOffsetChange(clampOffset({ ...offset, y: offset.y + 4 }))}>下移</button>
+            <button type="button" className="inline-flex min-h-10 w-auto shrink-0 items-center rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 hover:bg-violet-50" onClick={() => onOffsetChange(clampOffset({ ...offset, x: offset.x - 4 }))}>左移</button>
+            <button type="button" className="inline-flex min-h-10 w-auto shrink-0 items-center rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 hover:bg-violet-50" onClick={() => onOffsetChange(clampOffset({ ...offset, x: offset.x + 4 }))}>右移</button>
+            <button type="button" className="inline-flex min-h-10 w-auto shrink-0 items-center rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-violet-800 hover:bg-violet-100" onClick={() => onOffsetChange({ x: 0, y: 0 })}>置中</button>
+            <span className="whitespace-nowrap rounded-lg bg-white px-2 py-2 text-xs font-medium text-slate-500" aria-live="polite">偏移 {offset.x}, {offset.y}</span>
           </div>
 
           <div className="mt-3 rounded-xl bg-slate-50 p-3">
@@ -1573,7 +1591,7 @@ function PreviewCard({
             <input
               type="range"
               min="70"
-              max={cropMode === "crop" ? 130 : 100}
+              max={cropMode === "crop" ? 130 : 120}
               value={itemScale}
               onChange={(e) => onScaleChange(Number(e.target.value))}
               className="mt-2 w-full accent-blue-600"
@@ -1621,7 +1639,7 @@ export default function LineStickerTool() {
   );
   const [whatsAppReadyZip, setWhatsAppReadyZip] = useState<WhatsAppZipArchive | null>(null);
   const [cropMode, setCropMode] = useState<LineStickerCropMode>("smart-safe");
-  const [cropScale, setCropScale] = useState<number>(92);
+  const [cropScale, setCropScale] = useState<number>(100);
   const [downloadCompleted, setDownloadCompleted] = useState(
     () => flowProject?.mode === "static" && flowProject?.stage === 5,
   );
@@ -1631,6 +1649,9 @@ export default function LineStickerTool() {
   const [motherSheetGrid, setMotherSheetGrid] = useState<"auto" | MotherSheetGrid>("auto");
   const [autoRemoveWhiteBg, setAutoRemoveWhiteBg] = useState(true);
   const [whiteRemovalMode, setWhiteRemovalMode] = useState<StickerWhiteRemovalMode>("protect");
+  const [motherSheetFit, setMotherSheetFit] = useState<MotherSheetFitMode>(() =>
+    flowProject?.mode === "animated" ? "conservative" : "standard",
+  );
   const [darkStickerPreview, setDarkStickerPreview] = useState(false);
   const [mattingModeStale, setMattingModeStale] = useState(false);
   const [motherSheetSafetyResult, setMotherSheetSafetyResult] = useState<string | null>(null);
@@ -1654,6 +1675,10 @@ export default function LineStickerTool() {
       const next = updateLineStickerProject({ mode, count, stage: files.length ? 4 : 3 });
       if (next) setFlowProject(next);
     } else setDirectStickerMode(mode);
+    setMotherSheetFit(mode === "animated" ? "conservative" : "standard");
+    setCropScale(100);
+    setItemScales({});
+    setItemOffsets({});
     if (count !== stickerCount) {
       setStickerCount(count);
       setMotherSheetDetections([]);
@@ -1955,6 +1980,7 @@ export default function LineStickerTool() {
               autoRemoveWhiteBg,
               whiteRemovalMode,
               safety,
+              motherSheetFit,
             )),
           );
           safetyWarnings.push(...safety.warnings.map((warning) =>
@@ -1974,6 +2000,7 @@ export default function LineStickerTool() {
               autoRemoveWhiteBg,
               whiteRemovalMode,
               safety,
+              motherSheetFit,
             )),
           );
           safetyWarnings.push(...safety.warnings.map((warning) =>
@@ -2000,10 +2027,14 @@ export default function LineStickerTool() {
 
       await validateAndAddFiles(splitFiles);
       setMattingModeStale(false);
+      const safeBorder = Math.round(MOTHER_FIT_MARGIN[motherSheetFit] * 100);
+      const fitInfo = autoRemoveWhiteBg
+        ? `已依透明內容外框智慧放大並保留約 ${safeBorder}% 留白（最多 3 倍）；原始解析度不足時仍可能模糊。`
+        : "已關閉去背，不透明圖片不會強行裁白底。";
       setMotherSheetSafetyResult(
         safetyWarnings.length
-          ? `切割完成：已調整安全分隔線、置中補足約 13% 透明留白。偵測到原圖留白較小：${safetyWarnings.slice(0, 12).join("、")}${safetyWarnings.length > 12 ? `，另有 ${safetyWarnings.length - 12} 張` : ""}。請在下方逐張確認文字和花朵。`
-          : "安全切割完成：已尋找各格之間的留白通道，並自動去背、置中與補足約 13% 透明留白。請逐張預覽後再打包。",
+          ? `安全切割完成：${fitInfo} 原圖留白較小：${safetyWarnings.slice(0, 12).join("、")}${safetyWarnings.length > 12 ? `，另有 ${safetyWarnings.length - 12} 張` : ""}。請逐張確認文字與裝飾。`
+          : `安全切割完成：${fitInfo} 請逐張預覽後再打包。`,
       );
       setMotherSheetDetectionStatus("ready");
       setActionHint("下一步（第 5 步）：逐張檢查預覽、選好主圖，再按最後一步產生 ZIP；動態則接續製作動畫。");
@@ -2019,6 +2050,7 @@ export default function LineStickerTool() {
   }, [
     autoRemoveWhiteBg,
     whiteRemovalMode,
+    motherSheetFit,
     files,
     flowProject,
     loading,
@@ -2064,19 +2096,38 @@ export default function LineStickerTool() {
   );
 
   const updateItemScale = useCallback((index: number, nextScale: number) => {
-    setItemScales((prev) => ({ ...prev, [index]: nextScale }));
-  }, []);
+    const maxScale = cropMode === "crop" ? 130 : 120;
+    setItemScales((prev) => ({ ...prev, [index]: Math.max(70, Math.min(maxScale, Math.round(nextScale))) }));
+    setReviewedWarnings({});
+  }, [cropMode]);
 
+  // 批次滑桿：把全部設定成同一倍率；接著仍可用單張滑桿獨立微調。
   const updateGlobalScale = useCallback((nextScale: number) => {
-    setCropScale(nextScale);
-    setItemScales((prev) => {
-      const next: Record<number, number> = { ...prev };
-      files.forEach((_, index) => {
-        next[index] = nextScale;
-      });
-      return next;
+    const maxScale = cropMode === "crop" ? 130 : 120;
+    const normalized = Math.max(70, Math.min(maxScale, Math.round(nextScale)));
+    setCropScale(normalized);
+    setItemScales((previous) => {
+      const updated = { ...previous };
+      files.slice(0, stickerCount).forEach((_, index) => { updated[index] = normalized; });
+      return updated;
     });
-  }, [files]);
+    setReviewedWarnings({});
+  }, [cropMode, files, stickerCount]);
+
+  // +/- 5%：所有貼圖一起做相對放大或縮小，不清掉每張已經做過的細部差異。
+  const nudgeAllScales = useCallback((delta: number) => {
+    const maxScale = cropMode === "crop" ? 130 : 120;
+    const normalize = (n: number) => Math.max(70, Math.min(maxScale, Math.round(n)));
+    setItemScales((previous) => {
+      const updated = { ...previous };
+      files.slice(0, stickerCount).forEach((_, index) => {
+        updated[index] = normalize((previous[index] ?? cropScale) + delta);
+      });
+      return updated;
+    });
+    setCropScale((previous) => normalize(previous + delta));
+    setReviewedWarnings({});
+  }, [cropMode, files, stickerCount, cropScale]);
 
   const getOffsetForIndex = useCallback(
     (index: number) => itemOffsets[index] ?? { x: 0, y: 0 },
@@ -2089,11 +2140,11 @@ export default function LineStickerTool() {
 
   const autoSafetyFixAll = useCallback(() => {
     setCropMode("smart-safe");
-    setCropScale(92);
+    setCropScale(100);
     const nextScales: Record<number, number> = {};
     const nextOffsets: Record<number, ItemOffset> = {};
     files.forEach((_, index) => {
-      nextScales[index] = 92;
+      nextScales[index] = 100;
       nextOffsets[index] = { x: 0, y: 0 };
     });
     setItemScales(nextScales);
@@ -2115,6 +2166,7 @@ export default function LineStickerTool() {
         cropMode,
         getScaleForIndex(index),
         getOffsetForIndex(index),
+        MOTHER_FIT_MARGIN[motherSheetFit],
       );
       const report = analyzeStickerCanvas(canvas, index);
 
@@ -2122,7 +2174,7 @@ export default function LineStickerTool() {
       const scale = getScaleForIndex(index);
       const autoSafeLayout =
         cropMode === "smart-safe" &&
-        scale <= 92 &&
+        scale <= 120 &&
         Math.abs(offset.x) <= 1 &&
         Math.abs(offset.y) <= 1;
 
@@ -2185,6 +2237,7 @@ export default function LineStickerTool() {
         cropMode,
         mainScale,
         getOffsetForIndex(mainImageIndex),
+        MOTHER_FIT_MARGIN[motherSheetFit],
       );
       const tabCanvas = resizeImageToCanvas(
         targetMainImg,
@@ -2193,6 +2246,7 @@ export default function LineStickerTool() {
         cropMode,
         mainScale,
         getOffsetForIndex(mainImageIndex),
+        MOTHER_FIT_MARGIN[motherSheetFit],
       );
       if (
         !canvasHasTransparency(mainCanvas) ||
@@ -2211,6 +2265,7 @@ export default function LineStickerTool() {
           cropMode,
           getScaleForIndex(i),
           getOffsetForIndex(i),
+          MOTHER_FIT_MARGIN[motherSheetFit],
         );
         if (!canvasHasTransparency(canvas)) {
           throw new Error(
@@ -2273,6 +2328,7 @@ export default function LineStickerTool() {
         cropMode,
         getScaleForIndex(mainIndex),
         getOffsetForIndex(mainIndex),
+        MOTHER_FIT_MARGIN[motherSheetFit],
       );
       if (!canvasHasTransparency(mainCanvas)) {
         throw new Error("WhatsApp 貼圖集封面仍有不透明背景，請先完成去背。");
@@ -2292,6 +2348,7 @@ export default function LineStickerTool() {
             cropMode,
             getScaleForIndex(index),
             getOffsetForIndex(index),
+            MOTHER_FIT_MARGIN[motherSheetFit],
           );
           if (!canvasHasTransparency(canvas)) {
             throw new Error(`第 ${index + 1} 張背景不是透明，請先完成去背。`);
@@ -2369,6 +2426,7 @@ export default function LineStickerTool() {
           cropMode,
           getScaleForIndex(i),
           getOffsetForIndex(i),
+          MOTHER_FIT_MARGIN[motherSheetFit],
         );
         if (!canvasHasTransparency(canvas)) {
           throw new Error(`第 ${i + 1} 張背景仍不是透明，請先確認去背結果。`);
@@ -2436,7 +2494,7 @@ export default function LineStickerTool() {
               </div>
             </section>
             <StickerExcelOffers compact />
-            <div className="mt-6"><StickerCustomInquiry compact /></div>
+            <div className="mt-6"><StickerCustomPricing compact /></div>
           </div>
         </main>
       </>
@@ -2528,7 +2586,7 @@ export default function LineStickerTool() {
 
           <section className="mb-5 rounded-2xl border border-sky-200 bg-white p-4 shadow-sm">
             <h2 className="text-sm font-black text-slate-900">輸出平台｜同一張母圖可製作 LINE 或 WhatsApp 貼圖</h2>
-            <div className="mt-3 grid w-full max-w-[520px] grid-cols-2 items-stretch gap-3" role="group" aria-label="選擇貼圖輸出平台">
+            <div className="mt-3 flex flex-wrap items-center gap-2" role="group" aria-label="選擇貼圖輸出平台">
               <button type="button" onClick={() => {
                   setExportPlatform("line");
                   setWhatsAppReadyZip(null);
@@ -2537,7 +2595,7 @@ export default function LineStickerTool() {
                   setDownloadCompleted(false);
                 }}
                 aria-pressed={exportPlatform === "line"}
-                className={`inline-flex min-h-12 w-full min-w-0 items-center justify-center rounded-xl border-2 px-3 py-3 text-center text-sm font-bold leading-5 shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:border-violet-500 hover:bg-violet-100 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 active:translate-y-0 ${exportPlatform === "line" ? "border-violet-600 bg-violet-600 text-white shadow-md hover:bg-violet-700 hover:text-white" : "border-violet-200 bg-violet-50 text-violet-900"}`}>
+                className={`inline-flex min-h-11 w-auto max-w-full shrink-0 items-center justify-center rounded-xl border-2 px-4 py-2.5 text-center text-sm font-bold leading-5 shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:border-violet-500 hover:bg-violet-100 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 active:translate-y-0 ${exportPlatform === "line" ? "border-violet-600 bg-violet-600 text-white shadow-md hover:bg-violet-700 hover:text-white" : "border-violet-200 bg-violet-50 text-violet-900"}`}>
                 {exportPlatform === "line" ? "✓ LINE · PNG／APNG" : "LINE · PNG／APNG"}
               </button>
               <button type="button" onClick={() => {
@@ -2548,7 +2606,7 @@ export default function LineStickerTool() {
                   setDownloadCompleted(false);
                 }}
                 aria-pressed={exportPlatform === "whatsapp"}
-                className={`inline-flex min-h-12 w-full min-w-0 items-center justify-center rounded-xl border-2 px-3 py-3 text-center text-sm font-bold leading-5 shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:border-violet-500 hover:bg-violet-100 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 active:translate-y-0 ${exportPlatform === "whatsapp" ? "border-violet-600 bg-violet-600 text-white shadow-md hover:bg-violet-700 hover:text-white" : "border-violet-200 bg-violet-50 text-violet-900"}`}>
+                className={`inline-flex min-h-11 w-auto max-w-full shrink-0 items-center justify-center rounded-xl border-2 px-4 py-2.5 text-center text-sm font-bold leading-5 shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:border-violet-500 hover:bg-violet-100 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 active:translate-y-0 ${exportPlatform === "whatsapp" ? "border-violet-600 bg-violet-600 text-white shadow-md hover:bg-violet-700 hover:text-white" : "border-violet-200 bg-violet-50 text-violet-900"}`}>
                 {exportPlatform === "whatsapp" ? "✓ WhatsApp · WebP" : "WhatsApp · WebP"}
               </button>
             </div>
@@ -2786,7 +2844,7 @@ export default function LineStickerTool() {
                           setWhiteRemovalMode(event.target.value as StickerWhiteRemovalMode);
                           if (motherSheetDetections.length && files.length) setMattingModeStale(true);
                         }}
-                        className="mt-2 w-full rounded-xl border border-sky-200 bg-white px-3 py-3 text-sm font-bold text-slate-800">
+                        className="mt-2 w-full max-w-[440px] sm:w-auto sm:min-w-[320px] rounded-xl border border-sky-200 bg-white px-3 py-3 text-sm font-bold text-slate-800">
                         <option value="protect">保護白衣／白色字邊（預設推薦）</option>
                         <option value="balanced">均衡清理白底</option>
                         <option value="strong">加強去白底（可能傷到白衣與淺色花朵）</option>
@@ -2924,7 +2982,21 @@ export default function LineStickerTool() {
                       </div>
                     </div>
                   ) : null}
-                  <div id="mother-split" className="scroll-mt-24 mt-4 grid gap-3 xl:grid-cols-2">
+                                     <section className="mt-4 rounded-xl border border-violet-200 bg-white p-3" aria-label="母圖切割後智慧放大">
+                     <p className="text-sm font-black text-violet-900">切圖後智慧放大成品</p>
+                     <p className="mt-1 text-xs leading-6 text-slate-600">母圖先留白好切割，切完後偵測人物、文字、裝飾的透明外框，再等比例放大與置中。</p>
+                     <div className="mt-2 grid grid-cols-3 gap-2" role="group" aria-label="智慧放大程度">
+                       {(["conservative", "standard", "large"] as const).map((fitMode) => (
+                         <button key={fitMode} type="button" onClick={() => { setMotherSheetFit(fitMode); setCropMode("smart-safe"); setCropScale(100); setItemScales({}); setItemOffsets({}); }}
+                           aria-pressed={motherSheetFit === fitMode}
+                           className={"min-h-11 rounded-xl border-2 px-2 py-2 text-xs font-black " + (motherSheetFit === fitMode ? "border-violet-600 bg-violet-600 text-white" : "border-violet-100 bg-violet-50 text-violet-900 hover:border-violet-300")}>
+                           {fitMode === "conservative" ? "保守・動態" : fitMode === "standard" ? "標準・推薦" : "放大・靜態"}
+                         </button>
+                       ))}
+                     </div>
+                     <p className="mt-2 text-[11px] leading-5 text-slate-600">保留約 {Math.round(MOTHER_FIT_MARGIN[motherSheetFit] * 100)}% 四邊安全距離；最多放大 3 倍，來源像素太少仍會變模糊。關閉去背且圖片不透明時不會裁切白底。</p>
+                   </section>
+                   <div id="mother-split" className="scroll-mt-24 mt-4 grid gap-3 xl:grid-cols-2">
                     {motherSheetDetections.map((item, index) => {
                       const safetyGrid = !flowProject && motherSheetGrid !== "auto" && motherSheetDetections.length === 1 ? motherSheetGrid : item.grid;
                       const plannedGrid =
@@ -3146,40 +3218,13 @@ export default function LineStickerTool() {
                 </div>
 
                 <p className="mt-3 rounded-xl bg-emerald-50 px-3 py-2 text-[11px] font-bold leading-5 text-emerald-800">
-                  預設「智慧滿版」會保留約 8% 四邊安全空間，並自動限制拖曳／縮放不超出安全框，降低切到文字、頭髮與手勢的風險。
+                  預設「智慧滿版」會依上方選擇的智慧放大程度保留約 {Math.round(MOTHER_FIT_MARGIN[motherSheetFit] * 100)}% 四邊安全空間，並自動限制內容不超出安全框，降低切到文字、頭髮與手勢的風險。
                 </p>
 
-                                {(cropMode === "crop" || cropMode === "smart-safe") && (
-                  <div className="mt-4 rounded-xl bg-slate-50 p-3">
-                    <div className="mb-2 flex items-center justify-between gap-2">
-                      <span className="text-[11px] font-black text-slate-500">
-                        安全縮放
-                      </span>
-                      <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-black text-blue-600">
-                        {cropScale}%
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min={75}
-                      max={cropMode === "crop" ? 135 : 100}
-                      step={1}
-                      value={cropScale}
-                      onChange={(e) => updateGlobalScale(Number(e.target.value))}
-                      className="w-full accent-blue-600"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => updateGlobalScale(cropScale)}
-                      className="mt-2 inline-flex w-auto max-w-full items-center justify-center rounded-lg bg-white px-3 py-2 text-[11px] font-black text-blue-600 hover:bg-blue-50"
-                    >
-                      套用目前縮放到全部貼圖
-                    </button>
-                    <p className="mt-2 text-[11px] leading-relaxed text-slate-500">
-                      安全模式最多 100%，不會讓內容超出安全框；有文字建議 88%～94%。只有選「滿版」才允許放大裁切。
-                    </p>
-                  </div>
-                )}
+                <p className="mt-3 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs leading-6 text-blue-900">
+                  全部一起放大或縮小，請使用下方「全部貼圖批次縮放」；套用後仍可逐張微調。
+                  安全模式最多 120%，超過 100% 時仍保留至少 4% 邊界，不會故意裁字。
+                </p>
               </div>
             </section>
           </div>
@@ -3294,13 +3339,45 @@ export default function LineStickerTool() {
           )}
 
           {files.length > 0 && (
-            <section className="mb-10">
+            <section className="mb-10" aria-label="貼圖批次及個別尺寸調整">
+              <div className="mb-4 rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50 via-white to-rose-50 p-4 sm:p-5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="text-base font-black text-violet-900">全部貼圖批次縮放</h3>
+                  <span className="rounded-full bg-white px-3 py-1 text-sm font-black text-violet-700 shadow-sm">批次基準 {cropScale}%</span>
+                </div>
+                <p className="mt-1 text-xs leading-6 text-slate-600">先一次調整全部 {Math.min(files.length, stickerCount)} 張，再使用下面各張的「單張縮放」微調；不會清除各張位置或主圖選擇。</p>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <button type="button" onClick={() => nudgeAllScales(-5)}
+                    className="inline-flex min-h-11 w-auto max-w-full shrink-0 items-center justify-center rounded-xl border border-violet-200 bg-white px-4 py-2.5 text-sm font-black text-violet-800 hover:bg-violet-50">
+                    全部縮小 −5%
+                  </button>
+                  <button type="button" onClick={() => nudgeAllScales(5)}
+                    className="inline-flex min-h-11 w-auto max-w-full shrink-0 items-center justify-center rounded-xl bg-violet-700 px-4 py-2.5 text-sm font-black text-white hover:bg-violet-800">
+                    全部放大 +5%
+                  </button>
+                  <button type="button" onClick={() => updateGlobalScale(100)}
+                    className="inline-flex min-h-11 w-auto max-w-full shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-black text-slate-700 hover:bg-slate-50">
+                    全部還原 100%
+                  </button>
+                </div>
+                <label className="mt-4 block max-w-xl text-xs font-bold text-slate-800" htmlFor="line-sticker-all-scale">
+                  全部設為相同倍率：{cropScale}%（滑動立即套用）
+                </label>
+                <input id="line-sticker-all-scale" type="range" min="70" max={cropMode === "crop" ? 130 : 120}
+                  step="1" value={cropScale} onChange={(event) => updateGlobalScale(Number(event.target.value))}
+                  className="mt-2 block h-10 w-full max-w-xl cursor-pointer accent-violet-700"
+                  aria-label="全部貼圖一起縮放" />
+                <p className="mt-1 text-[11px] leading-5 text-slate-600">目前是「{cropMode === "crop" ? "滿版裁切" : cropMode === "smart-safe" ? "智慧安全" : "文字保護"}」模式。
+                  {cropMode === "crop" ? "滿版可能裁到文字，請仔細預覽。" : "超過 100% 仍限制在最少 4% 安全留白內；若已到安全上限，繼續放大也不會再變大。"}
+                  按 ±5% 會保留每張既有倍率差異；拉動滑桿會讓全部回到同一倍率。
+                </p>
+              </div>
               <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
                 <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">
                   {t("line_sticker_preview_title")}
                 </h3>
                 <p className="text-xs font-bold text-slate-500">
-                  預覽卡片已放大；可直接拖曳圖片微調位置，也可用下方縮放滑桿調整單張大小。
+                  可先使用上方批次縮放，再拖曳或縮放個別貼圖；此區調整會同步套用到下載 ZIP。
                 </p>
               </div>
               <div className="mb-4 flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-3">
@@ -3323,6 +3400,7 @@ export default function LineStickerTool() {
                     cropMode={cropMode}
                     itemScale={getScaleForIndex(i)}
                     darkStickerPreview={darkStickerPreview}
+                    smartMargin={MOTHER_FIT_MARGIN[motherSheetFit]}
                     onScaleChange={(nextScale) => updateItemScale(i, nextScale)}
                     offset={getOffsetForIndex(i)}
                     onOffsetChange={(nextOffset) => updateItemOffset(i, nextOffset)}
@@ -3803,7 +3881,7 @@ export default function LineStickerTool() {
 
 
         <div className="mx-auto mt-6 max-w-[1480px]">
-          <StickerCustomInquiry compact />
+          <StickerCustomPricing compact />
         </div>
       </div>
     </>
