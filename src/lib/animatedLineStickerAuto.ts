@@ -495,9 +495,12 @@ function renderFrames(
   }
   if (right <= left || bottom <= top) throw new Error("動畫內容為空，請檢查原始貼圖。");
 
-  const safePadding = 16 * renderScale;
+  // All eight motion frames share one fitting transform. Do not force scale
+  // <= 1: narrow sources would remain tiny after normalizing twice.
+  // The safety rectangle still caps all frames, including effects and hands.
+  const safePadding = 14 * renderScale;
   const scale = Math.min(
-    1,
+    1.18,
     (outputWidth - safePadding * 2) / (right - left),
     (outputHeight - safePadding * 2) / (bottom - top),
   );
