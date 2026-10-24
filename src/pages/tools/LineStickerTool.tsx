@@ -258,7 +258,7 @@ type ImagePreview = {
 type ItemOffset = { x: number; y: number };
 
 const SAFE_PADDING_RATIO = 0.11;
-const SMART_SAFE_PADDING_RATIO = 0.08;
+const SMART_SAFE_PADDING_RATIO = 0.06; // keep ~19px at 370x320; avoids double safety margins
 const MOTHER_SHEET_OVERLAP_RATIO = 0.06;
 const ALPHA_THRESHOLD = 12;
 
