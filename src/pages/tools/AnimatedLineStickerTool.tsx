@@ -54,8 +54,8 @@ const LINE_TAB_ICON_HEIGHT = 74;
 const LINE_APNG_MAX_BYTES = 1_000_000;
 const MAX_LINE_ZIP_MB = 60;
 const ALPHA_VISIBLE_THRESHOLD = 8;
-const SOURCE_CROP_PADDING = 12;
-const OUTPUT_SAFE_PADDING = 12; // 動態影格安全留白，避免二次縮放貼邊
+const SOURCE_CROP_PADDING = 4; // source already has safe padding; avoid adding a second wide blank ring
+const OUTPUT_SAFE_PADDING = 10; // fixed edge reserve for union of all frames
 
 type AlphaBounds = {
   left: number;
