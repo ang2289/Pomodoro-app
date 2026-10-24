@@ -38,6 +38,7 @@ import { stickerSaleTextRisks } from "@/lib/stickerCommercialSafety";
 import { buildMotherSheetWhitespaceRetryPrompt } from "@/lib/stickerMotherSheetWhitespace";
 import { saveAs } from "file-saver";
 import { removeStickerWhiteBackground, type StickerWhiteRemovalMode } from "@/lib/stickerWhiteBackground";
+import { planStickerReadableLayout, type StickerReadablePlan } from "@/lib/stickerReadableLayout";
 
 function DonationLite() {
   return (
@@ -565,6 +566,35 @@ function getImageSourceEdgeRisk(img: HTMLImageElement): {
   return { touchesHardEdge, nearEdge };
 }
 
+// Keep repeated preview/QC/export renders fast without retaining full image pixels.
+const readableLayoutCache = new WeakMap<HTMLImageElement, Map<string, StickerReadablePlan | null>>();
+
+function findReadablePlan(img: HTMLImageElement, targetW: number, targetH: number): StickerReadablePlan | null {
+  const key = `${targetW}x${targetH}`;
+  let cached = readableLayoutCache.get(img);
+  if (!cached) {
+    cached = new Map();
+    readableLayoutCache.set(img, cached);
+  }
+  if (cached.has(key)) return cached.get(key) ?? null;
+  const width = img.naturalWidth || img.width;
+  const height = img.naturalHeight || img.height;
+  const source = document.createElement("canvas");
+  source.width = width;
+  source.height = height;
+  const context = source.getContext("2d", { willReadFrequently: true });
+  let plan: StickerReadablePlan | null = null;
+  if (context) {
+    context.drawImage(img, 0, 0);
+    plan = planStickerReadableLayout(
+      context.getImageData(0, 0, width, height).data,
+      width, height, targetW, targetH,
+    );
+  }
+  cached.set(key, plan);
+  return plan;
+}
+
 function drawStickerToTransparentCanvas(
   img: HTMLImageElement,
   canvas: HTMLCanvasElement,
@@ -595,6 +625,27 @@ function drawStickerToTransparentCanvas(
       : { x: 0, y: 0, width: sourceW, height: sourceH };
 
   const requestedScale = Math.max(0.65, Math.min(1.3, scalePercent / 100));
+
+  // Caption-first layout only when the source has a real alpha gutter.
+  // A failed split (or manual transform) safely falls back to the old fit logic.
+  // Apply equally to LINE static and the 3x high-resolution animation handoff.
+  if (
+    mode === "smart-safe" &&
+    scalePercent === 100 &&
+    offset.x === 0 && offset.y === 0 &&
+    transparencyInfo.hasTransparency &&
+    Math.abs(targetW / targetH - STICKER_BODY.width / STICKER_BODY.height) < 0.025
+  ) {
+    const readable = findReadablePlan(img, targetW, targetH);
+    if (readable) {
+      for (const part of [readable.title, readable.body]) {
+        const { source, target } = part;
+        ctx.drawImage(img, source.x, source.y, source.width, source.height,
+          target.x, target.y, target.width, target.height);
+      }
+      return;
+    }
+  }
 
   if (mode === "crop") {
     const safeScale = requestedScale;
@@ -1319,7 +1370,8 @@ function centerMotherSheetCellWithPadding(source: HTMLCanvasElement): HTMLCanvas
   }
   const boxWidth = maxX - minX + 1;
   const boxHeight = maxY - minY + 1;
-  const padding = Math.max(5, Math.round(Math.min(width, height) * 0.13));
+  // Keep only a small cutting buffer here: the final 370x320 layout adds its own safety margin.
+  const padding = Math.max(3, Math.round(Math.min(width, height) * 0.04));
   const scale = Math.min(
     (width - padding * 2) / boxWidth,
     (height - padding * 2) / boxHeight,
@@ -1621,7 +1673,7 @@ export default function LineStickerTool() {
   );
   const [whatsAppReadyZip, setWhatsAppReadyZip] = useState<WhatsAppZipArchive | null>(null);
   const [cropMode, setCropMode] = useState<LineStickerCropMode>("smart-safe");
-  const [cropScale, setCropScale] = useState<number>(92);
+  const [cropScale, setCropScale] = useState<number>(100);
   const [downloadCompleted, setDownloadCompleted] = useState(
     () => flowProject?.mode === "static" && flowProject?.stage === 5,
   );
@@ -2089,11 +2141,11 @@ export default function LineStickerTool() {
 
   const autoSafetyFixAll = useCallback(() => {
     setCropMode("smart-safe");
-    setCropScale(92);
+    setCropScale(100);
     const nextScales: Record<number, number> = {};
     const nextOffsets: Record<number, ItemOffset> = {};
     files.forEach((_, index) => {
-      nextScales[index] = 92;
+      nextScales[index] = 100;
       nextOffsets[index] = { x: 0, y: 0 };
     });
     setItemScales(nextScales);
@@ -2122,7 +2174,7 @@ export default function LineStickerTool() {
       const scale = getScaleForIndex(index);
       const autoSafeLayout =
         cropMode === "smart-safe" &&
-        scale <= 92 &&
+        scale <= 100 &&
         Math.abs(offset.x) <= 1 &&
         Math.abs(offset.y) <= 1;
 
@@ -3146,7 +3198,7 @@ export default function LineStickerTool() {
                 </div>
 
                 <p className="mt-3 rounded-xl bg-emerald-50 px-3 py-2 text-[11px] font-bold leading-5 text-emerald-800">
-                  預設「智慧滿版」會保留約 8% 四邊安全空間，並自動限制拖曳／縮放不超出安全框，降低切到文字、頭髮與手勢的風險。
+                  預設「智慧滿版」不再重複縮小整張圖；可辨識文字與人物中間透明空隙時會優先放大上方文字。無法安全分層時保留原本等比例安全排版。
                 </p>
 
                                 {(cropMode === "crop" || cropMode === "smart-safe") && (
@@ -3176,7 +3228,7 @@ export default function LineStickerTool() {
                       套用目前縮放到全部貼圖
                     </button>
                     <p className="mt-2 text-[11px] leading-relaxed text-slate-500">
-                      安全模式最多 100%，不會讓內容超出安全框；有文字建議 88%～94%。只有選「滿版」才允許放大裁切。
+                      預設為 100%：安全框已保留留白，無須再次縮到 92%。手動調整後會保留自訂比例；「滿版」模式仍可能裁切內容。
                     </p>
                   </div>
                 )}
@@ -3210,7 +3262,7 @@ export default function LineStickerTool() {
                     🛡️ 全部自動安全修正
                   </button>
                   <p className="mt-2 text-[11px] font-bold leading-5 text-emerald-700">
-                    會統一改成智慧安全模式、縮放 92%、置中，並限制內容不可越過安全框。
+                    會統一改成智慧安全模式、縮放 100%、置中；文字與人物若可安全分層，將自動改善文字大小。
                   </p>
                 </div>
                 <div className="grid min-w-[240px] grid-cols-3 gap-2 text-center">
