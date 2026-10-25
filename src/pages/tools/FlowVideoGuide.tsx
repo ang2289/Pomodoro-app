@@ -7,7 +7,9 @@ type DemoVideo = {
   title: string;
   description: string;
   createdAt: string;
-  videoUrl: string;
+  youtubeId: string;
+  youtubeUrl: string;
+  embedUrl: string;
 };
 
 const FLOW_URL = "https://labs.google/fx/tools/flow";
@@ -123,27 +125,36 @@ export default function FlowVideoGuide() {
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h2 className="text-2xl font-black">AI 影片示範區</h2>
-            <p className="mt-1 text-slate-600">由 RXV 管理者上傳 MP4 示範影片；點擊即可播放。影片儲存在 Cloudflare R2，不會放進 Vercel 部署檔案。</p>
+            <p className="mt-1 text-slate-600">由 RXV 管理者加入 YouTube 影片網址，直接在本頁嵌入播放。MP4 存在 YouTube，不占用 RXV 的影片儲存空間。</p>
           </div>
-          <Link to="/admin/flow-demos" className="text-sm font-bold text-indigo-700 underline">管理者上傳影片</Link>
+          <Link to="/admin/flow-demos" className="text-sm font-bold text-indigo-700 underline">管理者新增 YouTube 影片</Link>
         </div>
         {videoStatus ? <p className="mt-5 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">{videoStatus}</p> : null}
         {!videoStatus && videos.length === 0 ? (
           <div className="mt-5 rounded-2xl border border-dashed border-indigo-200 bg-indigo-50/50 p-8 text-center">
             <p className="font-bold">示範影片準備中</p>
-            <p className="mt-2 text-sm text-slate-600">管理者上傳第一支 MP4 後，影片會自動出現在這裡。</p>
+            <p className="mt-2 text-sm text-slate-600">管理者貼上第一支 YouTube 連結後，影片會自動出現在這裡。</p>
           </div>
         ) : null}
         {videos.length > 0 ? (
           <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {videos.map((video) => (
               <article key={video.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <video controls playsInline preload="metadata" className="aspect-[9/16] w-full bg-slate-100 object-contain" src={video.videoUrl}>
-                  您的瀏覽器不支援 MP4 播放。
-                </video>
+                <div className="aspect-[9/16] w-full bg-slate-100">
+                  <iframe
+                    src={video.embedUrl}
+                    title={video.title || "RXV 示範影片"}
+                    className="h-full w-full"
+                    loading="lazy"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    referrerPolicy="strict-origin-when-cross-origin"
+                    allowFullScreen
+                  />
+                </div>
                 <div className="p-4">
                   <h3 className="font-bold">{video.title}</h3>
                   {video.description ? <p className="mt-2 whitespace-pre-line text-sm text-slate-600">{video.description}</p> : null}
+                  <a href={video.youtubeUrl} target="_blank" rel="noopener noreferrer" className="mt-3 inline-block text-sm font-semibold text-indigo-700 underline">前往 YouTube 觀看 ↗</a>
                 </div>
               </article>
             ))}
