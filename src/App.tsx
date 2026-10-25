@@ -152,6 +152,8 @@ import AirfryerPage from './pages/goods/airfryer-keshaui'
 import GoodsSharePage from './pages/goods/share'
 import AIHome from './pages/AIHome'
 import ToolsPage from './pages/tools'
+import FlowVideoGuide from './pages/tools/FlowVideoGuide'
+import FlowDemoAdmin from './pages/admin/FlowDemoAdmin'
 import AISummaryGuide from './pages/tools/ai-summary'
 import ShopeeSingleVideoPage from './pages/tools/ShopeeSingleVideoPage'
 import ShopeeVideoPage from './pages/tools/shopee-video/index.tsx'
@@ -697,6 +699,7 @@ function App() {
             <Route path="ai-home" element={<AIHome />} />
             {/* 預留功能路由 */}
             <Route path="tools" element={<ToolsPage />} />
+            <Route path="tools/flow-video" element={<FlowVideoGuide />} />
             <Route path="tools/eat-no-fat-game" element={<EatNoFatGame />} />
             <Route path="tools/traffic-accident" element={<TrafficAccidentSelfProtectionPage />} />
             <Route path="tools/ai-summary" element={<PausedAiToolPage />} />
@@ -850,6 +853,7 @@ function App() {
           <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
           <Route path="/admin/payments" element={<AdminPaymentsPage />} />
           <Route path="/admin/images" element={<AdminImagesPage />} />
+          <Route path="/admin/flow-demos" element={<FlowDemoAdmin />} />
           <Route path="/admin/images/list" element={<AdminImagesListPage />} />
           <Route path="/admin/deals" element={<AdminDealsPage />} />
 {/* 使用說明 */}
