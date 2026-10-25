@@ -8372,12 +8372,149 @@ async function handleAdminUpdateDealAffiliate(req: any, res: any, body: any) {
   }
 }
 
+// Google Flow 教學示範影片：沿用圖片後台管理金鑰與公共 R2 bucket，絕不觸及圖片庫前綴。
+// MP4 以瀏覽器使用短效簽名 URL 直接上傳 R2，避免 Vercel request body 大小限制。
+const FLOW_DEMO_PREFIX = "tools/flow-demos/";
+const FLOW_DEMO_MAX_BYTES = 40 * 1024 * 1024;
+
+function flowDemoR2() {
+  const config = getImageR2RuntimeConfig();
+  const rawBaseUrl = safeText(config.publicAssetUrl);
+  if (!rawBaseUrl) throw new Error("FLOW_DEMO_PUBLIC_URL_NOT_CONFIGURED");
+  const baseUrl = new URL(rawBaseUrl);
+  if (baseUrl.protocol !== "https:" || baseUrl.hostname.endsWith(".r2.cloudflarestorage.com")) {
+    throw new Error("FLOW_DEMO_PUBLIC_URL_INVALID");
+  }
+  return {
+    client: getImageCatalogR2Client(),
+    bucket: config.publicBucket,
+    baseUrl: rawBaseUrl.replace(/\/$/, ""),
+  };
+}
+
+function flowDemoId(value: any) {
+  const id = safeText(value);
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id) ? id : "";
+}
+
+function flowDemoVideoUrl(baseUrl: string, id: string) {
+  return baseUrl + "/" + FLOW_DEMO_PREFIX + id + ".mp4";
+}
+
+async function handleFlowDemoList(req: any, res: any) {
+  if (req.method !== "GET") return jsonResponse(res, 405, { ok: false, error: "METHOD_NOT_ALLOWED" });
+  try {
+    const { client, bucket, baseUrl } = flowDemoR2();
+    const listed = await client.send(new ListObjectsV2Command({
+      Bucket: bucket, Prefix: FLOW_DEMO_PREFIX, MaxKeys: 500,
+    }));
+    const keys = (listed.Contents || [])
+      .filter((item) => /^tools\/flow-demos\/[0-9a-f-]{36}\.json$/i.test(item.Key || ""))
+      .sort((a, b) => (b.LastModified?.getTime() || 0) - (a.LastModified?.getTime() || 0))
+      .slice(0, 48);
+    const videos = (await Promise.all(keys.map(async (item) => {
+      try {
+        const object = await client.send(new GetObjectCommand({ Bucket: bucket, Key: item.Key! }));
+        const raw = await (object.Body as any).transformToString();
+        const data = JSON.parse(raw);
+        const id = flowDemoId(data.id);
+        if (!id || item.Key !== FLOW_DEMO_PREFIX + id + ".json") return null;
+        return {
+          id,
+          title: safeText(data.title).slice(0, 100),
+          description: safeText(data.description).slice(0, 400),
+          createdAt: safeText(data.createdAt),
+          videoUrl: flowDemoVideoUrl(baseUrl, id),
+        };
+      } catch { return null; }
+    }))).filter(Boolean);
+    res.setHeader("Cache-Control", "public, max-age=30");
+    return jsonResponse(res, 200, { ok: true, videos });
+  } catch {
+    return jsonResponse(res, 503, { ok: false, error: "示範影片暫時無法載入。" });
+  }
+}
+
+async function handleFlowDemoPrepare(req: any, res: any, body: any) {
+  if (req.method !== "POST") return jsonResponse(res, 405, { ok: false, error: "METHOD_NOT_ALLOWED" });
+  try {
+    await requireImageAdmin(req);
+    const filename = safeText(body?.filename);
+    const size = Number(body?.size);
+    if (!/\.mp4$/i.test(filename) || !Number.isInteger(size) || size <= 0 || size > FLOW_DEMO_MAX_BYTES) {
+      return jsonResponse(res, 400, { ok: false, error: "僅支援 40MB 以下的 MP4 影片。" });
+    }
+    const { client, bucket } = flowDemoR2();
+    const id = crypto.randomUUID();
+    const uploadUrl = await getSignedUrl(client, new PutObjectCommand({
+      Bucket: bucket,
+      Key: FLOW_DEMO_PREFIX + id + ".mp4",
+      ContentType: "video/mp4",
+      CacheControl: "public, max-age=86400",
+    }), { expiresIn: 10 * 60 });
+    return jsonResponse(res, 200, { ok: true, id, uploadUrl });
+  } catch (error: any) {
+    const status = Number(error?.statusCode || 500);
+    return jsonResponse(res, status, { ok: false, error: status === 401 || status === 403 ? "管理金鑰錯誤或未提供。" : "無法建立影片上傳連結。" });
+  }
+}
+
+async function handleFlowDemoComplete(req: any, res: any, body: any) {
+  if (req.method !== "POST") return jsonResponse(res, 405, { ok: false, error: "METHOD_NOT_ALLOWED" });
+  try {
+    await requireImageAdmin(req);
+    const id = flowDemoId(body?.id);
+    const title = safeText(body?.title).slice(0, 100);
+    const description = safeText(body?.description).slice(0, 400);
+    if (!id || !title) return jsonResponse(res, 400, { ok: false, error: "缺少影片名稱或上傳識別碼。" });
+    const { client, bucket } = flowDemoR2();
+    const head = await client.send(new HeadObjectCommand({ Bucket: bucket, Key: FLOW_DEMO_PREFIX + id + ".mp4" }));
+    const size = Number(head.ContentLength || 0);
+    if (size < 1 || size > FLOW_DEMO_MAX_BYTES || !/^video\/mp4\b/i.test(head.ContentType || "")) {
+      return jsonResponse(res, 400, { ok: false, error: "上傳檔案的格式或大小不正確。" });
+    }
+    const metadata = { id, title, description, createdAt: new Date().toISOString() };
+    await client.send(new PutObjectCommand({
+      Bucket: bucket,
+      Key: FLOW_DEMO_PREFIX + id + ".json",
+      Body: JSON.stringify(metadata),
+      ContentType: "application/json; charset=utf-8",
+      CacheControl: "no-store",
+    }));
+    return jsonResponse(res, 200, { ok: true });
+  } catch (error: any) {
+    const status = Number(error?.statusCode || 500);
+    return jsonResponse(res, status, { ok: false, error: status === 401 || status === 403 ? "管理金鑰錯誤或未提供。" : "影片上傳完成確認失敗。" });
+  }
+}
+
+async function handleFlowDemoDelete(req: any, res: any, body: any) {
+  if (req.method !== "POST") return jsonResponse(res, 405, { ok: false, error: "METHOD_NOT_ALLOWED" });
+  try {
+    await requireImageAdmin(req);
+    const id = flowDemoId(body?.id);
+    if (!id) return jsonResponse(res, 400, { ok: false, error: "INVALID_DEMO_ID" });
+    const { client, bucket } = flowDemoR2();
+    await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: FLOW_DEMO_PREFIX + id + ".json" }));
+    await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: FLOW_DEMO_PREFIX + id + ".mp4" }));
+    return jsonResponse(res, 200, { ok: true });
+  } catch (error: any) {
+    const status = Number(error?.statusCode || 500);
+    return jsonResponse(res, status, { ok: false, error: status === 401 || status === 403 ? "管理金鑰錯誤或未提供。" : "刪除示範影片失敗。" });
+  }
+}
+
 export default async function handler(req: any, res: any) {
   const body = normalizeReqBody(req);
   const queryAction = typeof req?.query?.action === "string" ? req.query.action : "";
   const bodyAction = typeof body?.action === "string" ? body.action : "";
   const action = (queryAction || bodyAction || "").toLowerCase();
   console.log("ACTION RECEIVED:", action);
+
+  if (action === "flow-demo-list") return handleFlowDemoList(req, res);
+  if (action === "flow-demo-prepare") return handleFlowDemoPrepare(req, res, body);
+  if (action === "flow-demo-complete") return handleFlowDemoComplete(req, res, body);
+  if (action === "flow-demo-delete") return handleFlowDemoDelete(req, res, body);
 
   if (action.startsWith("group-buy-")) {
     if (!GROUP_BUY_ENABLED) {
