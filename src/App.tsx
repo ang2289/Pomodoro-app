@@ -416,6 +416,9 @@ function isLocalAdminImagePath(pathname: string) {
 }
 
 function isSupabaseMaintenancePath(pathname: string, search = '') {
+  // Google Flow 的 YouTube 示範後台只儲存影片連結，和 Supabase 維護狀態無關。
+  // 僅允許這個精確路徑通過；資料新增／刪除仍由 API 管理金鑰保護。
+  if (pathname === '/admin/flow-demos') return false
   if (isLocalAdminImagePath(pathname)) return false
 
   if (
