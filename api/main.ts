@@ -8445,6 +8445,15 @@ async function handleFlowDemoPrepare(req: any, res: any, body: any) {
       return jsonResponse(res, 400, { ok: false, error: "僅支援 40MB 以下的 MP4 影片。" });
     }
     const { client, bucket } = flowDemoR2();
+    const existing = await client.send(new ListObjectsV2Command({
+      Bucket: bucket, Prefix: FLOW_DEMO_PREFIX, MaxKeys: 200,
+    }));
+    const existingCount = (existing.Contents || []).filter((item) =>
+      /^tools\/flow-demos\/[0-9a-f-]{36}\.json$/i.test(item.Key || "")
+    ).length;
+    if (existingCount >= 30) {
+      return jsonResponse(res, 400, { ok: false, error: "示範區最多保留 30 支影片，請先刪除舊片再上傳。" });
+    }
     const id = crypto.randomUUID();
     const uploadUrl = await getSignedUrl(client, new PutObjectCommand({
       Bucket: bucket,
