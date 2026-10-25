@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 type DemoVideo = {
@@ -6,10 +6,27 @@ type DemoVideo = {
   title: string;
   description: string;
   createdAt: string;
-  videoUrl: string;
+  youtubeId: string;
+  youtubeUrl: string;
+  embedUrl: string;
 };
 const KEY_STORAGE = "rxv_image_admin_key";
-const MAX_BYTES = 40 * 1024 * 1024;
+
+function parseYouTubeId(raw: string) {
+  try {
+    const url = new URL(raw.trim());
+    if (url.protocol !== "https:") return "";
+    const host = url.hostname.toLowerCase();
+    const segments = url.pathname.split("/").filter(Boolean);
+    let id = "";
+    if (host === "youtu.be" || host === "www.youtu.be") id = segments[0] || "";
+    else if (["www.youtube.com", "youtube.com", "m.youtube.com", "music.youtube.com", "www.youtube-nocookie.com", "youtube-nocookie.com"].includes(host)) {
+      if (segments[0] === "watch") id = url.searchParams.get("v") || "";
+      else if (["shorts", "live", "embed", "v"].includes(segments[0])) id = segments[1] || "";
+    }
+    return /^[A-Za-z0-9_-]{11}$/.test(id) ? id : "";
+  } catch { return ""; }
+}
 
 export default function FlowDemoAdmin() {
   const [key, setKey] = useState(() => {
@@ -18,17 +35,17 @@ export default function FlowDemoAdmin() {
   });
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [file, setFile] = useState<File | null>(null);
+  const [youtubeUrl, setYoutubeUrl] = useState("");
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
   const [videos, setVideos] = useState<DemoVideo[]>([]);
-  const fileInput = useRef<HTMLInputElement>(null);
+  const youtubeId = parseYouTubeId(youtubeUrl);
 
   const refresh = useCallback(async () => {
     try {
       const response = await fetch("/api/main?action=flow-demo-list", { cache: "no-store" });
       const json = await response.json();
-      if (!response.ok || !json.ok) throw new Error(json.error || "無法讀取影片");
+      if (!response.ok || !json.ok) throw new Error(json.error || "無法讀取影片清單");
       setVideos(Array.isArray(json.videos) ? json.videos : []);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "示範影片載入失敗");
@@ -38,7 +55,7 @@ export default function FlowDemoAdmin() {
   useEffect(() => { void refresh(); }, [refresh]);
 
   async function adminRequest(action: string, body: Record<string, unknown>) {
-    if (!key.trim()) throw new Error("請先輸入管理者金鑰。");
+    if (!key.trim()) throw new Error("請輸入管理者金鑰。");
     const response = await fetch("/api/main?action=" + encodeURIComponent(action), {
       method: "POST",
       headers: {
@@ -55,65 +72,39 @@ export default function FlowDemoAdmin() {
     return result;
   }
 
-  async function upload() {
+  async function addVideo() {
     if (busy) return;
-    if (!file || !title.trim()) { setStatus("請先選擇 MP4 並填寫影片名稱。"); return; }
-    if (!/\.mp4$/i.test(file.name) || file.type !== "video/mp4") {
-      setStatus("僅支援真正的 MP4 影片，請先轉成 MP4。"); return;
-    }
-    if (file.size < 1 || file.size > MAX_BYTES) {
-      setStatus("單支影片大小上限 40 MB，請先壓縮影片。"); return;
+    if (!youtubeId || !title.trim()) {
+      setStatus("請填寫影片名稱並貼上正確的 YouTube 影片或 Shorts 分享網址。");
+      return;
     }
     setBusy(true);
-    setStatus("正在取得安全上傳網址…");
+    setStatus("正在新增 YouTube 影片連結…");
     try {
       sessionStorage.setItem(KEY_STORAGE, key.trim());
-      const { id, uploadUrl } = await adminRequest("flow-demo-prepare", {
-        filename: file.name,
-        size: file.size,
-      });
-      setStatus("正在直接上傳 Cloudflare R2，請勿關閉本頁…");
-      const putResponse = await fetch(uploadUrl, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "video/mp4",
-          "Cache-Control": "public, max-age=86400",
-        },
-        body: file,
-      });
-      if (!putResponse.ok) throw new Error("R2 上傳失敗 (HTTP " + putResponse.status + ")。");
-      setStatus("上傳完成，正在建立公開展示資料…");
-      await adminRequest("flow-demo-complete", {
-        id,
-        title: title.trim(),
-        description: description.trim(),
-      });
-      setStatus("影片上傳成功，已加入示範影片區！");
+      await adminRequest("flow-demo-add", { youtubeUrl: youtubeUrl.trim(), title: title.trim(), description: description.trim() });
+      setStatus("新增成功！公開示範頁現在會顯示這支 YouTube 影片。");
       setTitle("");
       setDescription("");
-      setFile(null);
-      if (fileInput.current) fileInput.current.value = "";
+      setYoutubeUrl("");
       await refresh();
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      const corsHint = /Failed to fetch|NetworkError|fetch/i.test(message)
-        ? "（若卡在直傳 R2，請檢查公共 R2 bucket 的 CORS 是否允許本網站來源 PUT 與 Content-Type、Cache-Control。）"
-        : "";
-      setStatus(message + corsHint);
+      setStatus(error instanceof Error ? error.message : "無法加入影片");
     } finally {
       setBusy(false);
     }
   }
 
   async function deleteVideo(id: string, name: string) {
-    if (busy || !window.confirm("確定要刪除「" + name + "」？將同步刪除 R2 中的影片，無法復原。")) return;
+    if (busy || !window.confirm("確定將「" + name + "」從 RXV 示範區移除？不會刪除 YouTube 原片。")) return;
     setBusy(true);
     try {
+      sessionStorage.setItem(KEY_STORAGE, key.trim());
       await adminRequest("flow-demo-delete", { id });
-      setStatus("已刪除示範影片：" + name);
+      setStatus("已從 RXV 示範區移除：" + name + "（YouTube 原片不受影響）");
       await refresh();
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "刪除失敗");
+      setStatus(error instanceof Error ? error.message : "移除失敗");
     } finally {
       setBusy(false);
     }
@@ -122,43 +113,72 @@ export default function FlowDemoAdmin() {
   return (
     <main className="mx-auto max-w-4xl px-4 py-8 text-slate-800">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-black">AI 影片示範區｜管理者上傳</h1>
+        <h1 className="text-2xl font-black">AI 影片示範區｜YouTube 嵌入管理</h1>
         <Link to="/tools/flow-video" className="font-semibold text-blue-700 underline">查看公開示範頁面</Link>
       </div>
       <div className="rounded-2xl border border-blue-100 bg-blue-50 p-5">
-        <p className="font-bold">影片上傳到 Cloudflare R2，不會存進 Vercel 部署檔。</p>
-        <p className="mt-2 text-sm leading-7">僅管理者可新增或刪除；使用既有「圖片後台管理金鑰」。影片是公開示範內容，請勿上傳未取得授權的影片、私人或付費限定素材。</p>
-        <p className="mt-2 text-sm leading-7">一次一支 MP4、每支限 40 MB。建議 9:16、8～20 秒、H.264 格式。R2 必須允許瀏覽器從網站網域直傳 PUT。</p>
+        <p className="font-bold">影片放 YouTube，RXV 不儲存 MP4，也不占用 Vercel 或 R2 的影片儲存容量。</p>
+        <p className="mt-2 text-sm leading-7">操作：① 到 YouTube Studio 上傳影片，選擇「公開」或「不公開」並確認允許嵌入。② 複製影片或 Shorts 分享網址。③ 在此貼上網址並新增至示範區。</p>
+        <p className="mt-2 text-sm leading-7">不公開影片仍可由持有連結的訪客觀看，私人影片無法正常對外嵌入。僅需使用現有圖片後台金鑰；網站僅在 R2 保存少量標題與 YouTube ID 清單，最多 30 筆。</p>
+        <a className="mt-3 inline-block font-semibold text-blue-700 underline" href="https://studio.youtube.com/" target="_blank" rel="noopener noreferrer">開啟 YouTube Studio 上傳影片 ↗</a>
       </div>
-      <form onSubmit={(e) => { e.preventDefault(); void upload(); }} className="mt-5 space-y-4 rounded-2xl border bg-white p-6 shadow-sm">
+
+      <form onSubmit={(event) => { event.preventDefault(); void addVideo(); }} className="mt-5 space-y-4 rounded-2xl border bg-white p-6 shadow-sm">
         <label className="block text-sm font-bold">圖片後台管理金鑰
-          <input type="password" autoComplete="off" className="mt-2 w-full rounded-xl border border-slate-300 p-3" value={key} onChange={(e) => setKey(e.target.value)} placeholder="僅管理者需要填寫" />
+          <input type="password" autoComplete="off" className="mt-2 w-full rounded-xl border border-slate-300 p-3" value={key} onChange={(event) => setKey(event.target.value)} placeholder="僅管理者需要填寫" />
         </label>
+        <label className="block text-sm font-bold">YouTube 影片分享網址
+          <input required type="url" inputMode="url" className="mt-2 w-full rounded-xl border border-slate-300 p-3" value={youtubeUrl} onChange={(event) => setYoutubeUrl(event.target.value)} placeholder="https://youtu.be/XXXXXXXXXXX 或 YouTube Shorts 網址" />
+        </label>
+        {youtubeUrl && !youtubeId ? <p className="text-sm text-rose-700">無法辨識影片 ID，請確認是完整的 YouTube HTTPS 分享網址。</p> : null}
+        {youtubeId ? (
+          <div className="max-w-xs overflow-hidden rounded-xl border bg-slate-50">
+            <iframe
+              className="aspect-[9/16] w-full"
+              title="即將新增的 YouTube 影片預覽"
+              loading="lazy"
+              src={"https://www.youtube-nocookie.com/embed/" + youtubeId}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              referrerPolicy="strict-origin-when-cross-origin"
+              allowFullScreen
+            />
+          </div>
+        ) : null}
         <label className="block text-sm font-bold">示範影片名稱
-          <input required maxLength={100} className="mt-2 w-full rounded-xl border border-slate-300 p-3" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="例如：Q 版美甲師揮手｜Flow 8 秒示範" />
+          <input required maxLength={100} className="mt-2 w-full rounded-xl border border-slate-300 p-3" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="例如：Q 版美甲師｜Flow 8 秒示範" />
         </label>
-        <label className="block text-sm font-bold">影片簡介（選填）
-          <textarea maxLength={400} className="mt-2 w-full rounded-xl border border-slate-300 p-3" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="簡述主題與製作步驟" />
+        <label className="block text-sm font-bold">影片說明（選填）
+          <textarea maxLength={400} className="mt-2 w-full rounded-xl border border-slate-300 p-3" rows={3} value={description} onChange={(event) => setDescription(event.target.value)} placeholder="例如：ChatGPT 生圖，再用 Google Flow 讓角色揮手" />
         </label>
-        <label className="block text-sm font-bold">MP4 影片檔案
-          <input ref={fileInput} required type="file" accept="video/mp4,.mp4" className="mt-2 block w-full rounded-xl border border-slate-300 bg-white p-3" onChange={(e) => setFile(e.target.files?.[0] || null)} />
-        </label>
-        {file ? <p className="text-sm text-slate-600">已選檔：{file.name}（{(file.size / 1024 / 1024).toFixed(1)} MB）</p> : null}
-        <button disabled={busy || !key.trim()} type="submit" className="rounded-xl bg-blue-600 px-6 py-3 font-bold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60">
-          {busy ? "處理中，請勿關閉" : "上傳 MP4 到示範區"}
+        <button disabled={busy || !key.trim() || !youtubeId || !title.trim()} type="submit" className="rounded-xl bg-blue-600 px-6 py-3 font-bold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60">
+          {busy ? "處理中…" : "新增 YouTube 影片到示範區"}
         </button>
         {status ? <p role="status" className="rounded-xl bg-slate-50 p-3 text-sm leading-7">{status}</p> : null}
       </form>
+
       <section className="mt-8">
-        <h2 className="text-xl font-black">目前上架的示範影片（{videos.length}）</h2>
-        {videos.length === 0 ? <p className="mt-4 text-slate-600">目前沒有公開示範影片。</p> : null}
+        <h2 className="text-xl font-black">目前展示影片（{videos.length} / 30）</h2>
+        {videos.length === 0 ? <p className="mt-4 text-slate-600">尚無影片。貼上第一支 YouTube 連結即可新增。</p> : null}
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           {videos.map((video) => (
-            <div key={video.id} className="rounded-xl border bg-white p-4">
-              <video controls preload="metadata" playsInline src={video.videoUrl} className="h-72 w-full rounded-lg bg-slate-100 object-contain" />
+            <article key={video.id} className="rounded-xl border bg-white p-4">
+              <div className="aspect-[9/16] max-h-[360px] overflow-hidden rounded-lg bg-slate-50">
+                <iframe
+                  className="h-full w-full"
+                  loading="lazy"
+                  title={video.title}
+                  src={video.embedUrl}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  allowFullScreen
+                />
+              </div>
               <p className="mt-2 font-bold">{video.title}</p>
-              <button type="button" disabled={busy || !key.trim()} onClick={() => { void deleteVideo(video.id, video.title); }} className="mt-2 rounded-lg border border-red-200 px-4 py-2 text-sm font-bold text-red-700 disabled:opacity-50">刪除此影片</button>
-            </div>
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <a className="text-sm font-semibold text-blue-700 underline" target="_blank" rel="noopener noreferrer" href={video.youtubeUrl}>在 YouTube 查看 ↗</a>
+                <button type="button" disabled={busy || !key.trim()} onClick={() => { void deleteVideo(video.id, video.title); }} className="rounded-lg border border-red-200 px-4 py-2 text-sm font-bold text-red-700 disabled:opacity-50">從示範區移除</button>
+              </div>
+            </article>
           ))}
         </div>
       </section>
