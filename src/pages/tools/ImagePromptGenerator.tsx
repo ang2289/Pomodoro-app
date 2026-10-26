@@ -1328,13 +1328,13 @@ export default function ImagePromptGenerator() {
                   <button key={series.key} type="button" role="tab"
                     aria-selected={fantasyTab === series.key}
                     onClick={() => { setFantasyTab(series.key); setFantasySearch(""); }}
-                    className={\`rounded-xl border px-3 py-2 text-sm font-bold transition \${fantasyTab === series.key ? "border-violet-600 bg-violet-600 text-white" : "border-violet-200 bg-white text-violet-800 hover:bg-violet-50"}\`}>
+                    className={`rounded-xl border px-3 py-2 text-sm font-bold transition ${fantasyTab === series.key ? "border-violet-600 bg-violet-600 text-white" : "border-violet-200 bg-white text-violet-800 hover:bg-violet-50"}`}>
                     {series.label}
                   </button>
                 ))}
                 <button type="button" role="tab" aria-selected={fantasyTab === "all"}
                   onClick={() => setFantasyTab("all")}
-                  className={\`rounded-xl border px-3 py-2 text-sm font-bold \${fantasyTab === "all" ? "border-violet-600 bg-violet-600 text-white" : "border-violet-200 bg-white text-violet-800"}\`}>
+                  className={`rounded-xl border px-3 py-2 text-sm font-bold ${fantasyTab === "all" ? "border-violet-600 bg-violet-600 text-white" : "border-violet-200 bg-white text-violet-800"}`}>
                   全部 40 組
                 </button>
               </div>
@@ -1347,7 +1347,7 @@ export default function ImagePromptGenerator() {
                   <button type="button" key={theme.id}
                     onClick={() => applyPreset(theme.id as PresetKey)}
                     aria-pressed={presetKey === theme.id}
-                    className={\`min-h-[64px] rounded-xl border p-3 text-left text-sm font-semibold leading-6 transition \${presetKey === theme.id ? "border-violet-600 bg-violet-100 text-violet-950" : "border-violet-100 bg-white text-slate-700 hover:border-violet-300"}\`}>
+                    className={`min-h-[64px] rounded-xl border p-3 text-left text-sm font-semibold leading-6 transition ${presetKey === theme.id ? "border-violet-600 bg-violet-100 text-violet-950" : "border-violet-100 bg-white text-slate-700 hover:border-violet-300"}`}>
                     {theme.title}
                   </button>
                 ))}
