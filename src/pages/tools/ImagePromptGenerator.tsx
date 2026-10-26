@@ -1425,9 +1425,15 @@ export default function ImagePromptGenerator() {
                       <select className="mt-2 min-h-[48px] w-full min-w-0 rounded-lg border border-sky-200 bg-white px-3 text-base text-slate-900"
                         value={fantasyOptions[field]}
                         onChange={(e) => setFantasyOptions((previous) => ({ ...previous, [field]: e.target.value }))}>
-                        {FANTASY_OPTIONS[fantasyTheme.category][field].map((value) => (
-                          <option key={value} value={value}>{value}</option>
-                        ))}
+                        {FANTASY_OPTIONS[fantasyTheme.category][field]
+                          .filter((value) => !(
+                            fantasyTheme.category === "photoBobblehead" && !useReferencePhoto
+                            && ((field === "person" && value === "依照片人物")
+                              || (field === "clothing" && value === "依照片服裝"))
+                          ))
+                          .map((value) => (
+                            <option key={value} value={value}>{value}</option>
+                          ))}
                       </select>
                       <span className="mt-2 text-xs leading-5 text-slate-600">{FANTASY_FIELD_GUIDES[field].effect}</span>
                     </label>
