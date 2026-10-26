@@ -4,6 +4,16 @@ on:
   push:
     branches:
       - feature/pause-affiliate-ads-20261026
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "src/config/affiliateAdVisibility.ts"
+      - "src/components/CoupangAd.tsx"
+      - "src/components/CoupangDynamicAd.tsx"
+      - "src/pages/**"
+      - "test/affiliateAdPause.test.mjs"
+      - ".github/workflows/affiliate-ad-pause-check.yml"
   workflow_dispatch:
 
 permissions:
