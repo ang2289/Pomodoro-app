@@ -1370,18 +1370,19 @@ export default function ImagePromptGenerator() {
                 <h3 className="text-lg font-black text-fuchsia-950">① 新增夢幻系列｜{FANTASY_THEMES.length} 組提示詞</h3>
                 <span className="text-xs font-semibold text-violet-700">原有古風女神與 100 組風格都保留</span>
               </div>
-              <div role="tablist" aria-label="夢幻主題分類" className="mt-3 flex flex-wrap gap-2">
+              <p className="mt-2 text-sm leading-6 text-violet-900">點分類會立即套用該系列的第一個主題；點下方的主題卡片可切換成其他畫面。</p>
+              <div role="tablist" aria-label="夢幻主題分類" className="mt-3 grid grid-cols-2 items-stretch gap-2 sm:grid-cols-3">
                 {FANTASY_SERIES.map((series) => (
                   <button key={series.key} type="button" role="tab"
                     aria-selected={fantasyTab === series.key}
-                    onClick={() => { setFantasyTab(series.key); setFantasySearch(""); }}
-                    className={`rounded-xl border px-3 py-2 text-sm font-bold transition ${fantasyTab === series.key ? "border-violet-600 bg-violet-600 text-white" : "border-violet-200 bg-white text-violet-800 hover:bg-violet-50"}`}>
+                    onClick={() => selectFantasySeries(series.key)}
+                    className={`flex min-h-[54px] w-full min-w-0 items-center justify-center rounded-xl border px-2 py-2 text-center text-sm font-bold leading-5 transition ${fantasyTab === series.key ? "border-violet-600 bg-violet-600 text-white" : "border-violet-200 bg-white text-violet-800 hover:bg-violet-50"}`}>
                     {series.label}
                   </button>
                 ))}
                 <button type="button" role="tab" aria-selected={fantasyTab === "all"}
-                  onClick={() => setFantasyTab("all")}
-                  className={`rounded-xl border px-3 py-2 text-sm font-bold ${fantasyTab === "all" ? "border-violet-600 bg-violet-600 text-white" : "border-violet-200 bg-white text-violet-800"}`}>
+                  onClick={() => selectFantasySeries("all")}
+                  className={`flex min-h-[54px] w-full min-w-0 items-center justify-center rounded-xl border px-2 py-2 text-center text-sm font-bold leading-5 ${fantasyTab === "all" ? "border-violet-600 bg-violet-600 text-white" : "border-violet-200 bg-white text-violet-800"}`}>
                   全部 {FANTASY_THEMES.length} 組
                 </button>
               </div>
@@ -1389,12 +1390,13 @@ export default function ImagePromptGenerator() {
                 onChange={(e) => setFantasySearch(e.target.value)}
                 placeholder="搜尋主題：例如冰雪、公仔、花仙子"
                 className="mt-3 min-h-[46px] w-full rounded-xl border border-violet-200 bg-white px-3 text-sm text-slate-900" />
-              <div className="mt-3 grid max-h-72 grid-cols-2 gap-2 overflow-y-auto pr-1 sm:grid-cols-3">
+              <p className="mt-2 text-xs leading-5 text-slate-600">搜尋只是篩選列表，請點選下方想要的主題；右側提示詞才會跟著更新。</p>
+              <div className="mt-3 grid max-h-80 grid-cols-2 items-stretch gap-2 overflow-y-auto pr-1">
                 {filteredFantasyThemes.map((theme) => (
                   <button type="button" key={theme.id}
                     onClick={() => applyPreset(theme.id as PresetKey)}
                     aria-pressed={presetKey === theme.id}
-                    className={`min-h-[64px] rounded-xl border p-3 text-left text-sm font-semibold leading-6 transition ${presetKey === theme.id ? "border-violet-600 bg-violet-100 text-violet-950" : "border-violet-100 bg-white text-slate-700 hover:border-violet-300"}`}>
+                    className={`flex min-h-[72px] h-full w-full min-w-0 items-center justify-center rounded-xl border p-3 text-center text-sm font-semibold leading-6 transition ${presetKey === theme.id ? "border-violet-600 bg-violet-100 text-violet-950 ring-1 ring-violet-400" : "border-violet-100 bg-white text-slate-700 hover:border-violet-300"}`}>
                     {theme.title}
                   </button>
                 ))}
