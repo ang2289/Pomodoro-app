@@ -1,3 +1,4 @@
+import { SHOW_AFFILIATE_ADS } from "@/config/affiliateAdVisibility";
 import {
   useEffect,
   useMemo,
@@ -18,6 +19,7 @@ import {
 import JSZip from "jszip";
 
 function PhotoRoomAffiliateBlock() {
+  if (!SHOW_AFFILIATE_ADS) return null;
   const getShareData = () => {
     const url = typeof window !== "undefined" ? window.location.href : "";
     const title = "RxV 免費圖片工具";
