@@ -184,7 +184,7 @@ function StickerDemoVideo({ item }: { item: DemoCase }) {
         ref={videoRef}
         controls
         playsInline
-        preload="metadata"
+        preload="none"
         poster={item.videoPoster}
         className="mx-auto max-h-[330px] w-full rounded-xl bg-white object-contain"
         aria-label={item.name + "動態影片展示"}

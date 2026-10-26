@@ -217,7 +217,7 @@ export default function GoodsSharePage() {
           <section className="px-4">
             {video ? (
               <div className="overflow-hidden rounded-2xl border border-slate-200 bg-black shadow">
-                <video controls playsInline className="aspect-[9/16] max-h-[760px] w-full bg-black object-contain" preload="metadata">
+                <video controls playsInline className="aspect-[9/16] max-h-[760px] w-full bg-black object-contain" preload="none">
                   <source src={video} type="video/mp4" />
                   您的瀏覽器不支援影片播放。
                 </video>

@@ -55,7 +55,7 @@ export default function AirfryerPage() {
 
         {videoType === "cdn" && cdnVideoUrl && (
           <div className="aspect-video mb-6 rounded-lg overflow-hidden border shadow-lg">
-            <video controls className="w-full h-full" preload="metadata">
+            <video controls className="w-full h-full" preload="none">
               <source src={cdnVideoUrl} type="video/mp4" />
               {t("airfryer_video_unsupported")}
             </video>
@@ -64,7 +64,7 @@ export default function AirfryerPage() {
 
         {videoType === "local" && localVideoSrc && (
           <div className="aspect-video mb-6 rounded-lg overflow-hidden border shadow-lg">
-            <video controls className="w-full h-full" preload="metadata">
+            <video controls className="w-full h-full" preload="none">
               <source src={localVideoSrc} type="video/mp4" />
               {t("airfryer_video_unsupported")}
             </video>

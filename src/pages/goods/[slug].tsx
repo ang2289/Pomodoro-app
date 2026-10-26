@@ -162,7 +162,7 @@ export default function GoodsDetailPage() {
         {shortDescription && <p className="mb-4 whitespace-pre-wrap text-base leading-7 text-slate-700">{shortDescription}</p>}
         {video ? (
           <div className="mb-6 overflow-hidden rounded-xl border border-slate-200 bg-black shadow">
-            <video controls playsInline className="aspect-[9/16] max-h-[720px] w-full bg-black" preload="metadata">
+            <video controls playsInline className="aspect-[9/16] max-h-[720px] w-full bg-black" preload="none">
               <source src={video} type="video/mp4" />
               您的瀏覽器不支援影片播放。
             </video>
