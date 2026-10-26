@@ -5,6 +5,10 @@ import LineStickerAuthorCard from "@/components/LineStickerAuthorCard";
 import ToolAdSlot from "@/components/ToolAdSlot";
 import { AI_IMAGE_100_GROUPS, AI_IMAGE_100_STYLES } from "@/data/aiImage100Styles";
 import { AI_IMAGE_100_PRESET_SETTINGS } from "@/data/aiImage100PresetSettings";
+import {
+  FANTASY_OPTIONS, FANTASY_SERIES, FANTASY_THEMES, FANTASY_THEME_BY_ID,
+  composeFantasyPrompt, type FantasyCategory, type FantasyOptionKey, type FantasyOptions,
+} from "@/data/imagePromptFantasy";
 
 const LINE_STICKER_STORE_URL = "https://store.line.me/stickershop/product/33968282/zh-Hant";
 const SUPPORT_TW_URL = "https://p.ecpay.com.tw/FD7CD6D";
@@ -61,7 +65,8 @@ type PresetKey =
   | "festivalMothersDayGreeting"
   | "festivalFathersDayGreeting"
   | "festivalHalloweenGreeting"
-  | `rxv100_${string}`;
+  | `rxv100_${string}`
+  | `rxvFantasy_${string}`;
 
 type Preset = {
   label: string;
@@ -833,7 +838,23 @@ const STYLE_100_PRESETS: Record<string, Preset> = Object.fromEntries(
   }),
 );
 
-const PRESETS: Record<string, Preset> = { ...ORIGINAL_PRESETS, ...STYLE_100_PRESETS };
+const FANTASY_PRESETS: Record<string, Preset> = Object.fromEntries(
+  FANTASY_THEMES.map((theme) => [theme.id, {
+    label: theme.title,
+    purpose: "夢幻桌布圖",
+    subject: theme.scene,
+    style: "夢幻唯美風",
+    mood: "神秘夢幻",
+    composition: "單一主角清楚展示",
+    ratio: "9:16",
+    enhancements: ["高畫質細節", "畫面乾淨", "可延伸成系列作品"],
+    avoids: ["不要浮水印", "不要 Logo", "不要文字", "不要怪異手部或肢體"],
+    description: theme.description,
+  } satisfies Preset]),
+);
+const PRESETS: Record<string, Preset> = {
+  ...ORIGINAL_PRESETS, ...STYLE_100_PRESETS, ...FANTASY_PRESETS,
+};
 
 function CreatorSupportSection({ toolName = "這個免費工具" }: { toolName?: string }) {
   return (
@@ -921,6 +942,10 @@ export default function ImagePromptGenerator() {
   const [presetKey, setPresetKey] = useState<PresetKey>(() => {
     if (typeof window !== "undefined") {
       const search = new URLSearchParams(window.location.search);
+      const requestedTemplateId = search.get("templateId");
+      if (requestedTemplateId && FANTASY_THEME_BY_ID[requestedTemplateId]) {
+        return requestedTemplateId as PresetKey;
+      }
       const legacyCode = search.get("code");
       const candidate: PresetKey = `rxv100_${legacyCode ?? ""}`;
       if (legacyCode && PRESETS[candidate]) return candidate;
@@ -942,11 +967,38 @@ export default function ImagePromptGenerator() {
   const [shareCopied, setShareCopied] = useState(false);
   const [shareCopyError, setShareCopyError] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [fantasyTab, setFantasyTab] = useState<FantasyCategory | "all">(
+    FANTASY_THEME_BY_ID[presetKey]?.category ?? "dreamPrincess",
+  );
+  const [fantasySearch, setFantasySearch] = useState("");
+  const [fantasyOptions, setFantasyOptions] = useState<FantasyOptions>(
+    FANTASY_THEME_BY_ID[presetKey]?.defaults ?? FANTASY_THEMES[0].defaults,
+  );
+  const [useReferencePhoto, setUseReferencePhoto] = useState(
+    FANTASY_THEME_BY_ID[presetKey]?.category === "photoBobblehead",
+  );
+  const [fantasyVariation, setFantasyVariation] = useState(0);
+  const fantasyTheme = FANTASY_THEME_BY_ID[presetKey] ?? null;
+  const filteredFantasyThemes = useMemo(
+    () => FANTASY_THEMES.filter((theme) =>
+      (fantasyTab === "all" || fantasyTab === theme.category)
+      && (`${theme.title} ${theme.categoryLabel} ${theme.scene}`)
+        .toLocaleLowerCase().includes(fantasySearch.trim().toLocaleLowerCase())
+    ), [fantasyTab, fantasySearch],
+  );
   const resultTextareaRef = useRef<HTMLTextAreaElement>(null);
   const quickTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   const applyPreset = (key: PresetKey) => {
     const preset = PRESETS[key];
+    if (!preset) return;
+    const theme = FANTASY_THEME_BY_ID[key];
+    if (theme) {
+      setFantasyTab(theme.category);
+      setFantasyOptions({ ...theme.defaults });
+      setUseReferencePhoto(theme.category === "photoBobblehead");
+      setFantasyVariation(0);
+    }
     setPresetKey(key);
     setPurpose(preset.purpose);
     setSubject(preset.subject);
@@ -971,6 +1023,11 @@ export default function ImagePromptGenerator() {
   };
 
   const resultPrompt = useMemo(() => {
+    if (fantasyTheme) {
+      return composeFantasyPrompt(
+        fantasyTheme, fantasyOptions, ratio, useReferencePhoto, fantasyVariation,
+      );
+    }
     const presetLabel = PRESETS[presetKey].label;
     const enhancementText = enhancements.length
       ? `畫面需${enhancements.join("、")}。`
@@ -1001,6 +1058,10 @@ export default function ImagePromptGenerator() {
     ratio,
     enhancements,
     avoids,
+    fantasyTheme,
+    fantasyOptions,
+    useReferencePhoto,
+    fantasyVariation,
   ]);
 
   // 主題或任一設定改變時，先前剪貼簿內容已非最新提示詞。
@@ -1089,8 +1150,8 @@ export default function ImagePromptGenerator() {
   return (
     <>
       <SEO
-        title="AI 生圖提示詞產生器｜商業圖片、社群美圖、貼圖與短影音靈感"
-        description="免費產生商品宣傳圖、品牌形象圖、社群吸睛圖、爆款互動圖、LINE 貼圖成果圖與短影音開場圖提示詞。"
+        title="免費 AI 生圖提示詞｜夢幻公主、水下花仙子、PVC 搖頭公仔、ChatGPT 生圖"
+        description="免費 AI 生圖提示詞、ChatGPT 生圖提示詞、夢幻公主 AI 圖片、水下夢幻公主、真人照片變 Q 版公仔、PVC 搖頭公仔提示詞與免費圖片下載。原有主題全部保留。"
         canonical="/tools/image-prompt"
       />
 
@@ -1146,6 +1207,13 @@ export default function ImagePromptGenerator() {
                 onChange={(e) => applyPreset(e.target.value as PresetKey)}
                 className="w-full min-h-[54px] rounded-2xl border border-violet-200 bg-white px-4 py-3.5 text-[15px] font-bold text-slate-900 shadow-sm outline-none transition focus:border-violet-400"
               >
+                {FANTASY_SERIES.map((group) => (
+                  <optgroup key={group.key} label={`✨ 新增夢幻系列｜${group.label}`}>
+                    {FANTASY_THEMES.filter((theme) => theme.category === group.key).map((theme) => (
+                      <option key={theme.id} value={theme.id}>{theme.title}</option>
+                    ))}
+                  </optgroup>
+                ))}
                 {AI_IMAGE_100_GROUPS.map((group) => (
                   <optgroup key={group.key} label={`100 組中文風格｜${group.label}`}>
                     {group.items.map(([id, title]) => (
@@ -1248,6 +1316,106 @@ export default function ImagePromptGenerator() {
                 {PRESETS[presetKey].description}
               </p>
             </label>
+
+            {/* 新增五大系列：獨立分類搜尋與主題專屬參數；原有下拉選單與設定維持不變。 */}
+            <div className="mt-5 rounded-2xl border border-fuchsia-200 bg-gradient-to-br from-fuchsia-50 via-white to-sky-50 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="text-lg font-black text-fuchsia-950">① 新增夢幻系列｜40 組提示詞</h3>
+                <span className="text-xs font-semibold text-violet-700">原有古風女神與 100 組風格都保留</span>
+              </div>
+              <div role="tablist" aria-label="夢幻主題分類" className="mt-3 flex flex-wrap gap-2">
+                {FANTASY_SERIES.map((series) => (
+                  <button key={series.key} type="button" role="tab"
+                    aria-selected={fantasyTab === series.key}
+                    onClick={() => { setFantasyTab(series.key); setFantasySearch(""); }}
+                    className={\`rounded-xl border px-3 py-2 text-sm font-bold transition \${fantasyTab === series.key ? "border-violet-600 bg-violet-600 text-white" : "border-violet-200 bg-white text-violet-800 hover:bg-violet-50"}\`}>
+                    {series.label}
+                  </button>
+                ))}
+                <button type="button" role="tab" aria-selected={fantasyTab === "all"}
+                  onClick={() => setFantasyTab("all")}
+                  className={\`rounded-xl border px-3 py-2 text-sm font-bold \${fantasyTab === "all" ? "border-violet-600 bg-violet-600 text-white" : "border-violet-200 bg-white text-violet-800"}\`}>
+                  全部 40 組
+                </button>
+              </div>
+              <input aria-label="搜尋夢幻提示詞範例" value={fantasySearch}
+                onChange={(e) => setFantasySearch(e.target.value)}
+                placeholder="搜尋主題：例如冰雪、公仔、花仙子"
+                className="mt-3 min-h-[46px] w-full rounded-xl border border-violet-200 bg-white px-3 text-sm text-slate-900" />
+              <div className="mt-3 grid max-h-72 grid-cols-2 gap-2 overflow-y-auto pr-1 sm:grid-cols-3">
+                {filteredFantasyThemes.map((theme) => (
+                  <button type="button" key={theme.id}
+                    onClick={() => applyPreset(theme.id as PresetKey)}
+                    aria-pressed={presetKey === theme.id}
+                    className={\`min-h-[64px] rounded-xl border p-3 text-left text-sm font-semibold leading-6 transition \${presetKey === theme.id ? "border-violet-600 bg-violet-100 text-violet-950" : "border-violet-100 bg-white text-slate-700 hover:border-violet-300"}\`}>
+                    {theme.title}
+                  </button>
+                ))}
+              </div>
+              {filteredFantasyThemes.length === 0 && (
+                <p className="mt-3 text-sm text-slate-600">沒有符合搜尋的夢幻主題，請換個關鍵字。</p>
+              )}
+            </div>
+
+            {fantasyTheme && (
+              <div className="mt-5 rounded-2xl border border-sky-200 bg-sky-50 p-4">
+                <h3 className="text-lg font-black text-slate-900">② 專屬參數｜{fantasyTheme.categoryLabel}</h3>
+                <p className="mt-1 text-sm leading-6 text-slate-700">
+                  各主題只列出適用的服裝、材質、姿勢與背景，無需會寫提示詞。
+                </p>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  {([
+                    ["person", "人物"],
+                    ["visualStyle", "風格"],
+                    ["clothing", "服裝"],
+                    ["expression", "表情"],
+                    ["pose", "動作"],
+                    ["background", "背景"],
+                    ["palette", "色系"],
+                  ] as [FantasyOptionKey, string][]).map(([field, title]) => (
+                    <label key={field} className="block text-sm font-bold text-slate-800">
+                      {title}
+                      <select className="mt-1 min-h-[48px] w-full rounded-xl border border-sky-200 bg-white px-3 text-slate-900"
+                        value={fantasyOptions[field]}
+                        onChange={(e) => setFantasyOptions((previous) => ({ ...previous, [field]: e.target.value }))}>
+                        {FANTASY_OPTIONS[fantasyTheme.category][field].map((value) => (
+                          <option key={value} value={value}>{value}</option>
+                        ))}
+                      </select>
+                    </label>
+                  ))}
+                </div>
+                {fantasyTheme.category === "photoBobblehead" && (
+                  <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3">
+                    <label className="flex cursor-pointer items-center gap-2 text-sm font-bold text-amber-950">
+                      <input type="checkbox" checked={useReferencePhoto}
+                        onChange={(e) => setUseReferencePhoto(e.target.checked)} />
+                      使用真人照片參考（預設開啟）
+                    </label>
+                    <p className="mt-2 text-sm leading-6 text-amber-900">
+                      請在 ChatGPT 生成圖片時一併上傳自己的照片；RXV 網站不接收或儲存私人照片。關閉後會改用原創人物描述，不會要求保留真人五官。AI 生成無法保證完全還原相貌。
+                    </p>
+                  </div>
+                )}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button type="button" onClick={() => setFantasyVariation((current) => current + 1)}
+                    className="min-h-[44px] rounded-xl bg-sky-700 px-4 py-2 font-bold text-white hover:bg-sky-800">
+                    重新組合構圖
+                  </button>
+                  <button type="button" onClick={() => {
+                    setFantasyOptions({ ...fantasyTheme.defaults });
+                    setUseReferencePhoto(fantasyTheme.category === "photoBobblehead");
+                    setRatio("9:16");
+                    setFantasyVariation(0);
+                  }} className="min-h-[44px] rounded-xl border border-sky-300 bg-white px-4 py-2 font-bold text-sky-800 hover:bg-sky-100">
+                    清除／重設選項
+                  </button>
+                </div>
+                <p className="mt-3 text-xs leading-6 text-slate-600">
+                  比例請使用下方原有「比例」選單（9:16、16:9、1:1 均支援）。③ 產生的完整提示詞會即時顯示，點選複製後可前往 ChatGPT 創作。
+                </p>
+              </div>
+            )}
 
             {/* 在窄螢幕也能緊接著主題選單看到提示詞，不必滑完整個設定區。 */}
             <div className="mt-4 rounded-2xl border border-violet-200 bg-violet-50/70 p-3 sm:p-4 lg:hidden">
@@ -1554,6 +1722,43 @@ export default function ImagePromptGenerator() {
               </div>
               </div>
             </details>
+          </div>
+        </section>
+
+        <section className="mt-7 rounded-3xl border border-emerald-200 bg-emerald-50 p-5 sm:p-6">
+          <h2 className="text-xl font-extrabold text-emerald-950">免費範例圖片｜RXV 圖片庫</h2>
+          <p className="mt-2 text-sm leading-7 text-emerald-900">
+            圖片素材庫可免費下載。夢幻公主、水下公主、花仙子與公仔的範例縮圖，目前尚未逐一核對可用的圖片 ID，因此暫不顯示可能失效或不相符的縮圖。
+          </p>
+          <div className="mt-4 rounded-2xl border border-dashed border-emerald-300 bg-white p-5 text-center">
+            <p className="font-bold text-slate-800">符合系列的範例圖片正在整理</p>
+            <p className="mt-1 text-sm text-slate-600">目前可先複製上方同風格 AI 提示詞，或前往既有圖片庫瀏覽及下載已公開的免費圖片。</p>
+            <div className="mt-3 flex flex-wrap justify-center gap-3">
+              <button type="button" onClick={handleCopy}
+                className="rounded-xl bg-violet-600 px-5 py-3 text-sm font-bold text-white hover:bg-violet-700">
+                複製目前主題 AI 提示詞
+              </button>
+              <Link to="/images" className="rounded-xl border border-emerald-300 bg-white px-5 py-3 text-sm font-bold text-emerald-800 hover:bg-emerald-50">
+                查看／下載免費圖片
+              </Link>
+            </div>
+          </div>
+        </section>
+        <section className="mt-7 rounded-3xl border border-slate-200 bg-white p-5 sm:p-6">
+          <h2 className="text-xl font-extrabold text-slate-900">免費 AI 生圖提示詞常見問題</h2>
+          <div className="mt-4 space-y-3 text-sm leading-7 text-slate-700">
+            {([
+              ["不會寫 AI 提示詞也能使用嗎？", "可以。選擇主題和參數，系統會在瀏覽器組合完整提示詞，直接複製即可。"],
+              ["可以上傳真人照片製作公仔嗎？", "可以在 ChatGPT 生成時上傳有權使用的照片；RXV 不接收私人照片，也不保證百分之百還原。"],
+              ["可以選擇圖片比例嗎？", "可以，保留原有的比例選單，支援 9:16、16:9、1:1 等比例。"],
+              ["AI 生成圖片會與範例完全一樣嗎？", "不保證。提示詞僅協助產生相似風格，結果依 AI 模型和設定而異。"],
+              ["哪裡可以下載免費範例圖片？", "使用上方 RXV 免費圖片庫連結，挑選現有公開素材。"],
+            ] as [string, string][]).map(([question, answer]) => (
+              <details key={question} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <summary className="cursor-pointer font-bold text-slate-900">{question}</summary>
+                <p className="mt-2">{answer}</p>
+              </details>
+            ))}
           </div>
         </section>
 
