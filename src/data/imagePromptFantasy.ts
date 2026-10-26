@@ -1,8 +1,8 @@
 /**
- * RXV AI 生圖提示詞擴充 — 純前端資料，固定 5 類 × 8 組。
+ * RXV AI 生圖提示詞擴充 — 純前端資料，固定 6 類 × 8 組。
  * 不涉及 AI API、真人照片上傳、圖片儲存或任何資料庫操作。
  */
-export type FantasyCategory = "dreamPrincess" | "underwaterPrincess" | "bobblehead" | "photoBobblehead" | "flowerFairy";
+export type FantasyCategory = "dreamPrincess" | "underwaterPrincess" | "bobblehead" | "photoBobblehead" | "flowerFairy" | "miniFairyWorld";
 export type FantasyOptionKey = "person" | "visualStyle" | "clothing" | "expression" | "pose" | "background" | "palette";
 export type FantasyOptions = Record<FantasyOptionKey, string>;
 export type FantasyTheme = {
@@ -254,6 +254,53 @@ const series: SeriesSource[] = [
         "月光花園"
       ]
     ]
+  },
+  {
+    "key": "miniFairyWorld",
+    "label": "夢幻花仙子 × 迷你分身",
+    "intro": "參考紫藤水晶泡泡世界：一位童話娃娃主角與數位同造型迷你自己互動，角色一致且構圖各不相同",
+    "themes": [
+      [
+        "紫藤水晶泡泡迷你分身",
+        "主角是長髮紫眸的原創夢幻花仙子娃娃，穿紫藤花薄紗裙，近景伸手朝向鏡頭；五個同臉型、同髮色、同花冠的小小迷你自己分別坐在髮頂、肩膀、泡泡與花朵上，表情各異。背景彷彿水下透光的紫藤花廊，水面折射、透明氣泡與粉紫光斑層層交錯；大主角臉清晰，周圍迷你分身完整可見，畫面有近大遠小的深度",
+        "紫藤水晶泡泡仙境"
+      ],
+      [
+        "櫻花雲端迷你仙子",
+        "奶油粉櫻花雲海，花仙子坐在半透明雲朵邊緣，四位與大主角同髮型、同服裝的小仙子在漂浮櫻花瓣上玩耍或揮手；側面景深構圖，粉白暖光，雲霧朦朧，主角不是對鏡頭伸手",
+        "櫻花雲端"
+      ],
+      [
+        "玫瑰玻璃溫室小分身",
+        "大主角倚靠玫瑰玻璃溫室的拱窗微笑，六位相同造型的迷你花仙子在玫瑰、玻璃杯與藤葉上捉迷藏；清晰的玻璃反射、晨光與粉玫瑰細節，採半身斜側構圖，避免大主角手掌遮住臉",
+        "玫瑰玻璃花房"
+      ],
+      [
+        "月光螢火精靈夥伴",
+        "銀紫月光下的大主角花仙子坐於發光蘑菇上，五位同角色迷你自己分布在螢火蟲光團、樹葉和小蕈菇上；夜色藍紫與金色微光，主角俯視迷你角色並輕輕伸指互動，畫面如童話繪本",
+        "月光螢火森林"
+      ],
+      [
+        "晨露花瓣小小世界",
+        "綠色清晨花園的微距視角，大主角側身凝視巨大的透明露珠，三位同臉迷你版站在葉尖、露珠內側與花心，彼此向她揮手；柔亮綠粉色、露珠折射與真實花瓣紋理，構圖從葉片前景引向人物",
+        "晨露微距花園"
+      ],
+      [
+        "星河水晶魔法分身",
+        "主角披著藍紫星光斗篷在星空水晶台階旋轉，七位同造型迷你自己分站在浮空小星星與透明水晶柱上，模仿主角旋轉、比心和眨眼；廣角舞台與遠景銀河，整體璀璨但臉部辨識清晰",
+        "星河水晶舞台"
+      ],
+      [
+        "冰雪花冠迷你公主",
+        "冰藍童話城堡前，主角穿白銀雪花紗裙坐在雪花鞦韆上，四位相同角色的小仙子搭乘冰晶泡泡在附近飛舞；冷藍雪景與溫柔桃粉臉頰形成對比，低角度仰望構圖，身體肢體正常",
+        "冰雪花冠宮殿"
+      ],
+      [
+        "夕陽湖面倒影小仙子",
+        "淡粉金色夕陽湖畔，主角花仙子在湖面小舟上伸出手指，五位同人物迷你自己在蓮花、飄浮小紙船和透明泡泡上互動；湖面金色倒影、粉紫晚霞、逆光髮絲，橫向空間感與遠近層次鮮明",
+        "夕陽蓮花湖"
+      ]
+    ]
   }
 ];
 
@@ -296,6 +343,15 @@ export const FANTASY_OPTIONS: Record<FantasyCategory, Record<FantasyOptionKey, s
     background: ["紫藤花園", "櫻花花園", "玫瑰花園", "繡球花園", "森林花園", "晨露花園", "蝴蝶花園", "月光花園"],
     palette,
   },
+  miniFairyWorld: {
+    person: ["原創女性", "女孩", "男性", "男孩", "長輩", "情侶", "雙人"],
+    visualStyle: ["3D 童話娃娃插畫", "夢幻藝術", "Q 版", "精緻 2.5D 插畫"],
+    clothing: ["花仙子裙", "公主禮服", "蕾絲薄紗洋裝", "水晶花冠禮服"],
+    expression: smiles,
+    pose: ["向鏡頭伸手", "坐姿", "與迷你版互動", "揮手", "比愛心", "優雅漂浮"],
+    background: ["紫藤水晶泡泡仙境", "櫻花雲端", "玫瑰玻璃花房", "月光螢火森林", "晨露微距花園", "星河水晶舞台", "冰雪花冠宮殿", "夕陽蓮花湖"],
+    palette: ["粉紫色", "粉色", "紫色", "藍色", "金色", "白色", "粉嫩漸層"],
+  },
 };
 
 export function composeFantasyPrompt(
@@ -316,7 +372,9 @@ export function composeFantasyPrompt(
       ? "畫面位於真正的水下環境，禮服、髮絲與小氣泡順著水流自然漂浮，水面陽光形成真實焦散光線與折射。角色優雅漂浮，不要塑膠玩具材質、彈簧脖子或陸地攝影棚。"
       : theme.category === "flowerFairy"
         ? "花瓣紋理、透光翅膀與晨露細節清晰，角色與花朵的大小關係自然，環境具有柔和景深與精緻光影。"
-        : "呈現童話公主故事感、精緻禮服布料與飾品細節、唯美自然光影，人物表情與肢體自然。";
+        : theme.category === "miniFairyWorld"
+          ? "畫風為夢幻精緻的 3D 童話娃娃感插畫，大主角帶有細緻的大眼睛、光澤髮絲與清透花飾；周圍每一個迷你分身都必須是同一原創角色的縮小版，臉型、瞳色、髮型、髮色、服裝與配飾保持一致，只改變表情及互動動作。大主角與迷你分身尺寸差異鮮明，迷你角色各自完整、自然擺放，不能變成不相關人物、分身不能長在主角身上。透過前景伸手、真實景深、泡泡光斑與花瓣層次呈現魔法微縮世界，不是 PVC 搖頭玩具，沒有彈簧脖子與商品展示台。"
+          : "呈現童話公主故事感、精緻禮服布料與飾品細節、唯美自然光影，人物表情與肢體自然。";
   const outfit = hasReference && options.clothing === "依照片服裝"
     ? "服裝參考上傳照片的服飾輪廓與配色"
     : "服裝：" + (!hasReference && options.clothing === "依照片服裝" ? "職業套裝" : options.clothing);
@@ -344,9 +402,11 @@ function defaultOptions(category: FantasyCategory, background: string): FantasyO
     visualStyle: list.visualStyle[0],
     clothing: list.clothing[0],
     expression: "燦爛笑容",
-    pose: category === "underwaterPrincess" ? "漂浮" : "站立",
+    pose: category === "underwaterPrincess" ? "漂浮"
+      : category === "miniFairyWorld" ? "與迷你版互動" : "站立",
     background: list.background.includes(background) ? background : list.background[0],
-    palette: category === "underwaterPrincess" ? "藍色" : "粉嫩漸層",
+    palette: category === "underwaterPrincess" ? "藍色"
+      : category === "miniFairyWorld" ? "粉紫色" : "粉嫩漸層",
   };
 }
 
