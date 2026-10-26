@@ -9,6 +9,14 @@ on:
       - "src/data/imagePromptFantasy.ts"
       - "test/imagePromptFantasyLive.test.ts"
       - ".github/workflows/image-prompt-feature-check.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "src/pages/tools/ImagePromptGenerator.tsx"
+      - "src/data/imagePromptFantasy.ts"
+      - "test/imagePromptFantasyLive.test.ts"
+      - ".github/workflows/image-prompt-feature-check.yml"
   workflow_dispatch:
 
 permissions:
