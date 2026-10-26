@@ -1,3 +1,4 @@
+import { SHOW_AFFILIATE_ADS } from "@/config/affiliateAdVisibility";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
@@ -974,6 +975,8 @@ export default function ImagesPage() {
           </div>
 
           <div className="mt-5 rounded-xl border border-blue-200 bg-white p-4">
+            {SHOW_AFFILIATE_ADS && (
+              <>
             <h4 className="font-bold text-blue-900">🎨 貼圖創作者推薦工具</h4>
             <p className="mt-1 text-sm leading-relaxed text-blue-800">
               想自己做 LINE 貼圖，可以先用 PhotoRoom
@@ -1000,6 +1003,8 @@ export default function ImagesPage() {
                 PhotoRoom AI 去背工具
               </a>
             </div>
+              </>
+            )}
             <div className="mt-4 rounded-xl border border-blue-100 bg-blue-50 p-3">
               <p className="text-xs font-bold text-blue-900">覺得這頁有用，也可以分享給朋友：</p>
               <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">

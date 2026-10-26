@@ -1,3 +1,4 @@
+import { SHOW_AFFILIATE_ADS } from "@/config/affiliateAdVisibility";
 import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 // ⚠️ 已停用前端直呼 Gemini：import { getGeminiAnswer } from "@/services/gemini";
@@ -60,6 +61,7 @@ async function playGoogleTTS(text: string, lang: string = "zh-TW") {
 // 共用朗讀 Hook（支援多語言）
 
 function FotorAffiliateBlock() {
+  if (!SHOW_AFFILIATE_ADS) return null;
   return (
     <section className="mt-10 mb-12 border-t border-slate-100 pt-8">
       <div className="flex flex-wrap items-center gap-2 mb-3">

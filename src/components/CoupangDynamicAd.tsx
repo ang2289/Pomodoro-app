@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { COUPANG_DYNAMIC_WIDGET } from "@/config/coupangAds";
+import { SHOW_AFFILIATE_ADS } from "@/config/affiliateAdVisibility";
 
 type CoupangDynamicAdProps = {
   subId: string;
@@ -59,6 +60,9 @@ export default function CoupangDynamicAd({
     `&trackingCode=${COUPANG_DYNAMIC_WIDGET.trackingCode}` +
     `&subId=${encodeURIComponent(subId)}` +
     `&width=${width}&height=${height}&tsource=`;
+
+  // 暫停時不渲染 iframe，也就不會向第三方廣告網域發送廣告請求。
+  if (!SHOW_AFFILIATE_ADS) return null;
 
   return (
     <aside

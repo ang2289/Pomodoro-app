@@ -1,4 +1,6 @@
+import { SHOW_AFFILIATE_ADS } from "@/config/affiliateAdVisibility";
 function FotorAffiliateBlock() {
+  if (!SHOW_AFFILIATE_ADS) return null;
   return (
     <section className="mt-10 mb-12 border-t border-slate-100 pt-8">
       <div className="flex flex-wrap items-center gap-2 mb-3">

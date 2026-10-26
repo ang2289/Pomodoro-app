@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { SHOW_AFFILIATE_ADS } from "@/config/affiliateAdVisibility";
 import {
   COUPANG_ADS,
   COUPANG_PARTNERS_CAMPAIGN,
@@ -30,7 +31,7 @@ export default function CoupangAd({ placement, ad: suppliedAd, className = "" }:
   const campaignEnd = new Date(COUPANG_PARTNERS_CAMPAIGN.endAt).getTime();
   const isCampaignActive = Date.now() >= campaignStart && Date.now() <= campaignEnd;
 
-  if (!ad || !isCampaignActive) return null;
+  if (!SHOW_AFFILIATE_ADS || !ad || !isCampaignActive) return null;
 
   const banner = isMobile
     ? { id: COUPANG_PARTNERS_CAMPAIGN.mobileId, width: COUPANG_PARTNERS_CAMPAIGN.mobileWidth, height: COUPANG_PARTNERS_CAMPAIGN.mobileHeight }

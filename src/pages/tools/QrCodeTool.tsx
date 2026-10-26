@@ -1,3 +1,4 @@
+import { SHOW_AFFILIATE_ADS } from "@/config/affiliateAdVisibility";
 import {
   useCallback,
   useEffect,
@@ -103,6 +104,7 @@ function getContrast(foreground: string, background: string) {
 }
 
 function PhotoRoomAffiliateBlock() {
+  if (!SHOW_AFFILIATE_ADS) return null;
   const shareUrl = typeof window !== "undefined" ? window.location.href : "";
   const shareText = "RxV QR Code 產生器，可快速製作商家、名片、社群分享用 QR Code。";
 

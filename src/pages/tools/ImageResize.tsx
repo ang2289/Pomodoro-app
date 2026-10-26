@@ -1,3 +1,4 @@
+import { SHOW_AFFILIATE_ADS } from "@/config/affiliateAdVisibility";
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Helmet } from "react-helmet-async";
@@ -23,6 +24,7 @@ import { type ImagePlacement } from "@/lib/imageLayout";
 /** 各 preset 對應的 i18n key（顯示用，不改 imageResize 邏輯） */
 
 function PhotoRoomAffiliateBlock() {
+  if (!SHOW_AFFILIATE_ADS) return null;
   const getShareData = () => {
     const url = typeof window !== "undefined" ? window.location.href : "";
     const title = "RxV 免費圖片工具";
