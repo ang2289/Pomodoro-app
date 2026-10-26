@@ -239,10 +239,11 @@ test("每組貼圖選擇按鈕同寬，選取、懸停、鍵盤焦點狀態清�
   const upload = read("src/pages/tools/LineStickerTool.tsx");
   const animated = read("src/pages/tools/AnimatedLineStickerTool.tsx");
 
-  // 平台與動靜態要使用等分的兩欄格線，格線本身有最大寬度，避免整頁滿版。
+  // 提示詞頁及動畫頁維持原有受限寬度的選項格線；貼圖整理工具依需求改成內容寬度、可自動換行。
   assert.match(prompt, /grid-cols-2 items-stretch gap-3" role="group" aria-label="選擇貼圖平台"/);
   assert.match(prompt, /grid-cols-2 items-stretch gap-3" role="group" aria-label="選擇靜態或動態貼圖"/);
-  assert.match(upload, /grid-cols-2 items-stretch gap-3" role="group" aria-label="選擇貼圖輸出平台"/);
+  assert.match(upload, /flex flex-wrap items-center gap-2" role="group" aria-label="選擇貼圖輸出平台"/);
+  assert.match(upload, /inline-flex min-h-11 w-auto max-w-full shrink-0 items-center justify-center/);
   assert.match(animated, /grid-cols-2 items-stretch gap-3" role="group" aria-label="選擇動態貼圖輸出平台"/);
 
   assert.ok(prompt.includes("aria-pressed={stickerPlatform === platform}"));

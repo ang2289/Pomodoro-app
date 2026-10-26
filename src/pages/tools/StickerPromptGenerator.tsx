@@ -5,7 +5,8 @@ import SEO from "@/components/SEO";
 import LineStickerAuthorCard from "@/components/LineStickerAuthorCard";
 import LineStickerFlowSteps from "@/components/LineStickerFlowSteps";
 import StickerExcelOffers from "@/components/StickerExcelOffers";
-import { StickerCustomInquiry, StickerNextActionHint } from "@/components/StickerBeginnerActions";
+import { StickerNextActionHint } from "@/components/StickerBeginnerActions";
+import StickerCustomPricing from "@/components/StickerCustomPricing";
 import {
   createLineStickerProject,
   getAllowedCounts,
@@ -5624,7 +5625,7 @@ export default function StickerPromptGenerator() {
                 onChange={(e) =>
                   handleTypeChange(e.target.value as TemplateKey)
                 }
-                className="mt-3 w-full max-w-lg rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
+                className="mt-3 w-full max-w-[420px] sm:w-auto sm:min-w-[240px] rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
               >
                 {filteredTemplateEntries.map(([key, item]) => (
                   <option key={key} value={key}>
@@ -5650,7 +5651,7 @@ export default function StickerPromptGenerator() {
               <select
                 value={photoMode}
                 onChange={(e) => setPhotoMode(e.target.value as PhotoMode)}
-                className="mt-2 w-full rounded-2xl border-2 border-violet-300 bg-violet-50 px-4 py-3 pr-10 text-sm font-black text-violet-800 shadow-sm outline-none focus:border-violet-500 focus:bg-white"
+                className="mt-2 w-full max-w-[420px] sm:w-auto sm:min-w-[240px] rounded-2xl border-2 border-violet-300 bg-violet-50 px-4 py-3 pr-10 text-sm font-black text-violet-800 shadow-sm outline-none focus:border-violet-500 focus:bg-white"
               >
                 {PHOTO_MODE_OPTIONS.map((item) => (
                   <option key={item.value} value={item.value}>
@@ -5710,7 +5711,7 @@ export default function StickerPromptGenerator() {
                     value={illustrationStyle}
                     onChange={(e) => setIllustrationStyle(e.target.value as IllustrationStyle)}
                     aria-label="選擇 12 種畫風"
-                    className="mt-2 w-full rounded-2xl border-2 border-violet-300 bg-white px-4 py-3 pr-10 text-sm font-bold text-violet-900 focus:border-violet-500"
+                    className="mt-2 w-full max-w-[420px] sm:w-auto sm:min-w-[240px] rounded-2xl border-2 border-violet-300 bg-white px-4 py-3 pr-10 text-sm font-bold text-violet-900 focus:border-violet-500"
                   >
                     {ILLUSTRATION_STYLE_OPTIONS.map((item) => (
                       <option key={item.value} value={item.value}>{item.label}</option>
@@ -5730,7 +5731,7 @@ export default function StickerPromptGenerator() {
                 onChange={(e) =>
                   handleNameModeChange(e.target.value as NameMode)
                 }
-                className="mt-2 w-full max-w-lg rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
+                className="mt-2 w-full max-w-[420px] sm:w-auto sm:min-w-[240px] rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
               >
                 {NAME_MODE_OPTIONS.map((item) => (
                   <option key={item.value} value={item.value}>
@@ -5748,7 +5749,7 @@ export default function StickerPromptGenerator() {
                     value={customName}
                     onChange={(e) => handleCustomNameChange(e.target.value)}
                     placeholder="例如：小宇、雙果花、舒菓蜜、小芳早餐店"
-                    className="mt-2 w-full max-w-lg rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
+                    className="mt-2 w-full max-w-[420px] sm:w-auto sm:min-w-[240px] rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
                   />
                   <p className="mt-2 rounded-2xl bg-violet-50 px-4 py-3 text-xs font-bold leading-6 text-violet-700">
                     加入名稱後，貼圖文字會變成「小宇已收到」、「小宇幫您確認」這類更有個人記憶點的版本；店家也可改成「雙果花已收到」、「舒菓蜜感謝支持」。
@@ -5764,7 +5765,7 @@ export default function StickerPromptGenerator() {
                   <select
                     value={textSize}
                     onChange={(e) => setTextSize(e.target.value as TextSize)}
-                    className="mt-2 w-full max-w-lg rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
+                    className="mt-2 w-full max-w-[420px] sm:w-auto sm:min-w-[240px] rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
                   >
                     {TEXT_SIZE_OPTIONS.map((item) => (
                       <option key={item.value} value={item.value}>
@@ -5780,7 +5781,7 @@ export default function StickerPromptGenerator() {
                   <select
                     value={fontStyle}
                     onChange={(e) => setFontStyle(e.target.value as FontStyle)}
-                    className="mt-2 w-full max-w-lg rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
+                    className="mt-2 w-full max-w-[420px] sm:w-auto sm:min-w-[240px] rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
                   >
                     {FONT_STYLE_OPTIONS.map((item) => (
                       <option key={item.value} value={item.value}>{item.label}</option>
@@ -5794,7 +5795,7 @@ export default function StickerPromptGenerator() {
                   <select
                     value={textColor}
                     onChange={(e) => setTextColor(e.target.value as TextColor)}
-                    className="mt-2 w-full max-w-lg rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
+                    className="mt-2 w-full max-w-[420px] sm:w-auto sm:min-w-[240px] rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
                   >
                     {TEXT_COLOR_OPTIONS.map((item) => (
                       <option key={item.value} value={item.value}>
@@ -5812,7 +5813,7 @@ export default function StickerPromptGenerator() {
                     onChange={(e) =>
                       setTextPosition(e.target.value as TextPosition)
                     }
-                    className="mt-2 w-full max-w-lg rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
+                    className="mt-2 w-full max-w-[420px] sm:w-auto sm:min-w-[240px] rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
                   >
                     {TEXT_POSITION_OPTIONS.map((item) => (
                       <option key={item.value} value={item.value}>
@@ -5839,7 +5840,7 @@ export default function StickerPromptGenerator() {
                         e.target.value as StickerStylePreset,
                       )
                     }
-                    className="mt-2 w-full max-w-lg rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
+                    className="mt-2 w-full max-w-[420px] sm:w-auto sm:min-w-[240px] rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
                   >
                     {STICKER_STYLE_OPTIONS.map((item) => (
                       <option key={item.value} value={item.value}>
@@ -6279,7 +6280,7 @@ export default function StickerPromptGenerator() {
           </section>
 
           <StickerExcelOffers compact />
-          <div className="mt-6"><StickerCustomInquiry /></div>
+          <div className="mt-6"><StickerCustomPricing /></div>
           {false && <SupportSection />}
 
           <section className="mt-6 rounded-3xl border border-pink-100 bg-gradient-to-br from-pink-50 via-white to-amber-50 p-5 shadow-sm">
