@@ -1408,61 +1408,87 @@ export default function ImagePromptGenerator() {
 
             {fantasyTheme && (
               <div className="mt-5 rounded-2xl border border-sky-200 bg-sky-50 p-4">
-                <h3 className="text-lg font-black text-slate-900">② 專屬參數｜{fantasyTheme.categoryLabel}</h3>
+                <h3 className="text-lg font-black text-slate-900">② 調整專屬設定｜{fantasyTheme.categoryLabel}</h3>
                 <p className="mt-1 text-sm leading-6 text-slate-700">
-                  各主題只列出適用的服裝、材質、姿勢與背景，無需會寫提示詞。
-                  {fantasyTheme.category === "miniFairyWorld" && " 迷你分身會保留大主角的相同臉型、髮色、服裝與配件，各自做出不同動作，並產生近大遠小的夢幻構圖。"} 
+                  目前套用：<strong>{fantasyTheme.title}</strong>。每個選項都會修改右側提示詞，
+                  只顯示此系列適用的畫風、服裝、動作及背景。
                 </p>
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  {([
-                    ["person", "人物"],
-                    ["visualStyle", "風格"],
-                    ["clothing", "服裝"],
-                    ["expression", "表情"],
-                    ["pose", "動作"],
-                    ["background", "背景"],
-                    ["palette", "色系"],
-                  ] as [FantasyOptionKey, string][]).map(([field, title]) => (
-                    <label key={field} className="block text-sm font-bold text-slate-800">
-                      {title}
-                      <select className="mt-1 min-h-[48px] w-full rounded-xl border border-sky-200 bg-white px-3 text-slate-900"
+                {fantasyTheme.category === "miniFairyWorld" && (
+                  <p className="mt-2 rounded-xl bg-white px-3 py-2 text-sm leading-6 text-violet-800">
+                    大主角與迷你分身保持相同的臉型、髮色和服裝，可改變表情及動作。
+                  </p>
+                )}
+                <div className="mt-4 grid items-stretch gap-3 sm:grid-cols-2">
+                  {FANTASY_FIELD_ORDER.map((field) => (
+                    <label key={field} className="flex min-w-0 flex-col rounded-xl border border-sky-100 bg-white p-3 text-sm text-slate-800">
+                      <span className="font-bold">{FANTASY_FIELD_GUIDES[field].title}</span>
+                      <select className="mt-2 min-h-[48px] w-full min-w-0 rounded-lg border border-sky-200 bg-white px-3 text-base text-slate-900"
                         value={fantasyOptions[field]}
                         onChange={(e) => setFantasyOptions((previous) => ({ ...previous, [field]: e.target.value }))}>
                         {FANTASY_OPTIONS[fantasyTheme.category][field].map((value) => (
                           <option key={value} value={value}>{value}</option>
                         ))}
                       </select>
+                      <span className="mt-2 text-xs leading-5 text-slate-600">{FANTASY_FIELD_GUIDES[field].effect}</span>
                     </label>
                   ))}
+                  <label className="flex min-w-0 flex-col rounded-xl border border-sky-100 bg-white p-3 text-sm text-slate-800">
+                    <span className="font-bold">圖片比例</span>
+                    <select value={ratio} onChange={(e) => setRatio(e.target.value)}
+                      className="mt-2 min-h-[48px] w-full min-w-0 rounded-lg border border-sky-200 bg-white px-3 text-base text-slate-900">
+                      {["9:16", "16:9", "1:1"].map((value) => (
+                        <option key={value} value={value}>{value}</option>
+                      ))}
+                    </select>
+                    <span className="mt-2 text-xs leading-5 text-slate-600">9:16 手機桌布、16:9 橫式封面、1:1 正方形貼文。</span>
+                  </label>
                 </div>
+                <label className="mt-4 block rounded-xl border border-sky-100 bg-white p-3 text-sm font-bold text-slate-800">
+                  自訂場景細節（可直接修改）
+                  <textarea value={fantasyScene} onChange={(e) => setFantasyScene(e.target.value)}
+                    rows={4} maxLength={1000}
+                    className="mt-2 w-full rounded-lg border border-sky-200 bg-white px-3 py-2 text-base font-normal leading-7 text-slate-900" />
+                  <span className="mt-2 block text-xs font-normal leading-5 text-slate-600">
+                    修改後會即時替換右邊「主題場景」段落；清空時自動恢復原場景。
+                  </span>
+                </label>
                 {fantasyTheme.category === "photoBobblehead" && (
                   <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3">
                     <label className="flex cursor-pointer items-center gap-2 text-sm font-bold text-amber-950">
                       <input type="checkbox" checked={useReferencePhoto}
-                        onChange={(e) => setUseReferencePhoto(e.target.checked)} />
-                      使用真人照片參考（預設開啟）
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setUseReferencePhoto(checked);
+                          if (!checked) setFantasyOptions((previous) => ({
+                            ...previous,
+                            person: previous.person === "依照片人物" ? "原創女性" : previous.person,
+                            clothing: previous.clothing === "依照片服裝" ? "職業套裝" : previous.clothing,
+                          }));
+                        }} />
+                      使用真人照片參考
                     </label>
                     <p className="mt-2 text-sm leading-6 text-amber-900">
-                      請在 ChatGPT 生成圖片時一併上傳自己的照片；RXV 網站不接收或儲存私人照片。關閉後會改用原創人物描述，不會要求保留真人五官。AI 生成無法保證完全還原相貌。
+                      開啟時：在 ChatGPT 自行上傳有權使用的照片；關閉後改用原創角色，不再要求保留真人五官與服裝。RXV 不接收照片，AI 生成也不保證百分之百還原。
                     </p>
                   </div>
                 )}
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-4 grid gap-2 sm:grid-cols-2">
                   <button type="button" onClick={() => setFantasyVariation((current) => current + 1)}
-                    className="min-h-[44px] rounded-xl bg-sky-700 px-4 py-2 font-bold text-white hover:bg-sky-800">
+                    className="min-h-[48px] w-full rounded-xl bg-sky-700 px-4 py-2 font-bold text-white hover:bg-sky-800">
                     重新組合構圖
                   </button>
                   <button type="button" onClick={() => {
                     setFantasyOptions({ ...fantasyTheme.defaults });
+                    setFantasyScene(fantasyTheme.scene);
                     setUseReferencePhoto(fantasyTheme.category === "photoBobblehead");
                     setRatio("9:16");
                     setFantasyVariation(0);
-                  }} className="min-h-[44px] rounded-xl border border-sky-300 bg-white px-4 py-2 font-bold text-sky-800 hover:bg-sky-100">
-                    清除／重設選項
+                  }} className="min-h-[48px] w-full rounded-xl border border-sky-300 bg-white px-4 py-2 font-bold text-sky-800 hover:bg-sky-100">
+                    恢復這個主題的預設值
                   </button>
                 </div>
-                <p className="mt-3 text-xs leading-6 text-slate-600">
-                  比例請使用下方原有「比例」選單（9:16、16:9、1:1 均支援）。③ 產生的完整提示詞會即時顯示，點選複製後可前往 ChatGPT 創作。
+                <p className="mt-3 rounded-xl bg-white px-3 py-2 text-sm leading-6 text-sky-900">
+                  ③ 每次修改人物、畫風、服裝、表情、動作、背景、色系、比例或場景，右側完整提示詞會同步改變。
                 </p>
               </div>
             )}
@@ -1498,6 +1524,8 @@ export default function ImagePromptGenerator() {
               {copyStatus === "manual" && <p role="alert" className="mt-2 text-sm font-semibold text-amber-800">自動複製未成功，已選取提示詞；請手動複製。</p>}
             </div>
 
+            {!fantasyTheme && (
+              <>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <label className="block">
                 <span className="mb-2 block text-sm font-bold text-slate-800">
@@ -1654,6 +1682,8 @@ export default function ImagePromptGenerator() {
               </div>
             </div>
             </div>
+              </>
+            )}
           </div>
 
           <div id="prompt-result" className="scroll-mt-20 rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200 sm:p-5 lg:sticky lg:top-4 lg:self-start">
