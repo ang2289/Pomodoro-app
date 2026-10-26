@@ -8372,12 +8372,152 @@ async function handleAdminUpdateDealAffiliate(req: any, res: any, body: any) {
   }
 }
 
+// Google Flow 教學示範：僅保存 YouTube 影片 ID 與文字資料在 R2。
+// 不上傳影片檔、不產生 presigned PUT URL，也不觸碰既有圖片或付費素材。
+const FLOW_YOUTUBE_DEMO_PREFIX = "tools/flow-demos/youtube/";
+const FLOW_DEMO_MAX_ITEMS = 30;
+const FLOW_YOUTUBE_ID_REGEX = /^[A-Za-z0-9_-]{11}$/;
+
+function flowDemoR2() {
+  const config = getImageR2RuntimeConfig();
+  return {
+    client: getImageCatalogR2Client(),
+    bucket: config.publicBucket,
+  };
+}
+
+function flowDemoId(value: any) {
+  const id = safeText(value);
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id) ? id : "";
+}
+
+function flowDemoYouTubeId(value: unknown) {
+  const raw = safeText(value);
+  if (!raw || raw.length > 500) return "";
+  let url: URL;
+  try { url = new URL(raw); } catch { return ""; }
+  if (url.protocol !== "https:") return "";
+  const hostname = url.hostname.toLowerCase();
+  const segments = url.pathname.split("/").filter(Boolean);
+  let id = "";
+  if (hostname === "youtu.be" || hostname === "www.youtu.be") {
+    id = segments[0] || "";
+  } else if (hostname === "youtube.com" || hostname === "www.youtube.com" || hostname === "m.youtube.com" || hostname === "music.youtube.com" || hostname === "www.youtube-nocookie.com" || hostname === "youtube-nocookie.com") {
+    if (segments[0] === "watch" || segments.length === 0) id = url.searchParams.get("v") || "";
+    else if (["shorts", "live", "embed", "v"].includes(segments[0])) id = segments[1] || "";
+  }
+  return FLOW_YOUTUBE_ID_REGEX.test(id) ? id : "";
+}
+
+async function handleFlowDemoList(req: any, res: any) {
+  if (req.method !== "GET") return jsonResponse(res, 405, { ok: false, error: "METHOD_NOT_ALLOWED" });
+  try {
+    const { client, bucket } = flowDemoR2();
+    const listed = await client.send(new ListObjectsV2Command({
+      Bucket: bucket, Prefix: FLOW_YOUTUBE_DEMO_PREFIX, MaxKeys: 250,
+    }));
+    const keys = (listed.Contents || [])
+      .filter((item) => /^tools\/flow-demos\/youtube\/[0-9a-f-]{36}\.json$/i.test(item.Key || ""))
+      .sort((a, b) => (b.LastModified?.getTime() || 0) - (a.LastModified?.getTime() || 0))
+      .slice(0, FLOW_DEMO_MAX_ITEMS);
+    const videos = (await Promise.all(keys.map(async (item) => {
+      try {
+        const object = await client.send(new GetObjectCommand({ Bucket: bucket, Key: item.Key! }));
+        const raw = await (object.Body as any).transformToString();
+        const data = JSON.parse(raw);
+        const id = flowDemoId(data.id);
+        const youtubeId = safeText(data.youtubeId);
+        if (!id || item.Key !== FLOW_YOUTUBE_DEMO_PREFIX + id + ".json" || !FLOW_YOUTUBE_ID_REGEX.test(youtubeId)) return null;
+        return {
+          id,
+          youtubeId,
+          title: safeText(data.title).slice(0, 100),
+          description: safeText(data.description).slice(0, 400),
+          createdAt: safeText(data.createdAt),
+          youtubeUrl: "https://www.youtube.com/watch?v=" + youtubeId,
+          embedUrl: "https://www.youtube-nocookie.com/embed/" + youtubeId + "?rel=0",
+        };
+      } catch { return null; }
+    }))).filter(Boolean);
+    res.setHeader("Cache-Control", "public, max-age=30");
+    return jsonResponse(res, 200, { ok: true, videos });
+  } catch (error: any) {
+    console.error("FLOW_YOUTUBE_DEMO_LIST_FAILED", safeText(error?.message));
+    return jsonResponse(res, 503, { ok: false, error: "示範影片清單暫時無法載入。" });
+  }
+}
+
+async function handleFlowDemoAdd(req: any, res: any, body: any) {
+  if (req.method !== "POST") return jsonResponse(res, 405, { ok: false, error: "METHOD_NOT_ALLOWED" });
+  try {
+    await requireImageAdmin(req);
+    const youtubeId = flowDemoYouTubeId(body?.youtubeUrl);
+    const title = safeText(body?.title).slice(0, 100);
+    const description = safeText(body?.description).slice(0, 400);
+    if (!youtubeId) return jsonResponse(res, 400, { ok: false, error: "請貼上正確的 YouTube 影片、Shorts 或分享網址（須為 HTTPS）。" });
+    if (!title) return jsonResponse(res, 400, { ok: false, error: "請輸入示範影片名稱。" });
+    const { client, bucket } = flowDemoR2();
+    const listed = await client.send(new ListObjectsV2Command({
+      Bucket: bucket, Prefix: FLOW_YOUTUBE_DEMO_PREFIX, MaxKeys: 250,
+    }));
+    const keys = (listed.Contents || []).filter((item) =>
+      /^tools\/flow-demos\/youtube\/[0-9a-f-]{36}\.json$/i.test(item.Key || "")
+    );
+    if (keys.length >= FLOW_DEMO_MAX_ITEMS) {
+      return jsonResponse(res, 400, { ok: false, error: "示範區最多保留 30 個 YouTube 影片連結，請先刪除舊項目。" });
+    }
+    // 既有資料不可重複使用同一支 YouTube 影片。
+    const matches = await Promise.all(keys.map(async (item) => {
+      try {
+        const object = await client.send(new GetObjectCommand({ Bucket: bucket, Key: item.Key! }));
+        const data = JSON.parse(await (object.Body as any).transformToString());
+        return safeText(data?.youtubeId) === youtubeId;
+      } catch { return false; }
+    }));
+    if (matches.some(Boolean)) return jsonResponse(res, 409, { ok: false, error: "這支 YouTube 影片已經加入示範區。" });
+    const id = crypto.randomUUID();
+    const record = { id, youtubeId, title, description, createdAt: new Date().toISOString() };
+    await client.send(new PutObjectCommand({
+      Bucket: bucket,
+      Key: FLOW_YOUTUBE_DEMO_PREFIX + id + ".json",
+      Body: JSON.stringify(record),
+      ContentType: "application/json; charset=utf-8",
+      CacheControl: "no-store",
+    }));
+    return jsonResponse(res, 200, { ok: true, id, youtubeId });
+  } catch (error: any) {
+    const status = Number(error?.statusCode || 500);
+    console.error("FLOW_YOUTUBE_DEMO_ADD_FAILED", status);
+    return jsonResponse(res, status, { ok: false, error: status === 401 || status === 403 ? "管理金鑰錯誤或未提供。" : "新增 YouTube 示範影片失敗。" });
+  }
+}
+
+async function handleFlowDemoDelete(req: any, res: any, body: any) {
+  if (req.method !== "POST") return jsonResponse(res, 405, { ok: false, error: "METHOD_NOT_ALLOWED" });
+  try {
+    await requireImageAdmin(req);
+    const id = flowDemoId(body?.id);
+    if (!id) return jsonResponse(res, 400, { ok: false, error: "INVALID_DEMO_ID" });
+    const { client, bucket } = flowDemoR2();
+    // 只刪除本站的 YouTube 影片清單資料，不刪 YouTube 原始影片，也不影響舊 R2 MP4。
+    await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: FLOW_YOUTUBE_DEMO_PREFIX + id + ".json" }));
+    return jsonResponse(res, 200, { ok: true });
+  } catch (error: any) {
+    const status = Number(error?.statusCode || 500);
+    return jsonResponse(res, status, { ok: false, error: status === 401 || status === 403 ? "管理金鑰錯誤或未提供。" : "移除 YouTube 示範項目失敗。" });
+  }
+}
+
 export default async function handler(req: any, res: any) {
   const body = normalizeReqBody(req);
   const queryAction = typeof req?.query?.action === "string" ? req.query.action : "";
   const bodyAction = typeof body?.action === "string" ? body.action : "";
   const action = (queryAction || bodyAction || "").toLowerCase();
   console.log("ACTION RECEIVED:", action);
+
+  if (action === "flow-demo-list") return handleFlowDemoList(req, res);
+  if (action === "flow-demo-add") return handleFlowDemoAdd(req, res, body);
+  if (action === "flow-demo-delete") return handleFlowDemoDelete(req, res, body);
 
   if (action.startsWith("group-buy-")) {
     if (!GROUP_BUY_ENABLED) {

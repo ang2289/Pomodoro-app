@@ -45,6 +45,13 @@ export default function ToolsPage() {
 
   const freeTools: ToolCard[] = [
     {
+      title: "Google Flow 免費 AI 圖生影片教學",
+      desc: "了解每日 50 點免費額度、8 秒 AI 影片製作、提示詞與 RXV 實際影片示範；可前往 Google Flow 製作。",
+      icon: "🎬",
+      to: "/tools/flow-video",
+      badges: ["free", "hot"],
+    },
+    {
       title: "免費圖片轉 MP4",
       desc: "圖片直接在瀏覽器本機轉成 MP4，可加 MP3／BGM、縮放與淡入淡出效果；不上傳影片伺服器。",
       icon: "🎬",
