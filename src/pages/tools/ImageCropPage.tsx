@@ -1,3 +1,4 @@
+import { SHOW_AFFILIATE_ADS } from "@/config/affiliateAdVisibility";
 import {
   useCallback,
   useEffect,
@@ -45,6 +46,7 @@ function messageForCropError(err: unknown, t: (key: string) => string): string {
 }
 
 function PhotoRoomAffiliateBlock() {
+  if (!SHOW_AFFILIATE_ADS) return null;
   const getShareData = () => {
     const url = typeof window !== "undefined" ? window.location.href : "";
     const title = "RxV 免費圖片工具";
