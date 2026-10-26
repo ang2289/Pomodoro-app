@@ -1,0 +1,34 @@
+name: Image Prompt Feature Check (GitHub only)
+
+on:
+  push:
+    branches:
+      - feature/image-prompt-fantasy-20261026
+    paths:
+      - "src/pages/tools/ImagePromptGenerator.tsx"
+      - "src/data/imagePromptFantasy.ts"
+      - "test/imagePromptFantasyLive.test.ts"
+      - ".github/workflows/image-prompt-feature-check.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  image-prompt-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout current feature branch
+        uses: actions/checkout@v4
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Image prompt regression tests
+        run: npx tsx --test test/imagePromptFantasyLive.test.ts
+      - name: TypeScript and Vite full build
+        run: npm run build
