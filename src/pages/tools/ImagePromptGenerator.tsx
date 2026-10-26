@@ -10,6 +10,19 @@ import {
   composeFantasyPrompt, type FantasyCategory, type FantasyOptionKey, type FantasyOptions,
 } from "@/data/imagePromptFantasy";
 
+const FANTASY_FIELD_GUIDES: Record<FantasyOptionKey, { title: string; effect: string }> = {
+  person: { title: "人物", effect: "改變主角身分及人物數量，不改變已選主題。" },
+  visualStyle: { title: "畫風", effect: "控制寫實、Q 版或夢幻插畫質感，主題材質限制仍保留。" },
+  clothing: { title: "服裝", effect: "更換人物穿著，維持同一個場景主題。" },
+  expression: { title: "表情", effect: "調整臉部情緒，例如微笑、眨眼或溫柔神情。" },
+  pose: { title: "動作", effect: "改變主角姿勢；只提供符合該系列的動作。" },
+  background: { title: "背景", effect: "改變場景位置與環境物件。" },
+  palette: { title: "色系", effect: "改變整體配色與氛圍。" },
+};
+const FANTASY_FIELD_ORDER: FantasyOptionKey[] = [
+  "person", "visualStyle", "clothing", "expression", "pose", "background", "palette",
+];
+
 const LINE_STICKER_STORE_URL = "https://store.line.me/stickershop/product/33968282/zh-Hant";
 const SUPPORT_TW_URL = "https://p.ecpay.com.tw/FD7CD6D";
 const SUPPORT_KOFI_URL = "https://ko-fi.com/ang2289";
@@ -968,7 +981,7 @@ export default function ImagePromptGenerator() {
   const [shareCopyError, setShareCopyError] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [fantasyTab, setFantasyTab] = useState<FantasyCategory | "all">(
-    FANTASY_THEME_BY_ID[presetKey]?.category ?? "dreamPrincess",
+    FANTASY_THEME_BY_ID[presetKey]?.category ?? "all",
   );
   const [fantasySearch, setFantasySearch] = useState("");
   const [fantasyOptions, setFantasyOptions] = useState<FantasyOptions>(
@@ -978,6 +991,9 @@ export default function ImagePromptGenerator() {
     FANTASY_THEME_BY_ID[presetKey]?.category === "photoBobblehead",
   );
   const [fantasyVariation, setFantasyVariation] = useState(0);
+  const [fantasyScene, setFantasyScene] = useState(
+    FANTASY_THEME_BY_ID[presetKey]?.scene ?? FANTASY_THEMES[0].scene,
+  );
   const fantasyTheme = FANTASY_THEME_BY_ID[presetKey] ?? null;
   const filteredFantasyThemes = useMemo(
     () => FANTASY_THEMES.filter((theme) =>
@@ -996,8 +1012,12 @@ export default function ImagePromptGenerator() {
     if (theme) {
       setFantasyTab(theme.category);
       setFantasyOptions({ ...theme.defaults });
+      setFantasyScene(theme.scene);
       setUseReferencePhoto(theme.category === "photoBobblehead");
       setFantasyVariation(0);
+    } else {
+      setFantasyTab("all");
+      setFantasySearch("");
     }
     setPresetKey(key);
     setPurpose(preset.purpose);
@@ -1008,6 +1028,17 @@ export default function ImagePromptGenerator() {
     setRatio(preset.ratio);
     setEnhancements(preset.enhancements);
     setAvoids(preset.avoids);
+  };
+
+  const selectFantasySeries = (category: FantasyCategory | "all") => {
+    setFantasySearch("");
+    if (category === "all") {
+      if (!FANTASY_THEME_BY_ID[presetKey]) applyPreset(FANTASY_THEMES[0].id as PresetKey);
+      setFantasyTab("all");
+      return;
+    }
+    const firstTheme = FANTASY_THEMES.find((theme) => theme.category === category);
+    if (firstTheme) applyPreset(firstTheme.id as PresetKey);
   };
 
   const toggleValue = (
@@ -1025,7 +1056,8 @@ export default function ImagePromptGenerator() {
   const resultPrompt = useMemo(() => {
     if (fantasyTheme) {
       return composeFantasyPrompt(
-        fantasyTheme, fantasyOptions, ratio, useReferencePhoto, fantasyVariation,
+        { ...fantasyTheme, scene: fantasyScene.trim() || fantasyTheme.scene },
+        fantasyOptions, ratio, useReferencePhoto, fantasyVariation,
       );
     }
     const presetLabel = PRESETS[presetKey].label;
@@ -1062,7 +1094,22 @@ export default function ImagePromptGenerator() {
     fantasyOptions,
     useReferencePhoto,
     fantasyVariation,
+    fantasyScene,
   ]);
+
+  // 兩個版面的提示詞文字框依內容自動增高，不再需要在框內另行捲動。
+  useEffect(() => {
+    const fitTextareas = () => {
+      [quickTextareaRef.current, resultTextareaRef.current].forEach((element) => {
+        if (!element || element.getClientRects().length === 0) return;
+        element.style.height = "auto";
+        element.style.height = `${Math.max(element.scrollHeight + 2, 420)}px`;
+      });
+    };
+    fitTextareas();
+    window.addEventListener("resize", fitTextareas);
+    return () => window.removeEventListener("resize", fitTextareas);
+  }, [resultPrompt]);
 
   // 主題或任一設定改變時，先前剪貼簿內容已非最新提示詞。
   useEffect(() => {
@@ -1166,7 +1213,7 @@ export default function ImagePromptGenerator() {
                 AI 生圖提示詞產生器
               </h1>
               <p className="mt-2 text-sm leading-7 text-slate-600 sm:text-base">
-                先選主題／職業類型，再調整用途、比例、風格與加強效果，右側會立即產生可複製的提示詞。
+                ① 選分類與主題 → ② 調整適用參數 → ③ 右側即時顯示完整提示詞；選項變更都會反映在結果中。
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
