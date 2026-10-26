@@ -1504,9 +1504,9 @@ export default function ImagePromptGenerator() {
                 aria-label="主題下方的完整生圖提示詞"
                 readOnly
                 value={resultPrompt}
-                rows={6}
+                rows={18}
                 onFocus={(e) => e.currentTarget.select()}
-                className="mt-3 min-h-[150px] w-full resize-y rounded-xl border border-violet-200 bg-white p-3 text-sm leading-6 text-slate-800"
+                className="mt-3 min-h-[420px] w-full resize-none overflow-hidden rounded-xl border border-violet-200 bg-white p-4 text-base leading-7 text-slate-900"
               />
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
                 <button
@@ -1686,7 +1686,7 @@ export default function ImagePromptGenerator() {
             )}
           </div>
 
-          <div id="prompt-result" className="scroll-mt-20 rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200 sm:p-5 lg:sticky lg:top-4 lg:self-start">
+          <div id="prompt-result" className="min-w-0 scroll-mt-20 rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200 sm:p-5 lg:self-start">
             <div className="flex flex-col gap-3">
               <div>
                 <h2 className="text-2xl font-bold text-slate-900">產生結果</h2>
@@ -1724,13 +1724,30 @@ export default function ImagePromptGenerator() {
               )}
             </div>
 
+            {fantasyTheme && (
+              <div className="mt-5 rounded-2xl border border-violet-200 bg-violet-50 p-4">
+                <h3 className="font-extrabold text-violet-950">③ 目前套用的設定｜即時更新</h3>
+                <p className="mt-2 text-sm leading-6 text-violet-900">
+                  主題：{fantasyTheme.title}；比例：{ratio}；構圖版本：{fantasyVariation % 4 + 1}。
+                </p>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  {FANTASY_FIELD_ORDER.map((field) => (
+                    <div key={field} className="min-w-0 rounded-lg border border-violet-100 bg-white px-3 py-2">
+                      <p className="text-xs text-slate-500">{FANTASY_FIELD_GUIDES[field].title}</p>
+                      <p className="break-words text-sm font-bold leading-6 text-slate-900">{fantasyOptions[field]}</p>
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-3 text-xs leading-5 text-violet-800">左側任何參數改變後，下方全文都會同步更新；請按「一鍵複製」取得最新版。</p>
+              </div>
+            )}
             <div className="mt-5 rounded-3xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-bold text-violet-700">
                   {PRESETS[presetKey].label}
                 </span>
                 <span className="text-xs font-medium text-slate-500">
-                  右側文字框已放大，方便直接閱讀與複製
+                  全文完整展開，請向下滑動頁面閱讀
                 </span>
               </div>
               <textarea
@@ -1738,9 +1755,9 @@ export default function ImagePromptGenerator() {
                 aria-label="完整 AI 生圖提示詞，可選取複製"
                 readOnly
                 value={resultPrompt}
-                rows={12}
+                rows={22}
                 onFocus={(e) => e.currentTarget.select()}
-                className="min-h-[240px] w-full resize-y rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm leading-7 text-slate-900 outline-none sm:px-4 sm:py-4 sm:text-base sm:leading-7 lg:h-[280px] lg:min-h-[240px]"
+                className="min-h-[540px] w-full resize-none overflow-hidden rounded-2xl border border-slate-200 bg-white px-4 py-4 text-base leading-8 text-slate-900 outline-none"
               />
             </div>
 
