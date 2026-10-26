@@ -311,7 +311,7 @@ export function composeFantasyPrompt(
     ? "以上傳的人像照片為參考，保留人物可辨識的五官、髮型與神韻，僅將人物轉為玩具造型，不保證百分之百還原相貌。"
     : "人物為全新原創角色，不參考或仿造任何真人照片、名人及既有知名角色。";
   const physical = isToy
-    ? "製作成真實可量產的 PVC 塑膠搖頭公仔：頭部誇張巨大、身體極度迷你、脖子有可見金屬彈簧。頭髮是帶粗大雕刻凹槽的厚實模製塑膠，眉眼和笑容具有塗裝感。精細呈現細微合模線、射出成型塑膠紋理、輕微塗裝錯位、細小磨痕與柔和塑膠反光；放在精緻展示底座，以實體玩具商品攝影呈現，而不是 CGI 或電腦 3D 渲染。"
+    ? "製作成真實可量產的 PVC 塑膠搖頭公仔：人物臉部略顯年輕、帶有燦爛友善的笑容，頭部誇張巨大、身體極度迷你、脖子有可見金屬彈簧。頭髮是帶粗大雕刻凹槽的厚實模製塑膠，眉眼和笑容具有塗裝感。精細呈現細微合模線、射出成型塑膠紋理、輕微塗裝錯位、細小磨痕與柔和塑膠反光；放在精緻展示底座，以實體玩具商品攝影呈現，而不是 CGI 或電腦 3D 渲染。"
     : theme.category === "underwaterPrincess"
       ? "畫面位於真正的水下環境，禮服、髮絲與小氣泡順著水流自然漂浮，水面陽光形成真實焦散光線與折射。角色優雅漂浮，不要塑膠玩具材質、彈簧脖子或陸地攝影棚。"
       : theme.category === "flowerFairy"
@@ -319,8 +319,10 @@ export function composeFantasyPrompt(
         : "呈現童話公主故事感、精緻禮服布料與飾品細節、唯美自然光影，人物表情與肢體自然。";
   const outfit = hasReference && options.clothing === "依照片服裝"
     ? "服裝參考上傳照片的服飾輪廓與配色"
-    : "服裝：" + options.clothing;
-  const role = hasReference && options.person === "依照片人物" ? "角色數量與身份依照片" : "人物設定：" + options.person;
+    : "服裝：" + (!hasReference && options.clothing === "依照片服裝" ? "職業套裝" : options.clothing);
+  const role = hasReference && options.person === "依照片人物"
+    ? "角色數量與身份依照片"
+    : "人物設定：" + (!hasReference && options.person === "依照片人物" ? "原創女性" : options.person);
   const variationText = ["主體置中且完整入鏡", "前景細節清楚、背景柔焦", "側面柔光加強材質層次", "較寬的景深與故事感構圖"][variation % 4];
   return [
     "請生成一張高品質的「" + theme.title + "」主題圖片。",
