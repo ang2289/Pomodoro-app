@@ -8372,18 +8372,22 @@ async function handleAdminUpdateDealAffiliate(req: any, res: any, body: any) {
   }
 }
 
-// Google Flow 教學示範：僅保存 YouTube 影片 ID 與文字資料在 R2。
-// 不上傳影片檔、不產生 presigned PUT URL，也不觸碰既有圖片或付費素材。
-const FLOW_YOUTUBE_DEMO_PREFIX = "tools/flow-demos/youtube/";
+// Flow YouTube demo metadata is kept in one R2 JSON object.
+// Crucial: no ListObjectsV2 call. The R2 token may allow GetObject/PutObject but deny bucket listing.
+const FLOW_YOUTUBE_DEMO_MANIFEST = "tools/flow-demos/youtube/index.json";
 const FLOW_DEMO_MAX_ITEMS = 30;
 const FLOW_YOUTUBE_ID_REGEX = /^[A-Za-z0-9_-]{11}$/;
+type FlowDemoEntry = {
+  id: string;
+  youtubeId: string;
+  title: string;
+  description: string;
+  createdAt: string;
+};
 
 function flowDemoR2() {
   const config = getImageR2RuntimeConfig();
-  return {
-    client: getImageCatalogR2Client(),
-    bucket: config.publicBucket,
-  };
+  return { client: getImageCatalogR2Client(), bucket: config.publicBucket };
 }
 
 function flowDemoId(value: any) {
@@ -8409,41 +8413,67 @@ function flowDemoYouTubeId(value: unknown) {
   return FLOW_YOUTUBE_ID_REGEX.test(id) ? id : "";
 }
 
+function flowDemoPublicEntry(item: FlowDemoEntry) {
+  return {
+    id: item.id,
+    youtubeId: item.youtubeId,
+    title: item.title,
+    description: item.description,
+    createdAt: item.createdAt,
+    youtubeUrl: "https://www.youtube.com/watch?v=" + item.youtubeId,
+    embedUrl: "https://www.youtube-nocookie.com/embed/" + item.youtubeId + "?rel=0",
+  };
+}
+
+async function readFlowDemoManifest(client: any, bucket: string): Promise<FlowDemoEntry[]> {
+  try {
+    const object = await client.send(new GetObjectCommand({
+      Bucket: bucket,
+      Key: FLOW_YOUTUBE_DEMO_MANIFEST,
+    }));
+    const raw = await (object.Body as any).transformToString();
+    const parsed = JSON.parse(raw);
+    const source = Array.isArray(parsed?.videos) ? parsed.videos : [];
+    return source
+      .filter((entry: any) => flowDemoId(entry?.id) && FLOW_YOUTUBE_ID_REGEX.test(safeText(entry?.youtubeId)))
+      .map((entry: any) => ({
+        id: flowDemoId(entry.id),
+        youtubeId: safeText(entry.youtubeId),
+        title: safeText(entry.title).slice(0, 100),
+        description: safeText(entry.description).slice(0, 400),
+        createdAt: safeText(entry.createdAt),
+      }))
+      .slice(0, FLOW_DEMO_MAX_ITEMS);
+  } catch (error: any) {
+    const code = safeText(error?.name || error?.Code || error?.code);
+    const status = Number(error?.$metadata?.httpStatusCode || 0);
+    if (code === "NoSuchKey" || code === "NotFound" || status === 404) return [];
+    throw error;
+  }
+}
+
+async function saveFlowDemoManifest(client: any, bucket: string, videos: FlowDemoEntry[]) {
+  await client.send(new PutObjectCommand({
+    Bucket: bucket,
+    Key: FLOW_YOUTUBE_DEMO_MANIFEST,
+    Body: JSON.stringify({ version: 1, videos }),
+    ContentType: "application/json; charset=utf-8",
+    CacheControl: "no-store",
+  }));
+}
+
 async function handleFlowDemoList(req: any, res: any) {
   if (req.method !== "GET") return jsonResponse(res, 405, { ok: false, error: "METHOD_NOT_ALLOWED" });
   try {
     const { client, bucket } = flowDemoR2();
-    const listed = await client.send(new ListObjectsV2Command({
-      Bucket: bucket, Prefix: FLOW_YOUTUBE_DEMO_PREFIX, MaxKeys: 250,
-    }));
-    const keys = (listed.Contents || [])
-      .filter((item) => /^tools\/flow-demos\/youtube\/[0-9a-f-]{36}\.json$/i.test(item.Key || ""))
-      .sort((a, b) => (b.LastModified?.getTime() || 0) - (a.LastModified?.getTime() || 0))
-      .slice(0, FLOW_DEMO_MAX_ITEMS);
-    const videos = (await Promise.all(keys.map(async (item) => {
-      try {
-        const object = await client.send(new GetObjectCommand({ Bucket: bucket, Key: item.Key! }));
-        const raw = await (object.Body as any).transformToString();
-        const data = JSON.parse(raw);
-        const id = flowDemoId(data.id);
-        const youtubeId = safeText(data.youtubeId);
-        if (!id || item.Key !== FLOW_YOUTUBE_DEMO_PREFIX + id + ".json" || !FLOW_YOUTUBE_ID_REGEX.test(youtubeId)) return null;
-        return {
-          id,
-          youtubeId,
-          title: safeText(data.title).slice(0, 100),
-          description: safeText(data.description).slice(0, 400),
-          createdAt: safeText(data.createdAt),
-          youtubeUrl: "https://www.youtube.com/watch?v=" + youtubeId,
-          embedUrl: "https://www.youtube-nocookie.com/embed/" + youtubeId + "?rel=0",
-        };
-      } catch { return null; }
-    }))).filter(Boolean);
+    const videos = await readFlowDemoManifest(client, bucket);
     res.setHeader("Cache-Control", "public, max-age=30");
-    return jsonResponse(res, 200, { ok: true, videos });
+    return jsonResponse(res, 200, { ok: true, videos: videos.map(flowDemoPublicEntry) });
   } catch (error: any) {
-    console.error("FLOW_YOUTUBE_DEMO_LIST_FAILED", safeText(error?.message));
-    return jsonResponse(res, 503, { ok: false, error: "示範影片清單暫時無法載入。" });
+    const code = safeText(error?.name || error?.Code || error?.code);
+    const status = Number(error?.$metadata?.httpStatusCode || 0);
+    console.error("FLOW_YOUTUBE_MANIFEST_READ_FAILED", { code, status });
+    return jsonResponse(res, 503, { ok: false, error: "示範影片清單暫時無法載入，請檢查 Cloudflare R2 影片清單資料的讀取權限。" });
   }
 }
 
@@ -8454,41 +8484,27 @@ async function handleFlowDemoAdd(req: any, res: any, body: any) {
     const youtubeId = flowDemoYouTubeId(body?.youtubeUrl);
     const title = safeText(body?.title).slice(0, 100);
     const description = safeText(body?.description).slice(0, 400);
-    if (!youtubeId) return jsonResponse(res, 400, { ok: false, error: "請貼上正確的 YouTube 影片、Shorts 或分享網址（須為 HTTPS）。" });
-    if (!title) return jsonResponse(res, 400, { ok: false, error: "請輸入示範影片名稱。" });
+    if (!youtubeId) return jsonResponse(res, 400, { ok: false, error: "請貼上有效的 YouTube 影片或 Shorts 網址。" });
+    if (!title) return jsonResponse(res, 400, { ok: false, error: "請輸入影片名稱。" });
     const { client, bucket } = flowDemoR2();
-    const listed = await client.send(new ListObjectsV2Command({
-      Bucket: bucket, Prefix: FLOW_YOUTUBE_DEMO_PREFIX, MaxKeys: 250,
-    }));
-    const keys = (listed.Contents || []).filter((item) =>
-      /^tools\/flow-demos\/youtube\/[0-9a-f-]{36}\.json$/i.test(item.Key || "")
-    );
-    if (keys.length >= FLOW_DEMO_MAX_ITEMS) {
-      return jsonResponse(res, 400, { ok: false, error: "示範區最多保留 30 個 YouTube 影片連結，請先刪除舊項目。" });
+    const videos = await readFlowDemoManifest(client, bucket);
+    if (videos.length >= FLOW_DEMO_MAX_ITEMS) {
+      return jsonResponse(res, 400, { ok: false, error: "示範區最多保留 30 個影片，請先移除其他展示。" });
     }
-    // 既有資料不可重複使用同一支 YouTube 影片。
-    const matches = await Promise.all(keys.map(async (item) => {
-      try {
-        const object = await client.send(new GetObjectCommand({ Bucket: bucket, Key: item.Key! }));
-        const data = JSON.parse(await (object.Body as any).transformToString());
-        return safeText(data?.youtubeId) === youtubeId;
-      } catch { return false; }
-    }));
-    if (matches.some(Boolean)) return jsonResponse(res, 409, { ok: false, error: "這支 YouTube 影片已經加入示範區。" });
-    const id = crypto.randomUUID();
-    const record = { id, youtubeId, title, description, createdAt: new Date().toISOString() };
-    await client.send(new PutObjectCommand({
-      Bucket: bucket,
-      Key: FLOW_YOUTUBE_DEMO_PREFIX + id + ".json",
-      Body: JSON.stringify(record),
-      ContentType: "application/json; charset=utf-8",
-      CacheControl: "no-store",
-    }));
-    return jsonResponse(res, 200, { ok: true, id, youtubeId });
+    if (videos.some((entry) => entry.youtubeId === youtubeId)) {
+      return jsonResponse(res, 409, { ok: false, error: "這支 YouTube 影片已加入示範區。" });
+    }
+    const record: FlowDemoEntry = {
+      id: crypto.randomUUID(), youtubeId, title, description, createdAt: new Date().toISOString(),
+    };
+    await saveFlowDemoManifest(client, bucket, [record, ...videos]);
+    res.setHeader("Cache-Control", "no-store");
+    return jsonResponse(res, 200, { ok: true, id: record.id, youtubeId });
   } catch (error: any) {
     const status = Number(error?.statusCode || 500);
-    console.error("FLOW_YOUTUBE_DEMO_ADD_FAILED", status);
-    return jsonResponse(res, status, { ok: false, error: status === 401 || status === 403 ? "管理金鑰錯誤或未提供。" : "新增 YouTube 示範影片失敗。" });
+    const code = safeText(error?.name || error?.Code || error?.code);
+    console.error("FLOW_YOUTUBE_MANIFEST_ADD_FAILED", { code, status });
+    return jsonResponse(res, status, { ok: false, error: status === 401 || status === 403 ? "管理金鑰錯誤或未提供。" : "影片新增失敗；請檢查 R2 資料讀寫權限。" });
   }
 }
 
@@ -8499,12 +8515,15 @@ async function handleFlowDemoDelete(req: any, res: any, body: any) {
     const id = flowDemoId(body?.id);
     if (!id) return jsonResponse(res, 400, { ok: false, error: "INVALID_DEMO_ID" });
     const { client, bucket } = flowDemoR2();
-    // 只刪除本站的 YouTube 影片清單資料，不刪 YouTube 原始影片，也不影響舊 R2 MP4。
-    await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: FLOW_YOUTUBE_DEMO_PREFIX + id + ".json" }));
+    const videos = await readFlowDemoManifest(client, bucket);
+    await saveFlowDemoManifest(client, bucket, videos.filter((entry) => entry.id !== id));
+    res.setHeader("Cache-Control", "no-store");
     return jsonResponse(res, 200, { ok: true });
   } catch (error: any) {
     const status = Number(error?.statusCode || 500);
-    return jsonResponse(res, status, { ok: false, error: status === 401 || status === 403 ? "管理金鑰錯誤或未提供。" : "移除 YouTube 示範項目失敗。" });
+    const code = safeText(error?.name || error?.Code || error?.code);
+    console.error("FLOW_YOUTUBE_MANIFEST_DELETE_FAILED", { code, status });
+    return jsonResponse(res, status, { ok: false, error: status === 401 || status === 403 ? "管理金鑰錯誤或未提供。" : "移除示範影片失敗；請檢查 R2 資料讀寫權限。" });
   }
 }
 
