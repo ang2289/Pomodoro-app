@@ -1,3 +1,4 @@
+import { SHOW_AFFILIATE_ADS } from "@/config/affiliateAdVisibility";
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -1987,6 +1988,7 @@ const HomePage: React.FC = () => {
               </div>
             </div>
 
+            {SHOW_AFFILIATE_ADS && (
             <div className="mb-6 p-5 bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl border border-blue-200">
               <h4 className="text-lg font-bold text-gray-900 mb-2">
                 🎨 貼圖創作者推薦工具
@@ -2017,6 +2019,8 @@ const HomePage: React.FC = () => {
                 </a>
               </div>
             </div>
+
+            )}
 
             <HomeShareButtons compact />
 
