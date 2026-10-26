@@ -1151,7 +1151,7 @@ export default function ImagePromptGenerator() {
     <>
       <SEO
         title="免費 AI 生圖提示詞｜夢幻公主、水下花仙子、PVC 搖頭公仔、ChatGPT 生圖"
-        description="免費 AI 生圖提示詞、ChatGPT 生圖提示詞、夢幻公主 AI 圖片、水下夢幻公主、真人照片變 Q 版公仔、PVC 搖頭公仔提示詞與免費圖片下載。原有主題全部保留。"
+        description="免費 AI 生圖提示詞、ChatGPT 生圖提示詞、夢幻公主、水下夢幻公主、花仙子迷你分身、紫藤水晶泡泡仙境、真人照片變 Q 版公仔、PVC 搖頭公仔提示詞與免費圖片下載。"
         canonical="/tools/image-prompt"
       />
 
@@ -1317,10 +1317,10 @@ export default function ImagePromptGenerator() {
               </p>
             </label>
 
-            {/* 新增五大系列：獨立分類搜尋與主題專屬參數；原有下拉選單與設定維持不變。 */}
+            {/* 新增夢幻系列：獨立分類搜尋與主題專屬參數；原有下拉選單與設定維持不變。 */}
             <div className="mt-5 rounded-2xl border border-fuchsia-200 bg-gradient-to-br from-fuchsia-50 via-white to-sky-50 p-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <h3 className="text-lg font-black text-fuchsia-950">① 新增夢幻系列｜40 組提示詞</h3>
+                <h3 className="text-lg font-black text-fuchsia-950">① 新增夢幻系列｜{FANTASY_THEMES.length} 組提示詞</h3>
                 <span className="text-xs font-semibold text-violet-700">原有古風女神與 100 組風格都保留</span>
               </div>
               <div role="tablist" aria-label="夢幻主題分類" className="mt-3 flex flex-wrap gap-2">
@@ -1335,7 +1335,7 @@ export default function ImagePromptGenerator() {
                 <button type="button" role="tab" aria-selected={fantasyTab === "all"}
                   onClick={() => setFantasyTab("all")}
                   className={`rounded-xl border px-3 py-2 text-sm font-bold ${fantasyTab === "all" ? "border-violet-600 bg-violet-600 text-white" : "border-violet-200 bg-white text-violet-800"}`}>
-                  全部 40 組
+                  全部 {FANTASY_THEMES.length} 組
                 </button>
               </div>
               <input aria-label="搜尋夢幻提示詞範例" value={fantasySearch}
@@ -1362,6 +1362,7 @@ export default function ImagePromptGenerator() {
                 <h3 className="text-lg font-black text-slate-900">② 專屬參數｜{fantasyTheme.categoryLabel}</h3>
                 <p className="mt-1 text-sm leading-6 text-slate-700">
                   各主題只列出適用的服裝、材質、姿勢與背景，無需會寫提示詞。
+                  {fantasyTheme.category === "miniFairyWorld" && " 迷你分身會保留大主角的相同臉型、髮色、服裝與配件，各自做出不同動作，並產生近大遠小的夢幻構圖。"} 
                 </p>
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                   {([
