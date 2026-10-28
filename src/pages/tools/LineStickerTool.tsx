@@ -2476,25 +2476,29 @@ export default function LineStickerTool() {
         <main className="min-h-screen bg-slate-50 px-4 py-8">
           <div className="mx-auto max-w-4xl">
             <h1 className="text-2xl font-black text-slate-900">第一次做 LINE／WhatsApp 貼圖？從第 1 步開始</h1>
-            <Link to="/tools/line-sticker-start" className="mt-3 inline-flex min-h-11 items-center rounded-xl border border-violet-200 bg-white px-4 py-2 text-sm font-bold text-violet-800 hover:bg-violet-50">先看九組成果與五步驟教學 →</Link>
-            <p className="mt-3 text-sm leading-7 text-slate-700">沒有圖片也沒關係，按順序選主題及文字 → 複製指令給 ChatGPT → 下載整張大圖 → 回 RXV 上傳切割。整個流程由上往下操作。</p>
-            <LineStickerFlowSteps activeStep={1} />
+            <p className="mt-3 text-base text-slate-700">選擇目前的情況，跟著按鈕操作即可；詳細說明需要時再打開。</p>
             <section className="rounded-2xl border border-sky-200 bg-sky-50 p-5" aria-label="選擇貼圖製作起點">
               <h2 className="text-lg font-black text-sky-900">下一步請先選一個按鈕</h2>
               <p className="mt-2 text-sm leading-7 text-slate-700">沒有母圖，請按第一個按鈕開始設定；若已經有完整母圖，才按第二個按鈕直接上傳。</p>
               <div className="mt-3 flex flex-wrap items-center gap-3">
                 <Link to="/tools/sticker-prompt#sticker-start"
                   className="inline-flex min-h-12 w-fit max-w-full items-center justify-center rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-black !text-white hover:bg-violet-700">
-                  第 1 步｜我還沒有母圖，從零開始 →
+                  開始製作貼圖
                 </Link>
                 <Link to="/tools/line-sticker?existing=1#mother-upload"
                   className="inline-flex min-h-12 w-fit max-w-full items-center justify-center rounded-xl border border-emerald-300 bg-white px-4 py-2.5 text-sm font-black text-emerald-800 hover:bg-emerald-50">
-                  我已有母圖｜直接進入第 3 步 →
+                  我已有母圖｜直接上傳
                 </Link>
               </div>
             </section>
-            <StickerExcelOffers compact />
-            <div className="mt-6"><StickerCustomPricing compact /></div>
+            <details className="mt-5 rounded-2xl border border-blue-200 bg-white p-4">
+              <summary className="cursor-pointer text-sm font-black text-blue-800">？什麼是母圖？查看圖片範例與五步驟</summary>
+              <div className="mt-4"><LineStickerFlowSteps activeStep={1} /><Link to="/tools/line-sticker-start" className="inline-flex min-h-11 items-center rounded-xl bg-blue-50 px-4 py-2 font-bold text-blue-800">查看完整教學 →</Link></div>
+            </details>
+            <details className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
+              <summary className="cursor-pointer text-sm font-bold text-slate-700">更多免費素材與客製服務（選用）</summary>
+              <div className="mt-4"><StickerExcelOffers compact /><StickerCustomPricing compact /></div>
+            </details>
           </div>
         </main>
       </>
@@ -2566,13 +2570,15 @@ export default function LineStickerTool() {
             </select>
             <p role="status" aria-live="polite" className="mt-3 rounded-xl border border-sky-200 bg-white p-3 text-sm font-bold leading-6 text-sky-900">{actionHint}</p>
           </section>
-          <section className="mb-5 rounded-2xl border border-indigo-100 bg-white p-4 shadow-sm">
-            <h2 className="text-sm font-black text-slate-900">一般客戶照著做就可以：5 個步驟</h2>
+          <details className="mb-5 rounded-2xl border border-indigo-100 bg-white shadow-sm">
+            <summary className="cursor-pointer p-4 text-sm font-black text-blue-800">？查看五步驟與注意事項</summary>
+            <div className="border-t border-indigo-100 p-4">
             <p className="mt-2 text-sm leading-6 text-slate-700">① 選貼圖種類與張數 → ② 複製指令到 ChatGPT 或 Google Gemini 產生完整大圖 → ③ 回本站上傳大圖 → ④ 預覽自動切割、去背結果 → ⑤ 下載 ZIP；動態貼圖再進入動畫流程。</p>
             <p className="mt-2 text-xs leading-5 text-slate-500">裁切、去白底與尺寸整理都由本站處理；若去背不理想，再選擇外部進階工具。完成 ZIP 不代表 LINE 必定審核通過。</p>
             <Link to="/tools/line-sticker-guide" className="mt-3 inline-flex items-center rounded-lg bg-indigo-50 px-3 py-2 text-xs font-black text-indigo-700 hover:bg-indigo-100">查看完整圖文教學</Link>
             {exportCheckResult ? <p role="status" className="mt-3 rounded-xl bg-emerald-50 p-3 text-sm font-bold leading-6 text-emerald-800">{exportCheckResult}</p> : null}
-          </section>
+            </div>
+          </details>
 
           {saleTextRisks.length > 0 ? (
             <section className="mb-5 rounded-2xl border border-amber-300 bg-amber-50 p-4">
