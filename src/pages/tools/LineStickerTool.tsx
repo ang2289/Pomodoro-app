@@ -2487,7 +2487,7 @@ export default function LineStickerTool() {
             <p className="mt-3 text-base text-slate-700">選擇目前的情況，跟著按鈕操作即可；詳細說明需要時再打開。</p>
             <section className="rounded-2xl border border-sky-200 bg-sky-50 p-5" aria-label="選擇貼圖製作起點">
               <h2 className="text-lg font-black text-sky-900">下一步請先選一個按鈕</h2>
-              <p className="mt-2 text-sm leading-7 text-slate-700">沒有母圖，請按第一個按鈕開始設定；若已經有完整母圖，才按第二個按鈕直接上傳。</p>
+              <p className="mt-2 text-sm leading-7 text-slate-700">還沒有母圖就按「開始製作」；已有母圖先選平台、類型和張數，再上傳切圖。</p>
               <div className="mt-3 flex flex-wrap items-center gap-3">
                 <Link to="/tools/sticker-prompt#sticker-start"
                   className="inline-flex min-h-12 w-fit max-w-full items-center justify-center rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-black !text-white hover:bg-violet-700">
@@ -2495,7 +2495,7 @@ export default function LineStickerTool() {
                 </Link>
                 <Link to="/tools/line-sticker?existing=1#mother-upload"
                   className="inline-flex min-h-12 w-fit max-w-full items-center justify-center rounded-xl border border-emerald-300 bg-white px-4 py-2.5 text-sm font-black text-emerald-800 hover:bg-emerald-50">
-                  我已有母圖｜直接上傳
+                  我已有母圖｜先選規格再上傳
                 </Link>
               </div>
             </section>
@@ -2819,9 +2819,10 @@ export default function LineStickerTool() {
                   <h2 className="mt-1 text-base font-black text-slate-900">
                     第 3 步｜上傳整張大圖（不用先切割）
                   </h2>
-                  <p className="mt-1 text-xs leading-relaxed text-slate-500">
-                    先辨識 4×2／4×4／4×5 與格數，再安全切割。去背預設保護白色衣服、白色文字描邊及淺色道具；處理後可切換深色背景逐張檢查。若原圖本來已有透明背景，不會重覆去白。
-                  </p>
+                  <details className="mt-2 text-xs text-slate-600">
+                      <summary className="cursor-pointer font-bold text-blue-800">？格數辨識與去背說明</summary>
+                      <p className="mt-2 leading-6">先辨識 4×2／4×4／4×5 與格數，再安全切割。去背預設保護白色衣服、白色文字描邊及淺色道具；處理後可切換深色背景逐張檢查。若原圖本來已有透明背景，不會重覆去白。</p>
+                    </details>
                 </div>
                 <div className="min-w-0 grid gap-2 sm:grid-cols-2">
                   <div className="sm:col-span-2">
