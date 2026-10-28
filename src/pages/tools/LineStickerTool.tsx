@@ -2525,6 +2525,9 @@ export default function LineStickerTool() {
 
       <div className="min-h-screen bg-slate-50 px-4 py-8 pb-12">
         <div className="mx-auto max-w-[1480px]">
+          <details className="mb-5 rounded-xl border border-slate-200 bg-white px-4 py-3">
+            <summary className="cursor-pointer text-sm font-bold text-blue-800">？查看完整五步驟流程</summary>
+            <div className="mt-4">
           <LineStickerFlowSteps
             activeStep={
               isFirstVisit ? 1
@@ -2536,21 +2539,23 @@ export default function LineStickerTool() {
             }
             mode={selectedStickerMode}
           />
+            </div>
+          </details>
 
-          <nav aria-label="貼圖製作階段" className="mb-5 rounded-2xl border border-blue-200 bg-white p-3 shadow-sm">
+          <nav aria-label="本頁操作區" className="mb-5 rounded-2xl border border-blue-200 bg-white p-3 shadow-sm">
             <div className="grid grid-cols-4 gap-2">
               {([
                 ["setup", "設定"], ["upload", "上傳"], ["review", "預覽"], ["download", "下載"],
-              ] as const).map(([view, title], index) => (
+              ] as const).map(([view, title]) => (
                 <button key={view} type="button" aria-current={wizardView === view ? "step" : undefined}
                   disabled={view === "download" ? !canDownload : view === "review" ? files.length === 0 : false}
                   onClick={() => goToWizardView(view)}
                   className={`min-h-12 rounded-xl px-1 py-2 text-sm font-black ${wizardView === view ? "bg-blue-600 text-white" : "bg-blue-50 text-blue-900 hover:bg-blue-100"} disabled:cursor-not-allowed disabled:opacity-40`}>
-                  {index + 1}. {title}
+                  {title}
                 </button>
               ))}
             </div>
-            <p className="mt-2 text-center text-xs font-semibold text-slate-600">每次只做一個步驟；返回修改不會清空已上傳的貼圖。</p>
+            <p className="mt-2 text-center text-xs font-semibold text-slate-600">依序完成設定、上傳、預覽、下載；返回修改不會清空已上傳的貼圖。</p>
           </nav>
           <header className="mb-6">
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">
@@ -3585,6 +3590,9 @@ export default function LineStickerTool() {
             </div>
           ) : null}
 
+          <details className="mt-8 rounded-2xl border border-slate-200 bg-white p-4">
+            <summary className="cursor-pointer text-sm font-black text-blue-800">？延伸教學、常見問題與其他創作工具（選用）</summary>
+            <div className="mt-4">
           {/* --- 修改開始：PhotoRoom 聯盟導流卡片 --- */}
           <section className="mt-10 mb-20 border-t border-slate-100 pt-10">
             <div className="flex flex-wrap items-center gap-2 mb-3">
@@ -3926,6 +3934,8 @@ export default function LineStickerTool() {
               </Link>
             </div>
           </section>
+            </div>
+          </details>
         </div>
 
 
