@@ -1661,6 +1661,12 @@ export default function LineStickerTool() {
   const [motherSheetDetectionStatus, setMotherSheetDetectionStatus] =
     useState<"idle" | "ready" | "invalid" | "cutting">("idle");
   const [loading, setLoading] = useState(false);
+  // 分階段顯示，不卸載原有切圖狀態，也不清空上傳內容。
+  const [wizardView, setWizardView] = useState<"setup" | "upload" | "review" | "download">("setup");
+  const goToWizardView = (view: "setup" | "upload" | "review" | "download") => {
+    setWizardView(view);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
   const [error, setError] = useState<string | null>(null);
   const [exportCheckResult, setExportCheckResult] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -2037,7 +2043,9 @@ export default function LineStickerTool() {
           : `安全切割完成：${fitInfo} 請逐張預覽後再打包。`,
       );
       setMotherSheetDetectionStatus("ready");
-      setActionHint("下一步（第 5 步）：逐張檢查預覽、選好主圖，再按最後一步產生 ZIP；動態則接續製作動畫。");
+      setActionHint("切圖完成！請逐張檢查預覽，確認後再下載 ZIP。");
+      setWizardView("review");
+      window.scrollTo({ top: 0, behavior: "smooth" });
       if (flowProject) updateLineStickerProject({ stage: 4 });
     } catch (cause) {
       setMotherSheetDetectionStatus("invalid");
@@ -2529,67 +2537,29 @@ export default function LineStickerTool() {
             mode={selectedStickerMode}
           />
 
-          <header className="mb-6">
-            <div className="mb-3 inline-flex rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-black text-sky-700">上架檢查強化版 · 2026.10.10</div>
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-              第 3～4 步｜上傳母圖，自動整理貼圖
-            </h1>
-            <p className="text-slate-500 text-sm mt-1">
-              將 ChatGPT 或 Google Gemini 畫出的「一整張母圖」存到手機或電腦，直接上傳這裡；不用自己切成 8 或 16 張，RXV 會自動切割、去背並整理。已有單張貼圖也可以直接上傳。
-            </p>
-            <p className="text-slate-500 text-sm mt-2">
-              {t("line_sticker_hero_desc")}
-            </p>
-          </header>
-
-          <section aria-label="設定貼圖類型與張數" className="mb-5 rounded-2xl border-2 border-violet-200 bg-violet-50 p-4 shadow-sm">
-            <h2 className="text-base font-black text-violet-900">第 3 步開始也能選｜這次要做靜態或動態？</h2>
-            <p className="mt-1 text-sm leading-6 text-slate-700">已有母圖可以直接開始，不需要回第 1 步。選動態時先上傳靜止母圖，後面再產生真正會動的貼圖。</p>
-            <div className="mt-3 grid max-w-xl grid-cols-2 gap-2" role="group" aria-label="貼圖種類">
-              {(["static", "animated"] as LineStickerMode[]).map(mode => (
-                <button key={mode} type="button" aria-pressed={selectedStickerMode === mode} onClick={() => changeStickerMode(mode)}
-                  className={`min-h-12 rounded-xl border-2 px-2 py-3 text-sm font-black ${selectedStickerMode === mode ? "border-violet-600 bg-violet-600 text-white" : "border-violet-300 bg-white text-violet-900"}`}>
-                  {selectedStickerMode === mode ? "✓ " : ""}{mode === "static" ? "靜態貼圖｜PNG" : "動態貼圖｜APNG"}
+          <nav aria-label="貼圖製作階段" className="mb-5 rounded-2xl border border-blue-200 bg-white p-3 shadow-sm">
+            <div className="grid grid-cols-4 gap-2">
+              {([
+                ["setup", "設定"], ["upload", "上傳"], ["review", "預覽"], ["download", "下載"],
+              ] as const).map(([view, title], index) => (
+                <button key={view} type="button" aria-current={wizardView === view ? "step" : undefined}
+                  disabled={view === "download" ? !canDownload : view === "review" ? files.length === 0 : false}
+                  onClick={() => goToWizardView(view)}
+                  className={`min-h-12 rounded-xl px-1 py-2 text-sm font-black ${wizardView === view ? "bg-blue-600 text-white" : "bg-blue-50 text-blue-900 hover:bg-blue-100"} disabled:cursor-not-allowed disabled:opacity-40`}>
+                  {index + 1}. {title}
                 </button>
               ))}
             </div>
-            <label htmlFor="step3-count" className="mt-4 block text-sm font-black text-slate-800">張數</label>
-            <select id="step3-count" value={stickerCount} onChange={event => {
-              const count = Number(event.target.value) as 8 | 16 | 24 | 32 | 40;
-              setStickerCount(count);
-              if (flowProject) {
-                const next = updateLineStickerProject({ count, stage: 3 });
-                if (next) setFlowProject(next);
-              }
-              setMotherSheetDetections([]);
-              setMotherSheetDetectionStatus("idle");
-              setDownloadCompleted(false);
-              setActionHint(`已選 ${count} 張。下一步：按紫色上傳按鈕選擇整張母圖並辨識格數。`);
-            }} className="mt-2 min-h-11 w-56 rounded-lg border border-violet-200 bg-white px-3 py-2 text-sm font-bold">
-              {getAllowedCounts(selectedStickerMode).map(count => <option key={count} value={count}>{count} 張</option>)}
-            </select>
-            <p role="status" aria-live="polite" className="mt-3 rounded-xl border border-sky-200 bg-white p-3 text-sm font-bold leading-6 text-sky-900">{actionHint}</p>
-          </section>
-          <details className="mb-5 rounded-2xl border border-indigo-100 bg-white shadow-sm">
-            <summary className="cursor-pointer p-4 text-sm font-black text-blue-800">？查看五步驟與注意事項</summary>
-            <div className="border-t border-indigo-100 p-4">
-            <p className="mt-2 text-sm leading-6 text-slate-700">① 選貼圖種類與張數 → ② 複製指令到 ChatGPT 或 Google Gemini 產生完整大圖 → ③ 回本站上傳大圖 → ④ 預覽自動切割、去背結果 → ⑤ 下載 ZIP；動態貼圖再進入動畫流程。</p>
-            <p className="mt-2 text-xs leading-5 text-slate-500">裁切、去白底與尺寸整理都由本站處理；若去背不理想，再選擇外部進階工具。完成 ZIP 不代表 LINE 必定審核通過。</p>
-            <Link to="/tools/line-sticker-guide" className="mt-3 inline-flex items-center rounded-lg bg-indigo-50 px-3 py-2 text-xs font-black text-indigo-700 hover:bg-indigo-100">查看完整圖文教學</Link>
-            {exportCheckResult ? <p role="status" className="mt-3 rounded-xl bg-emerald-50 p-3 text-sm font-bold leading-6 text-emerald-800">{exportCheckResult}</p> : null}
-            </div>
-          </details>
+            <p className="mt-2 text-center text-xs font-semibold text-slate-600">每次只做一個步驟；返回修改不會清空已上傳的貼圖。</p>
+          </nav>
+          <header className="mb-6">
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+              {wizardView === "setup" ? "先選好貼圖設定" : wizardView === "upload" ? "上傳母圖，開始切圖" : wizardView === "review" ? "檢查貼圖預覽" : "最後一步：下載 ZIP"}
+            </h1>
+            <p className="mt-2 text-sm font-semibold text-slate-600">{wizardView === "setup" ? "選擇平台、靜態或動態與張數。" : wizardView === "upload" ? "選取整張母圖，確認格數後切圖。" : wizardView === "review" ? "檢查每張貼圖、文字與安全留白。" : "確認內容，下載 ZIP 後再送審。"}</p>
+          </header>
 
-          {saleTextRisks.length > 0 ? (
-            <section className="mb-5 rounded-2xl border border-amber-300 bg-amber-50 p-4">
-              <p className="text-sm font-black text-amber-900">LINE 公開販售提醒：前一步貼圖文字有 {saleTextRisks.length} 句可能屬於促銷或導流。</p>
-              <p className="mt-1 text-xs leading-6 text-amber-800">
-                {saleTextRisks.slice(0, 6).map((risk) => `${risk.text} → ${risk.replacement}`).join("；")}。
-                若圖片已畫出這些字，修改文字清單不會自動改變圖片，請先重新產圖；否則仍可能被 LINE 退件。
-              </p>
-            </section>
-          ) : null}
-
+          <div className={wizardView === "setup" ? "" : "hidden"}>
           <section className="mb-5 rounded-2xl border border-sky-200 bg-white p-4 shadow-sm">
             <h2 className="text-sm font-black text-slate-900">輸出平台｜同一張母圖可製作 LINE 或 WhatsApp 貼圖</h2>
             <div className="mt-3 flex flex-wrap items-center gap-2" role="group" aria-label="選擇貼圖輸出平台">
@@ -2644,7 +2614,58 @@ export default function LineStickerTool() {
 
           </section>
 
-          {downloadCompleted && selectedStickerMode !== "animated" ? (
+          <section aria-label="設定貼圖類型與張數" className="mb-5 rounded-2xl border-2 border-violet-200 bg-violet-50 p-4 shadow-sm">
+            <h2 className="text-base font-black text-violet-900">第 3 步開始也能選｜這次要做靜態或動態？</h2>
+            <p className="mt-1 text-sm leading-6 text-slate-700">已有母圖可以直接開始，不需要回第 1 步。選動態時先上傳靜止母圖，後面再產生真正會動的貼圖。</p>
+            <div className="mt-3 grid max-w-xl grid-cols-2 gap-2" role="group" aria-label="貼圖種類">
+              {(["static", "animated"] as LineStickerMode[]).map(mode => (
+                <button key={mode} type="button" aria-pressed={selectedStickerMode === mode} onClick={() => changeStickerMode(mode)}
+                  className={`min-h-12 rounded-xl border-2 px-2 py-3 text-sm font-black ${selectedStickerMode === mode ? "border-violet-600 bg-violet-600 text-white" : "border-violet-300 bg-white text-violet-900"}`}>
+                  {selectedStickerMode === mode ? "✓ " : ""}{mode === "static" ? "靜態貼圖｜PNG" : "動態貼圖｜APNG"}
+                </button>
+              ))}
+            </div>
+            <label htmlFor="step3-count" className="mt-4 block text-sm font-black text-slate-800">張數</label>
+            <select id="step3-count" value={stickerCount} onChange={event => {
+              const count = Number(event.target.value) as 8 | 16 | 24 | 32 | 40;
+              setStickerCount(count);
+              if (flowProject) {
+                const next = updateLineStickerProject({ count, stage: 3 });
+                if (next) setFlowProject(next);
+              }
+              setMotherSheetDetections([]);
+              setMotherSheetDetectionStatus("idle");
+              setDownloadCompleted(false);
+              setActionHint(`已選 ${count} 張。下一步：按紫色上傳按鈕選擇整張母圖並辨識格數。`);
+            }} className="mt-2 min-h-11 w-56 rounded-lg border border-violet-200 bg-white px-3 py-2 text-sm font-bold">
+              {getAllowedCounts(selectedStickerMode).map(count => <option key={count} value={count}>{count} 張</option>)}
+            </select>
+            <p role="status" aria-live="polite" className="mt-3 rounded-xl border border-sky-200 bg-white p-3 text-sm font-bold leading-6 text-sky-900">{actionHint}</p>
+          </section>
+          <details className="mb-5 rounded-2xl border border-indigo-100 bg-white shadow-sm">
+            <summary className="cursor-pointer p-4 text-sm font-black text-blue-800">？查看五步驟與注意事項</summary>
+            <div className="border-t border-indigo-100 p-4">
+            <p className="mt-2 text-sm leading-6 text-slate-700">① 選貼圖種類與張數 → ② 複製指令到 ChatGPT 或 Google Gemini 產生完整大圖 → ③ 回本站上傳大圖 → ④ 預覽自動切割、去背結果 → ⑤ 下載 ZIP；動態貼圖再進入動畫流程。</p>
+            <p className="mt-2 text-xs leading-5 text-slate-500">裁切、去白底與尺寸整理都由本站處理；若去背不理想，再選擇外部進階工具。完成 ZIP 不代表 LINE 必定審核通過。</p>
+            <Link to="/tools/line-sticker-guide" className="mt-3 inline-flex items-center rounded-lg bg-indigo-50 px-3 py-2 text-xs font-black text-indigo-700 hover:bg-indigo-100">查看完整圖文教學</Link>
+            {exportCheckResult ? <p role="status" className="mt-3 rounded-xl bg-emerald-50 p-3 text-sm font-bold leading-6 text-emerald-800">{exportCheckResult}</p> : null}
+            </div>
+          </details>
+
+          {saleTextRisks.length > 0 ? (
+            <section className="mb-5 rounded-2xl border border-amber-300 bg-amber-50 p-4">
+              <p className="text-sm font-black text-amber-900">LINE 公開販售提醒：前一步貼圖文字有 {saleTextRisks.length} 句可能屬於促銷或導流。</p>
+              <p className="mt-1 text-xs leading-6 text-amber-800">
+                {saleTextRisks.slice(0, 6).map((risk) => `${risk.text} → ${risk.replacement}`).join("；")}。
+                若圖片已畫出這些字，修改文字清單不會自動改變圖片，請先重新產圖；否則仍可能被 LINE 退件。
+              </p>
+            </section>
+          ) : null}
+
+          <button type="button" onClick={() => goToWizardView("upload")}
+            className="mb-6 flex min-h-14 w-full items-center justify-center rounded-2xl bg-blue-600 px-5 py-3 text-base font-black text-white hover:bg-blue-700">下一步：上傳母圖 →</button>
+          </div>
+          {downloadCompleted && selectedStickerMode !== "animated" && wizardView === "download" ? (
             <section className="mb-6 rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-blue-50 p-5 shadow-sm">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-600 text-sm font-black text-white">
@@ -2689,11 +2710,12 @@ export default function LineStickerTool() {
             </section>
           ) : null}
 
-          {downloadCompleted && selectedStickerMode === "animated" ? (
+          {downloadCompleted && selectedStickerMode === "animated" && wizardView === "download" ? (
             <p role="status" className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-bold leading-7 text-emerald-900">
               已另存靜態 PNG ZIP：這一份可獨立上架為 LINE 靜態貼圖，不只是動態備份。下一步：繼續按紫色「製作 LINE 動態貼圖」，另做 APNG ZIP。
             </p>
           ) : null}
+          <div className={wizardView === "upload" ? "" : "hidden"}>
           {flowProject ? (
             <section className="mb-6 rounded-3xl border border-blue-200 bg-blue-50 p-5">
               <p className="text-xs font-black text-blue-600">已接續第 1～2 步</p>
@@ -3173,6 +3195,9 @@ export default function LineStickerTool() {
               </button>
             </section>
 
+            <details className="rounded-2xl border border-slate-200 bg-white p-4">
+              <summary className="cursor-pointer text-sm font-black text-blue-800">進階設定：張數與裁切模式（一般不用修改）</summary>
+              <div className="mt-4">
             <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-white p-5 rounded-2xl border border-slate-200">
                 <p className="text-[11px] font-black text-slate-400 uppercase mb-3">
@@ -3233,10 +3258,17 @@ export default function LineStickerTool() {
                 </p>
               </div>
             </section>
+              </div>
+            </details>
+          </div>
+          {files.length >= stickerCount ? (
+            <button type="button" onClick={() => goToWizardView("review")}
+              className="mb-6 flex min-h-14 w-full items-center justify-center rounded-2xl bg-blue-600 px-5 py-3 text-base font-black text-white hover:bg-blue-700">下一步：預覽與品質檢查 →</button>
+          ) : null}
           </div>
 
           {files.length > 0 && (
-            <section className="mb-8 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+            <section className={`mb-8 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm ${wizardView === "review" ? "" : "hidden"}`}>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -3345,7 +3377,8 @@ export default function LineStickerTool() {
           )}
 
           {files.length > 0 && (
-            <section className="mb-10" aria-label="貼圖批次及個別尺寸調整">
+            <section className={wizardView === "review" || wizardView === "download" ? "mb-10" : "hidden"} aria-label="貼圖批次及個別尺寸調整">
+              <div className={wizardView === "review" ? "" : "hidden"}>
               <div className="mb-4 rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50 via-white to-rose-50 p-4 sm:p-5">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <h3 className="text-base font-black text-violet-900">全部貼圖批次縮放</h3>
@@ -3445,7 +3478,16 @@ export default function LineStickerTool() {
                 </div>
                 <p className="mt-2 text-xs text-slate-500">重新設定人物不會直接改變已上傳的圖片，需重新到 ChatGPT 生圖並上傳。</p>
               </div>
+              <div className="mt-6 flex justify-center">
+                <button type="button" disabled={!canDownload || loading} onClick={() => goToWizardView("download")}
+                  className="min-h-14 w-full max-w-lg rounded-2xl bg-blue-600 px-5 py-3 text-base font-black text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300">
+                  {canDownload ? "確認預覽，下一步：下載 ZIP →" : "請先完成品質檢查"}
+                </button>
+              </div>
+              </div>
         <div id="sticker-download" className="scroll-mt-24" />
+        <div className={wizardView === "download" ? "" : "hidden"}>
+          <button type="button" onClick={() => goToWizardView("review")} className="mb-4 min-h-11 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-bold text-blue-800">← 返回預覽修改</button>
         <footer aria-label="第 5 步：貼圖下載或動態製作" className="mx-auto mt-5 mb-5 max-w-3xl rounded-2xl border-2 border-violet-200 bg-white px-3 py-4 shadow-sm sm:px-4">
           <div className="mx-auto">
             <h3 className="mb-2 text-center text-base font-bold text-violet-900">第 5 步｜確認預覽後，下載或製作動態貼圖</h3>
@@ -3532,6 +3574,7 @@ export default function LineStickerTool() {
           <p role="status" aria-live="polite" className="mt-3 rounded-xl bg-violet-50 p-3 text-center text-xs font-bold leading-6 text-violet-900">{actionHint}</p>
           </div>
         </footer>
+        </div>
 
             </section>
           )}
