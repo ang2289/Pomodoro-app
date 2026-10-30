@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { requireDistinctLineFrames } from "@/lib/animatedStickerFrameQuality";
+import { assertLineAnimatedZipManifest } from "@/lib/lineAnimatedZipManifest";
 import { WhatsAppMobileZipHandoff, type WhatsAppZipArchive } from "@/components/WhatsAppMobileZipHandoff";
 import { verifyLinePngBytes, auditEncodedLineApngDistinctFrames } from "@/lib/lineApngFileQuality";
 import { Helmet } from "react-helmet-async";
@@ -2301,6 +2302,8 @@ const AnimatedLineStickerTool: React.FC = () => {
       setBatchProgress(96);
       await waitMs(40);
 
+      // 僅允許完整的 LINE 上架 PNG；來源資料夾內的 ZIP 不能混入。
+      assertLineAnimatedZipManifest(files, batchSources.length);
       const zip = makeZip(files);
       if (zip.size > MAX_LINE_ZIP_MB * 1024 * 1024) {
         throw new Error(`ZIP 為 ${(zip.size / 1024 / 1024).toFixed(1)}MB，超過 LINE 60MB 上限，請簡化圖片再試。`);
