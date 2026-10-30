@@ -26,7 +26,7 @@
     "social:facebook:publish": "node scripts/facebook_page_publisher.mjs",
     "clean": "rimraf node_modules/.cache && rimraf .vite && rimraf .next",
     "postinstall": "node scripts/copy-ffmpeg-core.js",
-    "test:line-apng": "tsx --test test/animatedStickerFrameQuality.test.ts test/lineApngFileQuality.test.ts"
+    "test:line-apng": "tsx --test test/animatedStickerFrameQuality.test.ts test/lineApngFileQuality.test.ts test/lineAnimatedZipManifest.test.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1105.0",
