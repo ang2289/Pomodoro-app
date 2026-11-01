@@ -4892,7 +4892,7 @@ function RecommendedToolsSection() {
           rel="noopener noreferrer"
           className="group rounded-3xl border border-slate-100 bg-gradient-to-br from-blue-50 to-white p-5 shadow-sm hover:shadow-md"
         >
-          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 text-sm font-black !text-white">
+          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 text-sm font-black !text-white hover:!text-white active:!text-white disabled:!text-white">
             AI
           </div>
           <h3 className="text-lg font-black text-slate-900 group-hover:text-blue-700">
@@ -4912,7 +4912,7 @@ function RecommendedToolsSection() {
           rel="noopener noreferrer"
           className="group rounded-3xl border border-slate-100 bg-gradient-to-br from-violet-50 to-white p-5 shadow-sm hover:shadow-md"
         >
-          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-600 text-sm font-black !text-white">
+          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-600 text-sm font-black !text-white hover:!text-white active:!text-white disabled:!text-white">
             BG
           </div>
           <h3 className="text-lg font-black text-slate-900 group-hover:text-violet-700">
@@ -5565,7 +5565,7 @@ export default function StickerPromptGenerator() {
                   </p>
                   <a
                     href="#sticker-theme"
-                    className="mt-3 inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-violet-600 px-4 py-3 text-center text-sm font-black !text-white shadow-sm transition-colors hover:bg-violet-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
+                    className="mt-3 inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-violet-600 px-4 py-3 text-center text-sm font-black !text-white hover:!text-white active:!text-white disabled:!text-white shadow-sm transition-colors hover:bg-violet-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
                   >
                     繼續第 1 步｜選主題、角色與畫風 ↓
                   </a>
@@ -5620,7 +5620,7 @@ export default function StickerPromptGenerator() {
                   <button
                     type="button"
                     onClick={() => setProfessionKeyword("")}
-                    className="shrink-0 rounded-2xl bg-violet-600 px-4 py-3 text-sm font-black !text-white shadow-sm hover:bg-violet-700"
+                    className="shrink-0 rounded-2xl bg-violet-600 px-4 py-3 text-sm font-black !text-white hover:!text-white active:!text-white disabled:!text-white shadow-sm hover:bg-violet-700"
                     style={{ color: "#ffffff" }}
                   >
                     清除
@@ -6112,7 +6112,7 @@ export default function StickerPromptGenerator() {
                           type="button"
                           onClick={() => copyFlowPrompt(index, "chatgpt")}
                           disabled={saleRisks.length > 0}
-                          className="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-violet-600 px-4 py-3 text-sm font-black !text-white shadow hover:bg-violet-700 sm:w-auto disabled:cursor-not-allowed disabled:bg-slate-300"
+                          className="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-violet-600 px-4 py-3 text-sm font-black !text-white hover:!text-white active:!text-white disabled:!text-white shadow hover:bg-violet-700 sm:w-auto disabled:cursor-not-allowed disabled:bg-slate-300"
                         >
                           {copiedBatchIndex === index ? `✓ 已複製第 ${index + 1} 張指令` : `① 複製第 ${index + 1} 張指令（ChatGPT）`}
                         </button>
@@ -6128,7 +6128,7 @@ export default function StickerPromptGenerator() {
                           </button>
                           {preparedFlowPrompt[`gemini-${index}`] === item.prompt && (
                             index === 0 ? (
-                              <a href="https://gemini.google.com/app" target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-blue-700 px-3 py-2 text-center text-sm font-bold !text-white hover:bg-blue-800">
+                              <a href="https://gemini.google.com/app" target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-blue-700 px-3 py-2 text-center text-sm font-bold !text-white hover:!text-white active:!text-white disabled:!text-white hover:bg-blue-800">
                                 ② 已複製｜開啟 Gemini 畫第 1 張 ↗
                               </a>
                             ) : (
@@ -6143,7 +6143,7 @@ export default function StickerPromptGenerator() {
                         index === 0 ? (
                           <div role="status" className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3">
                             <p className="mb-2 text-xs font-bold text-emerald-900">✓ 第 1 張指令已複製。下一步請開啟 ChatGPT，貼上指令並送出。</p>
-                            <a href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-emerald-700 px-4 py-3 text-center text-sm font-black !text-white hover:bg-emerald-800 sm:w-auto">
+                            <a href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-emerald-700 px-4 py-3 text-center text-sm font-black !text-white hover:!text-white active:!text-white disabled:!text-white hover:bg-emerald-800 sm:w-auto">
                               ② 開啟 ChatGPT 畫第 1 張 ↗
                             </a>
                             <p className="mt-2 text-xs leading-6 text-emerald-950">③ AI 完成後下載完整母圖，再回此頁{motherSheetPlan.length > 1 ? "製作第 2 張" : "前往第 3 步上傳"}。真人／寵物模式需另外上傳原始照片。</p>
@@ -6274,7 +6274,7 @@ export default function StickerPromptGenerator() {
                   <button
                     onClick={copyStablePrompt}
                     type="button"
-                    className="rounded-xl bg-emerald-600 px-4 py-3 text-sm font-black !text-white"
+                    className="rounded-xl bg-emerald-600 px-4 py-3 text-sm font-black !text-white hover:!text-white active:!text-white disabled:!text-white"
                   >
                     {copiedStable ? "已複製" : "複製無字穩定版"}
                   </button>
