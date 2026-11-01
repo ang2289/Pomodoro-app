@@ -1,4 +1,6 @@
 import { auditStickerFrames, LINE_RECOMMENDED_DISTINCT_FRAMES } from "./animatedStickerFrameQuality";
+import { isLocalStickerMotion, warpLocalCharacter, type LocalStickerMotion } from "./stickerLocalMotion";
+export { pickLocalStickerMotion } from "./stickerLocalMotion";
 
 export type AutoMotionPreset =
   | "auto"
@@ -15,10 +17,18 @@ export type AutoMotionPreset =
   | "spin"
   | "slideLeft"
   | "slideRight"
-  | "breathe";
+  | "breathe"
+  | "wave"
+  | "blink"
+  | "busy"
+  | "cheer";
 
 export const AUTO_MOTION_PRESETS: { value: AutoMotionPreset; labelKey: string }[] = [
   { value: "auto", labelKey: "animated_line_sticker.auto_motion_auto" },
+  { value: "wave", labelKey: "animated_line_sticker.auto_motion_wave" },
+  { value: "blink", labelKey: "animated_line_sticker.auto_motion_blink" },
+  { value: "busy", labelKey: "animated_line_sticker.auto_motion_busy" },
+  { value: "cheer", labelKey: "animated_line_sticker.auto_motion_cheer" },
   { value: "salute", labelKey: "animated_line_sticker.auto_motion_salute" },
   { value: "bounce", labelKey: "animated_line_sticker.auto_motion_bounce" },
   { value: "shake", labelKey: "animated_line_sticker.auto_motion_shake" },
@@ -448,6 +458,7 @@ function renderFrames(
 ): HTMLCanvasElement[] {
   const layers = splitLayers(source, renderScale);
   const fallback = !layers.segmented;
+  const local = isLocalStickerMotion(preset);
   const outputWidth = OUTPUT_WIDTH * renderScale;
   const outputHeight = OUTPUT_HEIGHT * renderScale;
   // 先在加大畫布上繪製旋轉、位移與特效，再以整組影格的聯集統一縮放。
@@ -461,7 +472,19 @@ function renderFrames(
     if (!context) throw new Error("無法建立動畫影格。");
     context.translate(overscan, overscan);
     const transforms = getTransforms(preset, frameIndex);
-    if (fallback) {
+    if (local) {
+      // Feathered local pixel movement; original text is never shifted.
+      const warpedCharacter = warpLocalCharacter(
+        layers.character.canvas,
+        layers.character.bounds ?? {
+          left: 0, top: 0, width: source.width, height: source.height,
+        },
+        preset as LocalStickerMotion, frameIndex, renderScale,
+      );
+      if (!fallback) drawLayer(context, layers.text, {}, renderScale);
+      context.drawImage(warpedCharacter, 0, 0);
+      if (!fallback) drawLayer(context, layers.accents, {}, renderScale);
+    } else if (fallback) {
       drawLayer(context, layers.character, {
         ...transforms.character,
         scaleX: transforms.text.scaleX ?? transforms.character.scaleX,
@@ -473,7 +496,7 @@ function renderFrames(
       drawLayer(context, layers.character, transforms.character, renderScale);
       drawLayer(context, layers.accents, transforms.accents, renderScale);
     }
-    drawMotionMarks(context, preset, frameIndex, renderScale);
+    if (!local) drawMotionMarks(context, preset, frameIndex, renderScale);
     return canvas;
   });
 
@@ -593,13 +616,21 @@ export async function generateAutoAnimationWithQuality(
 ): Promise<{ files: File[]; distinctFrames: number; repaired: boolean }> {
   const image = await loadImage(sourceFile);
   const normalized = normalizeSource(image, renderScale);
-  const result = ensureVisibleMotion(renderFrames(normalized, preset, renderScale), renderScale);
+  // Do not repair local motion by shifting the entire sticker bitmap.
+  const local = isLocalStickerMotion(preset);
+  const canvases = renderFrames(normalized, preset, renderScale);
+  const result = local
+    ? { canvases, repaired: false }
+    : ensureVisibleMotion(canvases, renderScale);
   const rendered = result.canvases.map((canvas) => {
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) throw new Error("無法檢查動畫畫格。");
     return ctx.getImageData(0, 0, canvas.width, canvas.height);
   });
   const distinctFrames = auditStickerFrames(rendered).distinct;
+  if (local && distinctFrames < LINE_RECOMMENDED_DISTINCT_FRAMES) {
+    throw new Error(`局部動畫只有 ${distinctFrames} 個不同影格；請更換動作或提供分層素材，避免以整張縮放冒充局部動作。`);
+  }
   const files = await Promise.all(
     result.canvases.map((canvas, index) => canvasToPngFile(
       canvas,
