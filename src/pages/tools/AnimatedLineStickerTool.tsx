@@ -1359,6 +1359,12 @@ function rememberVideoQrUrl(value: string): string[] {
   } catch { /* private browsing may disable localStorage */ }
   return entries;
 }
+function formatStickerExportFilename(platform: "LINE" | "WhatsApp", kind: "動態" | "靜態", theme: string, count: number, ext: "zip" | "mp4" | "webm", note = ""): string {
+  const safeTheme = (theme || "貼圖作品").trim().replace(/[^\\p{L}\\p{N} _-]/gu, "-").replace(/\\s+/g, "-").slice(0, 48) || "貼圖作品";
+  const now = new Date();
+  const date = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
+  return [platform, kind, safeTheme, `${count}張`, note, date].filter(Boolean).join("_") + "." + ext;
+}
 function drawVideoQrFinalCard(ctx: CanvasRenderingContext2D, width: number, height: number, qr: HTMLCanvasElement) {
   ctx.save();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -1691,6 +1697,7 @@ const AnimatedLineStickerTool: React.FC = () => {
   const [batchVideoBusy, setBatchVideoBusy] = useState(false);
   const [batchVideoProgress, setBatchVideoProgress] = useState(0);
   const [batchVideoMessage, setBatchVideoMessage] = useState("");
+  const [exportTheme, setExportTheme] = useState(() => readLineStickerProject()?.theme || "貼圖作品");
   const [videoQrEnabled, setVideoQrEnabled] = useState(false);
   const [videoQrUrl, setVideoQrUrl] = useState(readLastVideoQrUrl);
   const [videoQrHistory, setVideoQrHistory] = useState(readVideoQrHistory);
@@ -1707,6 +1714,7 @@ const AnimatedLineStickerTool: React.FC = () => {
   const [batchEffectGalleryFrame, setBatchEffectGalleryFrame] = useState(0);
   const [handoffLoaded, setHandoffLoaded] = useState(false);
   const [handoffTheme, setHandoffTheme] = useState("");
+  const exportThemeValue = exportTheme.trim() || handoffTheme || "貼圖作品";
   const [sourceCaptions, setSourceCaptions] = useState<string[]>([]);
   const saleTextRisks = useMemo(
     () => stickerSaleTextRisks(sourceCaptions),
@@ -2245,7 +2253,7 @@ const AnimatedLineStickerTool: React.FC = () => {
       }
       const zip = makeZip(zipFiles);
       replaceBatchAnimatedPreviews(previews);
-      const filename = `rxv-whatsapp-animated-${batchSources.length}-webp.zip`;
+      const filename = formatStickerExportFilename("WhatsApp", "動態", exportThemeValue, batchSources.length, "zip");
       downloadBlob(zip, filename);
       setWhatsAppReadyZip({ blob: zip, filename });
       setCompletedPlatform("whatsapp");
@@ -2380,14 +2388,20 @@ const AnimatedLineStickerTool: React.FC = () => {
       setBatchProgress(96);
       await waitMs(40);
 
-      const zip = makeZip(files);
+      // The LINE upload package must contain only 01..NN.png, main.png, tab.png.
+      const expectedNames = new Set<string>([
+        ...Array.from({ length: batchSources.length }, (_, index) => `${String(index + 1).padStart(2, "0")}.png`),
+        "main.png", "tab.png",
+      ]);
+      const safeFiles = files.filter((item) => expectedNames.has(item.name));
+      if (safeFiles.length !== expectedNames.size || new Set(safeFiles.map((item) => item.name)).size !== expectedNames.size) {
+        throw new Error("動態 ZIP 檔案清單不完整或有重複，已停止匯出；請重新產生上架 ZIP。");
+      }
+      const zip = makeZip(safeFiles);
       if (zip.size > MAX_LINE_ZIP_MB * 1024 * 1024) {
         throw new Error(`ZIP 為 ${(zip.size / 1024 / 1024).toFixed(1)}MB，超過 LINE 60MB 上限，請簡化圖片再試。`);
       }
-      downloadBlob(
-        zip,
-        `rxv-line-animated-sticker-upload-pack-${batchSources.length}.zip`,
-      );
+      downloadBlob(zip, formatStickerExportFilename("LINE", "動態", exportThemeValue, batchSources.length, "zip"));
 
       setBatchProgress(100);
       setCompletedPlatform("line");
@@ -2436,7 +2450,7 @@ const AnimatedLineStickerTool: React.FC = () => {
         exportPlatform,
         videoQrEnabled ? videoQrCanvasRef.current : null,
       );
-      downloadBlob(result.blob, `rxv-${exportPlatform}-animated-${batchSources.length}-hd-1080x1920.${result.extension}`);
+      downloadBlob(result.blob, formatStickerExportFilename(exportPlatform === "line" ? "LINE" : "WhatsApp", "動態", exportThemeValue, batchSources.length, result.extension, "展示"));
       setBatchVideoMessage(
         result.isMp4
           ? "高清 MP4 已下載！1080×1920 直式展示影片，可用於社群推廣。"
@@ -3598,6 +3612,12 @@ const AnimatedLineStickerTool: React.FC = () => {
                 將 {batchAnimatedPreviews.length} 張依序播放，每張約 2 秒；先產生 640×540 動畫影格，再使用最高 30FPS 的錄製串流，只有影格變化時才重畫 1080×1920 高清畫面，避免前兩張耗時過久造成停格。MP4 僅供展示，貼圖上架請用對應的 ZIP。
               </p>
               {videoQrControls}
+              <label className="mt-3 mb-3 block max-w-xl text-sm font-bold text-slate-800">
+                匯出作品主題（檔名使用）
+                <input type="text" value={exportTheme} maxLength={80} onChange={(event) => setExportTheme(event.target.value)}
+                  className="mt-2 min-h-11 w-full rounded-xl border border-rose-200 bg-white px-3 py-2 text-sm font-normal"
+                  placeholder={handoffTheme || "例如：花店日常"} />
+              </label>
               <button type="button" disabled={batchVideoBusy || batchBusy}
                 onClick={exportBatchHdVideo}
                 className="mt-3 min-h-12 rounded-2xl bg-rose-600 px-5 py-3 text-sm font-black text-white shadow-md hover:bg-rose-700 disabled:cursor-not-allowed disabled:bg-slate-300">
