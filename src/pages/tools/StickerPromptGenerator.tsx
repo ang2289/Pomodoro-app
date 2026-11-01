@@ -4582,6 +4582,7 @@ ${fields}
 
 
 /** TUTU-V6-SIMPLE-THEME-20261102
+ * TUTU-V6-JSX-REPAIR-V3-20261102
  * 簡易主題模式忽略進階角色快取與模板人物鎖定；進階模式仍保留舊產生器。
  */
 type TutuSimpleMotherInput = {
@@ -5965,9 +5966,8 @@ export default function StickerPromptGenerator() {
               </div>
 
 
-              {!simpleMode && (<>
               {photoMode === "original" && !/情侶|夫妻|新郎|新娘|兩位|一家|全家|寵物|貓咪|狗狗|兔子|佛像|觀音|動物|怪獸|機器人/.test(role) && (
-                <section className="mt-5 rounded-xl border border-slate-200 bg-white p-4" aria-label="自選角色性別、年齡、個性與五官">
+                <section className="mt-5 rounded-xl border border-slate-200 bg-white p-4" aria-label="自選角色性別、年齡、個性與五官" style={{ display: simpleMode ? "none" : undefined }}>
                   <h4 className="text-base font-bold text-slate-900">我的角色要長什麼樣子？</h4>
                   <p className="mt-1 text-sm leading-6 text-slate-600">可以選男性／女性／中性、兒童／年輕／長者、性格、五官、髮型、服裝、招牌配件、配色與頭身比例；整套母圖會鎖定同一人物。</p>
                   <button type="button"
@@ -5995,7 +5995,7 @@ export default function StickerPromptGenerator() {
               )}
 
               {type === "businessPersonal" && photoMode === "original" && (
-                <section className="mt-6 rounded-xl border border-violet-200 bg-violet-50/50 p-4" aria-label="業務專屬角色設計">
+                <section className="mt-6 rounded-xl border border-violet-200 bg-violet-50/50 p-4" aria-label="業務專屬角色設計" style={{ display: simpleMode ? "none" : undefined }}>
                   <h4 className="text-base font-bold text-violet-950">設計我的專屬業務角色</h4>
                   <p className="mt-1 text-sm leading-6 text-slate-700">
                     首次進來會自動搭配一組外觀，可再自行修改；設定會保存在這台裝置的瀏覽器，方便下次製作同一角色。整套母圖都會沿用相同造型。
@@ -6039,7 +6039,7 @@ export default function StickerPromptGenerator() {
                 </section>
               )}
 
-              <section className="mt-6 rounded-xl border border-violet-200 bg-white p-4" aria-label="整套貼圖共用角色設定">
+              <section className="mt-6 rounded-xl border border-violet-200 bg-white p-4" aria-label="整套貼圖共用角色設定" style={{ display: simpleMode ? "none" : undefined }}>
                 <h4 className="text-base font-bold text-slate-900">整套角色／畫風鎖定（第 1、2 張都共用）</h4>
                 <p className="mt-1 text-xs leading-6 text-slate-600">
                   {photoMode === "original"
@@ -6066,10 +6066,10 @@ export default function StickerPromptGenerator() {
                 </p>
               </section>
 
-              <label className="mt-5 block text-xs font-black text-slate-500">
+              <label style={{ display: simpleMode ? "none" : undefined }} className="mt-5 block text-xs font-black text-slate-500">
                 角色設定
               </label>
-              <textarea
+              <textarea style={{ display: simpleMode ? "none" : undefined }}
                 value={role}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -6083,10 +6083,10 @@ export default function StickerPromptGenerator() {
                 className="mt-2 min-h-[140px] w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm leading-7 text-slate-700 outline-none focus:border-violet-400"
               />
 
-              <label className="mt-5 block text-xs font-black text-slate-500">
+              <label style={{ display: simpleMode ? "none" : undefined }} className="mt-5 block text-xs font-black text-slate-500">
                 風格描述
               </label>
-              <textarea
+              <textarea style={{ display: simpleMode ? "none" : undefined }}
                 value={style}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -6101,8 +6101,6 @@ export default function StickerPromptGenerator() {
                 rows={4}
                 className="mt-2 min-h-[110px] w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm leading-7 text-slate-700 outline-none focus:border-violet-400"
               />
-
-              </>)}
 
               <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
