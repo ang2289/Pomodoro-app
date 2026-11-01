@@ -4555,7 +4555,7 @@ function defaultStickerIdentity(role: string, style: string): StickerIdentity {
     outfit: "依職業與角色性格設計完整且有特色的服裝與配色，第一張母圖確立後不改款式",
     accessories: "由 AI 設計適量固定辨識配件；職業道具可依情境變換，不出現商標或文字",
     proportions: "大頭小身的可愛 Q 版比例；如使用者指定其他角色比例或畫風，依使用者選擇，整套一致",
-    illustration: "依使用者在畫風選單指定的風格呈現，清楚精緻的輪廓、五官與材質，整套一致；不強制套用 2D 或 3D",
+    illustration: `職業主題氣氛參考：${style}；畫面媒材只依使用者在畫風選單的選擇，保持清楚精緻的輪廓、五官與材質；不強制套用 2D 或 3D`,
     coloring: "明亮協調的柔和彩色、細緻陰影、清晰輪廓、純白背景；同套維持一致",
   };
 }
@@ -5218,9 +5218,7 @@ export default function StickerPromptGenerator() {
   const effectiveRole = useMemo(
     () => type === "businessPersonal" && photoMode === "original" && useBusinessAvatar
       ? `${role}\n\n${businessAvatarPrompt(businessAvatar, businessSignature)}`
-      : type === "businessPersonal" && !useBusinessAvatar
-        ? role.replace("須依下方專屬角色設定", "由 AI 依主題自由設計")
-        : role,
+      : role,
     [type, role, photoMode, businessAvatar, businessSignature, useBusinessAvatar],
   );
   const flowPrompts = useMemo(
