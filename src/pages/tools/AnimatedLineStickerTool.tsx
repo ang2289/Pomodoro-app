@@ -1360,7 +1360,7 @@ function rememberVideoQrUrl(value: string): string[] {
   return entries;
 }
 function formatStickerExportFilename(platform: "LINE" | "WhatsApp", kind: "動態" | "靜態", theme: string, count: number, ext: "zip" | "mp4" | "webm", note = ""): string {
-  const safeTheme = (theme || "貼圖作品").trim().replace(/[^\\p{L}\\p{N} _-]/gu, "-").replace(/\\s+/g, "-").slice(0, 48) || "貼圖作品";
+  const safeTheme = (theme || "貼圖作品").trim().replace(/[^\p{L}\p{N} _-]/gu, "-").replace(/\s+/g, "-").slice(0, 48) || "貼圖作品";
   const now = new Date();
   const date = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
   return [platform, kind, safeTheme, `${count}張`, note, date].filter(Boolean).join("_") + "." + ext;
