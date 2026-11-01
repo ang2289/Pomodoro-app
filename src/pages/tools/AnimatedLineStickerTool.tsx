@@ -2971,6 +2971,9 @@ const AnimatedLineStickerTool: React.FC = () => {
                   <span className="text-sm font-black text-slate-800">
                     動畫套用方式
                   </span>
+                  <div data-tutu-animation-version="LOCAL_MOTION_V3_20261102" className="mt-2 rounded-lg border border-violet-300 bg-violet-50 px-3 py-2 text-xs font-bold text-violet-900">
+                    局部動畫 V3 測試版｜支援揮手、點頭、眨眼、忙碌、歡呼。請選「多效果輪用」後重新產生 ZIP。
+                  </div>
                   <p className="mt-1 text-xs leading-5 text-slate-600">
                     可選「多效果輪用」、「全部同一效果」，或「每張自己選效果」。一般使用建議直接用多效果輪用；想統一品牌節奏則選同一效果。
                   </p>
