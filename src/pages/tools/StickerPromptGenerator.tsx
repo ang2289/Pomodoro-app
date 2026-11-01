@@ -4548,7 +4548,7 @@ const IDENTITY_FIELDS: Array<{ key: keyof StickerIdentity; label: string; hint: 
   { key: "coloring", label: "上色、陰影與裝飾", hint: "例如：粉彩柔霧色塊、細緻柔光陰影" },
 ];
 
-function defaultStickerIdentity(role: string, style: string): StickerIdentity {
+function defaultStickerIdentity(role: string): StickerIdentity {
   // 新手只預設可愛 Q 版品質，不暗中指定固定性別、年齡、髮型或服裝。
   const multipleOrNonHuman = /情侶|夫妻|新郎|新娘|兩位|一家|全家|寵物|貓咪|狗狗|兔子|佛像|觀音|動物|怪獸|機器人/.test(role);
   return {
@@ -4964,7 +4964,7 @@ export default function StickerPromptGenerator() {
   const [illustrationStyle, setIllustrationStyle] = useState<IllustrationStyle>("cute2d");
   const [premiumArtQuality, setPremiumArtQuality] = useState(true);
   const [role, setRole] = useState(templates.businessPersonal.role);
-  const [identity, setIdentity] = useState<StickerIdentity>(() => defaultStickerIdentity(templates.businessPersonal.role, templates.businessPersonal.style));
+  const [identity, setIdentity] = useState<StickerIdentity>(() => defaultStickerIdentity(templates.businessPersonal.role));
   const [referenceImage, setReferenceImage] = useState<{ name: string; url: string; series: string } | null>(null);
   const referenceUrlRef = useRef<string | null>(null);
   const referenceSeriesRef = useRef("businessPersonal:16");
@@ -5332,7 +5332,7 @@ export default function StickerPromptGenerator() {
     setType(nextType);
     setRole(templates[nextType].role);
     setStyle(templates[nextType].style);
-    setIdentity(defaultStickerIdentity(templates[nextType].role, templates[nextType].style));
+    setIdentity(defaultStickerIdentity(templates[nextType].role));
     setCharacterTraits({ ...ORIGINAL_CHARACTER_DEFAULT });
     setTexts(
       getDefaultFlowTexts(nextType, targetCount, nameMode, customName),
