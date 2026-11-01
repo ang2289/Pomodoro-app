@@ -4328,6 +4328,16 @@ function normalizeLines(textArea: string, count: number) {
   return lines.slice(0, count);
 }
 
+/** V2 美術完成度提升：尊重所選媒材，不覆蓋文字、人物、尺寸和安全區。 */
+function premiumStickerArtPrompt(artStyle: IllustrationStyle, enabled: boolean, photoMode: PhotoMode) {
+  if (!enabled || photoMode === "realPhoto") return "";
+  const shared = "【精緻美術強化 V2｜在使用者選定畫風內提升完成度】\n角色比例討喜、五官有辨識度、神情生動；髮型有自然層次，服裝與道具具備適量精緻細節，配色協調、輪廓乾淨。依主題創作專屬人物與職業情境，不沿用制式人物模板，也不預設性別、年齡、臉型、髮型或服裝。每格依指定短句變換眼神、嘴型、頭部角度、姿態與手勢，禁止整排重複微笑半身照；特效、愛心、星星或花朵可適量使用，但不得進入 15% 純白安全區、遮字或跨格。第一張母圖確立後，維持相同角色外貌與畫風。";
+  if (artStyle === "cute2d") return `${shared}\n本次選定「2D 可愛 Q 版」：高完成度、商用質感的精緻 2D Q 版插畫，大頭小身、明亮有神的眼睛與自然紅潤臉頰；細緻髮束、柔和光澤、清楚圓潤描邊、適度層次與柔和漸層陰影。人物不縮成小圖，文字使用已選的大字、字型與位置，不因美術效果改字或移位。`;
+  if (artStyle === "doll3d" || artStyle === "clay" || artStyle === "plush") return `${shared}\n依選定的 3D／黏土／毛絨材質提升光線、表面質感、立體感與精緻度，禁止改成 2D 插畫。`;
+  if (artStyle === "watercolor" || artStyle === "storybook" || artStyle === "korean" || artStyle === "pastel") return `${shared}\n依選定的手繪／繪本／柔和插畫風維持筆觸與色彩特性，不強制套用厚重 2D 勾線或 3D 質感。`;
+  return `${shared}\n只在選定畫風內強化細節、色彩、動作與可讀性，不自行改為 2D Q 版或 3D 公仔。`;
+}
+
 function buildPrompt(
   label: string,
   role: string,
@@ -4344,6 +4354,8 @@ function buildPrompt(
   platform: "line" | "whatsapp" = "line",
   startIndex = 0,
   stickerMode: LineStickerMode = "static",
+  artStyle: IllustrationStyle = "cute2d",
+  premiumArtQuality = true,
 ) {
   const gridInfo = gridOptions[grid];
   const lines = normalizeLines(textArea, gridInfo.count);
@@ -4370,8 +4382,9 @@ function buildPrompt(
     ? `\n\n【逐格表情與動作設計｜不可省略】\n${buildExpressiveCellPlan(lines, startIndex)}\n每格須依上面指定的表情、頭部角度及動作區別角色演出。`
     : "";
   const whitespaceRules = buildMotherSheetWhitespaceRules(grid, stickerMode);
+  const premiumArtPrompt = premiumStickerArtPrompt(artStyle, premiumArtQuality, photoMode);
 
-  return `請設計一張 ${platform === "whatsapp" ? "WhatsApp" : "LINE"} ${label}大圖，白色背景，${style}。\n\n商用販售安全：每格只能出現下方指定的主要貼圖短句，禁止在卡片、紙袋、花籃、店招、制服、道具額外產生任何文字、英文 NEW、價格、網址、QR Code、商標、店家 Logo、品牌字樣或促銷宣傳；${photoMode === "realPhoto" ? (subMode === "expressive" ? "以有權使用的真實照片作為唯一人物身份參考，可依指令生成自然的新表情與動作，不得模仿陌生人或加入未授權品牌。" : "只能使用已獲授權的原始真人照片，不得模仿未授權人物或加入品牌元素。") : "角色、衣服與道具皆需為原創，不可仿畫知名品牌角色。"}圖文清晰易讀、避免多手多腳、勿遮住文字。\n\n${rolePrompt}\n\n${whitespaceRules}\n\n風格加強：${safeStylePrompt}。\n\n真人／原創設定：${photoModePrompt}。${photoReminder}\n\n請畫成 ${gridInfo.layoutText}。每格貼圖都要獨立清楚、平均排列。每一格的角色＋文字＋裝飾只佔該格中央約 70%～74%，上下左右至少保留約 13%～15% 的純白安全留白，格與格之間必須看得到明顯白色空間，方便後續平均切割。角色與文字都要完整置中在各自格子內，不可超出邊界、不可跨格、不可互相重疊；每格最外圈至少 13% 純白，格線附近不可有花瓣、陰影或字；若空間不足，寧可把角色與文字整體縮小，也不要貼邊。\n\n文字設定（優先於其他畫風描述）：請使用繁體中文。字型造型遵守「${fontStylePrompt}」；文字大小遵守「${textSizePrompt}」；填色、描邊與文字效果遵守「${textColorPrompt}」；**文字所在區域必須嚴格遵守「${textPositionPrompt}」**。若背景情境或貼圖風格暗示不同的位置，仍以本次「文字位置」選項為準；不可自行改變為其他排版。文字必須清楚好讀，文字與頭髮、臉、手勢、手機、文件等主體至少保留明顯空隙，不可壓在人物或道具上；文字四周也要保留白邊，不要貼近格子邊界，不要切到字，不可出現序號、數字、標題、格號或列表符號。\n\n${photoPerformance}${individualPlan}\n\n貼圖文字如下：\n${numberedTexts}`;
+  return `請設計一張 ${platform === "whatsapp" ? "WhatsApp" : "LINE"} ${label}大圖，白色背景，${style}。\n\n商用販售安全：每格只能出現下方指定的主要貼圖短句，禁止在卡片、紙袋、花籃、店招、制服、道具額外產生任何文字、英文 NEW、價格、網址、QR Code、商標、店家 Logo、品牌字樣或促銷宣傳；${photoMode === "realPhoto" ? (subMode === "expressive" ? "以有權使用的真實照片作為唯一人物身份參考，可依指令生成自然的新表情與動作，不得模仿陌生人或加入未授權品牌。" : "只能使用已獲授權的原始真人照片，不得模仿未授權人物或加入品牌元素。") : "角色、衣服與道具皆需為原創，不可仿畫知名品牌角色。"}圖文清晰易讀、避免多手多腳、勿遮住文字。\n\n${rolePrompt}\n\n${premiumArtPrompt ? `${premiumArtPrompt}\n\n` : ""}${whitespaceRules}\n\n風格加強：${safeStylePrompt}。\n\n真人／原創設定：${photoModePrompt}。${photoReminder}\n\n請畫成 ${gridInfo.layoutText}。每格貼圖都要獨立清楚、平均排列。每一格的角色＋文字＋裝飾只佔該格中央約 70%～74%，上下左右至少保留約 13%～15% 的純白安全留白，格與格之間必須看得到明顯白色空間，方便後續平均切割。角色與文字都要完整置中在各自格子內，不可超出邊界、不可跨格、不可互相重疊；每格最外圈至少 13% 純白，格線附近不可有花瓣、陰影或字；若空間不足，寧可把角色與文字整體縮小，也不要貼邊。\n\n文字設定（優先於其他畫風描述）：請使用繁體中文。字型造型遵守「${fontStylePrompt}」；文字大小遵守「${textSizePrompt}」；填色、描邊與文字效果遵守「${textColorPrompt}」；**文字所在區域必須嚴格遵守「${textPositionPrompt}」**。若背景情境或貼圖風格暗示不同的位置，仍以本次「文字位置」選項為準；不可自行改變為其他排版。文字必須清楚好讀，文字與頭髮、臉、手勢、手機、文件等主體至少保留明顯空隙，不可壓在人物或道具上；文字四周也要保留白邊，不要貼近格子邊界，不要切到字，不可出現序號、數字、標題、格號或列表符號。\n\n${photoPerformance}${individualPlan}\n\n貼圖文字如下：\n${numberedTexts}`;
 }
 
 function buildStablePrompt(
@@ -4382,6 +4395,8 @@ function buildStablePrompt(
   stickerStyle: StickerStylePreset,
   photoMode: PhotoMode,
   subMode: RealPhotoSubMode = "unchanged",
+  artStyle: IllustrationStyle = "cute2d",
+  premiumArtQuality = true,
 ) {
   const gridInfo = gridOptions[grid];
   const policy = realPhotoPolicy(subMode);
@@ -4390,12 +4405,13 @@ function buildStablePrompt(
   const rolePrompt = buildRolePrompt(role, photoMode, subMode);
   const photoReminder = buildPhotoReminder(photoMode, subMode);
   const whitespaceRules = buildMotherSheetWhitespaceRules(grid);
+  const premiumArtPrompt = premiumStickerArtPrompt(artStyle, premiumArtQuality, photoMode);
 
   return `請設計一張 LINE ${label}${photoMode === "realPhoto" && subMode === "unchanged" ? "真人照片原貌排版" : "角色表情"}草稿大圖，白色背景，${style}。
 
 ${rolePrompt}
 
-${whitespaceRules}
+${premiumArtPrompt ? `${premiumArtPrompt}\n\n` : ""}${whitespaceRules}
 
 風格加強：${stickerStylePrompt}。
 
@@ -4538,8 +4554,8 @@ function defaultStickerIdentity(role: string, style: string): StickerIdentity {
     hair: "髮型、髮色與瀏海由 AI 原創設計；第一張母圖確立後整套一致",
     outfit: "依職業與角色性格設計完整且有特色的服裝與配色，第一張母圖確立後不改款式",
     accessories: "由 AI 設計適量固定辨識配件；職業道具可依情境變換，不出現商標或文字",
-    proportions: "原創可愛 Q 版，大頭小身體約 2.5～3 頭身，同套比例一致",
-    illustration: `${style}；精緻 2D Q 版貼圖、清楚圓潤描邊、大眼神情、自然肢體動作，畫風一致`,
+    proportions: "大頭小身的可愛 Q 版比例；如使用者指定其他角色比例或畫風，依使用者選擇，整套一致",
+    illustration: "依使用者在畫風選單指定的風格呈現，清楚精緻的輪廓、五官與材質，整套一致；不強制套用 2D 或 3D",
     coloring: "明亮協調的柔和彩色、細緻陰影、清晰輪廓、純白背景；同套維持一致",
   };
 }
@@ -4578,6 +4594,8 @@ function buildFlowPrompt(
   platform: "line" | "whatsapp",
   startIndex = 0,
   identityLock = "",
+  artStyle: IllustrationStyle = "cute2d",
+  premiumArtQuality = true,
 ) {
   const base = buildPrompt(
     label,
@@ -4595,6 +4613,8 @@ function buildFlowPrompt(
     platform,
     startIndex,
     mode,
+    artStyle,
+    premiumArtQuality,
   );
   const modeInstructions = mode === "animated"
     ? "本次選擇「動態貼圖」：母圖仍是一張靜止的原始圖，但每格角色四周多留移動空間；人物與文字保持視覺距離，避免後續製作位移動畫時被裁切。不要把多格合成動畫影格，也不要加入時間軸文字。"
@@ -4947,6 +4967,7 @@ export default function StickerPromptGenerator() {
   const [photoMode, setPhotoMode] = useState<PhotoMode>("original");
   const [realPhotoSubMode, setRealPhotoSubMode] = useState<RealPhotoSubMode>("unchanged");
   const [illustrationStyle, setIllustrationStyle] = useState<IllustrationStyle>("cute2d");
+  const [premiumArtQuality, setPremiumArtQuality] = useState(true);
   const [role, setRole] = useState(templates.businessPersonal.role);
   const [identity, setIdentity] = useState<StickerIdentity>(() => defaultStickerIdentity(templates.businessPersonal.role, templates.businessPersonal.style));
   const [referenceImage, setReferenceImage] = useState<{ name: string; url: string; series: string } | null>(null);
@@ -4995,7 +5016,7 @@ export default function StickerPromptGenerator() {
   const selectedStylePrompt = optionPrompt(ILLUSTRATION_STYLE_OPTIONS, illustrationStyle);
   const visualStyle = photoMode === "realPhoto"
     ? realPhotoPolicy(realPhotoSubMode).visual
-    : `${style}；指定畫風：${selectedStylePrompt}`;
+    : `主題氣氛：${style}；使用者指定畫風：${selectedStylePrompt}。若氣氛描述與指定畫風衝突，必須以指定畫風為準`;
   const [texts, setTexts] = useState(
     getDefaultTextWithName("businessPersonal", "4x4", "none", "小宇"),
   );
@@ -5200,7 +5221,9 @@ export default function StickerPromptGenerator() {
   const effectiveRole = useMemo(
     () => type === "businessPersonal" && photoMode === "original" && useBusinessAvatar
       ? `${role}\n\n${businessAvatarPrompt(businessAvatar, businessSignature)}`
-      : role,
+      : type === "businessPersonal" && !useBusinessAvatar
+        ? role.replace("須依下方專屬角色設定", "由 AI 依主題自由設計")
+        : role,
     [type, role, photoMode, businessAvatar, businessSignature, useBusinessAvatar],
   );
   const flowPrompts = useMemo(
@@ -5227,6 +5250,8 @@ export default function StickerPromptGenerator() {
             stickerPlatform,
             item.startIndex,
             identityLock,
+            illustrationStyle,
+            premiumArtQuality,
           ),
         };
       }),
@@ -5246,6 +5271,8 @@ export default function StickerPromptGenerator() {
       stickerMode,
       stickerPlatform,
       identityLock,
+      illustrationStyle,
+      premiumArtQuality,
     ],
   );
 
@@ -5266,6 +5293,11 @@ export default function StickerPromptGenerator() {
         stickerStylePreset,
         photoMode,
         realPhotoSubMode,
+        "line",
+        0,
+        "static",
+        illustrationStyle,
+        premiumArtQuality,
       ),
     [
       type,
@@ -5280,6 +5312,8 @@ export default function StickerPromptGenerator() {
       stickerStylePreset,
       photoMode,
       realPhotoSubMode,
+      illustrationStyle,
+      premiumArtQuality,
     ],
   );
   const stablePrompt = useMemo(
@@ -5292,8 +5326,10 @@ export default function StickerPromptGenerator() {
         stickerStylePreset,
         photoMode,
         realPhotoSubMode,
+        illustrationStyle,
+        premiumArtQuality,
       ),
-    [type, effectiveRole, visualStyle, grid, stickerStylePreset, photoMode, realPhotoSubMode],
+    [type, effectiveRole, visualStyle, grid, stickerStylePreset, photoMode, realPhotoSubMode, illustrationStyle, premiumArtQuality],
   );
 
   function handleTypeChange(nextType: TemplateKey) {
@@ -5699,8 +5735,12 @@ export default function StickerPromptGenerator() {
                     ))}
                   </select>
                   <p className="mt-2 text-xs leading-6 text-slate-600">
-                    畫風將寫進每張母圖的提示詞，與原有的「貼圖風格」氛圍加強是不同設定。3D 公仔娃娃是畫風，不是獨立角色模式。
+                    畫風將寫進每張母圖的提示詞；精緻美術強化只提升選定畫風的完成度，不會把 3D、手繪等改成 2D。
                   </p>
+                  <label className="mt-3 flex items-center gap-2 rounded-xl border border-violet-200 bg-violet-50 p-3 text-sm font-bold text-violet-900">
+                    <input type="checkbox" checked={premiumArtQuality} onChange={(event) => setPremiumArtQuality(event.target.checked)} className="h-5 w-5 accent-violet-600" />
+                    精緻美術強化（預設開啟）
+                  </label>
                 </>
               )}
 
@@ -5848,7 +5888,7 @@ export default function StickerPromptGenerator() {
                         <select value={characterTraits[key]}
                           onChange={(e) => setCharacterTraits(previous => ({...previous, [key]: e.target.value}))}
                           className="mt-1.5 min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-violet-500">
-                          {ORIGINAL_CHARACTER_OPTIONS[key].map(item => <option key={item} value={item}>{item}</option>)}
+                          {ORIGINAL_CHARACTER_OPTIONS[key].map(item => <option key={item} value={item}>{item === "依主題預設" ? "不指定／AI 自行設計" : item}</option>)}
                         </select>
                       </label>
                     ))}
