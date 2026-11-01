@@ -4528,39 +4528,19 @@ const IDENTITY_FIELDS: Array<{ key: keyof StickerIdentity; label: string; hint: 
 ];
 
 function defaultStickerIdentity(role: string, style: string): StickerIdentity {
-  // 主題名稱決定整套穩定預設，切換母圖或重繪頁面不會再隨機更換。
-  const hash = [...role].reduce((sum, c) => (sum * 31 + c.charCodeAt(0)) >>> 0, 17);
-  const isMultiOrNonHuman = /情侶|夫妻|新郎|新娘|兩位|一家|全家|寵物|貓咪|狗狗|兔子|佛像|觀音|動物|怪獸|機器人/.test(role);
-  const age = [25, 30, 35, 40, 45][hash % 5];
-  const gender = /男性|男生|男孩|男士|先生/.test(role) ? "男性"
-    : /女性|女生|女孩|女士|媽媽/.test(role) ? "女性"
-    : hash % 2 === 0 ? "女性" : "男性";
-  const face = [
-    "圓臉、杏仁形深棕大眼、小巧鼻樑、自然暖膚色",
-    "鵝蛋臉、圓潤黑棕眼、淡笑眉、自然明亮膚色",
-    "柔和方圓臉、清澈琥珀眼、微笑嘴角、暖米膚色",
-    "小圓臉、弧形眉毛、深棕圓眼、柔和自然膚色",
-  ][hash % 4];
-  const hair = [
-    "黑色側分短髮、整齊瀏海",
-    "深棕色微捲齊肩髮、側分瀏海",
-    "栗棕色低馬尾、輕薄空氣瀏海",
-    "深黑色中長直髮、柔和斜瀏海",
-    "咖啡色俐落短髮、自然蓬鬆瀏海",
-  ][hash % 5];
-  const palette = /美甲|美睫|美容|粉色|花藝/.test(role + style)
-    ? "奶茶粉、霧玫瑰與米白"
-    : ["霧藍與暖米白", "森林綠與淺杏色", "柔和紫與奶油白", "湖水綠與米白", "杏色與深藍"][hash % 5];
-  const roleDetails = isMultiOrNonHuman ? role : `${role}；主角固定為約 ${age} 歲台灣${gender}原創 Q 版人物`;
+  // 新手只預設可愛 Q 版品質，不暗中指定固定性別、年齡、髮型或服裝。
+  const multipleOrNonHuman = /情侶|夫妻|新郎|新娘|兩位|一家|全家|寵物|貓咪|狗狗|兔子|佛像|觀音|動物|怪獸|機器人/.test(role);
   return {
-    appearance: roleDetails,
-    face: isMultiOrNonHuman ? "依原角色設定，固定每位主角各自的眼睛、臉型、五官比例與膚色" : face,
-    hair: isMultiOrNonHuman ? "每位主角各自維持相同造型、髮色與頭部特徵" : hair,
-    outfit: `依主題保持固定的工作服／圍裙／制服款式與剪裁，固定配色：${palette}；不可任意更換`,
-    accessories: "固定配件須沿用角色設定，不增加額外品牌；手持職業道具可依動作更換",
-    proportions: "2.5～3 頭身，大頭小身體，頭身比與五官比例一致",
-    illustration: `${style}；相同線條粗細、輪廓筆觸、柔和陰影`,
-    coloring: `固定主色系：${palette}；相同上色方法、陰影方向、光澤與裝飾密度；純白背景`,
+    appearance: multipleOrNonHuman
+      ? `貼圖主題：${role}；由 AI 依主題設定原創主角，保持每位角色造型一致`
+      : `貼圖主題與職業情境：${role}；主角性別、年齡與人物造型由 AI 依職業原創設計，不預設固定人物`,
+    face: "臉型、眼睛、五官與膚色由 AI 依主題設計；第一張母圖確立後整套一致",
+    hair: "髮型、髮色與瀏海由 AI 原創設計；第一張母圖確立後整套一致",
+    outfit: "依職業與角色性格設計完整且有特色的服裝與配色，第一張母圖確立後不改款式",
+    accessories: "由 AI 設計適量固定辨識配件；職業道具可依情境變換，不出現商標或文字",
+    proportions: "原創可愛 Q 版，大頭小身體約 2.5～3 頭身，同套比例一致",
+    illustration: `${style}；精緻 2D Q 版貼圖、清楚圓潤描邊、大眼神情、自然肢體動作，畫風一致`,
+    coloring: "明亮協調的柔和彩色、細緻陰影、清晰輪廓、純白背景；同套維持一致",
   };
 }
 function makeStickerIdentityLock(
@@ -4960,10 +4940,10 @@ export default function StickerPromptGenerator() {
   const [customName, setCustomName] = useState("小宇");
   const [textSize, setTextSize] = useState<TextSize>("large");
   const [textColor, setTextColor] = useState<TextColor>("colorfulWhite");
-  const [textPosition, setTextPosition] = useState<TextPosition>("mixed");
+  const [textPosition, setTextPosition] = useState<TextPosition>("top");
   const [fontStyle, setFontStyle] = useState<FontStyle>("roundBold");
   const [stickerStylePreset, setStickerStylePreset] =
-    useState<StickerStylePreset>("friendly");
+    useState<StickerStylePreset>("cuteQ");
   const [photoMode, setPhotoMode] = useState<PhotoMode>("original");
   const [realPhotoSubMode, setRealPhotoSubMode] = useState<RealPhotoSubMode>("unchanged");
   const [illustrationStyle, setIllustrationStyle] = useState<IllustrationStyle>("cute2d");
@@ -5002,8 +4982,9 @@ export default function StickerPromptGenerator() {
     if (referenceUrlRef.current) URL.revokeObjectURL(referenceUrlRef.current);
   }, []);
   const [businessAvatar, setBusinessAvatar] = useState<BusinessAvatarSelection>(savedBusinessAvatar);
+  const [useBusinessAvatar, setUseBusinessAvatar] = useState(false);
   const [businessSignature, setBusinessSignature] = useState(savedBusinessSignature);
-  const [characterTraits, setCharacterTraits] = useState<OriginalCharacterTraits>(randomOriginalCharacter);
+  const [characterTraits, setCharacterTraits] = useState<OriginalCharacterTraits>(() => ({ ...ORIGINAL_CHARACTER_DEFAULT }));
   useEffect(() => {
     try {
       localStorage.setItem(BUSINESS_AVATAR_STORAGE_KEY, JSON.stringify(businessAvatar));
@@ -5178,7 +5159,7 @@ export default function StickerPromptGenerator() {
   // 所有母圖沿用同一角色設定，不會因為 24／40 張分批產生就更換長相。
   // 真人似顏繪優先忠實參考本人照片，不額外覆蓋髮型及臉部特徵。
   const lockedIdentity = useMemo(() => {
-    const businessBase: StickerIdentity = type === "businessPersonal" && photoMode === "original"
+    const businessBase: StickerIdentity = type === "businessPersonal" && photoMode === "original" && useBusinessAvatar
       ? {
           ...identity,
           appearance: businessAvatar.persona,
@@ -5193,7 +5174,7 @@ export default function StickerPromptGenerator() {
     return photoMode === "original" && !multipleOrNonHuman
       ? applyOriginalCharacterTraits(businessBase, characterTraits, templates[type].label)
       : businessBase;
-  }, [type, photoMode, role, identity, businessAvatar, businessSignature, characterTraits]);
+  }, [type, photoMode, role, identity, businessAvatar, businessSignature, characterTraits, useBusinessAvatar]);
   const identityLock = useMemo(() => {
     const photoIdentity = photoMode === "realPhoto"
       ? realPhotoPolicy(realPhotoSubMode).identity
@@ -5217,10 +5198,10 @@ export default function StickerPromptGenerator() {
 - 使用者選定畫風：${selectedStylePrompt}；整套母圖一致，不得隨意改變。`;
   }, [lockedIdentity, fontStyle, textSize, textColor, textPosition, photoMode, realPhotoSubMode, selectedStylePrompt]);
   const effectiveRole = useMemo(
-    () => type === "businessPersonal" && photoMode === "original"
+    () => type === "businessPersonal" && photoMode === "original" && useBusinessAvatar
       ? `${role}\n\n${businessAvatarPrompt(businessAvatar, businessSignature)}`
       : role,
-    [type, role, photoMode, businessAvatar, businessSignature],
+    [type, role, photoMode, businessAvatar, businessSignature, useBusinessAvatar],
   );
   const flowPrompts = useMemo(
     () =>
@@ -5884,11 +5865,15 @@ export default function StickerPromptGenerator() {
                 <section className="mt-6 rounded-xl border border-violet-200 bg-violet-50/50 p-4" aria-label="業務專屬角色設計">
                   <h4 className="text-base font-bold text-violet-950">設計我的專屬業務角色</h4>
                   <p className="mt-1 text-sm leading-6 text-slate-700">
-                    首次進來會自動搭配一組外觀，可再自行修改；設定會保存在這台裝置的瀏覽器，方便下次製作同一角色。整套母圖都會沿用相同造型。
+                    預設由 AI 自由設計角色；若想沿用特定業務形象，可勾選下方選項。啟用後整套母圖會保持相同造型。
                   </p>
+                  <label className="mt-3 flex items-center gap-2 text-sm font-bold text-violet-900">
+                    <input type="checkbox" checked={useBusinessAvatar} onChange={(event) => setUseBusinessAvatar(event.target.checked)} />
+                    啟用以下專屬業務角色設定（預設不指定）
+                  </label>
                   <button
                     type="button"
-                    onClick={() => setBusinessAvatar(randomBusinessAvatar())}
+                    onClick={() => { setBusinessAvatar(randomBusinessAvatar()); setUseBusinessAvatar(true); }}
                     className="mt-3 inline-flex min-h-11 items-center justify-center rounded-lg border-2 border-violet-300 bg-white px-4 py-2 text-sm font-bold text-violet-800 shadow-sm transition-colors hover:border-violet-600 hover:bg-violet-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
                   >
                     換一組不同的角色搭配 ↻
@@ -5899,7 +5884,7 @@ export default function StickerPromptGenerator() {
                         {BUSINESS_AVATAR_LABELS[key]}
                         <select
                           value={businessAvatar[key]}
-                          onChange={(e) => setBusinessAvatar((previous) => ({ ...previous, [key]: e.target.value }))}
+                          onChange={(e) => { setBusinessAvatar((previous) => ({ ...previous, [key]: e.target.value })); setUseBusinessAvatar(true); }}
                           className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-800 focus:border-violet-500"
                         >
                           {BUSINESS_AVATAR_OPTIONS[key].map((value) => (
@@ -5913,7 +5898,7 @@ export default function StickerPromptGenerator() {
                     個人辨識特徵（選填）
                     <input
                       value={businessSignature}
-                      onChange={(e) => setBusinessSignature(e.target.value)}
+                      onChange={(e) => { setBusinessSignature(e.target.value); if (e.target.value.trim()) setUseBusinessAvatar(true); }}
                       maxLength={180}
                       placeholder="例如：左臉小酒窩、溫柔笑眼、珍珠髮夾"
                       className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-800 focus:border-violet-500"
@@ -6216,7 +6201,7 @@ export default function StickerPromptGenerator() {
                         `角色來源：${optionLabel(PHOTO_MODE_OPTIONS, photoMode)}`,
                         `畫風：${photoMode === "realPhoto" ? realPhotoPolicy(realPhotoSubMode).label : optionLabel(ILLUSTRATION_STYLE_OPTIONS, illustrationStyle)}`,
                         `名稱：${optionLabel(NAME_MODE_OPTIONS, nameMode)}`,
-                        ...(type === "businessPersonal" && photoMode === "original" ? [`角色：${businessAvatar.persona}`, `髮型：${businessAvatar.hair}`, `服裝：${businessAvatar.clothes}`, `配色：${businessAvatar.palette}`] : []),
+                        ...(type === "businessPersonal" && photoMode === "original" && useBusinessAvatar ? [`角色：${businessAvatar.persona}`, `髮型：${businessAvatar.hair}`, `服裝：${businessAvatar.clothes}`, `配色：${businessAvatar.palette}`] : []),
                       ].map((label) => (
                         <span key={label} className="rounded-md bg-slate-100 px-2.5 py-1.5">{label}</span>
                       ))}
