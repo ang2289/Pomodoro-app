@@ -2530,12 +2530,14 @@ export default function LineStickerTool() {
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">
               第 3 步｜上傳母圖，自動整理貼圖
             </h1>
-            <p className="text-slate-500 text-sm mt-1">
-              將 ChatGPT 或 Google Gemini 畫出的「一整張母圖」存到手機或電腦，直接上傳這裡；不用自己切成 8 或 16 張，RXV 會自動切割、去背並整理。已有單張貼圖也可以直接上傳。
-            </p>
-            <p className="text-slate-500 text-sm mt-2">
-              {t("line_sticker_hero_desc")}
-            </p>
+            <p className="mt-2 text-sm text-slate-600">選好平台、靜態／動態與張數，直接上傳 AI 畫出的整張母圖。</p>
+            <details className="mt-3 rounded-lg border border-slate-200 bg-white p-3">
+              <summary className="cursor-pointer text-sm font-semibold text-slate-700">上傳母圖詳細說明｜點此展開</summary>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                將 ChatGPT 或 Gemini 生成的整張大圖存到手機或電腦，再回來上傳。本站會協助辨識、切割、去背與整理 ZIP。
+              </p>
+              <p className="mt-2 text-sm text-slate-500">{t("line_sticker_hero_desc")}</p>
+            </details>
           </header>
 
           <section aria-label="第 3 步｜貼圖平台類型張數" data-testid="step3-single-settings" className="mb-5 rounded-2xl border-2 border-violet-200 bg-violet-50 p-4 shadow-sm">
@@ -2630,9 +2632,9 @@ export default function LineStickerTool() {
             <p className="mt-2 text-sm leading-6 text-slate-700">① 選貼圖種類與張數 → ② 複製指令到 ChatGPT 或 Google Gemini 產生完整大圖 → ③ 回本站上傳大圖 → ④ 預覽自動切割、去背結果 → ⑤ 下載 ZIP；動態貼圖再進入動畫流程。</p>
             <p className="mt-2 text-xs leading-5 text-slate-500">裁切、去白底與尺寸整理都由本站處理；若去背不理想，再選擇外部進階工具。完成 ZIP 不代表 LINE 必定審核通過。</p>
             <Link to="/tools/line-sticker-guide" className="mt-3 inline-flex items-center rounded-lg bg-indigo-50 px-3 py-2 text-xs font-black text-indigo-700 hover:bg-indigo-100">查看完整圖文教學</Link>
-            {exportCheckResult ? <p role="status" className="mt-3 rounded-xl bg-emerald-50 p-3 text-sm font-bold leading-6 text-emerald-800">{exportCheckResult}</p> : null}
             </div>
           </details>
+          {exportCheckResult ? <p role="status" className="mb-4 rounded-xl bg-emerald-50 p-3 text-sm font-bold leading-6 text-emerald-800">{exportCheckResult}</p> : null}
           {saleTextRisks.length > 0 ? (
             <section className="mb-5 rounded-2xl border border-amber-300 bg-amber-50 p-4">
               <p className="text-sm font-black text-amber-900">LINE 公開販售提醒：前一步貼圖文字有 {saleTextRisks.length} 句可能屬於促銷或導流。</p>
@@ -3153,6 +3155,7 @@ export default function LineStickerTool() {
               className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-5"
               aria-label="已切好的單張貼圖補充上傳區"
             >
+              <summary className="cursor-pointer text-sm font-bold text-slate-900">備用功能｜已切好的單張貼圖上傳（點此展開）</summary>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -3161,7 +3164,6 @@ export default function LineStickerTool() {
                 onChange={handleInputChange}
                 className="hidden"
               />
-              <summary className="cursor-pointer text-sm font-bold text-slate-900">備用功能｜已切好的單張貼圖上傳（點此展開）</summary>
               <p className="mt-2 text-xs leading-6 text-slate-600">
                 只有當圖片已經是一張一張分開的透明 PNG／WebP 時才用此功能；
                 若您手上是一張包含 8／16／20 格的大圖，請使用上方紫色「選擇整張母圖並辨識格數」。
