@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { QRCodeCanvas } from "qrcode.react";
 import { requireDistinctLineFrames } from "@/lib/animatedStickerFrameQuality";
 import { WhatsAppMobileZipHandoff, type WhatsAppZipArchive } from "@/components/WhatsAppMobileZipHandoff";
 import { verifyLinePngBytes, auditEncodedLineApngDistinctFrames } from "@/lib/lineApngFileQuality";
@@ -1323,6 +1324,69 @@ async function waitMs(ms: number) {
   await new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
+// TUTU_MP4_QR_RESTORE_20261101: browser-only settings; never included in LINE/WhatsApp sticker ZIP.
+const VIDEO_QR_FALLBACK_URL = "https://store.line.me/";
+const VIDEO_QR_HISTORY_KEY = "tutu:video-qr-history-v1";
+const VIDEO_QR_LAST_KEY = "tutu:video-qr-last-v1";
+function videoQrUrlIsValid(raw: string): boolean {
+  try {
+    if (!raw.trim() || raw.length > 2048) return false;
+    const url = new URL(raw.trim());
+    return (url.protocol === "https:" || url.protocol === "http:") && Boolean(url.hostname);
+  } catch { return false; }
+}
+function readVideoQrHistory(): string[] {
+  try {
+    const list: unknown = JSON.parse(localStorage.getItem(VIDEO_QR_HISTORY_KEY) || "[]");
+    return Array.isArray(list)
+      ? [...new Set(list.filter((item): item is string => typeof item === "string" && videoQrUrlIsValid(item)))].slice(0, 10)
+      : [];
+  } catch { return []; }
+}
+function readLastVideoQrUrl(): string {
+  try {
+    const saved = localStorage.getItem(VIDEO_QR_LAST_KEY) || "";
+    return videoQrUrlIsValid(saved) ? saved : VIDEO_QR_FALLBACK_URL;
+  } catch { return VIDEO_QR_FALLBACK_URL; }
+}
+function rememberVideoQrUrl(value: string): string[] {
+  const url = value.trim();
+  if (!videoQrUrlIsValid(url)) throw new Error("QR Code 網址必須以 https:// 或 http:// 開頭，且不能留空。");
+  const entries = [url, ...readVideoQrHistory().filter((item) => item !== url)].slice(0, 10);
+  try {
+    localStorage.setItem(VIDEO_QR_LAST_KEY, url);
+    localStorage.setItem(VIDEO_QR_HISTORY_KEY, JSON.stringify(entries));
+  } catch { /* private browsing may disable localStorage */ }
+  return entries;
+}
+function drawVideoQrFinalCard(ctx: CanvasRenderingContext2D, width: number, height: number, qr: HTMLCanvasElement) {
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  const bg = ctx.createLinearGradient(0, 0, 0, height);
+  bg.addColorStop(0, "#eaf5ff");
+  bg.addColorStop(1, "#ffffff");
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, width, height);
+  const qrSize = Math.round(Math.min(width * 0.68, height * 0.38, 620));
+  const x = Math.round((width - qrSize) / 2);
+  const y = Math.round((height - qrSize) / 2);
+  const titleSize = Math.max(20, Math.round(width * 0.055));
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = "#16335b";
+  ctx.font = `bold ${titleSize}px "Microsoft JhengHei", sans-serif`;
+  ctx.fillText("更多 LINE／WhatsApp 貼圖作品", width / 2, Math.max(28, y - titleSize * 1.5), width - 24);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(x - 14, y - 14, qrSize + 28, qrSize + 28);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(qr, x, y, qrSize, qrSize);
+  ctx.imageSmoothingEnabled = true;
+  ctx.fillStyle = "#16335b";
+  ctx.font = `bold ${Math.max(17, Math.round(titleSize * 0.62))}px "Microsoft JhengHei", sans-serif`;
+  ctx.fillText("掃描 QR Code 觀看作品", width / 2, Math.min(height - 30, y + qrSize + titleSize * 1.6), width - 24);
+  ctx.restore();
+}
+
 type VideoExportOptions = {
   width?: number;
   height?: number;
@@ -1330,6 +1394,7 @@ type VideoExportOptions = {
   videoBitsPerSecond?: number;
   fillWhite?: boolean;
   allowScaleUp?: boolean;
+  qrCanvas?: HTMLCanvasElement | null;
 };
 
 async function createVideoBlob(
@@ -1399,6 +1464,10 @@ async function createVideoBlob(
     }
   }
 
+  if (options.qrCanvas) {
+    drawVideoQrFinalCard(ctx, width, height, options.qrCanvas);
+    await waitMs(3000);
+  }
   if (recorder.state === "recording" && typeof recorder.requestData === "function") {
     recorder.requestData();
     await waitMs(120);
@@ -1430,6 +1499,7 @@ async function createBatchShowcaseVideo(
   presets: AutoMotionPreset[],
   onProgress: (finished: number, total: number) => void,
   platform: "line" | "whatsapp" = "line",
+  qrCanvas: HTMLCanvasElement | null = null,
 ): Promise<{ blob: Blob; extension: "mp4" | "webm"; isMp4: boolean }> {
   if (![8, 16, 24].includes(sources.length) || sources.length !== presets.length) {
     throw new Error("展示影片來源與貼圖數量不一致，請先重新產生整套上架 ZIP。");
@@ -1564,6 +1634,10 @@ async function createBatchShowcaseVideo(
     if (actualCaptureMs > idealCaptureMs + maxAllowedLagMs) {
       throw new Error("影片錄製超過預定時長，為避免匯出卡住的 MP4，已停止下載。");
     }
+    if (qrCanvas) {
+      drawVideoQrFinalCard(ctx, canvas.width, canvas.height, qrCanvas);
+      await waitMs(3000);
+    }
     if (recorder.state === "recording") {
       recorder.requestData();
       await waitMs(150);
@@ -1617,6 +1691,11 @@ const AnimatedLineStickerTool: React.FC = () => {
   const [batchVideoBusy, setBatchVideoBusy] = useState(false);
   const [batchVideoProgress, setBatchVideoProgress] = useState(0);
   const [batchVideoMessage, setBatchVideoMessage] = useState("");
+  const [videoQrEnabled, setVideoQrEnabled] = useState(false);
+  const [videoQrUrl, setVideoQrUrl] = useState(readLastVideoQrUrl);
+  const [videoQrHistory, setVideoQrHistory] = useState(readVideoQrHistory);
+  const videoQrCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const saveVideoQr = () => setVideoQrHistory(rememberVideoQrUrl(videoQrUrl));
   const [batchAnimatedPreviews, setBatchAnimatedPreviews] =
     useState<BatchAnimatedPreview[]>([]);
   const [batchEffectGallery, setBatchEffectGallery] =
@@ -2340,6 +2419,11 @@ const AnimatedLineStickerTool: React.FC = () => {
 
   const exportBatchHdVideo = async () => {
     if (batchBusy || batchVideoBusy || batchAnimatedPreviews.length !== batchSources.length) return;
+    if (videoQrEnabled) {
+      try { saveVideoQr(); }
+      catch (error) { setBatchVideoMessage(error instanceof Error ? error.message : "QR Code 網址有誤"); return; }
+      if (!videoQrCanvasRef.current) { setBatchVideoMessage("QR Code 尚未準備完成，請重新按下載。"); return; }
+    }
     setBatchVideoBusy(true);
     setBatchVideoProgress(0);
     setBatchVideoMessage("");
@@ -2350,6 +2434,7 @@ const AnimatedLineStickerTool: React.FC = () => {
         sorted.map((item) => item.motionPreset),
         (finished, total) => setBatchVideoProgress(Math.round((finished / total) * 100)),
         exportPlatform,
+        videoQrEnabled ? videoQrCanvasRef.current : null,
       );
       downloadBlob(result.blob, `rxv-${exportPlatform}-animated-${batchSources.length}-hd-1080x1920.${result.extension}`);
       setBatchVideoMessage(
@@ -2552,6 +2637,11 @@ const AnimatedLineStickerTool: React.FC = () => {
 
   const exportVideo = async (quality: "normal" | "hd" = "normal") => {
     if (!canExport || busy) return;
+    if (videoQrEnabled) {
+      try { saveVideoQr(); }
+      catch (error) { setMessage(error instanceof Error ? error.message : "QR Code 網址有誤"); return; }
+      if (!videoQrCanvasRef.current) { setMessage("QR Code 尚未準備完成，請重新按下載。"); return; }
+    }
     setBusy(true);
     setMessage("");
     setExportStatus(quality === "hd" ? "正在產生高清 MP4 預覽…" : t("animated_line_sticker.status_video"));
@@ -2563,8 +2653,8 @@ const AnimatedLineStickerTool: React.FC = () => {
         loopCount,
         t,
         quality === "hd"
-          ? { width: 1080, height: 1080, frameRate: 30, videoBitsPerSecond: 12000000, fillWhite: true, allowScaleUp: true }
-          : { width: 500, height: 500, frameRate: 30, videoBitsPerSecond: 3500000, fillWhite: true, allowScaleUp: false }
+          ? { width: 1080, height: 1080, frameRate: 30, videoBitsPerSecond: 12000000, fillWhite: true, allowScaleUp: true, qrCanvas: videoQrEnabled ? videoQrCanvasRef.current : null }
+          : { width: 500, height: 500, frameRate: 30, videoBitsPerSecond: 3500000, fillWhite: true, allowScaleUp: false, qrCanvas: videoQrEnabled ? videoQrCanvasRef.current : null }
       );
       downloadBlob(
         result.blob,
@@ -2587,6 +2677,35 @@ const AnimatedLineStickerTool: React.FC = () => {
     }
   };
 
+  const videoQrControls = (
+    <div className="mt-4 rounded-2xl border border-sky-200 bg-sky-50 p-4" aria-label="社群展示影片片尾 QR Code 設定">
+      <label className="flex cursor-pointer items-center gap-3 text-base font-bold text-slate-900">
+        <input type="checkbox" checked={videoQrEnabled} onChange={(event) => setVideoQrEnabled(event.target.checked)} className="h-5 w-5 accent-blue-600" />
+        展示影片最後加入 QR Code（選用，預設不加入）
+      </label>
+      {videoQrEnabled ? (
+        <div className="mt-3 space-y-3">
+          <label className="block text-sm font-bold text-slate-800">
+            片尾 QR Code 網址
+            <input type="url" inputMode="url" value={videoQrUrl} onChange={(event) => setVideoQrUrl(event.target.value)}
+              onBlur={() => { try { saveVideoQr(); } catch { /* errors are displayed on export */ } }}
+              className="mt-2 min-h-12 w-full min-w-0 rounded-xl border border-sky-200 bg-white px-3 py-3 text-base"
+              placeholder="https://store.line.me/..." />
+          </label>
+          <label className="block text-sm font-bold text-slate-800">
+            快速選擇已記住的網址
+            <select value="" onChange={(event) => { if (event.target.value) setVideoQrUrl(event.target.value); }}
+              className="mt-2 min-h-12 w-full min-w-0 rounded-xl border border-sky-200 bg-white px-3 py-3 text-base">
+              <option value="">請選擇常用網址…</option>
+              {videoQrHistory.map((item) => <option key={item} value={item}>{item}</option>)}
+            </select>
+          </label>
+          <p className="text-sm leading-6 text-slate-700">展示影片最後 3 秒顯示 QR Code；不會加入 LINE／WhatsApp 上架 ZIP。</p>
+        </div>
+      ) : null}
+      <QRCodeCanvas ref={videoQrCanvasRef} value={videoQrUrl.trim() || VIDEO_QR_FALLBACK_URL} size={384} marginSize={2} level="M" className="hidden" />
+    </div>
+  );
   const baseUrl = getBaseUrl().replace(/\/$/, "");
   const pageUrl = `${baseUrl}/tools/animated-line-sticker`;
 
@@ -3478,6 +3597,7 @@ const AnimatedLineStickerTool: React.FC = () => {
               <p className="mt-1 text-xs leading-6 text-rose-800">
                 將 {batchAnimatedPreviews.length} 張依序播放，每張約 2 秒；先產生 640×540 動畫影格，再使用最高 30FPS 的錄製串流，只有影格變化時才重畫 1080×1920 高清畫面，避免前兩張耗時過久造成停格。MP4 僅供展示，貼圖上架請用對應的 ZIP。
               </p>
+              {videoQrControls}
               <button type="button" disabled={batchVideoBusy || batchBusy}
                 onClick={exportBatchHdVideo}
                 className="mt-3 min-h-12 rounded-2xl bg-rose-600 px-5 py-3 text-sm font-black text-white shadow-md hover:bg-rose-700 disabled:cursor-not-allowed disabled:bg-slate-300">
@@ -3649,6 +3769,7 @@ const AnimatedLineStickerTool: React.FC = () => {
 
             <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
               <h2 className="text-xl font-black text-slate-900">{t("animated_line_sticker.export_title")}</h2>
+              {videoQrControls}
               {workflowMode === "manual" ? (
                 <button
                   type="button"
