@@ -20,6 +20,7 @@ import {
   AUTO_MOTION_PRESETS,
   generateAutoAnimationFrameFiles,
   generateAutoAnimationWithQuality,
+  pickLocalStickerMotion,
   type AutoMotionPreset,
 } from "@/lib/animatedLineStickerAuto";
 
@@ -119,22 +120,9 @@ type MotionPresetGalleryItem = {
 
 type BatchMotionMode = "mixed" | "single" | "custom";
 
+// V2: local gestures replace whole-layer zoom as the mixed default.
 const MIXED_BATCH_MOTION_PRESETS: AutoMotionPreset[] = [
-  "auto",
-  "bounce",
-  "nod",
-  "sway",
-  "textPop",
-  "sparkle",
-  "pop",
-  "pulse",
-  "shake",
-  "salute",
-  "alert",
-  "slideLeft",
-  "slideRight",
-  "breathe",
-  "spin",
+  "wave", "nod", "blink", "busy", "cheer",
 ];
 
 
@@ -1629,6 +1617,7 @@ const AnimatedLineStickerTool: React.FC = () => {
   const [handoffLoaded, setHandoffLoaded] = useState(false);
   const [handoffTheme, setHandoffTheme] = useState("");
   const [sourceCaptions, setSourceCaptions] = useState<string[]>([]);
+  const suggestedMotion = (index: number): AutoMotionPreset => pickLocalStickerMotion(sourceCaptions[index], index);
   const saleTextRisks = useMemo(
     () => stickerSaleTextRisks(sourceCaptions),
     [sourceCaptions],
@@ -2139,10 +2128,9 @@ const AnimatedLineStickerTool: React.FC = () => {
         for (let localIndex = 0; localIndex < packCounts[packIndex]; localIndex++, globalIndex++) {
           const i = globalIndex;
           setBatchStatus(`正在壓縮 WhatsApp 動畫 ${i + 1}/${batchSources.length}（500KB 上限）…`);
-          const preset = batchMotionMode === "mixed"
-            ? MIXED_BATCH_MOTION_PRESETS[i % MIXED_BATCH_MOTION_PRESETS.length]
+          const preset = batchMotionMode === "mixed" ? suggestedMotion(i)
             : batchMotionMode === "custom"
-              ? batchCustomMotionPresets[i] ?? MIXED_BATCH_MOTION_PRESETS[i % MIXED_BATCH_MOTION_PRESETS.length]
+              ? batchCustomMotionPresets[i] ?? suggestedMotion(i)
               : batchMotionPreset;
           const pngs = await generateAutoAnimationFrameFiles(batchSources[i].file, preset);
           const webp = await createWhatsAppAnimatedSticker(pngs);
@@ -2213,15 +2201,9 @@ const AnimatedLineStickerTool: React.FC = () => {
         await waitMs(40);
 
         const motionPreset =
-          batchMotionMode === "mixed"
-            ? MIXED_BATCH_MOTION_PRESETS[
-                i % MIXED_BATCH_MOTION_PRESETS.length
-              ]
+          batchMotionMode === "mixed" ? suggestedMotion(i)
             : batchMotionMode === "custom"
-              ? batchCustomMotionPresets[i] ??
-                MIXED_BATCH_MOTION_PRESETS[
-                  i % MIXED_BATCH_MOTION_PRESETS.length
-                ]
+              ? batchCustomMotionPresets[i] ?? suggestedMotion(i)
               : batchMotionPreset;
         const motion = await generateAutoAnimationWithQuality(item.file, motionPreset)
           .catch((error: Error) => { throw new Error(`${stickerName} 動畫檢查失敗：${error.message}`); });
@@ -3014,7 +2996,7 @@ const AnimatedLineStickerTool: React.FC = () => {
                         ) : null}
                       </div>
                       <p className="mt-1 text-xs leading-5 text-slate-600">
-                        每張貼圖自動換一種動畫，整套不會全部動得一樣。
+                        依短句自動選揮手、點頭、眨眼、忙碌、歡呼；沒有短句時輪流使用五種局部效果。
                       </p>
                     </button>
 
@@ -3101,10 +3083,7 @@ const AnimatedLineStickerTool: React.FC = () => {
                       </p>
                       <div className="mt-3 grid gap-2 sm:grid-cols-2">
                         {batchSources.map((item, index) => {
-                          const fallbackPreset =
-                            MIXED_BATCH_MOTION_PRESETS[
-                              index % MIXED_BATCH_MOTION_PRESETS.length
-                            ];
+                          const fallbackPreset = suggestedMotion(index);
                           const selectedPreset =
                             batchCustomMotionPresets[index] ?? fallbackPreset;
                           return (
@@ -3153,7 +3132,7 @@ const AnimatedLineStickerTool: React.FC = () => {
                   ) : (
                     <div className="mt-3 rounded-xl bg-violet-50 px-3 py-2">
                       <p className="text-xs font-black text-violet-800">
-                        目前會依序輪用：
+                        依文字自動選擇（未提供文字則依序輪用）：
                       </p>
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         {MIXED_BATCH_MOTION_PRESETS.slice(
@@ -3374,7 +3353,7 @@ const AnimatedLineStickerTool: React.FC = () => {
                 <div className="mt-4 rounded-xl bg-white px-3 py-2 text-xs font-bold text-violet-800">
                   {batchMotionMode === "mixed" ? (
                     <>
-                      目前：✨ 多效果輪用。第 01 張開始依序套用不同效果，超過效果數後再從第一種循環。
+                      目前：局部動作優先。按短句搭配，沒有文字時依序輪用五種局部動作。
                     </>
                   ) : batchMotionMode === "custom" ? (
                     <>
