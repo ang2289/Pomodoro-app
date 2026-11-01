@@ -2528,7 +2528,7 @@ export default function LineStickerTool() {
           <header className="mb-6">
             <div className="mb-3 inline-flex rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-black text-sky-700">上架檢查強化版 · 2026.10.10</div>
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-              第 3～4 步｜上傳母圖，自動整理貼圖
+              第 3 步｜上傳母圖，自動整理貼圖
             </h1>
             <p className="text-slate-500 text-sm mt-1">
               將 ChatGPT 或 Google Gemini 畫出的「一整張母圖」存到手機或電腦，直接上傳這裡；不用自己切成 8 或 16 張，RXV 會自動切割、去背並整理。已有單張貼圖也可以直接上傳。
@@ -2538,53 +2538,10 @@ export default function LineStickerTool() {
             </p>
           </header>
 
-          <section aria-label="設定貼圖類型與張數" className="mb-5 rounded-2xl border-2 border-violet-200 bg-violet-50 p-4 shadow-sm">
-            <h2 className="text-base font-black text-violet-900">第 3 步開始也能選｜這次要做靜態或動態？</h2>
-            <p className="mt-1 text-sm leading-6 text-slate-700">已有母圖可以直接開始，不需要回第 1 步。選動態時先上傳靜止母圖，後面再產生真正會動的貼圖。</p>
-            <div className="mt-3 grid max-w-xl grid-cols-2 gap-2" role="group" aria-label="貼圖種類">
-              {(["static", "animated"] as LineStickerMode[]).map(mode => (
-                <button key={mode} type="button" aria-pressed={selectedStickerMode === mode} onClick={() => changeStickerMode(mode)}
-                  className={`min-h-12 rounded-xl border-2 px-2 py-3 text-sm font-black ${selectedStickerMode === mode ? "border-violet-600 bg-violet-600 text-white" : "border-violet-300 bg-white text-violet-900"}`}>
-                  {selectedStickerMode === mode ? "✓ " : ""}{mode === "static" ? "靜態貼圖｜PNG" : "動態貼圖｜APNG"}
-                </button>
-              ))}
-            </div>
-            <label htmlFor="step3-count" className="mt-4 block text-sm font-black text-slate-800">張數</label>
-            <select id="step3-count" value={stickerCount} onChange={event => {
-              const count = Number(event.target.value) as 8 | 16 | 24 | 32 | 40;
-              setStickerCount(count);
-              if (flowProject) {
-                const next = updateLineStickerProject({ count, stage: 3 });
-                if (next) setFlowProject(next);
-              }
-              setMotherSheetDetections([]);
-              setMotherSheetDetectionStatus("idle");
-              setDownloadCompleted(false);
-              setActionHint(`已選 ${count} 張。下一步：按紫色上傳按鈕選擇整張母圖並辨識格數。`);
-            }} className="mt-2 min-h-11 w-56 rounded-lg border border-violet-200 bg-white px-3 py-2 text-sm font-bold">
-              {getAllowedCounts(selectedStickerMode).map(count => <option key={count} value={count}>{count} 張</option>)}
-            </select>
-            <p role="status" aria-live="polite" className="mt-3 rounded-xl border border-sky-200 bg-white p-3 text-sm font-bold leading-6 text-sky-900">{actionHint}</p>
-          </section>
-          <section className="mb-5 rounded-2xl border border-indigo-100 bg-white p-4 shadow-sm">
-            <h2 className="text-sm font-black text-slate-900">一般客戶照著做就可以：5 個步驟</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-700">① 選貼圖種類與張數 → ② 複製指令到 ChatGPT 或 Google Gemini 產生完整大圖 → ③ 回本站上傳大圖 → ④ 預覽自動切割、去背結果 → ⑤ 下載 ZIP；動態貼圖再進入動畫流程。</p>
-            <p className="mt-2 text-xs leading-5 text-slate-500">裁切、去白底與尺寸整理都由本站處理；若去背不理想，再選擇外部進階工具。完成 ZIP 不代表 LINE 必定審核通過。</p>
-            <Link to="/tools/line-sticker-guide" className="mt-3 inline-flex items-center rounded-lg bg-indigo-50 px-3 py-2 text-xs font-black text-indigo-700 hover:bg-indigo-100">查看完整圖文教學</Link>
-            {exportCheckResult ? <p role="status" className="mt-3 rounded-xl bg-emerald-50 p-3 text-sm font-bold leading-6 text-emerald-800">{exportCheckResult}</p> : null}
-          </section>
+          <section aria-label="第 3 步｜貼圖平台類型張數" data-testid="step3-single-settings" className="mb-5 rounded-2xl border-2 border-violet-200 bg-violet-50 p-4 shadow-sm">
+            <h2 className="text-lg font-black text-violet-950">先選平台、貼圖類型與張數</h2>
+            <p className="mt-1 mb-4 text-sm text-slate-700">已有母圖可直接開始；選好後往下按「選擇整張母圖」，不必返回第一步。</p>
 
-          {saleTextRisks.length > 0 ? (
-            <section className="mb-5 rounded-2xl border border-amber-300 bg-amber-50 p-4">
-              <p className="text-sm font-black text-amber-900">LINE 公開販售提醒：前一步貼圖文字有 {saleTextRisks.length} 句可能屬於促銷或導流。</p>
-              <p className="mt-1 text-xs leading-6 text-amber-800">
-                {saleTextRisks.slice(0, 6).map((risk) => `${risk.text} → ${risk.replacement}`).join("；")}。
-                若圖片已畫出這些字，修改文字清單不會自動改變圖片，請先重新產圖；否則仍可能被 LINE 退件。
-              </p>
-            </section>
-          ) : null}
-
-          <section className="mb-5 rounded-2xl border border-sky-200 bg-white p-4 shadow-sm">
             <h2 className="text-sm font-black text-slate-900">輸出平台｜同一張母圖可製作 LINE 或 WhatsApp 貼圖</h2>
             <div className="mt-3 flex flex-wrap items-center gap-2" role="group" aria-label="選擇貼圖輸出平台">
               <button type="button" onClick={() => {
@@ -2635,8 +2592,56 @@ export default function LineStickerTool() {
             >
               {exportReadyMessage}
             </div>
+            <div className="mt-5 border-t border-violet-200 pt-4">
 
+            <h2 className="text-base font-black text-violet-900">貼圖類型｜靜態或動態</h2>
+            <p className="mt-1 text-sm leading-6 text-slate-700">已有母圖可以直接開始，不需要回第 1 步。選動態時先上傳靜止母圖，後面再產生真正會動的貼圖。</p>
+            <div className="mt-3 grid max-w-xl grid-cols-2 gap-2" role="group" aria-label="貼圖種類">
+              {(["static", "animated"] as LineStickerMode[]).map(mode => (
+                <button key={mode} type="button" aria-pressed={selectedStickerMode === mode} onClick={() => changeStickerMode(mode)}
+                  className={`min-h-12 rounded-xl border-2 px-2 py-3 text-sm font-black ${selectedStickerMode === mode ? "border-violet-600 bg-violet-600 text-white" : "border-violet-300 bg-white text-violet-900"}`}>
+                  {selectedStickerMode === mode ? "✓ " : ""}{mode === "static" ? "靜態貼圖｜PNG" : "動態貼圖｜APNG"}
+                </button>
+              ))}
+            </div>
+            <label htmlFor="step3-count" className="mt-4 block text-sm font-black text-slate-800">張數</label>
+            <select id="step3-count" value={stickerCount} onChange={event => {
+              const count = Number(event.target.value) as 8 | 16 | 24 | 32 | 40;
+              setStickerCount(count);
+              if (flowProject) {
+                const next = updateLineStickerProject({ count, stage: 3 });
+                if (next) setFlowProject(next);
+              }
+              setMotherSheetDetections([]);
+              setMotherSheetDetectionStatus("idle");
+              setDownloadCompleted(false);
+              setActionHint(`已選 ${count} 張。下一步：按紫色上傳按鈕選擇整張母圖並辨識格數。`);
+            }} className="mt-2 min-h-11 w-56 rounded-lg border border-violet-200 bg-white px-3 py-2 text-sm font-bold">
+              {getAllowedCounts(selectedStickerMode).map(count => <option key={count} value={count}>{count} 張</option>)}
+            </select>
+            <p role="status" aria-live="polite" className="mt-3 rounded-xl border border-sky-200 bg-white p-3 text-sm font-bold leading-6 text-sky-900">{actionHint}</p>
+            </div>
           </section>
+          <details className="mb-5 rounded-2xl border border-indigo-100 bg-white p-4 shadow-sm">
+            <summary className="cursor-pointer text-sm font-black text-slate-900">需要操作教學？點此展開</summary>
+            <div className="mt-3 border-t border-slate-100 pt-3">
+
+            <h2 className="text-sm font-black text-slate-900">一般客戶照著做就可以：5 個步驟</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-700">① 選貼圖種類與張數 → ② 複製指令到 ChatGPT 或 Google Gemini 產生完整大圖 → ③ 回本站上傳大圖 → ④ 預覽自動切割、去背結果 → ⑤ 下載 ZIP；動態貼圖再進入動畫流程。</p>
+            <p className="mt-2 text-xs leading-5 text-slate-500">裁切、去白底與尺寸整理都由本站處理；若去背不理想，再選擇外部進階工具。完成 ZIP 不代表 LINE 必定審核通過。</p>
+            <Link to="/tools/line-sticker-guide" className="mt-3 inline-flex items-center rounded-lg bg-indigo-50 px-3 py-2 text-xs font-black text-indigo-700 hover:bg-indigo-100">查看完整圖文教學</Link>
+            {exportCheckResult ? <p role="status" className="mt-3 rounded-xl bg-emerald-50 p-3 text-sm font-bold leading-6 text-emerald-800">{exportCheckResult}</p> : null}
+            </div>
+          </details>
+          {saleTextRisks.length > 0 ? (
+            <section className="mb-5 rounded-2xl border border-amber-300 bg-amber-50 p-4">
+              <p className="text-sm font-black text-amber-900">LINE 公開販售提醒：前一步貼圖文字有 {saleTextRisks.length} 句可能屬於促銷或導流。</p>
+              <p className="mt-1 text-xs leading-6 text-amber-800">
+                {saleTextRisks.slice(0, 6).map((risk) => `${risk.text} → ${risk.replacement}`).join("；")}。
+                若圖片已畫出這些字，修改文字清單不會自動改變圖片，請先重新產圖；否則仍可能被 LINE 退件。
+              </p>
+            </section>
+          ) : null}
 
           {downloadCompleted && selectedStickerMode !== "animated" ? (
             <section className="mb-6 rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-blue-50 p-5 shadow-sm">
@@ -2780,17 +2785,18 @@ export default function LineStickerTool() {
                       自動判斷 4×2／4×4／4×5
                     </span>
                   </div>
-                  <p className="mt-3 text-xs font-black uppercase tracking-wide text-violet-600">
-                    步驟 3
-                  </p>
                   <h2 className="mt-1 text-base font-black text-slate-900">
-                    第 3 步｜上傳整張大圖（不用先切割）
+                    上傳整張母圖（不用先切割）
                   </h2>
-                  <p className="mt-1 text-xs leading-relaxed text-slate-500">
-                    先辨識 4×2／4×4／4×5 與格數，再安全切割。去背預設保護白色衣服、白色文字描邊及淺色道具；處理後可切換深色背景逐張檢查。若原圖本來已有透明背景，不會重覆去白。
-                  </p>
+                  <details className="mt-2 rounded-lg border border-violet-100 bg-white px-3 py-2">
+                    <summary className="cursor-pointer text-xs font-semibold text-violet-800">切圖與去背技術說明｜點此展開</summary>
+                    <p className="mt-2 text-xs leading-relaxed text-slate-600">先辨識 4×2／4×4／4×5 與格數，再安全切割；去背預設保護白衣與文字白邊，處理後可逐張檢查。</p>
+                  </details>
                 </div>
                 <div className="min-w-0 grid gap-2 sm:grid-cols-2">
+                  <details className="sm:col-span-2 rounded-xl border border-slate-200 bg-white p-3">
+                    <summary className="cursor-pointer text-sm font-bold text-slate-800">進階設定｜手動格數、背景與去白底（點此展開）</summary>
+                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
                   <div className="sm:col-span-2">
                   {flowProject ? (
                     <div className="rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-xs font-black leading-5 text-violet-800">
@@ -2862,6 +2868,8 @@ export default function LineStickerTool() {
                       ) : null}
                     </div>
                   ) : null}
+                    </div>
+                  </details>
                   <input
                     ref={motherSheetInputRef}
                     type="file"
@@ -3140,7 +3148,7 @@ export default function LineStickerTool() {
                 </button>
               </section>
             ) : null}
-            <section
+            <details
               id="line-sticker-pack-tool"
               className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-5"
               aria-label="已切好的單張貼圖補充上傳區"
@@ -3153,7 +3161,7 @@ export default function LineStickerTool() {
                 onChange={handleInputChange}
                 className="hidden"
               />
-              <h3 className="text-sm font-bold text-slate-900">備用功能：已切好的單張貼圖上傳</h3>
+              <summary className="cursor-pointer text-sm font-bold text-slate-900">備用功能｜已切好的單張貼圖上傳（點此展開）</summary>
               <p className="mt-2 text-xs leading-6 text-slate-600">
                 只有當圖片已經是一張一張分開的透明 PNG／WebP 時才用此功能；
                 若您手上是一張包含 8／16／20 格的大圖，請使用上方紫色「選擇整張母圖並辨識格數」。
@@ -3165,33 +3173,11 @@ export default function LineStickerTool() {
               >
                 我已切成單張｜選擇 PNG／WebP（可多選）
               </button>
-            </section>
+            </details>
 
-            <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-white p-5 rounded-2xl border border-slate-200">
-                <p className="text-[11px] font-black text-slate-400 uppercase mb-3">
-                  {t("line_sticker_step_count")}
-                </p>
-                {flowProject ? (
-                  <div className="rounded-xl bg-blue-50 px-4 py-3 text-sm font-black text-blue-800">
-                    已從第 1 步帶入：{stickerCount} 張，不需要再選一次
-                  </div>
-                ) : (
-                  <div className="flex flex-wrap gap-2" role="group" aria-label="選擇貼圖張數">
-                    {STICKER_SIZES.map((n) => (
-                      <button
-                        key={n}
-                        onClick={() => setStickerCount(n)}
-                        aria-pressed={stickerCount === n}
-                        className={`inline-flex min-h-11 w-[68px] shrink-0 items-center justify-center rounded-lg border-2 px-2 py-2 text-xs font-bold shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:border-violet-500 hover:bg-violet-100 hover:text-violet-900 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 active:translate-y-0 ${stickerCount === n ? "border-violet-600 bg-violet-600 text-white shadow-md hover:bg-violet-700 hover:text-white" : "border-violet-200 bg-violet-50 text-violet-900"}`}
-                      >
-                        {n}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
+            <details className="rounded-2xl border border-slate-200 bg-white p-4">
+              <summary className="cursor-pointer text-sm font-bold text-slate-800">進階設定｜裁切方式與縮放（點此展開）</summary>
+              <div className="mt-3">
               <div className="bg-white p-5 rounded-2xl border border-slate-200">
                 <p className="text-[11px] font-black text-slate-400 uppercase mb-3">
                   {t("line_sticker_step_crop")}
@@ -3226,7 +3212,8 @@ export default function LineStickerTool() {
                   安全模式最多 120%，超過 100% 時仍保留至少 4% 邊界，不會故意裁字。
                 </p>
               </div>
-            </section>
+              </div>
+            </details>
           </div>
 
           {files.length > 0 && (
