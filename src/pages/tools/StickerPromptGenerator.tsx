@@ -4331,7 +4331,7 @@ function normalizeLines(textArea: string, count: number) {
 /** 美術品質跟隨客戶畫風、比例、字型與字級，不再覆蓋選單設定。 */
 function premiumStickerArtPrompt(artStyle: IllustrationStyle, enabled: boolean, photoMode: PhotoMode) {
   if (!enabled || photoMode === "realPhoto") return "";
-  const shared = "【精緻美術強化｜不覆蓋使用者選項】\n五官與表情具辨識度、姿勢與道具依每句短語變化；髮絲、服裝與材質細節精緻，配色協調、輪廓乾淨，避免每格都只是相似微笑半身照。人物性別、年齡、五官、服裝及頭身比例以客戶選擇優先，未指定時才由 AI 原創設計。文字大小、字型、字色與位置完全依使用者當下選擇，不自行改成大字或上方文字；裝飾不可遮字、跨格或侵入安全留白。";
+  const shared = "【精緻美術強化｜不覆蓋使用者選項】\n五官與表情具辨識度、姿勢與道具依每句短語變化；髮絲、服裝與材質細節精緻，配色協調、輪廓乾淨，避免每格都只是相似微笑半身照。人物性別、年齡、五官、服裝及頭身比例以客戶選擇優先，未指定時才由 AI 原創設計。文字大小、字型、字色與位置完全依使用者當下選擇，不得被美術強化改為其他選項；裝飾不可遮字、跨格或侵入安全留白。";
   if (artStyle === "cute2d") return `${shared}\n本次使用精緻 2D 可愛 Q 版：眼睛有神、臉頰自然柔和、髮束有層次、圓潤輪廓與柔和漸層陰影；頭身比例以客戶指定為準，沒有指定才使用大頭小身的 Q 版比例。`;
   if (artStyle === "doll3d" || artStyle === "clay" || artStyle === "plush") return `${shared}\n僅強化所選 3D／黏土／毛絨媒材的立體光線、材質與細節，禁止改成 2D。`;
   if (artStyle === "watercolor" || artStyle === "storybook" || artStyle === "korean" || artStyle === "pastel") return `${shared}\n僅強化所選手繪、繪本、韓系或粉彩媒材的筆觸及色彩，不強制套用 2D Q 版粗描邊或 3D。`;
@@ -4374,7 +4374,12 @@ function buildPrompt(
 
   const rolePrompt = buildRolePrompt(role, photoMode, subMode);
   const photoReminder = buildPhotoReminder(photoMode, subMode);
-  const safeStylePrompt = photoMode === "realPhoto" ? photoPolicy.flavor : stickerStylePrompt;
+  // Selected media and character proportions outrank the default cute-Q mood.
+  const safeStylePrompt = photoMode === "realPhoto"
+    ? photoPolicy.flavor
+    : stickerStyle === "cuteQ" && artStyle !== "cute2d"
+      ? "表情活潑討喜；頭身比例、線條與媒材以客戶選定畫風及人物比例為準，不強制改成 Q 版"
+      : stickerStylePrompt;
   const photoPerformance = photoMode === "realPhoto"
     ? photoPolicy.variation
     : "每張貼圖都要有不同表情與動作，整體風格一致、乾淨可愛、適合 LINE 貼圖使用。";
@@ -4384,7 +4389,7 @@ function buildPrompt(
   const whitespaceRules = buildMotherSheetWhitespaceRules(grid, stickerMode);
   const premiumArtPrompt = premiumStickerArtPrompt(artStyle, premiumArtQuality, photoMode);
 
-  return `請設計一張 ${platform === "whatsapp" ? "WhatsApp" : "LINE"} ${label}大圖，白色背景，${style}。\n\n商用販售安全：每格只能出現下方指定的主要貼圖短句，禁止在卡片、紙袋、花籃、店招、制服、道具額外產生任何文字、英文 NEW、價格、網址、QR Code、商標、店家 Logo、品牌字樣或促銷宣傳；${photoMode === "realPhoto" ? (subMode === "expressive" ? "以有權使用的真實照片作為唯一人物身份參考，可依指令生成自然的新表情與動作，不得模仿陌生人或加入未授權品牌。" : "只能使用已獲授權的原始真人照片，不得模仿未授權人物或加入品牌元素。") : "角色、衣服與道具皆需為原創，不可仿畫知名品牌角色。"}圖文清晰易讀、避免多手多腳、勿遮住文字。\n\n${rolePrompt}\n\n${premiumArtPrompt ? `${premiumArtPrompt}\n\n` : ""}${whitespaceRules}\n\n風格加強：${safeStylePrompt}。\n\n真人／原創設定：${photoModePrompt}。${photoReminder}\n\n版型為 ${gridInfo.layoutText}，僅輸出一張母圖。完整圖文放在各格中央安全區；純白切圖通道與四邊各 15% 留白，依上方強制切圖規則執行，不跨格、不畫格線。\n\n文字設定（優先於其他畫風描述）：請使用繁體中文。字型造型遵守「${fontStylePrompt}」；文字大小遵守「${textSizePrompt}」；填色、描邊與文字效果遵守「${textColorPrompt}」；**文字所在區域必須嚴格遵守「${textPositionPrompt}」**。若背景情境或貼圖風格暗示不同的位置，仍以本次「文字位置」選項為準；不可自行改變為其他排版。文字必須清楚好讀，文字與頭髮、臉、手勢、手機、文件等主體至少保留明顯空隙，不可壓在人物或道具上；文字四周也要保留白邊，不要貼近格子邊界，不要切到字，不可出現序號、數字、標題、格號或列表符號。\n\n${photoPerformance}${individualPlan}\n\n貼圖文字如下：\n${numberedTexts}`;
+  return `請設計一張 ${platform === "whatsapp" ? "WhatsApp" : "LINE"} ${label}大圖，白色背景，${style}。\n\n商用販售安全：每格只能出現下方指定的主要貼圖短句，禁止在卡片、紙袋、花籃、店招、制服、道具額外產生任何文字、英文 NEW、價格、網址、QR Code、商標、店家 Logo、品牌字樣或促銷宣傳；${photoMode === "realPhoto" ? (subMode === "expressive" ? "以有權使用的真實照片作為唯一人物身份參考，可依指令生成自然的新表情與動作，不得模仿陌生人或加入未授權品牌。" : "只能使用已獲授權的原始真人照片，不得模仿未授權人物或加入品牌元素。") : "角色、衣服與道具皆需為原創，不可仿畫知名品牌角色。"}圖文清晰易讀、避免多手多腳、勿遮住文字。\n\n${rolePrompt}\n\n${premiumArtPrompt ? `${premiumArtPrompt}\n\n` : ""}${whitespaceRules}\n\n風格加強：${safeStylePrompt}。\n\n真人／原創設定：${photoModePrompt}。${photoReminder}\n\n版型僅限 ${gridInfo.layoutText}；每格切圖安全區依上述規則，不畫格線。\n\n【目前客戶選單設定｜優先於主題模板與預設】繁體中文；字型：${fontStylePrompt}；字級：${textSizePrompt}；字色與效果：${textColorPrompt}；**文字位置：${textPositionPrompt}**。不得因畫風或貼圖主題擅自移動文字位置、改變字級、字色或字型；文字與人物、頭髮、手及道具要有清楚間隔，禁止額外文字、序號、標題或格號。\n\n${photoPerformance}${individualPlan}\n\n貼圖文字如下：\n${numberedTexts}`;
 }
 
 function buildStablePrompt(
@@ -4642,17 +4647,10 @@ ${batchNumber > 1
 ${base}
 
 最終版型僅此一種：${columns} 欄 × ${rows} 列（${grid.replace("x", "×")}、共 ${columns * rows} 格），畫布採用 ${ratio} 比例。禁止改成其他列數、欄數、橫幅或任意拼貼。
-每格短句位置必須依下表由左到右、由上到下排列，${columns * rows} 句各出現一次，不可遺漏、不可重複、不可更換成其他文字。每一格的「文字／人物相對位置」是強制條件，不能因圖像排版習慣而擅自改成上方標題：
+每格短句位置必須依下表由左到右、由上到下排列，${columns * rows} 句各出現一次，不可遺漏、不可重複、不可更換成其他文字。每一格的文字／人物相對位置由目前選單決定；不得因為排版習慣擅自改成其他位置：
 ${rowAssignment}
 
-重要規則：
-- 只輸出上方指定的 ${grid.replace("x", "×")} 母圖，不能變更排列。
-- 每格只能有指定的單句繁體中文，不能在手牌、道具、卡片、緞帶、招牌、背景另寫英文、中文、數字或其他字樣。
-- 每格的文字位置只依上方選擇與逐格標註執行；不得附加其他位置規則。長句只可在指定區域換行或縮小整體圖文。
-- 每格圖文、裝飾及陰影都要留在中央 70% 安全區；每邊 15% 純白、格間通道連續，不能跨格或畫格線。
-- 不要做成海報、漫畫分鏡或額外拼貼。
-- 禁止多手、多腳、多指，禁止遮住文字；不得任意更改繁體中文短句。
-- 不要在圖片外再加標題、編號、說明文字或浮水印。`;
+交付檢查：只輸出指定的 ${grid.replace("x", "×")} 母圖，逐格繁體中文短句各出現一次；格內以目前文字位置選單與逐格標註為準。每格四邊保留 15% 純白安全區，禁止跨格、畫格線、增添道具文字或浮水印；避免多手、多腳、多指，勿遮住文字。`;
 }
 
 /** Gemini 容易將 4×4 表格生為橫幅，提供可單獨複製的畫布／禁字強化版。 */
