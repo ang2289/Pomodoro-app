@@ -4543,7 +4543,7 @@ const IDENTITY_FIELDS: Array<{ key: keyof StickerIdentity; label: string; hint: 
   { key: "hair", label: "固定髮型、髮色與瀏海", hint: "例如：栗棕色低馬尾、空氣瀏海" },
   { key: "outfit", label: "固定服裝與顏色", hint: "例如：奶茶色圍裙、粉白制服" },
   { key: "accessories", label: "固定配件及辨識特徵", hint: "例如：珍珠髮夾、無文字工作證" },
-  { key: "proportions", label: "Q 版比例", hint: "例如：2.5～3 頭身，大頭小身體" },
+  { key: "proportions", label: "人物頭身比例", hint: "例如：2.5～3 頭身，或依客戶選定畫風的自然比例" },
   { key: "illustration", label: "畫風與線條", hint: "例如：柔和日系 Q 版、深棕色等粗描邊" },
   { key: "coloring", label: "上色、陰影與裝飾", hint: "例如：粉彩柔霧色塊、細緻柔光陰影" },
 ];
@@ -4560,7 +4560,7 @@ function defaultStickerIdentity(role: string, style: string): StickerIdentity {
     outfit: "依職業與角色性格設計完整且有特色的服裝與配色，第一張母圖確立後不改款式",
     accessories: "由 AI 設計適量固定辨識配件；職業道具可依情境變換，不出現商標或文字",
     proportions: "頭身比例以客戶選單選擇為準；沒有指定才依本次畫風設計；全套一致",
-    illustration: `主題情境氛圍：${style}；畫面媒材與線條以客戶所選畫風為準，氛圍文字不得覆蓋畫風`,
+    illustration: "畫面媒材、線條與質感依客戶目前的畫風選單；主題氛圍只影響表情與情境，不得覆蓋選定畫風",
     coloring: "明亮協調的柔和彩色、細緻陰影、清晰輪廓、純白背景；同套維持一致",
   };
 }
@@ -5009,9 +5009,12 @@ export default function StickerPromptGenerator() {
   }, [businessAvatar, businessSignature]);
   const [style, setStyle] = useState(templates.businessPersonal.style);
   const selectedStylePrompt = optionPrompt(ILLUSTRATION_STYLE_OPTIONS, illustrationStyle);
+  const visualMood = illustrationStyle === "cute2d" || illustrationStyle === "comic"
+    ? style
+    : style.replace(/Q\\s*版(?:可愛)?|可愛\\s*Q\\s*版/gi, "親切自然");
   const visualStyle = photoMode === "realPhoto"
     ? realPhotoPolicy(realPhotoSubMode).visual
-    : `主題氣氛：${style}；使用者指定畫風：${selectedStylePrompt}。若氣氛描述與指定畫風衝突，必須以指定畫風為準`;
+    : `主題氣氛：${visualMood}；本次客戶指定畫風：${selectedStylePrompt}。角色媒材、頭身比例及線條以本次客戶選項為準，不使用其他畫風的固定模板`;
   const [texts, setTexts] = useState(
     getDefaultTextWithName("businessPersonal", "4x4", "none", "小宇"),
   );
