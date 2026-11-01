@@ -3532,11 +3532,11 @@ function buildRolePrompt(role: string, photoMode: PhotoMode, subMode: RealPhotoS
   }
 
   if (photoMode === "petPhoto") {
-    return `請以上傳的寵物照片作為同一隻寵物的唯一外觀參考。固定品種、毛色、斑紋、眼睛、耳朵、口鼻、體型與辨識特徵；依選定畫風製作原創寵物 Q 版貼圖，不可每格換成不同動物。參考貼圖主題：${role}。沒有寵物照片時，請先要求上傳照片，不要自行創造一隻替代寵物。`;
+    return `請以上傳的寵物照片作為同一隻寵物的唯一外觀參考。固定品種、毛色、斑紋、眼睛、耳朵、口鼻、體型與辨識特徵；依客戶選定的畫風製作貼圖，不預設強制 Q 版，不可每格換成不同動物。參考貼圖主題：${role}。沒有寵物照片時，請先要求上傳照片，不要自行創造一隻替代寵物。`;
   }
 
   if (photoMode === "realPerson") {
-    return `請以使用者提供的真人照片作為主角參考，轉成可愛 Q 版似顏繪 LINE 貼圖角色。務必保留真人的髮型、臉型、五官比例、眼睛形狀、鼻子位置、嘴型比例與整體氣質，不要重新創造成另一個人。職業服裝、配件與動作可參考：${role}。若沒有提供照片，請先以親切專業的原創角色替代。`;
+    return `請以使用者提供的真人照片作為主角參考，依當下選定畫風轉成似顏繪 LINE 貼圖角色。務必保留真人的髮型、臉型、五官比例、眼睛形狀、鼻子位置、嘴型比例與整體氣質，不要重新創造成另一個人。職業服裝、配件與動作可參考：${role}。若沒有提供照片，請先要求提供已授權照片，不可自行替換成陌生角色。`;
   }
 
   if (photoMode === "realPersonPureQ") {
@@ -4328,14 +4328,14 @@ function normalizeLines(textArea: string, count: number) {
   return lines.slice(0, count);
 }
 
-/** V2 美術完成度提升：尊重所選媒材，不覆蓋文字、人物、尺寸和安全區。 */
+/** 美術品質跟隨客戶畫風、比例、字型與字級，不再覆蓋選單設定。 */
 function premiumStickerArtPrompt(artStyle: IllustrationStyle, enabled: boolean, photoMode: PhotoMode) {
   if (!enabled || photoMode === "realPhoto") return "";
-  const shared = "【精緻美術強化 V2｜在使用者選定畫風內提升完成度】\n角色比例討喜、五官有辨識度、神情生動；髮型有自然層次，服裝與道具具備適量精緻細節，配色協調、輪廓乾淨。依主題創作專屬人物與職業情境，不沿用制式人物模板，也不預設性別、年齡、臉型、髮型或服裝。每格依指定短句變換眼神、嘴型、頭部角度、姿態與手勢，禁止整排重複微笑半身照；特效、愛心、星星或花朵可適量使用，但不得進入 15% 純白安全區、遮字或跨格。第一張母圖確立後，維持相同角色外貌與畫風。";
-  if (artStyle === "cute2d") return `${shared}\n本次選定「2D 可愛 Q 版」：高完成度、商用質感的精緻 2D Q 版插畫，大頭小身、明亮有神的眼睛與自然紅潤臉頰；細緻髮束、柔和光澤、清楚圓潤描邊、適度層次與柔和漸層陰影。人物不縮成小圖，文字使用已選的大字、字型與位置，不因美術效果改字或移位。`;
-  if (artStyle === "doll3d" || artStyle === "clay" || artStyle === "plush") return `${shared}\n依選定的 3D／黏土／毛絨材質提升光線、表面質感、立體感與精緻度，禁止改成 2D 插畫。`;
-  if (artStyle === "watercolor" || artStyle === "storybook" || artStyle === "korean" || artStyle === "pastel") return `${shared}\n依選定的手繪／繪本／柔和插畫風維持筆觸與色彩特性，不強制套用厚重 2D 勾線或 3D 質感。`;
-  return `${shared}\n只在選定畫風內強化細節、色彩、動作與可讀性，不自行改為 2D Q 版或 3D 公仔。`;
+  const shared = "【精緻美術強化｜不覆蓋使用者選項】\n五官與表情具辨識度、姿勢與道具依每句短語變化；髮絲、服裝與材質細節精緻，配色協調、輪廓乾淨，避免每格都只是相似微笑半身照。人物性別、年齡、五官、服裝及頭身比例以客戶選擇優先，未指定時才由 AI 原創設計。文字大小、字型、字色與位置完全依使用者當下選擇，不自行改成大字或上方文字；裝飾不可遮字、跨格或侵入安全留白。";
+  if (artStyle === "cute2d") return `${shared}\n本次使用精緻 2D 可愛 Q 版：眼睛有神、臉頰自然柔和、髮束有層次、圓潤輪廓與柔和漸層陰影；頭身比例以客戶指定為準，沒有指定才使用大頭小身的 Q 版比例。`;
+  if (artStyle === "doll3d" || artStyle === "clay" || artStyle === "plush") return `${shared}\n僅強化所選 3D／黏土／毛絨媒材的立體光線、材質與細節，禁止改成 2D。`;
+  if (artStyle === "watercolor" || artStyle === "storybook" || artStyle === "korean" || artStyle === "pastel") return `${shared}\n僅強化所選手繪、繪本、韓系或粉彩媒材的筆觸及色彩，不強制套用 2D Q 版粗描邊或 3D。`;
+  return `${shared}\n只提升本次選定畫風的完成度；半寫實、動漫、漫畫或貼紙風仍維持原本選項，不強制變成 2D Q 版或 3D。`;
 }
 
 function buildPrompt(
@@ -4548,14 +4548,14 @@ function defaultStickerIdentity(role: string, style: string): StickerIdentity {
   const multipleOrNonHuman = /情侶|夫妻|新郎|新娘|兩位|一家|全家|寵物|貓咪|狗狗|兔子|佛像|觀音|動物|怪獸|機器人/.test(role);
   return {
     appearance: multipleOrNonHuman
-      ? `貼圖主題：${role}；由 AI 依主題設定原創主角，保持每位角色造型一致`
-      : `貼圖主題與職業情境：${role}；主角性別、年齡與人物造型由 AI 依職業原創設計，不預設固定人物`,
+      ? "依主題設定原創角色或動物；若有多位角色，個別維持一致造型；客戶指定的角色特徵優先"
+      : "主角性別、年齡、外貌與職業服裝未指定時由 AI 依主題原創設計；客戶選擇優先",
     face: "臉型、眼睛、五官與膚色由 AI 依主題設計；第一張母圖確立後整套一致",
     hair: "髮型、髮色與瀏海由 AI 原創設計；第一張母圖確立後整套一致",
     outfit: "依職業與角色性格設計完整且有特色的服裝與配色，第一張母圖確立後不改款式",
     accessories: "由 AI 設計適量固定辨識配件；職業道具可依情境變換，不出現商標或文字",
-    proportions: "大頭小身的可愛 Q 版比例；如使用者指定其他角色比例或畫風，依使用者選擇，整套一致",
-    illustration: `職業主題氣氛參考：${style}；畫面媒材只依使用者在畫風選單的選擇，保持清楚精緻的輪廓、五官與材質；不強制套用 2D 或 3D`,
+    proportions: "頭身比例以客戶選單選擇為準；沒有指定才依本次畫風設計；全套一致",
+    illustration: `主題情境氛圍：${style}；畫面媒材與線條以客戶所選畫風為準，氛圍文字不得覆蓋畫風`,
     coloring: "明亮協調的柔和彩色、細緻陰影、清晰輪廓、純白背景；同套維持一致",
   };
 }
