@@ -2554,7 +2554,7 @@ export default function LineStickerTool() {
                   setDownloadCompleted(false);
                 }}
                 aria-pressed={exportPlatform === "line"}
-                className={`inline-flex min-h-11 w-auto max-w-full shrink-0 items-center justify-center rounded-xl border-2 px-4 py-2.5 text-center text-sm font-bold leading-5 shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:border-violet-500 hover:bg-violet-100 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 active:translate-y-0 ${exportPlatform === "line" ? "border-violet-600 bg-violet-600 text-white shadow-md hover:bg-violet-700 hover:text-white" : "border-violet-200 bg-violet-50 text-violet-900"}`}>
+                className={`inline-flex min-h-11 w-auto max-w-full shrink-0 items-center justify-center rounded-xl border-2 px-4 py-2.5 text-center text-sm font-bold leading-5 shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:border-violet-500 hover:bg-violet-100 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 active:translate-y-0 ${exportPlatform === "line" ? "border-violet-600 bg-violet-600 !text-white hover:!text-white active:!text-white disabled:!text-white shadow-md hover:bg-violet-700 hover:text-white" : "border-violet-200 bg-violet-50 text-violet-900"}`}>
                 {exportPlatform === "line" ? "✓ LINE · PNG／APNG" : "LINE · PNG／APNG"}
               </button>
               <button type="button" onClick={() => {
@@ -2565,7 +2565,7 @@ export default function LineStickerTool() {
                   setDownloadCompleted(false);
                 }}
                 aria-pressed={exportPlatform === "whatsapp"}
-                className={`inline-flex min-h-11 w-auto max-w-full shrink-0 items-center justify-center rounded-xl border-2 px-4 py-2.5 text-center text-sm font-bold leading-5 shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:border-violet-500 hover:bg-violet-100 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 active:translate-y-0 ${exportPlatform === "whatsapp" ? "border-violet-600 bg-violet-600 text-white shadow-md hover:bg-violet-700 hover:text-white" : "border-violet-200 bg-violet-50 text-violet-900"}`}>
+                className={`inline-flex min-h-11 w-auto max-w-full shrink-0 items-center justify-center rounded-xl border-2 px-4 py-2.5 text-center text-sm font-bold leading-5 shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:border-violet-500 hover:bg-violet-100 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 active:translate-y-0 ${exportPlatform === "whatsapp" ? "border-violet-600 bg-violet-600 !text-white hover:!text-white active:!text-white disabled:!text-white shadow-md hover:bg-violet-700 hover:text-white" : "border-violet-200 bg-violet-50 text-violet-900"}`}>
                 {exportPlatform === "whatsapp" ? "✓ WhatsApp · WebP" : "WhatsApp · WebP"}
               </button>
             </div>
@@ -2601,7 +2601,7 @@ export default function LineStickerTool() {
             <div className="mt-3 grid max-w-xl grid-cols-2 gap-2" role="group" aria-label="貼圖種類">
               {(["static", "animated"] as LineStickerMode[]).map(mode => (
                 <button key={mode} type="button" aria-pressed={selectedStickerMode === mode} onClick={() => changeStickerMode(mode)}
-                  className={`min-h-12 rounded-xl border-2 px-2 py-3 text-sm font-black ${selectedStickerMode === mode ? "border-violet-600 bg-violet-600 text-white" : "border-violet-300 bg-white text-violet-900"}`}>
+                  className={`min-h-12 rounded-xl border-2 px-2 py-3 text-sm font-black ${selectedStickerMode === mode ? "border-violet-600 bg-violet-600 !text-white hover:!text-white active:!text-white disabled:!text-white" : "border-violet-300 bg-white text-violet-900"}`}>
                   {selectedStickerMode === mode ? "✓ " : ""}{mode === "static" ? "靜態貼圖｜PNG" : "動態貼圖｜APNG"}
                 </button>
               ))}
@@ -2667,7 +2667,7 @@ export default function LineStickerTool() {
                 <button
                   type="button"
                   onClick={startNewStickerFlow}
-                  className="inline-flex min-h-12 w-auto max-w-full items-center justify-center rounded-2xl bg-violet-600 px-5 py-3 text-sm font-black text-white shadow-md transition hover:-translate-y-0.5 hover:bg-violet-700 hover:shadow-lg"
+                  className="inline-flex min-h-12 w-auto max-w-full items-center justify-center rounded-2xl bg-violet-600 px-5 py-3 text-sm font-black !text-white hover:!text-white active:!text-white disabled:!text-white shadow-md transition hover:-translate-y-0.5 hover:bg-violet-700 hover:shadow-lg"
                 >
                   ✨ 再做一組新貼圖｜回到第 1 步
                 </button>
@@ -2680,7 +2680,7 @@ export default function LineStickerTool() {
                   ⬇ 再下載一次同一個 ZIP
                 </button>
                 {exportPlatform === "line" ? <a href="https://creator.line.me/zh-hant/" target="_blank" rel="noopener noreferrer"
-                  className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-black text-white hover:bg-emerald-700">前往 LINE 官方上架後台 ↗</a> : null}
+                  className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-black !text-white hover:!text-white active:!text-white disabled:!text-white hover:bg-emerald-700">前往 LINE 官方上架後台 ↗</a> : null}
                 <button type="button" onClick={() => openToolShare("line")}
                   className="inline-flex min-h-12 items-center justify-center rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-sm font-black text-emerald-800">分享到 LINE</button>
                 <button type="button" onClick={() => openToolShare("facebook")}
@@ -2884,7 +2884,7 @@ export default function LineStickerTool() {
                     type="button"
                     disabled={loading}
                     onClick={() => motherSheetInputRef.current?.click()}
-                    className="inline-flex min-h-12 w-fit max-w-full items-center justify-center rounded-xl bg-violet-600 px-4 py-3 text-center text-sm font-black text-white shadow-md transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-2"
+                    className="inline-flex min-h-12 w-fit max-w-full items-center justify-center rounded-xl bg-violet-600 px-4 py-3 text-center text-sm font-black !text-white hover:!text-white active:!text-white disabled:!text-white shadow-md transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-2"
                   >
                     {loading && motherSheetDetectionStatus !== "cutting"
                       ? "正在判斷母圖格數…"
@@ -2957,7 +2957,7 @@ export default function LineStickerTool() {
                         type="button"
                         disabled={loading}
                         onClick={applyDetectedMotherSheetCount}
-                        className="mt-3 inline-flex min-h-11 items-center justify-center rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-violet-700 disabled:opacity-60"
+                        className="mt-3 inline-flex min-h-11 items-center justify-center rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-bold !text-white hover:!text-white active:!text-white disabled:!text-white hover:bg-violet-700 disabled:opacity-60"
                       >
                         改用 {suggestedMotherSheetCount} 張｜保留已選母圖
                       </button>
@@ -2999,7 +2999,7 @@ export default function LineStickerTool() {
                        {(["conservative", "standard", "large"] as const).map((fitMode) => (
                          <button key={fitMode} type="button" onClick={() => { setMotherSheetFit(fitMode); setCropMode("smart-safe"); setCropScale(100); setItemScales({}); setItemOffsets({}); }}
                            aria-pressed={motherSheetFit === fitMode}
-                           className={"min-h-11 rounded-xl border-2 px-2 py-2 text-xs font-black " + (motherSheetFit === fitMode ? "border-violet-600 bg-violet-600 text-white" : "border-violet-100 bg-violet-50 text-violet-900 hover:border-violet-300")}>
+                           className={"min-h-11 rounded-xl border-2 px-2 py-2 text-xs font-black " + (motherSheetFit === fitMode ? "border-violet-600 bg-violet-600 !text-white hover:!text-white active:!text-white disabled:!text-white" : "border-violet-100 bg-violet-50 text-violet-900 hover:border-violet-300")}>
                            {fitMode === "conservative" ? "保守・動態" : fitMode === "standard" ? "標準・推薦" : "放大・靜態"}
                          </button>
                        ))}
@@ -3117,7 +3117,7 @@ export default function LineStickerTool() {
                         !motherSheetPlanCheck.valid)
                     }
                     onClick={confirmMotherSheetSplit}
-                    className="mt-4 inline-flex min-h-12 w-auto max-w-full items-center justify-center rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-black text-white shadow-md transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                    className="mt-4 inline-flex min-h-12 w-auto max-w-full items-center justify-center rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-black !text-white hover:!text-white active:!text-white disabled:!text-white shadow-md transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
                   >
                     {loading && motherSheetDetectionStatus === "cutting"
                       ? "正在切圖、去背與安全整理…"
@@ -3144,7 +3144,7 @@ export default function LineStickerTool() {
                   type="button"
                   disabled={loading}
                   onClick={() => motherSheetInputRef.current?.click()}
-                  className="mt-3 inline-flex min-h-11 w-fit max-w-full items-center justify-center rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-violet-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 disabled:opacity-60"
+                  className="mt-3 inline-flex min-h-11 w-fit max-w-full items-center justify-center rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-bold !text-white hover:!text-white active:!text-white disabled:!text-white transition-colors hover:bg-violet-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 disabled:opacity-60"
                 >
                   改用整張母圖自動切割 →
                 </button>
@@ -3187,19 +3187,19 @@ export default function LineStickerTool() {
                 <div className="flex flex-wrap gap-2">
                   <button
                     onClick={() => setCropMode("contain-safe") }
-                    className={`whitespace-nowrap rounded-lg px-2 py-2 text-[11px] font-black leading-none transition-all ${cropMode === "contain-safe" ? "bg-blue-600 text-white shadow-md" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}
+                    className={`whitespace-nowrap rounded-lg px-2 py-2 text-[11px] font-black leading-none transition-all ${cropMode === "contain-safe" ? "bg-blue-600 !text-white hover:!text-white active:!text-white disabled:!text-white shadow-md" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}
                   >
                     文字保護
                   </button>
                   <button
                     onClick={() => setCropMode("smart-safe")}
-                    className={`whitespace-nowrap rounded-lg px-2 py-2 text-[11px] font-black leading-none transition-all ${cropMode === "smart-safe" ? "bg-blue-600 text-white shadow-md" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}
+                    className={`whitespace-nowrap rounded-lg px-2 py-2 text-[11px] font-black leading-none transition-all ${cropMode === "smart-safe" ? "bg-blue-600 !text-white hover:!text-white active:!text-white disabled:!text-white shadow-md" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}
                   >
                     智慧滿版
                   </button>
                   <button
                     onClick={() => setCropMode("crop")}
-                    className={`whitespace-nowrap rounded-lg px-2 py-2 text-[11px] font-black leading-none transition-all ${cropMode === "crop" ? "bg-blue-600 text-white shadow-md" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}
+                    className={`whitespace-nowrap rounded-lg px-2 py-2 text-[11px] font-black leading-none transition-all ${cropMode === "crop" ? "bg-blue-600 !text-white hover:!text-white active:!text-white disabled:!text-white shadow-md" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}
                   >
                     滿版
                   </button>
@@ -3341,7 +3341,7 @@ export default function LineStickerTool() {
                     全部縮小 −5%
                   </button>
                   <button type="button" onClick={() => nudgeAllScales(5)}
-                    className="inline-flex min-h-11 w-auto max-w-full shrink-0 items-center justify-center rounded-xl bg-violet-700 px-4 py-2.5 text-sm font-black text-white hover:bg-violet-800">
+                    className="inline-flex min-h-11 w-auto max-w-full shrink-0 items-center justify-center rounded-xl bg-violet-700 px-4 py-2.5 text-sm font-black !text-white hover:!text-white active:!text-white disabled:!text-white hover:bg-violet-800">
                     全部放大 +5%
                   </button>
                   <button type="button" onClick={() => updateGlobalScale(100)}
@@ -3372,7 +3372,7 @@ export default function LineStickerTool() {
               <div className="mb-4 flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-3">
                 <span className="text-sm font-black text-slate-700">透明去背檢查：</span>
                 <button type="button" onClick={() => setDarkStickerPreview(false)}
-                  className={`rounded-xl px-3 py-2 text-xs font-black ${!darkStickerPreview ? "bg-blue-600 text-white" : "bg-white text-slate-700"}`}>
+                  className={`rounded-xl px-3 py-2 text-xs font-black ${!darkStickerPreview ? "bg-blue-600 !text-white hover:!text-white active:!text-white disabled:!text-white" : "bg-white text-slate-700"}`}>
                   白底
                 </button>
                 <button type="button" onClick={() => setDarkStickerPreview(true)}
@@ -3488,7 +3488,7 @@ export default function LineStickerTool() {
               <button
                 onClick={exportPlatform === "whatsapp" ? generateWhatsAppZip : generateZip}
                 disabled={!canDownload || loading}
-                className={`inline-flex min-h-12 w-auto max-w-full shrink-0 items-center justify-center rounded-2xl px-4 py-2.5 text-center text-sm font-black leading-5 shadow-lg transition-all active:scale-[0.97] sm:min-h-[52px] ${!canDownload || loading ? "cursor-not-allowed bg-slate-200 text-slate-400 shadow-none" : "bg-blue-600 text-white hover:bg-blue-700 shadow-lg"}`}
+                className={`inline-flex min-h-12 w-auto max-w-full shrink-0 items-center justify-center rounded-2xl px-4 py-2.5 text-center text-sm font-black leading-5 shadow-lg transition-all active:scale-[0.97] sm:min-h-[52px] ${!canDownload || loading ? "cursor-not-allowed bg-slate-200 text-slate-400 shadow-none" : "bg-blue-600 !text-white hover:!text-white active:!text-white disabled:!text-white hover:bg-blue-700 shadow-lg"}`}
               >
                 {loading
                   ? t("line_sticker_processing")
@@ -3508,7 +3508,7 @@ export default function LineStickerTool() {
             <button type="button" onClick={startNewStickerFlow} disabled={loading}
               className="inline-flex min-h-11 items-center justify-center rounded-xl border border-violet-300 bg-violet-50 px-4 py-2 text-xs font-black text-violet-900 hover:bg-violet-100 disabled:opacity-50">再做新的一組｜從第 1 步重做</button>
             {downloadCompleted && exportPlatform === "line" ? <a href="https://creator.line.me/zh-hant/" target="_blank" rel="noopener noreferrer"
-              className="inline-flex min-h-11 items-center justify-center rounded-xl bg-emerald-600 px-4 py-2 text-xs font-black text-white hover:bg-emerald-700">前往 LINE 官方上架後台 ↗</a> : null}
+              className="inline-flex min-h-11 items-center justify-center rounded-xl bg-emerald-600 px-4 py-2 text-xs font-black !text-white hover:!text-white active:!text-white disabled:!text-white hover:bg-emerald-700">前往 LINE 官方上架後台 ↗</a> : null}
             {downloadCompleted ? <button type="button" onClick={() => openToolShare("line")}
               className="inline-flex min-h-11 items-center justify-center rounded-xl border border-blue-200 bg-white px-4 py-2 text-xs font-black text-blue-800">分享製作工具</button> : null}
           </div>
