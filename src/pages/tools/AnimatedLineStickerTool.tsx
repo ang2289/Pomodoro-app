@@ -1325,7 +1325,7 @@ async function waitMs(ms: number) {
 }
 
 // TUTU_MP4_QR_RESTORE_20261101: browser-only settings; never included in LINE/WhatsApp sticker ZIP.
-const VIDEO_QR_FALLBACK_URL = "https://store.line.me/";
+const VIDEO_QR_FALLBACK_URL = "https://store.line.me/stickershop/author/5530587/zh-Hant";
 const VIDEO_QR_HISTORY_KEY = "tutu:video-qr-history-v1";
 const VIDEO_QR_LAST_KEY = "tutu:video-qr-last-v1";
 function videoQrUrlIsValid(raw: string): boolean {
@@ -1338,15 +1338,18 @@ function videoQrUrlIsValid(raw: string): boolean {
 function readVideoQrHistory(): string[] {
   try {
     const list: unknown = JSON.parse(localStorage.getItem(VIDEO_QR_HISTORY_KEY) || "[]");
-    return Array.isArray(list)
-      ? [...new Set(list.filter((item): item is string => typeof item === "string" && videoQrUrlIsValid(item)))].slice(0, 10)
+    const saved = Array.isArray(list)
+      ? list.filter((item): item is string => typeof item === "string" && videoQrUrlIsValid(item) && !/^https?:\/\/store\.line\.me\/?$/.test(item))
       : [];
+    return [...new Set([VIDEO_QR_FALLBACK_URL, ...saved])].slice(0, 10);
   } catch { return []; }
 }
 function readLastVideoQrUrl(): string {
   try {
     const saved = localStorage.getItem(VIDEO_QR_LAST_KEY) || "";
-    return videoQrUrlIsValid(saved) ? saved : VIDEO_QR_FALLBACK_URL;
+    // Earlier QA used the LINE Store homepage as a placeholder: migrate only that obsolete default.
+    return videoQrUrlIsValid(saved) && !/^https?:\/\/store\.line\.me\/?$/.test(saved)
+      ? saved : VIDEO_QR_FALLBACK_URL;
   } catch { return VIDEO_QR_FALLBACK_URL; }
 }
 function rememberVideoQrUrl(value: string): string[] {
@@ -3620,7 +3623,7 @@ const AnimatedLineStickerTool: React.FC = () => {
               </label>
               <button type="button" disabled={batchVideoBusy || batchBusy}
                 onClick={exportBatchHdVideo}
-                className="mt-3 min-h-12 rounded-2xl bg-rose-600 px-5 py-3 text-sm font-black text-white shadow-md hover:bg-rose-700 disabled:cursor-not-allowed disabled:bg-slate-300">
+                className="mt-3 min-h-12 rounded-2xl bg-rose-600 px-5 py-3 text-sm font-black !text-white hover:!text-white active:!text-white disabled:!text-white shadow-md hover:bg-rose-700 disabled:cursor-not-allowed disabled:bg-slate-300">
                 {batchVideoBusy ? `正在製作高清影片 ${batchVideoProgress}%…` : "下載整套高清影片（MP4 優先）"}
               </button>
               {batchVideoBusy ? <div className="mt-3 h-2 overflow-hidden rounded-full bg-rose-200"><div className="h-full bg-rose-600 transition-all" style={{ width: `${batchVideoProgress}%` }} /></div> : null}
@@ -3795,7 +3798,7 @@ const AnimatedLineStickerTool: React.FC = () => {
                   type="button"
                   disabled={!canExportApng || busy}
                   onClick={exportManualStoryboardPack}
-                  className="mt-4 inline-flex min-h-12 w-auto max-w-full items-center justify-center rounded-2xl bg-violet-600 px-4 py-3 text-sm font-black !text-white shadow-md transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                  className="mt-4 inline-flex min-h-12 w-auto max-w-full items-center justify-center rounded-2xl bg-violet-600 px-4 py-3 text-sm font-black !text-white hover:!text-white active:!text-white disabled:!text-white shadow-md transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-slate-300"
                 >
                   {busy ? "處理中…" : "📦 一鍵製作＋打包自備分鏡"}
                 </button>
@@ -3806,7 +3809,7 @@ const AnimatedLineStickerTool: React.FC = () => {
                   type="button"
                   disabled={!canExportApng || busy}
                   onClick={exportApng}
-                  className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-2xl bg-fuchsia-600 px-4 py-3 text-sm font-black leading-none !text-white shadow-md transition hover:bg-fuchsia-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                  className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-2xl bg-fuchsia-600 px-4 py-3 text-sm font-black leading-none !text-white hover:!text-white active:!text-white disabled:!text-white shadow-md transition hover:bg-fuchsia-700 disabled:cursor-not-allowed disabled:bg-slate-300"
                 >
                   {busy ? t("animated_line_sticker.processing") : t("animated_line_sticker.download_apng_button")}
                 </button>
@@ -3814,7 +3817,7 @@ const AnimatedLineStickerTool: React.FC = () => {
                   type="button"
                   disabled={!canExport || busy}
                   onClick={exportGif}
-                  className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-black leading-none !text-white shadow-md transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                  className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-black leading-none !text-white hover:!text-white active:!text-white disabled:!text-white shadow-md transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
                 >
                   {busy ? t("animated_line_sticker.processing") : t("animated_line_sticker.download_gif_button")}
                 </button>
@@ -3822,7 +3825,7 @@ const AnimatedLineStickerTool: React.FC = () => {
                   type="button"
                   disabled={!canExport || busy}
                   onClick={() => exportVideo("normal")}
-                  className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-2xl bg-orange-500 px-4 py-3 text-sm font-black leading-none !text-white shadow-md transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-slate-300"
+                  className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-2xl bg-orange-500 px-4 py-3 text-sm font-black leading-none !text-white hover:!text-white active:!text-white disabled:!text-white shadow-md transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-slate-300"
                 >
                   {busy ? t("animated_line_sticker.processing") : t("animated_line_sticker.download_mp4_button")}
                 </button>
@@ -3830,7 +3833,7 @@ const AnimatedLineStickerTool: React.FC = () => {
                   type="button"
                   disabled={!canExport || busy}
                   onClick={() => exportVideo("hd")}
-                  className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-2xl bg-rose-600 px-4 py-3 text-sm font-black leading-none !text-white shadow-md transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                  className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-2xl bg-rose-600 px-4 py-3 text-sm font-black leading-none !text-white hover:!text-white active:!text-white disabled:!text-white shadow-md transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:bg-slate-300"
                 >
                   {busy ? t("animated_line_sticker.processing") : "下載高清 MP4"}
                 </button>
@@ -3838,7 +3841,7 @@ const AnimatedLineStickerTool: React.FC = () => {
                   type="button"
                   disabled={!canExport || busy}
                   onClick={exportZip}
-                  className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-2xl bg-sky-600 px-4 py-3 text-sm font-black leading-none !text-white shadow-md transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                  className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-2xl bg-sky-600 px-4 py-3 text-sm font-black leading-none !text-white hover:!text-white active:!text-white disabled:!text-white shadow-md transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-300"
                 >
                   {busy ? t("animated_line_sticker.processing") : t("animated_line_sticker.download_zip_button")}
                 </button>
@@ -3846,7 +3849,7 @@ const AnimatedLineStickerTool: React.FC = () => {
                   type="button"
                   disabled={!canExport || busy}
                   onClick={exportSmallImages}
-                  className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-black leading-none !text-white shadow-md transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                  className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-black leading-none !text-white hover:!text-white active:!text-white disabled:!text-white shadow-md transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-300"
                 >
                   {busy ? t("animated_line_sticker.processing") : "下載小圖 ZIP（main＋tab）"}
                 </button>
