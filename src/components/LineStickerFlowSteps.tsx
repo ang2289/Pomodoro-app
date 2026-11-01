@@ -20,9 +20,12 @@ export default function LineStickerFlowSteps({
     if (!location.hash) return;
     let anchorId = location.hash.slice(1);
     try { anchorId = decodeURIComponent(anchorId); } catch { /* 保留原始 hash */ }
-    const target = document.getElementById(anchorId)
-      ?? (anchorId === "mother-split" ? document.getElementById("mother-upload") : null);
-    target?.scrollIntoView({ behavior: "auto", block: "start" });
+    // Step 3 is now a single top-to-bottom flow. Do not skip its platform/mode/count controls.
+    if (anchorId === "mother-upload" || anchorId === "mother-split") {
+      window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "auto" }));
+      return;
+    }
+    document.getElementById(anchorId)?.scrollIntoView({ behavior: "auto", block: "start" });
   }, [location.pathname, location.hash]);
 
   // The entire product flow is five steps. Making APNG/WebP is part of step 5,
