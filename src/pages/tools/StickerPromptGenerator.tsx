@@ -4580,6 +4580,85 @@ ${fields}
 所有母圖及每一格必須共用上述人物臉型、眼睛、五官、髮型、服裝、配件、頭身比例、畫風、線條粗細、陰影、字型、字色及排版。不得另創角色；僅允許改表情、手勢、動作、合適道具與指定貼圖短句。禁止把本段設定當作圖中文字印在畫面上。`;
 }
 
+
+/** TUTU-V6-SIMPLE-THEME-20261102
+ * 簡易主題模式忽略進階角色快取與模板人物鎖定；進階模式仍保留舊產生器。
+ */
+type TutuSimpleMotherInput = {
+  label: string; role: string; style: string; grid: GridType; batchTexts: string[];
+  textSize: TextSize; textColor: TextColor; textPosition: TextPosition; fontStyle: FontStyle;
+  photoMode: PhotoMode; subMode: RealPhotoSubMode; batchNumber: number;
+  mode: LineStickerMode; platform: "line" | "whatsapp"; startIndex: number;
+};
+function tutuStickerAction(text: string, index: number): string {
+  const rules: Array<[RegExp, string]> = [
+    [/收到|確認|了解|明白/, "點頭、確認手勢"],
+    [/忙|處理|趕工|加班/, "專注工作、操作道具"],
+    [/開會|會議|洽談|討論/, "站立簡報、解說"],
+    [/謝|辛苦|感恩/, "鞠躬、雙手致意"],
+    [/累|疲|休息|睡/, "趴桌、抱枕放鬆"],
+    [/下班|放假|完成|交件/, "開心跳躍、舉手慶祝"],
+    [/稍等|等待|回覆/, "看手錶、耐心等待"],
+    [/跟進|進度|安排|通知|消息/, "查看記事本、手機聯絡"],
+    [/安全|放心|平安|小心/, "安心提醒、保護手勢"],
+    [/加油|撐住|救命|努力/, "握拳鼓勵、戲劇化驚訝"],
+    [/歡迎|順心|再找|祝您/, "揮手、張開雙臂"],
+    [/備註|資料|紀錄|檢查/, "拿筆記本仔細記錄"],
+  ];
+  const match = rules.find(([pattern]) => pattern.test(text));
+  const variants = ["揮手問候","雙手介紹","站姿解說","拿出工作道具","輕快走動","轉身聆聽","比讚微笑","驚喜張嘴","坐姿專注","張開雙手","比心致意","舉手慶祝"];
+  return match?.[1] ?? variants[index % variants.length];
+}
+function buildSimpleFlowPrompt(input: TutuSimpleMotherInput): string {
+  const {label, role, style, grid, batchTexts, textSize, textColor, textPosition,
+    fontStyle, photoMode, subMode, batchNumber, mode, platform, startIndex} = input;
+  const columns = grid === "5x4" ? 5 : 4;
+  const rows = grid === "4x2" ? 2 : grid === "5x4" ? 4 : grid === "4x4" ? 4 : 5;
+  const canvas = grid === "4x2" ? "2:1 橫向" : grid === "4x4" ? "1:1 正方形" : grid === "5x4" ? "5:4 橫向" : "4:5 直向";
+  const realUnchanged = photoMode === "realPhoto" && subMode === "unchanged";
+  const guide = photoMode === "original"
+    ? `以「${label}」為主題，原創設計親切、有辨識度的貼圖角色。參考情境：${role}。未明確指定的年齡、性別、五官、髮型、服裝和色彩由 AI 原創搭配，不套用固定業務角色模板。`
+    : buildRolePrompt(role,photoMode,subMode);
+  const continuity = batchNumber === 1
+    ? "這是第 1 張基準母圖：先設計主角，再讓所有格子固定同一臉型、髮型、衣著與畫風，完成後保留原圖。"
+    : "這是後續母圖：請回到同一 AI 對話，附上第 1 張母圖鎖定相同角色、服裝、畫風與比例；照片模式同時附授權原照片。";
+  const layout = textPosition === "mixed"
+    ? "全球序號奇數格文字左、人物右；偶數格人物左、文字右"
+    : textPosition === "bottom" ? "文字在正下方、人物在上方" : "文字在正上方、人物在下方";
+  const content = batchTexts.map((line, i) => {
+    const index = startIndex + i;
+    const position = textPosition === "mixed"
+      ? (index % 2 ? "人物左、文字右" : "文字左、人物右")
+      : textPosition === "bottom" ? "文字下方" : "文字上方";
+    const action = realUnchanged ? "沿用原照片已有姿勢，只做排版" : tutuStickerAction(line,index);
+    return `${i+1}.「${line}」｜${position}｜動作：${action}`;
+  }).join("\n");
+  const art = realUnchanged
+    ? "僅以授權原照片去背、裁切與排版，不變更真人身分和既有表情姿勢。"
+    : "精品商用貼圖品質：生動五官、細緻髮束、乾淨輪廓、協調配色與柔和陰影；每格按照短句設計不同表情、姿態及道具，允許站姿、坐姿、轉身與全身動作，避免大量相似微笑半身照。使用者選擇 2D 就保持 2D，其他畫風亦照選項，不強制轉換媒材。";
+  return `請直接生成一張完整 ${platform === "whatsapp" ? "WhatsApp" : "LINE"} ${label}母圖，只輸出圖片，不要說明。
+
+【格數與畫布】第 ${batchNumber} 張；${columns} 欄 × ${rows} 列、共 ${columns * rows} 格；${canvas}。純白背景、等大格子、不畫格線。${mode === "animated" ? "這是供動態貼圖使用的靜止母圖，保留位移空間，不生成動畫影格。" : "靜態貼圖母圖，方便直接切割。"}
+
+【角色】${guide}
+${continuity}
+
+【美術】${photoMode === "realPhoto" ? realPhotoPolicy(subMode).visual : style}。${art}同一張母圖的角色外貌、服裝與頭身比例必須完全一致。
+
+【文字】每格只有指定繁體中文短句。字型：${optionPrompt(FONT_STYLE_OPTIONS,fontStyle)}；字級：${optionPrompt(TEXT_SIZE_OPTIONS,textSize)}；字色：${optionPrompt(TEXT_COLOR_OPTIONS,textColor)}；位置：${layout}。文字不可壓住角色；長句只在指定位置換行或縮小，不得改成其他排版。
+
+【安全切圖】每格四周保留約 15% 連續純白安全區；人物、文字、道具及特效全在中央 70% × 70% 範圍。圖文不得跨格或貼邊，不加格線或背景字、商標、Logo、序號、QR Code、浮水印。
+
+【由左至右、由上到下的短句與動作】每格只印雙引號內指定短句，動作文字不印在圖上：
+${content}
+
+請只輸出這張 ${columns}×${rows} 母圖，${batchTexts.length} 句各出現一次、順序正確，保持角色一致，沒有裁切到圖文。`;
+}
+function buildSimpleStablePrompt(label: string, role: string, style: string, grid: GridType, photoMode: PhotoMode, subMode: RealPhotoSubMode): string {
+  const columns = grid === "5x4" ? 5 : 4, rows = grid === "4x2" ? 2 : grid === "4x4" || grid === "5x4" ? 4 : 5;
+  return `請生成 ${label} 的 ${columns}×${rows} 無字草稿母圖。角色：${buildRolePrompt(role,photoMode,subMode)}。畫風：${style}。純白背景、格子等大、不畫格線；每格四周保留 15% 純白安全帶。同一主角、衣著和配色，每格不同姿態及職業道具；照片模式保留授權照片原貌。不加任何文字或浮水印。`;
+}
+
 function buildFlowPrompt(
   label: string,
   role: string,
@@ -4942,6 +5021,7 @@ export default function StickerPromptGenerator() {
       ? "animated"
       : "static";
   const [stickerMode, setStickerMode] = useState<LineStickerMode>(initialMode);
+  const [simpleMode, setSimpleMode] = useState(true);
   const [stickerPlatform, setStickerPlatform] = useState<"line" | "whatsapp">(
     typeof window !== "undefined" && new URLSearchParams(window.location.search).get("platform") === "whatsapp"
       ? "whatsapp"
@@ -4960,7 +5040,7 @@ export default function StickerPromptGenerator() {
   const [customName, setCustomName] = useState("小宇");
   const [textSize, setTextSize] = useState<TextSize>("large");
   const [textColor, setTextColor] = useState<TextColor>("colorfulWhite");
-  const [textPosition, setTextPosition] = useState<TextPosition>("mixed");
+  const [textPosition, setTextPosition] = useState<TextPosition>("top");
   const [fontStyle, setFontStyle] = useState<FontStyle>("roundBold");
   const [stickerStylePreset, setStickerStylePreset] =
     useState<StickerStylePreset>("friendly");
@@ -5228,7 +5308,15 @@ export default function StickerPromptGenerator() {
         const batchTexts = flowTexts.slice(item.startIndex, item.endIndex);
         return {
           ...item,
-          prompt: buildFlowPrompt(
+          prompt: simpleMode
+            ? buildSimpleFlowPrompt({
+                label: templates[type].label, role: templates[type].role,
+                style: photoMode === "realPhoto" ? visualStyle : selectedStylePrompt,
+                grid: item.grid, batchTexts, textSize, textColor, textPosition, fontStyle,
+                photoMode, subMode: realPhotoSubMode, batchNumber: index + 1,
+                mode: stickerMode, platform: stickerPlatform, startIndex: item.startIndex,
+              })
+            : buildFlowPrompt(
             templates[type].label,
             effectiveRole,
             visualStyle,
@@ -5265,14 +5353,21 @@ export default function StickerPromptGenerator() {
       stickerMode,
       stickerPlatform,
       identityLock,
+      simpleMode,
+      selectedStylePrompt,
     ],
   );
 
   const requiredCount = targetCount;
   const currentCount = flowTexts.length;
   const prompt = useMemo(
-    () =>
-      buildPrompt(
+    () => simpleMode ? buildSimpleFlowPrompt({
+        label: templates[type].label, role: templates[type].role,
+        style: photoMode === "realPhoto" ? visualStyle : selectedStylePrompt,
+        grid, batchTexts: normalizeLines(texts, gridOptions[grid].count),
+        textSize, textColor, textPosition, fontStyle, photoMode,
+        subMode: realPhotoSubMode, batchNumber: 1, mode: stickerMode, platform: stickerPlatform, startIndex: 0,
+      }) : buildPrompt(
         templates[type].label,
         effectiveRole,
         visualStyle,
@@ -5299,11 +5394,11 @@ export default function StickerPromptGenerator() {
       stickerStylePreset,
       photoMode,
       realPhotoSubMode,
+      simpleMode, stickerMode, stickerPlatform, selectedStylePrompt,
     ],
   );
   const stablePrompt = useMemo(
-    () =>
-      buildStablePrompt(
+    () => simpleMode ? buildSimpleStablePrompt(templates[type].label, templates[type].role, photoMode === "realPhoto" ? visualStyle : selectedStylePrompt, grid, photoMode, realPhotoSubMode) : buildStablePrompt(
         templates[type].label,
         effectiveRole,
         visualStyle,
@@ -5312,7 +5407,7 @@ export default function StickerPromptGenerator() {
         photoMode,
         realPhotoSubMode,
       ),
-    [type, effectiveRole, visualStyle, grid, stickerStylePreset, photoMode, realPhotoSubMode],
+    [type, effectiveRole, visualStyle, grid, stickerStylePreset, photoMode, realPhotoSubMode, simpleMode, selectedStylePrompt],
   );
 
   function handleTypeChange(nextType: TemplateKey) {
@@ -5593,6 +5688,22 @@ export default function StickerPromptGenerator() {
                   {filteredTemplateEntries.length} 筆
                 </span>
               </div>
+              <div className="mt-4 rounded-2xl border-2 border-violet-200 bg-violet-50 p-3" aria-label="貼圖設定模式">
+                <p className="mb-2 text-sm font-black text-violet-950">設定模式</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <button type="button" aria-pressed={simpleMode} onClick={() => setSimpleMode(true)}
+                    className={simpleMode ? "min-h-12 rounded-xl bg-violet-600 px-3 py-2 text-sm font-black !text-white" : "min-h-12 rounded-xl border border-violet-200 bg-white px-3 py-2 text-sm font-black text-violet-900"}>
+                    簡易大主題（推薦）
+                  </button>
+                  <button type="button" aria-pressed={!simpleMode} onClick={() => setSimpleMode(false)}
+                    className={!simpleMode ? "min-h-12 rounded-xl bg-violet-600 px-3 py-2 text-sm font-black !text-white" : "min-h-12 rounded-xl border border-violet-200 bg-white px-3 py-2 text-sm font-black text-violet-900"}>
+                    進階自訂
+                  </button>
+                </div>
+                <p className="mt-2 text-xs leading-6 text-violet-900">{simpleMode
+                  ? "選好主題即可讓 AI 原創設計角色；隱藏的舊人設不會加入指令。"
+                  : "進階模式可調整年齡、性別、服裝與角色鎖定；切換不會清除填寫內容。"}</p>
+              </div>
               <div className="mt-2 rounded-xl bg-slate-50 p-3">
                 <label className="block text-xs font-black text-violet-700">
                   搜尋職業／主題
@@ -5829,6 +5940,7 @@ export default function StickerPromptGenerator() {
                         : "已選下方：每格文字必須在人物下方。"}
                   </p>
                 </div>
+                {!simpleMode && (
                 <div>
                   <label className="block text-xs font-black text-slate-500">
                     貼圖氛圍加強（可選）
@@ -5849,9 +5961,11 @@ export default function StickerPromptGenerator() {
                     ))}
                   </select>
                 </div>
+                )}
               </div>
 
 
+              {!simpleMode && (<>
               {photoMode === "original" && !/情侶|夫妻|新郎|新娘|兩位|一家|全家|寵物|貓咪|狗狗|兔子|佛像|觀音|動物|怪獸|機器人/.test(role) && (
                 <section className="mt-5 rounded-xl border border-slate-200 bg-white p-4" aria-label="自選角色性別、年齡、個性與五官">
                   <h4 className="text-base font-bold text-slate-900">我的角色要長什麼樣子？</h4>
@@ -5987,6 +6101,8 @@ export default function StickerPromptGenerator() {
                 rows={4}
                 className="mt-2 min-h-[110px] w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm leading-7 text-slate-700 outline-none focus:border-violet-400"
               />
+
+              </>)}
 
               <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
