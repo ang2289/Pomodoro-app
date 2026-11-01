@@ -5011,7 +5011,7 @@ export default function StickerPromptGenerator() {
   const selectedStylePrompt = optionPrompt(ILLUSTRATION_STYLE_OPTIONS, illustrationStyle);
   const visualMood = illustrationStyle === "cute2d" || illustrationStyle === "comic"
     ? style
-    : style.replace(/Q\\s*版(?:可愛)?|可愛\\s*Q\\s*版/gi, "親切自然");
+    : style.replace(/Q\s*版(?:可愛)?|可愛\s*Q\s*版/gi, "親切自然");
   const visualStyle = photoMode === "realPhoto"
     ? realPhotoPolicy(realPhotoSubMode).visual
     : `主題氣氛：${visualMood}；本次客戶指定畫風：${selectedStylePrompt}。角色媒材、頭身比例及線條以本次客戶選項為準，不使用其他畫風的固定模板`;
