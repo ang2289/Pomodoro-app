@@ -850,7 +850,7 @@ const templates: Record<TemplateKey, Template> = {
   },
   businessPersonal: {
     label: "業務個人品牌貼圖",
-    role: "一位親切專業的原創台灣業務角色，搭配手機、文件夾、筆記本、業務洽談或服務道具，表情包含收到、確認、追進度、感謝與安心服務。角色的年齡、外觀、髮型、服裝和配色須依下方專屬角色設定，不預設任何固定男業務、西裝背心或棕髮造型",
+    role: "一位親切專業的原創台灣業務角色，搭配手機、文件夾、筆記本、業務洽談或服務道具，表情包含收到、確認、追進度、感謝與安心服務。主角的性別、年齡、臉型、髮型、服裝和配色預設由 AI 依情境設計；若使用者有明確選擇，優先遵守選擇，不套用固定人物模板",
     style:
       "Q版可愛、親切專業、有個人品牌記憶點、適合業務回覆客戶與長期經營關係",
     texts: [
@@ -4384,7 +4384,7 @@ function buildPrompt(
   const whitespaceRules = buildMotherSheetWhitespaceRules(grid, stickerMode);
   const premiumArtPrompt = premiumStickerArtPrompt(artStyle, premiumArtQuality, photoMode);
 
-  return `請設計一張 ${platform === "whatsapp" ? "WhatsApp" : "LINE"} ${label}大圖，白色背景，${style}。\n\n商用販售安全：每格只能出現下方指定的主要貼圖短句，禁止在卡片、紙袋、花籃、店招、制服、道具額外產生任何文字、英文 NEW、價格、網址、QR Code、商標、店家 Logo、品牌字樣或促銷宣傳；${photoMode === "realPhoto" ? (subMode === "expressive" ? "以有權使用的真實照片作為唯一人物身份參考，可依指令生成自然的新表情與動作，不得模仿陌生人或加入未授權品牌。" : "只能使用已獲授權的原始真人照片，不得模仿未授權人物或加入品牌元素。") : "角色、衣服與道具皆需為原創，不可仿畫知名品牌角色。"}圖文清晰易讀、避免多手多腳、勿遮住文字。\n\n${rolePrompt}\n\n${premiumArtPrompt ? `${premiumArtPrompt}\n\n` : ""}${whitespaceRules}\n\n風格加強：${safeStylePrompt}。\n\n真人／原創設定：${photoModePrompt}。${photoReminder}\n\n請畫成 ${gridInfo.layoutText}。每格貼圖都要獨立清楚、平均排列。每一格的角色＋文字＋裝飾只佔該格中央約 70%～74%，上下左右至少保留約 13%～15% 的純白安全留白，格與格之間必須看得到明顯白色空間，方便後續平均切割。角色與文字都要完整置中在各自格子內，不可超出邊界、不可跨格、不可互相重疊；每格最外圈至少 13% 純白，格線附近不可有花瓣、陰影或字；若空間不足，寧可把角色與文字整體縮小，也不要貼邊。\n\n文字設定（優先於其他畫風描述）：請使用繁體中文。字型造型遵守「${fontStylePrompt}」；文字大小遵守「${textSizePrompt}」；填色、描邊與文字效果遵守「${textColorPrompt}」；**文字所在區域必須嚴格遵守「${textPositionPrompt}」**。若背景情境或貼圖風格暗示不同的位置，仍以本次「文字位置」選項為準；不可自行改變為其他排版。文字必須清楚好讀，文字與頭髮、臉、手勢、手機、文件等主體至少保留明顯空隙，不可壓在人物或道具上；文字四周也要保留白邊，不要貼近格子邊界，不要切到字，不可出現序號、數字、標題、格號或列表符號。\n\n${photoPerformance}${individualPlan}\n\n貼圖文字如下：\n${numberedTexts}`;
+  return `請設計一張 ${platform === "whatsapp" ? "WhatsApp" : "LINE"} ${label}大圖，白色背景，${style}。\n\n商用販售安全：每格只能出現下方指定的主要貼圖短句，禁止在卡片、紙袋、花籃、店招、制服、道具額外產生任何文字、英文 NEW、價格、網址、QR Code、商標、店家 Logo、品牌字樣或促銷宣傳；${photoMode === "realPhoto" ? (subMode === "expressive" ? "以有權使用的真實照片作為唯一人物身份參考，可依指令生成自然的新表情與動作，不得模仿陌生人或加入未授權品牌。" : "只能使用已獲授權的原始真人照片，不得模仿未授權人物或加入品牌元素。") : "角色、衣服與道具皆需為原創，不可仿畫知名品牌角色。"}圖文清晰易讀、避免多手多腳、勿遮住文字。\n\n${rolePrompt}\n\n${premiumArtPrompt ? `${premiumArtPrompt}\n\n` : ""}${whitespaceRules}\n\n風格加強：${safeStylePrompt}。\n\n真人／原創設定：${photoModePrompt}。${photoReminder}\n\n版型為 ${gridInfo.layoutText}，僅輸出一張母圖。完整圖文放在各格中央安全區；純白切圖通道與四邊各 15% 留白，依上方強制切圖規則執行，不跨格、不畫格線。\n\n文字設定（優先於其他畫風描述）：請使用繁體中文。字型造型遵守「${fontStylePrompt}」；文字大小遵守「${textSizePrompt}」；填色、描邊與文字效果遵守「${textColorPrompt}」；**文字所在區域必須嚴格遵守「${textPositionPrompt}」**。若背景情境或貼圖風格暗示不同的位置，仍以本次「文字位置」選項為準；不可自行改變為其他排版。文字必須清楚好讀，文字與頭髮、臉、手勢、手機、文件等主體至少保留明顯空隙，不可壓在人物或道具上；文字四周也要保留白邊，不要貼近格子邊界，不要切到字，不可出現序號、數字、標題、格號或列表符號。\n\n${photoPerformance}${individualPlan}\n\n貼圖文字如下：\n${numberedTexts}`;
 }
 
 function buildStablePrompt(
@@ -4646,13 +4646,10 @@ ${base}
 ${rowAssignment}
 
 重要規則：
-- 只輸出一張完整母圖；每一列固定 ${columns} 格，總共固定 ${rows} 列。
-- 只能使用以上 ${grid.replace("x", "×")} 排列，不要自行選擇其他格數。
+- 只輸出上方指定的 ${grid.replace("x", "×")} 母圖，不能變更排列。
 - 每格只能有指定的單句繁體中文，不能在手牌、道具、卡片、緞帶、招牌、背景另寫英文、中文、數字或其他字樣。
 - 每格的文字位置只依上方選擇與逐格標註執行；不得附加其他位置規則。長句只可在指定區域換行或縮小整體圖文。
-- 每格主體與文字共佔中央約 70%～74%，四周至少 13%～15% 純白留白；圖文、道具、陰影與裝飾皆不可跨格。
-- 格與格之間保留明顯白色空間，不要畫格線。
-- 背景使用純白色，方便下一步自動去背與裁切。
+- 每格圖文、裝飾及陰影都要留在中央 70% 安全區；每邊 15% 純白、格間通道連續，不能跨格或畫格線。
 - 不要做成海報、漫畫分鏡或額外拼貼。
 - 禁止多手、多腳、多指，禁止遮住文字；不得任意更改繁體中文短句。
 - 不要在圖片外再加標題、編號、說明文字或浮水印。`;
