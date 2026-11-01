@@ -2754,7 +2754,7 @@ const AnimatedLineStickerTool: React.FC = () => {
                   updateLineStickerProject({ platform });
                   setBatchMessage("");
                 }}
-                className={`inline-flex min-h-12 w-full min-w-0 items-center justify-center rounded-xl border-2 px-3 py-3 text-center text-sm font-bold leading-5 shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:border-violet-500 hover:bg-violet-100 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 ${exportPlatform === platform ? "border-violet-600 bg-violet-600 text-white shadow-md hover:bg-violet-700 hover:text-white" : "border-violet-200 bg-violet-50 text-violet-900"}`}>
+                className={`inline-flex min-h-12 w-full min-w-0 items-center justify-center rounded-xl border-2 px-3 py-3 text-center text-sm font-bold leading-5 shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:border-violet-500 hover:bg-violet-100 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 ${exportPlatform === platform ? "border-violet-600 bg-violet-600 !text-white hover:!text-white active:!text-white disabled:!text-white shadow-md hover:bg-violet-700 hover:text-white" : "border-violet-200 bg-violet-50 text-violet-900"}`}>
                 {exportPlatform === platform ? "✓ " : ""}{platform === "line" ? "LINE 動態 APNG" : "WhatsApp 動態 WebP"}
               </button>
             ))}
@@ -3373,12 +3373,12 @@ const AnimatedLineStickerTool: React.FC = () => {
                         clearLineStickerProject();
                         try { await clearAnimatedStickerHandoff(); } catch { /* local cache is optional */ }
                         window.location.assign("/tools/sticker-prompt?new=1");
-                      }} className="min-h-11 rounded-xl bg-violet-600 px-4 py-2 text-sm font-black text-white hover:bg-violet-700">
+                      }} className="min-h-11 rounded-xl bg-violet-600 px-4 py-2 text-sm font-black !text-white hover:!text-white active:!text-white disabled:!text-white hover:bg-violet-700">
                         再做新的一組｜從第 1 步重做
                       </button>
                       {exportPlatform === "line" && (
                         <a href="https://creator.line.me/zh-hant/" target="_blank" rel="noopener noreferrer"
-                          className="inline-flex min-h-11 items-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-black text-white hover:bg-emerald-700">
+                          className="inline-flex min-h-11 items-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-black !text-white hover:!text-white active:!text-white disabled:!text-white hover:bg-emerald-700">
                           前往 LINE 官方上架後台 ↗
                         </a>
                       )}
