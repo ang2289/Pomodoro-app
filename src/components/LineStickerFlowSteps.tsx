@@ -2,17 +2,22 @@ import { useLayoutEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import type { LineStickerMode, LineStickerStage } from "@/lib/lineStickerFlow";
 import StickerStepHelp from "@/components/StickerStepHelp";
+import StickerGuidanceChooser from "@/components/StickerGuidanceChooser";
 
 type Props = {
   activeStep: LineStickerStage;
   mode?: LineStickerMode;
   compact?: boolean;
+  entryChoice?: boolean;
+  startAfterChoice?: boolean;
 };
 
 export default function LineStickerFlowSteps({
   activeStep,
   mode = "static",
   compact = false,
+  entryChoice = false,
+  startAfterChoice = false,
 }: Props) {
   const location = useLocation();
 
@@ -74,6 +79,7 @@ export default function LineStickerFlowSteps({
         {mode === "animated" ? "動態貼圖只需完成同樣的五步驟：第 5 步內製作動畫、下載 APNG／WebP ZIP，不額外增加第 6 步。" : "下載靜態 ZIP 就完成五步驟。"}
         {" "}<Link to="/tools/line-sticker-start" className="font-semibold text-violet-700 underline underline-offset-2">看九組貼圖成果＋圖片教學 →</Link>
       </p>
+      <StickerGuidanceChooser entry={entryChoice} startAfterChoice={startAfterChoice} />
       <StickerStepHelp activeStep={activeStep} mode={mode} />
     </nav>
   );
