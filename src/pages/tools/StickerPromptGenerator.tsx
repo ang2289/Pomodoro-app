@@ -5538,7 +5538,7 @@ export default function StickerPromptGenerator() {
 
       <main className="min-h-screen bg-[#F8F7F3] px-3 py-6 sm:px-6">
         <div className="mx-auto w-full max-w-3xl">
-          <LineStickerFlowSteps activeStep={copiedBatchIndex !== null || copied || copiedStable ? 2 : 1} mode={stickerMode} />
+          <LineStickerFlowSteps activeStep={copiedBatchIndex !== null || copied || copiedStable ? 2 : 1} mode={stickerMode} entryChoice />
           <header className="mb-6">
             <p className="text-xs font-semibold tracking-[0.15em] text-violet-700">RXV STICKER STUDIO</p>
             <h1 className="mt-2 text-2xl font-bold leading-tight text-slate-900 sm:text-3xl">把你的想法，做成專屬貼圖</h1>
