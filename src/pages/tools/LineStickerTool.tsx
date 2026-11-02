@@ -1656,6 +1656,8 @@ export default function LineStickerTool() {
   const [darkStickerPreview, setDarkStickerPreview] = useState(false);
   const [mattingModeStale, setMattingModeStale] = useState(false);
   const [motherSheetSafetyResult, setMotherSheetSafetyResult] = useState<string | null>(null);
+  // Invalidates earlier successful ZIP results as soon as a replacement mother sheet is selected.
+  const [motherSheetNeedsReprocessing, setMotherSheetNeedsReprocessing] = useState(false);
   const [motherSheetFixIssue, setMotherSheetFixIssue] = useState<MotherSheetRepairIssue | null>(null);
   const [motherSheetDetections, setMotherSheetDetections] = useState<
     MotherSheetDetection[]
@@ -1885,6 +1887,7 @@ export default function LineStickerTool() {
       setLoading(true);
       setError(null);
       setMotherSheetFixIssue(null);
+      setMotherSheetNeedsReprocessing(true);
       setMotherSheetSafetyResult(null);
       setMotherSheetDetectionStatus("idle");
 
@@ -2092,6 +2095,7 @@ export default function LineStickerTool() {
           : `安全切割完成：${fitInfo} 請逐張預覽後再打包。`,
       );
       setMotherSheetDetectionStatus("ready");
+      setMotherSheetNeedsReprocessing(false);
       setActionHint("下一步（第 5 步）：逐張檢查預覽、選好主圖，再按最後一步產生 ZIP；動態則接續製作動畫。");
       if (flowProject) updateLineStickerProject({ stage: 4 });
     } catch (cause) {
@@ -2127,6 +2131,7 @@ export default function LineStickerTool() {
     setMotherSheetDetections([]);
     setMotherSheetDetectionStatus("idle");
     setMotherSheetFixIssue(null);
+    setMotherSheetNeedsReprocessing(false);
     setDownloadCompleted(false);
     setMattingModeStale(false);
   }, [files]);
@@ -2137,6 +2142,7 @@ export default function LineStickerTool() {
     files.length === 1 && stickerCount > 1 && motherSheetDetections.length === 0;
   // A failed mother-sheet validation must never export stale images from an earlier attempt.
   const canDownload = files.length >= stickerCount && !mattingModeStale &&
+    !motherSheetNeedsReprocessing &&
     (motherSheetDetections.length === 0 ||
       (motherSheetDetectionStatus !== "invalid" && unsafeMotherSheets.length === 0));
   const exportReadyMessage = loading
@@ -2145,6 +2151,8 @@ export default function LineStickerTool() {
       ? "您已更改去背設定，請回到母圖區重新按「確認切割」，更新貼圖後才能下載。"
       : motherSheetDetections.length > 0 && (motherSheetDetectionStatus === "invalid" || unsafeMotherSheets.length > 0)
         ? "這次母圖檢查未通過。請依彈出提醒修正後重新上傳，不會使用上一次的貼圖檔案輸出 ZIP。"
+      : motherSheetNeedsReprocessing
+        ? "已選新母圖但尚未完成安全切割。請依提醒修正、重新上傳並完成切圖後，才能下載新的 ZIP。"
       : needMore > 0
         ? mayHaveUploadedMotherSheetAsSingle
           ? `目前只載入 1 張獨立貼圖，共需 ${stickerCount} 張。如果這張圖片含有多格小圖，代表可能用錯上傳區，請改用「整張母圖自動切割」，不是文字太多。`
