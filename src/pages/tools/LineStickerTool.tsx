@@ -8,6 +8,7 @@ import LineStickerFlowSteps from "@/components/LineStickerFlowSteps";
 import StickerExcelOffers from "@/components/StickerExcelOffers";
 import { StickerNextActionHint } from "@/components/StickerBeginnerActions";
 import StickerCustomPricing from "@/components/StickerCustomPricing";
+import MotherSheetRepairDialog, { type MotherSheetRepairIssue } from "@/components/MotherSheetRepairDialog";
 import {
   analyzeMotherSheetSafety,
   type MotherSheetSafetyReview,
@@ -1655,6 +1656,9 @@ export default function LineStickerTool() {
   const [darkStickerPreview, setDarkStickerPreview] = useState(false);
   const [mattingModeStale, setMattingModeStale] = useState(false);
   const [motherSheetSafetyResult, setMotherSheetSafetyResult] = useState<string | null>(null);
+  // Invalidates earlier successful ZIP results as soon as a replacement mother sheet is selected.
+  const [motherSheetNeedsReprocessing, setMotherSheetNeedsReprocessing] = useState(false);
+  const [motherSheetFixIssue, setMotherSheetFixIssue] = useState<MotherSheetRepairIssue | null>(null);
   const [motherSheetDetections, setMotherSheetDetections] = useState<
     MotherSheetDetection[]
   >([]);
@@ -1665,6 +1669,7 @@ export default function LineStickerTool() {
   const [exportCheckResult, setExportCheckResult] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const motherSheetInputRef = useRef<HTMLInputElement>(null);
+  const closeMotherSheetFixDialog = useCallback(() => setMotherSheetFixIssue(null), []);
   const changeStickerMode = useCallback((mode: LineStickerMode) => {
     if (mode === "animated" && stickerCount > 24 && files.length) {
       setActionHint("動態最多 24 張。請先完成這組靜態圖，或清除後再選動態。");
@@ -1881,6 +1886,8 @@ export default function LineStickerTool() {
 
       setLoading(true);
       setError(null);
+      setMotherSheetFixIssue(null);
+      setMotherSheetNeedsReprocessing(true);
       setMotherSheetSafetyResult(null);
       setMotherSheetDetectionStatus("idle");
 
@@ -1906,6 +1913,31 @@ export default function LineStickerTool() {
           ? "已切換為逐張自動辨識格數：一張 4×4 加一張 4×2 可組成 24 張，不會強迫橫圖變成正方形。下一步請確認張數並安全切圖。"
           : "下一步（第 4 步）：確認格數與原圖安全留白，再按綠色「確認格數，開始自動切圖」。");
 
+        // Block bad separator channels or clipped artwork immediately, before the user attempts a cut.
+        // Do not reject photos simply for having a colored background; use the existing pixel review.
+        const blockedDetection = detections.map((item) => {
+          const grid = !flowProject && motherSheetGrid !== "auto" && detections.length === 1
+            ? motherSheetGrid : item.grid;
+          const blocked = [...item.safetyByGrid[grid].blocked];
+          const ratio = item.width / Math.max(1, item.height);
+          if (grid === "4x4" && (ratio < 0.82 || ratio > 1.22)) {
+            blocked.unshift(`這張母圖是 ${item.width}×${item.height}，不符合 4×4 建議的正方形比例。`);
+          }
+          return { item, grid, blocked };
+        }).find((entry) => entry.blocked.length > 0);
+
+        if (blockedDetection) {
+          setMotherSheetFixIssue({
+            kind: "unsafe",
+            fileName: blockedDetection.item.file.name,
+            grid: blockedDetection.grid,
+            reasons: blockedDetection.blocked,
+          });
+          setMotherSheetDetectionStatus("invalid");
+          setError(`圖片需先修正：${blockedDetection.blocked.slice(0, 2).join("；")}`);
+          return;
+        }
+
         if (!flowProject && motherSheetGrid !== "auto" && detections.length === 1) {
           setMotherSheetDetectionStatus("ready");
           return;
@@ -1917,13 +1949,24 @@ export default function LineStickerTool() {
 
         if (!check.valid) {
           setError(check.message);
+          setMotherSheetFixIssue({
+            kind: "plan",
+            fileName: detections.map((item) => item.file.name).join("、"),
+            grid: detections[0].grid,
+            reasons: [check.message],
+          });
         }
       } catch (cause) {
+        const message = cause instanceof Error ? cause.message : "母圖格數辨識失敗";
         setMotherSheetDetections([]);
         setMotherSheetDetectionStatus("invalid");
-        setError(
-          cause instanceof Error ? cause.message : "母圖格數辨識失敗",
-        );
+        setError(message);
+        setMotherSheetFixIssue({
+          kind: "read",
+          fileName: selected.map((file) => file.name).join("、"),
+          grid: motherSheetGrid === "auto" ? "4x4" : motherSheetGrid,
+          reasons: [message],
+        });
       } finally {
         setLoading(false);
       }
@@ -1941,11 +1984,26 @@ export default function LineStickerTool() {
     if (useAutoPlan && !check.valid) {
       setMotherSheetDetectionStatus("invalid");
       setError(check.message);
+      setMotherSheetFixIssue({
+        kind: "plan",
+        fileName: motherSheetDetections.map((item) => item.file.name).join("、"),
+        grid: motherSheetDetections[0].grid,
+        reasons: [check.message],
+      });
       return;
     }
     if (unsafeMotherSheets.length) {
       setMotherSheetDetectionStatus("invalid");
       setError(`安全切割未通過：${unsafeMotherSheets.slice(0, 3).join("；")}`);
+      const first = motherSheetDetections[0];
+      const grid = !flowProject && motherSheetGrid !== "auto" && motherSheetDetections.length === 1
+        ? motherSheetGrid : first.grid;
+      setMotherSheetFixIssue({
+        kind: "unsafe",
+        fileName: first.file.name,
+        grid,
+        reasons: unsafeMotherSheets,
+      });
       return;
     }
 
@@ -2037,6 +2095,7 @@ export default function LineStickerTool() {
           : `安全切割完成：${fitInfo} 請逐張預覽後再打包。`,
       );
       setMotherSheetDetectionStatus("ready");
+      setMotherSheetNeedsReprocessing(false);
       setActionHint("下一步（第 5 步）：逐張檢查預覽、選好主圖，再按最後一步產生 ZIP；動態則接續製作動畫。");
       if (flowProject) updateLineStickerProject({ stage: 4 });
     } catch (cause) {
@@ -2071,6 +2130,8 @@ export default function LineStickerTool() {
     setMainImageIndex(0);
     setMotherSheetDetections([]);
     setMotherSheetDetectionStatus("idle");
+    setMotherSheetFixIssue(null);
+    setMotherSheetNeedsReprocessing(false);
     setDownloadCompleted(false);
     setMattingModeStale(false);
   }, [files]);
@@ -2079,11 +2140,19 @@ export default function LineStickerTool() {
   // 在單張匯入入口選到整張母圖時，不能將 1/16 誤解為圖片文字太多。
   const mayHaveUploadedMotherSheetAsSingle =
     files.length === 1 && stickerCount > 1 && motherSheetDetections.length === 0;
-  const canDownload = files.length >= stickerCount && !mattingModeStale;
+  // A failed mother-sheet validation must never export stale images from an earlier attempt.
+  const canDownload = files.length >= stickerCount && !mattingModeStale &&
+    !motherSheetNeedsReprocessing &&
+    (motherSheetDetections.length === 0 ||
+      (motherSheetDetectionStatus !== "invalid" && unsafeMotherSheets.length === 0));
   const exportReadyMessage = loading
     ? "正在產生檔案，請稍候完成。"
     : mattingModeStale
       ? "您已更改去背設定，請回到母圖區重新按「確認切割」，更新貼圖後才能下載。"
+      : motherSheetDetections.length > 0 && (motherSheetDetectionStatus === "invalid" || unsafeMotherSheets.length > 0)
+        ? "這次母圖檢查未通過。請依彈出提醒修正後重新上傳，不會使用上一次的貼圖檔案輸出 ZIP。"
+      : motherSheetNeedsReprocessing
+        ? "已選新母圖但尚未完成安全切割。請依提醒修正、重新上傳並完成切圖後，才能下載新的 ZIP。"
       : needMore > 0
         ? mayHaveUploadedMotherSheetAsSingle
           ? `目前只載入 1 張獨立貼圖，共需 ${stickerCount} 張。如果這張圖片含有多格小圖，代表可能用錯上傳區，請改用「整張母圖自動切割」，不是文字太多。`
@@ -2503,6 +2572,12 @@ export default function LineStickerTool() {
 
   return (
     <>
+      <MotherSheetRepairDialog
+        issue={motherSheetFixIssue}
+        mode={selectedStickerMode}
+        onClose={closeMotherSheetFixDialog}
+        onReupload={() => motherSheetInputRef.current?.click()}
+      />
       <SEO
         title="LINE＋WhatsApp 貼圖製作工具｜母圖切割、去背、WebP 輸出 - RxV"
         description="使用舊圖片或 Google Gemini／ChatGPT 母圖，免費自動切割去背；LINE 可輸出 PNG 上架 ZIP，WhatsApp 靜態貼圖可輸出 512x512 WebP 素材包。"
