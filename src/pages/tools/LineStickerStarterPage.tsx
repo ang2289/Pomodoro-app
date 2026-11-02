@@ -269,7 +269,7 @@ export default function LineStickerStarterPage() {
 
           <section className="rounded-3xl border border-slate-100 bg-white p-4 sm:p-6" aria-label="LINE 貼圖五步驟">
             <h2 className="text-xl font-black text-slate-900">完整流程就 5 步｜動態貼圖不加第 6 步</h2>
-            <LineStickerFlowSteps activeStep={1} />
+            <LineStickerFlowSteps activeStep={1} entryChoice startAfterChoice />
             <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-5">
               {steps.map((step) => (
                 <article key={step.n} className="rounded-2xl border border-violet-100 bg-[#faf9ff] p-3">
