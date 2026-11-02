@@ -1,9 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import type { LineStickerMode, LineStickerStage } from "@/lib/lineStickerFlow";
+import {
+  hasSeenStickerGuideStep,
+  markStickerGuideStepSeen,
+  setStickerGuidanceMode,
+  useStickerGuidanceMode,
+} from "@/lib/stickerGuidanceMode";
 
-const DISABLED_KEY = "tutu_sticker_help_disable_auto_v1";
-const seenKey = (step: number) => `tutu_sticker_help_seen_v1_${step}`;
 
 type Props = {
   activeStep: LineStickerStage;
@@ -98,6 +102,7 @@ function guideFor(step: LineStickerStage, mode: LineStickerMode): Guide {
 }
 
 export default function StickerStepHelp({ activeStep, mode }: Props) {
+  const selectedMode = useStickerGuidanceMode();
   const [isOpen, setIsOpen] = useState(false);
   const [visibleStep, setVisibleStep] = useState<LineStickerStage>(activeStep);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -105,24 +110,20 @@ export default function StickerStepHelp({ activeStep, mode }: Props) {
 
   useEffect(() => {
     setVisibleStep(activeStep);
-    let disabled = false;
-    let seen = false;
-    try {
-      disabled = window.localStorage.getItem(DISABLED_KEY) === "1";
-      seen = window.localStorage.getItem(seenKey(activeStep)) === "1";
-    } catch {
-      // Storage may be disabled. Keep one-popup-per-step behavior within this page.
+    if (selectedMode !== "guided") {
+      setIsOpen(false);
+      return;
     }
-    if (!disabled && !seen && !seenThisMount.current.has(activeStep)) {
+    // Guided-mode instructions reappear during a future browser session, useful
+    // for people who do not remember every step. Show once per step in this session.
+    if (!hasSeenStickerGuideStep(activeStep) && !seenThisMount.current.has(activeStep)) {
       setIsOpen(true);
     }
-  }, [activeStep]);
+  }, [activeStep, selectedMode]);
 
   const markSeen = () => {
     seenThisMount.current.add(activeStep);
-    try {
-      window.localStorage.setItem(seenKey(activeStep), "1");
-    } catch { /* Browsers may block local storage. */ }
+    markStickerGuideStepSeen(activeStep);
   };
 
   const close = () => {
@@ -132,9 +133,7 @@ export default function StickerStepHelp({ activeStep, mode }: Props) {
 
   const disableAuto = () => {
     markSeen();
-    try {
-      window.localStorage.setItem(DISABLED_KEY, "1");
-    } catch { /* Keep the current dialog dismissible. */ }
+    setStickerGuidanceMode("quick", true);
     setIsOpen(false);
   };
 
@@ -182,7 +181,13 @@ export default function StickerStepHelp({ activeStep, mode }: Props) {
           className="inline-flex min-h-11 items-center justify-center rounded-xl border border-violet-300 bg-white px-4 py-2.5 text-sm font-black text-violet-800 hover:bg-violet-50">
           ？ 不會操作｜看這一步教學
         </button>
-        <span className="text-xs font-semibold text-slate-600">第一次到各步驟會教一次；不需要時可關閉。</span>
+        <span className="text-xs font-semibold text-slate-600">
+          {selectedMode === "guided"
+            ? "教學模式：每個步驟都會教一次，下次再來也可以重新學。"
+            : selectedMode === "quick"
+              ? "快速模式：不自動跳教學，需要時再按左邊按鈕。"
+              : "先選擇操作方式，再依自己的速度製作貼圖。"}
+        </span>
       </div>
 
       {isOpen ? (
@@ -240,7 +245,7 @@ export default function StickerStepHelp({ activeStep, mode }: Props) {
               </button>
               <button type="button" onClick={disableAuto}
                 className="min-h-11 rounded-xl px-4 py-2 text-xs font-bold text-slate-600 underline hover:bg-slate-50">
-                不要再自動顯示教學（仍可按「？ 不會操作」）
+                改用快速模式，不再自動彈出教學
               </button>
             </div>
           </section>
