@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import SEO from "@/components/SEO";
 
 import LineStickerAuthorCard from "@/components/LineStickerAuthorCard";
@@ -5016,6 +5016,8 @@ function RecommendedToolsSection() {
 }
 
 export default function StickerPromptGenerator() {
+  const location = useLocation();
+  const guideStep = location.hash === "#sticker-copy" ? 2 : 1;
   const initialMode: LineStickerMode =
     typeof window !== "undefined" &&
     new URLSearchParams(window.location.search).get("mode") === "animated"
@@ -5538,7 +5540,7 @@ export default function StickerPromptGenerator() {
 
       <main className="min-h-screen bg-[#F8F7F3] px-3 py-6 sm:px-6">
         <div className="mx-auto w-full max-w-3xl">
-          <LineStickerFlowSteps activeStep={copiedBatchIndex !== null || copied || copiedStable ? 2 : 1} mode={stickerMode} entryChoice />
+          <LineStickerFlowSteps activeStep={guideStep} mode={stickerMode} entryChoice />
           <header className="mb-6">
             <p className="text-xs font-semibold tracking-[0.15em] text-violet-700">RXV STICKER STUDIO</p>
             <h1 className="mt-2 text-2xl font-bold leading-tight text-slate-900 sm:text-3xl">把你的想法，做成專屬貼圖</h1>
@@ -6144,9 +6146,9 @@ export default function StickerPromptGenerator() {
               </section>
               <div className="mt-6 border-t border-violet-100 pt-5">
                 <StickerNextActionHint>已完成上方的主題、張數、文字與風格設定？下一步請按下方「前往第 2 步｜複製畫圖指令」。如果不想自訂，保留預設值也可以直接前往。</StickerNextActionHint>
-                <a href="#sticker-copy" className="inline-flex min-h-12 w-auto max-w-full items-center justify-center rounded-xl bg-violet-600 px-5 py-3 text-sm font-black text-white shadow hover:bg-violet-700">
+                <Link to="#sticker-copy" className="inline-flex min-h-12 w-auto max-w-full items-center justify-center rounded-xl bg-violet-600 px-5 py-3 text-sm font-black text-white shadow hover:bg-violet-700">
                   前往第 2 步｜複製畫圖指令 ↓
-                </a>
+                </Link>
               </div>
             </div>
 
