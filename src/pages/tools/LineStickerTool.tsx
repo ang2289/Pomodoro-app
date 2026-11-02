@@ -2590,12 +2590,13 @@ export default function LineStickerTool() {
         <div className="mx-auto max-w-[1480px]">
           <LineStickerFlowSteps
             activeStep={
-              isFirstVisit ? 1
-                : downloadCompleted && selectedStickerMode !== "animated"
-                  ? 5
-                  : files.length >= stickerCount
-                    ? 4
-                    : 3
+              files.length >= stickerCount && canDownload
+                ? 5
+                : motherSheetDetections.length > 0 &&
+                    motherSheetDetectionStatus === "ready" &&
+                    unsafeMotherSheets.length === 0
+                  ? 4
+                  : 3
             }
             mode={selectedStickerMode}
           />
