@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { fitStickerBoundsToCanvas } from "@/lib/stickerOutputFit";
 import type { ChangeEvent, PointerEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -243,7 +244,8 @@ const FAQ_KEYS = [
 
 type LineStickerCropMode = "contain-safe" | "crop" | "smart-safe";
 type MotherSheetFitMode = "conservative" | "standard" | "large";
-const MOTHER_FIT_MARGIN: Record<MotherSheetFitMode, number> = { conservative: 0.13, standard: 0.09, large: 0.06 };
+// 母圖辨識後的安全區獨立於單張匯出；避免重複留白讓貼圖太小。
+const MOTHER_FIT_MARGIN: Record<MotherSheetFitMode, number> = { conservative: 0.085, standard: 0.065, large: 0.045 };
 
 type ImagePreview = {
   file: File;
@@ -1333,10 +1335,7 @@ function centerMotherSheetCellWithPadding(source: HTMLCanvasElement, fitMode: Mo
   const boxHeight = maxY - minY + 1;
   // Fit the combined alpha bounds, including detached words and decorations.
   const padding = Math.max(5, Math.round(Math.min(width, height) * MOTHER_FIT_MARGIN[fitMode]));
-  const idealScale = Math.min(
-    (width - padding * 2) / boxWidth,
-    (height - padding * 2) / boxHeight,
-  );
+  const idealScale = fitStickerBoundsToCanvas(boxWidth, boxHeight, width, height, padding);
   const scale = Math.min(3, idealScale); // Resampling cannot restore lost pixels.
   const drawWidth = Math.max(1, Math.round(boxWidth * scale));
   const drawHeight = Math.max(1, Math.round(boxHeight * scale));
