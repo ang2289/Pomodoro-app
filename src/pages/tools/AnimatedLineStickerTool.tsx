@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { fitStickerBoundsToCanvas } from "@/lib/stickerOutputFit";
 import { requireDistinctLineFrames } from "@/lib/animatedStickerFrameQuality";
 import { WhatsAppMobileZipHandoff, type WhatsAppZipArchive } from "@/components/WhatsAppMobileZipHandoff";
 import { verifyLinePngBytes, auditEncodedLineApngDistinctFrames } from "@/lib/lineApngFileQuality";
@@ -55,7 +56,7 @@ const LINE_APNG_MAX_BYTES = 1_000_000;
 const MAX_LINE_ZIP_MB = 60;
 const ALPHA_VISIBLE_THRESHOLD = 8;
 const SOURCE_CROP_PADDING = 12;
-const OUTPUT_SAFE_PADDING = 12; // 動態影格安全留白，避免二次縮放貼邊
+const OUTPUT_SAFE_PADDING = 10; // 依所有畫格的透明範圍安全置中，減少多餘留白
 
 type AlphaBounds = {
   left: number;
@@ -434,10 +435,7 @@ async function prepareLineRenderData(frames: FrameItem[], t: Translate): Promise
   const union = sameSourceSize ? expandBounds(unionBounds(rawBounds), sizes[0].width, sizes[0].height) : unionBounds(expandedBounds);
   const maxCropWidth = sameSourceSize ? union.width : Math.max(...expandedBounds.map((bounds) => bounds.width));
   const maxCropHeight = sameSourceSize ? union.height : Math.max(...expandedBounds.map((bounds) => bounds.height));
-  const scale = Math.min(
-    (OUTPUT_WIDTH - OUTPUT_SAFE_PADDING * 2) / Math.max(1, maxCropWidth),
-    (OUTPUT_HEIGHT - OUTPUT_SAFE_PADDING * 2) / Math.max(1, maxCropHeight)
-  );
+  const scale = fitStickerBoundsToCanvas(maxCropWidth, maxCropHeight, OUTPUT_WIDTH, OUTPUT_HEIGHT, OUTPUT_SAFE_PADDING);
 
   const plans = images.map((_, index) => {
     const crop = sameSourceSize ? union : expandedBounds[index];
