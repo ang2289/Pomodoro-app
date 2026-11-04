@@ -11,12 +11,12 @@ test("新手可以直接跳到第 3 步上傳母圖，不需做提示詞", () =>
   const prompt = read("src/pages/tools/StickerPromptGenerator.tsx");
   const homepage = read("src/components/NewUserStickerGuide.tsx");
   assert.match(starter, /已經有貼圖大圖？不用再產生提示詞/);
-  assert.match(starter, /\/tools\/line-sticker\?existing=1#mother-upload/);
+  assert.match(starter, /\/tools\/line-sticker\?existing=1#step3-options/);
   // 保留第 3 步上傳捷徑，但不能搶走第一次製作的主要操作入口。
   assert.match(prompt, /href="#sticker-theme"/);
   assert.match(prompt, /第一次製作貼圖？從這裡繼續/);
   assert.match(prompt, /我已製作完成整張貼圖母圖｜直接上傳（進階）/);
-  assert.match(prompt, /to="\/tools\/line-sticker\?flow=1#mother-upload"/);
+  assert.match(prompt, /to="\/tools\/line-sticker\?flow=1#step3-options"/);
   assert.match(homepage, /<StickerExistingMotherSheetShortcut compact \/>/);
 });
 
@@ -38,7 +38,7 @@ test("每段新手流程明確同時提供 ChatGPT 與 Google Gemini，且保留
   assert.match(guide, /<StickerAIProviderLinks \/>/);
   assert.match(prompt, /① 複製第/);
   assert.match(prompt, /已從 ChatGPT 或 Gemini 下載完整大圖/);
-  assert.match(prompt, /flow=1#mother-upload/);
+  assert.match(prompt, /flow=1#step3-options/);
   assert.match(progress, /AI 畫母圖/);
   assert.match(starter, /用 ChatGPT／Gemini 畫圖/);
   assert.match(starter, /下一步請按/);
@@ -47,8 +47,8 @@ test("每段新手流程明確同時提供 ChatGPT 與 Google Gemini，且保留
 test("已有母圖的上傳操作清楚，客製服務能私訊且不出現收費價目", () => {
   const upload = read("src/pages/tools/LineStickerTool.tsx");
   const entry = read("src/components/StickerBeginnerActions.tsx");
-  assert.match(upload, /第 3 步｜選擇整張母圖並辨識格數/);
-  assert.match(upload, /下一步請按下方/);
+  assert.match(upload, /選擇整張母圖｜上傳圖片/);
+  assert.match(upload, /只要選三項/);
   assert.match(entry, /https:\/\/www\.facebook\.com\/profile\.php\?id=61588964893446/);
   assert.match(entry, /https:\/\/line\.me\/ti\/p\/~angelchen2289/);
   assert.match(entry, /StickerCustomInquiry/);
@@ -186,14 +186,14 @@ test("第一次進貼圖工具從第 1 步開始，只有明確選擇已有圖�
 
   assert.match(upload, /if \(isFirstVisit\) \{/);
   assert.match(upload, /<LineStickerFlowSteps activeStep=\{1\} \/>/);
-  assert.match(upload, /我還沒有母圖，從零開始/);
-  assert.match(upload, /line-sticker\?existing=1#mother-upload/);
+  assert.match(upload, /第 1 步｜我還沒有母圖/);
+  assert.match(upload, /line-sticker\?existing=1#step3-options/);
   assert.match(upload, /!new URLSearchParams\(location.search\)\.has\("existing"\)/);
   assert.match(upload, /!location\.hash/);
   assert.match(prompt, /mt-6 flex flex-col gap-6/);
   assert.doesNotMatch(prompt, /xl:grid-cols-\[0\.82fr_1\.18fr\]/);
   assert.match(prompt, /前往第 2 步｜複製畫圖指令 ↓/);
-  assert.match(prompt, /to="\/tools\/line-sticker\?flow=1#mother-upload"/);
+  assert.match(prompt, /to="\/tools\/line-sticker\?flow=1#step3-options"/);
   assert.match(progress, /grid grid-cols-5 gap-1\.5/);
   assert.match(guide, /mt-4 flex flex-col gap-2/);
   assert.doesNotMatch(guide, /lg:grid-cols-5/);
@@ -242,14 +242,14 @@ test("每組貼圖選擇按鈕同寬，選取、懸停、鍵盤焦點狀態清�
   // 提示詞頁及動畫頁維持原有受限寬度的選項格線；貼圖整理工具依需求改成內容寬度、可自動換行。
   assert.match(prompt, /grid-cols-2 items-stretch gap-3" role="group" aria-label="選擇貼圖平台"/);
   assert.match(prompt, /grid-cols-2 items-stretch gap-3" role="group" aria-label="選擇靜態或動態貼圖"/);
-  assert.match(upload, /flex flex-wrap items-center gap-2" role="group" aria-label="選擇貼圖輸出平台"/);
-  assert.match(upload, /inline-flex min-h-11 w-auto max-w-full shrink-0 items-center justify-center/);
+  assert.match(upload, /id="step3-platform"/);
+  assert.match(upload, /STICKER_UI\.primaryAction/);
   assert.match(animated, /grid-cols-2 items-stretch gap-3" role="group" aria-label="選擇動態貼圖輸出平台"/);
 
   assert.ok(prompt.includes("aria-pressed={stickerPlatform === platform}"));
   assert.ok(prompt.includes("aria-pressed={stickerMode === mode}"));
   assert.ok(prompt.includes("aria-pressed={targetCount === count}"));
-  assert.ok(upload.includes('aria-pressed={exportPlatform === "whatsapp"}'));
+  assert.ok(upload.includes('value={exportPlatform}'));
   assert.ok(animated.includes("aria-pressed={exportPlatform === platform}"));
 
   // 選項使用同色系，未選擇也有明確邊框與底色，滑過和鍵盤操作有可見回饋。
@@ -263,7 +263,7 @@ test("每組貼圖選擇按鈕同寬，選取、懸停、鍵盤焦點狀態清�
   // 張數按鈕為同寬且可換行，窄手機不應強迫五顆擠在同一排。
   assert.ok(prompt.includes("w-[76px] shrink-0"));
   assert.ok(prompt.includes('max-w-[520px] flex-wrap gap-2" role="group" aria-label="選擇貼圖張數"'));
-  assert.ok(upload.includes("w-[68px] shrink-0"));
+  assert.ok(upload.includes('STICKER_UI.select'));
 });
 
 test("五步驟小卡版型與貼圖錨點不會產生捲動爭用", () => {
@@ -551,7 +551,7 @@ test("已有母圖按鈕位於選擇張數下方，會帶入靜態動態、平�
   assert.match(shortcut, /<details/);
   assert.match(shortcut, /不是只有一張寶寶或真人照片/);
   assert.match(shortcut, /已有完整母圖｜前往第 3 步上傳/);
-  assert.match(shortcut, /to="\/tools\/line-sticker\?flow=1#mother-upload"/);
+  assert.match(shortcut, /to="\/tools\/line-sticker\?flow=1#step3-options"/);
   assert.match(shortcut, /onClick=\{\(\) => persistFlowProject\(3\)\}/);
   assert.match(shortcut, /stickerMode === "animated"/);
   assert.match(shortcut, /stickerPlatform === "line"/);
