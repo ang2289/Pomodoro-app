@@ -611,8 +611,26 @@ test("花店 4x4 母圖教學會出現在提示詞第 1 步與上傳第 3 步，
   assert.match(guide, /tutu-mother-sheet-guide-16\.webp/);
   assert.match(guide, /花店母圖範例｜4×4，共 16 格/);
   assert.match(guide, /不要先自己切成單張/);
-  assert.match(guide, /showModal\(\)/);
+  assert.match(guide, /onClick=\{\(\) => setIsImageOpen\(true\)\}/);
   assert.match(guide, /onError=\{\(\) => setImageFailed\(true\)\}/);
   assert.match(upload, /選擇整張母圖｜上傳圖片/);
-  assert.match(prompt, /第 1 步｜先認識母圖/);
+  assert.match(prompt, /第 1 步｜先選貼圖種類與張數/);
+});
+
+test("母圖教學放大畫面可關閉，且第一步先選平台、模式與張數再看到示範", () => {
+  const prompt = read("src/pages/tools/StickerPromptGenerator.tsx");
+  const guide = read("src/components/StickerMotherSheetExample.tsx");
+  assert.match(guide, /role="dialog" aria-modal="true"/);
+  assert.match(guide, /onClick=\{closeImage\}/);
+  assert.match(guide, /event\.key === "Escape"/);
+  assert.match(guide, /event\.target === event\.currentTarget/);
+  assert.match(guide, /max-h-\[94dvh\]/);
+  assert.doesNotMatch(guide, /<form method="dialog">/);
+  const countPosition = prompt.indexOf('aria-label="選擇貼圖張數"');
+  const guidePosition = prompt.indexOf('<StickerMotherSheetExample count={targetCount} variant="intro" />');
+  assert.ok(countPosition > 0 && guidePosition > countPosition, "第 1 步要先選張數，再顯示母圖示範");
+  assert.match(prompt, /function tutuStickerHeadAngle\(globalIndex: number\)/);
+  assert.match(prompt, /const pose = realUnchanged \? ""/);
+  assert.match(prompt, /const headAnglePlan = photoMode === "realPhoto" && subMode === "unchanged"/);
+  assert.match(prompt, /嚴禁 16 格都用相近的三分之四側臉/);
 });
