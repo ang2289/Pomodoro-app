@@ -4642,9 +4642,10 @@ ${content}
 
 請只輸出這張 ${columns}×${rows} 母圖，${batchTexts.length} 句各出現一次、順序正確，保持角色一致，沒有裁切到圖文。`;
 }
-function buildSimpleStablePrompt(label: string, role: string, style: string, grid: GridType, photoMode: PhotoMode, subMode: RealPhotoSubMode): string {
+function buildSimpleStablePrompt(label: string, role: string, style: string, grid: GridType, photoMode: PhotoMode, subMode: RealPhotoSubMode, characterTraits: OriginalCharacterTraits): string {
   const columns = grid === "5x4" ? 5 : 4, rows = grid === "4x2" ? 2 : grid === "4x4" || grid === "5x4" ? 4 : 5;
-  return `請生成 ${label} 的 ${columns}×${rows} 無字草稿母圖。角色：${buildRolePrompt(role,photoMode,subMode)}。畫風：${style}。純白背景、格子等大、不畫格線；每格四周保留 15% 純白安全帶。同一主角、衣著和配色，每格不同姿態及職業道具；照片模式保留授權照片原貌。不加任何文字或浮水印。`;
+  const traits = photoMode === "original" ? explicitCharacterChoices(characterTraits) : "";
+  return `請生成 ${label} 的 ${columns}×${rows} 無字草稿母圖。角色：${buildRolePrompt(role,photoMode,subMode)}。${traits ? `使用者選擇外觀：${traits}，優先遵守；` : ""}未指定外觀由 AI 原創設計。畫風：${style}。純白背景、格子等大、不畫格線；每格四周保留 15% 純白安全帶。同一主角、衣著和配色，每格不同姿態及職業道具；照片模式保留授權照片原貌。不加任何文字或浮水印。`;
 }
 
 function buildFlowPrompt(
@@ -5036,7 +5037,7 @@ export default function StickerPromptGenerator() {
   const [realPhotoSubMode, setRealPhotoSubMode] = useState<RealPhotoSubMode>("unchanged");
   const [illustrationStyle, setIllustrationStyle] = useState<IllustrationStyle>("cute2d");
   const [role, setRole] = useState(templates.businessPersonal.role);
-  const [identity, setIdentity] = useState<StickerIdentity>(() => defaultStickerIdentity(templates.businessPersonal.role, templates.businessPersonal.style));
+  const [identity, setIdentity] = useState<StickerIdentity>(() => defaultStickerIdentity(templates.businessPersonal.role, optionPrompt(ILLUSTRATION_STYLE_OPTIONS, "cute2d")));
   const [referenceImage, setReferenceImage] = useState<{ name: string; url: string; series: string } | null>(null);
   const referenceUrlRef = useRef<string | null>(null);
   const referenceSeriesRef = useRef("businessPersonal:16");
@@ -5080,7 +5081,7 @@ export default function StickerPromptGenerator() {
       localStorage.setItem(BUSINESS_AVATAR_STORAGE_KEY + "-signature", businessSignature);
     } catch { /* 無痕模式或儲存受限時仍可正常使用 */ }
   }, [businessAvatar, businessSignature]);
-  const [style, setStyle] = useState(templates.businessPersonal.style);
+  const [style, setStyle] = useState("");
   const selectedStylePrompt = optionPrompt(ILLUSTRATION_STYLE_OPTIONS, illustrationStyle);
   const visualStyle = photoMode === "realPhoto"
     ? realPhotoPolicy(realPhotoSubMode).visual
@@ -5393,7 +5394,7 @@ export default function StickerPromptGenerator() {
     ],
   );
   const stablePrompt = useMemo(
-    () => simpleMode ? buildSimpleStablePrompt(templates[type].label, templates[type].role, photoMode === "realPhoto" ? visualStyle : selectedStylePrompt, grid, photoMode, realPhotoSubMode) : buildStablePrompt(
+    () => simpleMode ? buildSimpleStablePrompt(templates[type].label, templates[type].role, photoMode === "realPhoto" ? visualStyle : selectedStylePrompt, grid, photoMode, realPhotoSubMode, characterTraits) : buildStablePrompt(
         templates[type].label,
         effectiveRole,
         visualStyle,
@@ -5402,14 +5403,14 @@ export default function StickerPromptGenerator() {
         photoMode,
         realPhotoSubMode,
       ),
-    [type, effectiveRole, visualStyle, grid, stickerStylePreset, photoMode, realPhotoSubMode, simpleMode, selectedStylePrompt],
+    [type, effectiveRole, visualStyle, grid, stickerStylePreset, photoMode, realPhotoSubMode, simpleMode, selectedStylePrompt, characterTraits],
   );
 
   function handleTypeChange(nextType: TemplateKey) {
     setType(nextType);
     setRole(templates[nextType].role);
-    setStyle(templates[nextType].style);
-    setIdentity(defaultStickerIdentity(templates[nextType].role, templates[nextType].style));
+    setStyle("");
+    setIdentity(defaultStickerIdentity(templates[nextType].role, selectedStylePrompt));
     // 使用者已選的年齡／性別／外觀仍保留；只換主題不重設角色選擇。
     setTexts(
       getDefaultFlowTexts(nextType, targetCount, nameMode, customName),
