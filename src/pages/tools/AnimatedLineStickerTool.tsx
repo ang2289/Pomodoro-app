@@ -3070,43 +3070,6 @@ const AnimatedLineStickerTool: React.FC = () => {
                     <p className="mt-1">多效果輪用：每張交替用不同動作；全部同一效果：整套節奏一致；每張自己選效果：逐張指定動畫。</p>
                   </details>
                   {batchMotionMode === "single" ? (
-                          <span className="rounded-full bg-emerald-600 px-2 py-1 text-[10px] font-black text-white">
-                            已選
-                          </span>
-                        ) : null}
-                      </div>
-                      <p className="mt-1 text-xs leading-5 text-slate-600">
-                        適合品牌想維持同一節奏，或指定全部使用某一種動畫。
-                      </p>
-                    </button>
-
-                    <button
-                      type="button"
-                      disabled={batchBusy}
-                      onClick={() => setBatchMotionMode("custom")}
-                      className={`rounded-xl border px-3 py-3 text-left transition ${
-                        batchMotionMode === "custom"
-                          ? "border-sky-500 bg-sky-50 ring-2 ring-sky-100"
-                          : "border-slate-200 bg-white hover:border-sky-200"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-black text-slate-900">
-                          🎛️ 每張自己選效果
-                        </span>
-                        {batchMotionMode === "custom" ? (
-                          <span className="rounded-full bg-sky-600 px-2 py-1 text-[10px] font-black text-white">
-                            已選
-                          </span>
-                        ) : null}
-                      </div>
-                      <p className="mt-1 text-xs leading-5 text-slate-600">
-                        進階模式：每一張貼圖都可指定不同動畫，適合客戶已經知道每句話想怎麼動。
-                      </p>
-                    </button>
-                  </div>
-
-                  {batchMotionMode === "single" ? (
                     <label className="mt-3 block">
                       <span className="text-xs font-black text-slate-700">
                         選擇整套效果
