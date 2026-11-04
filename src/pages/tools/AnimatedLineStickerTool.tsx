@@ -2549,7 +2549,7 @@ const AnimatedLineStickerTool: React.FC = () => {
 
       const zip = makeZip(files);
       if (zip.size >= MAX_LINE_ZIP_MB * 1024 * 1024) throw new Error("自備分鏡 ZIP 超過 60MB，已停止下載。");
-      downloadBlob(zip, "rxv-manual-storyboard-dynamic-pack.zip");
+      downloadBlob(zip, `LINE_動態_${stickerThemeForFile}_自備分鏡_上架.zip`);
       setMessage("自備分鏡動態貼圖包已通過 APNG、main、tab 尺寸／容量／播放控制檢查並下載；送審前仍須人工檢查人物、文字與著作權。");
     } catch (error: any) {
       setMessage(
@@ -2569,7 +2569,7 @@ const AnimatedLineStickerTool: React.FC = () => {
     try {
       await new Promise((resolve) => window.setTimeout(resolve, 30));
       const zip = await createFramesZip(frames, durationSec, loopCount, t);
-      downloadBlob(zip, "rxv-line-dynamic-sticker-frames.zip");
+      downloadBlob(zip, `LINE_動態_${stickerThemeForFile}_分鏡影格.zip`);
       setMessage(t("animated_line_sticker.message_zip_success"));
     } catch (error: any) {
       setMessage(error?.message || t("animated_line_sticker.error_zip_failed"));
@@ -2587,7 +2587,7 @@ const AnimatedLineStickerTool: React.FC = () => {
     try {
       await new Promise((resolve) => window.setTimeout(resolve, 30));
       const zip = await createLineSmallImagesZip(frames, durationSec, loopCount, t);
-      downloadBlob(zip, "line-small-images.zip");
+      downloadBlob(zip, `LINE_動態_${stickerThemeForFile}_主圖與標籤.zip`);
       setMessage("LINE 小圖 ZIP 已下載：main_240x240.png（APNG）、tab_96x74.png（PNG）。請分別上傳到 LINE 後台 main 與 tab 欄位。");
     } catch (error: any) {
       setMessage(error?.message || "LINE 小圖匯出失敗，請重新整理後再試一次。");
@@ -2609,7 +2609,7 @@ const AnimatedLineStickerTool: React.FC = () => {
       const apngData = new Uint8Array(await apng.arrayBuffer());
       verifyLineOutputPng(apngData, "animated-sticker.png", OUTPUT_WIDTH, OUTPUT_HEIGHT, true);
       await auditEncodedLineApngDistinctFrames(apngData, "animated-sticker.png", OUTPUT_WIDTH, OUTPUT_HEIGHT);
-      downloadBlob(apng, "rxv-line-dynamic-sticker-apng.png");
+      downloadBlob(apng, `LINE_動態_${stickerThemeForFile}_單張.png`);
       setMessage(`${t("animated_line_sticker.message_apng_success")}（約 ${sizeKb}KB；已通過輸出檔案檢查）`);
     } catch (error: any) {
       setMessage(error?.message || t("animated_line_sticker.error_apng_failed"));
@@ -2628,7 +2628,7 @@ const AnimatedLineStickerTool: React.FC = () => {
     try {
       await new Promise((resolve) => window.setTimeout(resolve, 30));
       const gif = await createGifBlob(frames, durationSec, loopCount, t);
-      downloadBlob(gif, "rxv-line-dynamic-sticker-preview.gif");
+      downloadBlob(gif, `LINE_動態_${stickerThemeForFile}_預覽.gif`);
       setMessage(t("animated_line_sticker.message_gif_success"));
     } catch (error: any) {
       setMessage(error?.message || t("animated_line_sticker.error_gif_failed"));
