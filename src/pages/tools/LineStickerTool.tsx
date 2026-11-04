@@ -1576,13 +1576,13 @@ function PreviewCard({
 
       {!isExcluded && (
         <>
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-bold text-slate-600" aria-label="單張貼圖位置微調">
-            <button type="button" className="inline-flex min-h-10 w-auto shrink-0 items-center rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 hover:bg-violet-50" onClick={() => onOffsetChange(clampOffset({ ...offset, y: offset.y - 4 }))}>上移</button>
-            <button type="button" className="inline-flex min-h-10 w-auto shrink-0 items-center rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 hover:bg-violet-50" onClick={() => onOffsetChange(clampOffset({ ...offset, y: offset.y + 4 }))}>下移</button>
-            <button type="button" className="inline-flex min-h-10 w-auto shrink-0 items-center rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 hover:bg-violet-50" onClick={() => onOffsetChange(clampOffset({ ...offset, x: offset.x - 4 }))}>左移</button>
-            <button type="button" className="inline-flex min-h-10 w-auto shrink-0 items-center rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 hover:bg-violet-50" onClick={() => onOffsetChange(clampOffset({ ...offset, x: offset.x + 4 }))}>右移</button>
-            <button type="button" className="inline-flex min-h-10 w-auto shrink-0 items-center rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-violet-800 hover:bg-violet-100" onClick={() => onOffsetChange({ x: 0, y: 0 })}>置中</button>
-            <span className="whitespace-nowrap rounded-lg bg-white px-2 py-2 text-xs font-medium text-slate-500" aria-live="polite">偏移 {offset.x}, {offset.y}</span>
+          <div className="mt-3 grid grid-cols-3 gap-2 text-xs font-bold text-slate-600 sm:grid-cols-5" aria-label="單張貼圖位置微調">
+            <button type="button" className="flex min-h-10 w-full min-w-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 px-2 py-2 hover:bg-violet-50" onClick={() => onOffsetChange(clampOffset({ ...offset, y: offset.y - 4 }))}>上移</button>
+            <button type="button" className="flex min-h-10 w-full min-w-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 px-2 py-2 hover:bg-violet-50" onClick={() => onOffsetChange(clampOffset({ ...offset, y: offset.y + 4 }))}>下移</button>
+            <button type="button" className="flex min-h-10 w-full min-w-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 px-2 py-2 hover:bg-violet-50" onClick={() => onOffsetChange(clampOffset({ ...offset, x: offset.x - 4 }))}>左移</button>
+            <button type="button" className="flex min-h-10 w-full min-w-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 px-2 py-2 hover:bg-violet-50" onClick={() => onOffsetChange(clampOffset({ ...offset, x: offset.x + 4 }))}>右移</button>
+            <button type="button" className="flex min-h-10 w-full min-w-0 items-center justify-center rounded-lg border border-violet-200 bg-violet-50 px-2 py-2 text-violet-800 hover:bg-violet-100" onClick={() => onOffsetChange({ x: 0, y: 0 })}>置中</button>
+            <span className="col-span-3 rounded-lg bg-white px-2 py-2 text-center text-xs font-medium text-slate-500 sm:col-span-5" aria-live="polite">偏移 {offset.x}, {offset.y}</span>
           </div>
 
           <div className="mt-3 rounded-xl bg-slate-50 p-3">
@@ -1672,6 +1672,7 @@ export default function LineStickerTool() {
   const [exportCheckResult, setExportCheckResult] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const motherSheetInputRef = useRef<HTMLInputElement>(null);
+  const previewScrollPendingRef = useRef(false);
   const closeMotherSheetFixDialog = useCallback(() => setMotherSheetFixIssue(null), []);
   const changeStickerMode = useCallback((mode: LineStickerMode) => {
     if (mode === "animated" && stickerCount > 24 && files.length) {
@@ -2099,7 +2100,8 @@ export default function LineStickerTool() {
       );
       setMotherSheetDetectionStatus("ready");
       setMotherSheetNeedsReprocessing(false);
-      setActionHint("下一步（第 5 步）：逐張檢查預覽、選好主圖，再按最後一步產生 ZIP；動態則接續製作動畫。");
+      setActionHint("已切好貼圖！下一步請檢查下方預覽，再按「前往第 5 步」下載 ZIP 或製作動態。");
+      previewScrollPendingRef.current = true;
       if (flowProject) updateLineStickerProject({ stage: 4 });
     } catch (cause) {
       setMotherSheetDetectionStatus("invalid");
@@ -2123,6 +2125,19 @@ export default function LineStickerTool() {
     t,
     validateAndAddFiles,
   ]);
+
+  // Wait until React has rendered every split card, then scroll once to the actual preview.
+  useEffect(() => {
+    if (!previewScrollPendingRef.current || loading || motherSheetNeedsReprocessing || files.length < stickerCount) return;
+    const timer = window.setTimeout(() => {
+      const target = document.getElementById("line-sticker-preview");
+      if (previewScrollPendingRef.current && target) {
+        previewScrollPendingRef.current = false;
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }, 160);
+    return () => window.clearTimeout(timer);
+  }, [files.length, loading, motherSheetNeedsReprocessing, stickerCount]);
 
   const clearAll = useCallback(() => {
     files.forEach((p) => URL.revokeObjectURL(p.url));
@@ -2645,10 +2660,12 @@ export default function LineStickerTool() {
             <p role="status" aria-live="polite" className="mt-3 rounded-xl border border-sky-200 bg-white p-3 text-sm font-bold leading-6 text-sky-900">{actionHint}</p>
           </section>
           <section className="mb-5 rounded-2xl border border-indigo-100 bg-white p-4 shadow-sm">
-            <h2 className="text-sm font-black text-slate-900">一般客戶照著做就可以：5 個步驟</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-700">① 選貼圖種類與張數 → ② 複製指令到 ChatGPT 或 Google Gemini 產生完整大圖 → ③ 回本站上傳大圖 → ④ 預覽自動切割、去背結果 → ⑤ 下載 ZIP；動態貼圖再進入動畫流程。</p>
-            <p className="mt-2 text-xs leading-5 text-slate-500">裁切、去白底與尺寸整理都由本站處理；若去背不理想，再選擇外部進階工具。完成 ZIP 不代表 LINE 必定審核通過。</p>
-            <Link to="/tools/line-sticker-guide" className="mt-3 inline-flex items-center rounded-lg bg-indigo-50 px-3 py-2 text-xs font-black text-indigo-700 hover:bg-indigo-100">查看完整圖文教學</Link>
+            <details>
+              <summary className="cursor-pointer text-sm font-black text-slate-900">完整 5 個步驟與教學（點此展開）</summary>
+              <p className="mt-2 text-sm leading-6 text-slate-700">① 選種類與張數 → ② 使用 AI 產生母圖 → ③ 上傳母圖 → ④ 確認格數並預覽切圖 → ⑤ 下載 ZIP；動態需接續製作動畫。</p>
+              <p className="mt-2 text-xs leading-5 text-slate-500">系統協助裁切與去背，但上架前仍須確認文字及角色完整。</p>
+              <Link to="/tools/line-sticker-guide" className="mt-3 inline-flex items-center rounded-lg bg-indigo-50 px-3 py-2 text-xs font-black text-indigo-700">查看完整圖文教學</Link>
+            </details>
             {exportCheckResult ? <p role="status" className="mt-3 rounded-xl bg-emerald-50 p-3 text-sm font-bold leading-6 text-emerald-800">{exportCheckResult}</p> : null}
           </section>
 
@@ -3062,16 +3079,17 @@ export default function LineStickerTool() {
                   ) : null}
                                      <section className="mt-4 rounded-xl border border-violet-200 bg-white p-3" aria-label="母圖切割後智慧放大">
                      <p className="text-sm font-black text-violet-900">切圖後智慧放大成品</p>
-                     <p className="mt-1 text-xs leading-6 text-slate-600">母圖先留白好切割，切完後偵測人物、文字、裝飾的透明外框，再等比例放大與置中。</p>
-                     <div className="mt-2 grid grid-cols-3 gap-2" role="group" aria-label="智慧放大程度">
-                       {(["conservative", "standard", "large"] as const).map((fitMode) => (
-                         <button key={fitMode} type="button" onClick={() => { setMotherSheetFit(fitMode); setCropMode("smart-safe"); setCropScale(100); setItemScales({}); setItemOffsets({}); }}
-                           aria-pressed={motherSheetFit === fitMode}
-                           className={"min-h-11 rounded-xl border-2 px-2 py-2 text-xs font-black " + (motherSheetFit === fitMode ? "border-violet-600 bg-violet-600 text-white" : "border-violet-100 bg-violet-50 text-violet-900 hover:border-violet-300")}>
-                           {fitMode === "conservative" ? "保守・動態" : fitMode === "standard" ? "標準・推薦" : "放大・靜態"}
-                         </button>
-                       ))}
-                     </div>
+                     <details className="mt-2 text-xs leading-6 text-slate-600"><summary className="cursor-pointer font-bold">智慧放大說明（選看）</summary><p>切圖後偵測人物、文字與裝飾的透明外框，再等比例放大置中。</p></details>
+                     <label className="mt-3 block text-xs font-black text-violet-900">智慧放大程度（三選一）
+                       <select value={motherSheetFit} onChange={(event) => {
+                         setMotherSheetFit(event.target.value as MotherSheetFitMode);
+                         setCropMode("smart-safe"); setCropScale(100); setItemScales({}); setItemOffsets({});
+                       }} className="mt-2 block min-h-11 w-full max-w-sm rounded-xl border border-violet-200 bg-white px-3 py-2 text-sm font-bold text-violet-900">
+                         <option value="conservative">保守・動態</option>
+                         <option value="standard">標準・推薦</option>
+                         <option value="large">放大・靜態</option>
+                       </select>
+                     </label>
                      <p className="mt-2 text-[11px] leading-5 text-slate-600">保留約 {Math.round(MOTHER_FIT_MARGIN[motherSheetFit] * 100)}% 四邊安全距離；最多放大 3 倍，來源像素太少仍會變模糊。關閉去背且圖片不透明時不會裁切白底。</p>
                    </section>
                    <div id="mother-split" className="scroll-mt-24 mt-4 grid gap-3 xl:grid-cols-2">
@@ -3134,27 +3152,14 @@ export default function LineStickerTool() {
                             <p className="text-[10px] font-bold leading-4 text-slate-500">
                               如果 AI 母圖留白很多、系統判錯，可直接手動指定這一張：
                             </p>
-                            <div className="mt-2 grid grid-cols-3 gap-1.5">
-                              {(["4x2", "4x4", "4x5"] as MotherSheetGrid[]).map(
-                                (grid) => (
-                                  <button
-                                    key={grid}
-                                    type="button"
-                                    onClick={() =>
-                                      overrideMotherSheetGrid(item.id, grid)
-                                    }
-                                    disabled={loading}
-                                    className={`rounded-lg px-2 py-1.5 text-[10px] font-black transition ${
-                                      item.grid === grid
-                                        ? "bg-violet-600 text-white"
-                                        : "bg-slate-100 text-slate-600 hover:bg-violet-50 hover:text-violet-700"
-                                    }`}
-                                  >
-                                    {formatMotherSheetGrid(grid)}
-                                  </button>
-                                ),
-                              )}
-                            </div>
+                            <select value={item.grid} disabled={loading}
+                              aria-label={`母圖 ${index + 1} 手動指定格數`}
+                              onChange={(event) => overrideMotherSheetGrid(item.id, event.target.value as MotherSheetGrid)}
+                              className="mt-2 min-h-11 w-full rounded-lg border border-violet-200 bg-white px-3 py-2 text-sm font-bold text-violet-900">
+                              <option value="4x2">4×2（8 張）</option>
+                              <option value="4x4">4×4（16 張）</option>
+                              <option value="4x5">4×5（20 張）</option>
+                            </select>
                           </div>
                         </div>
                       );
@@ -3185,7 +3190,7 @@ export default function LineStickerTool() {
                         !motherSheetPlanCheck.valid)
                     }
                     onClick={confirmMotherSheetSplit}
-                    className="mt-4 inline-flex min-h-12 w-auto max-w-full items-center justify-center rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-black text-white shadow-md transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                    className="mt-4 flex min-h-12 w-full items-center justify-center rounded-2xl bg-emerald-600 px-5 py-3 text-center text-sm font-black text-white shadow-md transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300 sm:w-[340px]"
                   >
                     {loading && motherSheetDetectionStatus === "cutting"
                       ? "正在切圖、去背與安全整理…"
@@ -3274,35 +3279,18 @@ export default function LineStickerTool() {
                 <p className="text-[11px] font-black text-slate-400 uppercase mb-3">
                   {t("line_sticker_step_crop")}
                 </p>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    onClick={() => setCropMode("contain-safe") }
-                    className={`whitespace-nowrap rounded-lg px-2 py-2 text-[11px] font-black leading-none transition-all ${cropMode === "contain-safe" ? "bg-blue-600 text-white shadow-md" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}
-                  >
-                    文字保護
-                  </button>
-                  <button
-                    onClick={() => setCropMode("smart-safe")}
-                    className={`whitespace-nowrap rounded-lg px-2 py-2 text-[11px] font-black leading-none transition-all ${cropMode === "smart-safe" ? "bg-blue-600 text-white shadow-md" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}
-                  >
-                    智慧滿版
-                  </button>
-                  <button
-                    onClick={() => setCropMode("crop")}
-                    className={`whitespace-nowrap rounded-lg px-2 py-2 text-[11px] font-black leading-none transition-all ${cropMode === "crop" ? "bg-blue-600 text-white shadow-md" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}
-                  >
-                    滿版
-                  </button>
-                </div>
-
-                <p className="mt-3 rounded-xl bg-emerald-50 px-3 py-2 text-[11px] font-bold leading-5 text-emerald-800">
-                  預設「智慧滿版」會依上方選擇的智慧放大程度保留約 {Math.round(MOTHER_FIT_MARGIN[motherSheetFit] * 100)}% 四邊安全空間，並自動限制內容不超出安全框，降低切到文字、頭髮與手勢的風險。
-                </p>
-
-                <p className="mt-3 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs leading-6 text-blue-900">
-                  全部一起放大或縮小，請使用下方「全部貼圖批次縮放」；套用後仍可逐張微調。
-                  安全模式最多 120%，超過 100% 時仍保留至少 4% 邊界，不會故意裁字。
-                </p>
+                <label className="block text-xs font-bold text-slate-700">裁切模式（三選一）
+                  <select value={cropMode} onChange={(event) => setCropMode(event.target.value as LineStickerCropMode)}
+                    className="mt-2 min-h-11 w-full max-w-sm rounded-xl border border-blue-200 bg-white px-3 py-2 text-sm font-bold text-blue-900">
+                    <option value="contain-safe">文字保護</option>
+                    <option value="smart-safe">智慧滿版（預設）</option>
+                    <option value="crop">滿版（可能裁字）</option>
+                  </select>
+                </label>
+                <details className="mt-3 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800">
+                  <summary className="cursor-pointer">裁切、留白與縮放說明（選看）</summary>
+                  <p className="mt-2">智慧滿版會保留約 {Math.round(MOTHER_FIT_MARGIN[motherSheetFit] * 100)}% 安全留白，調整尺寸請使用下方批次縮放。</p>
+                </details>
               </div>
             </section>
           </div>
@@ -3424,17 +3412,17 @@ export default function LineStickerTool() {
                   <span className="rounded-full bg-white px-3 py-1 text-sm font-black text-violet-700 shadow-sm">批次基準 {cropScale}%</span>
                 </div>
                 <p className="mt-1 text-xs leading-6 text-slate-600">先一次調整全部 {Math.min(files.length, stickerCount)} 張，再使用下面各張的「單張縮放」微調；不會清除各張位置或主圖選擇。</p>
-                <div className="mt-3 flex flex-wrap items-center gap-2">
+                <div className="mt-3 grid grid-cols-1 gap-2 sm:max-w-3xl sm:grid-cols-3">
                   <button type="button" onClick={() => nudgeAllScales(-5)}
-                    className="inline-flex min-h-11 w-auto max-w-full shrink-0 items-center justify-center rounded-xl border border-violet-200 bg-white px-4 py-2.5 text-sm font-black text-violet-800 hover:bg-violet-50">
+                    className="flex min-h-11 w-full min-w-0 items-center justify-center rounded-xl border border-violet-200 bg-white px-4 py-2.5 text-sm font-black text-violet-800 hover:bg-violet-50">
                     全部縮小 −5%
                   </button>
                   <button type="button" onClick={() => nudgeAllScales(5)}
-                    className="inline-flex min-h-11 w-auto max-w-full shrink-0 items-center justify-center rounded-xl bg-violet-700 px-4 py-2.5 text-sm font-black text-white hover:bg-violet-800">
+                    className="flex min-h-11 w-full min-w-0 items-center justify-center rounded-xl bg-violet-700 px-4 py-2.5 text-sm font-black text-white hover:bg-violet-800">
                     全部放大 +5%
                   </button>
                   <button type="button" onClick={() => updateGlobalScale(100)}
-                    className="inline-flex min-h-11 w-auto max-w-full shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-black text-slate-700 hover:bg-slate-50">
+                    className="flex min-h-11 w-full min-w-0 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-black text-slate-700 hover:bg-slate-50">
                     全部還原 100%
                   </button>
                 </div>
@@ -3445,10 +3433,16 @@ export default function LineStickerTool() {
                   step="1" value={cropScale} onChange={(event) => updateGlobalScale(Number(event.target.value))}
                   className="mt-2 block h-10 w-full max-w-xl cursor-pointer accent-violet-700"
                   aria-label="全部貼圖一起縮放" />
-                <p className="mt-1 text-[11px] leading-5 text-slate-600">目前是「{cropMode === "crop" ? "滿版裁切" : cropMode === "smart-safe" ? "智慧安全" : "文字保護"}」模式。
-                  {cropMode === "crop" ? "滿版可能裁到文字，請仔細預覽。" : "超過 100% 仍限制在最少 4% 安全留白內；若已到安全上限，繼續放大也不會再變大。"}
-                  按 ±5% 會保留每張既有倍率差異；拉動滑桿會讓全部回到同一倍率。
-                </p>
+                <details className="mt-2 text-xs leading-5 text-slate-600">
+                  <summary className="cursor-pointer font-bold">縮放操作說明（選看）</summary>
+                  <p>±5% 會保留各張原有倍率差異，滑桿則統一倍率；安全模式仍限制放大範圍。</p>
+                </details>
+              </div>
+              <div id="line-sticker-preview" className="mb-4 scroll-mt-24 rounded-2xl border-2 border-emerald-200 bg-emerald-50 p-4">
+                <h3 className="text-base font-black text-emerald-900">第 4 步完成｜已切好 {Math.min(files.length, stickerCount)} 張貼圖，請檢查預覽</h3>
+                <p className="mt-2 text-sm font-bold text-emerald-900">下一步：查看每張人物、手腳及文字是否完整，確認後按下方藍色按鈕前往第 5 步。</p>
+                <button type="button" onClick={() => document.getElementById("sticker-download")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                  className="mt-3 flex min-h-11 w-full items-center justify-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white hover:bg-blue-700 sm:w-[320px]">前往第 5 步｜下載／製作動態</button>
               </div>
               <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
                 <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">
