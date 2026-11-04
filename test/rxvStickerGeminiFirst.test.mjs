@@ -590,3 +590,20 @@ test("提示詞預設由下拉決定，不再自動寫死年齡、髮色、職�
   assert.match(prompt, /進階模式｜細部設定/);
   assert.match(prompt, /照片模式保留授權照片原貌/);
 });
+
+test("花店 4x4 母圖教學會出現在提示詞第 1 步與上傳第 3 步，並隨張數顯示實際母圖計畫", () => {
+  const prompt = read("src/pages/tools/StickerPromptGenerator.tsx");
+  const upload = read("src/pages/tools/LineStickerTool.tsx");
+  const guide = read("src/components/StickerMotherSheetExample.tsx");
+  assert.match(prompt, /<StickerMotherSheetExample count=\{targetCount\} variant="intro" \/>/);
+  assert.match(upload, /<StickerMotherSheetExample count=\{stickerCount\} variant="upload" \/>/);
+  assert.match(upload, /motherSheetDetections\.length === 0 && files\.length === 0/);
+  assert.match(guide, /getMotherSheetPlan\(count\)/);
+  assert.match(guide, /tutu-mother-sheet-guide-16\.webp/);
+  assert.match(guide, /花店母圖範例｜4×4，共 16 格/);
+  assert.match(guide, /不要先自己切成單張/);
+  assert.match(guide, /showModal\(\)/);
+  assert.match(guide, /onError=\{\(\) => setImageFailed\(true\)\}/);
+  assert.match(upload, /選擇整張母圖｜上傳圖片/);
+  assert.match(prompt, /第 1 步｜先認識母圖/);
+});
