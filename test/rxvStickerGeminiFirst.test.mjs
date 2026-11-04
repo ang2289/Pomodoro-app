@@ -129,7 +129,7 @@ test("自訂文字和字型在新手頁預設顯示，並且設定實際寫入�
   assert.match(prompt, /onChange=\{\(e\) => setFontStyle/);
   assert.match(prompt, /fontStylePrompt = optionPrompt\(FONT_STYLE_OPTIONS, fontStyle\)/);
   assert.match(prompt, /字型造型遵守「\$\{fontStylePrompt\}」/);
-  assert.match(prompt, /fontStyle,\s*stickerStylePreset,\s*photoMode,\s*realPhotoSubMode,\s*index \+ 1,/);
+  assert.match(prompt, /fontStyle,\s*photoMode, subMode: realPhotoSubMode, batchNumber: index \+ 1,/);
   assert.match(prompt, /fontStyle,\s*stickerStyle,\s*photoMode,\s*subMode,/);
   assert.doesNotMatch(prompt, /想換角色、修改文字或指定畫風？展開進階設定/);
   assert.match(prompt, /一行一句，可自行修改/);
@@ -168,7 +168,7 @@ test("第 2 步顯示全部已選設定，母圖提示詞逐格指定位置並�
   assert.match(source, /optionLabel\(FONT_STYLE_OPTIONS, fontStyle\)/);
   assert.match(source, /optionLabel\(TEXT_SIZE_OPTIONS, textSize\)/);
   assert.match(source, /optionLabel\(TEXT_COLOR_OPTIONS, textColor\)/);
-  assert.match(source, /optionLabel\(STICKER_STYLE_OPTIONS, stickerStylePreset\)/);
+  assert.match(source, /optionLabel\(ILLUSTRATION_STYLE_OPTIONS, illustrationStyle\)/);
   assert.match(source, /optionLabel\(PHOTO_MODE_OPTIONS, photoMode\)/);
   assert.match(source, /modeInstructions = mode === "animated"/);
   assert.match(source, /platform === "whatsapp" \? "WhatsApp" : "LINE"/);
