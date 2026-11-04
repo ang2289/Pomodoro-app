@@ -2748,7 +2748,7 @@ const AnimatedLineStickerTool: React.FC = () => {
         <link rel="canonical" href={pageUrl} />
       </Helmet>
 
-      <main className="relative left-1/2 w-screen -translate-x-1/2 px-4 py-8 md:px-6 md:py-10">
+      <main className="tutu-sticker-readable relative left-1/2 w-screen -translate-x-1/2 px-4 py-8 md:px-6 md:py-10">
         <div className="mx-auto w-full max-w-[1480px]">
         <LineStickerFlowSteps activeStep={5} mode="animated" />
         {handoffLoaded ? (
