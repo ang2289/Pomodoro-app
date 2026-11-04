@@ -118,7 +118,7 @@ export default function NewUserStickerGuide({ compact = false }: Props) {
         <Link to="/tools/sticker-prompt#sticker-start" className="inline-flex min-h-11 items-center rounded-xl bg-sky-700 px-4 py-2.5 text-sm font-black !text-white hover:bg-sky-800">
           第 1 步｜我還沒有圖片
         </Link>
-        <Link to="/tools/line-sticker?existing=1#mother-upload" className="inline-flex min-h-11 items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-800 hover:bg-slate-100">
+        <Link to="/tools/line-sticker?existing=1#step3-options" className="inline-flex min-h-11 items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-800 hover:bg-slate-100">
           第 3 步｜我已有圖片
         </Link>
         <Link to="/tools/line-sticker-guide" className="inline-flex min-h-11 items-center px-2 py-2 text-sm font-bold text-sky-800 underline underline-offset-4">
