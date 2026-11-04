@@ -5071,7 +5071,9 @@ export default function StickerPromptGenerator() {
   }, []);
   const [businessAvatar, setBusinessAvatar] = useState<BusinessAvatarSelection>(savedBusinessAvatar);
   const [businessSignature, setBusinessSignature] = useState(savedBusinessSignature);
-  const [characterTraits, setCharacterTraits] = useState<OriginalCharacterTraits>(randomOriginalCharacter);
+  const [characterTraits, setCharacterTraits] = useState<OriginalCharacterTraits>(() => ({ ...ORIGINAL_CHARACTER_DEFAULT }));
+  const [useBusinessAvatar, setUseBusinessAvatar] = useState(false);
+  const [manualTextEnabled, setManualTextEnabled] = useState(false);
   useEffect(() => {
     try {
       localStorage.setItem(BUSINESS_AVATAR_STORAGE_KEY, JSON.stringify(businessAvatar));
@@ -5082,7 +5084,7 @@ export default function StickerPromptGenerator() {
   const selectedStylePrompt = optionPrompt(ILLUSTRATION_STYLE_OPTIONS, illustrationStyle);
   const visualStyle = photoMode === "realPhoto"
     ? realPhotoPolicy(realPhotoSubMode).visual
-    : `${style}；指定畫風：${selectedStylePrompt}`;
+    : `${selectedStylePrompt}${manualTextEnabled && style.trim() ? `；使用者手動補充：${style.trim()}（若與已選畫風衝突，以畫風下拉選單為準）` : ""}`;
   const [texts, setTexts] = useState(
     getDefaultTextWithName("businessPersonal", "4x4", "none", "小宇"),
   );
@@ -5246,22 +5248,24 @@ export default function StickerPromptGenerator() {
   // 所有母圖沿用同一角色設定，不會因為 24／40 張分批產生就更換長相。
   // 真人似顏繪優先忠實參考本人照片，不額外覆蓋髮型及臉部特徵。
   const lockedIdentity = useMemo(() => {
-    const businessBase: StickerIdentity = type === "businessPersonal" && photoMode === "original"
+    const base = manualTextEnabled
+      ? identity
+      : defaultStickerIdentity(templates[type].role, selectedStylePrompt);
+    const businessBase: StickerIdentity = useBusinessAvatar && type === "businessPersonal" && photoMode === "original"
       ? {
-          ...identity,
+          ...base,
           appearance: businessAvatar.persona,
           hair: businessAvatar.hair,
           outfit: businessAvatar.clothes,
           accessories: `${businessAvatar.accessory}；${businessSignature.trim() || "不額外增加固定配件"}`,
-          coloring: `${identity.coloring}；固定色系：${businessAvatar.palette}`,
+          coloring: `固定色系：${businessAvatar.palette}；純白背景`,
         }
-      : identity;
-    // 真人參考、多人角色與動物主題不強制套用單一人物的性別與年齡。
+      : base;
     const multipleOrNonHuman = /情侶|夫妻|新郎|新娘|兩位|一家|全家|寵物|貓咪|狗狗|兔子|佛像|觀音|動物|怪獸|機器人/.test(role);
     return photoMode === "original" && !multipleOrNonHuman
       ? applyOriginalCharacterTraits(businessBase, characterTraits, templates[type].label)
       : businessBase;
-  }, [type, photoMode, role, identity, businessAvatar, businessSignature, characterTraits]);
+  }, [type, photoMode, role, identity, businessAvatar, businessSignature, characterTraits, manualTextEnabled, useBusinessAvatar, selectedStylePrompt]);
   const identityLock = useMemo(() => {
     const photoIdentity = photoMode === "realPhoto"
       ? realPhotoPolicy(realPhotoSubMode).identity
@@ -5284,12 +5288,12 @@ export default function StickerPromptGenerator() {
     return `${makeStickerIdentityLock(lockedIdentity, fontStyle, textSize, textColor, textPosition)}
 - 使用者選定畫風：${selectedStylePrompt}；整套母圖一致，不得隨意改變。`;
   }, [lockedIdentity, fontStyle, textSize, textColor, textPosition, photoMode, realPhotoSubMode, selectedStylePrompt]);
-  const effectiveRole = useMemo(
-    () => type === "businessPersonal" && photoMode === "original"
-      ? `${role}\n\n${businessAvatarPrompt(businessAvatar, businessSignature)}`
-      : role,
-    [type, role, photoMode, businessAvatar, businessSignature],
-  );
+  const effectiveRole = useMemo(() => {
+    const selectedRole = manualTextEnabled ? role : templates[type].role;
+    return useBusinessAvatar && type === "businessPersonal" && photoMode === "original"
+      ? `${selectedRole}\n\n${businessAvatarPrompt(businessAvatar, businessSignature)}`
+      : selectedRole;
+  }, [type, role, photoMode, businessAvatar, businessSignature, useBusinessAvatar, manualTextEnabled]);
   const flowPrompts = useMemo(
     () =>
       motherSheetPlan.map((item, index) => {
@@ -5303,6 +5307,7 @@ export default function StickerPromptGenerator() {
                 grid: item.grid, batchTexts, textSize, textColor, textPosition, fontStyle,
                 photoMode, subMode: realPhotoSubMode, batchNumber: index + 1,
                 mode: stickerMode, platform: stickerPlatform, startIndex: item.startIndex,
+                characterTraits,
               })
             : buildFlowPrompt(
             templates[type].label,
@@ -5343,6 +5348,7 @@ export default function StickerPromptGenerator() {
       identityLock,
       simpleMode,
       selectedStylePrompt,
+      characterTraits,
     ],
   );
 
@@ -5355,6 +5361,7 @@ export default function StickerPromptGenerator() {
         grid, batchTexts: normalizeLines(texts, gridOptions[grid].count),
         textSize, textColor, textPosition, fontStyle, photoMode,
         subMode: realPhotoSubMode, batchNumber: 1, mode: stickerMode, platform: stickerPlatform, startIndex: 0,
+        characterTraits,
       }) : buildPrompt(
         templates[type].label,
         effectiveRole,
@@ -5382,7 +5389,7 @@ export default function StickerPromptGenerator() {
       stickerStylePreset,
       photoMode,
       realPhotoSubMode,
-      simpleMode, stickerMode, stickerPlatform, selectedStylePrompt,
+      simpleMode, stickerMode, stickerPlatform, selectedStylePrompt, characterTraits,
     ],
   );
   const stablePrompt = useMemo(
@@ -5403,7 +5410,7 @@ export default function StickerPromptGenerator() {
     setRole(templates[nextType].role);
     setStyle(templates[nextType].style);
     setIdentity(defaultStickerIdentity(templates[nextType].role, templates[nextType].style));
-    setCharacterTraits({ ...ORIGINAL_CHARACTER_DEFAULT });
+    // 使用者已選的年齡／性別／外觀仍保留；只換主題不重設角色選擇。
     setTexts(
       getDefaultFlowTexts(nextType, targetCount, nameMode, customName),
     );
