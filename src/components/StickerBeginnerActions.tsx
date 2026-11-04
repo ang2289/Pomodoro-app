@@ -9,8 +9,8 @@ import type { ReactNode } from "react";
  */
 export const STICKER_UI = {
   entryGrid: "grid grid-cols-1 gap-3 sm:grid-cols-2 sm:max-w-[680px]",
-  entryAction: "flex min-h-14 w-full min-w-0 items-center justify-center rounded-xl px-4 py-3 text-center text-sm font-black leading-6 shadow-sm transition-colors",
-  primaryAction: "flex min-h-12 w-full min-w-0 items-center justify-center rounded-xl px-4 py-3 text-center text-sm font-black leading-6 shadow-sm transition-colors sm:w-[320px]",
+  entryAction: "flex min-h-14 w-full min-w-0 items-center justify-center rounded-xl px-4 py-3 text-center text-base font-black leading-7 shadow-sm transition-colors",
+  primaryAction: "flex min-h-12 w-full min-w-0 items-center justify-center rounded-xl px-4 py-3 text-center text-base font-black leading-7 shadow-sm transition-colors sm:w-[320px]",
   select: "mt-2 min-h-12 w-full rounded-xl border-2 border-violet-200 bg-white px-4 py-2 text-base font-bold text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-violet-500",
   selectionGrid: "grid grid-cols-1 gap-3 sm:max-w-[680px] sm:grid-cols-2",
 } as const;
