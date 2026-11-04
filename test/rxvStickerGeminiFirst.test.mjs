@@ -61,7 +61,7 @@ test("最近的重要動畫和圖片流量修復仍保留", () => {
   const gallery = read("src/pages/tools/StickerShowcaseGallery.tsx");
   const upload = read("src/pages/tools/LineStickerTool.tsx");
   assert.match(apng, /ensureVisibleMotion/);
-  assert.match(animated, /const OUTPUT_SAFE_PADDING = 12/);
+  assert.match(animated, /const OUTPUT_SAFE_PADDING = 10/);
   assert.match(gallery, /loading="lazy"/);
   assert.match(upload, /WhatsAppMobileZipHandoff/);
 });
@@ -173,7 +173,7 @@ test("第 2 步顯示全部已選設定，母圖提示詞逐格指定位置並�
   assert.match(source, /modeInstructions = mode === "animated"/);
   assert.match(source, /platform === "whatsapp" \? "WhatsApp" : "LINE"/);
   assert.match(source, /stickerMode,\s*stickerPlatform,\s*item\.startIndex,\s*identityLock,\s*\),/);
-  assert.match(source, /\[\s*motherSheetPlan,[\s\S]*?textPosition,\s*fontStyle,[\s\S]*?stickerMode,\s*stickerPlatform,\s*identityLock,\s*\]/);
+  assert.match(source, /\[\s*motherSheetPlan,[\s\S]*?textPosition,\s*fontStyle,[\s\S]*?stickerMode,\s*stickerPlatform,\s*identityLock,\s*simpleMode,[\s\S]*?characterTraits,\s*\]/);
   assert.doesNotMatch(source, /人物從第一格到最後一格保持完全同一組新郎新娘/);
 });
 
