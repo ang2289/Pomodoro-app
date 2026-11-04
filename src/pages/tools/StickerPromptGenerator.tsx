@@ -5531,7 +5531,7 @@ export default function StickerPromptGenerator() {
         keywords="LINE貼圖提示詞, LINE貼圖咒語, AI貼圖, 貼圖生圖提示詞, RxV"
       />
 
-      <main className="min-h-screen bg-[#F8F7F3] px-3 py-6 sm:px-6">
+      <main className="tutu-sticker-readable min-h-screen bg-[#F8F7F3] px-3 py-6 sm:px-6">
         <div className="mx-auto w-full max-w-3xl">
           <LineStickerFlowSteps activeStep={copiedBatchIndex !== null || copied || copiedStable ? 2 : 1} mode={stickerMode} />
           <header className="mb-6">
@@ -5685,20 +5685,21 @@ export default function StickerPromptGenerator() {
                 </span>
               </div>
               <div className="mt-4 rounded-2xl border-2 border-violet-200 bg-violet-50 p-3" aria-label="貼圖設定模式">
-                <p className="mb-2 text-sm font-black text-violet-950">設定模式</p>
+                <p className="mb-2 text-base font-black text-violet-950">操作方式（選一種，兩種都以你的下拉設定產生提示詞）</p>
                 <div className="grid grid-cols-2 gap-2">
                   <button type="button" aria-pressed={simpleMode} onClick={() => setSimpleMode(true)}
                     className={simpleMode ? "min-h-12 rounded-xl bg-violet-600 px-3 py-2 text-sm font-black !text-white" : "min-h-12 rounded-xl border border-violet-200 bg-white px-3 py-2 text-sm font-black text-violet-900"}>
-                    簡易大主題（推薦）
+                    簡易模式｜快速產圖
                   </button>
                   <button type="button" aria-pressed={!simpleMode} onClick={() => setSimpleMode(false)}
                     className={!simpleMode ? "min-h-12 rounded-xl bg-violet-600 px-3 py-2 text-sm font-black !text-white" : "min-h-12 rounded-xl border border-violet-200 bg-white px-3 py-2 text-sm font-black text-violet-900"}>
-                    進階自訂
+                    進階模式｜細部設定
                   </button>
                 </div>
-                <p className="mt-2 text-xs leading-6 text-violet-900">{simpleMode
-                  ? "選好主題即可讓 AI 原創設計角色；隱藏的舊人設不會加入指令。"
-                  : "進階模式可調整年齡、性別、服裝與角色鎖定；切換不會清除填寫內容。"}</p>
+                <p className="mt-2 text-base leading-7 text-violet-900">{simpleMode
+                  ? "只需選主題、畫風、文字與字型，其他人物特徵由 AI 原創。"
+                  : "可進一步選五官、髮型、服裝與配色。文字框預設不參與提示詞，手動啟用才生效。"}
+                </p>
               </div>
               <div className="mt-2 rounded-xl bg-slate-50 p-3">
                 <label className="block text-xs font-black text-violet-700">
@@ -5732,7 +5733,7 @@ export default function StickerPromptGenerator() {
                 onChange={(e) =>
                   handleTypeChange(e.target.value as TemplateKey)
                 }
-                className="mt-3 w-full max-w-[420px] sm:w-auto sm:min-w-[240px] rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
+                className="mt-3 w-full min-h-12 rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
               >
                 {filteredTemplateEntries.map(([key, item]) => (
                   <option key={key} value={key}>
@@ -5749,16 +5750,16 @@ export default function StickerPromptGenerator() {
 
 
               <section id="sticker-customize" aria-label="自訂貼圖文字、字型及角色設定" className="scroll-mt-24 mt-5 border-t border-slate-200 pt-5">
-                <h3 className="text-base font-semibold text-slate-900">自訂文字、字型與角色（可直接修改）</h3>
-                <p className="mt-1 text-xs leading-5 text-slate-500">保留預設也可以；字型設定會加入 AI 指令，產圖後仍需檢查文字。</p>
+                <h3 className="text-xl font-black text-slate-900">選擇畫風、文字與角色</h3>
+                <p className="mt-2 text-base leading-7 text-slate-600">下拉選擇後就會更新生圖提示詞；沒有選的人物外觀交給 AI。先保留預設也可以直接產圖。</p>
                 <div className="mt-3">
-              <label className="mt-5 block text-xs font-black text-slate-500">
-                角色來源
+              <label className="mt-5 block text-base font-black text-slate-800">
+                角色來源（預設原創角色）
               </label>
               <select
                 value={photoMode}
                 onChange={(e) => setPhotoMode(e.target.value as PhotoMode)}
-                className="mt-2 w-full max-w-[420px] sm:w-auto sm:min-w-[240px] rounded-2xl border-2 border-violet-300 bg-violet-50 px-4 py-3 pr-10 text-sm font-black text-violet-800 shadow-sm outline-none focus:border-violet-500 focus:bg-white"
+                className="mt-2 w-full min-h-12 rounded-2xl border-2 border-violet-300 bg-violet-50 px-4 py-3 pr-10 text-sm font-black text-violet-800 shadow-sm outline-none focus:border-violet-500 focus:bg-white"
               >
                 {PHOTO_MODE_OPTIONS.map((item) => (
                   <option key={item.value} value={item.value}>
@@ -5805,7 +5806,7 @@ export default function StickerPromptGenerator() {
                       ? "請在 AI 生圖工具另外附上有權使用的貓狗或其他寵物照片，整套使用同一隻寵物。本站不會自動傳送或儲存照片。"
                       : "請在 ChatGPT／Gemini 另外附上本人或已獲授權的照片。似顏繪 Q 版較接近真人；超萌 Q 版則有更大的頭身比例。本站只產生提示詞，不會自動上傳照片。"}
               </p>
-              <label className="mt-5 block text-xs font-black text-slate-500">畫風選擇</label>
+              <label className="mt-5 block text-base font-black text-slate-800">畫風（下拉選項就是實際生圖畫風）</label>
               {photoMode === "realPhoto" ? (
                 <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
                   {realPhotoSubMode === "unchanged"
@@ -5818,17 +5819,37 @@ export default function StickerPromptGenerator() {
                     value={illustrationStyle}
                     onChange={(e) => setIllustrationStyle(e.target.value as IllustrationStyle)}
                     aria-label="選擇 12 種畫風"
-                    className="mt-2 w-full max-w-[420px] sm:w-auto sm:min-w-[240px] rounded-2xl border-2 border-violet-300 bg-white px-4 py-3 pr-10 text-sm font-bold text-violet-900 focus:border-violet-500"
+                    className="mt-2 w-full min-h-12 rounded-2xl border-2 border-violet-300 bg-white px-4 py-3 pr-10 text-sm font-bold text-violet-900 focus:border-violet-500"
                   >
                     {ILLUSTRATION_STYLE_OPTIONS.map((item) => (
                       <option key={item.value} value={item.value}>{item.label}</option>
                     ))}
                   </select>
-                  <p className="mt-2 text-xs leading-6 text-slate-600">
-                    畫風將寫進每張母圖的提示詞，與原有的「貼圖風格」氛圍加強是不同設定。3D 公仔娃娃是畫風，不是獨立角色模式。
+                  <p className="mt-2 text-sm leading-6 font-semibold text-violet-800">
+                    已選畫風會直接用於提示詞，不會再套用舊人物模板的其他畫風。
                   </p>
                 </>
               )}
+
+              {photoMode === "original" &&
+                !/情侶|夫妻|新郎|新娘|兩位|一家|全家|寵物|貓咪|狗狗|兔子|佛像|觀音|動物|怪獸|機器人/.test(role) ? (
+                <div className="mt-5 rounded-2xl border border-violet-200 bg-violet-50/40 p-4">
+                  <h4 className="text-base font-black text-slate-900">人物選項（不指定也可以）</h4>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">未選性別與年齡時，由 AI 依主題設計，不會固定生成成年人或熟齡人物。</p>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    {(["gender", "age"] as OriginalCharacterKey[]).map((key) => (
+                      <label key={key} className="block text-base font-bold text-slate-800">
+                        {ORIGINAL_CHARACTER_LABELS[key]}
+                        <select value={characterTraits[key]}
+                          onChange={(event) => setCharacterTraits(previous => ({...previous, [key]: event.target.value}))}
+                          className="mt-2 min-h-12 w-full rounded-xl border border-violet-200 bg-white px-3 py-2 text-base font-bold text-slate-900">
+                          {ORIGINAL_CHARACTER_OPTIONS[key].map(item => <option key={item} value={item}>{item}</option>)}
+                        </select>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
 
               <label className="mt-5 block text-xs font-black text-slate-500">
                 是否加入人名／店名
@@ -5838,7 +5859,7 @@ export default function StickerPromptGenerator() {
                 onChange={(e) =>
                   handleNameModeChange(e.target.value as NameMode)
                 }
-                className="mt-2 w-full max-w-[420px] sm:w-auto sm:min-w-[240px] rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
+                className="mt-2 w-full min-h-12 rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
               >
                 {NAME_MODE_OPTIONS.map((item) => (
                   <option key={item.value} value={item.value}>
@@ -5856,7 +5877,7 @@ export default function StickerPromptGenerator() {
                     value={customName}
                     onChange={(e) => handleCustomNameChange(e.target.value)}
                     placeholder="例如：小宇、雙果花、舒菓蜜、小芳早餐店"
-                    className="mt-2 w-full max-w-[420px] sm:w-auto sm:min-w-[240px] rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
+                    className="mt-2 w-full min-h-12 rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
                   />
                   <p className="mt-2 rounded-2xl bg-violet-50 px-4 py-3 text-xs font-bold leading-6 text-violet-700">
                     加入名稱後，貼圖文字會變成「小宇已收到」、「小宇幫您確認」這類更有個人記憶點的版本；店家也可改成「雙果花已收到」、「舒菓蜜感謝支持」。
@@ -5872,7 +5893,7 @@ export default function StickerPromptGenerator() {
                   <select
                     value={textSize}
                     onChange={(e) => setTextSize(e.target.value as TextSize)}
-                    className="mt-2 w-full max-w-[420px] sm:w-auto sm:min-w-[240px] rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
+                    className="mt-2 w-full min-h-12 rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
                   >
                     {TEXT_SIZE_OPTIONS.map((item) => (
                       <option key={item.value} value={item.value}>
@@ -5888,7 +5909,7 @@ export default function StickerPromptGenerator() {
                   <select
                     value={fontStyle}
                     onChange={(e) => setFontStyle(e.target.value as FontStyle)}
-                    className="mt-2 w-full max-w-[420px] sm:w-auto sm:min-w-[240px] rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
+                    className="mt-2 w-full min-h-12 rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
                   >
                     {FONT_STYLE_OPTIONS.map((item) => (
                       <option key={item.value} value={item.value}>{item.label}</option>
@@ -5902,7 +5923,7 @@ export default function StickerPromptGenerator() {
                   <select
                     value={textColor}
                     onChange={(e) => setTextColor(e.target.value as TextColor)}
-                    className="mt-2 w-full max-w-[420px] sm:w-auto sm:min-w-[240px] rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
+                    className="mt-2 w-full min-h-12 rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
                   >
                     {TEXT_COLOR_OPTIONS.map((item) => (
                       <option key={item.value} value={item.value}>
@@ -5920,7 +5941,7 @@ export default function StickerPromptGenerator() {
                     onChange={(e) =>
                       setTextPosition(e.target.value as TextPosition)
                     }
-                    className="mt-2 w-full max-w-[420px] sm:w-auto sm:min-w-[240px] rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
+                    className="mt-2 w-full min-h-12 rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
                   >
                     {TEXT_POSITION_OPTIONS.map((item) => (
                       <option key={item.value} value={item.value}>
@@ -5948,7 +5969,7 @@ export default function StickerPromptGenerator() {
                         e.target.value as StickerStylePreset,
                       )
                     }
-                    className="mt-2 w-full max-w-[420px] sm:w-auto sm:min-w-[240px] rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
+                    className="mt-2 w-full min-h-12 rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none focus:border-violet-400"
                   >
                     {STICKER_STYLE_OPTIONS.map((item) => (
                       <option key={item.value} value={item.value}>
