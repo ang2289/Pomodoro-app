@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { STICKER_UI } from "@/components/StickerBeginnerActions";
 import { StickerExistingMotherSheetShortcut, StickerCustomInquiry, StickerNextActionHint } from "@/components/StickerBeginnerActions";
 
 /**
@@ -114,17 +115,17 @@ export default function NewUserStickerGuide({ compact = false }: Props) {
       <div className="mt-4">
         <StickerNextActionHint>還沒有圖片，就按「第 1 步｜我還沒有圖片」，從選主題開始。</StickerNextActionHint>
       </div>
-      <div className="mt-2 flex flex-wrap items-center gap-2">
-        <Link to="/tools/sticker-prompt#sticker-start" className="inline-flex min-h-11 items-center rounded-xl bg-sky-700 px-4 py-2.5 text-sm font-black !text-white hover:bg-sky-800">
+      <div className={`mt-2 ${STICKER_UI.entryGrid}`}>
+        <Link to="/tools/sticker-prompt#sticker-start" className={`${STICKER_UI.entryAction} bg-violet-600 text-white hover:bg-violet-700`}>
           第 1 步｜我還沒有圖片
         </Link>
-        <Link to="/tools/line-sticker?existing=1#step3-options" className="inline-flex min-h-11 items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-800 hover:bg-slate-100">
+        <Link to="/tools/line-sticker?existing=1#step3-options" className={`${STICKER_UI.entryAction} border-2 border-violet-200 bg-white text-violet-800 hover:bg-violet-50`}>
           第 3 步｜我已有圖片
         </Link>
-        <Link to="/tools/line-sticker-guide" className="inline-flex min-h-11 items-center px-2 py-2 text-sm font-bold text-sky-800 underline underline-offset-4">
-          查看完整圖文說明
-        </Link>
       </div>
+      <Link to="/tools/line-sticker-guide" className="mt-2 inline-flex min-h-11 items-center px-2 py-2 text-sm font-bold text-sky-800 underline underline-offset-4">
+        查看完整圖文說明
+      </Link>
       <div className="mt-4"><StickerExistingMotherSheetShortcut compact /></div>
       <div className="mt-3"><StickerCustomInquiry compact /></div>
       <p className="mt-3 rounded-xl bg-emerald-50 px-3 py-2 text-xs leading-6 text-emerald-900">
