@@ -2574,7 +2574,7 @@ export default function LineStickerTool() {
           description="從貼圖主題、文字與字型選擇開始，先用 ChatGPT 畫母圖，再回 RXV 切圖；已有母圖可以直接跳到上傳。"
           path="/tools/line-sticker"
         />
-        <main className="min-h-screen bg-slate-50 px-4 py-8">
+        <main className="tutu-sticker-readable min-h-screen bg-slate-50 px-4 py-8">
           <div className="mx-auto max-w-4xl">
             <h1 className="text-2xl font-black text-slate-900">第一次做 LINE／WhatsApp 貼圖？從第 1 步開始</h1>
             <LineStickerFlowSteps activeStep={1} />
@@ -2622,7 +2622,7 @@ export default function LineStickerTool() {
         jsonLd={faqJsonLd}
       />
 
-      <div className="min-h-screen bg-slate-50 px-4 py-8 pb-12">
+      <div className="tutu-sticker-readable min-h-screen bg-slate-50 px-4 py-8 pb-12">
         <div className="mx-auto max-w-[1480px]">
           <LineStickerFlowSteps
             activeStep={
