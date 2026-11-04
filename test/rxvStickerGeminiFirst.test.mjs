@@ -296,7 +296,7 @@ test("業務個人品牌角色可選外觀並固定整套母圖，不再所有�
     assert.match(source, new RegExp(key + ": \\["));
   }
   assert.match(source, /useState<BusinessAvatarSelection>\(savedBusinessAvatar\)/);
-  assert.match(source, /onClick=\{\(\) => setBusinessAvatar\(randomBusinessAvatar\(\)\)\}/);
+  assert.match(source, /checked=\{useBusinessAvatar\}/);
   assert.match(source, /businessAvatarPrompt\(businessAvatar, businessSignature\)/);
   assert.match(source, /const effectiveRole = useMemo/);
   assert.match(source, /type === "businessPersonal" && photoMode === "original"/);
@@ -304,11 +304,11 @@ test("業務個人品牌角色可選外觀並固定整套母圖，不再所有�
   assert.match(source, /effectiveRole,\s*visualStyle,\s*grid,\s*texts,/);
   assert.match(source, /effectiveRole,\s*visualStyle,\s*grid,\s*stickerStylePreset,/);
   assert.match(source, /localStorage\.setItem\(BUSINESS_AVATAR_STORAGE_KEY/);
-  assert.match(source, /個人辨識特徵（選填）/);
+  assert.match(source, /其他特徵（選填）/);
   assert.match(source, /後續第 2 張母圖都必須維持同一張臉/);
   assert.match(source, /不能一格變一個人/);
   assert.doesNotMatch(source, /role: "一位親切又專業的年輕業務角色，穿襯衫與西裝背心/);
-  assert.match(source, /無法保證與其他使用者絕不重複/);
+  assert.match(source, /舊版業務個人品牌外觀設定（選用）/);
 });
 
 test("角色描述組合保持每格一致，能帶入個人外觀但不額外加入名牌文字", () => {
@@ -374,7 +374,7 @@ test("兩張母圖的角色與字型鎖定相同，文字位置三種模式互�
   assert.match(source, /identityLock,\s*\),/);
   assert.match(source, /第 1 張已完成母圖/);
   assert.match(source, /同一個 ChatGPT 對話/);
-  assert.match(source, /整套貼圖共用角色設定/);
+  assert.match(source, /手動文字微調（進階可選/);
   assert.match(source, /type StickerIdentity/);
   assert.match(source, /startIndex \+ row \* columns \+ column/);
   assert.doesNotMatch(source, /- 左右交錯時，奇數格文字在左、偶數格文字在右，人物必須在相反側/);
@@ -458,13 +458,13 @@ test("原創職業貼圖可獨立選擇性別、兒童與長者年齡、個性�
   for (const label of ["女性","男性","中性／不指定性別","兒童（7～12 歲）","長者（70 歲以上）","活潑開朗","沉穩可靠","圓臉笑眼"]) {
     assert.ok(source.includes(label), "角色選項缺少："+label);
   }
-  assert.match(source, /aria-label="自選角色性別、年齡、個性與五官"/);
-  assert.match(source, /幫我隨機搭配不同角色/);
+  assert.match(source, /aria-label="進階人物下拉設定"/);
+  assert.match(source, /隨機搭配人物/);
   assert.match(source, /setCharacterTraits\(randomOriginalCharacter\(\)\)/);
   assert.match(source, /characterTraits, templates\[type\]\.label/);
   assert.match(source, /identityLock = useMemo/);
   assert.match(source, /setCharacterTraits\(\{ \.\.\.ORIGINAL_CHARACTER_DEFAULT \}\)/);
-  assert.match(source, /真人參考、多人角色與動物主題不強制套用/);
+  assert.match(source, /const multipleOrNonHuman =/);
 });
 
 test("簡易人設只修改指定特徵，不會覆蓋髮型服裝或母圖鎖定風格", () => {
