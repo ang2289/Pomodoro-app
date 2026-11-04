@@ -1,6 +1,20 @@
 import { Link } from "react-router-dom";
 import type { ReactNode } from "react";
 
+/**
+ * 貼圖工具共用版型。單一主要動作：手機全寬、桌面 320px。
+ * 兩個起點選項：同一格線、同樣高度與寬度。
+ * 其他「進階／小動作」使用內容寬度，不強制拉到同一尺寸。
+ * 新按鈕請複用此規則，避免 w-fit / w-auto / w-full 相互覆蓋。
+ */
+export const STICKER_UI = {
+  entryGrid: "grid grid-cols-1 gap-3 sm:grid-cols-2 sm:max-w-[680px]",
+  entryAction: "flex min-h-14 w-full min-w-0 items-center justify-center rounded-xl px-4 py-3 text-center text-sm font-black leading-6 shadow-sm transition-colors",
+  primaryAction: "flex min-h-12 w-full min-w-0 items-center justify-center rounded-xl px-4 py-3 text-center text-sm font-black leading-6 shadow-sm transition-colors sm:w-[320px]",
+  select: "mt-2 min-h-12 w-full rounded-xl border-2 border-violet-200 bg-white px-4 py-2 text-base font-bold text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-violet-500",
+  selectionGrid: "grid grid-cols-1 gap-3 sm:max-w-[680px] sm:grid-cols-2",
+} as const;
+
 /** 新手主流程：已有母圖可直接上傳；需要協助可私訊，不呈現價目表。 */
 export function StickerExistingMotherSheetShortcut({ compact = false }: { compact?: boolean }) {
   return (
@@ -9,8 +23,8 @@ export function StickerExistingMotherSheetShortcut({ compact = false }: { compac
       <p className="mt-1 text-xs leading-5 text-slate-600">例如一張有 8 格、16 格或 20 格角色的完整大圖，直接傳到第 3 步。RXV 會協助辨識格數、切割與去背。</p>
       <p className="mt-2 text-xs font-medium text-slate-600">下一步請按下方「第 3 步｜我已有母圖，直接上傳」按鈕。</p>
       <Link
-        to="/tools/line-sticker?existing=1#mother-upload"
-        className="mt-2 inline-flex min-h-11 w-fit max-w-full items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-center text-sm font-semibold text-violet-800 hover:border-violet-500"
+        to="/tools/line-sticker?existing=1#step3-options"
+        className={`${STICKER_UI.primaryAction} mt-2 border border-violet-200 bg-white text-violet-800 hover:bg-violet-50`}
       >
         第 3 步｜我已有母圖，直接上傳 →
       </Link>
