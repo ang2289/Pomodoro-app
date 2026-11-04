@@ -2727,16 +2727,13 @@ const AnimatedLineStickerTool: React.FC = () => {
           <h1 className="mt-2 text-2xl font-black tracking-tight text-slate-900 md:text-4xl">
             {t("animated_line_sticker.title")}
           </h1>
-          <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-700 md:text-base">
-            {t("animated_line_sticker.intro_line_1")}
-            {t("animated_line_sticker.intro_line_2")}
-          </p>
-          <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
-            <span className="font-black">{t("animated_line_sticker.recommended_timing_label")}</span>
-            {t("animated_line_sticker.recommended_timing_before")}
-            <span className="font-black">{t("animated_line_sticker.recommended_timing_value")}</span>
-            {t("animated_line_sticker.recommended_timing_after")}
-          </div>
+          <details className="mt-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm leading-6 text-slate-700">
+            <summary className="cursor-pointer font-bold">動態製作方式、時間與格式說明（選看）</summary>
+            <p className="mt-2">{t("animated_line_sticker.intro_line_1")}{t("animated_line_sticker.intro_line_2")}</p>
+            <p className="mt-2 text-amber-900"><strong>{t("animated_line_sticker.recommended_timing_label")}</strong>
+              {t("animated_line_sticker.recommended_timing_before")}{t("animated_line_sticker.recommended_timing_value")}{t("animated_line_sticker.recommended_timing_after")}
+            </p>
+          </details>
           <div className="mt-5 flex flex-wrap items-center gap-3">
             <a
               href="/tools/sticker-prompt?mode=animated"
@@ -2940,23 +2937,27 @@ const AnimatedLineStickerTool: React.FC = () => {
               <h2 className="text-2xl font-black text-slate-900">
                 {t("animated_line_sticker.batch_title")}
               </h2>
-              <p className="max-w-4xl text-sm leading-7 text-slate-600">
-                {t("animated_line_sticker.batch_desc")}
-              </p>
+              <details className="max-w-4xl text-sm leading-7 text-slate-600">
+                <summary className="cursor-pointer font-bold">整套動畫製作說明（選看）</summary>
+                <p className="mt-2">{t("animated_line_sticker.batch_desc")}</p>
+              </details>
             </div>
 
-            <div className="mt-5 grid gap-3 md:grid-cols-3">
-              {[
-                ["操作 A｜確認貼圖", t("animated_line_sticker.batch_step1")],
-                ["操作 B｜設定動畫", t("animated_line_sticker.batch_step2")],
-                ["操作 C｜下載 ZIP", t("animated_line_sticker.batch_step3")],
-              ].map(([label, desc]) => (
-                <div key={label} className="rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm">
-                  <p className="text-xs font-black uppercase tracking-wide text-emerald-600">{label}</p>
-                  <p className="mt-2 text-sm font-bold leading-6 text-slate-800">{desc}</p>
-                </div>
-              ))}
-            </div>
+            <details className="mt-4 rounded-xl border border-emerald-100 bg-white p-3">
+              <summary className="cursor-pointer text-sm font-black text-emerald-800">操作 A／B／C 詳細步驟（選看）</summary>
+              <div className="mt-3 grid gap-3 md:grid-cols-3">
+                {[
+                  ["操作 A｜確認貼圖", t("animated_line_sticker.batch_step1")],
+                  ["操作 B｜設定動畫", t("animated_line_sticker.batch_step2")],
+                  ["操作 C｜下載 ZIP", t("animated_line_sticker.batch_step3")],
+                ].map(([label, desc]) => (
+                  <div key={label} className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-3">
+                    <p className="text-xs font-black text-emerald-800">{label}</p>
+                    <p className="mt-2 text-xs leading-6 text-slate-700">{desc}</p>
+                  </div>
+                ))}
+              </div>
+            </details>
 
             <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_0.8fr]">
               <div className="rounded-2xl border border-slate-200 bg-white p-4">
