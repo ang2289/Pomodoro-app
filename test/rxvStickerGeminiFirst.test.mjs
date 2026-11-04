@@ -123,7 +123,7 @@ test("自訂文字和字型在新手頁預設顯示，並且設定實際寫入�
   const prompt = read("src/pages/tools/StickerPromptGenerator.tsx");
   assert.match(prompt, /id="sticker-customize"/);
   assert.match(prompt, /直接調整文字、字型/);
-  assert.match(prompt, /自訂文字、字型與角色（可直接修改）/);
+  assert.match(prompt, /選擇畫風、文字與角色/);
   assert.match(prompt, /字型風格（可選）/);
   assert.match(prompt, /value=\{fontStyle\}/);
   assert.match(prompt, /onChange=\{\(e\) => setFontStyle/);
@@ -571,4 +571,22 @@ test("已有母圖按鈕位於選擇張數下方，會帶入靜態動態、平�
   assert.match(flow, /mode: input\.mode/);
   assert.match(flow, /platform: input\.platform \?\? "line"/);
   assert.match(flow, /count: input\.count/);
+});
+
+test("提示詞預設由下拉決定，不再自動寫死年齡、髮色、職業人物模板", () => {
+  const prompt = read("src/pages/tools/StickerPromptGenerator.tsx");
+  assert.match(prompt, /useState<OriginalCharacterTraits>\(\(\) => \(\{ \.\.\.ORIGINAL_CHARACTER_DEFAULT \}\)\)/);
+  assert.match(prompt, /useState<IllustrationStyle>\("cute2d"\)/);
+  assert.match(prompt, /useState<TextSize>\("large"\)/);
+  assert.match(prompt, /useState<TextPosition>\("top"\)/);
+  assert.doesNotMatch(prompt, /const age = \[25, 30, 35, 40, 45\]/);
+  assert.match(prompt, /explicitCharacterChoices\(characterTraits\)/);
+  assert.match(prompt, /characterTraits,/);
+  assert.match(prompt, /\!simpleMode \? \(/);
+  assert.match(prompt, /checked=\{manualTextEnabled\}/);
+  assert.match(prompt, /checked=\{useBusinessAvatar\}/);
+  assert.match(prompt, /進階人物設定（全部由下拉決定）/);
+  assert.match(prompt, /簡易模式｜快速產圖/);
+  assert.match(prompt, /進階模式｜細部設定/);
+  assert.match(prompt, /照片模式保留授權照片原貌/);
 });
