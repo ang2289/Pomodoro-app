@@ -2706,7 +2706,7 @@ export default function LineStickerTool() {
             <button type="button" disabled={loading}
               onClick={() => motherSheetInputRef.current?.click()}
               className={`${STICKER_UI.primaryAction} mt-5 bg-violet-600 text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-slate-300`}>
-              {loading && motherSheetDetectionStatus !== "cutting" ? "正在辨識母圖…" : `選擇整張母圖｜上傳 ${getMotherSheetPlan(stickerCount).length} 張大圖`}
+              {loading && motherSheetDetectionStatus !== "cutting" ? "正在辨識母圖…" : `選擇整張母圖｜上傳圖片（需 ${getMotherSheetPlan(stickerCount).length} 張）`}
             </button>
             <p role="status" aria-live="polite" className="mt-3 text-base font-bold leading-7 text-violet-900">{actionHint}</p>
             <details className="mt-3 text-xs text-slate-600">
