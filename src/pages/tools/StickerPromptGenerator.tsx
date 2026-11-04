@@ -4,6 +4,7 @@ import SEO from "@/components/SEO";
 
 import LineStickerAuthorCard from "@/components/LineStickerAuthorCard";
 import LineStickerFlowSteps from "@/components/LineStickerFlowSteps";
+import StickerMotherSheetExample from "@/components/StickerMotherSheetExample";
 import StickerExcelOffers from "@/components/StickerExcelOffers";
 import { StickerNextActionHint } from "@/components/StickerBeginnerActions";
 import StickerCustomPricing from "@/components/StickerCustomPricing";
@@ -5557,11 +5558,14 @@ export default function StickerPromptGenerator() {
           <section className="mt-6 flex flex-col gap-6" aria-label="依順序操作第 1、2 步">
             <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
               <h2 className="text-xl font-bold text-slate-900">
-                第 1 步｜選擇角色、文字與畫風
+                第 1 步｜先認識母圖，再選主題與畫風
               </h2>
-              <p className="mt-2 text-sm leading-6 text-slate-600">
-                先選貼圖平台、靜態／動態和張數，再往下挑主題並修改文字。所有項目都有預設值。
+              <p className="mt-2 text-base leading-7 text-slate-700">
+                不用先畫好圖片。先看下面真正的花店母圖示範，再選平台、張數、主題及文字；本站會產生可直接複製的 AI 畫圖指令。
               </p>
+              <div className="mt-4">
+                <StickerMotherSheetExample count={targetCount} variant="intro" />
+              </div>
               <p className="mt-3 text-sm font-medium leading-6 text-slate-600">
                 接下來先選平台，再選靜態／動態與張數。
                 {" "}<a href="#sticker-customize" className="font-semibold text-violet-700 underline underline-offset-2">直接調整文字、字型 ↓</a>
