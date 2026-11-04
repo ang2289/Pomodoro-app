@@ -5666,7 +5666,7 @@ export default function StickerPromptGenerator() {
                     {stickerMode === "animated" ? "動態" : "靜態"}、共 {targetCount} 張。下一步將進入第 3 步上傳、切割與打包。
                   </p>
                   <Link
-                    to="/tools/line-sticker?flow=1#mother-upload"
+                    to="/tools/line-sticker?flow=1#step3-options"
                     onClick={() => persistFlowProject(3)}
                     className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl border-2 border-slate-300 bg-white px-3 py-2.5 text-center text-sm font-bold text-slate-800 transition-colors hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
                   >
@@ -6343,7 +6343,7 @@ export default function StickerPromptGenerator() {
               </details>
               <div className="mt-4"><StickerNextActionHint>已從 ChatGPT 或 Gemini 下載完整大圖？請按下方「第 3 步｜已下載整張大圖，回 RXV 上傳」。</StickerNextActionHint></div>
               <Link
-                to="/tools/line-sticker?flow=1#mother-upload"
+                to="/tools/line-sticker?flow=1#step3-options"
                 onClick={() => persistFlowProject(3)}
                 className="mt-5 inline-flex min-h-[52px] items-center justify-center rounded-2xl bg-blue-600 px-5 py-3 text-center text-sm font-black !text-white shadow-lg transition hover:bg-blue-700"
               >
