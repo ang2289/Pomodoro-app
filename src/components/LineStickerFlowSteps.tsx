@@ -65,8 +65,8 @@ export default function LineStickerFlowSteps({
               <span className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-black ${
                 active ? "bg-violet-600 text-white" : "bg-violet-100 text-violet-700"
               }`}>{phase.step}</span>
-              <span className="text-[10px] font-bold leading-4 sm:text-sm">{phase.title}</span>
-              <span className="hidden text-[11px] leading-5 text-slate-500 md:block">{phase.desc}</span>
+              <span className="text-sm font-bold leading-5 sm:text-base">{phase.title}</span>
+              <span className="hidden text-sm leading-6 text-slate-500 md:block">{phase.desc}</span>
             </Link>
           );
         })}
