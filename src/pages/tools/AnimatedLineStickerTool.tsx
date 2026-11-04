@@ -6,6 +6,7 @@ import { verifyLinePngBytes, auditEncodedLineApngDistinctFrames } from "@/lib/li
 import { Helmet } from "react-helmet-async";
 import { useTranslation } from "react-i18next";
 import SEO, { getBaseUrl } from "@/components/SEO";
+import { QRCodeSVG } from "qrcode.react";
 import LineStickerFlowSteps from "@/components/LineStickerFlowSteps";
 import { stickerSaleTextRisks } from "@/lib/stickerCommercialSafety";
 import {
@@ -54,6 +55,38 @@ const LINE_TAB_ICON_HEIGHT = 74;
 // 採用保守的十進位 1MB 上限，避免上架平台與瀏覽器的 MB 換算差異。
 const LINE_APNG_MAX_BYTES = 1_000_000;
 const MAX_LINE_ZIP_MB = 60;
+// TUTU_WEB_SIZE_AND_EXPORT_QR_NAMING_20261104
+const DEFAULT_SHOWCASE_QR_URL = "https://store.line.me/stickershop/author/5530587/zh-Hant";
+const QR_LAST_URL_STORAGE = "tutu_showcase_qr_v1";
+const QR_RECENT_URL_STORAGE = "tutu_showcase_qr_recent_v1";
+function safeStickerThemeName(value: string) {
+  return (value.trim() || "未命名貼圖")
+    .replace(/[\\/:*?"<>|\x00-\x1f]/g, "_").replace(/\s+/g, "_").slice(0, 40) || "未命名貼圖";
+}
+function validShowcaseUrl(value: string) {
+  try {
+    const parsed = new URL(value);
+    return (parsed.protocol === "https:" || parsed.protocol === "http:") && Boolean(parsed.hostname);
+  } catch { return false; }
+}
+async function loadQrCodeCanvasImage(): Promise<HTMLImageElement> {
+  const svg = document.getElementById("tutu-video-qr") as SVGSVGElement | null;
+  if (!svg) throw new Error("QR Code 尚未準備好，請重新整理頁面。");
+  const clone = svg.cloneNode(true) as SVGSVGElement;
+  clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+  const svgText = new XMLSerializer().serializeToString(clone);
+  const objectUrl = URL.createObjectURL(new Blob([svgText], {type:"image/svg+xml"}));
+  try {
+    const image = new Image();
+    await new Promise<void>((resolve,reject) => {
+      image.onload = () => resolve();
+      image.onerror = () => reject(new Error("QR Code 圖片讀取失敗，請重新整理頁面。"));
+      image.src = objectUrl;
+    });
+    return image;
+  } finally { URL.revokeObjectURL(objectUrl); }
+}
+
 const ALPHA_VISIBLE_THRESHOLD = 8;
 const SOURCE_CROP_PADDING = 12;
 const OUTPUT_SAFE_PADDING = 10; // 依所有畫格的透明範圍安全置中，減少多餘留白
@@ -1328,6 +1361,7 @@ type VideoExportOptions = {
   videoBitsPerSecond?: number;
   fillWhite?: boolean;
   allowScaleUp?: boolean;
+  qrImage?: HTMLImageElement;
 };
 
 async function createVideoBlob(
@@ -1397,6 +1431,18 @@ async function createVideoBlob(
     }
   }
 
+  if (options.qrImage) {
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, width, height);
+    ctx.fillStyle = "#293653";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.font = 'bold ' + Math.round(width * 0.055) + 'px "Microsoft JhengHei", sans-serif';
+    ctx.fillText("掃描 QR Code 查看更多貼圖", width / 2, height * 0.23);
+    const qrSide = Math.round(Math.min(width, height) * 0.5);
+    ctx.drawImage(options.qrImage, (width - qrSide) / 2, (height - qrSide) / 2, qrSide, qrSide);
+    await waitMs(2900);
+  }
   if (recorder.state === "recording" && typeof recorder.requestData === "function") {
     recorder.requestData();
     await waitMs(120);
@@ -1428,6 +1474,7 @@ async function createBatchShowcaseVideo(
   presets: AutoMotionPreset[],
   onProgress: (finished: number, total: number) => void,
   platform: "line" | "whatsapp" = "line",
+  qrImage: HTMLImageElement,
 ): Promise<{ blob: Blob; extension: "mp4" | "webm"; isMp4: boolean }> {
   if (![8, 16, 24].includes(sources.length) || sources.length !== presets.length) {
     throw new Error("展示影片來源與貼圖數量不一致，請先重新產生整套上架 ZIP。");
@@ -1487,6 +1534,23 @@ async function createBatchShowcaseVideo(
     ctx.fillText(`${String(index + 1).padStart(2, "0")} / ${String(sources.length).padStart(2, "0")}`, width / 2, 1480);
   };
 
+  const drawQrEnding = () => {
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, width, height);
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "#273653";
+    ctx.font = 'bold 66px "Microsoft JhengHei", sans-serif';
+    ctx.fillText("更多精彩貼圖", width / 2, 475);
+    ctx.font = 'bold 42px "Microsoft JhengHei", sans-serif';
+    ctx.fillText("掃描 QR Code 查看", width / 2, 560);
+    ctx.fillStyle = "#f4f7ff";
+    ctx.fillRect(285, 646, 510, 510);
+    ctx.drawImage(qrImage, 330, 691, 420, 420);
+    ctx.font = 'bold 34px "Microsoft JhengHei", sans-serif';
+    ctx.fillStyle = "#53627a";
+    ctx.fillText("LINE／WhatsApp 貼圖工坊", width / 2, 1270);
+  };
   const recorder = new MediaRecorderCtor(stream, {
     mimeType,
     videoBitsPerSecond: 12_000_000,
@@ -1562,6 +1626,8 @@ async function createBatchShowcaseVideo(
     if (actualCaptureMs > idealCaptureMs + maxAllowedLagMs) {
       throw new Error("影片錄製超過預定時長，為避免匯出卡住的 MP4，已停止下載。");
     }
+    drawQrEnding();
+    await waitMs(2900);
     if (recorder.state === "recording") {
       recorder.requestData();
       await waitMs(150);
@@ -1626,6 +1692,27 @@ const AnimatedLineStickerTool: React.FC = () => {
   const [batchEffectGalleryFrame, setBatchEffectGalleryFrame] = useState(0);
   const [handoffLoaded, setHandoffLoaded] = useState(false);
   const [handoffTheme, setHandoffTheme] = useState("");
+  const [showcaseQrUrl, setShowcaseQrUrl] = useState(() => {
+    try { const saved = localStorage.getItem(QR_LAST_URL_STORAGE) || ""; return validShowcaseUrl(saved) ? saved : DEFAULT_SHOWCASE_QR_URL; }
+    catch { return DEFAULT_SHOWCASE_QR_URL; }
+  });
+  const [showcaseQrRecents, setShowcaseQrRecents] = useState<string[]>(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(QR_RECENT_URL_STORAGE) || "[]");
+      return Array.isArray(saved) ? saved.filter((url): url is string => typeof url === "string" && validShowcaseUrl(url)).slice(0, 8) : [];
+    } catch { return []; }
+  });
+  const stickerThemeForFile = safeStickerThemeName(handoffTheme || readLineStickerProject()?.theme || "");
+  const rememberShowcaseQr = () => {
+    const url = showcaseQrUrl.trim();
+    if (!validShowcaseUrl(url)) throw new Error("請輸入正確的 http 或 https QR 網址。");
+    const recent = [url, ...showcaseQrRecents.filter((u) => u !== url)].slice(0, 8);
+    setShowcaseQrRecents(recent);
+    try {
+      localStorage.setItem(QR_LAST_URL_STORAGE, url);
+      localStorage.setItem(QR_RECENT_URL_STORAGE, JSON.stringify(recent));
+    } catch { /* local storage optional */ }
+  };
   const [sourceCaptions, setSourceCaptions] = useState<string[]>([]);
   const saleTextRisks = useMemo(
     () => stickerSaleTextRisks(sourceCaptions),
@@ -2164,7 +2251,7 @@ const AnimatedLineStickerTool: React.FC = () => {
       }
       const zip = makeZip(zipFiles);
       replaceBatchAnimatedPreviews(previews);
-      const filename = `rxv-whatsapp-animated-${batchSources.length}-webp.zip`;
+      const filename = `WhatsApp_動態_${stickerThemeForFile}_${batchSources.length}張_WebP.zip`;
       downloadBlob(zip, filename);
       setWhatsAppReadyZip({ blob: zip, filename });
       setCompletedPlatform("whatsapp");
@@ -2305,7 +2392,7 @@ const AnimatedLineStickerTool: React.FC = () => {
       }
       downloadBlob(
         zip,
-        `rxv-line-animated-sticker-upload-pack-${batchSources.length}.zip`,
+        `LINE_動態_${stickerThemeForFile}_${batchSources.length}張_上架.zip`,
       );
 
       setBatchProgress(100);
@@ -2342,14 +2429,17 @@ const AnimatedLineStickerTool: React.FC = () => {
     setBatchVideoProgress(0);
     setBatchVideoMessage("");
     try {
+      rememberShowcaseQr();
+      const qrImage = await loadQrCodeCanvasImage();
       const sorted = [...batchAnimatedPreviews].sort((left, right) => left.index - right.index);
       const result = await createBatchShowcaseVideo(
         batchSources,
         sorted.map((item) => item.motionPreset),
         (finished, total) => setBatchVideoProgress(Math.round((finished / total) * 100)),
         exportPlatform,
+        qrImage,
       );
-      downloadBlob(result.blob, `rxv-${exportPlatform}-animated-${batchSources.length}-hd-1080x1920.${result.extension}`);
+      downloadBlob(result.blob, `${exportPlatform === "line" ? "LINE" : "WhatsApp"}_動態_${stickerThemeForFile}_${batchSources.length}張_展示1080x1920_QR.${result.extension}`);
       setBatchVideoMessage(
         result.isMp4
           ? "高清 MP4 已下載！1080×1920 直式展示影片，可用於社群推廣。"
@@ -2554,6 +2644,8 @@ const AnimatedLineStickerTool: React.FC = () => {
     setMessage("");
     setExportStatus(quality === "hd" ? "正在產生高清 MP4 預覽…" : t("animated_line_sticker.status_video"));
     try {
+      rememberShowcaseQr();
+      const qrImage = await loadQrCodeCanvasImage();
       await new Promise((resolve) => window.setTimeout(resolve, 30));
       const result = await createVideoBlob(
         frames,
@@ -2561,14 +2653,14 @@ const AnimatedLineStickerTool: React.FC = () => {
         loopCount,
         t,
         quality === "hd"
-          ? { width: 1080, height: 1080, frameRate: 30, videoBitsPerSecond: 12000000, fillWhite: true, allowScaleUp: true }
-          : { width: 500, height: 500, frameRate: 30, videoBitsPerSecond: 3500000, fillWhite: true, allowScaleUp: false }
+          ? { width: 1080, height: 1080, frameRate: 30, videoBitsPerSecond: 12000000, fillWhite: true, allowScaleUp: true, qrImage }
+          : { width: 500, height: 500, frameRate: 30, videoBitsPerSecond: 3500000, fillWhite: true, allowScaleUp: false, qrImage }
       );
       downloadBlob(
         result.blob,
         quality === "hd"
-          ? `rxv-line-dynamic-sticker-preview-hd.${result.extension}`
-          : `rxv-line-dynamic-sticker-preview.${result.extension}`
+          ? `LINE_動態_${stickerThemeForFile}_單張高清_QR.${result.extension}`
+          : `LINE_動態_${stickerThemeForFile}_單張展示_QR.${result.extension}`
       );
       setMessage(
         quality === "hd"
@@ -2590,6 +2682,9 @@ const AnimatedLineStickerTool: React.FC = () => {
 
   return (
     <>
+      <div aria-hidden="true" style={{ position: "absolute", width: 0, height: 0, overflow: "hidden" }}>
+        <QRCodeSVG id="tutu-video-qr" value={validShowcaseUrl(showcaseQrUrl) ? showcaseQrUrl : DEFAULT_SHOWCASE_QR_URL} size={420} bgColor="#ffffff" fgColor="#111827" />
+      </div>
       <SEO
         title={t("animated_line_sticker.seo_title")}
         description={t("animated_line_sticker.seo_description")}
@@ -3191,6 +3286,10 @@ const AnimatedLineStickerTool: React.FC = () => {
                   </p>
                 </div>
 
+                <label className="mt-4 block text-sm font-black text-slate-900">
+                  本套貼圖主題（下載檔名）
+                  <input value={handoffTheme} onChange={(event) => setHandoffTheme(event.target.value)} maxLength={40} placeholder="例如：消防人員" className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-bold" />
+                </label>
                 <p className="mt-4 rounded-xl border border-indigo-200 bg-white p-3 text-sm font-black leading-6 text-indigo-900">
                   最後一步：只有按下「產生並下載上架 ZIP」，才會真正產生貼圖 ZIP；前面的動畫試播與預覽不等於已完成打包。
                 </p>
@@ -3472,10 +3571,17 @@ const AnimatedLineStickerTool: React.FC = () => {
             </div>
 
             <section className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 p-4">
-              <h3 className="text-base font-black text-rose-900">完成後另存高清影片｜整套動態展示</h3>
+              <h3 className="text-base font-black text-rose-900">下載高清展示影片（片尾 QR Code）</h3>
+              <label className="mt-3 block text-sm font-black text-rose-900">
+                片尾 QR Code 連結
+                <input type="url" value={showcaseQrUrl} onChange={(event) => setShowcaseQrUrl(event.target.value)} list="tutu-showcase-qr-recent" className="mt-2 w-full rounded-xl border border-rose-200 bg-white px-3 py-3 text-sm font-bold" />
+              </label>
+              <datalist id="tutu-showcase-qr-recent">{showcaseQrRecents.map((url) => <option value={url} key={url}/>)}</datalist>
+              <p className="mt-2 text-xs font-bold text-rose-800">MP4／WebM 片尾約 3 秒顯示 QR Code。成功匯出前會記住這個網址。</p>
+              <details className="mt-3 text-xs text-rose-800"><summary className="cursor-pointer font-bold">影片技術說明（選看）</summary>
               <p className="mt-1 text-xs leading-6 text-rose-800">
                 將 {batchAnimatedPreviews.length} 張依序播放，每張約 2 秒；先產生 640×540 動畫影格，再使用最高 30FPS 的錄製串流，只有影格變化時才重畫 1080×1920 高清畫面，避免前兩張耗時過久造成停格。MP4 僅供展示，貼圖上架請用對應的 ZIP。
-              </p>
+              </p></details>
               <button type="button" disabled={batchVideoBusy || batchBusy}
                 onClick={exportBatchHdVideo}
                 className="mt-3 min-h-12 rounded-2xl bg-rose-600 px-5 py-3 text-sm font-black text-white shadow-md hover:bg-rose-700 disabled:cursor-not-allowed disabled:bg-slate-300">
@@ -3483,11 +3589,9 @@ const AnimatedLineStickerTool: React.FC = () => {
               </button>
               {batchVideoBusy ? <div className="mt-3 h-2 overflow-hidden rounded-full bg-rose-200"><div className="h-full bg-rose-600 transition-all" style={{ width: `${batchVideoProgress}%` }} /></div> : null}
               {batchVideoMessage ? <p role="status" className="mt-3 text-xs font-bold leading-6 text-rose-900">{batchVideoMessage}</p> : null}
-              <p className="mt-2 text-[11px] leading-5 text-rose-700">全程在本機瀏覽器製作，無需上傳雲端。原始低解析度素材的細節無法憑空還原；影片錄製時間約為貼圖數量×2秒，且會先準備動畫影格。瀏覽器不支援 MP4 時會輸出真正 WebM。</p>
+              <details className="mt-2 text-xs leading-5 text-rose-700"><summary className="cursor-pointer font-bold">影片格式與瀏覽器限制（選看）</summary><p>影片在瀏覽器本機製作，低解析來源無法憑空變高清；不支援 MP4 時會改輸出 WebM。</p></details>
             </section>
-            <div className="mt-4 rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-xs font-bold leading-5 text-sky-900">
-              瀏覽器顯示的是實際 APNG 動畫；若動畫已播放完，可按「重播全部」或點單張圖片重新播放。
-            </div>
+            <details className="mt-4 rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-xs font-bold leading-5 text-sky-900"><summary className="cursor-pointer font-bold">動畫重播教學（選看）</summary>可按「重播全部」或點單張圖片重新播放。</details>
           </section>
         ) : null}
 
@@ -3658,6 +3762,12 @@ const AnimatedLineStickerTool: React.FC = () => {
                 </button>
               ) : null}
 
+              <label className="mt-4 block text-sm font-black text-slate-900">貼圖主題（下載檔名）
+                <input value={handoffTheme} onChange={(event) => setHandoffTheme(event.target.value)} maxLength={40} placeholder="例如：消防人員" className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-bold"/>
+              </label>
+              <label className="mt-3 block text-sm font-black text-slate-900">MP4／WebM 片尾 QR Code 網址
+                <input type="url" value={showcaseQrUrl} onChange={(event) => setShowcaseQrUrl(event.target.value)} list="tutu-showcase-qr-recent" className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-bold"/>
+              </label>
               <div className="mt-4 flex flex-wrap items-center gap-3">
                 <button
                   type="button"
@@ -3708,13 +3818,13 @@ const AnimatedLineStickerTool: React.FC = () => {
                   {busy ? t("animated_line_sticker.processing") : "下載小圖 ZIP（main＋tab）"}
                 </button>
               </div>
-              <div className="mt-3 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-xs leading-6 text-slate-600">
+              <details className="mt-3 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-xs leading-6 text-slate-600"><summary className="cursor-pointer font-bold">各種匯出格式說明（選看）</summary>
                 <p><span className="font-black text-slate-800">{t("animated_line_sticker.apng_label")}</span>{t("animated_line_sticker.apng_desc")}</p>
                 <p className="mt-1 font-bold text-amber-700">提示：工具可上傳最多 20 禎；LINE 動態貼圖每張 APNG 必須小於 1MB。10 禎以上會啟用快速匯出模式，但不會自動縮小角色。</p>
                 <p><span className="font-black text-slate-800">{t("animated_line_sticker.gif_label")}</span>{t("animated_line_sticker.gif_desc")}</p>
                 <p><span className="font-black text-slate-800">{t("animated_line_sticker.mp4_label")}</span>{t("animated_line_sticker.mp4_desc")}</p>
-                <p><span className="font-black text-slate-800">小圖 ZIP：</span>自動匯出 LINE 後台需要的 main_240x240.png（APNG）與 tab_96x74.png（PNG）；tab 會用第 1 禎裁掉透明留白後置中。</p>
-              </div>
+                <p><span className="font-black text-slate-800">小圖 ZIP：</span>匯出 LINE 後台需要的主圖與標籤圖。</p>
+              </details>
               {exportStatus ? (
                 <p className="mt-3 rounded-xl bg-sky-50 px-3 py-2 text-sm font-bold text-sky-800">
                   {exportStatus}
