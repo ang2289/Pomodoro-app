@@ -5042,7 +5042,6 @@ export default function StickerPromptGenerator() {
       ? "animated"
       : "static";
   const [stickerMode, setStickerMode] = useState<LineStickerMode>(initialMode);
-  const [simpleMode, setSimpleMode] = useState(true);
   const [stickerPlatform, setStickerPlatform] = useState<"line" | "whatsapp">(
     typeof window !== "undefined" && new URLSearchParams(window.location.search).get("platform") === "whatsapp"
       ? "whatsapp"
@@ -5333,109 +5332,42 @@ export default function StickerPromptGenerator() {
         const batchTexts = flowTexts.slice(item.startIndex, item.endIndex);
         return {
           ...item,
-          prompt: simpleMode
-            ? buildSimpleFlowPrompt({
-                label: templates[type].label, role: templates[type].role,
-                style: photoMode === "realPhoto" ? visualStyle : selectedStylePrompt,
-                grid: item.grid, batchTexts, textSize, textColor, textPosition, fontStyle,
-                photoMode, subMode: realPhotoSubMode, batchNumber: index + 1,
-                mode: stickerMode, platform: stickerPlatform, startIndex: item.startIndex,
-                characterTraits,
-              })
-            : buildFlowPrompt(
-            templates[type].label,
-            effectiveRole,
-            visualStyle,
-            item.grid,
-            batchTexts,
-            textSize,
-            textColor,
-            textPosition,
-            fontStyle,
-            stickerStylePreset,
-            photoMode,
-            realPhotoSubMode,
-            index + 1,
-            stickerMode,
-            stickerPlatform,
-            item.startIndex,
-            identityLock,
-          ),
+          prompt: buildSimpleFlowPrompt({
+            label: templates[type].label, role: templates[type].role,
+            style: photoMode === "realPhoto" ? visualStyle : selectedStylePrompt,
+            grid: item.grid, batchTexts, textSize, textColor, textPosition, fontStyle,
+            photoMode, subMode: realPhotoSubMode, batchNumber: index + 1,
+            mode: stickerMode, platform: stickerPlatform, startIndex: item.startIndex,
+            characterTraits,
+          }),
         };
       }),
-    [
-      motherSheetPlan,
-      flowTexts,
-      type,
-      effectiveRole,
-      visualStyle,
-      textSize,
-      textColor,
-      textPosition,
-      fontStyle,
-      stickerStylePreset,
-      photoMode,
-      realPhotoSubMode,
-      stickerMode,
-      stickerPlatform,
-      identityLock,
-      simpleMode,
-      selectedStylePrompt,
-      characterTraits,
-    ],
+    [motherSheetPlan, flowTexts, type, photoMode, visualStyle, selectedStylePrompt,
+      textSize, textColor, textPosition, fontStyle, realPhotoSubMode,
+      stickerMode, stickerPlatform, characterTraits],
   );
 
   const requiredCount = targetCount;
   const currentCount = flowTexts.length;
+  // All export paths use one dropdown-driven prompt generator.
   const prompt = useMemo(
-    () => simpleMode ? buildSimpleFlowPrompt({
-        label: templates[type].label, role: templates[type].role,
-        style: photoMode === "realPhoto" ? visualStyle : selectedStylePrompt,
-        grid, batchTexts: normalizeLines(texts, gridOptions[grid].count),
-        textSize, textColor, textPosition, fontStyle, photoMode,
-        subMode: realPhotoSubMode, batchNumber: 1, mode: stickerMode, platform: stickerPlatform, startIndex: 0,
-        characterTraits,
-      }) : buildPrompt(
-        templates[type].label,
-        effectiveRole,
-        visualStyle,
-        grid,
-        texts,
-        textSize,
-        textColor,
-        textPosition,
-        fontStyle,
-        stickerStylePreset,
-        photoMode,
-        realPhotoSubMode,
-      ),
-    [
-      type,
-      effectiveRole,
-      visualStyle,
-      grid,
-      texts,
-      textSize,
-      textColor,
-      textPosition,
-      fontStyle,
-      stickerStylePreset,
-      photoMode,
-      realPhotoSubMode,
-      simpleMode, stickerMode, stickerPlatform, selectedStylePrompt, characterTraits,
-    ],
+    () => buildSimpleFlowPrompt({
+      label: templates[type].label, role: templates[type].role,
+      style: photoMode === "realPhoto" ? visualStyle : selectedStylePrompt,
+      grid, batchTexts: normalizeLines(texts, gridOptions[grid].count),
+      textSize, textColor, textPosition, fontStyle, photoMode,
+      subMode: realPhotoSubMode, batchNumber: 1, mode: stickerMode, platform: stickerPlatform,
+      startIndex: 0, characterTraits,
+    }),
+    [type, photoMode, visualStyle, selectedStylePrompt, grid, texts, textSize,
+      textColor, textPosition, fontStyle, realPhotoSubMode,
+      stickerMode, stickerPlatform, characterTraits],
   );
   const stablePrompt = useMemo(
-    () => simpleMode ? buildSimpleStablePrompt(templates[type].label, templates[type].role, photoMode === "realPhoto" ? visualStyle : selectedStylePrompt, grid, photoMode, realPhotoSubMode, characterTraits) : buildStablePrompt(
-        templates[type].label,
-        effectiveRole,
-        visualStyle,
-        grid,
-        stickerStylePreset,
-        photoMode,
-        realPhotoSubMode,
-      ),
-    [type, effectiveRole, visualStyle, grid, stickerStylePreset, photoMode, realPhotoSubMode, simpleMode, selectedStylePrompt, characterTraits],
+    () => buildSimpleStablePrompt(templates[type].label, templates[type].role,
+      photoMode === "realPhoto" ? visualStyle : selectedStylePrompt,
+      grid, photoMode, realPhotoSubMode, characterTraits),
+    [type, photoMode, visualStyle, selectedStylePrompt, grid, realPhotoSubMode, characterTraits],
   );
 
   function handleTypeChange(nextType: TemplateKey) {
@@ -5721,23 +5653,9 @@ export default function StickerPromptGenerator() {
                   {filteredTemplateEntries.length} 筆
                 </span>
               </div>
-              <div className="mt-4 rounded-2xl border-2 border-violet-200 bg-violet-50 p-3" aria-label="貼圖設定模式">
-                <p className="mb-2 text-base font-black text-violet-950">操作方式（選一種，兩種都以你的下拉設定產生提示詞）</p>
-                <div className="grid grid-cols-2 gap-2">
-                  <button type="button" aria-pressed={simpleMode} onClick={() => setSimpleMode(true)}
-                    className={simpleMode ? "min-h-12 rounded-xl bg-violet-600 px-3 py-2 text-sm font-black !text-white" : "min-h-12 rounded-xl border border-violet-200 bg-white px-3 py-2 text-sm font-black text-violet-900"}>
-                    簡易模式｜快速產圖
-                  </button>
-                  <button type="button" aria-pressed={!simpleMode} onClick={() => setSimpleMode(false)}
-                    className={!simpleMode ? "min-h-12 rounded-xl bg-violet-600 px-3 py-2 text-sm font-black !text-white" : "min-h-12 rounded-xl border border-violet-200 bg-white px-3 py-2 text-sm font-black text-violet-900"}>
-                    進階模式｜細部設定
-                  </button>
-                </div>
-                <p className="mt-2 text-base leading-7 text-violet-900">{simpleMode
-                  ? "只需選主題、畫風、文字與字型，其他人物特徵由 AI 原創。"
-                  : "可進一步選五官、髮型、服裝與配色。文字框預設不參與提示詞，手動啟用才生效。"}
-                </p>
-              </div>
+              <p className="mt-4 rounded-xl bg-violet-50 px-4 py-3 text-base font-bold leading-7 text-violet-900">
+                選好主題、畫風、文字與人物設定，就能產生 AI 畫圖指令；沒指定的外觀交給 AI 原創。
+              </p>
               <div className="mt-2 rounded-xl bg-slate-50 p-3">
                 <label className="block text-xs font-black text-violet-700">
                   搜尋職業／主題
