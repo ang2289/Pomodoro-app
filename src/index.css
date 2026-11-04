@@ -1217,8 +1217,8 @@ input[type="time"] {
    Minimum 14px help text within sticker tools only; no global website change.
    Does not reduce any font already styled text-sm/text-base/text-lg. */
 .tutu-sticker-readable .text-xs,
-.tutu-sticker-readable .text-\\[10px\\],
-.tutu-sticker-readable .text-\\[11px\\] {
+.tutu-sticker-readable [class~="text-[10px]"],
+.tutu-sticker-readable [class~="text-[11px]"] {
   font-size: 0.875rem;
   line-height: 1.45rem;
 }
