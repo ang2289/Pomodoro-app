@@ -2651,7 +2651,7 @@ export default function LineStickerTool() {
 
           <section id="step3-options" aria-label="第 3 步開始：選擇貼圖種類張數及平台" className="mb-5 scroll-mt-24 rounded-2xl border-2 border-violet-200 bg-violet-50 p-4 shadow-sm sm:p-5">
             <h2 className="text-xl font-black text-violet-950">第 3 步｜選好設定，再上傳母圖</h2>
-            <p className="mt-1 text-base font-semibold text-slate-700">先看母圖示範，選好下方三項，最後按紫色按鈕上傳整張大圖。</p>
+            <p className="mt-1 text-base font-semibold text-slate-700">先看母圖示範，只要選三項：種類、張數、平台。最後按紫色按鈕上傳完整大圖。</p>
             {motherSheetDetections.length === 0 && files.length === 0 ? (
               <div className="mt-4">
                 <StickerMotherSheetExample count={stickerCount} variant="upload" />
