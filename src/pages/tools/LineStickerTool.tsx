@@ -232,7 +232,11 @@ const STICKER_BODY = { width: 370, height: 320 };
 const PREVIEW_CARD_CANVAS = { width: 520, height: 450 };
 const MAIN_IMG = { width: 240, height: 240 };
 const TAB_IMG = { width: 96, height: 74 };
-const ZIP_FILENAME = "line-sticker-ready.zip";
+// 檔案外部名稱可使用主題，但 LINE ZIP 內部 01.png/main.png/tab.png 不更動。
+function safeStickerThemeName(value: string) {
+  return (value.trim() || "未命名貼圖")
+    .replace(/[\\/:*?"<>|\x00-\x1f]/g, "_").replace(/\s+/g, "_").slice(0, 40) || "未命名貼圖";
+}
 const PHOTOROOM_BG_URL = "https://www.photoroom.com/zh-tw/tools/background-remover";
 const PHOTOROOM_AI_URL = "https://www.photoroom.com/zh-tw/tools/ai-image-generator";
 
@@ -2346,7 +2350,7 @@ export default function LineStickerTool() {
       if (content.size > 60 * 1024 * 1024) {
         throw new Error("ZIP 超過 60MB，請減少圖片檔案大小再產生。");
       }
-      saveAs(content, ZIP_FILENAME);
+      saveAs(content, `LINE_靜態_${safeStickerThemeName(flowProject?.theme || readLineStickerProject()?.theme || "")}_${stickerCount}張_上架.zip`);
       setExportCheckResult(`已檢查 ${stickerCount} 張貼圖＋main＋tab：透明背景、尺寸、檔名與每張容量符合工具可驗證的 LINE 基本規格；下載後仍請人工檢查文字及著作權。`);
       if (selectedStickerMode !== "animated") updateLineStickerProject({ stage: 5 });
       setDownloadCompleted(true);
@@ -2437,7 +2441,7 @@ export default function LineStickerTool() {
         + "6. LINE 上架需要原本的 PNG / APNG ZIP，不能與 WhatsApp 混用。\\n"
       );
       const blob = await zip.generateAsync({ type: "blob" });
-      const filename = `rxv-whatsapp-static-${stickerCount}-webp.zip`;
+      const filename = `WhatsApp_靜態_${safeStickerThemeName(flowProject?.theme || readLineStickerProject()?.theme || "")}_${stickerCount}張_WebP.zip`;
       saveAs(blob, filename);
       setWhatsAppReadyZip({ blob, filename });
       setExportCheckResult(`WhatsApp 靜態貼圖已輸出 ${stickerCount} 張（${sizes.length} 組），512×512 WebP、每張≤100KB、附貼圖集縮圖。此 ZIP 是素材包，仍須在 WhatsApp 或相容貼圖 APP 匯入。`);
