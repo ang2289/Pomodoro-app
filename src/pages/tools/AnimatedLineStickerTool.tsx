@@ -1777,6 +1777,7 @@ const AnimatedLineStickerTool: React.FC = () => {
   const batchAnimatedPreviewsRef = useRef<BatchAnimatedPreview[]>([]);
   const batchEffectGalleryUrlsRef = useRef<string[]>([]);
   const batchPreviewSectionRef = useRef<HTMLElement | null>(null);
+  const handoffGuideScrollRef = useRef(false);
 
   useEffect(() => {
     framesRef.current = frames;
@@ -1852,6 +1853,15 @@ const AnimatedLineStickerTool: React.FC = () => {
       cancelled = true;
     };
   }, [t]);
+
+  useEffect(() => {
+    if (!handoffLoaded || handoffGuideScrollRef.current) return;
+    handoffGuideScrollRef.current = true;
+    const timer = window.setTimeout(() => {
+      document.getElementById("tutu-animated-next-action")?.scrollIntoView({ behavior: "auto", block: "start" });
+    }, 160);
+    return () => window.clearTimeout(timer);
+  }, [handoffLoaded]);
 
   useEffect(() => {
     return () => {
@@ -2741,6 +2751,38 @@ const AnimatedLineStickerTool: React.FC = () => {
       <main className="relative left-1/2 w-screen -translate-x-1/2 px-4 py-8 md:px-6 md:py-10">
         <div className="mx-auto w-full max-w-[1480px]">
         <LineStickerFlowSteps activeStep={5} mode="animated" />
+        {handoffLoaded ? (
+          <section id="tutu-animated-next-action" aria-label="第 5 步下一步操作"
+            className="mb-5 scroll-mt-24 rounded-3xl border-2 border-emerald-400 bg-emerald-50 p-5 shadow-sm sm:p-6">
+            <p className="text-base font-black text-emerald-800">第 5 步｜貼圖已從上一步自動帶入</p>
+            <h2 className="mt-2 text-xl font-black leading-8 text-slate-950 sm:text-2xl">
+              {batchSources.length} 張已準備好，下一步請按綠色按鈕
+            </h2>
+            <p className="mt-2 text-base leading-7 text-slate-800">
+              預設使用「整套自動、多效果輪用」，不需要重新上傳；可直接下載動態 ZIP。
+            </p>
+            <button type="button"
+              disabled={batchBusy || batchVideoBusy || ![8, 16, 24].includes(batchSources.length)}
+              onClick={exportPlatform === "whatsapp" ? exportWhatsAppAnimatedPack : exportBatchUploadPack}
+              className="mt-4 flex min-h-14 w-full items-center justify-center rounded-xl bg-emerald-700 px-5 py-3 text-center text-base font-black leading-7 text-white shadow-md hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-slate-300 sm:max-w-[440px]">
+              {batchBusy ? "正在產生動態 ZIP…" : exportPlatform === "whatsapp" ? "直接產生並下載 WhatsApp 動態 ZIP" : "直接產生並下載 LINE 動態 ZIP"}
+            </button>
+            <button type="button"
+              onClick={() => document.getElementById("tutu-batch-motion-select")?.scrollIntoView({ behavior: "smooth", block: "center" })}
+              className="mt-3 flex min-h-12 w-full items-center justify-center rounded-xl border border-violet-300 bg-white px-4 py-2 text-base font-bold text-violet-800 hover:bg-violet-50 sm:max-w-[440px]">
+              想自己選動畫？前往動畫設定
+            </button>
+            {batchBusy ? (
+              <div className="mt-4 max-w-[440px]" role="status" aria-live="polite">
+                <p className="text-base font-black text-emerald-800">製作進度 {batchProgress}%</p>
+                <div className="mt-2 h-3 overflow-hidden rounded-full bg-emerald-100">
+                  <div className="h-full bg-emerald-600 transition-all" style={{ width: `${batchProgress}%` }} />
+                </div>
+              </div>
+            ) : null}
+            {batchMessage ? <p role="status" aria-live="polite" className="mt-3 rounded-xl bg-white p-3 text-base font-bold leading-7 text-slate-800">{batchMessage}</p> : null}
+          </section>
+        ) : null}
         <section id="animated-sticker-batch" className="scroll-mt-24 mb-5 rounded-2xl border border-emerald-200 bg-white p-4">
           <label className="mb-4 block text-sm font-black text-slate-900">
             貼圖主題（作為 ZIP／MP4 下載檔名）
@@ -2791,17 +2833,17 @@ const AnimatedLineStickerTool: React.FC = () => {
               {t("animated_line_sticker.recommended_timing_before")}{t("animated_line_sticker.recommended_timing_value")}{t("animated_line_sticker.recommended_timing_after")}
             </p>
           </details>
-          <div className="mt-5 flex flex-wrap items-center gap-3">
+          {!handoffLoaded ? <div className="mt-5 flex flex-wrap items-center gap-3">
             <a
               href="/tools/sticker-prompt?mode=animated"
               className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-full bg-sky-600 px-5 py-3 text-sm font-black leading-none !text-white shadow-md transition hover:-translate-y-0.5 hover:bg-sky-700 hover:shadow-lg"
             >
               從第 1 步重新製作
             </a>
-            <span className="text-xs font-bold text-slate-500">
+            <span className="text-sm font-bold text-slate-500">
               {t("animated_line_sticker.choose_mode_hint")}
             </span>
-          </div>
+          </div> : null}
           <input
             ref={inputRef}
             type="file"
@@ -2822,22 +2864,11 @@ const AnimatedLineStickerTool: React.FC = () => {
           </section>
         ) : null}
 
-        {handoffLoaded ? (
-          <section className="mt-6 rounded-3xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm">
-            <p className="text-xs font-black uppercase tracking-wide text-emerald-700">
-              已自動接續第 4 步
-            </p>
-            <h2 className="mt-1 text-xl font-black text-slate-900">
-              {handoffTheme ? `${handoffTheme}｜` : ""}{batchSources.length} 張貼圖已準備完成
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-slate-600">
-              不需要重新上傳圖片。下面確認動畫效果後，按一次按鈕就會逐張產生動態貼圖並整理成 ZIP。
-            </p>
-          </section>
-        ) : null}
-
-        <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
-          <div className="flex flex-wrap items-end justify-between gap-3">
+        <details open={!handoffLoaded} className="mt-6 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
+          <summary className="cursor-pointer text-base font-black text-violet-900">
+            {handoffLoaded ? "其他製作方式（進階，可選）" : "選擇動態貼圖製作方式"}
+          </summary>
+          <div className="mt-4 flex flex-wrap items-end justify-between gap-3">
             <div>
               <p className="text-sm font-black text-slate-900">
                 選擇動態貼圖製作方式
@@ -2852,7 +2883,7 @@ const AnimatedLineStickerTool: React.FC = () => {
             </span>
           </div>
 
-          <label className="mt-4 block text-sm font-black text-slate-900">製作方式（三選一）
+          <label className="mt-4 block text-base font-black text-slate-900">製作方式（三選一）
             <select value={workflowMode} onChange={(event) => setWorkflowMode(event.target.value as WorkflowMode)}
               className="mt-2 min-h-12 w-full max-w-xl rounded-xl border-2 border-violet-200 bg-white px-4 py-3 text-base font-black text-violet-900">
               <option value="single">單張 PNG 自動做動態</option>
@@ -2869,7 +2900,7 @@ const AnimatedLineStickerTool: React.FC = () => {
             <p>自備影格：自行準備多張動作 PNG，再匯出 APNG。</p>
             <p>整套自動：一批 8／16／24 張一次套用動畫並下載 ZIP。</p>
           </details>
-        </section>
+        </details>
 
         {workflowMode === "single" ? (
         <section className="mt-6 rounded-3xl border border-violet-200 bg-gradient-to-br from-violet-50 via-white to-fuchsia-50 p-5 shadow-sm md:p-7">
@@ -3114,7 +3145,7 @@ const AnimatedLineStickerTool: React.FC = () => {
                   <span className="text-sm font-black text-slate-800">
                     動畫套用方式
                   </span>
-                  <label className="mt-3 block text-xs font-black text-slate-700">動畫效果（三選一）
+                  <label id="tutu-batch-motion-select" className="mt-3 block scroll-mt-24 text-base font-black text-slate-700">動畫效果（三選一）
                     <select value={batchMotionMode} disabled={batchBusy}
                       onChange={(event) => setBatchMotionMode(event.target.value as BatchMotionMode)}
                       className="mt-2 min-h-12 w-full max-w-xl rounded-xl border-2 border-violet-200 bg-white px-4 py-3 text-base font-black text-violet-900 disabled:opacity-60">
@@ -3251,10 +3282,12 @@ const AnimatedLineStickerTool: React.FC = () => {
                   </p>
                 </div>
 
-                <label className="mt-4 block text-sm font-black text-slate-900">
-                  本套貼圖主題（下載檔名）
-                  <input value={handoffTheme} onChange={(event) => setHandoffTheme(event.target.value)} maxLength={40} placeholder="例如：消防人員" className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-bold" />
-                </label>
+                {!handoffLoaded ? (
+                  <label className="mt-4 block text-base font-black text-slate-900">
+                    本套貼圖主題（下載檔名）
+                    <input value={handoffTheme} onChange={(event) => setHandoffTheme(event.target.value)} maxLength={40} placeholder="例如：消防人員" className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-base font-bold" />
+                  </label>
+                ) : null}
                 <p className="mt-4 rounded-xl border border-indigo-200 bg-white p-3 text-sm font-black leading-6 text-indigo-900">
                   最後一步：只有按下「產生並下載上架 ZIP」，才會真正產生貼圖 ZIP；前面的動畫試播與預覽不等於已完成打包。
                 </p>
@@ -3262,7 +3295,7 @@ const AnimatedLineStickerTool: React.FC = () => {
                   type="button"
                   disabled={batchBusy || ![8, 16, 24].includes(batchSources.length)}
                   onClick={exportPlatform === "whatsapp" ? exportWhatsAppAnimatedPack : exportBatchUploadPack}
-                  className="mt-4 inline-flex min-h-12 w-auto max-w-full items-center justify-center rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-black !text-white shadow-md transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                  className="mt-4 flex min-h-12 w-full items-center justify-center rounded-2xl bg-emerald-600 px-4 py-3 text-base font-black !text-white shadow-md transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300 sm:max-w-[440px]"
                 >
                   {batchBusy
                     ? (exportPlatform === "whatsapp" ? "正在壓縮 WhatsApp 動畫 WebP…" : t("animated_line_sticker.batch_generating_button"))
