@@ -2710,59 +2710,17 @@ export default function LineStickerTool() {
             </section>
           ) : null}
 
-          <section className="mb-5 rounded-2xl border border-sky-200 bg-white p-4 shadow-sm">
-            <h2 className="text-sm font-black text-slate-900">輸出平台｜同一張母圖可製作 LINE 或 WhatsApp 貼圖</h2>
-            <div className="mt-3 flex flex-wrap items-center gap-2" role="group" aria-label="選擇貼圖輸出平台">
-              <button type="button" onClick={() => {
-                  setExportPlatform("line");
-                  setWhatsAppReadyZip(null);
-                  updateLineStickerProject({ platform: "line" });
-                  setExportCheckResult(null);
-                  setDownloadCompleted(false);
-                }}
-                aria-pressed={exportPlatform === "line"}
-                className={`inline-flex min-h-11 w-auto max-w-full shrink-0 items-center justify-center rounded-xl border-2 px-4 py-2.5 text-center text-sm font-bold leading-5 shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:border-violet-500 hover:bg-violet-100 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 active:translate-y-0 ${exportPlatform === "line" ? "border-violet-600 bg-violet-600 text-white shadow-md hover:bg-violet-700 hover:text-white" : "border-violet-200 bg-violet-50 text-violet-900"}`}>
-                {exportPlatform === "line" ? "✓ LINE · PNG／APNG" : "LINE · PNG／APNG"}
-              </button>
-              <button type="button" onClick={() => {
-                  setExportPlatform("whatsapp");
-                  setWhatsAppReadyZip(null);
-                  updateLineStickerProject({ platform: "whatsapp" });
-                  setExportCheckResult(null);
-                  setDownloadCompleted(false);
-                }}
-                aria-pressed={exportPlatform === "whatsapp"}
-                className={`inline-flex min-h-11 w-auto max-w-full shrink-0 items-center justify-center rounded-xl border-2 px-4 py-2.5 text-center text-sm font-bold leading-5 shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:border-violet-500 hover:bg-violet-100 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 active:translate-y-0 ${exportPlatform === "whatsapp" ? "border-violet-600 bg-violet-600 text-white shadow-md hover:bg-violet-700 hover:text-white" : "border-violet-200 bg-violet-50 text-violet-900"}`}>
-                {exportPlatform === "whatsapp" ? "✓ WhatsApp · WebP" : "WhatsApp · WebP"}
-              </button>
-            </div>
-            <p className="mt-2 text-xs leading-6 text-slate-600">
-              {exportPlatform === "whatsapp"
-                ? (selectedStickerMode === "animated"
-                    ? "已選 WhatsApp 動態：完成切割後按底部「下一步」，即可製作真正的 512×512 動畫 WebP ZIP（每張≤500KB）。"
-                    : "WhatsApp 靜態：下載 512×512、單張≤100KB 的透明 WebP ZIP；匯入貼圖集需透過 WhatsApp 或相容貼圖 APP。")
-                : "LINE：靜態輸出 PNG 上架 ZIP，動態輸出 APNG；可以接續下一步製作動態貼圖。"}
-            </p>
-            {exportPlatform === "whatsapp" ? (
-              <a
-                href="https://faq.whatsapp.com/1056840314992666"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-2 inline-flex text-xs font-black text-emerald-700 underline"
-              >
-                查看 WhatsApp 官方建立及分享貼圖集說明
-              </a>
-            ) : null}
-            {exportPlatform === "whatsapp" && <WhatsAppMobileZipHandoff archive={whatsAppReadyZip} />}
-            <div
-              role="status"
-              aria-live="polite"
-              className={`mt-3 rounded-xl border px-3 py-2.5 text-xs font-bold leading-6 ${canDownload ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-amber-200 bg-amber-50 text-amber-900"}`}
-            >
-              {exportReadyMessage}
-            </div>
-
-          </section>
+          {(files.length > 0 || motherSheetDetections.length > 0 || whatsAppReadyZip) ? (
+            <section className="mb-5 rounded-2xl border border-sky-200 bg-white p-4">
+              <p className="text-sm font-black text-slate-900">目前輸出：{exportPlatform === "line" ? "LINE" : "WhatsApp"}｜{selectedStickerMode === "animated" ? "動態" : "靜態"}｜{stickerCount} 張</p>
+              {whatsAppReadyZip ? <WhatsAppMobileZipHandoff archive={whatsAppReadyZip} /> : null}
+              <details className="mt-2 text-xs text-slate-600">
+                <summary className="cursor-pointer font-bold">輸出格式與下載條件（選看）</summary>
+                <p className="mt-2">{exportPlatform === "line" ? "LINE 靜態使用 PNG，動態使用 APNG。" : "WhatsApp 使用 WebP。"} 需要切圖完成後才能下載。</p>
+                <p className="mt-2">{exportReadyMessage}</p>
+              </details>
+            </section>
+          ) : null}
 
           {downloadCompleted && selectedStickerMode !== "animated" ? (
             <section className="mb-6 rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-blue-50 p-5 shadow-sm">
@@ -2829,18 +2787,11 @@ export default function LineStickerTool() {
               </p>
             </section>
           ) : (
-            <section className="mb-6 rounded-2xl border border-violet-100 bg-violet-50 p-4">
-              <p className="text-sm font-black text-slate-900">還沒有貼圖母圖？</p>
-              <p className="mt-1 text-xs leading-5 text-slate-600">
-                建議先從第 1 步開始，系統會幫你準備可貼到 ChatGPT 或 Google Gemini 的生圖指令。
-              </p>
-              <Link
-                to="/tools/sticker-prompt"
-                className="mt-3 inline-flex rounded-xl bg-violet-600 px-4 py-2.5 text-xs font-black !text-white"
-              >
-                回到第 1 步
-              </Link>
-            </section>
+            <details className="mb-5 rounded-xl border border-violet-100 bg-white px-4 py-3 text-sm text-slate-700">
+              <summary className="cursor-pointer font-bold">還沒有母圖？點此返回第 1 步</summary>
+              <p className="mt-2 text-xs">先用 AI 生成完整母圖，再回此頁上傳。</p>
+              <Link to="/tools/sticker-prompt" className="mt-2 inline-flex text-sm font-black text-violet-700 underline">從第 1 步開始</Link>
+            </details>
           )}
 
           <details className="mb-6 rounded-2xl border border-slate-200 bg-white">
@@ -2893,8 +2844,9 @@ export default function LineStickerTool() {
             </div>
           )}
 
+          {(motherSheetDetections.length > 0 || motherSheetNeedsReprocessing) ? (
           <div id="mother-upload" className="scroll-mt-24 space-y-4 mb-10">
-            <StickerNextActionHint>已經有完整母圖？請按下方紫色「第 3 步｜選擇整張母圖並辨識格數」，直接從裝置選圖片，不用回去做提示詞。</StickerNextActionHint>
+            <p className="text-sm font-black text-violet-900">母圖辨識與安全切圖｜確認格數後繼續</p>
             <section className="rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50 to-white p-5">
               <div className="grid gap-4">
                 <div className="min-w-0">
@@ -2989,24 +2941,7 @@ export default function LineStickerTool() {
                       ) : null}
                     </div>
                   ) : null}
-                  <input
-                    ref={motherSheetInputRef}
-                    type="file"
-                    accept={ACCEPT_TYPES.join(",")}
-                    multiple
-                    onChange={handleMotherSheetChange}
-                    className="hidden"
-                  />
-                  <button
-                    type="button"
-                    disabled={loading}
-                    onClick={() => motherSheetInputRef.current?.click()}
-                    className="inline-flex min-h-12 w-fit max-w-full items-center justify-center rounded-xl bg-violet-600 px-4 py-3 text-center text-sm font-black text-white shadow-md transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-2"
-                  >
-                    {loading && motherSheetDetectionStatus !== "cutting"
-                      ? "正在判斷母圖格數…"
-                      : "第 3 步｜選擇整張母圖並辨識格數"}
-                  </button>
+                  <p className="text-xs font-semibold text-violet-800 sm:col-span-2">要更換母圖請使用頁面上方「選擇整張母圖」。</p>
                 </div>
               </div>
 
@@ -3281,35 +3216,9 @@ export default function LineStickerTool() {
               </button>
             </details>
 
-            <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-white p-5 rounded-2xl border border-slate-200">
-                <p className="text-[11px] font-black text-slate-400 uppercase mb-3">
-                  {t("line_sticker_step_count")}
-                </p>
-                {flowProject ? (
-                  <div className="rounded-xl bg-blue-50 px-4 py-3 text-sm font-black text-blue-800">
-                    已從第 1 步帶入：{stickerCount} 張，不需要再選一次
-                  </div>
-                ) : (
-                  <div className="flex flex-wrap gap-2" role="group" aria-label="選擇貼圖張數">
-                    {STICKER_SIZES.map((n) => (
-                      <button
-                        key={n}
-                        onClick={() => setStickerCount(n)}
-                        aria-pressed={stickerCount === n}
-                        className={`inline-flex min-h-11 w-[68px] shrink-0 items-center justify-center rounded-lg border-2 px-2 py-2 text-xs font-bold shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:border-violet-500 hover:bg-violet-100 hover:text-violet-900 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 active:translate-y-0 ${stickerCount === n ? "border-violet-600 bg-violet-600 text-white shadow-md hover:bg-violet-700 hover:text-white" : "border-violet-200 bg-violet-50 text-violet-900"}`}
-                      >
-                        {n}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="bg-white p-5 rounded-2xl border border-slate-200">
-                <p className="text-[11px] font-black text-slate-400 uppercase mb-3">
-                  {t("line_sticker_step_crop")}
-                </p>
+            <details className="rounded-2xl border border-slate-200 bg-white p-4">
+              <summary className="cursor-pointer text-sm font-bold text-slate-700">進階：裁切模式與安全留白設定（選看）</summary>
+              <div className="mt-3 max-w-md">
                 <label className="block text-xs font-bold text-slate-700">裁切模式（三選一）
                   <select value={cropMode} onChange={(event) => setCropMode(event.target.value as LineStickerCropMode)}
                     className="mt-2 min-h-11 w-full max-w-sm rounded-xl border border-blue-200 bg-white px-3 py-2 text-sm font-bold text-blue-900">
@@ -3323,8 +3232,9 @@ export default function LineStickerTool() {
                   <p className="mt-2">智慧滿版會保留約 {Math.round(MOTHER_FIT_MARGIN[motherSheetFit] * 100)}% 安全留白，調整尺寸請使用下方批次縮放。</p>
                 </details>
               </div>
-            </section>
+            </details>
           </div>
+          ) : null}
 
           {files.length > 0 && (
             <section className="mb-8 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
