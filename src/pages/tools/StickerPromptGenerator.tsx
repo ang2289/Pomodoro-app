@@ -5558,16 +5558,14 @@ export default function StickerPromptGenerator() {
           <section className="mt-6 flex flex-col gap-6" aria-label="依順序操作第 1、2 步">
             <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
               <h2 className="text-xl font-bold text-slate-900">
-                第 1 步｜先認識母圖，再選主題與畫風
+                第 1 步｜先選貼圖種類與張數
               </h2>
               <p className="mt-2 text-base leading-7 text-slate-700">
-                不用先畫好圖片。先看下面真正的花店母圖示範，再選平台、張數、主題及文字；本站會產生可直接複製的 AI 畫圖指令。
+                先選 LINE／WhatsApp、靜態／動態與貼圖張數，接著看母圖範例；下面再選主題、文字與畫風，產生 AI 畫圖指令。
               </p>
-              <div className="mt-4">
-                <StickerMotherSheetExample count={targetCount} variant="intro" />
-              </div>
+
               <p className="mt-3 text-sm font-medium leading-6 text-slate-600">
-                接下來先選平台，再選靜態／動態與張數。
+                ① 先選平台、靜態／動態及張數。選好後，下方會更新母圖示範。
                 {" "}<a href="#sticker-customize" className="font-semibold text-violet-700 underline underline-offset-2">直接調整文字、字型 ↓</a>
               </p>
               <div className="mt-4 grid w-full max-w-[520px] grid-cols-2 items-stretch gap-3" role="group" aria-label="選擇貼圖平台">
@@ -5640,6 +5638,10 @@ export default function StickerPromptGenerator() {
                         ? "系統會準備 2 張 4×4，共 32 張。"
                         : "系統會準備 2 張 4×5，共 40 張。"}
               </p>
+              <div className="mt-5" id="sticker-mother-guide">
+                <h3 className="mb-3 text-lg font-black text-sky-950">② 看懂整張母圖，再準備 AI 畫圖</h3>
+                <StickerMotherSheetExample count={targetCount} variant="intro" />
+              </div>
               <div className="mt-5 max-w-[520px] space-y-3" aria-label="依製作進度選擇下一步">
                 <div className="rounded-2xl border-2 border-violet-300 bg-violet-50 p-4">
                   <h3 className="text-base font-black text-violet-950">第一次製作貼圖？從這裡繼續</h3>
