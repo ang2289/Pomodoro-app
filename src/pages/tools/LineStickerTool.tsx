@@ -2701,12 +2701,16 @@ export default function LineStickerTool() {
                 </select>
               </label>
             </div>
+            <p className="mt-4 text-base font-bold leading-7 text-violet-900" aria-live="polite">
+              請準備 {getMotherSheetPlan(stickerCount).length} 張整張母圖
+              （{getMotherSheetPlan(stickerCount).map((part) => part.grid.replace("x", "×")).join("＋")}），不用先切割。
+            </p>
             <input ref={motherSheetInputRef} type="file" accept={ACCEPT_TYPES.join(",")}
               multiple onChange={handleMotherSheetChange} className="hidden" />
             <button type="button" disabled={loading}
               onClick={() => motherSheetInputRef.current?.click()}
-              className={`${STICKER_UI.primaryAction} mt-5 bg-violet-600 text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-slate-300`}>
-              {loading && motherSheetDetectionStatus !== "cutting" ? "正在辨識母圖…" : `選擇整張母圖｜上傳圖片（需 ${getMotherSheetPlan(stickerCount).length} 張）`}
+              className={`${STICKER_UI.primaryAction} mt-3 whitespace-nowrap bg-violet-600 text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-slate-300`}>
+              {loading && motherSheetDetectionStatus !== "cutting" ? "正在辨識母圖…" : "上傳整張母圖"}
             </button>
             <p role="status" aria-live="polite" className="mt-3 text-base font-bold leading-7 text-violet-900">{actionHint}</p>
             <details className="mt-3 text-xs text-slate-600">
