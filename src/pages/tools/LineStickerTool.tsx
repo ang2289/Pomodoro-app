@@ -2881,7 +2881,7 @@ export default function LineStickerTool() {
                     </span>
                   </div>
                   <p className="mt-3 text-xs font-black uppercase tracking-wide text-violet-600">
-                    步驟 3
+                    步驟 4
                   </p>
                   <h2 className="mt-1 text-base font-black text-slate-900">
                     第 4 步｜確認母圖辨識結果
@@ -2895,6 +2895,7 @@ export default function LineStickerTool() {
                   <summary className="cursor-pointer text-sm font-bold text-violet-900">進階：辨識格數／去背強度（選看，預設已設定）</summary>
                   <div className="mt-3 grid gap-2 sm:grid-cols-2">
                     <div className="sm:col-span-2">
+                      {flowProject ? (
                     <div className="rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-xs font-black leading-5 text-violet-800">
                       已依第 1 步設定自動辨識：
                       {getMotherSheetPlan(flowProject.count)
