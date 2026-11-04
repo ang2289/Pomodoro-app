@@ -30,7 +30,7 @@ export default function LineStickerFlowSteps({
   const phases = [
     { step: 1 as const, title: "選角色", desc: "主題、文字、張數", path: "/tools/sticker-prompt#sticker-start" },
     { step: 2 as const, title: "AI 畫母圖", desc: "逐張複製指令", path: "/tools/sticker-prompt#sticker-copy" },
-    { step: 3 as const, title: "上傳母圖", desc: "4×4＋4×2 等大圖", path: "/tools/line-sticker?existing=1#mother-upload" },
+    { step: 3 as const, title: "上傳母圖", desc: "4×4＋4×2 等大圖", path: "/tools/line-sticker?existing=1#step3-options" },
     { step: 4 as const, title: "自動切圖", desc: "安全檢查、去背", path: "/tools/line-sticker?flow=1#mother-split" },
     {
       step: 5 as const,
