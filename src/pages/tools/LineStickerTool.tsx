@@ -2579,8 +2579,8 @@ export default function LineStickerTool() {
             <h1 className="text-2xl font-black text-slate-900">第一次做 LINE／WhatsApp 貼圖？從第 1 步開始</h1>
             <LineStickerFlowSteps activeStep={1} />
             <section className="rounded-2xl border border-sky-200 bg-sky-50 p-5" aria-label="選擇貼圖製作起點">
-              <h2 className="text-lg font-black text-sky-900">下一步請先選一個按鈕</h2>
-              <p className="mt-2 text-sm leading-7 text-slate-700">沒有母圖，請按第一個按鈕開始設定；若已經有完整母圖，才按第二個按鈕直接上傳。</p>
+              <h2 className="text-xl font-black text-sky-900">下一步請先選一個按鈕</h2>
+              <p className="mt-2 text-base leading-7 text-slate-700">沒有母圖，請按第一個按鈕開始設定；已有完整母圖，請按第二個按鈕。</p>
               <div className={`mt-3 ${STICKER_UI.entryGrid}`}>
                 <Link to="/tools/sticker-prompt#sticker-start"
                   className={`${STICKER_UI.entryAction} bg-violet-600 !text-white hover:bg-violet-700`}>
@@ -2592,11 +2592,12 @@ export default function LineStickerTool() {
                 </Link>
               </div>
             </section>
-            <details className="mt-5 rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700">
-              <summary className="cursor-pointer font-bold text-slate-800">相關教學與其他貼圖資源（選看）</summary>
-              <p className="mt-2 leading-6">尚未有母圖，先選角色與文字，複製提示詞到 AI 畫圖，再回來切圖。</p>
-              <Link to="/tools/line-sticker-start" className="mt-3 inline-flex min-h-11 items-center text-sm font-bold text-violet-800 underline">看九組成果與五步驟教學</Link>
-              <StickerExcelOffers compact />
+            {/* Marketing links for both promoted Excel products must be visible without opening a disclosure. */}
+            <StickerExcelOffers compact />
+            <details className="mt-5 rounded-xl border border-slate-200 bg-white p-4 text-base text-slate-700">
+              <summary className="cursor-pointer font-bold text-slate-800">其他教學與客製服務（選看）</summary>
+              <p className="mt-2 leading-7">尚未有母圖，先選角色與文字，複製提示詞到 AI 畫圖，再回來切圖。</p>
+              <Link to="/tools/line-sticker-start" className="mt-3 inline-flex min-h-11 items-center text-base font-bold text-violet-800 underline">看九組成果與五步驟教學</Link>
               <div className="mt-6"><StickerCustomPricing compact /></div>
             </details>
           </div>
@@ -2649,7 +2650,7 @@ export default function LineStickerTool() {
 
           <section id="step3-options" aria-label="第 3 步開始：選擇貼圖種類張數及平台" className="mb-5 scroll-mt-24 rounded-2xl border-2 border-violet-200 bg-violet-50 p-4 shadow-sm sm:p-5">
             <h2 className="text-xl font-black text-violet-950">第 3 步｜選好設定，再上傳母圖</h2>
-            <p className="mt-1 text-sm font-semibold text-slate-700">只要選三項，接著按紫色按鈕選圖片。</p>
+            <p className="mt-1 text-base font-semibold text-slate-700">只要選三項，接著按紫色按鈕上傳圖片。</p>
             <div className={`mt-4 ${STICKER_UI.selectionGrid}`}>
               <label htmlFor="step3-kind" className="block text-sm font-black text-slate-800">
                 ① 貼圖種類
@@ -2701,7 +2702,7 @@ export default function LineStickerTool() {
               className={`${STICKER_UI.primaryAction} mt-5 bg-violet-600 text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-slate-300`}>
               {loading && motherSheetDetectionStatus !== "cutting" ? "正在辨識母圖…" : "選擇整張母圖｜上傳圖片"}
             </button>
-            <p role="status" aria-live="polite" className="mt-3 text-sm font-bold text-violet-900">{actionHint}</p>
+            <p role="status" aria-live="polite" className="mt-3 text-base font-bold leading-7 text-violet-900">{actionHint}</p>
             <details className="mt-3 text-xs text-slate-600">
               <summary className="cursor-pointer font-bold">預設設定與上傳說明（選看）</summary>
               <p className="mt-2">預設靜態、8 張、LINE；動態貼圖仍先上傳靜止母圖，再製作動畫。可一次選多張母圖，系統會辨識格數。</p>
@@ -3376,7 +3377,7 @@ export default function LineStickerTool() {
                 <h3 className="text-base font-black text-emerald-900">第 4 步完成｜已切好 {Math.min(files.length, stickerCount)} 張貼圖，請檢查預覽</h3>
                 <p className="mt-2 text-sm font-bold text-emerald-900">下一步：查看每張人物、手腳及文字是否完整，確認後按下方藍色按鈕前往第 5 步。</p>
                 <button type="button" onClick={() => document.getElementById("sticker-download")?.scrollIntoView({ behavior: "smooth", block: "start" })}
-                  className="mt-3 flex min-h-11 w-full items-center justify-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white hover:bg-blue-700 sm:w-[320px]">前往第 5 步｜下載／製作動態</button>
+                  className="mt-3 flex min-h-12 w-full items-center justify-center rounded-xl bg-blue-600 px-4 py-2 text-base font-black text-white hover:bg-blue-700 sm:w-[320px]">前往第 5 步｜下載／製作動態</button>
               </div>
               <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
                 <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">
@@ -3448,8 +3449,8 @@ export default function LineStickerTool() {
         <div id="sticker-download" className="scroll-mt-24" />
         <footer aria-label="第 5 步：貼圖下載或動態製作" className="mx-auto mt-5 mb-5 max-w-3xl rounded-2xl border-2 border-violet-200 bg-white px-3 py-4 shadow-sm sm:px-4">
           <div className="mx-auto">
-            <h3 className="mb-2 text-center text-base font-bold text-violet-900">第 5 步｜確認預覽後，下載或製作動態貼圖</h3>
-            <p className="mb-2 text-center text-xs font-bold leading-5 text-slate-700">
+            <h3 className="mb-2 text-center text-xl font-black text-violet-900">第 5 步｜確認預覽後，下載或製作動態貼圖</h3>
+            <p className="mb-3 text-center text-base font-bold leading-7 text-slate-700">
               {canDownload
                 ? (selectedStickerMode === "animated"
                     ? "下一步請按紫色「前往動畫製作」；真正動態 ZIP 需到動畫製作頁，再按「產生上架 ZIP」才會打包。"
@@ -3475,7 +3476,7 @@ export default function LineStickerTool() {
                 <button
                   onClick={exportPlatform === "whatsapp" ? generateWhatsAppZip : generateZip}
                   disabled={!canDownload || loading}
-                  className={`inline-flex min-h-[52px] items-center justify-center rounded-2xl px-4 py-3 text-xs font-black ${
+                  className={`inline-flex min-h-[52px] items-center justify-center rounded-2xl px-4 py-3 text-base font-black ${
                     !canDownload || loading
                       ? "cursor-not-allowed bg-slate-100 text-slate-400"
                       : "border border-blue-200 bg-white text-blue-700 hover:bg-blue-50"
