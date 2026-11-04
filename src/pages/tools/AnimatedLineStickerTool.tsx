@@ -59,9 +59,12 @@ const MAX_LINE_ZIP_MB = 60;
 const DEFAULT_SHOWCASE_QR_URL = "https://store.line.me/stickershop/author/5530587/zh-Hant";
 const QR_LAST_URL_STORAGE = "tutu_showcase_qr_v1";
 const QR_RECENT_URL_STORAGE = "tutu_showcase_qr_recent_v1";
+function isPlaceholderStickerTheme(value: string) {
+  return !value.trim() || ["未命名貼圖", "未命名", "無主題"].includes(value.trim());
+}
 function safeStickerThemeName(value: string) {
-  return (value.trim() || "我的貼圖")
-    .replace(/[\\/:*?"<>|\x00-\x1f]/g, "_").replace(/\s+/g, "_").slice(0, 40) || "我的貼圖";
+  const name = isPlaceholderStickerTheme(value) ? "我的貼圖" : value.trim();
+  return name.replace(/[\\/:*?"<>|\x00-\x1f]/g, "_").replace(/\s+/g, "_").slice(0, 40) || "我的貼圖";
 }
 function validShowcaseUrl(value: string) {
   try {
@@ -1441,7 +1444,24 @@ async function createVideoBlob(
     ctx.fillText("掃描 QR Code 查看更多貼圖", width / 2, height * 0.23);
     const qrSide = Math.round(Math.min(width, height) * 0.5);
     ctx.drawImage(options.qrImage, (width - qrSide) / 2, (height - qrSide) / 2, qrSide, qrSide);
-    await waitMs(2900);
+    // MediaRecorder may discard a single unchanging QR frame at the end.
+    // Keep the QR itself stationary while animating only a thin footer bar.
+    const endingStart = performance.now();
+    const endingDurationMs = 3200;
+    const progressWidth = width * 0.7;
+    const progressLeft = (width - progressWidth) / 2;
+    const progressTop = Math.round(height * 0.9);
+    const videoTrack = stream.getVideoTracks()[0] as MediaStreamTrack & { requestFrame?: () => void };
+    for (let step = 0; step <= 32; step += 1) {
+      const untilFrame = endingStart + step * 100 - performance.now();
+      if (untilFrame > 0) await waitMs(untilFrame);
+      ctx.fillStyle = "#e2e8f0";
+      ctx.fillRect(progressLeft, progressTop, progressWidth, 6);
+      ctx.fillStyle = "#6366f1";
+      ctx.fillRect(progressLeft, progressTop, Math.max(2, progressWidth * step / 32), 6);
+      videoTrack.requestFrame?.();
+    }
+    await waitMs(100);
   }
   if (recorder.state === "recording" && typeof recorder.requestData === "function") {
     recorder.requestData();
@@ -2726,7 +2746,7 @@ const AnimatedLineStickerTool: React.FC = () => {
             貼圖主題（作為 ZIP／MP4 下載檔名）
             <input
               type="text"
-              value={stickerFileThemeOverride ?? projectThemeForFile}
+              value={stickerFileThemeOverride ?? (isPlaceholderStickerTheme(projectThemeForFile) ? "" : projectThemeForFile)}
               onChange={(event) => setStickerFileThemeOverride(event.target.value)}
               placeholder="例如：社區總幹事"
               maxLength={40}
