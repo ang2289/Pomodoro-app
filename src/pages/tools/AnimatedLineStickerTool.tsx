@@ -2761,6 +2761,13 @@ const AnimatedLineStickerTool: React.FC = () => {
             <p className="mt-2 text-base leading-7 text-slate-800">
               預設使用「整套自動、多效果輪用」，不需要重新上傳；可直接下載動態 ZIP。
             </p>
+            <label className="mt-4 block max-w-[440px] text-base font-black text-slate-900">
+              貼圖主題（下載檔名，可修改）
+              <input type="text" value={stickerFileThemeOverride ?? (isPlaceholderStickerTheme(projectThemeForFile) ? "" : projectThemeForFile)}
+                onChange={(event) => setStickerFileThemeOverride(event.target.value)} maxLength={40}
+                placeholder="例如：社區總幹事；留空會使用我的貼圖"
+                className="mt-2 min-h-12 w-full rounded-xl border-2 border-violet-200 bg-white px-4 py-3 text-base font-bold text-slate-900" />
+            </label>
             <button type="button"
               disabled={batchBusy || batchVideoBusy || ![8, 16, 24].includes(batchSources.length)}
               onClick={exportPlatform === "whatsapp" ? exportWhatsAppAnimatedPack : exportBatchUploadPack}
@@ -2784,18 +2791,17 @@ const AnimatedLineStickerTool: React.FC = () => {
           </section>
         ) : null}
         <section id="animated-sticker-batch" className="scroll-mt-24 mb-5 rounded-2xl border border-emerald-200 bg-white p-4">
-          <label className="mb-4 block text-sm font-black text-slate-900">
-            貼圖主題（作為 ZIP／MP4 下載檔名）
-            <input
-              type="text"
-              value={stickerFileThemeOverride ?? (isPlaceholderStickerTheme(projectThemeForFile) ? "" : projectThemeForFile)}
-              onChange={(event) => setStickerFileThemeOverride(event.target.value)}
-              placeholder="例如：社區總幹事"
-              maxLength={40}
-              className="mt-2 block min-h-12 w-full max-w-xl rounded-xl border-2 border-violet-200 bg-white px-4 py-3 text-base font-bold text-slate-900"
-            />
-          </label>
-          <p className="mb-4 text-xs font-bold text-violet-800">
+          {!handoffLoaded ? (
+            <label className="mb-4 block text-base font-black text-slate-900">
+              貼圖主題（作為 ZIP／MP4 下載檔名）
+              <input type="text"
+                value={stickerFileThemeOverride ?? (isPlaceholderStickerTheme(projectThemeForFile) ? "" : projectThemeForFile)}
+                onChange={(event) => setStickerFileThemeOverride(event.target.value)}
+                placeholder="例如：社區總幹事" maxLength={40}
+                className="mt-2 block min-h-12 w-full max-w-xl rounded-xl border-2 border-violet-200 bg-white px-4 py-3 text-base font-bold text-slate-900" />
+            </label>
+          ) : null}
+          <p className="mb-4 text-sm font-bold text-violet-800">
             目前檔名主題：{stickerThemeForFile}（留空會使用「我的貼圖」）
           </p>
           <p className="text-sm font-black text-slate-900">輸出平台｜動態貼圖</p>
