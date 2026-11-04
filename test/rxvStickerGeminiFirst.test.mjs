@@ -252,14 +252,23 @@ test("每組貼圖選擇按鈕同寬，選取、懸停、鍵盤焦點狀態清�
   assert.ok(upload.includes('value={exportPlatform}'));
   assert.ok(animated.includes("aria-pressed={exportPlatform === platform}"));
 
-  // 選項使用同色系，未選擇也有明確邊框與底色，滑過和鍵盤操作有可見回饋。
+  // 各工具都保留懸停、鍵盤焦點回饋；提示詞與動畫選項用紫色選取態。
+  // 上傳頁已改成下拉選單，選取態由 select 元件負責，不能再要求舊按鈕 CSS。
   for (const source of [prompt, upload, animated]) {
     assert.ok(source.includes("hover:-translate-y-0.5"));
     assert.match(source, /hover:shadow-md/);
     assert.match(source, /focus-visible:outline-offset-2/);
+  }
+  for (const source of [prompt, animated]) {
     assert.match(source, /border-violet-600 bg-violet-600/);
     assert.match(source, /border-violet-200 bg-violet-50/);
   }
+  const shared = read("src/components/StickerBeginnerActions.tsx");
+  assert.match(shared, /select: "mt-2 min-h-12 w-full/);
+  assert.match(upload, /id="step3-kind"/);
+  assert.match(upload, /id="step3-count"/);
+  assert.match(upload, /id="step3-platform"/);
+  assert.match(upload, /STICKER_UI\.select/);
   // 張數按鈕為同寬且可換行，窄手機不應強迫五顆擠在同一排。
   assert.ok(prompt.includes("w-[76px] shrink-0"));
   assert.ok(prompt.includes('max-w-[520px] flex-wrap gap-2" role="group" aria-label="選擇貼圖張數"'));
