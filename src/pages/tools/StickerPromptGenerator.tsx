@@ -3362,38 +3362,38 @@ ${detail ? `- 自訂辨識特徵：${detail}（只改造型，不得變成道具
 // 不將性別、年齡與個性寫死在每個職業模板；新手能直接選擇並套用到整套母圖。
 const ORIGINAL_CHARACTER_OPTIONS = {
   gender: [
-    "依主題預設", "女性", "男性", "中性／不指定性別",
+    "由 AI 依主題設計", "女性", "男性", "中性／不指定性別",
   ],
   age: [
-    "依主題預設", "幼兒（4～6 歲）", "兒童（7～12 歲）", "青少年（13～17 歲）",
+    "由 AI 依主題設計", "幼兒（4～6 歲）", "兒童（7～12 歲）", "青少年（13～17 歲）",
     "年輕成人（18～30 歲）", "中年（31～55 歲）", "熟齡（56～70 歲）", "長者（70 歲以上）",
   ],
   personality: [
-    "依主題預設", "活潑開朗", "溫柔療癒", "沉穩可靠", "幽默調皮",
+    "由 AI 依主題設計", "活潑開朗", "溫柔療癒", "沉穩可靠", "幽默調皮",
     "親切熱情", "知性優雅", "自信俐落", "害羞內向", "天真好奇", "酷帥冷靜",
   ],
   face: [
-    "依主題預設", "圓臉笑眼", "鵝蛋臉杏眼", "方圓臉與濃眉", "細長眼與微笑嘴角",
+    "由 AI 依主題設計", "圓臉笑眼", "鵝蛋臉杏眼", "方圓臉與濃眉", "細長眼與微笑嘴角",
     "小雀斑與小巧鼻子", "酒窩與大眼睛", "溫柔下垂眼",
   ],
   hair: [
-    "依主題預設", "黑色短髮與側分瀏海", "栗棕色雙辮子", "銀白短捲髮", "深棕鮑伯頭",
+    "由 AI 依主題設計", "黑色短髮與側分瀏海", "栗棕色雙辮子", "銀白短捲髮", "深棕鮑伯頭",
     "黑色高馬尾", "自然黑色中長捲髮", "灰棕俐落油頭", "柔和金棕齊肩髮",
   ],
   outfit: [
-    "依主題預設", "粉色休閒服", "湖水綠連帽上衣", "奶茶色圍裙", "靛藍襯衫",
+    "由 AI 依主題設計", "粉色休閒服", "湖水綠連帽上衣", "奶茶色圍裙", "靛藍襯衫",
     "紫色針織衫", "台灣復古花布上衣", "橘紅工裝背心", "森林綠休閒套裝",
   ],
   signature: [
-    "依主題預設", "圓框眼鏡", "愛心髮夾", "小圍巾", "原創星星胸針",
+    "由 AI 依主題設計", "圓框眼鏡", "愛心髮夾", "小圍巾", "原創星星胸針",
     "小巧側背包", "無配件（靠五官辨識）", "素色鴨舌帽", "特色蝴蝶結",
   ],
   palette: [
-    "依主題預設", "珊瑚粉與米白", "霧藍與暖杏色", "湖水綠與奶油黃",
+    "由 AI 依主題設計", "珊瑚粉與米白", "霧藍與暖杏色", "湖水綠與奶油黃",
     "酒紅與淺卡其", "薰衣草紫與珍珠白", "森林綠與橙色", "懷舊紅與薄荷綠",
   ],
   proportions: [
-    "依主題預設", "2.5 頭身圓潤短手腳", "3 頭身精緻 Q 版",
+    "由 AI 依主題設計", "2.5 頭身圓潤短手腳", "3 頭身精緻 Q 版",
     "2 頭身超大頭娃娃", "3 頭身細緻手腳",
   ],
 } as const;
@@ -3411,10 +3411,16 @@ const ORIGINAL_CHARACTER_LABELS: Record<OriginalCharacterKey,string> = {
   proportions:"Q 版頭身比例",
 };
 const ORIGINAL_CHARACTER_DEFAULT: OriginalCharacterTraits = {
-  gender:"依主題預設", age:"依主題預設", personality:"依主題預設", face:"依主題預設",
-  hair:"依主題預設", outfit:"依主題預設", signature:"依主題預設",
-  palette:"依主題預設", proportions:"依主題預設",
+  gender:"由 AI 依主題設計", age:"由 AI 依主題設計", personality:"由 AI 依主題設計", face:"由 AI 依主題設計",
+  hair:"由 AI 依主題設計", outfit:"由 AI 依主題設計", signature:"由 AI 依主題設計",
+  palette:"由 AI 依主題設計", proportions:"由 AI 依主題設計",
 };
+function explicitCharacterChoices(choice: OriginalCharacterTraits): string {
+  return (Object.keys(ORIGINAL_CHARACTER_LABELS) as OriginalCharacterKey[])
+    .filter((key) => choice[key] && choice[key] !== ORIGINAL_CHARACTER_DEFAULT[key])
+    .map((key) => `${ORIGINAL_CHARACTER_LABELS[key]}：${choice[key]}`)
+    .join("；");
+}
 function randomOriginalCharacter(): OriginalCharacterTraits {
   const random = (items: readonly string[]) => items[1 + Math.floor(Math.random() * (items.length - 1))] || items[1] || items[0];
   return {
@@ -3435,12 +3441,13 @@ function applyOriginalCharacterTraits(
   profession: string,
 ): StickerIdentity {
   // 相容舊版只含性別／年齡／個性／臉型的資料；未指定的新版欄位不可寫入 undefined。
-  const picked = (key: OriginalCharacterKey) => Boolean(choice[key]) && choice[key] !== "依主題預設";
+  const picked = (key: OriginalCharacterKey) =>
+    Boolean(choice[key]) && choice[key] !== ORIGINAL_CHARACTER_DEFAULT[key];
   // 新手的簡單選擇優先於該職業模板原有的性別、年齡及五官預設。
   return {
     ...base,
     appearance: picked("gender") || picked("age")
-      ? `職業與主題：${profession}；主角性別：${picked("gender") ? choice.gender : "依主題預設"}；主角年齡：${picked("age") ? choice.age : "依主題預設"}。若其他段落出現不同性別或年齡，以上選擇優先。`
+      ? `職業與主題：${profession}；${picked("gender") ? `主角性別：${choice.gender}；` : ""}${picked("age") ? `主角年齡：${choice.age}；` : ""}使用者下拉設定優先於其他主題範例。`
       : base.appearance,
     face: picked("face") ? `${choice.face}；固定臉型、五官比例及膚色，全套一致` : base.face,
     hair: picked("hair") ? `${choice.hair}，所有格子與後續母圖固定同一髮型、髮色` : base.hair,
@@ -3451,7 +3458,7 @@ function applyOriginalCharacterTraits(
       picked("personality") ? `人物性格固定為「${choice.personality}」，以表情、眼神、姿態表現，不擅自加入文字` : "",
     ].filter(Boolean).join("；"),
     proportions: picked("proportions") ? `${choice.proportions}，整套人物身形比例相同` : base.proportions,
-    coloring: picked("palette") ? `${base.coloring}；主要配色固定為「${choice.palette}」，整套母圖不可換色` : base.coloring,
+    coloring: picked("palette") ? `主要配色固定為「${choice.palette}」，整套母圖不可換色；純白背景` : base.coloring,
   };
 }
 
@@ -4528,39 +4535,17 @@ const IDENTITY_FIELDS: Array<{ key: keyof StickerIdentity; label: string; hint: 
 ];
 
 function defaultStickerIdentity(role: string, style: string): StickerIdentity {
-  // 主題名稱決定整套穩定預設，切換母圖或重繪頁面不會再隨機更換。
-  const hash = [...role].reduce((sum, c) => (sum * 31 + c.charCodeAt(0)) >>> 0, 17);
-  const isMultiOrNonHuman = /情侶|夫妻|新郎|新娘|兩位|一家|全家|寵物|貓咪|狗狗|兔子|佛像|觀音|動物|怪獸|機器人/.test(role);
-  const age = [25, 30, 35, 40, 45][hash % 5];
-  const gender = /男性|男生|男孩|男士|先生/.test(role) ? "男性"
-    : /女性|女生|女孩|女士|媽媽/.test(role) ? "女性"
-    : hash % 2 === 0 ? "女性" : "男性";
-  const face = [
-    "圓臉、杏仁形深棕大眼、小巧鼻樑、自然暖膚色",
-    "鵝蛋臉、圓潤黑棕眼、淡笑眉、自然明亮膚色",
-    "柔和方圓臉、清澈琥珀眼、微笑嘴角、暖米膚色",
-    "小圓臉、弧形眉毛、深棕圓眼、柔和自然膚色",
-  ][hash % 4];
-  const hair = [
-    "黑色側分短髮、整齊瀏海",
-    "深棕色微捲齊肩髮、側分瀏海",
-    "栗棕色低馬尾、輕薄空氣瀏海",
-    "深黑色中長直髮、柔和斜瀏海",
-    "咖啡色俐落短髮、自然蓬鬆瀏海",
-  ][hash % 5];
-  const palette = /美甲|美睫|美容|粉色|花藝/.test(role + style)
-    ? "奶茶粉、霧玫瑰與米白"
-    : ["霧藍與暖米白", "森林綠與淺杏色", "柔和紫與奶油白", "湖水綠與米白", "杏色與深藍"][hash % 5];
-  const roleDetails = isMultiOrNonHuman ? role : `${role}；主角固定為約 ${age} 歲台灣${gender}原創 Q 版人物`;
+  // 下拉未指定者不自動產生性別、年齡、髮型、服裝或主色系。
+  // 保留主題情境，讓 AI 設計第一張，再依第一張角色延伸後續母圖。
   return {
-    appearance: roleDetails,
-    face: isMultiOrNonHuman ? "依原角色設定，固定每位主角各自的眼睛、臉型、五官比例與膚色" : face,
-    hair: isMultiOrNonHuman ? "每位主角各自維持相同造型、髮色與頭部特徵" : hair,
-    outfit: `依主題保持固定的工作服／圍裙／制服款式與剪裁，固定配色：${palette}；不可任意更換`,
-    accessories: "固定配件須沿用角色設定，不增加額外品牌；手持職業道具可依動作更換",
-    proportions: "2.5～3 頭身，大頭小身體，頭身比與五官比例一致",
-    illustration: `${style}；相同線條粗細、輪廓筆觸、柔和陰影`,
-    coloring: `固定主色系：${palette}；相同上色方法、陰影方向、光澤與裝飾密度；純白背景`,
+    appearance: `主題情境：${role}；未指定性別及年齡時，由 AI 依主題原創設計`,
+    face: "未指定五官與臉型；由 AI 原創設計第一張基準角色，整套保持一致",
+    hair: "未指定髮型與髮色；由 AI 原創搭配，整套保持一致",
+    outfit: "依選定主題設計服裝；若未指定款式與顏色，由 AI 原創搭配，整套保持一致",
+    accessories: "依職業與句子安排道具；只有明確指定的招牌配件才需全套固定",
+    proportions: "可愛 Q 版大頭小身體，比例由畫風及使用者選擇決定，整套一致",
+    illustration: `${style}；全套使用已選畫風，保持線條與陰影一致`,
+    coloring: "由 AI 選擇協調配色；第一張確立後整套維持同一主色系，純白背景",
   };
 }
 function makeStickerIdentityLock(
@@ -4590,6 +4575,7 @@ type TutuSimpleMotherInput = {
   textSize: TextSize; textColor: TextColor; textPosition: TextPosition; fontStyle: FontStyle;
   photoMode: PhotoMode; subMode: RealPhotoSubMode; batchNumber: number;
   mode: LineStickerMode; platform: "line" | "whatsapp"; startIndex: number;
+  characterTraits: OriginalCharacterTraits;
 };
 function tutuStickerAction(text: string, index: number): string {
   const rules: Array<[RegExp, string]> = [
@@ -4612,7 +4598,7 @@ function tutuStickerAction(text: string, index: number): string {
 }
 function buildSimpleFlowPrompt(input: TutuSimpleMotherInput): string {
   const {label, role, style, grid, batchTexts, textSize, textColor, textPosition,
-    fontStyle, photoMode, subMode, batchNumber, mode, platform, startIndex} = input;
+    fontStyle, photoMode, subMode, batchNumber, mode, platform, startIndex, characterTraits} = input;
   const columns = grid === "5x4" ? 5 : 4;
   const rows = grid === "4x2" ? 2 : grid === "5x4" ? 4 : grid === "4x4" ? 4 : 5;
   const canvas = grid === "4x2" ? "2:1 橫向" : grid === "4x4" ? "1:1 正方形" : grid === "5x4" ? "5:4 橫向" : "4:5 直向";
@@ -4620,6 +4606,7 @@ function buildSimpleFlowPrompt(input: TutuSimpleMotherInput): string {
   const guide = photoMode === "original"
     ? `以「${label}」為主題，原創設計親切、有辨識度的貼圖角色。參考情境：${role}。未明確指定的年齡、性別、五官、髮型、服裝和色彩由 AI 原創搭配，不套用固定業務角色模板。`
     : buildRolePrompt(role,photoMode,subMode);
+  const explicitTraits = photoMode === "original" ? explicitCharacterChoices(characterTraits) : "";
   const continuity = batchNumber === 1
     ? "這是第 1 張基準母圖：先設計主角，再讓所有格子固定同一臉型、髮型、衣著與畫風，完成後保留原圖。"
     : "這是後續母圖：請回到同一 AI 對話，附上第 1 張母圖鎖定相同角色、服裝、畫風與比例；照片模式同時附授權原照片。";
@@ -4642,7 +4629,7 @@ function buildSimpleFlowPrompt(input: TutuSimpleMotherInput): string {
 【格數與畫布】第 ${batchNumber} 張；${columns} 欄 × ${rows} 列、共 ${columns * rows} 格；${canvas}。純白背景、等大格子、不畫格線。${mode === "animated" ? "這是供動態貼圖使用的靜止母圖，保留位移空間，不生成動畫影格。" : "靜態貼圖母圖，方便直接切割。"}
 
 【角色】${guide}
-${continuity}
+${explicitTraits ? `【使用者選定外觀，優先遵守】${explicitTraits}。其他未選項目由 AI 依主題設計，不得沿用固定業務模板。\n` : ""}${continuity}
 
 【美術】${photoMode === "realPhoto" ? realPhotoPolicy(subMode).visual : style}。${art}同一張母圖的角色外貌、服裝與頭身比例必須完全一致。
 
