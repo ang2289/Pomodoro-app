@@ -1673,6 +1673,7 @@ export default function LineStickerTool() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const motherSheetInputRef = useRef<HTMLInputElement>(null);
   const previewScrollPendingRef = useRef(false);
+  const inspectScrollPendingRef = useRef(false);
   const closeMotherSheetFixDialog = useCallback(() => setMotherSheetFixIssue(null), []);
   const changeStickerMode = useCallback((mode: LineStickerMode) => {
     if (mode === "animated" && stickerCount > 24 && files.length) {
@@ -1911,6 +1912,7 @@ export default function LineStickerTool() {
         );
 
         setMotherSheetDetections(detections);
+        inspectScrollPendingRef.current = detections.length > 0;
         // 多張母圖可能混用 4×4 + 4×2，不能把上方的單張手動格數強制套到全部。
         if (detections.length > 1) setMotherSheetGrid("auto");
         setActionHint(detections.length > 1
@@ -2138,6 +2140,18 @@ export default function LineStickerTool() {
     }, 160);
     return () => window.clearTimeout(timer);
   }, [files.length, loading, motherSheetNeedsReprocessing, stickerCount]);
+
+  useEffect(() => {
+    if (!inspectScrollPendingRef.current || !motherSheetDetections.length || loading) return;
+    const timer = window.setTimeout(() => {
+      const target = document.getElementById("mother-upload");
+      if (inspectScrollPendingRef.current && target) {
+        inspectScrollPendingRef.current = false;
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }, 120);
+    return () => window.clearTimeout(timer);
+  }, [motherSheetDetections.length, loading]);
 
   const clearAll = useCallback(() => {
     files.forEach((p) => URL.revokeObjectURL(p.url));
@@ -2689,6 +2703,14 @@ export default function LineStickerTool() {
               <summary className="cursor-pointer font-bold">預設設定與上傳說明（選看）</summary>
               <p className="mt-2">預設靜態、8 張、LINE；動態貼圖仍先上傳靜止母圖，再製作動畫。可一次選多張母圖，系統會辨識格數。</p>
             </details>
+            <details className="mt-3 rounded-xl border border-violet-100 bg-white p-3">
+              <summary className="cursor-pointer text-xs font-black text-violet-800">進階：我已經有切好的單張 PNG／WebP</summary>
+              <input ref={fileInputRef} type="file" accept={ACCEPT_TYPES.join(",")} multiple onChange={handleInputChange} className="hidden" />
+              <button type="button" onClick={() => fileInputRef.current?.click()}
+                className={`${STICKER_UI.primaryAction} mt-3 border border-violet-200 bg-white text-violet-900 hover:bg-violet-50`}>
+                選擇單張貼圖（可多選）
+              </button>
+            </details>
           </section>
           <section className="mb-5 rounded-2xl border border-indigo-100 bg-white p-4 shadow-sm">
             <details>
@@ -3157,7 +3179,7 @@ export default function LineStickerTool() {
                         !motherSheetPlanCheck.valid)
                     }
                     onClick={confirmMotherSheetSplit}
-                    className="mt-4 flex min-h-12 w-full items-center justify-center rounded-2xl bg-emerald-600 px-5 py-3 text-center text-sm font-black text-white shadow-md transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300 sm:w-[340px]"
+                    className={`${STICKER_UI.primaryAction} mt-4 bg-emerald-600 text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300`}
                   >
                     {loading && motherSheetDetectionStatus === "cutting"
                       ? "正在切圖、去背與安全整理…"
@@ -3190,32 +3212,6 @@ export default function LineStickerTool() {
                 </button>
               </section>
             ) : null}
-            <details
-              id="line-sticker-pack-tool"
-              className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-5"
-            >
-              <summary className="cursor-pointer text-sm font-bold text-slate-900">備用功能：已有單張 PNG／WebP？點此展開上傳</summary>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept={ACCEPT_TYPES.join(",")}
-                multiple
-                onChange={handleInputChange}
-                className="hidden"
-              />
-              <p className="mt-2 text-xs leading-6 text-slate-600">
-                只有當圖片已經是一張一張分開的透明 PNG／WebP 時才用此功能；
-                若您手上是一張包含 8／16／20 格的大圖，請使用上方紫色「選擇整張母圖並辨識格數」。
-              </p>
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="mt-3 inline-flex min-h-11 w-fit items-center justify-center rounded-lg border-2 border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-800 transition-colors hover:border-violet-500 hover:bg-violet-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
-              >
-                我已切成單張｜選擇 PNG／WebP（可多選）
-              </button>
-            </details>
-
             <details className="rounded-2xl border border-slate-200 bg-white p-4">
               <summary className="cursor-pointer text-sm font-bold text-slate-700">進階：裁切模式與安全留白設定（選看）</summary>
               <div className="mt-3 max-w-md">
@@ -3493,7 +3489,7 @@ export default function LineStickerTool() {
                 <button
                   onClick={continueToAnimated}
                   disabled={!canDownload || loading}
-                  className={`inline-flex min-h-12 w-auto max-w-full shrink-0 items-center justify-center rounded-2xl px-4 py-2.5 text-center text-sm font-black leading-5 shadow-lg transition active:scale-[0.97] sm:min-h-[52px] ${
+                  className={`${STICKER_UI.primaryAction} shadow-lg transition active:scale-[0.97] ${
                     !canDownload || loading
                       ? "cursor-not-allowed bg-slate-200 text-slate-400 shadow-none"
                       : "bg-violet-600 text-white hover:bg-violet-700"
@@ -3512,7 +3508,7 @@ export default function LineStickerTool() {
               <button
                 onClick={exportPlatform === "whatsapp" ? generateWhatsAppZip : generateZip}
                 disabled={!canDownload || loading}
-                className={`inline-flex min-h-12 w-auto max-w-full shrink-0 items-center justify-center rounded-2xl px-4 py-2.5 text-center text-sm font-black leading-5 shadow-lg transition-all active:scale-[0.97] sm:min-h-[52px] ${!canDownload || loading ? "cursor-not-allowed bg-slate-200 text-slate-400 shadow-none" : "bg-blue-600 text-white hover:bg-blue-700 shadow-lg"}`}
+                className={`${STICKER_UI.primaryAction} shadow-lg transition-all active:scale-[0.97] ${!canDownload || loading ? "cursor-not-allowed bg-slate-200 text-slate-400 shadow-none" : "bg-blue-600 text-white hover:bg-blue-700 shadow-lg"}`}
               >
                 {loading
                   ? t("line_sticker_processing")
