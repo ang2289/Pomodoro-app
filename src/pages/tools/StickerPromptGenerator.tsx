@@ -5982,141 +5982,137 @@ export default function StickerPromptGenerator() {
               </div>
 
 
-              {photoMode === "original" && !/情侶|夫妻|新郎|新娘|兩位|一家|全家|寵物|貓咪|狗狗|兔子|佛像|觀音|動物|怪獸|機器人/.test(role) && (
-                <section className="mt-5 rounded-xl border border-slate-200 bg-white p-4" aria-label="自選角色性別、年齡、個性與五官" style={{ display: simpleMode ? "none" : undefined }}>
-                  <h4 className="text-base font-bold text-slate-900">我的角色要長什麼樣子？</h4>
-                  <p className="mt-1 text-sm leading-6 text-slate-600">可以選男性／女性／中性、兒童／年輕／長者、性格、五官、髮型、服裝、招牌配件、配色與頭身比例；整套母圖會鎖定同一人物。</p>
-                  <button type="button"
-                    onClick={() => setCharacterTraits(randomOriginalCharacter())}
-                    className="mt-3 inline-flex min-h-11 items-center justify-center rounded-lg border-2 border-violet-300 bg-violet-50 px-4 py-2 text-sm font-semibold text-violet-800 transition-colors hover:border-violet-600 hover:bg-violet-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
-                  >幫我隨機搭配不同角色 ↻</button>
+              {!simpleMode && photoMode === "original" &&
+                !/情侶|夫妻|新郎|新娘|兩位|一家|全家|寵物|貓咪|狗狗|兔子|佛像|觀音|動物|怪獸|機器人/.test(role) ? (
+                <section className="mt-5 rounded-2xl border-2 border-violet-200 bg-violet-50/50 p-4" aria-label="進階人物下拉設定">
+                  <h4 className="text-lg font-black text-violet-950">進階人物設定（全部由下拉決定）</h4>
+                  <p className="mt-1 text-base leading-7 text-slate-700">
+                    額外選擇的五官、髮型、服裝會直接寫進提示詞，未選仍交給 AI。
+                  </p>
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                    {(Object.keys(ORIGINAL_CHARACTER_OPTIONS) as OriginalCharacterKey[]).map((key) => (
-                      <label key={key} className="text-sm font-medium text-slate-700">
+                    {(["personality", "face", "hair", "outfit"] as OriginalCharacterKey[]).map((key) => (
+                      <label key={key} className="block text-base font-bold text-slate-800">
                         {ORIGINAL_CHARACTER_LABELS[key]}
                         <select value={characterTraits[key]}
-                          onChange={(e) => setCharacterTraits(previous => ({...previous, [key]: e.target.value}))}
-                          className="mt-1.5 min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-violet-500">
+                          onChange={(event) => setCharacterTraits(previous => ({...previous, [key]: event.target.value}))}
+                          className="mt-2 min-h-12 w-full rounded-xl border border-violet-200 bg-white px-3 py-2 text-base text-slate-900">
                           {ORIGINAL_CHARACTER_OPTIONS[key].map(item => <option key={item} value={item}>{item}</option>)}
                         </select>
                       </label>
                     ))}
                   </div>
-                  <p className="mt-3 text-xs leading-5 text-slate-600">
-                    想更特別？下方還能設定髮型、服裝、固定配件、配色、Q 版頭身比及線條畫風。
-                    以上只修改新的生圖提示詞，已生成的圖片不會自動變更。
-                    年齡、性別和個性可能影響角色畫法，但不能保證每位使用者都畫出完全獨一無二的人物。
-                  </p>
-                </section>
-              )}
-
-              {type === "businessPersonal" && photoMode === "original" && (
-                <section className="mt-6 rounded-xl border border-violet-200 bg-violet-50/50 p-4" aria-label="業務專屬角色設計" style={{ display: simpleMode ? "none" : undefined }}>
-                  <h4 className="text-base font-bold text-violet-950">設計我的專屬業務角色</h4>
-                  <p className="mt-1 text-sm leading-6 text-slate-700">
-                    首次進來會自動搭配一組外觀，可再自行修改；設定會保存在這台裝置的瀏覽器，方便下次製作同一角色。整套母圖都會沿用相同造型。
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => setBusinessAvatar(randomBusinessAvatar())}
-                    className="mt-3 inline-flex min-h-11 items-center justify-center rounded-lg border-2 border-violet-300 bg-white px-4 py-2 text-sm font-bold text-violet-800 shadow-sm transition-colors hover:border-violet-600 hover:bg-violet-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
-                  >
-                    換一組不同的角色搭配 ↻
-                  </button>
-                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                    {(Object.keys(BUSINESS_AVATAR_OPTIONS) as BusinessAvatarKey[]).map((key) => (
-                      <label key={key} className="block text-sm font-medium text-slate-700">
-                        {BUSINESS_AVATAR_LABELS[key]}
-                        <select
-                          value={businessAvatar[key]}
-                          onChange={(e) => setBusinessAvatar((previous) => ({ ...previous, [key]: e.target.value }))}
-                          className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-800 focus:border-violet-500"
-                        >
-                          {BUSINESS_AVATAR_OPTIONS[key].map((value) => (
-                            <option key={value} value={value}>{value}</option>
-                          ))}
-                        </select>
-                      </label>
-                    ))}
+                  <details className="mt-4 rounded-xl border border-violet-100 bg-white p-3">
+                    <summary className="cursor-pointer text-base font-bold text-violet-900">更多選項：配件、配色與頭身比例（選看）</summary>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                      {(["signature", "palette", "proportions"] as OriginalCharacterKey[]).map((key) => (
+                        <label key={key} className="block text-base font-bold text-slate-800">
+                          {ORIGINAL_CHARACTER_LABELS[key]}
+                          <select value={characterTraits[key]}
+                            onChange={(event) => setCharacterTraits(previous => ({...previous, [key]: event.target.value}))}
+                            className="mt-2 min-h-12 w-full rounded-xl border border-violet-200 bg-white px-3 py-2 text-base text-slate-900">
+                            {ORIGINAL_CHARACTER_OPTIONS[key].map(item => <option key={item} value={item}>{item}</option>)}
+                          </select>
+                        </label>
+                      ))}
+                    </div>
+                  </details>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <button type="button" onClick={() => setCharacterTraits(randomOriginalCharacter())}
+                      className="min-h-11 rounded-xl border border-violet-300 bg-white px-4 py-2 text-sm font-bold text-violet-800 hover:bg-violet-50">
+                      隨機搭配人物
+                    </button>
+                    <button type="button" onClick={() => setCharacterTraits({ ...ORIGINAL_CHARACTER_DEFAULT })}
+                      className="min-h-11 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
+                      清除外觀指定，交給 AI
+                    </button>
                   </div>
-                  <label className="mt-4 block text-sm font-medium text-slate-700">
-                    個人辨識特徵（選填）
-                    <input
-                      value={businessSignature}
-                      onChange={(e) => setBusinessSignature(e.target.value)}
-                      maxLength={180}
-                      placeholder="例如：左臉小酒窩、溫柔笑眼、珍珠髮夾"
-                      className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-800 focus:border-violet-500"
-                    />
-                  </label>
-                  <p className="mt-2 text-xs leading-5 text-slate-600">
-                    固定角色外觀有助於辨識，但無法保證與其他使用者絕不重複。若希望與本人相似，請在「角色來源」改選真人似顏繪並自行提供有授權的照片。
-                  </p>
                 </section>
-              )}
+              ) : null}
 
-              <section className="mt-6 rounded-xl border border-violet-200 bg-white p-4" aria-label="整套貼圖共用角色設定" style={{ display: simpleMode ? "none" : undefined }}>
-                <h4 className="text-base font-bold text-slate-900">整套角色／畫風鎖定（第 1、2 張都共用）</h4>
-                <p className="mt-1 text-xs leading-6 text-slate-600">
-                  {photoMode === "original"
-                    ? "以下已依主題自動設定。可直接修改人物外觀並鎖定整套母圖。"
-                    : "照片模式會優先鎖定所附照片的本人或寵物外貌；不再套用預設陌生人物的臉型、髮型及服裝。畫風依上方選擇。"}
-                </p>
-                {photoMode === "original" && <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                  {IDENTITY_FIELDS.map((field) => (
-                    <label key={field.key} className="text-xs font-semibold text-slate-700">
-                      {field.label}
-                      <textarea
-                        value={identity[field.key]}
-                        onChange={(e) => setIdentity(previous => ({ ...previous, [field.key]: e.target.value }))}
-                        placeholder={field.hint}
-                        rows={2}
-                        maxLength={500}
-                        className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-normal leading-6 text-slate-800 focus:border-violet-500"
-                      />
-                    </label>
-                  ))}
-                </div>}
-                <p className="mt-2 text-xs leading-5 text-slate-500">
-                  文字字型、大小、顏色與位置直接沿用上方所選值。照片模式請在 AI 生圖時另外附上有權使用的照片。
-                </p>
-              </section>
+              {!simpleMode && type === "businessPersonal" && photoMode === "original" ? (
+                <details className="mt-4 rounded-2xl border border-violet-200 bg-white p-4">
+                  <summary className="cursor-pointer text-base font-black text-violet-900">
+                    舊版業務個人品牌外觀設定（選用）
+                  </summary>
+                  <label className="mt-3 flex items-start gap-3 text-base font-bold leading-7 text-slate-800">
+                    <input type="checkbox" checked={useBusinessAvatar}
+                      onChange={(event) => setUseBusinessAvatar(event.target.checked)}
+                      className="mt-1 h-5 w-5 accent-violet-600" />
+                    啟用舊版業務角色設定（預設不使用）
+                  </label>
+                  {useBusinessAvatar ? (
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      {(Object.keys(BUSINESS_AVATAR_OPTIONS) as BusinessAvatarKey[]).map((key) => (
+                        <label key={key} className="block text-base font-bold text-slate-800">
+                          {BUSINESS_AVATAR_LABELS[key]}
+                          <select value={businessAvatar[key]}
+                            onChange={(event) => setBusinessAvatar(previous => ({ ...previous, [key]: event.target.value }))}
+                            className="mt-2 min-h-12 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-base text-slate-900">
+                            {BUSINESS_AVATAR_OPTIONS[key].map(value => <option key={value} value={value}>{value}</option>)}
+                          </select>
+                        </label>
+                      ))}
+                      <label className="sm:col-span-2 block text-base font-bold text-slate-800">
+                        其他特徵（選填）
+                        <input value={businessSignature} onChange={(event) => setBusinessSignature(event.target.value)}
+                          maxLength={180} placeholder="例如：左臉小酒窩"
+                          className="mt-2 min-h-12 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-base text-slate-900" />
+                      </label>
+                    </div>
+                  ) : <p className="mt-2 text-sm text-slate-600">目前使用上方下拉設定，不套用舊業務角色。</p>}
+                </details>
+              ) : null}
 
-              <label style={{ display: simpleMode ? "none" : undefined }} className="mt-5 block text-xs font-black text-slate-500">
-                角色設定
-              </label>
-              <textarea style={{ display: simpleMode ? "none" : undefined }}
-                value={role}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setRole(value);
-                  setIdentity(previous => ({
-                    ...previous,
-                    appearance: previous.appearance === role ? value : previous.appearance,
-                  }));
-                }}
-                rows={5}
-                className="mt-2 min-h-[140px] w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm leading-7 text-slate-700 outline-none focus:border-violet-400"
-              />
-
-              <label style={{ display: simpleMode ? "none" : undefined }} className="mt-5 block text-xs font-black text-slate-500">
-                風格描述
-              </label>
-              <textarea style={{ display: simpleMode ? "none" : undefined }}
-                value={style}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setStyle(value);
-                  setIdentity(previous => ({
-                    ...previous,
-                    illustration: previous.illustration.startsWith(style)
-                      ? previous.illustration.replace(style, value)
-                      : previous.illustration,
-                  }));
-                }}
-                rows={4}
-                className="mt-2 min-h-[110px] w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm leading-7 text-slate-700 outline-none focus:border-violet-400"
-              />
+              {!simpleMode ? (
+                <details className="mt-4 rounded-2xl border border-slate-200 bg-white p-4" aria-label="手動編輯角色描述">
+                  <summary className="cursor-pointer text-base font-black text-slate-800">
+                    手動文字微調（進階可選，預設不使用）
+                  </summary>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    一般使用只需上方下拉。若你熟悉提示詞、真的需要手動修改角色描述，再啟用下方開關。
+                  </p>
+                  <label className="mt-3 flex items-center gap-3 text-base font-bold text-slate-800">
+                    <input type="checkbox" checked={manualTextEnabled}
+                      onChange={(event) => {
+                        if (event.target.checked) {
+                          setIdentity(lockedIdentity);
+                          setRole(templates[type].role);
+                          setStyle("");
+                        }
+                        setManualTextEnabled(event.target.checked);
+                      }}
+                      className="h-5 w-5 accent-violet-600" />
+                    啟用手動文字編輯
+                  </label>
+                  {manualTextEnabled ? (
+                    <div className="mt-4 space-y-4">
+                      <p className="text-sm font-bold leading-6 text-violet-800">
+                        有指定外觀時仍以已選下拉設定優先；未指定的角色描述才使用手動文字。
+                      </p>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        {IDENTITY_FIELDS.map((field) => (
+                          <label key={field.key} className="text-base font-bold text-slate-800">
+                            {field.label}
+                            <textarea value={identity[field.key]}
+                              onChange={(event) => setIdentity(previous => ({ ...previous, [field.key]: event.target.value }))}
+                              placeholder={field.hint} rows={2} maxLength={500}
+                              className="mt-2 min-h-[92px] w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-base font-normal leading-7 text-slate-900" />
+                          </label>
+                        ))}
+                      </div>
+                      <label className="block text-base font-bold text-slate-800">額外角色情境（選填）
+                        <textarea value={role} onChange={(event) => setRole(event.target.value)}
+                          rows={3} className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-base font-normal leading-7 text-slate-900" />
+                      </label>
+                      <label className="block text-base font-bold text-slate-800">其他畫面描述（選填，不覆蓋畫風下拉）
+                        <textarea value={style} onChange={(event) => setStyle(event.target.value)}
+                          rows={2} placeholder="可補充場景與光影，不必重複設定 2D／3D"
+                          className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-base font-normal leading-7 text-slate-900" />
+                      </label>
+                    </div>
+                  ) : null}
+                </details>
+              ) : null}
 
               <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
