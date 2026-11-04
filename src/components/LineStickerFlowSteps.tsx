@@ -20,8 +20,10 @@ export default function LineStickerFlowSteps({
     if (!location.hash) return;
     let anchorId = location.hash.slice(1);
     try { anchorId = decodeURIComponent(anchorId); } catch { /* 保留原始 hash */ }
-    const target = document.getElementById(anchorId)
-      ?? (anchorId === "mother-split" ? document.getElementById("mother-upload") : null);
+    const nextAnchor = anchorId === "mother-upload" && location.pathname === "/tools/line-sticker"
+      ? "step3-options" : anchorId;
+    const target = document.getElementById(nextAnchor)
+      ?? (nextAnchor === "mother-split" ? document.getElementById("mother-upload") || document.getElementById("step3-options") : null);
     target?.scrollIntoView({ behavior: "auto", block: "start" });
   }, [location.pathname, location.hash]);
 
