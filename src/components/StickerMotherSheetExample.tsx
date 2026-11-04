@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getMotherSheetPlan, type LineStickerCount } from "@/lib/lineStickerFlow";
 
 /**
@@ -17,8 +17,30 @@ export default function StickerMotherSheetExample({
   count = 16,
   variant = "intro",
 }: StickerMotherSheetExampleProps) {
-  const modalRef = useRef<HTMLDialogElement>(null);
+  const imageTriggerRef = useRef<HTMLButtonElement>(null);
+  const modalCloseRef = useRef<HTMLButtonElement>(null);
+  const [isImageOpen, setIsImageOpen] = useState(false);
   const [imageFailed, setImageFailed] = useState(false);
+
+  const closeImage = () => {
+    setIsImageOpen(false);
+    // Return keyboard focus to the thumbnail after closing.
+    requestAnimationFrame(() => imageTriggerRef.current?.focus());
+  };
+
+  useEffect(() => {
+    if (!isImageOpen) return;
+    modalCloseRef.current?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setIsImageOpen(false);
+        requestAnimationFrame(() => imageTriggerRef.current?.focus());
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [isImageOpen]);
   const plan = getMotherSheetPlan(count);
   const isUpload = variant === "upload";
   const planText = plan
@@ -50,7 +72,8 @@ export default function StickerMotherSheetExample({
           ) : (
             <button
               type="button"
-              onClick={() => modalRef.current?.showModal()}
+              ref={imageTriggerRef}
+              onClick={() => setIsImageOpen(true)}
               className="block w-full rounded-lg focus-visible:outline focus-visible:outline-4 focus-visible:outline-sky-500"
               aria-label="放大花店 16 格母圖教學示範"
             >
@@ -88,20 +111,30 @@ export default function StickerMotherSheetExample({
         </div>
       </div>
 
-      {!imageFailed ? (
-        <dialog ref={modalRef}
-          onClick={(event) => { if (event.target === modalRef.current) modalRef.current?.close(); }}
-          className="w-[min(96vw,950px)] max-h-[94vh] rounded-2xl border border-slate-300 bg-white p-3 shadow-2xl backdrop:bg-slate-900/70"
-          aria-label="母圖教學圖片放大檢視">
-          <div className="mb-2 flex items-center justify-between gap-3">
-            <p className="text-base font-black text-slate-900">花店 4×4 母圖示範</p>
-            <form method="dialog"><button type="submit" className="rounded-xl bg-blue-700 px-4 py-2 text-base font-black text-white">關閉圖片</button></form>
+      {isImageOpen && !imageFailed ? (
+        <div
+          role="presentation"
+          onClick={(event) => { if (event.target === event.currentTarget) closeImage(); }}
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/75 p-3 sm:p-5"
+        >
+          <div role="dialog" aria-modal="true" aria-label="花店母圖教學圖片放大檢視"
+            className="flex max-h-[94dvh] w-full max-w-[980px] flex-col overflow-hidden rounded-2xl bg-white p-3 shadow-2xl sm:p-4">
+            <div className="mb-3 flex shrink-0 items-center justify-between gap-3">
+              <p className="text-base font-black text-slate-900">花店 4×4 母圖示範</p>
+              <button ref={modalCloseRef} type="button" onClick={closeImage}
+                className="min-h-12 shrink-0 rounded-xl bg-blue-700 px-5 py-2 text-base font-black text-white hover:bg-blue-800 focus-visible:outline focus-visible:outline-4 focus-visible:outline-blue-300">
+                關閉圖片 ×
+              </button>
+            </div>
+            <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto">
+              <img src={GUIDE_IMAGE}
+                alt="完整母圖教學：AI 先畫整張母圖，回本站上傳，系統自動切成 16 張並匯出 ZIP"
+                className="mx-auto block max-h-[calc(94dvh-6rem)] max-w-full object-contain"
+                onError={() => { setImageFailed(true); setIsImageOpen(false); }} />
+            </div>
+            <p className="mt-2 shrink-0 text-center text-sm font-bold text-slate-700">按右上角「關閉圖片」、Esc，或點圖片外側即可返回操作</p>
           </div>
-          <div className="max-h-[82vh] overflow-y-auto">
-            <img src={GUIDE_IMAGE} alt="完整母圖教學：AI 畫出一張大圖，回本網站上傳，系統自動切成 16 張並匯出 ZIP"
-              className="mx-auto h-auto w-full object-contain" />
-          </div>
-        </dialog>
+        </div>
       ) : null}
     </section>
   );
