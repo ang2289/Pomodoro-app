@@ -60,8 +60,8 @@ const DEFAULT_SHOWCASE_QR_URL = "https://store.line.me/stickershop/author/553058
 const QR_LAST_URL_STORAGE = "tutu_showcase_qr_v1";
 const QR_RECENT_URL_STORAGE = "tutu_showcase_qr_recent_v1";
 function safeStickerThemeName(value: string) {
-  return (value.trim() || "未命名貼圖")
-    .replace(/[\\/:*?"<>|\x00-\x1f]/g, "_").replace(/\s+/g, "_").slice(0, 40) || "未命名貼圖";
+  return (value.trim() || "我的貼圖")
+    .replace(/[\\/:*?"<>|\x00-\x1f]/g, "_").replace(/\s+/g, "_").slice(0, 40) || "我的貼圖";
 }
 function validShowcaseUrl(value: string) {
   try {
@@ -1517,24 +1517,25 @@ async function createBatchShowcaseVideo(
     ctx.textBaseline = "middle";
     ctx.fillStyle = "#744e61";
     ctx.font = 'bold 58px "Microsoft JhengHei", sans-serif';
-    ctx.fillText(platform === "whatsapp" ? "WhatsApp 動態貼圖展示" : "LINE 動態貼圖展示", width / 2, 355);
+    ctx.fillText(platform === "whatsapp" ? "WhatsApp 動態貼圖展示" : "LINE 動態貼圖展示", width / 2, 315);
     ctx.fillStyle = "#ffffff";
     ctx.shadowColor = "rgba(93, 72, 84, 0.14)";
     ctx.shadowBlur = 32;
     ctx.beginPath();
-    ctx.roundRect(52, 490, 976, 830, 46);
+    // Social video only: enlarge the showcase card without changing LINE APNG safe bounds.
+    ctx.roundRect(30, 410, 1020, 1040, 48);
     ctx.fill();
     ctx.shadowBlur = 0;
-    const ratio = Math.min(900 / bitmap.width, 752 / bitmap.height);
+    const ratio = Math.min(1000 / bitmap.width, 920 / bitmap.height);
     const w = Math.round(bitmap.width * ratio);
     const h = Math.round(bitmap.height * ratio);
-    ctx.drawImage(bitmap, (width - w) / 2, 905 - h / 2, w, h);
+    ctx.drawImage(bitmap, (width - w) / 2, 930 - h / 2, w, h);
     ctx.fillStyle = "#886c7a";
     ctx.font = 'bold 46px "Microsoft JhengHei", sans-serif';
-    ctx.fillText(`${String(index + 1).padStart(2, "0")} / ${String(sources.length).padStart(2, "0")}`, width / 2, 1480);
+    ctx.fillText(`${String(index + 1).padStart(2, "0")} / ${String(sources.length).padStart(2, "0")}`, width / 2, 1550);
   };
 
-  const drawQrEnding = () => {
+  const drawQrEnding = (progress: number) => {
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, width, height);
     ctx.textAlign = "center";
@@ -1546,10 +1547,15 @@ async function createBatchShowcaseVideo(
     ctx.fillText("掃描 QR Code 查看", width / 2, 560);
     ctx.fillStyle = "#f4f7ff";
     ctx.fillRect(285, 646, 510, 510);
+    // Keep QR pixels steady for scanning. Animate ONLY a small progress bar beneath.
     ctx.drawImage(qrImage, 330, 691, 420, 420);
     ctx.font = 'bold 34px "Microsoft JhengHei", sans-serif';
     ctx.fillStyle = "#53627a";
     ctx.fillText("LINE／WhatsApp 貼圖工坊", width / 2, 1270);
+    ctx.fillStyle = "#e2e8f0";
+    ctx.fillRect(255, 1450, 570, 12);
+    ctx.fillStyle = "#6366f1";
+    ctx.fillRect(255, 1450, Math.max(2, Math.round(570 * Math.max(0, Math.min(1, progress)))), 12);
   };
   const recorder = new MediaRecorderCtor(stream, {
     mimeType,
@@ -1626,9 +1632,23 @@ async function createBatchShowcaseVideo(
     if (actualCaptureMs > idealCaptureMs + maxAllowedLagMs) {
       throw new Error("影片錄製超過預定時長，為避免匯出卡住的 MP4，已停止下載。");
     }
-    drawQrEnding();
-    await waitMs(2900);
+    // Drawing a single still QR then sleeping can produce only one recorded frame
+    // (observed: video stops near 32 seconds instead of 35 seconds). Force a
+    // changing footer every 100 ms while leaving the actual QR perfectly still.
+    // This gives MediaRecorder timestamped frames throughout the full end card.
+    const qrEndingStartedAt = performance.now();
+    const qrEndingDurationMs = 3200;
+    const qrEndingStepMs = 100;
+    const videoTrack = stream.getVideoTracks()[0] as MediaStreamTrack & { requestFrame?: () => void };
+    for (let step = 0; step <= qrEndingDurationMs / qrEndingStepMs; step += 1) {
+      const dueAt = qrEndingStartedAt + step * qrEndingStepMs;
+      const remaining = dueAt - performance.now();
+      if (remaining > 0) await waitMs(remaining);
+      drawQrEnding(step * qrEndingStepMs / qrEndingDurationMs);
+      videoTrack.requestFrame?.();
+    }
     if (recorder.state === "recording") {
+      await waitMs(150);
       recorder.requestData();
       await waitMs(150);
       recorder.stop();
@@ -1702,7 +1722,10 @@ const AnimatedLineStickerTool: React.FC = () => {
       return Array.isArray(saved) ? saved.filter((url): url is string => typeof url === "string" && validShowcaseUrl(url)).slice(0, 8) : [];
     } catch { return []; }
   });
-  const stickerThemeForFile = safeStickerThemeName(handoffTheme || readLineStickerProject()?.theme || "");
+  // null means using the original project theme; a typed value overrides only the filename.
+  const [stickerFileThemeOverride, setStickerFileThemeOverride] = useState<string | null>(null);
+  const projectThemeForFile = handoffTheme || readLineStickerProject()?.theme || "";
+  const stickerThemeForFile = safeStickerThemeName(stickerFileThemeOverride ?? projectThemeForFile);
   const rememberShowcaseQr = () => {
     const url = showcaseQrUrl.trim();
     if (!validShowcaseUrl(url)) throw new Error("請輸入正確的 http 或 https QR 網址。");
@@ -2699,6 +2722,20 @@ const AnimatedLineStickerTool: React.FC = () => {
         <div className="mx-auto w-full max-w-[1480px]">
         <LineStickerFlowSteps activeStep={5} mode="animated" />
         <section id="animated-sticker-batch" className="scroll-mt-24 mb-5 rounded-2xl border border-emerald-200 bg-white p-4">
+          <label className="mb-4 block text-sm font-black text-slate-900">
+            貼圖主題（作為 ZIP／MP4 下載檔名）
+            <input
+              type="text"
+              value={stickerFileThemeOverride ?? projectThemeForFile}
+              onChange={(event) => setStickerFileThemeOverride(event.target.value)}
+              placeholder="例如：社區總幹事"
+              maxLength={40}
+              className="mt-2 block min-h-12 w-full max-w-xl rounded-xl border-2 border-violet-200 bg-white px-4 py-3 text-base font-bold text-slate-900"
+            />
+          </label>
+          <p className="mb-4 text-xs font-bold text-violet-800">
+            目前檔名主題：{stickerThemeForFile}（留空會使用「我的貼圖」）
+          </p>
           <p className="text-sm font-black text-slate-900">輸出平台｜動態貼圖</p>
           <div className="mt-3 grid w-full max-w-[520px] grid-cols-2 items-stretch gap-3" role="group" aria-label="選擇動態貼圖輸出平台">
             {(["line", "whatsapp"] as const).map((platform) => (
