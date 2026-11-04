@@ -2788,59 +2788,33 @@ const AnimatedLineStickerTool: React.FC = () => {
               <p className="text-sm font-black text-slate-900">
                 選擇動態貼圖製作方式
               </p>
-              <p className="mt-1 text-xs leading-5 text-slate-500">
-                三種方式都會保留；有自己設計好的動作 PNG，請使用「自備動作 PNG 影格」。
-              </p>
+              <details className="mt-2 text-xs leading-5 text-slate-500">
+                <summary className="cursor-pointer font-bold">選擇方式說明（選看）</summary>
+                <p className="mt-1">已有自己設計的動作影格，請選「自備動作 PNG 影格」。</p>
+              </details>
             </div>
             <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-black text-amber-700">
               可隨時切換，不會刪掉已選圖片
             </span>
           </div>
 
-          <div className="mt-4 grid gap-3 md:grid-cols-3">
-            {([
-              [
-                "single",
-                "✨",
-                "單張 PNG 自動做動態",
-                "上傳 1 張靜態貼圖，選動作效果後自動產生動畫影格。",
-              ],
-              [
-                "manual",
-                "🧩",
-                "自備動作 PNG 影格",
-                "你已自己畫好每個動作影格時使用；可排序、預覽，再輸出 APNG／GIF／ZIP。",
-              ],
-              [
-                "batch",
-                "📦",
-                "8／16／24 張整套自動",
-                "一批貼圖可選多效果輪用、全部同一效果，或每張自己指定，最後一次整理成 LINE 上架 ZIP。",
-              ],
-            ] as const).map(([mode, icon, title, desc]) => {
-              const active = workflowMode === mode;
-              return (
-                <button
-                  key={mode}
-                  type="button"
-                  onClick={() => setWorkflowMode(mode)}
-                  className={`rounded-2xl border p-4 text-left transition ${
-                    active
-                      ? "border-violet-500 bg-violet-50 ring-2 ring-violet-100"
-                      : "border-slate-200 bg-slate-50 hover:border-violet-200 hover:bg-white"
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl">{icon}</span>
-                    <span className="text-sm font-black leading-5 text-slate-900">
-                      {title}
-                    </span>
-                  </div>
-                  <p className="mt-2 text-xs leading-5 text-slate-600">{desc}</p>
-                </button>
-              );
-            })}
-          </div>
+          <label className="mt-4 block text-sm font-black text-slate-900">製作方式（三選一）
+            <select value={workflowMode} onChange={(event) => setWorkflowMode(event.target.value as WorkflowMode)}
+              className="mt-2 min-h-12 w-full max-w-xl rounded-xl border-2 border-violet-200 bg-white px-4 py-3 text-base font-black text-violet-900">
+              <option value="single">單張 PNG 自動做動態</option>
+              <option value="manual">自備動作 PNG 影格</option>
+              <option value="batch">8／16／24 張整套自動</option>
+            </select>
+          </label>
+          <p className="mt-2 text-sm font-bold text-violet-800">
+            {workflowMode === "single" ? "下一步：上傳單張 PNG，挑選動作。" : workflowMode === "manual" ? "下一步：上傳各張動作影格。" : "下一步：確認整套貼圖，再選擇動畫效果。"}
+          </p>
+          <details className="mt-3 text-xs leading-6 text-slate-600">
+            <summary className="cursor-pointer font-bold">三種製作方式說明（選看）</summary>
+            <p className="mt-2">單張 PNG：上傳一張貼圖，由工具製作動畫。</p>
+            <p>自備影格：自行準備多張動作 PNG，再匯出 APNG。</p>
+            <p>整套自動：一批 8／16／24 張一次套用動畫並下載 ZIP。</p>
+          </details>
         </section>
 
         {workflowMode === "single" ? (
@@ -3082,50 +3056,20 @@ const AnimatedLineStickerTool: React.FC = () => {
                   <span className="text-sm font-black text-slate-800">
                     動畫套用方式
                   </span>
-                  <p className="mt-1 text-xs leading-5 text-slate-600">
-                    可選「多效果輪用」、「全部同一效果」，或「每張自己選效果」。一般使用建議直接用多效果輪用；想統一品牌節奏則選同一效果。
-                  </p>
-                  <div className="mt-3 grid gap-2">
-                    <button
-                      type="button"
-                      disabled={batchBusy}
-                      onClick={() => setBatchMotionMode("mixed")}
-                      className={`rounded-xl border px-3 py-3 text-left transition ${
-                        batchMotionMode === "mixed"
-                          ? "border-violet-500 bg-violet-50 ring-2 ring-violet-100"
-                          : "border-slate-200 bg-white hover:border-violet-200"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-black text-slate-900">
-                          ✨ 多效果輪用（推薦）
-                        </span>
-                        {batchMotionMode === "mixed" ? (
-                          <span className="rounded-full bg-violet-600 px-2 py-1 text-[10px] font-black text-white">
-                            已選
-                          </span>
-                        ) : null}
-                      </div>
-                      <p className="mt-1 text-xs leading-5 text-slate-600">
-                        每張貼圖自動換一種動畫，整套不會全部動得一樣。
-                      </p>
-                    </button>
-
-                    <button
-                      type="button"
-                      disabled={batchBusy}
-                      onClick={() => setBatchMotionMode("single")}
-                      className={`rounded-xl border px-3 py-3 text-left transition ${
-                        batchMotionMode === "single"
-                          ? "border-emerald-500 bg-emerald-50 ring-2 ring-emerald-100"
-                          : "border-slate-200 bg-white hover:border-emerald-200"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-black text-slate-900">
-                          🎬 全部使用同一效果
-                        </span>
-                        {batchMotionMode === "single" ? (
+                  <label className="mt-3 block text-xs font-black text-slate-700">動畫效果（三選一）
+                    <select value={batchMotionMode} disabled={batchBusy}
+                      onChange={(event) => setBatchMotionMode(event.target.value as BatchMotionMode)}
+                      className="mt-2 min-h-12 w-full max-w-xl rounded-xl border-2 border-violet-200 bg-white px-4 py-3 text-base font-black text-violet-900 disabled:opacity-60">
+                      <option value="mixed">多效果輪用（推薦）</option>
+                      <option value="single">全部使用同一效果</option>
+                      <option value="custom">每張自己選效果</option>
+                    </select>
+                  </label>
+                  <details className="mt-2 text-xs leading-6 text-slate-600">
+                    <summary className="cursor-pointer font-bold">效果差異說明（選看）</summary>
+                    <p className="mt-1">多效果輪用：每張交替用不同動作；全部同一效果：整套節奏一致；每張自己選效果：逐張指定動畫。</p>
+                  </details>
+                  {batchMotionMode === "single" ? (
                           <span className="rounded-full bg-emerald-600 px-2 py-1 text-[10px] font-black text-white">
                             已選
                           </span>
