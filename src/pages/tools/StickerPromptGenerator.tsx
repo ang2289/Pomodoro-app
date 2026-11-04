@@ -6114,6 +6114,22 @@ export default function StickerPromptGenerator() {
                 </details>
               ) : null}
 
+              <div role="status" aria-live="polite" className="mt-5 rounded-xl border border-sky-200 bg-sky-50 p-4 text-base leading-7 text-sky-950">
+                <p className="font-black">目前 AI 提示詞會使用你的選擇：</p>
+                <p className="mt-1">
+                  畫風：{photoMode === "realPhoto" ? "依授權照片模式" : optionLabel(ILLUSTRATION_STYLE_OPTIONS, illustrationStyle)}；
+                  文字：{optionLabel(TEXT_SIZE_OPTIONS, textSize)}、
+                  {optionLabel(FONT_STYLE_OPTIONS, fontStyle)}、
+                  {optionLabel(TEXT_POSITION_OPTIONS, textPosition)}。
+                </p>
+                {photoMode === "original" ? (
+                  <p className="mt-1">人物：{explicitCharacterChoices(characterTraits) || "未指定性別、年齡與外觀，由 AI 依主題原創"}。</p>
+                ) : null}
+                <p className="mt-1 font-bold text-sky-800">
+                  {simpleMode ? "簡易：其餘交給 AI 設計。" : "進階：有額外選擇才加入外觀；手動文字未啟用時不會套用舊模板。"}
+                </p>
+              </div>
+
               <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                   <label className="block text-sm font-black leading-none text-slate-600">
