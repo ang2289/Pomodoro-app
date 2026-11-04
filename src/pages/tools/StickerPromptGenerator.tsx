@@ -4374,13 +4374,16 @@ function buildPrompt(
   const safeStylePrompt = photoMode === "realPhoto" ? photoPolicy.flavor : stickerStylePrompt;
   const photoPerformance = photoMode === "realPhoto"
     ? photoPolicy.variation
-    : "每張貼圖都要有不同表情與動作，整體風格一致、乾淨可愛、適合 LINE 貼圖使用。";
+    : "每張貼圖都要有不同表情、頭部朝向、視線與身體動作，不能大多數格子都畫成同一種三分之四側臉或歪頭微笑；角色的五官、髮型、服裝仍須整套一致。";
   const individualPlan = photoMode === "realPhoto" && subMode === "expressive"
     ? `\n\n【逐格表情與動作設計｜不可省略】\n${buildExpressiveCellPlan(lines, startIndex)}\n每格須依上面指定的表情、頭部角度及動作區別角色演出。`
     : "";
   const whitespaceRules = buildMotherSheetWhitespaceRules(grid, stickerMode);
+  const headAnglePlan = photoMode === "realPhoto" && subMode === "unchanged"
+    ? ""
+    : `\n【逐格頭部角度與鏡位差異｜不印到貼圖上】\n${lines.map((_, i) => `第 ${i + 1} 格：${tutuStickerHeadAngle(startIndex + i)}`).join("\n")}\n同一套角色固定相同臉型、髮型、服裝、配色；只改變頭部方向、視線、肩膀姿態和表情，不能把整張母圖畫成全部相同的 45 度半身微笑。\n`;
 
-  return `請設計一張 ${platform === "whatsapp" ? "WhatsApp" : "LINE"} ${label}大圖，白色背景，${style}。\n\n商用販售安全：每格只能出現下方指定的主要貼圖短句，禁止在卡片、紙袋、花籃、店招、制服、道具額外產生任何文字、英文 NEW、價格、網址、QR Code、商標、店家 Logo、品牌字樣或促銷宣傳；${photoMode === "realPhoto" ? (subMode === "expressive" ? "以有權使用的真實照片作為唯一人物身份參考，可依指令生成自然的新表情與動作，不得模仿陌生人或加入未授權品牌。" : "只能使用已獲授權的原始真人照片，不得模仿未授權人物或加入品牌元素。") : "角色、衣服與道具皆需為原創，不可仿畫知名品牌角色。"}圖文清晰易讀、避免多手多腳、勿遮住文字。\n\n${rolePrompt}\n\n${whitespaceRules}\n\n風格加強：${safeStylePrompt}。\n\n真人／原創設定：${photoModePrompt}。${photoReminder}\n\n請畫成 ${gridInfo.layoutText}。每格貼圖都要獨立清楚、平均排列。每一格的角色＋文字＋裝飾只佔該格中央約 70%～74%，上下左右至少保留約 13%～15% 的純白安全留白，格與格之間必須看得到明顯白色空間，方便後續平均切割。角色與文字都要完整置中在各自格子內，不可超出邊界、不可跨格、不可互相重疊；每格最外圈至少 13% 純白，格線附近不可有花瓣、陰影或字；若空間不足，寧可把角色與文字整體縮小，也不要貼邊。\n\n文字設定（優先於其他畫風描述）：請使用繁體中文。字型造型遵守「${fontStylePrompt}」；文字大小遵守「${textSizePrompt}」；填色、描邊與文字效果遵守「${textColorPrompt}」；**文字所在區域必須嚴格遵守「${textPositionPrompt}」**。若背景情境或貼圖風格暗示不同的位置，仍以本次「文字位置」選項為準；不可自行改變為其他排版。文字必須清楚好讀，文字與頭髮、臉、手勢、手機、文件等主體至少保留明顯空隙，不可壓在人物或道具上；文字四周也要保留白邊，不要貼近格子邊界，不要切到字，不可出現序號、數字、標題、格號或列表符號。\n\n${photoPerformance}${individualPlan}\n\n貼圖文字如下：\n${numberedTexts}`;
+  return `請設計一張 ${platform === "whatsapp" ? "WhatsApp" : "LINE"} ${label}大圖，白色背景，${style}。\n\n商用販售安全：每格只能出現下方指定的主要貼圖短句，禁止在卡片、紙袋、花籃、店招、制服、道具額外產生任何文字、英文 NEW、價格、網址、QR Code、商標、店家 Logo、品牌字樣或促銷宣傳；${photoMode === "realPhoto" ? (subMode === "expressive" ? "以有權使用的真實照片作為唯一人物身份參考，可依指令生成自然的新表情與動作，不得模仿陌生人或加入未授權品牌。" : "只能使用已獲授權的原始真人照片，不得模仿未授權人物或加入品牌元素。") : "角色、衣服與道具皆需為原創，不可仿畫知名品牌角色。"}圖文清晰易讀、避免多手多腳、勿遮住文字。\n\n${rolePrompt}\n\n${whitespaceRules}\n\n風格加強：${safeStylePrompt}。\n\n真人／原創設定：${photoModePrompt}。${photoReminder}\n\n請畫成 ${gridInfo.layoutText}。每格貼圖都要獨立清楚、平均排列。每一格的角色＋文字＋裝飾只佔該格中央約 70%～74%，上下左右至少保留約 13%～15% 的純白安全留白，格與格之間必須看得到明顯白色空間，方便後續平均切割。角色與文字都要完整置中在各自格子內，不可超出邊界、不可跨格、不可互相重疊；每格最外圈至少 13% 純白，格線附近不可有花瓣、陰影或字；若空間不足，寧可把角色與文字整體縮小，也不要貼邊。\n\n文字設定（優先於其他畫風描述）：請使用繁體中文。字型造型遵守「${fontStylePrompt}」；文字大小遵守「${textSizePrompt}」；填色、描邊與文字效果遵守「${textColorPrompt}」；**文字所在區域必須嚴格遵守「${textPositionPrompt}」**。若背景情境或貼圖風格暗示不同的位置，仍以本次「文字位置」選項為準；不可自行改變為其他排版。文字必須清楚好讀，文字與頭髮、臉、手勢、手機、文件等主體至少保留明顯空隙，不可壓在人物或道具上；文字四周也要保留白邊，不要貼近格子邊界，不要切到字，不可出現序號、數字、標題、格號或列表符號。\n\n${photoPerformance}${individualPlan}${headAnglePlan}\n\n貼圖文字如下：\n${numberedTexts}`;
 }
 
 function buildStablePrompt(
@@ -4579,6 +4582,32 @@ type TutuSimpleMotherInput = {
   mode: LineStickerMode; platform: "line" | "whatsapp"; startIndex: number;
   characterTraits: OriginalCharacterTraits;
 };
+/**
+ * 逐格鏡位：頭部方向、視線及肩膀姿態要有差異。
+ * 只控制動作構圖，不改變客戶在下拉選擇的臉型、髮型、服裝與畫風。
+ * 連續母圖用全套索引，因此 24 張也沿用不同鏡位排序。
+ */
+function tutuStickerHeadAngle(globalIndex: number): string {
+  const variations = [
+    "頭部正面、直視畫面，肩膀自然展開",
+    "臉向畫面左前方約 30 度，視線看左邊道具",
+    "臉向畫面右前方約 35 度，目光回看觀眾",
+    "頭稍微俯下，視線看向手上的工作內容",
+    "上半身左轉、頭回望觀眾，微微歪頭",
+    "左側臉約 60 度，側身向前行動",
+    "右側臉約 60 度，轉頭看向同事或道具",
+    "正面略抬頭、眼睛向上看，雙臂動作明顯",
+    "身體往右前方，臉轉回鏡頭",
+    "從左側視角看角色，微低頭專注",
+    "正面歪頭向左，帶誇張驚喜表情",
+    "肩膀朝左、臉向右，呈回頭微笑動作",
+    "正面歪頭向右，視線看畫面下方",
+    "半側面向左、雙手前伸與道具互動",
+    "半側面向右、側身移動並露出表情",
+    "略俯身前傾、由下往上看觀眾",
+  ];
+  return variations[((globalIndex % variations.length) + variations.length) % variations.length];
+}
 function tutuStickerAction(text: string, index: number): string {
   const rules: Array<[RegExp, string]> = [
     [/收到|確認|了解|明白/, "點頭、確認手勢"],
@@ -4621,11 +4650,12 @@ function buildSimpleFlowPrompt(input: TutuSimpleMotherInput): string {
       ? (index % 2 ? "人物左、文字右" : "文字左、人物右")
       : textPosition === "bottom" ? "文字下方" : "文字上方";
     const action = realUnchanged ? "沿用原照片已有姿勢，只做排版" : tutuStickerAction(line,index);
-    return `${i+1}.「${line}」｜${position}｜動作：${action}`;
+    const pose = realUnchanged ? "" : `｜鏡位：${tutuStickerHeadAngle(index)}`;
+    return `${i+1}.「${line}」｜${position}｜動作：${action}${pose}`;
   }).join("\n");
   const art = realUnchanged
     ? "僅以授權原照片去背、裁切與排版，不變更真人身分和既有表情姿勢。"
-    : "精品商用貼圖品質：生動五官、細緻髮束、乾淨輪廓、協調配色與柔和陰影；每格按照短句設計不同表情、姿態及道具，允許站姿、坐姿、轉身與全身動作，避免大量相似微笑半身照。使用者選擇 2D 就保持 2D，其他畫風亦照選項，不強制轉換媒材。";
+    : "精品商用貼圖品質：生動五官、細緻髮束、乾淨輪廓、協調配色與柔和陰影；每格按照短句設計不同表情、姿態及道具，允許站姿、坐姿、轉身與全身動作。嚴禁 16 格都用相近的三分之四側臉、同一微笑與歪頭；依每格鏡位安排正面、左轉、右轉、低頭、仰頭及回頭的區別。主角臉型五官、髮型、服裝不能改。使用者選擇 2D 就保持 2D，其他畫風亦照選項，不強制轉換媒材。";
   return `請直接生成一張完整 ${platform === "whatsapp" ? "WhatsApp" : "LINE"} ${label}母圖，只輸出圖片，不要說明。
 
 【格數與畫布】第 ${batchNumber} 張；${columns} 欄 × ${rows} 列、共 ${columns * rows} 格；${canvas}。純白背景、等大格子、不畫格線。${mode === "animated" ? "這是供動態貼圖使用的靜止母圖，保留位移空間，不生成動畫影格。" : "靜態貼圖母圖，方便直接切割。"}
@@ -4647,7 +4677,7 @@ ${content}
 function buildSimpleStablePrompt(label: string, role: string, style: string, grid: GridType, photoMode: PhotoMode, subMode: RealPhotoSubMode, characterTraits: OriginalCharacterTraits): string {
   const columns = grid === "5x4" ? 5 : 4, rows = grid === "4x2" ? 2 : grid === "4x4" || grid === "5x4" ? 4 : 5;
   const traits = photoMode === "original" ? explicitCharacterChoices(characterTraits) : "";
-  return `請生成 ${label} 的 ${columns}×${rows} 無字草稿母圖。角色：${buildRolePrompt(role,photoMode,subMode)}。${traits ? `使用者選擇外觀：${traits}，優先遵守；` : ""}未指定外觀由 AI 原創設計。畫風：${style}。純白背景、格子等大、不畫格線；每格四周保留 15% 純白安全帶。同一主角、衣著和配色，每格不同姿態及職業道具；照片模式保留授權照片原貌。不加任何文字或浮水印。`;
+  return `請生成 ${label} 的 ${columns}×${rows} 無字草稿母圖。角色：${buildRolePrompt(role,photoMode,subMode)}。${traits ? `使用者選擇外觀：${traits}，優先遵守；` : ""}未指定外觀由 AI 原創設計。畫風：${style}。純白背景、格子等大、不畫格線；每格四周保留 15% 純白安全帶。同一主角、衣著和配色，每格不同姿態及職業道具；${photoMode === "realPhoto" && subMode === "unchanged" ? "照片模式保留授權照片原貌與原有頭部角度" : "請安排正面、左轉、右轉、低頭、仰頭、回頭等不同鏡位，避免全部相同三分之四側臉"}。不加任何文字或浮水印。`;
 }
 
 function buildFlowPrompt(
