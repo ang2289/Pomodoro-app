@@ -70,7 +70,7 @@ function validShowcaseUrl(value: string) {
   } catch { return false; }
 }
 async function loadQrCodeCanvasImage(): Promise<HTMLImageElement> {
-  const svg = document.getElementById("tutu-video-qr") as SVGSVGElement | null;
+  const svg = document.querySelector<SVGSVGElement>("#tutu-video-qr");
   if (!svg) throw new Error("QR Code 尚未準備好，請重新整理頁面。");
   const clone = svg.cloneNode(true) as SVGSVGElement;
   clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
