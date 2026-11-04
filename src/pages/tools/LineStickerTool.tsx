@@ -2623,17 +2623,16 @@ export default function LineStickerTool() {
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">
               第 3～4 步｜上傳母圖，自動整理貼圖
             </h1>
-            <p className="text-slate-500 text-sm mt-1">
-              將 ChatGPT 或 Google Gemini 畫出的「一整張母圖」存到手機或電腦，直接上傳這裡；不用自己切成 8 或 16 張，RXV 會自動切割、去背並整理。已有單張貼圖也可以直接上傳。
-            </p>
-            <p className="text-slate-500 text-sm mt-2">
-              {t("line_sticker_hero_desc")}
-            </p>
+            <details className="mt-2 text-sm text-slate-500">
+              <summary className="cursor-pointer font-bold">母圖上傳與使用說明（選看）</summary>
+              <p className="mt-2">將 AI 畫出的完整母圖存到裝置，再上傳這裡；本站會協助切圖、去背與整理。</p>
+              <p className="mt-2">{t("line_sticker_hero_desc")}</p>
+            </details>
           </header>
 
           <section aria-label="設定貼圖類型與張數" className="mb-5 rounded-2xl border-2 border-violet-200 bg-violet-50 p-4 shadow-sm">
             <h2 className="text-base font-black text-violet-900">第 3 步開始也能選｜這次要做靜態或動態？</h2>
-            <p className="mt-1 text-sm leading-6 text-slate-700">已有母圖可以直接開始，不需要回第 1 步。選動態時先上傳靜止母圖，後面再產生真正會動的貼圖。</p>
+            <details className="mt-2 text-xs leading-6 text-slate-600"><summary className="cursor-pointer font-bold">靜態／動態製作說明（選看）</summary><p className="mt-1">已有母圖可直接開始，不需返回第 1 步。動態貼圖先使用靜止母圖，後續才產生動畫。</p></details>
             <div className="mt-3 grid max-w-xl grid-cols-2 gap-2" role="group" aria-label="貼圖種類">
               {(["static", "animated"] as LineStickerMode[]).map(mode => (
                 <button key={mode} type="button" aria-pressed={selectedStickerMode === mode} onClick={() => changeStickerMode(mode)}
@@ -2881,9 +2880,10 @@ export default function LineStickerTool() {
                   <h2 className="mt-1 text-base font-black text-slate-900">
                     第 3 步｜上傳整張大圖（不用先切割）
                   </h2>
-                  <p className="mt-1 text-xs leading-relaxed text-slate-500">
-                    先辨識 4×2／4×4／4×5 與格數，再安全切割。去背預設保護白色衣服、白色文字描邊及淺色道具；處理後可切換深色背景逐張檢查。若原圖本來已有透明背景，不會重覆去白。
-                  </p>
+                  <details className="mt-2 text-xs leading-6 text-slate-500">
+                    <summary className="cursor-pointer font-bold">切圖、去背與安全處理說明（選看）</summary>
+                    <p className="mt-1">系統辨識 4×2／4×4／4×5 後安全切割。預設保護白色衣物與文字，透明背景不重複去背；完成後可用深色底檢查。</p>
+                  </details>
                 </div>
                 <div className="min-w-0 grid gap-2 sm:grid-cols-2">
                   <div className="sm:col-span-2">
@@ -3090,7 +3090,7 @@ export default function LineStickerTool() {
                          <option value="large">放大・靜態</option>
                        </select>
                      </label>
-                     <p className="mt-2 text-[11px] leading-5 text-slate-600">保留約 {Math.round(MOTHER_FIT_MARGIN[motherSheetFit] * 100)}% 四邊安全距離；最多放大 3 倍，來源像素太少仍會變模糊。關閉去背且圖片不透明時不會裁切白底。</p>
+                     <details className="mt-2 text-[11px] leading-5 text-slate-600"><summary className="cursor-pointer font-bold">安全留白與解析度（選看）</summary><p>保留約 {Math.round(MOTHER_FIT_MARGIN[motherSheetFit] * 100)}% 安全邊距；最多放大 3 倍，來源像素不足仍會模糊。</p></details>
                    </section>
                    <div id="mother-split" className="scroll-mt-24 mt-4 grid gap-3 xl:grid-cols-2">
                     {motherSheetDetections.map((item, index) => {
@@ -3223,11 +3223,11 @@ export default function LineStickerTool() {
                 </button>
               </section>
             ) : null}
-            <section
+            <details
               id="line-sticker-pack-tool"
               className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-5"
-              aria-label="已切好的單張貼圖補充上傳區"
             >
+              <summary className="cursor-pointer text-sm font-bold text-slate-900">備用功能：已有單張 PNG／WebP？點此展開上傳</summary>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -3236,7 +3236,6 @@ export default function LineStickerTool() {
                 onChange={handleInputChange}
                 className="hidden"
               />
-              <h3 className="text-sm font-bold text-slate-900">備用功能：已切好的單張貼圖上傳</h3>
               <p className="mt-2 text-xs leading-6 text-slate-600">
                 只有當圖片已經是一張一張分開的透明 PNG／WebP 時才用此功能；
                 若您手上是一張包含 8／16／20 格的大圖，請使用上方紫色「選擇整張母圖並辨識格數」。
@@ -3248,7 +3247,7 @@ export default function LineStickerTool() {
               >
                 我已切成單張｜選擇 PNG／WebP（可多選）
               </button>
-            </section>
+            </details>
 
             <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-white p-5 rounded-2xl border border-slate-200">
