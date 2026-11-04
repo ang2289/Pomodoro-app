@@ -79,7 +79,7 @@ test("貼圖工具主要按鈕依內容寬度排列，不再整列滿版", () =>
   assert.match(upload, /w-fit max-w-full shrink-0 items-center justify-center rounded-full/);
   assert.match(upload, /mt-5 mb-5 max-w-3xl rounded-2xl/);
   assert.doesNotMatch(upload, /className="fixed bottom-2 left-1\/2/);
-  assert.match(upload, /inline-flex min-h-12 w-auto max-w-full shrink-0/);
+  assert.match(upload, /STICKER_UI\.primaryAction/);
   assert.doesNotMatch(upload, /h-12 min-h-12 flex-1 whitespace-nowrap/);
   assert.match(prompt, /grid-cols-2 items-stretch gap-3" role="group" aria-label="選擇貼圖平台"/);
   assert.match(prompt, /w-fit max-w-full/);
@@ -341,9 +341,9 @@ test("單張上傳與整張母圖清楚區分，1/16 不誤導新手以為文字
   assert.match(upload, /這不是「字太多」的判定/);
   assert.match(upload, /改用整張母圖自動切割/);
   assert.match(upload, /onClick=\{\(\) => motherSheetInputRef\.current\?\.click\(\)\}/);
-  assert.match(upload, /備用功能：已切好的單張貼圖上傳/);
-  assert.match(upload, /我已切成單張｜選擇 PNG／WebP（可多選）/);
-  assert.match(upload, /aria-label="已切好的單張貼圖補充上傳區"/);
+  assert.match(upload, /進階：我已經有切好的單張 PNG／WebP/);
+  assert.match(upload, /選擇單張貼圖（可多選）/);
+  assert.match(upload, /選擇整張母圖｜上傳圖片/);
   assert.match(upload, /目前只載入 1 張獨立貼圖/);
   assert.doesNotMatch(upload, /第 3 步｜點這裡上傳圖片（可一次多選）/);
 });
