@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import SEO, { getBaseUrl } from "@/components/SEO";
 import LineStickerAuthorCard from "@/components/LineStickerAuthorCard";
 import LineStickerFlowSteps from "@/components/LineStickerFlowSteps";
+import StickerMotherSheetExample from "@/components/StickerMotherSheetExample";
 import StickerExcelOffers from "@/components/StickerExcelOffers";
 import { STICKER_UI } from "@/components/StickerBeginnerActions";
 import StickerCustomPricing from "@/components/StickerCustomPricing";
@@ -2580,7 +2581,7 @@ export default function LineStickerTool() {
             <LineStickerFlowSteps activeStep={1} />
             <section className="rounded-2xl border border-sky-200 bg-sky-50 p-5" aria-label="選擇貼圖製作起點">
               <h2 className="text-xl font-black text-sky-900">下一步請先選一個按鈕</h2>
-              <p className="mt-2 text-base leading-7 text-slate-700">沒有母圖，請按第一個按鈕開始設定；已有完整母圖，請按第二個按鈕。</p>
+              <p className="mt-2 text-base leading-7 text-slate-700">母圖就是 AI 畫好的「一張大圖、裡面有好幾格貼圖」。還沒畫圖，選第 1 步；已下載整張大圖，選第 3 步。</p>
               <div className={`mt-3 ${STICKER_UI.entryGrid}`}>
                 <Link to="/tools/sticker-prompt#sticker-start"
                   className={`${STICKER_UI.entryAction} bg-violet-600 !text-white hover:bg-violet-700`}>
@@ -2650,7 +2651,12 @@ export default function LineStickerTool() {
 
           <section id="step3-options" aria-label="第 3 步開始：選擇貼圖種類張數及平台" className="mb-5 scroll-mt-24 rounded-2xl border-2 border-violet-200 bg-violet-50 p-4 shadow-sm sm:p-5">
             <h2 className="text-xl font-black text-violet-950">第 3 步｜選好設定，再上傳母圖</h2>
-            <p className="mt-1 text-base font-semibold text-slate-700">只要選三項，接著按紫色按鈕上傳圖片。</p>
+            <p className="mt-1 text-base font-semibold text-slate-700">先看母圖示範，選好下方三項，最後按紫色按鈕上傳整張大圖。</p>
+            {motherSheetDetections.length === 0 && files.length === 0 ? (
+              <div className="mt-4">
+                <StickerMotherSheetExample count={stickerCount} variant="upload" />
+              </div>
+            ) : null}
             <div className={`mt-4 ${STICKER_UI.selectionGrid}`}>
               <label htmlFor="step3-kind" className="block text-sm font-black text-slate-800">
                 ① 貼圖種類
@@ -2700,7 +2706,7 @@ export default function LineStickerTool() {
             <button type="button" disabled={loading}
               onClick={() => motherSheetInputRef.current?.click()}
               className={`${STICKER_UI.primaryAction} mt-5 bg-violet-600 text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-slate-300`}>
-              {loading && motherSheetDetectionStatus !== "cutting" ? "正在辨識母圖…" : "選擇整張母圖｜上傳圖片"}
+              {loading && motherSheetDetectionStatus !== "cutting" ? "正在辨識母圖…" : `選擇整張母圖｜上傳 ${getMotherSheetPlan(stickerCount).length} 張大圖`}
             </button>
             <p role="status" aria-live="polite" className="mt-3 text-base font-bold leading-7 text-violet-900">{actionHint}</p>
             <details className="mt-3 text-xs text-slate-600">
