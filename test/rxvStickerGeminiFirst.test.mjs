@@ -172,8 +172,8 @@ test("第 2 步顯示全部已選設定，母圖提示詞逐格指定位置並�
   assert.match(source, /optionLabel\(PHOTO_MODE_OPTIONS, photoMode\)/);
   assert.match(source, /modeInstructions = mode === "animated"/);
   assert.match(source, /platform === "whatsapp" \? "WhatsApp" : "LINE"/);
-  assert.match(source, /stickerMode,\s*stickerPlatform,\s*item\.startIndex,\s*identityLock,\s*\),/);
-  assert.match(source, /\[\s*motherSheetPlan,[\s\S]*?textPosition,\s*fontStyle,[\s\S]*?stickerMode,\s*stickerPlatform,\s*identityLock,\s*simpleMode,[\s\S]*?characterTraits,\s*\]/);
+  assert.match(source, /platform: stickerPlatform, startIndex: item\.startIndex,/);
+  assert.match(source, /\[motherSheetPlan, flowTexts, type, photoMode,[\s\S]*?stickerMode, stickerPlatform, characterTraits\]/);
   assert.doesNotMatch(source, /人物從第一格到最後一格保持完全同一組新郎新娘/);
 });
 
@@ -298,26 +298,16 @@ test("五步驟小卡版型與貼圖錨點不會產生捲動爭用", () => {
   assert.match(prompt, /WhatsApp 貼圖/);
 });
 
-test("業務個人品牌角色可選外觀並固定整套母圖，不再所有客戶套用同一男性西裝背心", () => {
+test("職業角色設定只用客戶選的下拉，不會偷偷套用舊版業務人設", () => {
   const source = read("src/pages/tools/StickerPromptGenerator.tsx");
-  assert.match(source, /const BUSINESS_AVATAR_OPTIONS =/);
-  for (const key of ["persona", "hair", "clothes", "accessory", "palette"]) {
-    assert.match(source, new RegExp(key + ": \\["));
-  }
-  assert.match(source, /useState<BusinessAvatarSelection>\(savedBusinessAvatar\)/);
-  assert.match(source, /checked=\{useBusinessAvatar\}/);
-  assert.match(source, /businessAvatarPrompt\(businessAvatar, businessSignature\)/);
-  assert.match(source, /const effectiveRole = useMemo/);
-  assert.match(source, /type === "businessPersonal" && photoMode === "original"/);
-  assert.match(source, /effectiveRole,\s*visualStyle,\s*item.grid,/);
-  assert.match(source, /effectiveRole,\s*visualStyle,\s*grid,\s*texts,/);
-  assert.match(source, /effectiveRole,\s*visualStyle,\s*grid,\s*stickerStylePreset,/);
-  assert.match(source, /localStorage\.setItem\(BUSINESS_AVATAR_STORAGE_KEY/);
-  assert.match(source, /其他特徵（選填）/);
-  assert.match(source, /後續第 2 張母圖都必須維持同一張臉/);
-  assert.match(source, /不能一格變一個人/);
-  assert.doesNotMatch(source, /role: "一位親切又專業的年輕業務角色，穿襯衫與西裝背心/);
-  assert.match(source, /舊版業務個人品牌外觀設定（選用）/);
+  assert.match(source, /prompt: buildSimpleFlowPrompt\(\{/);
+  assert.match(source, /role: templates\[type\]\.role/);
+  assert.match(source, /characterTraits,/);
+  assert.match(source, /explicitCharacterChoices\(characterTraits\)/);
+  assert.match(source, /更多人物設定（可不填）/);
+  assert.doesNotMatch(source, /checked=\{useBusinessAvatar\}/);
+  assert.doesNotMatch(source, /舊版業務個人品牌外觀設定（選用）/);
+  assert.doesNotMatch(source, /簡易模式｜快速產圖|進階模式｜細部設定/);
 });
 
 test("角色描述組合保持每格一致，能帶入個人外觀但不額外加入名牌文字", () => {
@@ -380,10 +370,10 @@ test("五種張數採共用母圖配置及全域起訖序號", () => {
 test("兩張母圖的角色與字型鎖定相同，文字位置三種模式互斥", () => {
   const source = read("src/pages/tools/StickerPromptGenerator.tsx");
   assert.match(source, /function makeStickerIdentityLock/);
-  assert.match(source, /identityLock,\s*\),/);
+  assert.match(source, /prompt: buildSimpleFlowPrompt\(\{/);
   assert.match(source, /第 1 張已完成母圖/);
   assert.match(source, /同一個 ChatGPT 對話/);
-  assert.match(source, /手動文字微調（進階可選/);
+  assert.match(source, /更多人物設定（可不填）/);
   assert.match(source, /type StickerIdentity/);
   assert.match(source, /startIndex \+ row \* columns \+ column/);
   assert.doesNotMatch(source, /- 左右交錯時，奇數格文字在左、偶數格文字在右，人物必須在相反側/);
@@ -467,12 +457,12 @@ test("原創職業貼圖可獨立選擇性別、兒童與長者年齡、個性�
   for (const label of ["女性","男性","中性／不指定性別","兒童（7～12 歲）","長者（70 歲以上）","活潑開朗","沉穩可靠","圓臉笑眼"]) {
     assert.ok(source.includes(label), "角色選項缺少："+label);
   }
-  assert.match(source, /aria-label="進階人物下拉設定"/);
-  assert.match(source, /隨機搭配人物/);
-  assert.match(source, /setCharacterTraits\(randomOriginalCharacter\(\)\)/);
+  assert.match(source, /更多人物設定（可不填）/);
+  assert.match(source, /清除額外設定（保留性別與年齡）/);
+  assert.match(source, /onChange=\{\(event\) => setCharacterTraits\(previous =>/);
   assert.match(source, /characterTraits, templates\[type\]\.label/);
   assert.match(source, /identityLock = useMemo/);
-  assert.match(source, /setCharacterTraits\(\{ \.\.\.ORIGINAL_CHARACTER_DEFAULT \}\)/);
+  assert.match(source, /gender: previous\.gender, age: previous\.age/);
   assert.match(source, /const multipleOrNonHuman =/);
 });
 
@@ -591,12 +581,12 @@ test("提示詞預設由下拉決定，不再自動寫死年齡、髮色、職�
   assert.doesNotMatch(prompt, /const age = \[25, 30, 35, 40, 45\]/);
   assert.match(prompt, /explicitCharacterChoices\(characterTraits\)/);
   assert.match(prompt, /characterTraits,/);
-  assert.match(prompt, /\!simpleMode \? \(/);
-  assert.match(prompt, /checked=\{manualTextEnabled\}/);
-  assert.match(prompt, /checked=\{useBusinessAvatar\}/);
-  assert.match(prompt, /進階人物設定（全部由下拉決定）/);
-  assert.match(prompt, /簡易模式｜快速產圖/);
-  assert.match(prompt, /進階模式｜細部設定/);
+  assert.match(prompt, /prompt: buildSimpleFlowPrompt\(\{/);
+  assert.doesNotMatch(prompt, /checked=\{manualTextEnabled\}/);
+  assert.doesNotMatch(prompt, /checked=\{useBusinessAvatar\}/);
+  assert.match(prompt, /更多人物設定（可不填）/);
+  assert.doesNotMatch(prompt, /簡易模式｜快速產圖/);
+  assert.doesNotMatch(prompt, /進階模式｜細部設定/);
   assert.match(prompt, /照片模式保留授權照片原貌/);
 });
 
@@ -633,4 +623,20 @@ test("母圖教學放大畫面可關閉，且第一步先選平台、模式與�
   assert.match(prompt, /const pose = realUnchanged \? ""/);
   assert.match(prompt, /const headAnglePlan = photoMode === "realPhoto" && subMode === "unchanged"/);
   assert.match(prompt, /嚴禁 16 格都用相近的三分之四側臉/);
+});
+
+test("單一提示詞流程下拉設定為唯一來源，額外人物設定只需展開", () => {
+  const source = read("src/pages/tools/StickerPromptGenerator.tsx");
+  assert.doesNotMatch(source, /simpleMode|setSimpleMode/);
+  assert.match(source, /prompt: buildSimpleFlowPrompt\(\{/);
+  assert.match(source, /\(\) => buildSimpleFlowPrompt\(\{/);
+  assert.match(source, /\(\) => buildSimpleStablePrompt\(/);
+  assert.match(source, /更多人物設定（可不填）/);
+  assert.match(source, /value=\{characterTraits\[key\]\}/);
+  assert.match(source, /gender: previous\.gender, age: previous\.age/);
+  assert.match(source, /useState<IllustrationStyle>\("cute2d"\)/);
+  assert.match(source, /useState<TextSize>\("large"\)/);
+  assert.match(source, /useState<TextPosition>\("top"\)/);
+  assert.match(source, /const pose = realUnchanged \? ""/);
+  assert.doesNotMatch(source, /舊版業務個人品牌外觀設定（選用）/);
 });
