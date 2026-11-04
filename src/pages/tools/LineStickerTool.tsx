@@ -7,7 +7,7 @@ import SEO, { getBaseUrl } from "@/components/SEO";
 import LineStickerAuthorCard from "@/components/LineStickerAuthorCard";
 import LineStickerFlowSteps from "@/components/LineStickerFlowSteps";
 import StickerExcelOffers from "@/components/StickerExcelOffers";
-import { StickerNextActionHint } from "@/components/StickerBeginnerActions";
+import { STICKER_UI } from "@/components/StickerBeginnerActions";
 import StickerCustomPricing from "@/components/StickerCustomPricing";
 import MotherSheetRepairDialog, { type MotherSheetRepairIssue } from "@/components/MotherSheetRepairDialog";
 import {
@@ -1636,7 +1636,7 @@ export default function LineStickerTool() {
   );
   const [directStickerMode, setDirectStickerMode] = useState<LineStickerMode>("static");
   const selectedStickerMode: LineStickerMode = flowProject?.mode ?? directStickerMode;
-  const [actionHint, setActionHint] = useState("下一步請按下方靜態或動態按鈕，選好張數後，再按第 3 步上傳母圖。");
+  const [actionHint, setActionHint] = useState("確認貼圖種類、張數與平台後，按紫色按鈕上傳母圖。");
   const [mainImageIndex, setMainImageIndex] = useState<number>(0);
   const [exportPlatform, setExportPlatform] = useState<"line" | "whatsapp">(() =>
     readLineStickerProject()?.platform === "whatsapp" ? "whatsapp" : "line"
@@ -2569,14 +2569,14 @@ export default function LineStickerTool() {
             <section className="rounded-2xl border border-sky-200 bg-sky-50 p-5" aria-label="選擇貼圖製作起點">
               <h2 className="text-lg font-black text-sky-900">下一步請先選一個按鈕</h2>
               <p className="mt-2 text-sm leading-7 text-slate-700">沒有母圖，請按第一個按鈕開始設定；若已經有完整母圖，才按第二個按鈕直接上傳。</p>
-              <div className="mt-3 flex flex-wrap items-center gap-3">
+              <div className={`mt-3 ${STICKER_UI.entryGrid}`}>
                 <Link to="/tools/sticker-prompt#sticker-start"
-                  className="inline-flex min-h-12 w-fit max-w-full items-center justify-center rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-black !text-white hover:bg-violet-700">
-                  第 1 步｜我還沒有母圖，從零開始 →
+                  className={`${STICKER_UI.entryAction} bg-violet-600 !text-white hover:bg-violet-700`}>
+                  第 1 步｜我還沒有母圖
                 </Link>
-                <Link to="/tools/line-sticker?existing=1#mother-upload"
-                  className="inline-flex min-h-12 w-fit max-w-full items-center justify-center rounded-xl border border-emerald-300 bg-white px-4 py-2.5 text-sm font-black text-emerald-800 hover:bg-emerald-50">
-                  我已有母圖｜直接進入第 3 步 →
+                <Link to="/tools/line-sticker?existing=1#step3-options"
+                  className={`${STICKER_UI.entryAction} border-2 border-violet-300 bg-white text-violet-800 hover:bg-violet-50`}>
+                  第 3 步｜我已有母圖
                 </Link>
               </div>
             </section>
@@ -2630,33 +2630,65 @@ export default function LineStickerTool() {
             </details>
           </header>
 
-          <section aria-label="設定貼圖類型與張數" className="mb-5 rounded-2xl border-2 border-violet-200 bg-violet-50 p-4 shadow-sm">
-            <h2 className="text-base font-black text-violet-900">第 3 步開始也能選｜這次要做靜態或動態？</h2>
-            <details className="mt-2 text-xs leading-6 text-slate-600"><summary className="cursor-pointer font-bold">靜態／動態製作說明（選看）</summary><p className="mt-1">已有母圖可直接開始，不需返回第 1 步。動態貼圖先使用靜止母圖，後續才產生動畫。</p></details>
-            <div className="mt-3 grid max-w-xl grid-cols-2 gap-2" role="group" aria-label="貼圖種類">
-              {(["static", "animated"] as LineStickerMode[]).map(mode => (
-                <button key={mode} type="button" aria-pressed={selectedStickerMode === mode} onClick={() => changeStickerMode(mode)}
-                  className={`min-h-12 rounded-xl border-2 px-2 py-3 text-sm font-black ${selectedStickerMode === mode ? "border-violet-600 bg-violet-600 text-white" : "border-violet-300 bg-white text-violet-900"}`}>
-                  {selectedStickerMode === mode ? "✓ " : ""}{mode === "static" ? "靜態貼圖｜PNG" : "動態貼圖｜APNG"}
-                </button>
-              ))}
+          <section id="step3-options" aria-label="第 3 步開始：選擇貼圖種類張數及平台" className="mb-5 scroll-mt-24 rounded-2xl border-2 border-violet-200 bg-violet-50 p-4 shadow-sm sm:p-5">
+            <h2 className="text-xl font-black text-violet-950">第 3 步｜選好設定，再上傳母圖</h2>
+            <p className="mt-1 text-sm font-semibold text-slate-700">只要選三項，接著按紫色按鈕選圖片。</p>
+            <div className={`mt-4 ${STICKER_UI.selectionGrid}`}>
+              <label htmlFor="step3-kind" className="block text-sm font-black text-slate-800">
+                ① 貼圖種類
+                <select id="step3-kind" value={selectedStickerMode}
+                  onChange={(event) => changeStickerMode(event.target.value as LineStickerMode)}
+                  className={STICKER_UI.select}>
+                  <option value="static">靜態貼圖（PNG）</option>
+                  <option value="animated">動態貼圖（APNG）</option>
+                </select>
+              </label>
+              <label htmlFor="step3-count" className="block text-sm font-black text-slate-800">
+                ② 張數
+                <select id="step3-count" value={stickerCount}
+                  onChange={(event) => {
+                    const count = Number(event.target.value) as 8 | 16 | 24 | 32 | 40;
+                    setStickerCount(count);
+                    if (flowProject) {
+                      const next = updateLineStickerProject({ count, stage: 3 });
+                      if (next) setFlowProject(next);
+                    }
+                    setMotherSheetDetections([]);
+                    setMotherSheetDetectionStatus("idle");
+                    setDownloadCompleted(false);
+                    setActionHint(`已選 ${count} 張；按下方「選擇整張母圖」即可繼續。`);
+                  }} className={STICKER_UI.select}>
+                  {getAllowedCounts(selectedStickerMode).map(count => <option key={count} value={count}>{count} 張</option>)}
+                </select>
+              </label>
+              <label htmlFor="step3-platform" className="block text-sm font-black text-slate-800">
+                ③ 輸出平台
+                <select id="step3-platform" value={exportPlatform}
+                  onChange={(event) => {
+                    const platform = event.target.value as "line" | "whatsapp";
+                    setExportPlatform(platform);
+                    setWhatsAppReadyZip(null);
+                    updateLineStickerProject({ platform });
+                    setExportCheckResult(null);
+                    setDownloadCompleted(false);
+                  }} className={STICKER_UI.select}>
+                  <option value="line">LINE 貼圖</option>
+                  <option value="whatsapp">WhatsApp 貼圖</option>
+                </select>
+              </label>
             </div>
-            <label htmlFor="step3-count" className="mt-4 block text-sm font-black text-slate-800">張數</label>
-            <select id="step3-count" value={stickerCount} onChange={event => {
-              const count = Number(event.target.value) as 8 | 16 | 24 | 32 | 40;
-              setStickerCount(count);
-              if (flowProject) {
-                const next = updateLineStickerProject({ count, stage: 3 });
-                if (next) setFlowProject(next);
-              }
-              setMotherSheetDetections([]);
-              setMotherSheetDetectionStatus("idle");
-              setDownloadCompleted(false);
-              setActionHint(`已選 ${count} 張。下一步：按紫色上傳按鈕選擇整張母圖並辨識格數。`);
-            }} className="mt-2 min-h-11 w-56 rounded-lg border border-violet-200 bg-white px-3 py-2 text-sm font-bold">
-              {getAllowedCounts(selectedStickerMode).map(count => <option key={count} value={count}>{count} 張</option>)}
-            </select>
-            <p role="status" aria-live="polite" className="mt-3 rounded-xl border border-sky-200 bg-white p-3 text-sm font-bold leading-6 text-sky-900">{actionHint}</p>
+            <input ref={motherSheetInputRef} type="file" accept={ACCEPT_TYPES.join(",")}
+              multiple onChange={handleMotherSheetChange} className="hidden" />
+            <button type="button" disabled={loading}
+              onClick={() => motherSheetInputRef.current?.click()}
+              className={`${STICKER_UI.primaryAction} mt-5 bg-violet-600 text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-slate-300`}>
+              {loading && motherSheetDetectionStatus !== "cutting" ? "正在辨識母圖…" : "選擇整張母圖｜上傳圖片"}
+            </button>
+            <p role="status" aria-live="polite" className="mt-3 text-sm font-bold text-violet-900">{actionHint}</p>
+            <details className="mt-3 text-xs text-slate-600">
+              <summary className="cursor-pointer font-bold">預設設定與上傳說明（選看）</summary>
+              <p className="mt-2">預設靜態、8 張、LINE；動態貼圖仍先上傳靜止母圖，再製作動畫。可一次選多張母圖，系統會辨識格數。</p>
+            </details>
           </section>
           <section className="mb-5 rounded-2xl border border-indigo-100 bg-white p-4 shadow-sm">
             <details>
