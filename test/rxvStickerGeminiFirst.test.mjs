@@ -47,7 +47,7 @@ test("每段新手流程明確同時提供 ChatGPT 與 Google Gemini，且保留
 test("已有母圖的上傳操作清楚，客製服務能私訊且不出現收費價目", () => {
   const upload = read("src/pages/tools/LineStickerTool.tsx");
   const entry = read("src/components/StickerBeginnerActions.tsx");
-  assert.match(upload, /選擇整張母圖｜上傳圖片/);
+  assert.match(upload, /上傳整張母圖/);
   assert.match(upload, /只要選三項/);
   assert.match(entry, /https:\/\/www\.facebook\.com\/profile\.php\?id=61588964893446/);
   assert.match(entry, /https:\/\/line\.me\/ti\/p\/~angelchen2289/);
@@ -342,7 +342,7 @@ test("單張上傳與整張母圖清楚區分，1/16 不誤導新手以為文字
   assert.match(upload, /onClick=\{\(\) => motherSheetInputRef\.current\?\.click\(\)\}/);
   assert.match(upload, /進階：我已經有切好的單張 PNG／WebP/);
   assert.match(upload, /選擇單張貼圖（可多選）/);
-  assert.match(upload, /選擇整張母圖｜上傳圖片/);
+  assert.match(upload, /上傳整張母圖/);
   assert.match(upload, /目前只載入 1 張獨立貼圖/);
   assert.doesNotMatch(upload, /第 3 步｜點這裡上傳圖片（可一次多選）/);
 });
@@ -603,7 +603,7 @@ test("花店 4x4 母圖教學會出現在提示詞第 1 步與上傳第 3 步，
   assert.match(guide, /不要先自己切成單張/);
   assert.match(guide, /onClick=\{\(\) => setIsImageOpen\(true\)\}/);
   assert.match(guide, /onError=\{\(\) => setImageFailed\(true\)\}/);
-  assert.match(upload, /選擇整張母圖｜上傳圖片/);
+  assert.match(upload, /上傳整張母圖/);
   assert.match(prompt, /第 1 步｜先選貼圖種類與張數/);
 });
 
@@ -639,4 +639,13 @@ test("單一提示詞流程下拉設定為唯一來源，額外人物設定只�
   assert.match(source, /useState<TextPosition>\("top"\)/);
   assert.match(source, /const pose = realUnchanged \? ""/);
   assert.doesNotMatch(source, /舊版業務個人品牌外觀設定（選用）/);
+});
+
+test("第 3 步上傳按鈕不再因張數文字被切成兩行", () => {
+  const upload = read("src/pages/tools/LineStickerTool.tsx");
+  assert.match(upload, /"上傳整張母圖"/);
+  assert.match(upload, /mt-3 whitespace-nowrap bg-violet-600/);
+  assert.match(upload, /請準備 \{getMotherSheetPlan\(stickerCount\)\.length\} 張整張母圖/);
+  assert.match(upload, /\.map\(\(part\) => part\.grid\.replace\("x", "×"\)\)/);
+  assert.doesNotMatch(upload, /選擇整張母圖｜上傳圖片（需/);
 });
