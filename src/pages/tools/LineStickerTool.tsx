@@ -2884,16 +2884,17 @@ export default function LineStickerTool() {
                     步驟 3
                   </p>
                   <h2 className="mt-1 text-base font-black text-slate-900">
-                    第 3 步｜上傳整張大圖（不用先切割）
+                    第 4 步｜確認母圖辨識結果
                   </h2>
                   <details className="mt-2 text-xs leading-6 text-slate-500">
                     <summary className="cursor-pointer font-bold">切圖、去背與安全處理說明（選看）</summary>
                     <p className="mt-1">系統辨識 4×2／4×4／4×5 後安全切割。預設保護白色衣物與文字，透明背景不重複去背；完成後可用深色底檢查。</p>
                   </details>
                 </div>
-                <div className="min-w-0 grid gap-2 sm:grid-cols-2">
-                  <div className="sm:col-span-2">
-                  {flowProject ? (
+                <details className="rounded-xl border border-violet-100 bg-white p-3">
+                  <summary className="cursor-pointer text-sm font-bold text-violet-900">進階：辨識格數／去背強度（選看，預設已設定）</summary>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                    <div className="sm:col-span-2">
                     <div className="rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-xs font-black leading-5 text-violet-800">
                       已依第 1 步設定自動辨識：
                       {getMotherSheetPlan(flowProject.count)
@@ -2902,27 +2903,17 @@ export default function LineStickerTool() {
                       。可一次多選，檔案順序不限，系統會依圖片比例自動配對。
                     </div>
                   ) : (
-                    <div className="flex flex-wrap gap-2">
-
-                      {(["auto", "4x2", "4x4", "4x5"] as const).map((grid) => (
-                        <button
-                          key={grid}
-                          type="button"
-                          onClick={() => {
-                            if (motherSheetDetections.length > 1 && grid !== "auto") return;
-                            setMotherSheetGrid(grid);
-                          }}
-                          disabled={motherSheetDetections.length > 1 && grid !== "auto"}
-                          className={`rounded-xl px-3 py-2 text-xs font-black ${
-                            motherSheetGrid === grid
-                              ? "bg-violet-600 text-white"
-                              : "bg-white text-slate-600 shadow-sm"
-                          }`}
-                        >
-                          {grid === "auto" ? "自動判斷" : grid.replace("x", "×")}
-                        </button>
-                      ))}
-                    </div>
+                    <label className="block text-xs font-bold text-violet-900">
+                      手動格數辨識（預設自動）
+                      <select value={motherSheetGrid} disabled={motherSheetDetections.length > 1}
+                        onChange={(event) => setMotherSheetGrid(event.target.value as "auto" | MotherSheetGrid)}
+                        className={STICKER_UI.select}>
+                        <option value="auto">自動判斷（推薦）</option>
+                        <option value="4x2">4×2（8 張）</option>
+                        <option value="4x4">4×4（16 張）</option>
+                        <option value="4x5">4×5（20 張）</option>
+                      </select>
+                    </label>
                   )}
                   </div>
                   <label className="flex min-w-0 items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800 sm:col-span-2">
@@ -2964,7 +2955,8 @@ export default function LineStickerTool() {
                     </div>
                   ) : null}
                   <p className="text-xs font-semibold text-violet-800 sm:col-span-2">要更換母圖請使用頁面上方「選擇整張母圖」。</p>
-                </div>
+                  </div>
+                </details>
               </div>
 
               {motherSheetDetections.length > 0 ? (
@@ -2974,9 +2966,10 @@ export default function LineStickerTool() {
                       <p className="text-sm font-black text-slate-900">
                         🔎 母圖辨識結果
                       </p>
-                      <p className="mt-1 text-xs leading-5 text-slate-500">
-                        系統會看內容排列與圖片比例。4×4（16 格）應使用接近 1:1 的正方形母圖；Gemini 若產生橫幅、漏格或額外英文，請先重新產圖。其他格數可檢查後手動修正，但不要將錯誤橫幅硬切成 4×4。
-                      </p>
+                      <details className="mt-2 text-xs leading-5 text-slate-600">
+                        <summary className="cursor-pointer font-bold">辨識判斷與圖片比例說明（選看）</summary>
+                        <p className="mt-1">4×4 建議正方形母圖，若圖片橫幅、漏格或額外文字，請修正後再切圖。</p>
+                      </details>
                     </div>
                     <button
                       type="button"
