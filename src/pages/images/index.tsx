@@ -71,7 +71,7 @@ async function forceDownloadImage(downloadUrl: string, filename: string) {
   const blobUrl = window.URL.createObjectURL(webp);
   const link = document.createElement("a");
   link.href = blobUrl;
-  const safeName = filename.replace(/[<>:"/\\|?*\x00-\x1F]/g, "_").replace(/\.(png|jpe?g|webp)$/i, "").trim();
+  const safeName = filename.replace(/[^\p{L}\p{N}\s._-]/gu, "_").replace(/\.(png|jpe?g|webp)$/i, "").trim();
   link.download = `${safeName || "圖片素材"}.webp`;
   document.body.appendChild(link);
   link.click();
