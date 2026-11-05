@@ -18,23 +18,66 @@ import CoupangDynamicAd from "@/components/CoupangDynamicAd";
 import { isLoggedIn, getCurrentUserId } from "@/lib/auth";
 import { getCurrentCreditSummary } from "@/lib/accountApi";
 
-// 圖片庫公開頁：高畫質原圖免費下載，並引導至 LINE 與 MP4 工具。
+// 公開圖片庫免費單張以 WebP 交付；原始 PNG/JPG 與付費 ZIP 保留在 Private R2。
+// 若舊版 manifest 只有 PNG/JPG，下載前在瀏覽器轉成 WebP；要節省 R2 傳輸量
+// 仍須事先將 WebP 上傳到 Public R2 並填入 download_webp_url。
+async function convertToWebp(source: Blob): Promise<Blob> {
+  if (source.type.toLowerCase() === "image/webp") return source;
+
+  const sourceUrl = window.URL.createObjectURL(source);
+  try {
+    const picture = new Image();
+    await new Promise<void>((resolve, reject) => {
+      picture.onload = () => resolve();
+      picture.onerror = () => reject(new Error("圖片無法解碼，請檢查 R2 下載網址"));
+      picture.src = sourceUrl;
+    });
+
+    if (!picture.naturalWidth || !picture.naturalHeight) {
+      throw new Error("圖片尺寸無效，無法產生 WebP");
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = picture.naturalWidth;
+    canvas.height = picture.naturalHeight;
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("瀏覽器無法處理圖片轉檔");
+
+    context.drawImage(picture, 0, 0);
+    const webp = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob(
+        (result) => result ? resolve(result) : reject(new Error("WebP 轉檔失敗")),
+        "image/webp",
+        0.88,
+      );
+    });
+    if (webp.type.toLowerCase() !== "image/webp") {
+      throw new Error("目前瀏覽器不支援 WebP 下載");
+    }
+    return webp;
+  } finally {
+    window.URL.revokeObjectURL(sourceUrl);
+  }
+}
 
 async function forceDownloadImage(downloadUrl: string, filename: string) {
   if (!downloadUrl) throw new Error("這張圖片目前沒有可用的下載網址");
 
-  const res = await fetch(downloadUrl);
-  if (!res.ok) throw new Error("下載失敗");
+  const response = await fetch(downloadUrl);
+  if (!response.ok) throw new Error("下載失敗");
 
-  const blob = await res.blob();
-  const blobUrl = window.URL.createObjectURL(blob);
+  const source = await response.blob();
+  const webp = await convertToWebp(source);
+  const blobUrl = window.URL.createObjectURL(webp);
   const link = document.createElement("a");
   link.href = blobUrl;
-  link.download = filename;
+  const safeName = filename.replace(/[<>:"/\\|?*\x00-\x1F]/g, "_").replace(/\.(png|jpe?g|webp)$/i, "").trim();
+  link.download = `${safeName || "圖片素材"}.webp`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-  window.URL.revokeObjectURL(blobUrl);
+  // Android 瀏覽器有時需要在下載開始後才釋放 Blob。
+  window.setTimeout(() => window.URL.revokeObjectURL(blobUrl), 5000);
 }
 
 // 圖片方案類型：對應 images.plan_type 或 price_type
@@ -68,6 +111,10 @@ interface PublicImageManifestItem {
   category_slug?: string | null;
   thumbnail_url?: string | null;
   preview_url?: string | null;
+  thumbnail_webp_url?: string | null;
+  preview_webp_url?: string | null;
+  download_webp_url?: string | null;
+  webp_url?: string | null;
   download_url?: string | null; // 只允許免費圖片提供
   keywords?: string | string[] | null;
   tags?: string | string[] | null;
@@ -425,12 +472,14 @@ export default function ImagesPage() {
               id: img.id,
               title: img.title || t("images_unnamed"),
               previewUrl:
+                img.preview_webp_url ||
+                img.thumbnail_webp_url ||
                 img.preview_url ||
                 img.thumbnail_url ||
                 "",
               downloadUrl:
                 planType === "free"
-                  ? img.download_url || ""
+                  ? img.download_webp_url || img.webp_url || img.download_url || ""
                   : "",
               planType,
               category_id: categoryId,
@@ -449,7 +498,7 @@ export default function ImagesPage() {
             };
           })
           .sort((left, right) => {
-            // Let visitors try the free originals before browsing bundle-only cards.
+            // Free WebP images appear before bundle-only cards.
             return Number(right.planType === "free") - Number(left.planType === "free");
           });
 
@@ -540,7 +589,7 @@ export default function ImagesPage() {
 
     try {
       trackEvent("download_free_image", { image_id: image.id, image_plan_type: image.planType });
-      await forceDownloadImage(image.downloadUrl, `${image.title || "RxV-免費圖片"}`);
+      await forceDownloadImage(image.downloadUrl, image.title || "圖圖姐姐-免費圖片");
       setDownloadedImageIds((prev) => new Set(prev).add(image.id));
       setDownloadToastId((previous) => previous + 1);
     } catch (e) {
@@ -718,7 +767,7 @@ export default function ImagesPage() {
                     ? "正在統計圖片數量…"
                     : selectedCategoryId
                       ? `「${selectedCategoryName}」共有 ${totalImages} 張素材，目前先顯示 ${images.length} 張。`
-                      : `目前素材庫已累積 ${totalImages} 張免費圖片，本頁先顯示 ${images.length} 張；點圖片右下角的下載按鈕即可保存原圖。`}
+                      : `目前素材庫已累積 ${totalImages} 張圖片，本頁先顯示 ${images.length} 張；點右下角按鈕可免費下載 WebP。`}
               </p>
             </div>
             {totalImages !== null && totalImages > 0 && (
@@ -774,7 +823,7 @@ export default function ImagesPage() {
                 <p className="mt-1 text-sm leading-relaxed text-emerald-900">
                   已開放 {libraryTotalLabel} 張圖片免費下載；選擇喜歡的圖片，下載後可製作貼圖或 MP4。
                 </p>
-                <p className="mt-2 text-sm font-bold text-emerald-700">下方優先顯示免費高畫質下載素材；可繼續載入查看全部 37 張免費素材。</p>
+                <p className="mt-2 text-sm font-bold text-emerald-700">下方優先顯示免費圖片，點擊下載取得 WebP 格式。</p>
               </section>
             )}
             <div className="columns-2 gap-3 sm:columns-3 sm:gap-4 lg:columns-4 lg:gap-5 2xl:columns-5 2xl:gap-6">
