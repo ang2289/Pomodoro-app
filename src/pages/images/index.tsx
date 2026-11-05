@@ -474,7 +474,12 @@ export default function ImagesPage() {
               });
             }
 
-            const planType = toPlanType(img.price_type, img.plan_type);
+            // A public full-size WebP is free to download individually even when
+            // the catalog's legacy plan_type still says "bundle". The NT$199
+            // original-format ZIP is a separate Google Play product.
+            const planType: PlanType = img.download_webp_url
+              ? "free"
+              : toPlanType(img.price_type, img.plan_type);
 
             return {
               id: img.id,
@@ -485,10 +490,9 @@ export default function ImagesPage() {
                 img.preview_url ||
                 img.thumbnail_url ||
                 "",
-              downloadUrl:
-                planType === "free"
-                  ? img.download_webp_url || img.webp_url || img.download_url || ""
-                  : "",
+              // No free-download path may point at an original PNG/JPG.
+              // This becomes active after full-size WebP backfill in Public R2.
+              downloadUrl: planType === "free" ? img.download_webp_url || "" : "",
               planType,
               category_id: categoryId,
               searchText: [
