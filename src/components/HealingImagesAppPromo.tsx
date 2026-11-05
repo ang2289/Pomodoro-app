@@ -26,6 +26,33 @@ export default function HealingImagesAppPromo() {
 
   if (!PROMO_PATHS.has(normalized)) return null;
 
+  // 圖片庫頁已經有大量素材與分類：使用精簡 CTA，避免宣傳卡把搜尋框推到畫面下方。
+  if (normalized === "/images") {
+    return (
+      <aside className="mx-auto mt-4 w-full max-w-5xl px-3 sm:px-6" aria-label="RxV 療癒圖片庫 APP">
+        <div className="flex flex-col gap-3 rounded-2xl border border-sky-200 bg-gradient-to-r from-sky-50 via-white to-emerald-50 px-4 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:px-5">
+          <div className="min-w-0">
+            <p className="text-xs font-black text-blue-700">Google Play 已上架・手機找圖更方便</p>
+            <h2 className="mt-1 text-lg font-black text-slate-900 sm:text-xl">
+              網站免費下載，APP 還能收藏喜歡的圖片
+            </h2>
+            <p className="mt-1 text-sm leading-6 text-slate-600">
+              安裝 RxV 療癒圖片庫，隨時找圖、收藏、下載、分享或設成手機桌布。
+            </p>
+          </div>
+          <a
+            href={PLAY_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex min-h-[48px] shrink-0 items-center justify-center rounded-xl bg-blue-700 px-5 py-3 text-center text-base font-black !text-white shadow-md transition hover:bg-blue-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200"
+          >
+            免費安裝圖片 APP
+          </a>
+        </div>
+      </aside>
+    );
+  }
+
   return (
     <aside
       className="mx-auto mt-5 w-full max-w-5xl px-4"
