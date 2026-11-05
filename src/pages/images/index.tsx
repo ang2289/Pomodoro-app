@@ -46,6 +46,7 @@ interface ImageAsset {
   title: string;
   previewUrl: string;
   downloadUrl: string;
+  searchText: string;
   planType: PlanType;
   category_id?: string | null;
 }
@@ -68,6 +69,8 @@ interface PublicImageManifestItem {
   thumbnail_url?: string | null;
   preview_url?: string | null;
   download_url?: string | null; // 只允許免費圖片提供
+  keywords?: string | string[] | null;
+  tags?: string | string[] | null;
   plan_type?: string | null;
   price_type?: string | null;
 }
@@ -252,6 +255,7 @@ export default function ImagesPage() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
     null,
   );
+  const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [loadingCategories, setLoadingCategories] = useState(false);
   const [remainingChars, setRemainingChars] = useState<number | null>(null);
@@ -430,6 +434,18 @@ export default function ImagesPage() {
                   : "",
               planType,
               category_id: categoryId,
+              searchText: [
+                img.title,
+                img.category_name,
+                img.category_slug,
+                img.category,
+                categoryId ? CATEGORY_NAME_MAP[categoryId] : "",
+                ...(Array.isArray(img.keywords) ? img.keywords : [img.keywords]),
+                ...(Array.isArray(img.tags) ? img.tags : [img.tags]),
+              ]
+                .filter(Boolean)
+                .join(" ")
+                .toLocaleLowerCase("zh-TW"),
             };
           })
           .sort((left, right) => {
@@ -476,9 +492,17 @@ export default function ImagesPage() {
     else setLoading(true);
 
     try {
-      const filtered = selectedCategoryId
-        ? allImages.filter((img) => img.category_id === selectedCategoryId)
-        : allImages;
+      const terms = searchQuery.trim().toLocaleLowerCase("zh-TW").split(/\s+/).filter(Boolean);
+      const filtered = allImages.filter((img) => {
+        if (selectedCategoryId && img.category_id !== selectedCategoryId) return false;
+        if (!terms.length) return true;
+        const category = categories.find((item) => item.id === img.category_id);
+        const searchable = [
+          img.searchText,
+          category ? getCategoryDisplayName(category, t) : "",
+        ].join(" ").toLocaleLowerCase("zh-TW");
+        return terms.every((term) => searchable.includes(term));
+      });
 
       const from = nextPage * PAGE_SIZE;
       const pageImages = filtered.slice(from, from + PAGE_SIZE);
@@ -502,7 +526,7 @@ export default function ImagesPage() {
     setHasMore(false);
     setTotalImages(null);
     loadImages(0, false);
-  }, [selectedCategoryId, manifestLoaded, allImages]);
+  }, [selectedCategoryId, searchQuery, manifestLoaded, allImages]);
 
   const notifyImagePendingFreeDownload = () => {
     alert("這張圖片的免費下載資訊正在更新，請稍後重新整理頁面。");
@@ -610,6 +634,34 @@ export default function ImagesPage() {
 
         <CoupangDynamicAd subId="rxv_images_dynamic" desktopWidth={1000} desktopHeight={180} />
 
+        {/* 搜尋會和分類篩選共同作用，且搜尋全量 manifest 而非僅已載入的圖片。 */}
+        <section className="mb-5 rounded-2xl border border-blue-200 bg-white p-4 shadow-sm" aria-label="圖片素材搜尋">
+          <label htmlFor="image-library-search" className="mb-2 block text-base font-black text-slate-900">
+            搜尋圖片素材
+          </label>
+          <div className="flex gap-2">
+            <input
+              id="image-library-search"
+              type="search"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="搜尋花店、婚禮、美甲、牙醫、名片…"
+              className="min-h-[48px] w-full min-w-0 rounded-xl border border-slate-300 bg-white px-4 text-base text-slate-900 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+              autoComplete="off"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="min-h-[48px] shrink-0 rounded-xl bg-slate-100 px-4 text-sm font-bold text-slate-700 hover:bg-slate-200"
+              >
+                清除
+              </button>
+            )}
+          </div>
+          <p className="mt-2 text-xs text-slate-500">可同時選擇下方分類，搜尋全部圖片而不只是目前顯示的 24 張。</p>
+        </section>
+
         {/* 分類篩選：手機版橫向滑動，避免按鈕擠在一起。 */}
         {!loadingCategories && categories.length > 0 && (
           <div className="mb-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -704,9 +756,11 @@ export default function ImagesPage() {
         {!loading && images.length === 0 && (
           <div className="text-center py-12">
             <p className="text-gray-600">
-              {selectedCategoryId
-                ? t("images_no_images_in_category")
-                : t("images_no_images")}
+              {searchQuery.trim()
+                ? "找不到符合關鍵字的圖片，請試試其他名稱或清除搜尋。"
+                : selectedCategoryId
+                  ? t("images_no_images_in_category")
+                  : t("images_no_images")}
             </p>
           </div>
         )}
