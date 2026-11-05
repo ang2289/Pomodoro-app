@@ -24,6 +24,14 @@ import { getCurrentCreditSummary } from "@/lib/accountApi";
 async function convertToWebp(source: Blob): Promise<Blob> {
   if (source.type.toLowerCase() === "image/webp") return source;
 
+  // R2 若回傳 application/octet-stream，從檔頭辨認既有 WebP，避免重複有損壓縮。
+  const header = new Uint8Array(await source.slice(0, 12).arrayBuffer());
+  if (header.length === 12 &&
+      String.fromCharCode(...header.slice(0, 4)) === "RIFF" &&
+      String.fromCharCode(...header.slice(8, 12)) === "WEBP") {
+    return source;
+  }
+
   const sourceUrl = window.URL.createObjectURL(source);
   try {
     const picture = new Image();
@@ -765,9 +773,11 @@ export default function ImagesPage() {
                   ? "圖片清單暫時無法載入，請稍後重新整理。"
                   : totalImages === null
                     ? "正在統計圖片數量…"
-                    : selectedCategoryId
-                      ? `「${selectedCategoryName}」共有 ${totalImages} 張素材，目前先顯示 ${images.length} 張。`
-                      : `目前素材庫已累積 ${totalImages} 張圖片，本頁先顯示 ${images.length} 張；點右下角按鈕可免費下載 WebP。`}
+                    : searchQuery.trim()
+                      ? `搜尋「${searchQuery.trim()}」找到 ${totalImages} 張素材，已顯示 ${images.length} 張。`
+                      : selectedCategoryId
+                        ? `「${selectedCategoryName}」共有 ${totalImages} 張素材，目前先顯示 ${images.length} 張。`
+                        : `目前素材庫已累積 ${totalImages} 張圖片，本頁先顯示 ${images.length} 張；點右下角按鈕可免費下載 WebP。`}
               </p>
             </div>
             {totalImages !== null && totalImages > 0 && (
@@ -1243,6 +1253,14 @@ export default function ImagesPage() {
           >
             🎬 立即將圖片轉 MP4
           </Link>
+          <a
+            href="https://play.google.com/store/apps/details?id=com.rxv.healingimages"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex min-h-[40px] items-center justify-center rounded-xl bg-blue-700 px-4 py-2 text-center text-sm font-black !text-white transition hover:bg-blue-800"
+          >
+            用 APP 收藏更多圖片
+          </a>
         </div>
       )}
     </div>
