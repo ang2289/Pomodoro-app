@@ -787,123 +787,83 @@ async function handleGetR2ImageThumbnail(req: any, res: any) {
   }
 }
 
+// Free single images are delivered exclusively from PUBLIC R2 as full-resolution
+// WebP; raw PNG/JPEG/WebP originals stay in PRIVATE R2 for the Google Play paid ZIP.
+// IMPORTANT: Deploy this API only after all catalog download_webp_url fields are
+// populated and full-size WebP objects have been verified in Public R2.
+class FreeWebpRequestError extends Error {
+  constructor(readonly code: string, readonly status: number) { super(code); }
+}
+
+async function resolvePublicFullWebpForImage(imageId: string): Promise<string> {
+  if (!imageId || imageId.length > 128 || !/^[A-Za-z0-9_-]+$/.test(imageId)) {
+    throw new FreeWebpRequestError("INVALID_IMAGE_ID", 400);
+  }
+  const catalog = await readPublicImageCatalogFromR2();
+  const image = catalog.images.find((item: any) => safeText(item?.id) === imageId);
+  if (!image) throw new FreeWebpRequestError("IMAGE_NOT_FOUND", 404);
+
+  const key = `downloads/by-image-id/${imageId}.webp`;
+  const expectedUrl = buildPublicImageAssetUrl(key, catalog);
+  const catalogUrl = safeText(image?.download_webp_url);
+  // Never follow arbitrary URLs from catalog or fall back to a private original.
+  if (!catalogUrl || catalogUrl !== expectedUrl) {
+    throw new FreeWebpRequestError("FREE_WEBP_NOT_READY", 503);
+  }
+
+  const cfg = getImageR2RuntimeConfig();
+  const client = getImageCatalogR2Client();
+  try {
+    const head = await client.send(new HeadObjectCommand({ Bucket: cfg.publicBucket, Key: key }));
+    if (!(Number(head.ContentLength) > 0) || !/^image\/webp(?:$|;)/i.test(safeText(head.ContentType))) {
+      throw new FreeWebpRequestError("FREE_WEBP_INVALID", 503);
+    }
+  } catch (error: any) {
+    if (error instanceof FreeWebpRequestError) throw error;
+    if (error?.$metadata?.httpStatusCode === 404 || error?.name === "NoSuchKey") {
+      throw new FreeWebpRequestError("FREE_WEBP_NOT_READY", 503);
+    }
+    throw error;
+  } finally {
+    client.destroy();
+  }
+  return expectedUrl;
+}
+
 async function handleGetR2FreeImageDownload(req: any, res: any) {
   if (req.method !== "GET") return jsonResponse(res, 405, { ok: false, error: "Method Not Allowed" });
   try {
-    const imageId = safeText(req?.query?.id);
-    if (!imageId || imageId.length > 160) return jsonResponse(res, 400, { ok: false, error: "INVALID_IMAGE_ID" });
-    const image = readR2ImageMaster().find((item: any) => safeText(item?.id) === imageId);
-    const originalKey = safeText(image?.original_key);
-    if (!image || safeText(image?.plan_type) !== "free" || !isR2CatalogOriginalKey(originalKey)) {
-      return jsonResponse(res, 404, { ok: false, error: "FREE_IMAGE_NOT_FOUND" });
-    }
-
-    const object = await getR2Client().send(new GetObjectCommand({ Bucket: R2_BUCKET_NAME, Key: originalKey }));
-    const extension = originalKey.split(".").pop()?.toLowerCase() || "jpg";
-    res.status(200);
-    res.setHeader("Content-Type", object.ContentType || `image/${extension === "jpg" ? "jpeg" : extension}`);
-    if (object.ContentLength != null) res.setHeader("Content-Length", String(object.ContentLength));
-    res.setHeader("Content-Disposition", `attachment; filename="RXV-${imageId}.${extension}"`);
+    const url = await resolvePublicFullWebpForImage(safeText(req?.query?.id));
     res.setHeader("Cache-Control", "private, no-store");
-    return (object.Body as any).pipe(res);
-  } catch {
-    return jsonResponse(res, 500, { ok: false, error: "FREE_IMAGE_DOWNLOAD_UNAVAILABLE" });
+    res.setHeader("Location", url);
+    return res.status(302).end();
+  } catch (error) {
+    const known = error instanceof FreeWebpRequestError;
+    return jsonResponse(res, known ? error.status : 500, {
+      ok: false, error: known ? error.code : "FREE_WEBP_UNAVAILABLE",
+    });
   }
-}
-
-function getR2ImageDownloadClient() {
-  const accountId = safeText(process.env.R2_ACCOUNT_ID);
-  const accessKeyId = safeText(process.env.R2_ACCESS_KEY_ID);
-  const secretAccessKey = safeText(process.env.R2_SECRET_ACCESS_KEY);
-
-  if (!accountId || !accessKeyId || !secretAccessKey) {
-    throw new Error("R2_DOWNLOAD_ENV_MISSING");
-  }
-
-  return {
-    bucket: safeText(
-      process.env.R2_PRIVATE_BUCKET_NAME || "rxv-healing-images-staging"
-    ),
-    client: new S3Client({
-      region: "auto",
-      endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
-      credentials: { accessKeyId, secretAccessKey },
-    }),
-  };
 }
 
 async function handleDownloadImage(req: any, res: any, body: any) {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-
-  if (req.method === "OPTIONS") {
-    return res.status(204).end();
-  }
-
+  if (req.method === "OPTIONS") return res.status(204).end();
   if (req.method !== "POST") {
-    return res.status(405).json({
-      success: false,
-      error: "Method not allowed",
-    });
+    return jsonResponse(res, 405, { success: false, error: "METHOD_NOT_ALLOWED" });
   }
-
   try {
     const imageId = safeText(body?.imageId);
-
-    if (!imageId || imageId.length > 128 || !/^[A-Za-z0-9_-]+$/.test(imageId)) {
-      return res.status(400).json({
-        success: false,
-        error: "imageId is required",
-      });
-    }
-
-    const { client, bucket } = getR2ImageDownloadClient();
-    const prefix = `originals/by-image-id/${imageId}/`;
-
-    const listed = await client.send(
-      new ListObjectsV2Command({
-        Bucket: bucket,
-        Prefix: prefix,
-        MaxKeys: 10,
-      })
-    );
-
-    const originalKey = listed.Contents
-      ?.map((item) => item.Key || "")
-      .find((key) =>
-        /^original\.(jpg|jpeg|png|webp)$/i.test(key.slice(prefix.length))
-      );
-
-    if (!originalKey) {
-      return res.status(404).json({
-        success: false,
-        error: "Original image not found",
-      });
-    }
-
-    const extension = originalKey.split(".").pop()?.toLowerCase() || "jpg";
-
-    const downloadUrl = await getSignedUrl(
-      client,
-      new GetObjectCommand({
-        Bucket: bucket,
-        Key: originalKey,
-        ResponseContentDisposition:
-          `attachment; filename="RXV-${imageId}.${extension}"`,
-      }),
-      { expiresIn: 600 }
-    );
-
-    return res.status(200).json({
-      success: true,
-      downloadUrl,
+    const downloadUrl = await resolvePublicFullWebpForImage(imageId);
+    return jsonResponse(res, 200, {
+      success: true, downloadUrl, mimeType: "image/webp", fileName: `RXV-${imageId}.webp`,
     });
   } catch (error) {
-    console.error("[download-image] error:", error);
-    return res.status(500).json({
-      success: false,
-      error: error?.message || "Download failed",
+    const known = error instanceof FreeWebpRequestError;
+    if (!known) console.error("FREE_WEBP_DOWNLOAD_FAILED", error);
+    return jsonResponse(res, known ? error.status : 500, {
+      success: false, code: known ? error.code : "FREE_WEBP_UNAVAILABLE",
     });
   }
 }
