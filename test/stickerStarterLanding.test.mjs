@@ -22,7 +22,7 @@ test("真正有導入獨立新手頁、展示使用者兩組 24 格與動態成�
   assert.match(page, /原創 Q 版職業角色/);
   assert.match(page, /to="\/tools\/sticker-prompt\?new=1#sticker-start"/);
   assert.match(page, /to="\/tools\/line-sticker\?existing=1#mother-upload"/);
-  assert.match(page, /preload="metadata"/);
+  assert.match(page, /preload="none"/);
 });
 
 test("全程只有五個明確步驟，動畫是第五步內的操作 A/B/C",()=>{
@@ -35,7 +35,7 @@ test("全程只有五個明確步驟，動畫是第五步內的操作 A/B/C",()=
   assert.match(animated,/第 5 步內操作 C｜產生動畫/);
   assert.match(animated,/第 5 步完成/);
   assert.match(prompt,/先看寶寶、花店成果與五步驟圖片教學/);
-  assert.match(cutter,/先看九組成果與五步驟教學/);
+  assert.match(cutter,/第 3 步｜選好設定，再上傳母圖/);
 });
 
 test("貼圖專頁不插入分潤廣告；其他網站廣告設定保留",()=>{
@@ -71,13 +71,13 @@ test("上傳示範 ZIP 新增七個類型，保留原寶寶與花店範例", () 
   assert.match(page, /aria-pressed=\{selected\.id === item\.id\}/);
   assert.match(page, /selected\.video \?/);
   assert.match(page, /本組只有靜態母圖/);
-  assert.match(page, /preload="metadata"/);
+  assert.match(page, /preload="none"/);
 });
 
 test("native MP4 previews show duration, restart after selection changes and provide manual retry", () => {
   assert.match(page, /function StickerDemoVideo\(/);
   assert.match(page, /<StickerDemoVideo key=\{selected\.id\} item=\{selected\} \/>/);
-  assert.match(page, /preload="metadata"/);
+  assert.match(page, /preload="none"/);
   assert.match(page, /onLoadedMetadata=/);
   assert.match(page, /onError=/);
   assert.match(page, /video\.play\(\)/);
