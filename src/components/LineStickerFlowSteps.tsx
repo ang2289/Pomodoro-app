@@ -20,8 +20,10 @@ export default function LineStickerFlowSteps({
     if (!location.hash) return;
     let anchorId = location.hash.slice(1);
     try { anchorId = decodeURIComponent(anchorId); } catch { /* 保留原始 hash */ }
-    const target = document.getElementById(anchorId)
-      ?? (anchorId === "mother-split" ? document.getElementById("mother-upload") : null);
+    const nextAnchor = anchorId === "mother-upload" && location.pathname === "/tools/line-sticker"
+      ? "step3-options" : anchorId;
+    const target = document.getElementById(nextAnchor)
+      ?? (nextAnchor === "mother-split" ? document.getElementById("mother-upload") || document.getElementById("step3-options") : null);
     target?.scrollIntoView({ behavior: "auto", block: "start" });
   }, [location.pathname, location.hash]);
 
@@ -30,7 +32,7 @@ export default function LineStickerFlowSteps({
   const phases = [
     { step: 1 as const, title: "選角色", desc: "主題、文字、張數", path: "/tools/sticker-prompt#sticker-start" },
     { step: 2 as const, title: "AI 畫母圖", desc: "逐張複製指令", path: "/tools/sticker-prompt#sticker-copy" },
-    { step: 3 as const, title: "上傳母圖", desc: "4×4＋4×2 等大圖", path: "/tools/line-sticker?existing=1#mother-upload" },
+    { step: 3 as const, title: "上傳母圖", desc: "4×4＋4×2 等大圖", path: "/tools/line-sticker?existing=1#step3-options" },
     { step: 4 as const, title: "自動切圖", desc: "安全檢查、去背", path: "/tools/line-sticker?flow=1#mother-split" },
     {
       step: 5 as const,
@@ -63,16 +65,17 @@ export default function LineStickerFlowSteps({
               <span className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-black ${
                 active ? "bg-violet-600 text-white" : "bg-violet-100 text-violet-700"
               }`}>{phase.step}</span>
-              <span className="text-[10px] font-bold leading-4 sm:text-sm">{phase.title}</span>
-              <span className="hidden text-[11px] leading-5 text-slate-500 md:block">{phase.desc}</span>
+              <span className="text-sm font-bold leading-5 sm:text-base">{phase.title}</span>
+              <span className="hidden text-sm leading-6 text-slate-500 md:block">{phase.desc}</span>
             </Link>
           );
         })}
       </div>
-      <p className="mt-2 text-xs leading-5 text-slate-600">
-        {mode === "animated" ? "動態貼圖只需完成同樣的五步驟：第 5 步內製作動畫、下載 APNG／WebP ZIP，不額外增加第 6 步。" : "下載靜態 ZIP 就完成五步驟。"}
-        {" "}<Link to="/tools/line-sticker-start" className="font-semibold text-violet-700 underline underline-offset-2">看九組貼圖成果＋圖片教學 →</Link>
-      </p>
+      <details className="mt-2 text-xs leading-5 text-slate-600">
+        <summary className="cursor-pointer font-semibold text-violet-800">五步驟與貼圖上架說明（選看）</summary>
+        <p className="mt-2">{mode === "animated" ? "動態貼圖的動畫與 ZIP 下載都屬於第 5 步。" : "下載靜態 ZIP 即完成五步驟。"}</p>
+        <Link to="/tools/line-sticker-start" className="font-semibold text-violet-700 underline underline-offset-2">看九組貼圖成果與圖片教學</Link>
+      </details>
     </nav>
   );
 }

@@ -1,4 +1,5 @@
 import { auditStickerFrames, LINE_RECOMMENDED_DISTINCT_FRAMES } from "./animatedStickerFrameQuality";
+import { fitStickerBoundsToCanvas } from "@/lib/stickerOutputFit";
 
 export type AutoMotionPreset =
   | "auto"
@@ -125,13 +126,10 @@ function normalizeSource(image: HTMLImageElement, renderScale = 1): HTMLCanvasEl
   if (!bounds) throw new Error("圖片沒有可辨識的內容，請確認透明PNG內有角色或文字。");
 
   // 預留更大的動畫位移空間，避免加強動作後碰到畫布邊界。
-  const padding = 16 * renderScale;
+  const padding = 12 * renderScale; // 母圖已有安全留白，無需再次縮太多
   const logicalWidth = OUTPUT_WIDTH * renderScale;
   const logicalHeight = OUTPUT_HEIGHT * renderScale;
-  const scale = Math.min(
-    (logicalWidth - padding * 2) / bounds.width,
-    (logicalHeight - padding * 2) / bounds.height,
-  );
+  const scale = fitStickerBoundsToCanvas(bounds.width, bounds.height, logicalWidth, logicalHeight, padding);
   const targetWidth = Math.max(1, Math.round(bounds.width * scale));
   const targetHeight = Math.max(1, Math.round(bounds.height * scale));
   const targetX = Math.round((logicalWidth - targetWidth) / 2);
@@ -495,12 +493,9 @@ function renderFrames(
   }
   if (right <= left || bottom <= top) throw new Error("動畫內容為空，請檢查原始貼圖。");
 
-  const safePadding = 16 * renderScale;
-  const scale = Math.min(
-    1,
-    (outputWidth - safePadding * 2) / (right - left),
-    (outputHeight - safePadding * 2) / (bottom - top),
-  );
+  // 所有 8 禎共用同一安全框；僅允許最多 12% 的補放大，不剪掉文字或手勢。
+  const safePadding = 11 * renderScale;
+  const scale = fitStickerBoundsToCanvas(right - left, bottom - top, outputWidth, outputHeight, safePadding, 1.12);
   const offsetX = outputWidth / 2 - ((left + right) / 2) * scale;
   const offsetY = outputHeight / 2 - ((top + bottom) / 2) * scale;
   return rawFrames.map((rawFrame) => {
