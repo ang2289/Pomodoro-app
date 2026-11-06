@@ -15,6 +15,7 @@ const functions = [
   "textPositionForCell",
   "buildRolePrompt",
   "buildPhotoReminder",
+  "tutuStickerHeadAngle",
   "buildPrompt",
   "buildStablePrompt",
   "buildFlowPrompt",

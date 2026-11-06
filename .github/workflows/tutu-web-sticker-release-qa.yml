@@ -1,0 +1,33 @@
+name: TUTU Web Sticker Release QA
+on:
+  push:
+    branches:
+      - release/tutu-web-sticker-only-20261106
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Output bounds and sticker unit tests
+        run: |
+          npx tsx --test test/stickerOutputFit.test.ts
+          node --test test/rxvStickerGeminiFirst.test.mjs test/rxvStickerOnboarding.test.mjs test/rxvStickerFinalWorkflow.test.mjs test/stickerStarterLanding.test.mjs test/stickerExcelOffers.test.mjs
+      - name: Production build
+        run: npm run build

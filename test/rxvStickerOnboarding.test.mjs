@@ -26,7 +26,7 @@ test("跨頁導覽有目標錨點與標示", () => {
   assert.match(progress, /to=\{phase.path\}/);
   assert.match(progress, /貼圖製作五步驟導覽/);
   assert.match(progress, /tools\/sticker-prompt#sticker-start/);
-  assert.match(progress, /tools\/line-sticker\?existing=1#mother-upload/);
+  assert.match(progress, /tools\/line-sticker\?existing=1#step3-options/);
   assert.match(slicer, /第 4 步｜確認格數/);
 });
 
@@ -48,7 +48,8 @@ test("持續保留近期 QA、零成本與減流量修正", () => {
   assert.match(apng, /ensureVisibleMotion/);
   assert.match(apng, /auditStickerFrames/);
   assert.match(apng, /const overscan = 80 \* renderScale/);
-  assert.match(animated, /const OUTPUT_SAFE_PADDING = 12/);
+  assert.match(animated, /const OUTPUT_SAFE_PADDING = 10/);
+  assert.match(animated, /fitStickerBoundsToCanvas/);
   assert.match(page, /WhatsAppMobileZipHandoff/);
   assert.match(html, /href="\/icon.png"/);
   assert.match(gallery, /loading="lazy"/);

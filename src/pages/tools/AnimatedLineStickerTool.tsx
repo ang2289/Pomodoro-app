@@ -1,10 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { fitStickerBoundsToCanvas } from "@/lib/stickerOutputFit";
 import { requireDistinctLineFrames } from "@/lib/animatedStickerFrameQuality";
 import { WhatsAppMobileZipHandoff, type WhatsAppZipArchive } from "@/components/WhatsAppMobileZipHandoff";
 import { verifyLinePngBytes, auditEncodedLineApngDistinctFrames } from "@/lib/lineApngFileQuality";
 import { Helmet } from "react-helmet-async";
 import { useTranslation } from "react-i18next";
 import SEO, { getBaseUrl } from "@/components/SEO";
+import { QRCodeSVG } from "qrcode.react";
 import LineStickerFlowSteps from "@/components/LineStickerFlowSteps";
 import { stickerSaleTextRisks } from "@/lib/stickerCommercialSafety";
 import {
@@ -53,9 +55,44 @@ const LINE_TAB_ICON_HEIGHT = 74;
 // 採用保守的十進位 1MB 上限，避免上架平台與瀏覽器的 MB 換算差異。
 const LINE_APNG_MAX_BYTES = 1_000_000;
 const MAX_LINE_ZIP_MB = 60;
+// TUTU_WEB_SIZE_AND_EXPORT_QR_NAMING_20261104
+const DEFAULT_SHOWCASE_QR_URL = "https://store.line.me/stickershop/author/5530587/zh-Hant";
+const QR_LAST_URL_STORAGE = "tutu_showcase_qr_v1";
+const QR_RECENT_URL_STORAGE = "tutu_showcase_qr_recent_v1";
+function isPlaceholderStickerTheme(value: string) {
+  return !value.trim() || ["未命名貼圖", "未命名", "無主題"].includes(value.trim());
+}
+function safeStickerThemeName(value: string) {
+  const name = isPlaceholderStickerTheme(value) ? "我的貼圖" : value.trim();
+  return name.replace(/[\\/:*?"<>|\x00-\x1f]/g, "_").replace(/\s+/g, "_").slice(0, 40) || "我的貼圖";
+}
+function validShowcaseUrl(value: string) {
+  try {
+    const parsed = new URL(value);
+    return (parsed.protocol === "https:" || parsed.protocol === "http:") && Boolean(parsed.hostname);
+  } catch { return false; }
+}
+async function loadQrCodeCanvasImage(): Promise<HTMLImageElement> {
+  const svg = document.querySelector<SVGSVGElement>("#tutu-video-qr");
+  if (!svg) throw new Error("QR Code 尚未準備好，請重新整理頁面。");
+  const clone = svg.cloneNode(true) as SVGSVGElement;
+  clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+  const svgText = new XMLSerializer().serializeToString(clone);
+  const objectUrl = URL.createObjectURL(new Blob([svgText], {type:"image/svg+xml"}));
+  try {
+    const image = new Image();
+    await new Promise<void>((resolve,reject) => {
+      image.onload = () => resolve();
+      image.onerror = () => reject(new Error("QR Code 圖片讀取失敗，請重新整理頁面。"));
+      image.src = objectUrl;
+    });
+    return image;
+  } finally { URL.revokeObjectURL(objectUrl); }
+}
+
 const ALPHA_VISIBLE_THRESHOLD = 8;
 const SOURCE_CROP_PADDING = 12;
-const OUTPUT_SAFE_PADDING = 12; // 動態影格安全留白，避免二次縮放貼邊
+const OUTPUT_SAFE_PADDING = 10; // 依所有畫格的透明範圍安全置中，減少多餘留白
 
 type AlphaBounds = {
   left: number;
@@ -434,10 +471,7 @@ async function prepareLineRenderData(frames: FrameItem[], t: Translate): Promise
   const union = sameSourceSize ? expandBounds(unionBounds(rawBounds), sizes[0].width, sizes[0].height) : unionBounds(expandedBounds);
   const maxCropWidth = sameSourceSize ? union.width : Math.max(...expandedBounds.map((bounds) => bounds.width));
   const maxCropHeight = sameSourceSize ? union.height : Math.max(...expandedBounds.map((bounds) => bounds.height));
-  const scale = Math.min(
-    (OUTPUT_WIDTH - OUTPUT_SAFE_PADDING * 2) / Math.max(1, maxCropWidth),
-    (OUTPUT_HEIGHT - OUTPUT_SAFE_PADDING * 2) / Math.max(1, maxCropHeight)
-  );
+  const scale = fitStickerBoundsToCanvas(maxCropWidth, maxCropHeight, OUTPUT_WIDTH, OUTPUT_HEIGHT, OUTPUT_SAFE_PADDING);
 
   const plans = images.map((_, index) => {
     const crop = sameSourceSize ? union : expandedBounds[index];
@@ -1330,6 +1364,7 @@ type VideoExportOptions = {
   videoBitsPerSecond?: number;
   fillWhite?: boolean;
   allowScaleUp?: boolean;
+  qrImage?: HTMLImageElement;
 };
 
 async function createVideoBlob(
@@ -1399,6 +1434,35 @@ async function createVideoBlob(
     }
   }
 
+  if (options.qrImage) {
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, width, height);
+    ctx.fillStyle = "#293653";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.font = 'bold ' + Math.round(width * 0.055) + 'px "Microsoft JhengHei", sans-serif';
+    ctx.fillText("掃描 QR Code 查看更多貼圖", width / 2, height * 0.23);
+    const qrSide = Math.round(Math.min(width, height) * 0.5);
+    ctx.drawImage(options.qrImage, (width - qrSide) / 2, (height - qrSide) / 2, qrSide, qrSide);
+    // MediaRecorder may discard a single unchanging QR frame at the end.
+    // Keep the QR itself stationary while animating only a thin footer bar.
+    const endingStart = performance.now();
+    const endingDurationMs = 3200;
+    const progressWidth = width * 0.7;
+    const progressLeft = (width - progressWidth) / 2;
+    const progressTop = Math.round(height * 0.9);
+    const videoTrack = stream.getVideoTracks()[0] as MediaStreamTrack & { requestFrame?: () => void };
+    for (let step = 0; step <= 32; step += 1) {
+      const untilFrame = endingStart + step * 100 - performance.now();
+      if (untilFrame > 0) await waitMs(untilFrame);
+      ctx.fillStyle = "#e2e8f0";
+      ctx.fillRect(progressLeft, progressTop, progressWidth, 6);
+      ctx.fillStyle = "#6366f1";
+      ctx.fillRect(progressLeft, progressTop, Math.max(2, progressWidth * step / 32), 6);
+      videoTrack.requestFrame?.();
+    }
+    await waitMs(100);
+  }
   if (recorder.state === "recording" && typeof recorder.requestData === "function") {
     recorder.requestData();
     await waitMs(120);
@@ -1430,6 +1494,7 @@ async function createBatchShowcaseVideo(
   presets: AutoMotionPreset[],
   onProgress: (finished: number, total: number) => void,
   platform: "line" | "whatsapp" = "line",
+  qrImage: HTMLImageElement,
 ): Promise<{ blob: Blob; extension: "mp4" | "webm"; isMp4: boolean }> {
   if (![8, 16, 24].includes(sources.length) || sources.length !== presets.length) {
     throw new Error("展示影片來源與貼圖數量不一致，請先重新產生整套上架 ZIP。");
@@ -1472,23 +1537,46 @@ async function createBatchShowcaseVideo(
     ctx.textBaseline = "middle";
     ctx.fillStyle = "#744e61";
     ctx.font = 'bold 58px "Microsoft JhengHei", sans-serif';
-    ctx.fillText(platform === "whatsapp" ? "WhatsApp 動態貼圖展示" : "LINE 動態貼圖展示", width / 2, 355);
+    ctx.fillText(platform === "whatsapp" ? "WhatsApp 動態貼圖展示" : "LINE 動態貼圖展示", width / 2, 315);
     ctx.fillStyle = "#ffffff";
     ctx.shadowColor = "rgba(93, 72, 84, 0.14)";
     ctx.shadowBlur = 32;
     ctx.beginPath();
-    ctx.roundRect(52, 490, 976, 830, 46);
+    // Social video only: enlarge the showcase card without changing LINE APNG safe bounds.
+    ctx.roundRect(30, 410, 1020, 1040, 48);
     ctx.fill();
     ctx.shadowBlur = 0;
-    const ratio = Math.min(900 / bitmap.width, 752 / bitmap.height);
+    const ratio = Math.min(1000 / bitmap.width, 920 / bitmap.height);
     const w = Math.round(bitmap.width * ratio);
     const h = Math.round(bitmap.height * ratio);
-    ctx.drawImage(bitmap, (width - w) / 2, 905 - h / 2, w, h);
+    ctx.drawImage(bitmap, (width - w) / 2, 930 - h / 2, w, h);
     ctx.fillStyle = "#886c7a";
     ctx.font = 'bold 46px "Microsoft JhengHei", sans-serif';
-    ctx.fillText(`${String(index + 1).padStart(2, "0")} / ${String(sources.length).padStart(2, "0")}`, width / 2, 1480);
+    ctx.fillText(`${String(index + 1).padStart(2, "0")} / ${String(sources.length).padStart(2, "0")}`, width / 2, 1550);
   };
 
+  const drawQrEnding = (progress: number) => {
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, width, height);
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "#273653";
+    ctx.font = 'bold 66px "Microsoft JhengHei", sans-serif';
+    ctx.fillText("更多精彩貼圖", width / 2, 475);
+    ctx.font = 'bold 42px "Microsoft JhengHei", sans-serif';
+    ctx.fillText("掃描 QR Code 查看", width / 2, 560);
+    ctx.fillStyle = "#f4f7ff";
+    ctx.fillRect(285, 646, 510, 510);
+    // Keep QR pixels steady for scanning. Animate ONLY a small progress bar beneath.
+    ctx.drawImage(qrImage, 330, 691, 420, 420);
+    ctx.font = 'bold 34px "Microsoft JhengHei", sans-serif';
+    ctx.fillStyle = "#53627a";
+    ctx.fillText("LINE／WhatsApp 貼圖工坊", width / 2, 1270);
+    ctx.fillStyle = "#e2e8f0";
+    ctx.fillRect(255, 1450, 570, 12);
+    ctx.fillStyle = "#6366f1";
+    ctx.fillRect(255, 1450, Math.max(2, Math.round(570 * Math.max(0, Math.min(1, progress)))), 12);
+  };
   const recorder = new MediaRecorderCtor(stream, {
     mimeType,
     videoBitsPerSecond: 12_000_000,
@@ -1564,7 +1652,23 @@ async function createBatchShowcaseVideo(
     if (actualCaptureMs > idealCaptureMs + maxAllowedLagMs) {
       throw new Error("影片錄製超過預定時長，為避免匯出卡住的 MP4，已停止下載。");
     }
+    // Drawing a single still QR then sleeping can produce only one recorded frame
+    // (observed: video stops near 32 seconds instead of 35 seconds). Force a
+    // changing footer every 100 ms while leaving the actual QR perfectly still.
+    // This gives MediaRecorder timestamped frames throughout the full end card.
+    const qrEndingStartedAt = performance.now();
+    const qrEndingDurationMs = 3200;
+    const qrEndingStepMs = 100;
+    const videoTrack = stream.getVideoTracks()[0] as MediaStreamTrack & { requestFrame?: () => void };
+    for (let step = 0; step <= qrEndingDurationMs / qrEndingStepMs; step += 1) {
+      const dueAt = qrEndingStartedAt + step * qrEndingStepMs;
+      const remaining = dueAt - performance.now();
+      if (remaining > 0) await waitMs(remaining);
+      drawQrEnding(step * qrEndingStepMs / qrEndingDurationMs);
+      videoTrack.requestFrame?.();
+    }
     if (recorder.state === "recording") {
+      await waitMs(150);
       recorder.requestData();
       await waitMs(150);
       recorder.stop();
@@ -1628,6 +1732,30 @@ const AnimatedLineStickerTool: React.FC = () => {
   const [batchEffectGalleryFrame, setBatchEffectGalleryFrame] = useState(0);
   const [handoffLoaded, setHandoffLoaded] = useState(false);
   const [handoffTheme, setHandoffTheme] = useState("");
+  const [showcaseQrUrl, setShowcaseQrUrl] = useState(() => {
+    try { const saved = localStorage.getItem(QR_LAST_URL_STORAGE) || ""; return validShowcaseUrl(saved) ? saved : DEFAULT_SHOWCASE_QR_URL; }
+    catch { return DEFAULT_SHOWCASE_QR_URL; }
+  });
+  const [showcaseQrRecents, setShowcaseQrRecents] = useState<string[]>(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(QR_RECENT_URL_STORAGE) || "[]");
+      return Array.isArray(saved) ? saved.filter((url): url is string => typeof url === "string" && validShowcaseUrl(url)).slice(0, 8) : [];
+    } catch { return []; }
+  });
+  // null means using the original project theme; a typed value overrides only the filename.
+  const [stickerFileThemeOverride, setStickerFileThemeOverride] = useState<string | null>(null);
+  const projectThemeForFile = handoffTheme || readLineStickerProject()?.theme || "";
+  const stickerThemeForFile = safeStickerThemeName(stickerFileThemeOverride ?? projectThemeForFile);
+  const rememberShowcaseQr = () => {
+    const url = showcaseQrUrl.trim();
+    if (!validShowcaseUrl(url)) throw new Error("請輸入正確的 http 或 https QR 網址。");
+    const recent = [url, ...showcaseQrRecents.filter((u) => u !== url)].slice(0, 8);
+    setShowcaseQrRecents(recent);
+    try {
+      localStorage.setItem(QR_LAST_URL_STORAGE, url);
+      localStorage.setItem(QR_RECENT_URL_STORAGE, JSON.stringify(recent));
+    } catch { /* local storage optional */ }
+  };
   const [sourceCaptions, setSourceCaptions] = useState<string[]>([]);
   const saleTextRisks = useMemo(
     () => stickerSaleTextRisks(sourceCaptions),
@@ -1649,6 +1777,7 @@ const AnimatedLineStickerTool: React.FC = () => {
   const batchAnimatedPreviewsRef = useRef<BatchAnimatedPreview[]>([]);
   const batchEffectGalleryUrlsRef = useRef<string[]>([]);
   const batchPreviewSectionRef = useRef<HTMLElement | null>(null);
+  const handoffGuideScrollRef = useRef(false);
 
   useEffect(() => {
     framesRef.current = frames;
@@ -1724,6 +1853,15 @@ const AnimatedLineStickerTool: React.FC = () => {
       cancelled = true;
     };
   }, [t]);
+
+  useEffect(() => {
+    if (!handoffLoaded || handoffGuideScrollRef.current) return;
+    handoffGuideScrollRef.current = true;
+    const timer = window.setTimeout(() => {
+      document.getElementById("tutu-animated-next-action")?.scrollIntoView({ behavior: "auto", block: "start" });
+    }, 160);
+    return () => window.clearTimeout(timer);
+  }, [handoffLoaded]);
 
   useEffect(() => {
     return () => {
@@ -2166,7 +2304,7 @@ const AnimatedLineStickerTool: React.FC = () => {
       }
       const zip = makeZip(zipFiles);
       replaceBatchAnimatedPreviews(previews);
-      const filename = `rxv-whatsapp-animated-${batchSources.length}-webp.zip`;
+      const filename = `WhatsApp_動態_${stickerThemeForFile}_${batchSources.length}張_WebP.zip`;
       downloadBlob(zip, filename);
       setWhatsAppReadyZip({ blob: zip, filename });
       setCompletedPlatform("whatsapp");
@@ -2307,7 +2445,7 @@ const AnimatedLineStickerTool: React.FC = () => {
       }
       downloadBlob(
         zip,
-        `rxv-line-animated-sticker-upload-pack-${batchSources.length}.zip`,
+        `LINE_動態_${stickerThemeForFile}_${batchSources.length}張_上架.zip`,
       );
 
       setBatchProgress(100);
@@ -2344,14 +2482,17 @@ const AnimatedLineStickerTool: React.FC = () => {
     setBatchVideoProgress(0);
     setBatchVideoMessage("");
     try {
+      rememberShowcaseQr();
+      const qrImage = await loadQrCodeCanvasImage();
       const sorted = [...batchAnimatedPreviews].sort((left, right) => left.index - right.index);
       const result = await createBatchShowcaseVideo(
         batchSources,
         sorted.map((item) => item.motionPreset),
         (finished, total) => setBatchVideoProgress(Math.round((finished / total) * 100)),
         exportPlatform,
+        qrImage,
       );
-      downloadBlob(result.blob, `rxv-${exportPlatform}-animated-${batchSources.length}-hd-1080x1920.${result.extension}`);
+      downloadBlob(result.blob, `${exportPlatform === "line" ? "LINE" : "WhatsApp"}_動態_${stickerThemeForFile}_${batchSources.length}張_展示1080x1920_QR.${result.extension}`);
       setBatchVideoMessage(
         result.isMp4
           ? "高清 MP4 已下載！1080×1920 直式展示影片，可用於社群推廣。"
@@ -2461,7 +2602,7 @@ const AnimatedLineStickerTool: React.FC = () => {
 
       const zip = makeZip(files);
       if (zip.size >= MAX_LINE_ZIP_MB * 1024 * 1024) throw new Error("自備分鏡 ZIP 超過 60MB，已停止下載。");
-      downloadBlob(zip, "rxv-manual-storyboard-dynamic-pack.zip");
+      downloadBlob(zip, `LINE_動態_${stickerThemeForFile}_自備分鏡_上架.zip`);
       setMessage("自備分鏡動態貼圖包已通過 APNG、main、tab 尺寸／容量／播放控制檢查並下載；送審前仍須人工檢查人物、文字與著作權。");
     } catch (error: any) {
       setMessage(
@@ -2481,7 +2622,7 @@ const AnimatedLineStickerTool: React.FC = () => {
     try {
       await new Promise((resolve) => window.setTimeout(resolve, 30));
       const zip = await createFramesZip(frames, durationSec, loopCount, t);
-      downloadBlob(zip, "rxv-line-dynamic-sticker-frames.zip");
+      downloadBlob(zip, `LINE_動態_${stickerThemeForFile}_分鏡影格.zip`);
       setMessage(t("animated_line_sticker.message_zip_success"));
     } catch (error: any) {
       setMessage(error?.message || t("animated_line_sticker.error_zip_failed"));
@@ -2499,7 +2640,7 @@ const AnimatedLineStickerTool: React.FC = () => {
     try {
       await new Promise((resolve) => window.setTimeout(resolve, 30));
       const zip = await createLineSmallImagesZip(frames, durationSec, loopCount, t);
-      downloadBlob(zip, "line-small-images.zip");
+      downloadBlob(zip, `LINE_動態_${stickerThemeForFile}_主圖與標籤.zip`);
       setMessage("LINE 小圖 ZIP 已下載：main_240x240.png（APNG）、tab_96x74.png（PNG）。請分別上傳到 LINE 後台 main 與 tab 欄位。");
     } catch (error: any) {
       setMessage(error?.message || "LINE 小圖匯出失敗，請重新整理後再試一次。");
@@ -2521,7 +2662,7 @@ const AnimatedLineStickerTool: React.FC = () => {
       const apngData = new Uint8Array(await apng.arrayBuffer());
       verifyLineOutputPng(apngData, "animated-sticker.png", OUTPUT_WIDTH, OUTPUT_HEIGHT, true);
       await auditEncodedLineApngDistinctFrames(apngData, "animated-sticker.png", OUTPUT_WIDTH, OUTPUT_HEIGHT);
-      downloadBlob(apng, "rxv-line-dynamic-sticker-apng.png");
+      downloadBlob(apng, `LINE_動態_${stickerThemeForFile}_單張.png`);
       setMessage(`${t("animated_line_sticker.message_apng_success")}（約 ${sizeKb}KB；已通過輸出檔案檢查）`);
     } catch (error: any) {
       setMessage(error?.message || t("animated_line_sticker.error_apng_failed"));
@@ -2540,7 +2681,7 @@ const AnimatedLineStickerTool: React.FC = () => {
     try {
       await new Promise((resolve) => window.setTimeout(resolve, 30));
       const gif = await createGifBlob(frames, durationSec, loopCount, t);
-      downloadBlob(gif, "rxv-line-dynamic-sticker-preview.gif");
+      downloadBlob(gif, `LINE_動態_${stickerThemeForFile}_預覽.gif`);
       setMessage(t("animated_line_sticker.message_gif_success"));
     } catch (error: any) {
       setMessage(error?.message || t("animated_line_sticker.error_gif_failed"));
@@ -2556,6 +2697,8 @@ const AnimatedLineStickerTool: React.FC = () => {
     setMessage("");
     setExportStatus(quality === "hd" ? "正在產生高清 MP4 預覽…" : t("animated_line_sticker.status_video"));
     try {
+      rememberShowcaseQr();
+      const qrImage = await loadQrCodeCanvasImage();
       await new Promise((resolve) => window.setTimeout(resolve, 30));
       const result = await createVideoBlob(
         frames,
@@ -2563,14 +2706,14 @@ const AnimatedLineStickerTool: React.FC = () => {
         loopCount,
         t,
         quality === "hd"
-          ? { width: 1080, height: 1080, frameRate: 30, videoBitsPerSecond: 12000000, fillWhite: true, allowScaleUp: true }
-          : { width: 500, height: 500, frameRate: 30, videoBitsPerSecond: 3500000, fillWhite: true, allowScaleUp: false }
+          ? { width: 1080, height: 1080, frameRate: 30, videoBitsPerSecond: 12000000, fillWhite: true, allowScaleUp: true, qrImage }
+          : { width: 500, height: 500, frameRate: 30, videoBitsPerSecond: 3500000, fillWhite: true, allowScaleUp: false, qrImage }
       );
       downloadBlob(
         result.blob,
         quality === "hd"
-          ? `rxv-line-dynamic-sticker-preview-hd.${result.extension}`
-          : `rxv-line-dynamic-sticker-preview.${result.extension}`
+          ? `LINE_動態_${stickerThemeForFile}_單張高清_QR.${result.extension}`
+          : `LINE_動態_${stickerThemeForFile}_單張展示_QR.${result.extension}`
       );
       setMessage(
         quality === "hd"
@@ -2592,6 +2735,9 @@ const AnimatedLineStickerTool: React.FC = () => {
 
   return (
     <>
+      <div aria-hidden="true" style={{ position: "absolute", width: 0, height: 0, overflow: "hidden" }}>
+        <QRCodeSVG id="tutu-video-qr" value={validShowcaseUrl(showcaseQrUrl) ? showcaseQrUrl : DEFAULT_SHOWCASE_QR_URL} size={420} bgColor="#ffffff" fgColor="#111827" />
+      </div>
       <SEO
         title={t("animated_line_sticker.seo_title")}
         description={t("animated_line_sticker.seo_description")}
@@ -2602,10 +2748,62 @@ const AnimatedLineStickerTool: React.FC = () => {
         <link rel="canonical" href={pageUrl} />
       </Helmet>
 
-      <main className="relative left-1/2 w-screen -translate-x-1/2 px-4 py-8 md:px-6 md:py-10">
+      <main className="tutu-sticker-readable relative left-1/2 w-screen -translate-x-1/2 px-4 py-8 md:px-6 md:py-10">
         <div className="mx-auto w-full max-w-[1480px]">
         <LineStickerFlowSteps activeStep={5} mode="animated" />
+        {handoffLoaded ? (
+          <section id="tutu-animated-next-action" aria-label="第 5 步下一步操作"
+            className="mb-5 scroll-mt-24 rounded-3xl border-2 border-emerald-400 bg-emerald-50 p-5 shadow-sm sm:p-6">
+            <p className="text-base font-black text-emerald-800">第 5 步｜貼圖已從上一步自動帶入</p>
+            <h2 className="mt-2 text-xl font-black leading-8 text-slate-950 sm:text-2xl">
+              {batchSources.length} 張已準備好，下一步請按綠色按鈕
+            </h2>
+            <p className="mt-2 text-base leading-7 text-slate-800">
+              預設使用「整套自動、多效果輪用」，不需要重新上傳；可直接下載動態 ZIP。
+            </p>
+            <label className="mt-4 block max-w-[440px] text-base font-black text-slate-900">
+              貼圖主題（下載檔名，可修改）
+              <input type="text" value={stickerFileThemeOverride ?? (isPlaceholderStickerTheme(projectThemeForFile) ? "" : projectThemeForFile)}
+                onChange={(event) => setStickerFileThemeOverride(event.target.value)} maxLength={40}
+                placeholder="例如：社區總幹事；留空會使用我的貼圖"
+                className="mt-2 min-h-12 w-full rounded-xl border-2 border-violet-200 bg-white px-4 py-3 text-base font-bold text-slate-900" />
+            </label>
+            <button type="button"
+              disabled={batchBusy || batchVideoBusy || ![8, 16, 24].includes(batchSources.length)}
+              onClick={exportPlatform === "whatsapp" ? exportWhatsAppAnimatedPack : exportBatchUploadPack}
+              className="mt-4 flex min-h-14 w-full items-center justify-center rounded-xl bg-emerald-700 px-5 py-3 text-center text-base font-black leading-7 text-white shadow-md hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-slate-300 sm:max-w-[440px]">
+              {batchBusy ? "正在產生動態 ZIP…" : exportPlatform === "whatsapp" ? "直接產生並下載 WhatsApp 動態 ZIP" : "直接產生並下載 LINE 動態 ZIP"}
+            </button>
+            <button type="button"
+              onClick={() => document.getElementById("tutu-batch-motion-select")?.scrollIntoView({ behavior: "smooth", block: "center" })}
+              className="mt-3 flex min-h-12 w-full items-center justify-center rounded-xl border border-violet-300 bg-white px-4 py-2 text-base font-bold text-violet-800 hover:bg-violet-50 sm:max-w-[440px]">
+              想自己選動畫？前往動畫設定
+            </button>
+            {batchBusy ? (
+              <div className="mt-4 max-w-[440px]" role="status" aria-live="polite">
+                <p className="text-base font-black text-emerald-800">製作進度 {batchProgress}%</p>
+                <div className="mt-2 h-3 overflow-hidden rounded-full bg-emerald-100">
+                  <div className="h-full bg-emerald-600 transition-all" style={{ width: `${batchProgress}%` }} />
+                </div>
+              </div>
+            ) : null}
+            {batchMessage ? <p role="status" aria-live="polite" className="mt-3 rounded-xl bg-white p-3 text-base font-bold leading-7 text-slate-800">{batchMessage}</p> : null}
+          </section>
+        ) : null}
         <section id="animated-sticker-batch" className="scroll-mt-24 mb-5 rounded-2xl border border-emerald-200 bg-white p-4">
+          {!handoffLoaded ? (
+            <label className="mb-4 block text-base font-black text-slate-900">
+              貼圖主題（作為 ZIP／MP4 下載檔名）
+              <input type="text"
+                value={stickerFileThemeOverride ?? (isPlaceholderStickerTheme(projectThemeForFile) ? "" : projectThemeForFile)}
+                onChange={(event) => setStickerFileThemeOverride(event.target.value)}
+                placeholder="例如：社區總幹事" maxLength={40}
+                className="mt-2 block min-h-12 w-full max-w-xl rounded-xl border-2 border-violet-200 bg-white px-4 py-3 text-base font-bold text-slate-900" />
+            </label>
+          ) : null}
+          <p className="mb-4 text-sm font-bold text-violet-800">
+            目前檔名主題：{stickerThemeForFile}（留空會使用「我的貼圖」）
+          </p>
           <p className="text-sm font-black text-slate-900">輸出平台｜動態貼圖</p>
           <div className="mt-3 grid w-full max-w-[520px] grid-cols-2 items-stretch gap-3" role="group" aria-label="選擇動態貼圖輸出平台">
             {(["line", "whatsapp"] as const).map((platform) => (
@@ -2634,27 +2832,24 @@ const AnimatedLineStickerTool: React.FC = () => {
           <h1 className="mt-2 text-2xl font-black tracking-tight text-slate-900 md:text-4xl">
             {t("animated_line_sticker.title")}
           </h1>
-          <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-700 md:text-base">
-            {t("animated_line_sticker.intro_line_1")}
-            {t("animated_line_sticker.intro_line_2")}
-          </p>
-          <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
-            <span className="font-black">{t("animated_line_sticker.recommended_timing_label")}</span>
-            {t("animated_line_sticker.recommended_timing_before")}
-            <span className="font-black">{t("animated_line_sticker.recommended_timing_value")}</span>
-            {t("animated_line_sticker.recommended_timing_after")}
-          </div>
-          <div className="mt-5 flex flex-wrap items-center gap-3">
+          <details className="mt-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm leading-6 text-slate-700">
+            <summary className="cursor-pointer font-bold">動態製作方式、時間與格式說明（選看）</summary>
+            <p className="mt-2">{t("animated_line_sticker.intro_line_1")}{t("animated_line_sticker.intro_line_2")}</p>
+            <p className="mt-2 text-amber-900"><strong>{t("animated_line_sticker.recommended_timing_label")}</strong>
+              {t("animated_line_sticker.recommended_timing_before")}{t("animated_line_sticker.recommended_timing_value")}{t("animated_line_sticker.recommended_timing_after")}
+            </p>
+          </details>
+          {!handoffLoaded ? <div className="mt-5 flex flex-wrap items-center gap-3">
             <a
               href="/tools/sticker-prompt?mode=animated"
               className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-full bg-sky-600 px-5 py-3 text-sm font-black leading-none !text-white shadow-md transition hover:-translate-y-0.5 hover:bg-sky-700 hover:shadow-lg"
             >
               從第 1 步重新製作
             </a>
-            <span className="text-xs font-bold text-slate-500">
+            <span className="text-sm font-bold text-slate-500">
               {t("animated_line_sticker.choose_mode_hint")}
             </span>
-          </div>
+          </div> : null}
           <input
             ref={inputRef}
             type="file"
@@ -2675,80 +2870,43 @@ const AnimatedLineStickerTool: React.FC = () => {
           </section>
         ) : null}
 
-        {handoffLoaded ? (
-          <section className="mt-6 rounded-3xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm">
-            <p className="text-xs font-black uppercase tracking-wide text-emerald-700">
-              已自動接續第 4 步
-            </p>
-            <h2 className="mt-1 text-xl font-black text-slate-900">
-              {handoffTheme ? `${handoffTheme}｜` : ""}{batchSources.length} 張貼圖已準備完成
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-slate-600">
-              不需要重新上傳圖片。下面確認動畫效果後，按一次按鈕就會逐張產生動態貼圖並整理成 ZIP。
-            </p>
-          </section>
-        ) : null}
-
-        <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
-          <div className="flex flex-wrap items-end justify-between gap-3">
+        <details open={!handoffLoaded} className="mt-6 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
+          <summary className="cursor-pointer text-base font-black text-violet-900">
+            {handoffLoaded ? "其他製作方式（進階，可選）" : "選擇動態貼圖製作方式"}
+          </summary>
+          <div className="mt-4 flex flex-wrap items-end justify-between gap-3">
             <div>
               <p className="text-sm font-black text-slate-900">
                 選擇動態貼圖製作方式
               </p>
-              <p className="mt-1 text-xs leading-5 text-slate-500">
-                三種方式都會保留；有自己設計好的動作 PNG，請使用「自備動作 PNG 影格」。
-              </p>
+              <details className="mt-2 text-xs leading-5 text-slate-500">
+                <summary className="cursor-pointer font-bold">選擇方式說明（選看）</summary>
+                <p className="mt-1">已有自己設計的動作影格，請選「自備動作 PNG 影格」。</p>
+              </details>
             </div>
             <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-black text-amber-700">
               可隨時切換，不會刪掉已選圖片
             </span>
           </div>
 
-          <div className="mt-4 grid gap-3 md:grid-cols-3">
-            {([
-              [
-                "single",
-                "✨",
-                "單張 PNG 自動做動態",
-                "上傳 1 張靜態貼圖，選動作效果後自動產生動畫影格。",
-              ],
-              [
-                "manual",
-                "🧩",
-                "自備動作 PNG 影格",
-                "你已自己畫好每個動作影格時使用；可排序、預覽，再輸出 APNG／GIF／ZIP。",
-              ],
-              [
-                "batch",
-                "📦",
-                "8／16／24 張整套自動",
-                "一批貼圖可選多效果輪用、全部同一效果，或每張自己指定，最後一次整理成 LINE 上架 ZIP。",
-              ],
-            ] as const).map(([mode, icon, title, desc]) => {
-              const active = workflowMode === mode;
-              return (
-                <button
-                  key={mode}
-                  type="button"
-                  onClick={() => setWorkflowMode(mode)}
-                  className={`rounded-2xl border p-4 text-left transition ${
-                    active
-                      ? "border-violet-500 bg-violet-50 ring-2 ring-violet-100"
-                      : "border-slate-200 bg-slate-50 hover:border-violet-200 hover:bg-white"
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl">{icon}</span>
-                    <span className="text-sm font-black leading-5 text-slate-900">
-                      {title}
-                    </span>
-                  </div>
-                  <p className="mt-2 text-xs leading-5 text-slate-600">{desc}</p>
-                </button>
-              );
-            })}
-          </div>
-        </section>
+          <label className="mt-4 block text-base font-black text-slate-900">製作方式（三選一）
+            <select value={workflowMode} onChange={(event) => setWorkflowMode(event.target.value as WorkflowMode)}
+              className="mt-2 min-h-12 w-full max-w-xl rounded-xl border-2 border-violet-200 bg-white px-4 py-3 text-base font-black text-violet-900">
+              <option value="single">單張 PNG 自動做動態</option>
+              <option value="manual">自備動作 PNG 影格</option>
+              <option value="batch">8／16／24 張整套自動</option>
+            </select>
+          </label>
+          <p className="mt-2 text-sm font-bold text-violet-800">
+            {workflowMode === "single" ? "下一步：上傳單張 PNG，挑選動作。" : workflowMode === "manual" ? "下一步：上傳各張動作影格。" : "下一步：確認整套貼圖，再選擇動畫效果。"}
+          </p>
+          <details className="mt-3 text-xs leading-6 text-slate-600">
+            <summary className="cursor-pointer font-bold">三種製作方式說明（選看）</summary>
+            <p className="mt-2">單張 PNG：上傳一張貼圖，由工具製作動畫。</p>
+            <p>自備影格：自行準備多張動作 PNG，再匯出 APNG。</p>
+            <p>整套自動：一批 8／16／24 張一次套用動畫並下載 ZIP。</p>
+          </details>
+        </details>
 
         {workflowMode === "single" ? (
         <section className="mt-6 rounded-3xl border border-violet-200 bg-gradient-to-br from-violet-50 via-white to-fuchsia-50 p-5 shadow-sm md:p-7">
@@ -2873,23 +3031,27 @@ const AnimatedLineStickerTool: React.FC = () => {
               <h2 className="text-2xl font-black text-slate-900">
                 {t("animated_line_sticker.batch_title")}
               </h2>
-              <p className="max-w-4xl text-sm leading-7 text-slate-600">
-                {t("animated_line_sticker.batch_desc")}
-              </p>
+              <details className="max-w-4xl text-sm leading-7 text-slate-600">
+                <summary className="cursor-pointer font-bold">整套動畫製作說明（選看）</summary>
+                <p className="mt-2">{t("animated_line_sticker.batch_desc")}</p>
+              </details>
             </div>
 
-            <div className="mt-5 grid gap-3 md:grid-cols-3">
-              {[
-                ["操作 A｜確認貼圖", t("animated_line_sticker.batch_step1")],
-                ["操作 B｜設定動畫", t("animated_line_sticker.batch_step2")],
-                ["操作 C｜下載 ZIP", t("animated_line_sticker.batch_step3")],
-              ].map(([label, desc]) => (
-                <div key={label} className="rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm">
-                  <p className="text-xs font-black uppercase tracking-wide text-emerald-600">{label}</p>
-                  <p className="mt-2 text-sm font-bold leading-6 text-slate-800">{desc}</p>
-                </div>
-              ))}
-            </div>
+            <details className="mt-4 rounded-xl border border-emerald-100 bg-white p-3">
+              <summary className="cursor-pointer text-sm font-black text-emerald-800">操作 A／B／C 詳細步驟（選看）</summary>
+              <div className="mt-3 grid gap-3 md:grid-cols-3">
+                {[
+                  ["操作 A｜確認貼圖", t("animated_line_sticker.batch_step1")],
+                  ["操作 B｜設定動畫", t("animated_line_sticker.batch_step2")],
+                  ["操作 C｜下載 ZIP", t("animated_line_sticker.batch_step3")],
+                ].map(([label, desc]) => (
+                  <div key={label} className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-3">
+                    <p className="text-xs font-black text-emerald-800">{label}</p>
+                    <p className="mt-2 text-xs leading-6 text-slate-700">{desc}</p>
+                  </div>
+                ))}
+              </div>
+            </details>
 
             <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_0.8fr]">
               <div className="rounded-2xl border border-slate-200 bg-white p-4">
@@ -2989,86 +3151,19 @@ const AnimatedLineStickerTool: React.FC = () => {
                   <span className="text-sm font-black text-slate-800">
                     動畫套用方式
                   </span>
-                  <p className="mt-1 text-xs leading-5 text-slate-600">
-                    可選「多效果輪用」、「全部同一效果」，或「每張自己選效果」。一般使用建議直接用多效果輪用；想統一品牌節奏則選同一效果。
-                  </p>
-                  <div className="mt-3 grid gap-2">
-                    <button
-                      type="button"
-                      disabled={batchBusy}
-                      onClick={() => setBatchMotionMode("mixed")}
-                      className={`rounded-xl border px-3 py-3 text-left transition ${
-                        batchMotionMode === "mixed"
-                          ? "border-violet-500 bg-violet-50 ring-2 ring-violet-100"
-                          : "border-slate-200 bg-white hover:border-violet-200"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-black text-slate-900">
-                          ✨ 多效果輪用（推薦）
-                        </span>
-                        {batchMotionMode === "mixed" ? (
-                          <span className="rounded-full bg-violet-600 px-2 py-1 text-[10px] font-black text-white">
-                            已選
-                          </span>
-                        ) : null}
-                      </div>
-                      <p className="mt-1 text-xs leading-5 text-slate-600">
-                        每張貼圖自動換一種動畫，整套不會全部動得一樣。
-                      </p>
-                    </button>
-
-                    <button
-                      type="button"
-                      disabled={batchBusy}
-                      onClick={() => setBatchMotionMode("single")}
-                      className={`rounded-xl border px-3 py-3 text-left transition ${
-                        batchMotionMode === "single"
-                          ? "border-emerald-500 bg-emerald-50 ring-2 ring-emerald-100"
-                          : "border-slate-200 bg-white hover:border-emerald-200"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-black text-slate-900">
-                          🎬 全部使用同一效果
-                        </span>
-                        {batchMotionMode === "single" ? (
-                          <span className="rounded-full bg-emerald-600 px-2 py-1 text-[10px] font-black text-white">
-                            已選
-                          </span>
-                        ) : null}
-                      </div>
-                      <p className="mt-1 text-xs leading-5 text-slate-600">
-                        適合品牌想維持同一節奏，或指定全部使用某一種動畫。
-                      </p>
-                    </button>
-
-                    <button
-                      type="button"
-                      disabled={batchBusy}
-                      onClick={() => setBatchMotionMode("custom")}
-                      className={`rounded-xl border px-3 py-3 text-left transition ${
-                        batchMotionMode === "custom"
-                          ? "border-sky-500 bg-sky-50 ring-2 ring-sky-100"
-                          : "border-slate-200 bg-white hover:border-sky-200"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-black text-slate-900">
-                          🎛️ 每張自己選效果
-                        </span>
-                        {batchMotionMode === "custom" ? (
-                          <span className="rounded-full bg-sky-600 px-2 py-1 text-[10px] font-black text-white">
-                            已選
-                          </span>
-                        ) : null}
-                      </div>
-                      <p className="mt-1 text-xs leading-5 text-slate-600">
-                        進階模式：每一張貼圖都可指定不同動畫，適合客戶已經知道每句話想怎麼動。
-                      </p>
-                    </button>
-                  </div>
-
+                  <label id="tutu-batch-motion-select" className="mt-3 block scroll-mt-24 text-base font-black text-slate-700">動畫效果（三選一）
+                    <select value={batchMotionMode} disabled={batchBusy}
+                      onChange={(event) => setBatchMotionMode(event.target.value as BatchMotionMode)}
+                      className="mt-2 min-h-12 w-full max-w-xl rounded-xl border-2 border-violet-200 bg-white px-4 py-3 text-base font-black text-violet-900 disabled:opacity-60">
+                      <option value="mixed">多效果輪用（推薦）</option>
+                      <option value="single">全部使用同一效果</option>
+                      <option value="custom">每張自己選效果</option>
+                    </select>
+                  </label>
+                  <details className="mt-2 text-xs leading-6 text-slate-600">
+                    <summary className="cursor-pointer font-bold">效果差異說明（選看）</summary>
+                    <p className="mt-1">多效果輪用：每張交替用不同動作；全部同一效果：整套節奏一致；每張自己選效果：逐張指定動畫。</p>
+                  </details>
                   {batchMotionMode === "single" ? (
                     <label className="mt-3 block">
                       <span className="text-xs font-black text-slate-700">
@@ -3193,6 +3288,12 @@ const AnimatedLineStickerTool: React.FC = () => {
                   </p>
                 </div>
 
+                {!handoffLoaded ? (
+                  <label className="mt-4 block text-base font-black text-slate-900">
+                    本套貼圖主題（下載檔名）
+                    <input value={handoffTheme} onChange={(event) => setHandoffTheme(event.target.value)} maxLength={40} placeholder="例如：消防人員" className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-base font-bold" />
+                  </label>
+                ) : null}
                 <p className="mt-4 rounded-xl border border-indigo-200 bg-white p-3 text-sm font-black leading-6 text-indigo-900">
                   最後一步：只有按下「產生並下載上架 ZIP」，才會真正產生貼圖 ZIP；前面的動畫試播與預覽不等於已完成打包。
                 </p>
@@ -3200,7 +3301,7 @@ const AnimatedLineStickerTool: React.FC = () => {
                   type="button"
                   disabled={batchBusy || ![8, 16, 24].includes(batchSources.length)}
                   onClick={exportPlatform === "whatsapp" ? exportWhatsAppAnimatedPack : exportBatchUploadPack}
-                  className="mt-4 inline-flex min-h-12 w-auto max-w-full items-center justify-center rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-black !text-white shadow-md transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                  className="mt-4 flex min-h-12 w-full items-center justify-center rounded-2xl bg-emerald-600 px-4 py-3 text-base font-black !text-white shadow-md transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300 sm:max-w-[440px]"
                 >
                   {batchBusy
                     ? (exportPlatform === "whatsapp" ? "正在壓縮 WhatsApp 動畫 WebP…" : t("animated_line_sticker.batch_generating_button"))
@@ -3474,10 +3575,17 @@ const AnimatedLineStickerTool: React.FC = () => {
             </div>
 
             <section className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 p-4">
-              <h3 className="text-base font-black text-rose-900">完成後另存高清影片｜整套動態展示</h3>
+              <h3 className="text-base font-black text-rose-900">下載高清展示影片（片尾 QR Code）</h3>
+              <label className="mt-3 block text-sm font-black text-rose-900">
+                片尾 QR Code 連結
+                <input type="url" value={showcaseQrUrl} onChange={(event) => setShowcaseQrUrl(event.target.value)} list="tutu-showcase-qr-recent" className="mt-2 w-full rounded-xl border border-rose-200 bg-white px-3 py-3 text-sm font-bold" />
+              </label>
+              <datalist id="tutu-showcase-qr-recent">{showcaseQrRecents.map((url) => <option value={url} key={url}/>)}</datalist>
+              <p className="mt-2 text-xs font-bold text-rose-800">MP4／WebM 片尾約 3 秒顯示 QR Code。成功匯出前會記住這個網址。</p>
+              <details className="mt-3 text-xs text-rose-800"><summary className="cursor-pointer font-bold">影片技術說明（選看）</summary>
               <p className="mt-1 text-xs leading-6 text-rose-800">
                 將 {batchAnimatedPreviews.length} 張依序播放，每張約 2 秒；先產生 640×540 動畫影格，再使用最高 30FPS 的錄製串流，只有影格變化時才重畫 1080×1920 高清畫面，避免前兩張耗時過久造成停格。MP4 僅供展示，貼圖上架請用對應的 ZIP。
-              </p>
+              </p></details>
               <button type="button" disabled={batchVideoBusy || batchBusy}
                 onClick={exportBatchHdVideo}
                 className="mt-3 min-h-12 rounded-2xl bg-rose-600 px-5 py-3 text-sm font-black text-white shadow-md hover:bg-rose-700 disabled:cursor-not-allowed disabled:bg-slate-300">
@@ -3485,11 +3593,9 @@ const AnimatedLineStickerTool: React.FC = () => {
               </button>
               {batchVideoBusy ? <div className="mt-3 h-2 overflow-hidden rounded-full bg-rose-200"><div className="h-full bg-rose-600 transition-all" style={{ width: `${batchVideoProgress}%` }} /></div> : null}
               {batchVideoMessage ? <p role="status" className="mt-3 text-xs font-bold leading-6 text-rose-900">{batchVideoMessage}</p> : null}
-              <p className="mt-2 text-[11px] leading-5 text-rose-700">全程在本機瀏覽器製作，無需上傳雲端。原始低解析度素材的細節無法憑空還原；影片錄製時間約為貼圖數量×2秒，且會先準備動畫影格。瀏覽器不支援 MP4 時會輸出真正 WebM。</p>
+              <details className="mt-2 text-xs leading-5 text-rose-700"><summary className="cursor-pointer font-bold">影片格式與瀏覽器限制（選看）</summary><p>影片在瀏覽器本機製作，低解析來源無法憑空變高清；不支援 MP4 時會改輸出 WebM。</p></details>
             </section>
-            <div className="mt-4 rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-xs font-bold leading-5 text-sky-900">
-              瀏覽器顯示的是實際 APNG 動畫；若動畫已播放完，可按「重播全部」或點單張圖片重新播放。
-            </div>
+            <details className="mt-4 rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-xs font-bold leading-5 text-sky-900"><summary className="cursor-pointer font-bold">動畫重播教學（選看）</summary>可按「重播全部」或點單張圖片重新播放。</details>
           </section>
         ) : null}
 
@@ -3660,6 +3766,12 @@ const AnimatedLineStickerTool: React.FC = () => {
                 </button>
               ) : null}
 
+              <label className="mt-4 block text-sm font-black text-slate-900">貼圖主題（下載檔名）
+                <input value={handoffTheme} onChange={(event) => setHandoffTheme(event.target.value)} maxLength={40} placeholder="例如：消防人員" className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-bold"/>
+              </label>
+              <label className="mt-3 block text-sm font-black text-slate-900">MP4／WebM 片尾 QR Code 網址
+                <input type="url" value={showcaseQrUrl} onChange={(event) => setShowcaseQrUrl(event.target.value)} list="tutu-showcase-qr-recent" className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-bold"/>
+              </label>
               <div className="mt-4 flex flex-wrap items-center gap-3">
                 <button
                   type="button"
@@ -3710,13 +3822,13 @@ const AnimatedLineStickerTool: React.FC = () => {
                   {busy ? t("animated_line_sticker.processing") : "下載小圖 ZIP（main＋tab）"}
                 </button>
               </div>
-              <div className="mt-3 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-xs leading-6 text-slate-600">
+              <details className="mt-3 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-xs leading-6 text-slate-600"><summary className="cursor-pointer font-bold">各種匯出格式說明（選看）</summary>
                 <p><span className="font-black text-slate-800">{t("animated_line_sticker.apng_label")}</span>{t("animated_line_sticker.apng_desc")}</p>
                 <p className="mt-1 font-bold text-amber-700">提示：工具可上傳最多 20 禎；LINE 動態貼圖每張 APNG 必須小於 1MB。10 禎以上會啟用快速匯出模式，但不會自動縮小角色。</p>
                 <p><span className="font-black text-slate-800">{t("animated_line_sticker.gif_label")}</span>{t("animated_line_sticker.gif_desc")}</p>
                 <p><span className="font-black text-slate-800">{t("animated_line_sticker.mp4_label")}</span>{t("animated_line_sticker.mp4_desc")}</p>
-                <p><span className="font-black text-slate-800">小圖 ZIP：</span>自動匯出 LINE 後台需要的 main_240x240.png（APNG）與 tab_96x74.png（PNG）；tab 會用第 1 禎裁掉透明留白後置中。</p>
-              </div>
+                <p><span className="font-black text-slate-800">小圖 ZIP：</span>匯出 LINE 後台需要的主圖與標籤圖。</p>
+              </details>
               {exportStatus ? (
                 <p className="mt-3 rounded-xl bg-sky-50 px-3 py-2 text-sm font-bold text-sky-800">
                   {exportStatus}

@@ -50,7 +50,7 @@ test("第一次使用者優先進入設定，完整母圖捷徑為摺疊進階�
   assert.match(source, /不是只有一張寶寶或真人照片/);
   assert.match(source, /<details className="group rounded-xl/);
   assert.match(source, /已製作完成整張貼圖母圖/);
-  assert.match(source, /to="\/tools\/line-sticker\?flow=1#mother-upload"/);
+  assert.match(source, /to="\/tools\/line-sticker\?flow=1#step3-options"/);
   assert.match(source, /onClick=\{\(\) => persistFlowProject\(3\)\}/);
   assert.match(source, /動態貼圖仍需於第 5 步製作動畫/);
 });
