@@ -14,12 +14,12 @@ test("角色區分可選性別年齡性格與固定的獨特造型", () => {
   }
   assert.match(source, /主角專屬辨識配件/);
   assert.match(source, /所有格子與後續母圖固定同一髮型/);
-  assert.match(source, /幫我隨機搭配不同角色/);
+  assert.match(source, /未指定性別及年齡時，由 AI 依主題原創設計/);
 });
 
 test("從第3步直接上傳也可選動畫或靜態、張數也配對規則", () => {
   const source = read("src/pages/tools/LineStickerTool.tsx");
-  assert.match(source, /第 3 步開始也能選/);
+  assert.match(source, /第 3 步｜選好設定，再上傳母圖/);
   assert.match(source, /selectedStickerMode: LineStickerMode = flowProject\?\.mode \?\? directStickerMode/);
   assert.match(source, /getAllowedCounts\(selectedStickerMode\)/);
   assert.match(source, /selectedStickerMode === "animated" \? \(/);
@@ -46,7 +46,7 @@ test("正常產生 ZIP 成功後才顯示完成提示", () => {
   assert.match(animated, /setCompletedPlatform\(null\)/);
   assert.match(animated, /setCompletedPlatform\("line"\)/);
   assert.match(animated, /setCompletedPlatform\("whatsapp"\)/);
-  const indexDownload = animated.indexOf("downloadBlob(\n        zip,\n        `rxv-line-animated-sticker-upload-pack-");
+  const indexDownload = animated.indexOf("downloadBlob(\n        zip,\n        `LINE_動態_");
   const indexComplete = animated.indexOf('setCompletedPlatform("line")');
   assert.ok(indexDownload >= 0 && indexComplete > indexDownload, "LINE animated completion must follow downloadable ZIP");
 });
@@ -55,7 +55,7 @@ test("Windows CRLF 與 Linux LF 的 ZIP 完成順序檢查結果一致", () => {
   const source = read("src/pages/tools/AnimatedLineStickerTool.tsx");
   const simulatedCRLF = source.replace(/\n/g, "\r\n");
   const normalize = (text) => text.replace(/\r\n/g, "\n");
-  const expected = 'downloadBlob(\n        zip,\n        `rxv-line-animated-sticker-upload-pack-';
+  const expected = 'downloadBlob(\n        zip,\n        `LINE_動態_';
   for (const variant of [source, simulatedCRLF]) {
     const normalized = normalize(variant);
     const downloaded = normalized.indexOf(expected);
