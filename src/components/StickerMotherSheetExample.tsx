@@ -6,7 +6,7 @@ import { getMotherSheetPlan, type LineStickerCount } from "@/lib/lineStickerFlow
  * 圖檔由本機 QA 工具安裝至 public/images/tutu-mother-sheet-guide-16.webp。
  * 圖檔未載入時，顯示版型示意而不是空白圖片。
  */
-const GUIDE_IMAGE = "/images/tutu-mother-sheet-guide-16.webp";
+const GUIDE_IMAGE = "/images/rxv-sticker-guide/florist-4x4.webp";
 
 type StickerMotherSheetExampleProps = {
   count?: LineStickerCount;
