@@ -5,7 +5,7 @@ import JSZip from "jszip";
 import { QRCodeCanvas } from "qrcode.react";
 import { Link } from "react-router-dom";
 import SEO from "@/components/SEO";
-import { buildMusicTimeline, imageSelectionLimit } from "@/lib/musicMvTimeline";
+import { buildMusicTimeline, combinePictureSelections, imageSelectionLimit } from "@/lib/musicMvTimeline";
 
 type VideoPurpose = "slideshow" | "music";
 type Ratio = "9:16" | "16:9" | "1:1" | "4:5";
@@ -1046,6 +1046,9 @@ export default function BrowserImageToMp4() {
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const audioInputRef = useRef<HTMLInputElement | null>(null);
   const zipInputRef = useRef<HTMLInputElement | null>(null);
+  const imagePickModeRef = useRef<"append" | "replace">("replace");
+  const zipPickModeRef = useRef<"append" | "replace">("replace");
+  const [zipImporting, setZipImporting] = useState(false);
   const qrCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const ffmpegRef = useRef<FFmpeg | null>(null);
   const loadedRef = useRef(false);
@@ -1485,8 +1488,12 @@ export default function BrowserImageToMp4() {
     );
   };
 
-  const applyImageSelection = (nextImages: File[]) => {
-    setImages(nextImages);
+  // Import more pictures without losing the user's previous selection.
+  // Only a deliberate replace/clear action discards the current batch.
+  const applyImageSelection = (newFiles: File[], mode: "append" | "replace" = "replace") => {
+    const combined = combinePictureSelections(images, newFiles, maxImages, mode);
+    const added = mode === "append" ? combined.length - images.length : combined.length;
+    setImages(combined);
     setError("");
     setResultUrl((current) => {
       if (current) URL.revokeObjectURL(current);
@@ -1497,41 +1504,58 @@ export default function BrowserImageToMp4() {
     setRenderedDuration(null);
     setCompletedInfo(null);
     setSaveStatus("");
-
-    if (!musicMode && autoGenerateAfterSelect && nextImages.length > 0) {
+    pendingAutoGenerateRef.current = false;
+    if (!musicMode && mode === "replace" && autoGenerateAfterSelect && combined.length > 0) {
       pendingAutoGenerateRef.current = true;
       setAutomationMessage("已換新圖片，準備自動產生 MP4…");
-    } else if (nextImages.length > 0) {
-      setAutomationMessage("已換新圖片，其他設定全部保留。");
+    } else if (mode === "append") {
+      setAutomationMessage(added > 0
+        ? `已追加 ${added} 張，目前共 ${combined.length} / ${maxImages} 張；原有圖片與排序已保留。`
+        : `已達 ${maxImages} 張上限，請先刪除部分圖片再加入。`);
+    } else {
+      setAutomationMessage(combined.length
+        ? `已重新選擇 ${combined.length} 張圖片，其他影片設定保留。`
+        : "圖片已全部清空，可重新選擇。");
     }
+    return added;
   };
 
   const handleImageSelection = (fileList: FileList | null) => {
     const picked = Array.from(fileList || []);
-    if (picked.length > maxImages) {
-      setAutomationMessage(`目前模式最多載入 ${maxImages} 張，已選前 ${maxImages} 張；可用上下移動調整順序。`);
+    if (!picked.length) return;
+    const mode = imagePickModeRef.current;
+    const slots = mode === "append" ? Math.max(0, maxImages - images.length) : maxImages;
+    const added = applyImageSelection(picked.slice(0, slots), mode);
+    if (picked.length > slots) {
+      setAutomationMessage(`成功加入 ${added} 張，已選 ${Math.min(maxImages, images.length + (mode === "replace" ? 0 : added))} / ${maxImages} 張；超出上限的 ${picked.length - slots} 張未匯入。`);
     }
-    applyImageSelection(picked.slice(0, maxImages));
   };
 
   const handleImageZip = async (file: File | null) => {
-    if (!file) return;
+    if (!file || zipImporting) return;
+    const mode = zipPickModeRef.current;
+    const slots = mode === "append" ? Math.max(0, maxImages - images.length) : maxImages;
+    if (slots === 0) {
+      setAutomationMessage(`已達 ${maxImages} 張上限，請先刪除部分圖片再匯入。`);
+      return;
+    }
     const zipLimitMB = mobileDevice ? 90 : 180;
     if (file.size > zipLimitMB * 1024 * 1024) {
       setError(`ZIP 超過 ${zipLimitMB}MB，請先分成較小的圖片包。`);
       return;
     }
     setError("");
+    setZipImporting(true);
     try {
       setAutomationMessage("正在讀取圖片 ZIP，圖片不會上傳到伺服器…");
       const zip = await JSZip.loadAsync(file);
       const files = Object.values(zip.files)
-        .filter((entry) => !entry.dir && !entry.name.includes("__MACOSX") && /\.(png|jpe?g|webp)$/i.test(entry.name))
+        .filter((entry) => !entry.dir && !entry.name.includes("__MACOSX") && /\\.(png|jpe?g|webp)$/i.test(entry.name))
         .sort((a, b) => a.name.localeCompare(b.name, "zh-Hant", { numeric: true }));
       if (!files.length) throw new Error("ZIP 內找不到 PNG、JPG 或 WebP 圖片。");
       const picked: File[] = [];
-      let totalExpandedBytes = 0;
-      for (const entry of files.slice(0, maxImages)) {
+      let totalExpandedBytes = mode === "append" ? images.reduce((sum, image) => sum + image.size, 0) : 0;
+      for (const entry of files.slice(0, slots)) {
         const data = await entry.async("uint8array");
         if (data.byteLength > 12 * 1024 * 1024) throw new Error("ZIP 內有圖片超過 12MB，請先縮小該圖片。");
         totalExpandedBytes += data.byteLength;
@@ -1539,13 +1563,15 @@ export default function BrowserImageToMp4() {
           throw new Error("這批圖片解壓後占用空間太大，請分成較小的 ZIP，或改用較小尺寸的圖片。");
         }
         const name = entry.name.split("/").pop() || "image.png";
-        const type = /\.png$/i.test(name) ? "image/png" : /\.webp$/i.test(name) ? "image/webp" : "image/jpeg";
+        const type = /\\.png$/i.test(name) ? "image/png" : /\\.webp$/i.test(name) ? "image/webp" : "image/jpeg";
         picked.push(new File([new Uint8Array(data).buffer], name, { type }));
       }
-      applyImageSelection(picked);
-      setAutomationMessage(`已從 ZIP 選取 ${picked.length} 張圖片${files.length > maxImages ? `（共 ${files.length} 張，為了效能先取前 ${maxImages} 張）` : ""}；可直接編輯排序。`);
+      const added = applyImageSelection(picked, mode);
+      setAutomationMessage(`已從 ZIP ${mode === "append" ? "追加" : "匯入"} ${added} 張，目前共 ${mode === "append" ? images.length + added : added} / ${maxImages} 張${files.length > slots ? `；ZIP 共有 ${files.length} 張，其餘未匯入` : ""}。`);
     } catch (error) {
       setError(error instanceof Error ? error.message : "ZIP 讀取失敗，請確認檔案完整。");
+    } finally {
+      setZipImporting(false);
     }
   };
 
@@ -2371,15 +2397,29 @@ export default function BrowserImageToMp4() {
                   </div>
                 </div>
 
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <button type="button" onClick={() => imageInputRef.current?.click()}
-                    className="inline-flex min-h-11 w-auto items-center justify-center rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-blue-700">
-                    選擇圖片
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                  <button type="button" disabled={busy || zipImporting || images.length >= maxImages}
+                    onClick={() => { imagePickModeRef.current = images.length ? "append" : "replace"; imageInputRef.current?.click(); }}
+                    className="inline-flex min-h-11 w-auto items-center justify-center rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-40">
+                    {images.length ? "＋ 繼續新增圖片" : "選擇圖片"}
                   </button>
-                  {musicMode && <button type="button" onClick={() => zipInputRef.current?.click()}
-                    className="inline-flex min-h-11 w-auto items-center justify-center rounded-xl border border-blue-300 bg-white px-5 py-2.5 text-sm font-bold text-blue-800 hover:bg-blue-50">
-                    匯入圖片 ZIP
+                  {musicMode && <button type="button" disabled={busy || zipImporting || images.length >= maxImages}
+                    onClick={() => { zipPickModeRef.current = images.length ? "append" : "replace"; zipInputRef.current?.click(); }}
+                    className="inline-flex min-h-11 w-auto items-center justify-center rounded-xl border border-blue-300 bg-white px-5 py-2.5 text-sm font-bold text-blue-800 hover:bg-blue-50 disabled:opacity-40">
+                    {zipImporting ? "正在匯入 ZIP…" : images.length ? "＋ 從 ZIP 追加圖片" : "匯入圖片 ZIP"}
                   </button>}
+                  {images.length > 0 && <>
+                    <button type="button" disabled={busy || zipImporting}
+                      onClick={() => { imagePickModeRef.current = "replace"; imageInputRef.current?.click(); }}
+                      className="inline-flex min-h-11 w-auto items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40">
+                      重選全部
+                    </button>
+                    <button type="button" disabled={busy || zipImporting}
+                      onClick={() => { if (window.confirm("確定清空目前所有圖片嗎？歌曲與影片設定會保留。")) applyImageSelection([], "replace"); }}
+                      className="inline-flex min-h-11 w-auto items-center justify-center rounded-xl border border-rose-200 bg-white px-4 py-2.5 text-sm font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-40">
+                      全部清空
+                    </button>
+                  </>}
                 </div>
                 {musicMode && <input ref={zipInputRef} className="hidden" type="file" accept=".zip,application/zip"
                   onChange={(e) => { void handleImageZip(e.currentTarget.files?.[0] || null); e.currentTarget.value = ""; }} />}
