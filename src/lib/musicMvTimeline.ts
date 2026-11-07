@@ -1,6 +1,12 @@
 export type MusicScene = { imageIndex: number; start: number; frames: number; duration: number };
 export type MusicTimeline = { scenes: MusicScene[]; contentFrames: number; finalFrames: number; totalFrames: number; totalSeconds: number };
 
+/** Cap the number of decoded pictures based on the engine and device. */
+export function imageSelectionLimit(purpose: "slideshow" | "music", mobile: boolean, nativeFast: boolean) {
+  if (purpose !== "music") return 12;
+  return mobile || !nativeFast ? 24 : 48;
+}
+
 /** The audio is the clock. Scene durations sum to the exact output frame count (no accumulated float drift). */
 export function buildMusicTimeline(audioSeconds: number, imageCount: number, fps: number, finalQrSeconds = 0): MusicTimeline {
   if (!Number.isFinite(audioSeconds) || audioSeconds <= 0 || imageCount <= 0 || fps <= 0) {
