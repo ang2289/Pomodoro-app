@@ -999,6 +999,9 @@ function prettyTime(seconds: number) {
 export default function BrowserImageToMp4() {
   const [purpose, setPurpose] = useState<VideoPurpose>("slideshow");
   const [musicDuration, setMusicDuration] = useState<number | null>(null);
+  const [audioPreviewUrl, setAudioPreviewUrl] = useState("");
+  const [renderedDuration, setRenderedDuration] = useState<number | null>(null);
+  const [completedInfo, setCompletedInfo] = useState<{ width: number; height: number; fps: number; seconds: number; ratio: Ratio; quality: Quality } | null>(null);
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
   const [audio, setAudio] = useState<File | null>(null);
@@ -1104,6 +1107,7 @@ export default function BrowserImageToMp4() {
     if (!audio) return;
     let active = true;
     const url = URL.createObjectURL(audio);
+    setAudioPreviewUrl(url);
     const probe = document.createElement("audio");
     probe.preload = "metadata";
     const readDuration = () => {
@@ -1126,6 +1130,7 @@ export default function BrowserImageToMp4() {
       probe.removeAttribute("src");
       probe.load();
       URL.revokeObjectURL(url);
+      setAudioPreviewUrl("");
     };
   }, [audio]);
 
@@ -1506,6 +1511,8 @@ export default function BrowserImageToMp4() {
     });
     resultBlobRef.current = null;
     setResultFileName("");
+    setRenderedDuration(null);
+    setCompletedInfo(null);
     setSaveStatus("");
 
     if (!musicMode && autoGenerateAfterSelect && nextImages.length > 0) {
@@ -1618,6 +1625,8 @@ export default function BrowserImageToMp4() {
 
   const saveCompletedVideo = async (blob: Blob) => {
     resultBlobRef.current = blob;
+    setCompletedInfo({ width, height, fps: outputFps, seconds: totalSeconds, ratio, quality });
+    setRenderedDuration(null);
     const filename = buildOutputFileName(ratio);
     setResultFileName(filename);
 
@@ -2213,6 +2222,63 @@ export default function BrowserImageToMp4() {
             </p>
           </div>
 
+          <section className="mb-5 space-y-4 rounded-2xl border border-blue-200 bg-blue-50/50 p-4 sm:p-5" aria-label="選擇影片製作模式">
+            <h2 className="text-lg font-black text-slate-900">先選一種做影片的方法</h2>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <button type="button" disabled={busy} onClick={() => setPurpose("slideshow")}
+                aria-pressed={!musicMode}
+                className={`rounded-2xl border p-4 text-left font-bold transition ${!musicMode ? "border-blue-600 bg-white ring-2 ring-blue-100" : "border-slate-200 bg-white hover:border-blue-300"}`}>
+                <span className="block text-base text-slate-900">圖片短影片</span>
+                <span className="mt-1 block text-sm font-normal leading-6 text-slate-600">先選圖片，再設定每張播放幾秒；可選配背景音樂。</span>
+              </button>
+              <button type="button" disabled={busy} onClick={() => { setPurpose("music"); setAutoGenerateAfterSelect(false); }}
+                aria-pressed={musicMode}
+                className={`rounded-2xl border p-4 text-left font-bold transition ${musicMode ? "border-blue-600 bg-white ring-2 ring-blue-100" : "border-slate-200 bg-white hover:border-blue-300"}`}>
+                <span className="block text-base text-slate-900">整首 MP3 音樂 MV</span>
+                <span className="mt-1 block text-sm font-normal leading-6 text-slate-600">先上傳歌曲，自動把圖片分配到整首音樂，不重播、不提早截歌。</span>
+              </button>
+            </div>
+            {musicMode ? (
+              <div className="rounded-xl border border-blue-200 bg-white p-4">
+                <label className="block text-base font-black text-slate-900">第 1 步｜先上傳整首 MP3</label>
+                <p className="mt-1 text-sm leading-6 text-slate-600">以音樂的完整時間決定影片長度，QR Code 片尾也包含在歌曲時間內。</p>
+                <button type="button" disabled={busy} onClick={() => audioInputRef.current?.click()}
+                  className="mt-3 inline-flex min-h-11 items-center justify-center rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-blue-700">
+                  {audio ? "更換 MP3" : "選擇 MP3 音樂"}
+                </button>
+                <input ref={audioInputRef} type="file" className="hidden"
+                  accept="audio/mpeg,audio/mp3,audio/wav,audio/x-wav,audio/mp4,audio/aac"
+                  onChange={(e) => { setAudio(e.currentTarget.files?.[0] || null); e.currentTarget.value = ""; }} />
+                {audio && <div className="mt-3 min-w-0 space-y-2">
+                  <p className="break-all text-sm font-semibold text-slate-700">{audio.name}</p>
+                  <p className="text-sm font-bold text-blue-700">歌曲長度：{musicDuration ? prettyTime(musicDuration) : "正在讀取…"}</p>
+                  {audioPreviewUrl && <audio className="w-full max-w-lg" src={audioPreviewUrl} controls preload="metadata" />}
+                </div>}
+                {musicTimeline && musicTimeline.scenes.length > 0 &&
+                  <p className="mt-3 rounded-xl bg-blue-50 p-3 text-sm leading-6 text-blue-900">
+                    已自動安排 {musicTimeline.scenes.length} 個畫面片段。成片約 {prettyTime(musicTimeline.totalSeconds)}，音樂完整播放一次。
+                  </p>}
+              </div>
+            ) : null}
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="text-sm font-bold text-slate-700">影片比例
+                <select value={ratio} onChange={(e) => setRatio(e.target.value as Ratio)}
+                  className="mt-1 block min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-base">
+                  <option value="9:16">9:16 直式｜短影音</option>
+                  <option value="16:9">16:9 橫式｜YouTube</option>
+                  <option value="1:1">1:1 方形</option><option value="4:5">4:5 直式貼文</option>
+                </select>
+              </label>
+              <label className="text-sm font-bold text-slate-700">輸出畫質
+                <select value={quality} onChange={(e) => setQuality(e.target.value as Quality)}
+                  className="mt-1 block min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-base">
+                  <option value="540p">540p｜手機快速</option><option value="720p">720p｜標準</option><option value="1080p">1080p｜高畫質（較耗資源）</option>
+                </select>
+              </label>
+            </div>
+            <p className="text-sm leading-6 text-slate-600">已選擇：{width} × {height} 像素｜{outputFps} fps｜{musicMode ? "依 MP3 長度" : "依圖片秒數"}。細部效果可在下方「進階設定」調整。</p>
+          </section>
+
           <div className="grid gap-6 2xl:grid-cols-[0.95fr_1.05fr]">
             <section className="space-y-5">
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
@@ -2324,7 +2390,7 @@ export default function BrowserImageToMp4() {
                 ) : null}
               </div>
 
-              <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+              {!musicMode && <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
                 <div className="flex items-start gap-3">
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-600 text-sm font-black text-white">
                     2
@@ -2375,10 +2441,12 @@ export default function BrowserImageToMp4() {
                     </label>
                   </div>
                 ) : null}
-              </div>
+              </div>}
             </section>
 
-            <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+            <details className="rounded-2xl border border-slate-200 bg-white">
+              <summary className="cursor-pointer p-4 text-base font-black text-blue-800 sm:p-5">進階設定｜特效、每張秒數、字幕、QR Code（點此展開）</summary>
+            <section className="border-t border-slate-200 p-4 sm:p-5">
               <div className="flex items-start gap-3">
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-500 text-sm font-black text-white">
                   3
@@ -3038,6 +3106,7 @@ export default function BrowserImageToMp4() {
                 )}
               </div>
             </section>
+            </details>
           </div>
 
           <section className="mt-6 rounded-2xl border border-blue-200 bg-blue-50/40 p-4 sm:p-5">
