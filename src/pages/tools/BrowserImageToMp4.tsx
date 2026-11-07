@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { fetchFile } from "@ffmpeg/util";
+import JSZip from "jszip";
 import { QRCodeCanvas } from "qrcode.react";
 import { Link } from "react-router-dom";
 import SEO from "@/components/SEO";
+import { buildMusicTimeline, combinePictureSelections, imageSelectionLimit } from "@/lib/musicMvTimeline";
 
+type VideoPurpose = "slideshow" | "music";
 type Ratio = "9:16" | "16:9" | "1:1" | "4:5";
 type Quality = "540p" | "720p" | "1080p";
 type Effect =
@@ -967,7 +970,18 @@ function wait(ms: number) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
+function prettyTime(seconds: number) {
+  if (!Number.isFinite(seconds) || seconds <= 0) return "--:--";
+  const whole = Math.round(seconds);
+  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
+}
+
 export default function BrowserImageToMp4() {
+  const [purpose, setPurpose] = useState<VideoPurpose>("slideshow");
+  const [musicDuration, setMusicDuration] = useState<number | null>(null);
+  const [audioPreviewUrl, setAudioPreviewUrl] = useState("");
+  const [renderedDuration, setRenderedDuration] = useState<number | null>(null);
+  const [completedInfo, setCompletedInfo] = useState<{ width: number; height: number; fps: number; seconds: number; ratio: Ratio; quality: Quality } | null>(null);
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
   const [audio, setAudio] = useState<File | null>(null);
@@ -1031,6 +1045,10 @@ export default function BrowserImageToMp4() {
 
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const audioInputRef = useRef<HTMLInputElement | null>(null);
+  const zipInputRef = useRef<HTMLInputElement | null>(null);
+  const imagePickModeRef = useRef<"append" | "replace">("replace");
+  const zipPickModeRef = useRef<"append" | "replace">("replace");
+  const [zipImporting, setZipImporting] = useState(false);
   const qrCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const ffmpegRef = useRef<FFmpeg | null>(null);
   const loadedRef = useRef(false);
@@ -1050,22 +1068,58 @@ export default function BrowserImageToMp4() {
   const encodeTimeoutMs =
     quality === "540p" ? 180_000 : quality === "720p" ? 240_000 : 300_000;
 
-  const imageSequenceSeconds = useMemo(
-    () => images.length * secondsPerImage,
-    [images.length, secondsPerImage],
+  const musicTimeline = useMemo(
+    () => purpose === "music" && musicDuration != null
+      ? buildMusicTimeline(musicDuration, images.length, outputFps, qrEnabled && qrDisplayMode === "final" ? finalPageDuration : 0)
+      : null,
+    [purpose, musicDuration, images.length, outputFps, qrEnabled, qrDisplayMode, finalPageDuration],
   );
+  const musicMode = purpose === "music";
+  // Keep memory use predictable on phones, while desktop users can arrange a full-length MV.
+  const mobileDevice = typeof navigator !== "undefined" && (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || (typeof window !== "undefined" && window.innerWidth < 700));
+  const maxImages = imageSelectionLimit(purpose, mobileDevice, nativeMp4Available);
+  const imageSequenceSeconds = musicTimeline ? musicTimeline.contentFrames / outputFps : images.length * secondsPerImage;
+  const totalSeconds = musicTimeline
+    ? musicTimeline.totalSeconds
+    : imageSequenceSeconds + (qrEnabled && qrDisplayMode === "final" ? finalPageDuration : 0);
+  const musicReady = !musicMode || (Boolean(audio) && musicDuration != null && musicDuration > 0);
+  const orderedScenes = musicTimeline?.scenes ?? images.map((_, i) => ({
+    imageIndex: i, start: i * secondsPerImage,
+    duration: secondsPerImage, frames: Math.round(secondsPerImage * outputFps),
+  }));
 
-  const totalSeconds = useMemo(
-    () =>
-      imageSequenceSeconds +
-      (qrEnabled && qrDisplayMode === "final" ? finalPageDuration : 0),
-    [
-      imageSequenceSeconds,
-      qrEnabled,
-      qrDisplayMode,
-      finalPageDuration,
-    ],
-  );
+  // Read the audio's actual duration without uploading it. Audio is never looped in music mode.
+  useEffect(() => {
+    setMusicDuration(null);
+    if (!audio) return;
+    let active = true;
+    const url = URL.createObjectURL(audio);
+    setAudioPreviewUrl(url);
+    const probe = document.createElement("audio");
+    probe.preload = "metadata";
+    const readDuration = () => {
+      if (!active) return;
+      const duration = probe.duration;
+      if (Number.isFinite(duration) && duration > 0) {
+        setMusicDuration(duration);
+      } else {
+        setError("無法讀取音樂長度。請改用一般 MP3／WAV 檔再試一次。");
+      }
+    };
+    probe.addEventListener("loadedmetadata", readDuration);
+    probe.addEventListener("durationchange", () => {
+      if (Number.isFinite(probe.duration) && probe.duration > 0 && active) setMusicDuration(probe.duration);
+    });
+    probe.addEventListener("error", () => { if (active) setError("音樂格式無法讀取，請更換 MP3 或 WAV。"); });
+    probe.src = url;
+    return () => {
+      active = false;
+      probe.removeAttribute("src");
+      probe.load();
+      URL.revokeObjectURL(url);
+      setAudioPreviewUrl("");
+    };
+  }, [audio]);
 
   useEffect(() => {
     const urls = images.map((file) => URL.createObjectURL(file));
@@ -1102,6 +1156,7 @@ export default function BrowserImageToMp4() {
 
     const saved = readVideoSettings();
     if (!saved) return;
+    if (saved.purpose === "music" || saved.purpose === "slideshow") setPurpose(saved.purpose);
 
     if (["9:16", "16:9", "1:1", "4:5"].includes(String(saved.ratio))) {
       setRatio(saved.ratio as Ratio);
@@ -1433,9 +1488,12 @@ export default function BrowserImageToMp4() {
     );
   };
 
-  const handleImageSelection = (fileList: FileList | null) => {
-    const nextImages = Array.from(fileList || []).slice(0, 12);
-    setImages(nextImages);
+  // Import more pictures without losing the user's previous selection.
+  // Only a deliberate replace/clear action discards the current batch.
+  const applyImageSelection = (newFiles: File[], mode: "append" | "replace" = "replace") => {
+    const combined = combinePictureSelections(images, newFiles, maxImages, mode);
+    const added = mode === "append" ? combined.length - images.length : combined.length;
+    setImages(combined);
     setError("");
     setResultUrl((current) => {
       if (current) URL.revokeObjectURL(current);
@@ -1443,13 +1501,77 @@ export default function BrowserImageToMp4() {
     });
     resultBlobRef.current = null;
     setResultFileName("");
+    setRenderedDuration(null);
+    setCompletedInfo(null);
     setSaveStatus("");
-
-    if (autoGenerateAfterSelect && nextImages.length > 0) {
+    pendingAutoGenerateRef.current = false;
+    if (!musicMode && mode === "replace" && autoGenerateAfterSelect && combined.length > 0) {
       pendingAutoGenerateRef.current = true;
       setAutomationMessage("已換新圖片，準備自動產生 MP4…");
-    } else if (nextImages.length > 0) {
-      setAutomationMessage("已換新圖片，其他設定全部保留。");
+    } else if (mode === "append") {
+      setAutomationMessage(added > 0
+        ? `已追加 ${added} 張，目前共 ${combined.length} / ${maxImages} 張；原有圖片與排序已保留。`
+        : `已達 ${maxImages} 張上限，請先刪除部分圖片再加入。`);
+    } else {
+      setAutomationMessage(combined.length
+        ? `已重新選擇 ${combined.length} 張圖片，其他影片設定保留。`
+        : "圖片已全部清空，可重新選擇。");
+    }
+    return added;
+  };
+
+  const handleImageSelection = (fileList: FileList | null) => {
+    const picked = Array.from(fileList || []);
+    if (!picked.length) return;
+    const mode = imagePickModeRef.current;
+    const slots = mode === "append" ? Math.max(0, maxImages - images.length) : maxImages;
+    const added = applyImageSelection(picked.slice(0, slots), mode);
+    if (picked.length > slots) {
+      setAutomationMessage(`成功加入 ${added} 張，已選 ${mode === "append" ? images.length + added : added} / ${maxImages} 張；超出上限的 ${picked.length - slots} 張未匯入。`);
+    }
+  };
+
+  const handleImageZip = async (file: File | null) => {
+    if (!file || zipImporting) return;
+    const mode = zipPickModeRef.current;
+    const slots = mode === "append" ? Math.max(0, maxImages - images.length) : maxImages;
+    if (slots === 0) {
+      setAutomationMessage(`已達 ${maxImages} 張上限，請先刪除部分圖片再匯入。`);
+      return;
+    }
+    const zipLimitMB = mobileDevice ? 90 : 180;
+    if (file.size > zipLimitMB * 1024 * 1024) {
+      setError(`ZIP 超過 ${zipLimitMB}MB，請先分成較小的圖片包。`);
+      return;
+    }
+    setError("");
+    setZipImporting(true);
+    try {
+      setAutomationMessage("正在讀取圖片 ZIP，圖片不會上傳到伺服器…");
+      const zip = await JSZip.loadAsync(file);
+      const files = Object.values(zip.files)
+        .filter((entry) => !entry.dir && !entry.name.includes("__MACOSX") && /\.(png|jpe?g|webp)$/i.test(entry.name))
+        .sort((a, b) => a.name.localeCompare(b.name, "zh-Hant", { numeric: true }));
+      if (!files.length) throw new Error("ZIP 內找不到 PNG、JPG 或 WebP 圖片。");
+      const picked: File[] = [];
+      let totalExpandedBytes = mode === "append" ? images.reduce((sum, image) => sum + image.size, 0) : 0;
+      for (const entry of files.slice(0, slots)) {
+        const data = await entry.async("uint8array");
+        if (data.byteLength > 12 * 1024 * 1024) throw new Error("ZIP 內有圖片超過 12MB，請先縮小該圖片。");
+        totalExpandedBytes += data.byteLength;
+        if (totalExpandedBytes > (mobileDevice ? 90 : 220) * 1024 * 1024) {
+          throw new Error("這批圖片解壓後占用空間太大，請分成較小的 ZIP，或改用較小尺寸的圖片。");
+        }
+        const name = entry.name.split("/").pop() || "image.png";
+        const type = /\.png$/i.test(name) ? "image/png" : /\.webp$/i.test(name) ? "image/webp" : "image/jpeg";
+        picked.push(new File([new Uint8Array(data).buffer], name, { type }));
+      }
+      const added = applyImageSelection(picked, mode);
+      setAutomationMessage(`已從 ZIP ${mode === "append" ? "追加" : "匯入"} ${added} 張，目前共 ${mode === "append" ? images.length + added : added} / ${maxImages} 張${files.length > slots ? `；ZIP 共有 ${files.length} 張，其餘未匯入` : ""}。`);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "ZIP 讀取失敗，請確認檔案完整。");
+    } finally {
+      setZipImporting(false);
     }
   };
 
@@ -1484,6 +1606,7 @@ export default function BrowserImageToMp4() {
     const settings = {
       ratio,
       quality,
+      purpose,
       fitMode,
       background,
       effect,
@@ -1554,6 +1677,8 @@ export default function BrowserImageToMp4() {
 
   const saveCompletedVideo = async (blob: Blob) => {
     resultBlobRef.current = blob;
+    setCompletedInfo({ width, height, fps: outputFps, seconds: totalSeconds, ratio, quality });
+    setRenderedDuration(null);
     const filename = buildOutputFileName(ratio);
     setResultFileName(filename);
 
@@ -1602,7 +1727,34 @@ export default function BrowserImageToMp4() {
     const ctx = canvas.getContext("2d", { alpha: false });
     if (!ctx) throw new Error("瀏覽器無法建立影片畫布");
 
-    const loadedImages = await Promise.all(images.map(loadImageElement));
+    // Keep only a few decoded pictures in memory. Loading 48 full-size originals
+    // at once can exhaust the tab even if their compressed files are small.
+    const imageCache = new Map<number, HTMLImageElement>();
+    const inflightImages = new Map<number, Promise<HTMLImageElement>>();
+    const getCachedImage = (index: number): Promise<HTMLImageElement> => {
+      const existing = imageCache.get(index);
+      if (existing) {
+        imageCache.delete(index);
+        imageCache.set(index, existing);
+        return Promise.resolve(existing);
+      }
+      const inflight = inflightImages.get(index);
+      if (inflight) return inflight;
+      const loading = loadImageElement(images[index]).then((image) => {
+        imageCache.set(index, image);
+        while (imageCache.size > 3) {
+          const oldestIndex = imageCache.keys().next().value;
+          if (oldestIndex === undefined || oldestIndex === index) break;
+          const oldestImage = imageCache.get(oldestIndex);
+          oldestImage?.removeAttribute("src");
+          imageCache.delete(oldestIndex);
+        }
+        return image;
+      }).finally(() => { inflightImages.delete(index); });
+      inflightImages.set(index, loading);
+      return loading;
+    };
+    await getCachedImage(0);
     const videoStream = canvas.captureStream(outputFps);
     const combinedStream = new MediaStream(videoStream.getVideoTracks());
 
@@ -1622,7 +1774,7 @@ export default function BrowserImageToMp4() {
       gain.gain.value = audioVolume;
       audioSource = audioContext.createBufferSource();
       audioSource.buffer = audioBuffer;
-      audioSource.loop = true;
+      audioSource.loop = !musicMode;
       audioSource.connect(gain);
       gain.connect(destination);
 
@@ -1658,9 +1810,11 @@ export default function BrowserImageToMp4() {
       audioSource?.start();
 
       const frameInterval = 1000 / outputFps;
-      const totalFrames = Math.max(1, Math.ceil(totalSeconds * outputFps));
+      const totalFrames = musicTimeline?.totalFrames ?? Math.max(1, Math.ceil(totalSeconds * outputFps));
       const startedAt = performance.now();
-
+      let activeImageIndex = -1;
+      let activeImage: HTMLImageElement | null = null;
+      let nextPrefetchImageIndex = -1;
       for (let frameIndex = 0; frameIndex < totalFrames; frameIndex += 1) {
         const videoTimeSec = frameIndex / outputFps;
         const showingFinalQrPage =
@@ -1681,20 +1835,35 @@ export default function BrowserImageToMp4() {
             qrPercent,
           );
         } else {
-          const imageIndex = Math.min(
-            images.length - 1,
-            Math.floor(videoTimeSec / secondsPerImage),
+          const scene = musicTimeline?.scenes.find((item) =>
+            videoTimeSec >= item.start && videoTimeSec < item.start + item.duration + 0.00001
           );
-          const imageTime =
-            videoTimeSec - imageIndex * secondsPerImage;
-          const imageProgress = Math.max(
-            0,
-            Math.min(1, imageTime / secondsPerImage),
+          const imageIndex = scene ? scene.imageIndex : Math.min(
+            images.length - 1, Math.floor(videoTimeSec / secondsPerImage),
+          );
+          const imageTime = scene
+            ? videoTimeSec - scene.start
+            : videoTimeSec - imageIndex * secondsPerImage;
+          const imageProgress = Math.max(0,
+            Math.min(1, imageTime / (scene?.duration ?? secondsPerImage)),
           );
 
+          if (activeImageIndex !== imageIndex || !activeImage) {
+            activeImage = await getCachedImage(imageIndex);
+            activeImageIndex = imageIndex;
+          }
+          // Preload the next scene before the boundary so music can keep playing
+          // without repeatedly decoding the entire collection at once.
+          if (scene && musicTimeline && nextPrefetchImageIndex !== imageIndex) {
+            const nextScene = musicTimeline.scenes.find((item) => item.start > scene.start);
+            if (nextScene && nextScene.start - videoTimeSec < 1.4 && nextScene.imageIndex !== imageIndex) {
+              nextPrefetchImageIndex = imageIndex;
+              void getCachedImage(nextScene.imageIndex).catch(() => {});
+            }
+          }
           drawNativeVideoFrame(
             ctx,
-            loadedImages[imageIndex],
+            activeImage,
             width,
             height,
             fitMode,
@@ -1773,6 +1942,8 @@ export default function BrowserImageToMp4() {
       } catch {}
       combinedStream.getTracks().forEach((track) => track.stop());
       videoStream.getTracks().forEach((track) => track.stop());
+      imageCache.forEach((image) => image.removeAttribute("src"));
+      imageCache.clear();
     }
   };
 
@@ -1806,8 +1977,17 @@ export default function BrowserImageToMp4() {
       setError("請先選擇至少 1 張圖片。");
       return;
     }
-    if (images.length > 12) {
-      setError("一次最多 12 張圖片，避免手機或瀏覽器記憶體不足。");
+    if (musicMode && !musicReady) {
+      setError("請先上傳 MP3，確認已讀取歌曲長度，再開始製作整首 MV。");
+      return;
+    }
+    if (images.length > maxImages) {
+      setError(`目前模式最多 ${maxImages} 張圖片，請先刪減圖片再產生影片。`);
+      return;
+    }
+    const bytes = images.reduce((sum, file) => sum + file.size, 0);
+    if (bytes > (mobileDevice ? 90 : 220) * 1024 * 1024) {
+      setError("圖片總大小過高，請先縮小圖片或分批製作，避免瀏覽器轉檔中斷。");
       return;
     }
     if (qrEnabled && !qrText.trim()) {
@@ -1884,8 +2064,8 @@ export default function BrowserImageToMp4() {
       }
 
       const includeFinalQrPage =
-        qrEnabled && qrDisplayMode === "final";
-      let visualInputCount = images.length;
+        qrEnabled && qrDisplayMode === "final" && (!musicTimeline || musicTimeline.finalFrames > 0);
+      let visualInputCount = orderedScenes.length;
 
       if (includeFinalQrPage) {
         setStatus("建立 QR Code 最後一頁…");
@@ -1914,14 +2094,10 @@ export default function BrowserImageToMp4() {
       }
 
       const args: string[] = [];
-      images.forEach((_, i) => {
+      orderedScenes.forEach((scene) => {
         args.push(
-          "-loop",
-          "1",
-          "-t",
-          String(secondsPerImage),
-          "-i",
-          `rxv-img-${i}.jpg`,
+          "-loop", "1", "-t", String(scene.duration), "-i",
+          `rxv-img-${scene.imageIndex}.jpg`,
         );
       });
 
@@ -1930,32 +2106,30 @@ export default function BrowserImageToMp4() {
           "-loop",
           "1",
           "-t",
-          String(finalPageDuration),
+          String(musicTimeline ? musicTimeline.finalFrames / outputFps : finalPageDuration),
           "-i",
           "rxv-final-qr.jpg",
         );
       }
 
       if (audioName) {
-        args.push("-stream_loop", "-1", "-i", audioName);
+        if (musicMode) args.push("-i", audioName);
+        else args.push("-stream_loop", "-1", "-i", audioName);
       }
 
       const filters: string[] = [];
-      for (let i = 0; i < images.length; i += 1) {
+      for (let i = 0; i < orderedScenes.length; i += 1) {
+        const sceneSeconds = orderedScenes[i].duration;
         filters.push(
           `[${i}:v]setsar=1,${effectFilter(
-            effect,
-            width,
-            height,
-            secondsPerImage,
-            outputFps,
-          )},trim=duration=${secondsPerImage},setpts=PTS-STARTPTS[v${i}]`,
+            effect, width, height, sceneSeconds, outputFps,
+          )},trim=duration=${sceneSeconds},setpts=PTS-STARTPTS[v${i}]`,
         );
       }
 
       if (includeFinalQrPage) {
         filters.push(
-          `[${images.length}:v]fps=${outputFps},trim=duration=${finalPageDuration},setpts=PTS-STARTPTS[v${images.length}]`,
+          `[${orderedScenes.length}:v]fps=${outputFps},trim=duration=${musicTimeline ? musicTimeline.finalFrames / outputFps : finalPageDuration},setpts=PTS-STARTPTS[v${orderedScenes.length}]`,
         );
       }
 
@@ -1966,7 +2140,9 @@ export default function BrowserImageToMp4() {
 
       if (audioName) {
         filters.push(
-          `[${visualInputCount}:a]volume=${audioVolume.toFixed(2)}[aout]`,
+          musicMode
+            ? `[${visualInputCount}:a]volume=${audioVolume.toFixed(2)},apad,atrim=duration=${totalSeconds.toFixed(6)},asetpts=PTS-STARTPTS[aout]`
+            : `[${visualInputCount}:a]volume=${audioVolume.toFixed(2)}[aout]`,
         );
       }
 
@@ -1985,7 +2161,7 @@ export default function BrowserImageToMp4() {
           "aac",
           "-b:a",
           "128k",
-          "-shortest",
+          ...(musicMode ? ["-t", totalSeconds.toFixed(6)] : ["-shortest"]),
         );
       } else {
         args.push("-an");
@@ -2014,9 +2190,10 @@ export default function BrowserImageToMp4() {
       );
       setProgress(Math.max(30, progress));
 
-      const exitCode = await ffmpeg.exec(args, encodeTimeoutMs);
+      const durationAwareTimeoutMs = musicMode ? Math.max(encodeTimeoutMs, Math.min(1_800_000, Math.ceil(totalSeconds * 4000))) : encodeTimeoutMs;
+      const exitCode = await ffmpeg.exec(args, durationAwareTimeoutMs);
       if (exitCode !== 0) {
-        const minutes = Math.round(encodeTimeoutMs / 60_000);
+        const minutes = Math.round(durationAwareTimeoutMs / 60_000);
         throw new Error(
           `轉檔超過 ${minutes} 分鐘已自動停止。建議改用「540p 快速」或減少圖片張數後再試。`,
         );
@@ -2103,7 +2280,7 @@ export default function BrowserImageToMp4() {
   };
 
   const pickerButtonClass =
-    "inline-flex min-h-12 w-full items-center justify-center rounded-2xl border border-blue-200 bg-white px-4 py-3 text-sm font-black text-blue-700 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-blue-400 hover:bg-blue-50 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-300";
+    "inline-flex min-h-11 w-auto max-w-full items-center justify-center rounded-xl border border-blue-200 bg-white px-5 py-2.5 text-sm font-bold text-blue-700 hover:border-blue-400 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-300";
 
   return (
     <>
@@ -2146,6 +2323,63 @@ export default function BrowserImageToMp4() {
             </p>
           </div>
 
+          <section className="mb-5 space-y-4 rounded-2xl border border-blue-200 bg-blue-50/50 p-4 sm:p-5" aria-label="選擇影片製作模式">
+            <h2 className="text-lg font-black text-slate-900">先選一種做影片的方法</h2>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <button type="button" disabled={busy} onClick={() => setPurpose("slideshow")}
+                aria-pressed={!musicMode}
+                className={`rounded-2xl border p-4 text-left font-bold transition ${!musicMode ? "border-blue-600 bg-white ring-2 ring-blue-100" : "border-slate-200 bg-white hover:border-blue-300"}`}>
+                <span className="block text-base text-slate-900">圖片短影片</span>
+                <span className="mt-1 block text-sm font-normal leading-6 text-slate-600">先選圖片，再設定每張播放幾秒；可選配背景音樂。</span>
+              </button>
+              <button type="button" disabled={busy} onClick={() => { setPurpose("music"); setAutoGenerateAfterSelect(false); }}
+                aria-pressed={musicMode}
+                className={`rounded-2xl border p-4 text-left font-bold transition ${musicMode ? "border-blue-600 bg-white ring-2 ring-blue-100" : "border-slate-200 bg-white hover:border-blue-300"}`}>
+                <span className="block text-base text-slate-900">整首 MP3 音樂 MV</span>
+                <span className="mt-1 block text-sm font-normal leading-6 text-slate-600">先上傳歌曲，自動把圖片分配到整首音樂，不重播、不提早截歌。</span>
+              </button>
+            </div>
+            {musicMode ? (
+              <div className="rounded-xl border border-blue-200 bg-white p-4">
+                <label className="block text-base font-black text-slate-900">第 1 步｜先上傳整首 MP3</label>
+                <p className="mt-1 text-sm leading-6 text-slate-600">以音樂的完整時間決定影片長度，QR Code 片尾也包含在歌曲時間內。</p>
+                <button type="button" disabled={busy} onClick={() => audioInputRef.current?.click()}
+                  className="mt-3 inline-flex min-h-11 items-center justify-center rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-blue-700">
+                  {audio ? "更換 MP3" : "選擇 MP3 音樂"}
+                </button>
+                <input ref={audioInputRef} type="file" className="hidden"
+                  accept="audio/mpeg,audio/mp3,audio/wav,audio/x-wav,audio/mp4,audio/aac"
+                  onChange={(e) => { setAudio(e.currentTarget.files?.[0] || null); e.currentTarget.value = ""; }} />
+                {audio && <div className="mt-3 min-w-0 space-y-2">
+                  <p className="break-all text-sm font-semibold text-slate-700">{audio.name}</p>
+                  <p className="text-sm font-bold text-blue-700">歌曲長度：{musicDuration ? prettyTime(musicDuration) : "正在讀取…"}</p>
+                  {audioPreviewUrl && <audio className="w-full max-w-lg" src={audioPreviewUrl} controls preload="metadata" />}
+                </div>}
+                {musicTimeline && musicTimeline.scenes.length > 0 &&
+                  <p className="mt-3 rounded-xl bg-blue-50 p-3 text-sm leading-6 text-blue-900">
+                    已自動安排 {musicTimeline.scenes.length} 個畫面片段。成片約 {prettyTime(musicTimeline.totalSeconds)}，音樂完整播放一次。
+                  </p>}
+              </div>
+            ) : null}
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="text-sm font-bold text-slate-700">影片比例
+                <select value={ratio} onChange={(e) => setRatio(e.target.value as Ratio)}
+                  className="mt-1 block min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-base">
+                  <option value="9:16">9:16 直式｜短影音</option>
+                  <option value="16:9">16:9 橫式｜YouTube</option>
+                  <option value="1:1">1:1 方形</option><option value="4:5">4:5 直式貼文</option>
+                </select>
+              </label>
+              <label className="text-sm font-bold text-slate-700">輸出畫質
+                <select value={quality} onChange={(e) => setQuality(e.target.value as Quality)}
+                  className="mt-1 block min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-base">
+                  <option value="540p">540p｜手機快速</option><option value="720p">720p｜標準</option><option value="1080p">1080p｜高畫質（較耗資源）</option>
+                </select>
+              </label>
+            </div>
+            <p className="text-sm leading-6 text-slate-600">已選擇：{width} × {height} 像素｜{outputFps} fps｜{musicMode ? "依 MP3 長度" : "依圖片秒數"}。細部效果可在下方「進階設定」調整。</p>
+          </section>
+
           <div className="grid gap-6 2xl:grid-cols-[0.95fr_1.05fr]">
             <section className="space-y-5">
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
@@ -2155,21 +2389,40 @@ export default function BrowserImageToMp4() {
                   </span>
                   <div className="min-w-0 flex-1">
                     <h2 className="break-words text-base font-black text-slate-900">
-                      選擇圖片（最多 12 張）
+                      {musicMode ? `第 2 步｜選擇圖片（最多 ${maxImages} 張）` : "選擇圖片（最多 12 張）"}
                     </h2>
                     <p className="mt-1 break-words text-xs leading-5 text-slate-500">
-                      上傳順序就是播放順序；下面可以再調整。
+                      縮圖僅供編排，原圖不會因此壓縮；圖片將依所選 MP4 解析度輸出。
                     </p>
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => imageInputRef.current?.click()}
-                  className={`${pickerButtonClass} mt-4`}
-                >
-                  🖼️ 選擇圖片
-                </button>
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                  <button type="button" disabled={busy || zipImporting || images.length >= maxImages}
+                    onClick={() => { imagePickModeRef.current = images.length ? "append" : "replace"; imageInputRef.current?.click(); }}
+                    className="inline-flex min-h-11 w-auto items-center justify-center rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-40">
+                    {images.length ? "＋ 繼續新增圖片" : "選擇圖片"}
+                  </button>
+                  {musicMode && <button type="button" disabled={busy || zipImporting || images.length >= maxImages}
+                    onClick={() => { zipPickModeRef.current = images.length ? "append" : "replace"; zipInputRef.current?.click(); }}
+                    className="inline-flex min-h-11 w-auto items-center justify-center rounded-xl border border-blue-300 bg-white px-5 py-2.5 text-sm font-bold text-blue-800 hover:bg-blue-50 disabled:opacity-40">
+                    {zipImporting ? "正在匯入 ZIP…" : images.length ? "＋ 從 ZIP 追加圖片" : "匯入圖片 ZIP"}
+                  </button>}
+                  {images.length > 0 && <>
+                    <button type="button" disabled={busy || zipImporting}
+                      onClick={() => { imagePickModeRef.current = "replace"; imageInputRef.current?.click(); }}
+                      className="inline-flex min-h-11 w-auto items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40">
+                      重選全部
+                    </button>
+                    <button type="button" disabled={busy || zipImporting}
+                      onClick={() => { if (window.confirm("確定清空目前所有圖片嗎？歌曲與影片設定會保留。")) applyImageSelection([], "replace"); }}
+                      className="inline-flex min-h-11 w-auto items-center justify-center rounded-xl border border-rose-200 bg-white px-4 py-2.5 text-sm font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-40">
+                      全部清空
+                    </button>
+                  </>}
+                </div>
+                {musicMode && <input ref={zipInputRef} className="hidden" type="file" accept=".zip,application/zip"
+                  onChange={(e) => { void handleImageZip(e.currentTarget.files?.[0] || null); e.currentTarget.value = ""; }} />}
                 <input
                   ref={imageInputRef}
                   className="hidden"
@@ -2183,25 +2436,27 @@ export default function BrowserImageToMp4() {
                 />
 
                 <p className="mt-3 break-words text-sm font-bold text-slate-700">
-                  已選 {images.length} 張
+                  已選 {images.length} / {maxImages} 張
                   {images.length
                     ? `｜預估影片 ${totalSeconds.toFixed(1)} 秒｜${outputFps} fps`
                     : ""}
                 </p>
 
                 {images.length ? (
-                  <div className="mt-3 space-y-2">
+                  <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
                     {images.map((file, index) => (
                       <div
                         key={`${file.name}-${file.lastModified}-${index}`}
-                        className="grid min-w-0 grid-cols-[88px_minmax(0,1fr)] gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:grid-cols-[104px_minmax(0,1fr)]"
+                        className="flex min-w-0 flex-col gap-2 rounded-xl border border-slate-200 bg-white p-2 shadow-sm sm:p-3"
                       >
-                        <div className="relative aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
+                        <div className="relative flex h-28 w-full items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-100 sm:h-32">
                           {imagePreviewUrls[index] ? (
                             <img
                               src={imagePreviewUrls[index]}
                               alt={`第 ${index + 1} 張預覽：${file.name}`}
-                              className="h-full w-full object-cover"
+                              className="h-full w-full object-contain"
+                              loading="lazy"
+                              decoding="async"
                             />
                           ) : (
                             <div className="flex h-full w-full items-center justify-center text-xs font-bold text-slate-400">
@@ -2215,7 +2470,7 @@ export default function BrowserImageToMp4() {
 
                         <div className="min-w-0">
                           <p
-                            className="line-clamp-2 break-all text-sm font-bold leading-5 text-slate-800"
+                            className="line-clamp-2 break-all text-xs font-bold leading-5 text-slate-800"
                             title={file.name}
                           >
                             {file.name}
@@ -2224,12 +2479,12 @@ export default function BrowserImageToMp4() {
                             {(file.size / 1024 / 1024).toFixed(2)} MB
                           </p>
 
-                          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+                          <div className="mt-2 grid grid-cols-3 gap-1.5">
                             <button
                               type="button"
                               onClick={() => moveImage(index, -1)}
                               disabled={index === 0 || busy}
-                              className="min-h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-black transition hover:border-blue-300 hover:bg-blue-50 disabled:opacity-30"
+                              className="min-h-9 rounded-lg border border-slate-200 bg-white px-1 text-xs font-bold transition hover:border-blue-300 hover:bg-blue-50 disabled:opacity-30"
                             >
                               ↑ 上移
                             </button>
@@ -2237,7 +2492,7 @@ export default function BrowserImageToMp4() {
                               type="button"
                               onClick={() => moveImage(index, 1)}
                               disabled={index === images.length - 1 || busy}
-                              className="min-h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-black transition hover:border-blue-300 hover:bg-blue-50 disabled:opacity-30"
+                              className="min-h-9 rounded-lg border border-slate-200 bg-white px-1 text-xs font-bold transition hover:border-blue-300 hover:bg-blue-50 disabled:opacity-30"
                             >
                               ↓ 下移
                             </button>
@@ -2245,7 +2500,7 @@ export default function BrowserImageToMp4() {
                               type="button"
                               onClick={() => removeImage(index)}
                               disabled={busy}
-                              className="min-h-9 rounded-lg border border-rose-200 bg-white px-3 text-xs font-black text-rose-600 transition hover:bg-rose-50 disabled:opacity-30"
+                              className="min-h-9 rounded-lg border border-rose-200 bg-white px-1 text-xs font-bold text-rose-600 transition hover:bg-rose-50 disabled:opacity-30"
                             >
                               刪除
                             </button>
@@ -2257,7 +2512,7 @@ export default function BrowserImageToMp4() {
                 ) : null}
               </div>
 
-              <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+              {!musicMode && <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
                 <div className="flex items-start gap-3">
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-600 text-sm font-black text-white">
                     2
@@ -2308,10 +2563,12 @@ export default function BrowserImageToMp4() {
                     </label>
                   </div>
                 ) : null}
-              </div>
+              </div>}
             </section>
 
-            <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+            <details className="rounded-2xl border border-slate-200 bg-white">
+              <summary className="cursor-pointer p-4 text-base font-black text-blue-800 sm:p-5">進階設定｜特效、每張秒數、字幕、QR Code（點此展開）</summary>
+            <section className="border-t border-slate-200 p-4 sm:p-5">
               <div className="flex items-start gap-3">
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-500 text-sm font-black text-white">
                   3
@@ -2971,6 +3228,7 @@ export default function BrowserImageToMp4() {
                 )}
               </div>
             </section>
+            </details>
           </div>
 
           <section className="mt-6 rounded-2xl border border-blue-200 bg-blue-50/40 p-4 sm:p-5">
@@ -3093,16 +3351,16 @@ export default function BrowserImageToMp4() {
               <button
                 type="button"
                 onClick={generate}
-                disabled={busy || images.length === 0}
-                className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-black text-white shadow transition hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={busy || images.length === 0 || !musicReady}
+                className="inline-flex min-h-11 w-auto items-center justify-center rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white shadow transition hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {busy
                   ? renderMode === "native"
                     ? "⚡ 快速產生中…"
                     : "正在處理…"
                   : nativeMp4Available
-                    ? "⚡ 快速產生 MP4"
-                    : "開始產生 MP4"}
+                    ? (musicMode ? "產生整首音樂 MV" : "快速產生 MP4")
+                    : (musicMode ? "產生整首音樂 MV" : "開始產生 MP4")}
               </button>
 
               {busy ? (
@@ -3116,13 +3374,18 @@ export default function BrowserImageToMp4() {
               ) : null}
 
               {resultUrl ? (
-                <button
-                  type="button"
-                  onClick={download}
-                  className="rounded-xl bg-emerald-600 px-5 py-3 text-sm font-black text-white shadow transition hover:-translate-y-0.5 hover:bg-emerald-700 hover:shadow-lg"
-                >
-                  下載 MP4
-                </button>
+                <>
+                  <button type="button" onClick={download}
+                    className="inline-flex min-h-11 w-auto shrink-0 items-center justify-center rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white shadow hover:bg-emerald-700">
+                    下載 MP4
+                  </button>
+                  <div className="min-w-0 flex-1 rounded-xl border border-emerald-200 bg-white px-3 py-2 text-xs leading-6 text-slate-700" aria-label="已完成影片的輸出資訊">
+                    <strong className="text-emerald-800">影片資訊：</strong>
+                    {completedInfo ? ` ${completedInfo.ratio}｜${completedInfo.width} × ${completedInfo.height}｜${completedInfo.quality}｜${completedInfo.fps} fps｜預定 ${prettyTime(completedInfo.seconds)}` : ` ${ratio}｜${width} × ${height}｜${quality}｜${outputFps} fps`}
+                    {renderedDuration != null && `｜實際 ${prettyTime(renderedDuration)}`}
+                    {resultBlobRef.current && `｜${(resultBlobRef.current.size / (1024 * 1024)).toFixed(1)} MB`}
+                  </div>
+                </>
               ) : null}
             </div>
 
@@ -3155,6 +3418,7 @@ export default function BrowserImageToMp4() {
                 src={resultUrl}
                 controls
                 playsInline
+                onLoadedMetadata={(e) => setRenderedDuration(Number.isFinite(e.currentTarget.duration) ? e.currentTarget.duration : null)}
               />
             ) : null}
 
@@ -3169,7 +3433,7 @@ export default function BrowserImageToMp4() {
                 type="button"
                 onClick={() => imageInputRef.current?.click()}
                 disabled={busy}
-                className="mt-3 inline-flex min-h-12 w-full items-center justify-center rounded-2xl border border-blue-300 bg-blue-50 px-4 py-3 text-sm font-black text-blue-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-blue-100 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
+                className="mt-3 inline-flex min-h-11 w-auto max-w-full items-center justify-center rounded-xl border border-blue-300 bg-blue-50 px-5 py-2.5 text-sm font-bold text-blue-800 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 🖼️ 重新選圖（保留全部設定）
               </button>

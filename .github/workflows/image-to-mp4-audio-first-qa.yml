@@ -1,0 +1,28 @@
+name: Image To MP4 Audio First QA
+on:
+  push:
+    branches:
+      - feature/image-to-mp4-audio-first-mobile-ui-20261107
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Music duration and scene tests
+        run: npx tsx --test test/musicMvTimeline.test.ts
+      - name: Build full site
+        run: npm run build
