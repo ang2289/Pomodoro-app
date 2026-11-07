@@ -1516,8 +1516,9 @@ export default function BrowserImageToMp4() {
 
   const handleImageZip = async (file: File | null) => {
     if (!file) return;
-    if (file.size > 150 * 1024 * 1024) {
-      setError("ZIP 大於 150MB，請先分成較小的圖片包。");
+    const zipLimitMB = mobileDevice ? 90 : 180;
+    if (file.size > zipLimitMB * 1024 * 1024) {
+      setError(`ZIP 超過 ${zipLimitMB}MB，請先分成較小的圖片包。`);
       return;
     }
     setError("");
