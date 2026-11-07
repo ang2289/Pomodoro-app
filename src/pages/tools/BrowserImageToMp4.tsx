@@ -1700,7 +1700,34 @@ export default function BrowserImageToMp4() {
     const ctx = canvas.getContext("2d", { alpha: false });
     if (!ctx) throw new Error("瀏覽器無法建立影片畫布");
 
-    const loadedImages = await Promise.all(images.map(loadImageElement));
+    // Keep only a few decoded pictures in memory. Loading 48 full-size originals
+    // at once can exhaust the tab even if their compressed files are small.
+    const imageCache = new Map<number, HTMLImageElement>();
+    const inflightImages = new Map<number, Promise<HTMLImageElement>>();
+    const getCachedImage = (index: number): Promise<HTMLImageElement> => {
+      const existing = imageCache.get(index);
+      if (existing) {
+        imageCache.delete(index);
+        imageCache.set(index, existing);
+        return Promise.resolve(existing);
+      }
+      const inflight = inflightImages.get(index);
+      if (inflight) return inflight;
+      const loading = loadImageElement(images[index]).then((image) => {
+        imageCache.set(index, image);
+        while (imageCache.size > 3) {
+          const oldestIndex = imageCache.keys().next().value;
+          if (oldestIndex === undefined || oldestIndex === index) break;
+          const oldestImage = imageCache.get(oldestIndex);
+          oldestImage?.removeAttribute("src");
+          imageCache.delete(oldestIndex);
+        }
+        return image;
+      }).finally(() => { inflightImages.delete(index); });
+      inflightImages.set(index, loading);
+      return loading;
+    };
+    await getCachedImage(0);
     const videoStream = canvas.captureStream(outputFps);
     const combinedStream = new MediaStream(videoStream.getVideoTracks());
 
@@ -1758,7 +1785,9 @@ export default function BrowserImageToMp4() {
       const frameInterval = 1000 / outputFps;
       const totalFrames = musicTimeline?.totalFrames ?? Math.max(1, Math.ceil(totalSeconds * outputFps));
       const startedAt = performance.now();
-
+      let activeImageIndex = -1;
+      let activeImage: HTMLImageElement | null = null;
+      let nextPrefetchImageIndex = -1;
       for (let frameIndex = 0; frameIndex < totalFrames; frameIndex += 1) {
         const videoTimeSec = frameIndex / outputFps;
         const showingFinalQrPage =
@@ -1792,9 +1821,22 @@ export default function BrowserImageToMp4() {
             Math.min(1, imageTime / (scene?.duration ?? secondsPerImage)),
           );
 
+          if (activeImageIndex !== imageIndex || !activeImage) {
+            activeImage = await getCachedImage(imageIndex);
+            activeImageIndex = imageIndex;
+          }
+          // Preload the next scene before the boundary so music can keep playing
+          // without repeatedly decoding the entire collection at once.
+          if (scene && musicTimeline && nextPrefetchImageIndex !== imageIndex) {
+            const nextScene = musicTimeline.scenes.find((item) => item.start > scene.start);
+            if (nextScene && nextScene.start - videoTimeSec < 1.4 && nextScene.imageIndex !== imageIndex) {
+              nextPrefetchImageIndex = imageIndex;
+              void getCachedImage(nextScene.imageIndex).catch(() => {});
+            }
+          }
           drawNativeVideoFrame(
             ctx,
-            loadedImages[imageIndex],
+            activeImage,
             width,
             height,
             fitMode,
@@ -1873,6 +1915,8 @@ export default function BrowserImageToMp4() {
       } catch {}
       combinedStream.getTracks().forEach((track) => track.stop());
       videoStream.getTracks().forEach((track) => track.stop());
+      imageCache.forEach((image) => image.removeAttribute("src"));
+      imageCache.clear();
     }
   };
 
