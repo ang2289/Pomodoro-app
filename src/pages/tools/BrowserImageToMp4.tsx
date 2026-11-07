@@ -2288,7 +2288,7 @@ export default function BrowserImageToMp4() {
                   </span>
                   <div className="min-w-0 flex-1">
                     <h2 className="break-words text-base font-black text-slate-900">
-                      選擇圖片（最多 12 張）
+                      {musicMode ? "第 2 步｜選擇圖片（最多 12 張）" : "選擇圖片（最多 12 張）"}
                     </h2>
                     <p className="mt-1 break-words text-xs leading-5 text-slate-500">
                       上傳順序就是播放順序；下面可以再調整。
@@ -2323,18 +2323,18 @@ export default function BrowserImageToMp4() {
                 </p>
 
                 {images.length ? (
-                  <div className="mt-3 space-y-2">
+                  <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
                     {images.map((file, index) => (
                       <div
                         key={`${file.name}-${file.lastModified}-${index}`}
-                        className="grid min-w-0 grid-cols-[88px_minmax(0,1fr)] gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:grid-cols-[104px_minmax(0,1fr)]"
+                        className="flex min-w-0 flex-col gap-2 rounded-xl border border-slate-200 bg-white p-2 shadow-sm sm:p-3"
                       >
-                        <div className="relative aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
+                        <div className="relative flex h-28 w-full items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-100 sm:h-32">
                           {imagePreviewUrls[index] ? (
                             <img
                               src={imagePreviewUrls[index]}
                               alt={`第 ${index + 1} 張預覽：${file.name}`}
-                              className="h-full w-full object-cover"
+                              className="h-full w-full object-contain"
                             />
                           ) : (
                             <div className="flex h-full w-full items-center justify-center text-xs font-bold text-slate-400">
@@ -2348,7 +2348,7 @@ export default function BrowserImageToMp4() {
 
                         <div className="min-w-0">
                           <p
-                            className="line-clamp-2 break-all text-sm font-bold leading-5 text-slate-800"
+                            className="line-clamp-2 break-all text-xs font-bold leading-5 text-slate-800"
                             title={file.name}
                           >
                             {file.name}
@@ -2357,12 +2357,12 @@ export default function BrowserImageToMp4() {
                             {(file.size / 1024 / 1024).toFixed(2)} MB
                           </p>
 
-                          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+                          <div className="mt-2 grid grid-cols-3 gap-1.5">
                             <button
                               type="button"
                               onClick={() => moveImage(index, -1)}
                               disabled={index === 0 || busy}
-                              className="min-h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-black transition hover:border-blue-300 hover:bg-blue-50 disabled:opacity-30"
+                              className="min-h-9 rounded-lg border border-slate-200 bg-white px-1 text-xs font-bold transition hover:border-blue-300 hover:bg-blue-50 disabled:opacity-30"
                             >
                               ↑ 上移
                             </button>
@@ -2370,7 +2370,7 @@ export default function BrowserImageToMp4() {
                               type="button"
                               onClick={() => moveImage(index, 1)}
                               disabled={index === images.length - 1 || busy}
-                              className="min-h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-black transition hover:border-blue-300 hover:bg-blue-50 disabled:opacity-30"
+                              className="min-h-9 rounded-lg border border-slate-200 bg-white px-1 text-xs font-bold transition hover:border-blue-300 hover:bg-blue-50 disabled:opacity-30"
                             >
                               ↓ 下移
                             </button>
@@ -2378,7 +2378,7 @@ export default function BrowserImageToMp4() {
                               type="button"
                               onClick={() => removeImage(index)}
                               disabled={busy}
-                              className="min-h-9 rounded-lg border border-rose-200 bg-white px-3 text-xs font-black text-rose-600 transition hover:bg-rose-50 disabled:opacity-30"
+                              className="min-h-9 rounded-lg border border-rose-200 bg-white px-1 text-xs font-bold text-rose-600 transition hover:bg-rose-50 disabled:opacity-30"
                             >
                               刪除
                             </button>
