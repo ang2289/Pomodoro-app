@@ -2196,7 +2196,7 @@ export default function BrowserImageToMp4() {
   };
 
   const pickerButtonClass =
-    "inline-flex min-h-12 w-full items-center justify-center rounded-2xl border border-blue-200 bg-white px-4 py-3 text-sm font-black text-blue-700 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-blue-400 hover:bg-blue-50 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-300";
+    "inline-flex min-h-11 w-auto max-w-full items-center justify-center rounded-xl border border-blue-200 bg-white px-5 py-2.5 text-sm font-bold text-blue-700 hover:border-blue-400 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-300";
 
   return (
     <>
@@ -2308,7 +2308,7 @@ export default function BrowserImageToMp4() {
                       {musicMode ? "第 2 步｜選擇圖片（最多 12 張）" : "選擇圖片（最多 12 張）"}
                     </h2>
                     <p className="mt-1 break-words text-xs leading-5 text-slate-500">
-                      上傳順序就是播放順序；下面可以再調整。
+                      縮圖僅供編排，原圖不會因此壓縮；圖片將依所選 MP4 解析度輸出。
                     </p>
                   </div>
                 </div>
