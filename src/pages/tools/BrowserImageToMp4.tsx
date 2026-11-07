@@ -1963,7 +1963,7 @@ export default function BrowserImageToMp4() {
       }
 
       const includeFinalQrPage =
-        qrEnabled && qrDisplayMode === "final";
+        qrEnabled && qrDisplayMode === "final" && (!musicTimeline || musicTimeline.finalFrames > 0);
       let visualInputCount = orderedScenes.length;
 
       if (includeFinalQrPage) {
@@ -3229,16 +3229,16 @@ export default function BrowserImageToMp4() {
               <button
                 type="button"
                 onClick={generate}
-                disabled={busy || images.length === 0}
-                className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-black text-white shadow transition hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={busy || images.length === 0 || !musicReady}
+                className="inline-flex min-h-11 w-auto items-center justify-center rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white shadow transition hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {busy
                   ? renderMode === "native"
                     ? "⚡ 快速產生中…"
                     : "正在處理…"
                   : nativeMp4Available
-                    ? "⚡ 快速產生 MP4"
-                    : "開始產生 MP4"}
+                    ? (musicMode ? "產生整首音樂 MV" : "快速產生 MP4")
+                    : (musicMode ? "產生整首音樂 MV" : "開始產生 MP4")}
               </button>
 
               {busy ? (
@@ -3252,13 +3252,18 @@ export default function BrowserImageToMp4() {
               ) : null}
 
               {resultUrl ? (
-                <button
-                  type="button"
-                  onClick={download}
-                  className="rounded-xl bg-emerald-600 px-5 py-3 text-sm font-black text-white shadow transition hover:-translate-y-0.5 hover:bg-emerald-700 hover:shadow-lg"
-                >
-                  下載 MP4
-                </button>
+                <>
+                  <button type="button" onClick={download}
+                    className="inline-flex min-h-11 w-auto shrink-0 items-center justify-center rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white shadow hover:bg-emerald-700">
+                    下載 MP4
+                  </button>
+                  <div className="min-w-0 flex-1 rounded-xl border border-emerald-200 bg-white px-3 py-2 text-xs leading-6 text-slate-700" aria-label="已完成影片的輸出資訊">
+                    <strong className="text-emerald-800">影片資訊：</strong>
+                    {completedInfo ? ` ${completedInfo.ratio}｜${completedInfo.width} × ${completedInfo.height}｜${completedInfo.quality}｜${completedInfo.fps} fps｜預定 ${prettyTime(completedInfo.seconds)}` : ` ${ratio}｜${width} × ${height}｜${quality}｜${outputFps} fps`}
+                    {renderedDuration != null && `｜實際 ${prettyTime(renderedDuration)}`}
+                    {resultBlobRef.current && `｜${(resultBlobRef.current.size / (1024 * 1024)).toFixed(1)} MB`}
+                  </div>
+                </>
               ) : null}
             </div>
 
@@ -3291,6 +3296,7 @@ export default function BrowserImageToMp4() {
                 src={resultUrl}
                 controls
                 playsInline
+                onLoadedMetadata={(e) => setRenderedDuration(Number.isFinite(e.currentTarget.duration) ? e.currentTarget.duration : null)}
               />
             ) : null}
 
@@ -3305,7 +3311,7 @@ export default function BrowserImageToMp4() {
                 type="button"
                 onClick={() => imageInputRef.current?.click()}
                 disabled={busy}
-                className="mt-3 inline-flex min-h-12 w-full items-center justify-center rounded-2xl border border-blue-300 bg-blue-50 px-4 py-3 text-sm font-black text-blue-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-blue-100 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
+                className="mt-3 inline-flex min-h-11 w-auto max-w-full items-center justify-center rounded-xl border border-blue-300 bg-blue-50 px-5 py-2.5 text-sm font-bold text-blue-800 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 🖼️ 重新選圖（保留全部設定）
               </button>
