@@ -5,7 +5,7 @@ import JSZip from "jszip";
 import { QRCodeCanvas } from "qrcode.react";
 import { Link } from "react-router-dom";
 import SEO from "@/components/SEO";
-import { buildMusicTimeline } from "@/lib/musicMvTimeline";
+import { buildMusicTimeline, imageSelectionLimit } from "@/lib/musicMvTimeline";
 
 type VideoPurpose = "slideshow" | "music";
 type Ratio = "9:16" | "16:9" | "1:1" | "4:5";
@@ -1074,7 +1074,7 @@ export default function BrowserImageToMp4() {
   const musicMode = purpose === "music";
   // Keep memory use predictable on phones, while desktop users can arrange a full-length MV.
   const mobileDevice = typeof navigator !== "undefined" && (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || (typeof window !== "undefined" && window.innerWidth < 700));
-  const maxImages = musicMode ? (mobileDevice || !nativeMp4Available ? 24 : 48) : 12;
+  const maxImages = imageSelectionLimit(purpose, mobileDevice, nativeMp4Available);
   const imageSequenceSeconds = musicTimeline ? musicTimeline.contentFrames / outputFps : images.length * secondsPerImage;
   const totalSeconds = musicTimeline
     ? musicTimeline.totalSeconds
