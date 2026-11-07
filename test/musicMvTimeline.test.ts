@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildMusicTimeline } from "../src/lib/musicMvTimeline";
+import { buildMusicTimeline, imageSelectionLimit } from "../src/lib/musicMvTimeline";
 
 test("MP3 duration is master and QR tail stays inside it", () => {
   const duration = 200;
@@ -48,4 +48,20 @@ test("missing audio or images cannot fabricate a timeline", () => {
   assert.equal(buildMusicTimeline(0, 8, 24).totalFrames, 0);
   assert.equal(buildMusicTimeline(120, 0, 24).scenes.length, 0);
   assert.equal(buildMusicTimeline(NaN, 5, 24).totalFrames, 0);
+});
+
+test("full-song mode accepts 48 desktop pictures, 24 on phones/fallback", () => {
+  assert.equal(imageSelectionLimit("music", false, true), 48);
+  assert.equal(imageSelectionLimit("music", true, true), 24);
+  assert.equal(imageSelectionLimit("music", false, false), 24);
+  assert.equal(imageSelectionLimit("slideshow", false, true), 12);
+  assert.equal(imageSelectionLimit("slideshow", true, true), 12);
+});
+
+test("48 unique images fit a 188.8 second song, without extending duration", () => {
+  const timeline = buildMusicTimeline(188.8, 48, 24, 3.2);
+  assert.equal(timeline.scenes.length, 48);
+  assert.deepEqual(timeline.scenes.map(s => s.imageIndex), Array.from({length: 48}, (_, i) => i));
+  assert.equal(timeline.scenes.reduce((sum, scene) => sum + scene.frames, 0), timeline.contentFrames);
+  assert.ok(Math.abs(timeline.totalSeconds - 188.8) < 1/24);
 });
