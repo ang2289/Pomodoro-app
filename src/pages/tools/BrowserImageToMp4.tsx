@@ -5,6 +5,7 @@ import { QRCodeCanvas } from "qrcode.react";
 import { Link } from "react-router-dom";
 import SEO from "@/components/SEO";
 
+type VideoPurpose = "slideshow" | "music";
 type Ratio = "9:16" | "16:9" | "1:1" | "4:5";
 type Quality = "540p" | "720p" | "1080p";
 type Effect =
@@ -967,7 +968,37 @@ function wait(ms: number) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
+type MusicScene = { imageIndex: number; start: number; frames: number; duration: number };
+type MusicTimeline = { scenes: MusicScene[]; contentFrames: number; finalFrames: number; totalFrames: number; totalSeconds: number };
+
+/** The audio is the clock. Scene durations sum to the exact output frame count (no accumulated float drift). */
+export function buildMusicTimeline(audioSeconds: number, imageCount: number, fps: number, finalQrSeconds = 0): MusicTimeline {
+  if (!Number.isFinite(audioSeconds) || audioSeconds <= 0 || imageCount <= 0 || fps <= 0) {
+    return { scenes: [], contentFrames: 0, finalFrames: 0, totalFrames: 0, totalSeconds: 0 };
+  }
+  const totalFrames = Math.max(1, Math.round(audioSeconds * fps));
+  const finalFrames = Math.min(Math.max(0, Math.round(finalQrSeconds * fps)), Math.max(0, totalFrames - 1));
+  const contentFrames = totalFrames - finalFrames;
+  const sceneCount = Math.min(contentFrames, Math.max(imageCount, Math.ceil(contentFrames / Math.round(5.5 * fps))));
+  const scenes: MusicScene[] = [];
+  for (let i = 0; i < sceneCount; i += 1) {
+    const begin = Math.floor((i * contentFrames) / sceneCount);
+    const end = Math.floor(((i + 1) * contentFrames) / sceneCount);
+    const frames = end - begin;
+    scenes.push({ imageIndex: i % imageCount, start: begin / fps, frames, duration: frames / fps });
+  }
+  return { scenes, contentFrames, finalFrames, totalFrames, totalSeconds: totalFrames / fps };
+}
+
+function prettyTime(seconds: number) {
+  if (!Number.isFinite(seconds) || seconds <= 0) return "--:--";
+  const whole = Math.round(seconds);
+  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
+}
+
 export default function BrowserImageToMp4() {
+  const [purpose, setPurpose] = useState<VideoPurpose>("slideshow");
+  const [musicDuration, setMusicDuration] = useState<number | null>(null);
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
   const [audio, setAudio] = useState<File | null>(null);
@@ -1050,22 +1081,53 @@ export default function BrowserImageToMp4() {
   const encodeTimeoutMs =
     quality === "540p" ? 180_000 : quality === "720p" ? 240_000 : 300_000;
 
-  const imageSequenceSeconds = useMemo(
-    () => images.length * secondsPerImage,
-    [images.length, secondsPerImage],
+  const musicTimeline = useMemo(
+    () => purpose === "music" && musicDuration != null
+      ? buildMusicTimeline(musicDuration, images.length, outputFps, qrEnabled && qrDisplayMode === "final" ? finalPageDuration : 0)
+      : null,
+    [purpose, musicDuration, images.length, outputFps, qrEnabled, qrDisplayMode, finalPageDuration],
   );
+  const musicMode = purpose === "music";
+  const imageSequenceSeconds = musicTimeline ? musicTimeline.contentFrames / outputFps : images.length * secondsPerImage;
+  const totalSeconds = musicTimeline
+    ? musicTimeline.totalSeconds
+    : imageSequenceSeconds + (qrEnabled && qrDisplayMode === "final" ? finalPageDuration : 0);
+  const musicReady = !musicMode || (Boolean(audio) && musicDuration != null && musicDuration > 0);
+  const orderedScenes = musicTimeline?.scenes ?? images.map((_, i) => ({
+    imageIndex: i, start: i * secondsPerImage,
+    duration: secondsPerImage, frames: Math.round(secondsPerImage * outputFps),
+  }));
 
-  const totalSeconds = useMemo(
-    () =>
-      imageSequenceSeconds +
-      (qrEnabled && qrDisplayMode === "final" ? finalPageDuration : 0),
-    [
-      imageSequenceSeconds,
-      qrEnabled,
-      qrDisplayMode,
-      finalPageDuration,
-    ],
-  );
+  // Read the audio's actual duration without uploading it. Audio is never looped in music mode.
+  useEffect(() => {
+    setMusicDuration(null);
+    if (!audio) return;
+    let active = true;
+    const url = URL.createObjectURL(audio);
+    const probe = document.createElement("audio");
+    probe.preload = "metadata";
+    const readDuration = () => {
+      if (!active) return;
+      const duration = probe.duration;
+      if (Number.isFinite(duration) && duration > 0) {
+        setMusicDuration(duration);
+      } else {
+        setError("無法讀取音樂長度。請改用一般 MP3／WAV 檔再試一次。");
+      }
+    };
+    probe.addEventListener("loadedmetadata", readDuration);
+    probe.addEventListener("durationchange", () => {
+      if (Number.isFinite(probe.duration) && probe.duration > 0 && active) setMusicDuration(probe.duration);
+    });
+    probe.addEventListener("error", () => { if (active) setError("音樂格式無法讀取，請更換 MP3 或 WAV。"); });
+    probe.src = url;
+    return () => {
+      active = false;
+      probe.removeAttribute("src");
+      probe.load();
+      URL.revokeObjectURL(url);
+    };
+  }, [audio]);
 
   useEffect(() => {
     const urls = images.map((file) => URL.createObjectURL(file));
@@ -1102,6 +1164,7 @@ export default function BrowserImageToMp4() {
 
     const saved = readVideoSettings();
     if (!saved) return;
+    if (saved.purpose === "music" || saved.purpose === "slideshow") setPurpose(saved.purpose);
 
     if (["9:16", "16:9", "1:1", "4:5"].includes(String(saved.ratio))) {
       setRatio(saved.ratio as Ratio);
@@ -1445,7 +1508,7 @@ export default function BrowserImageToMp4() {
     setResultFileName("");
     setSaveStatus("");
 
-    if (autoGenerateAfterSelect && nextImages.length > 0) {
+    if (!musicMode && autoGenerateAfterSelect && nextImages.length > 0) {
       pendingAutoGenerateRef.current = true;
       setAutomationMessage("已換新圖片，準備自動產生 MP4…");
     } else if (nextImages.length > 0) {
@@ -1484,6 +1547,7 @@ export default function BrowserImageToMp4() {
     const settings = {
       ratio,
       quality,
+      purpose,
       fitMode,
       background,
       effect,
