@@ -1527,7 +1527,7 @@ export default function BrowserImageToMp4() {
     const slots = mode === "append" ? Math.max(0, maxImages - images.length) : maxImages;
     const added = applyImageSelection(picked.slice(0, slots), mode);
     if (picked.length > slots) {
-      setAutomationMessage(`成功加入 ${added} 張，已選 ${Math.min(maxImages, images.length + (mode === "replace" ? 0 : added))} / ${maxImages} 張；超出上限的 ${picked.length - slots} 張未匯入。`);
+      setAutomationMessage(`成功加入 ${added} 張，已選 ${mode === "append" ? images.length + added : added} / ${maxImages} 張；超出上限的 ${picked.length - slots} 張未匯入。`);
     }
   };
 
@@ -1550,7 +1550,7 @@ export default function BrowserImageToMp4() {
       setAutomationMessage("正在讀取圖片 ZIP，圖片不會上傳到伺服器…");
       const zip = await JSZip.loadAsync(file);
       const files = Object.values(zip.files)
-        .filter((entry) => !entry.dir && !entry.name.includes("__MACOSX") && /\\.(png|jpe?g|webp)$/i.test(entry.name))
+        .filter((entry) => !entry.dir && !entry.name.includes("__MACOSX") && /\.(png|jpe?g|webp)$/i.test(entry.name))
         .sort((a, b) => a.name.localeCompare(b.name, "zh-Hant", { numeric: true }));
       if (!files.length) throw new Error("ZIP 內找不到 PNG、JPG 或 WebP 圖片。");
       const picked: File[] = [];
@@ -1563,7 +1563,7 @@ export default function BrowserImageToMp4() {
           throw new Error("這批圖片解壓後占用空間太大，請分成較小的 ZIP，或改用較小尺寸的圖片。");
         }
         const name = entry.name.split("/").pop() || "image.png";
-        const type = /\\.png$/i.test(name) ? "image/png" : /\\.webp$/i.test(name) ? "image/webp" : "image/jpeg";
+        const type = /\.png$/i.test(name) ? "image/png" : /\.webp$/i.test(name) ? "image/webp" : "image/jpeg";
         picked.push(new File([new Uint8Array(data).buffer], name, { type }));
       }
       const added = applyImageSelection(picked, mode);
