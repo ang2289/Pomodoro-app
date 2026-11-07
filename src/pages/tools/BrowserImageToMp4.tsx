@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { fetchFile } from "@ffmpeg/util";
+import JSZip from "jszip";
 import { QRCodeCanvas } from "qrcode.react";
 import { Link } from "react-router-dom";
 import SEO from "@/components/SEO";
@@ -1044,6 +1045,7 @@ export default function BrowserImageToMp4() {
 
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const audioInputRef = useRef<HTMLInputElement | null>(null);
+  const zipInputRef = useRef<HTMLInputElement | null>(null);
   const qrCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const ffmpegRef = useRef<FFmpeg | null>(null);
   const loadedRef = useRef(false);
@@ -1480,8 +1482,7 @@ export default function BrowserImageToMp4() {
     );
   };
 
-  const handleImageSelection = (fileList: FileList | null) => {
-    const nextImages = Array.from(fileList || []).slice(0, 12);
+  const applyImageSelection = (nextImages: File[]) => {
     setImages(nextImages);
     setError("");
     setResultUrl((current) => {
@@ -1499,6 +1500,43 @@ export default function BrowserImageToMp4() {
       setAutomationMessage("已換新圖片，準備自動產生 MP4…");
     } else if (nextImages.length > 0) {
       setAutomationMessage("已換新圖片，其他設定全部保留。");
+    }
+  };
+
+  const handleImageSelection = (fileList: FileList | null) => {
+    const picked = Array.from(fileList || []);
+    if (picked.length > 12) {
+      setAutomationMessage("一次最多載入 12 張圖片，已採用前 12 張；可用上下移動調整順序。");
+    }
+    applyImageSelection(picked.slice(0, 12));
+  };
+
+  const handleImageZip = async (file: File | null) => {
+    if (!file) return;
+    if (file.size > 150 * 1024 * 1024) {
+      setError("ZIP 大於 150MB，請先分成較小的圖片包。");
+      return;
+    }
+    setError("");
+    try {
+      setAutomationMessage("正在讀取圖片 ZIP，圖片不會上傳到伺服器…");
+      const zip = await JSZip.loadAsync(file);
+      const files = Object.values(zip.files)
+        .filter((entry) => !entry.dir && !entry.name.includes("__MACOSX") && /\.(png|jpe?g|webp)$/i.test(entry.name))
+        .sort((a, b) => a.name.localeCompare(b.name, "zh-Hant", { numeric: true }));
+      if (!files.length) throw new Error("ZIP 內找不到 PNG、JPG 或 WebP 圖片。");
+      const picked: File[] = [];
+      for (const entry of files.slice(0, 12)) {
+        const data = await entry.async("uint8array");
+        if (data.byteLength > 12 * 1024 * 1024) throw new Error("ZIP 內有圖片超過 12MB，請先縮小該圖片。");
+        const name = entry.name.split("/").pop() || "image.png";
+        const type = /\.png$/i.test(name) ? "image/png" : /\.webp$/i.test(name) ? "image/webp" : "image/jpeg";
+        picked.push(new File([new Uint8Array(data).buffer], name, { type }));
+      }
+      applyImageSelection(picked);
+      setAutomationMessage(`已從 ZIP 選取 ${picked.length} 張圖片${files.length > 12 ? `（共 ${files.length} 張，為了效能先取前 12 張）` : ""}；可直接編輯排序。`);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "ZIP 讀取失敗，請確認檔案完整。");
     }
   };
 
@@ -2275,13 +2313,18 @@ export default function BrowserImageToMp4() {
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => imageInputRef.current?.click()}
-                  className={`${pickerButtonClass} mt-4`}
-                >
-                  🖼️ 選擇圖片
-                </button>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <button type="button" onClick={() => imageInputRef.current?.click()}
+                    className="inline-flex min-h-11 w-auto items-center justify-center rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-blue-700">
+                    選擇圖片
+                  </button>
+                  {musicMode && <button type="button" onClick={() => zipInputRef.current?.click()}
+                    className="inline-flex min-h-11 w-auto items-center justify-center rounded-xl border border-blue-300 bg-white px-5 py-2.5 text-sm font-bold text-blue-800 hover:bg-blue-50">
+                    匯入圖片 ZIP
+                  </button>}
+                </div>
+                {musicMode && <input ref={zipInputRef} className="hidden" type="file" accept=".zip,application/zip"
+                  onChange={(e) => { void handleImageZip(e.currentTarget.files?.[0] || null); e.currentTarget.value = ""; }} />}
                 <input
                   ref={imageInputRef}
                   className="hidden"
