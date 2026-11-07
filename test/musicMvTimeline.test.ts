@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildMusicTimeline, imageSelectionLimit } from "../src/lib/musicMvTimeline";
+import { buildMusicTimeline, combinePictureSelections, imageSelectionLimit } from "../src/lib/musicMvTimeline";
 
 test("MP3 duration is master and QR tail stays inside it", () => {
   const duration = 200;
@@ -64,4 +64,35 @@ test("48 unique images fit a 188.8 second song, without extending duration", () 
   assert.deepEqual(timeline.scenes.map(s => s.imageIndex), Array.from({length: 48}, (_, i) => i));
   assert.equal(timeline.scenes.reduce((sum, scene) => sum + scene.frames, 0), timeline.contentFrames);
   assert.ok(Math.abs(timeline.totalSeconds - 188.8) < 1/24);
+});
+
+test("selecting a second 12-picture batch appends to the first without losing order", () => {
+  const first = Array.from({ length: 12 }, (_, i) => `first-${i + 1}`);
+  const next = Array.from({ length: 12 }, (_, i) => `second-${i + 1}`);
+  const combined = combinePictureSelections(first, next, 48, "append");
+  assert.equal(combined.length, 24);
+  assert.deepEqual(combined.slice(0, 12), first);
+  assert.deepEqual(combined.slice(12), next);
+});
+
+test("desktop MV can fill 48 images across four batches; overflows are ignored", () => {
+  let selected: string[] = [];
+  for (let batch = 0; batch < 4; batch += 1) {
+    const incoming = Array.from({ length: 12 }, (_, i) => `img-${batch * 12 + i + 1}`);
+    selected = combinePictureSelections(selected, incoming, 48, "append");
+  }
+  assert.equal(selected.length, 48);
+  assert.equal(selected[0], "img-1");
+  assert.equal(selected[47], "img-48");
+  assert.deepEqual(combinePictureSelections(selected, ["too-many"], 48, "append"), selected);
+});
+
+test("mobile caps to 24 and replace and clear never append old frames", () => {
+  const oldImages = Array.from({length: 12}, (_, i) => `old-${i}`);
+  const next = Array.from({length: 30}, (_, i) => `new-${i}`);
+  const limited = combinePictureSelections(oldImages, next, 24, "append");
+  assert.equal(limited.length, 24);
+  assert.deepEqual(limited.slice(0, 12), oldImages);
+  assert.deepEqual(combinePictureSelections(oldImages, next, 48, "replace"), next);
+  assert.deepEqual(combinePictureSelections(oldImages, [], 48, "replace"), []);
 });
