@@ -1686,7 +1686,7 @@ export default function BrowserImageToMp4() {
       gain.gain.value = audioVolume;
       audioSource = audioContext.createBufferSource();
       audioSource.buffer = audioBuffer;
-      audioSource.loop = true;
+      audioSource.loop = !musicMode;
       audioSource.connect(gain);
       gain.connect(destination);
 
@@ -1722,7 +1722,7 @@ export default function BrowserImageToMp4() {
       audioSource?.start();
 
       const frameInterval = 1000 / outputFps;
-      const totalFrames = Math.max(1, Math.ceil(totalSeconds * outputFps));
+      const totalFrames = musicTimeline?.totalFrames ?? Math.max(1, Math.ceil(totalSeconds * outputFps));
       const startedAt = performance.now();
 
       for (let frameIndex = 0; frameIndex < totalFrames; frameIndex += 1) {
@@ -1745,15 +1745,17 @@ export default function BrowserImageToMp4() {
             qrPercent,
           );
         } else {
-          const imageIndex = Math.min(
-            images.length - 1,
-            Math.floor(videoTimeSec / secondsPerImage),
+          const scene = musicTimeline?.scenes.find((item) =>
+            videoTimeSec >= item.start && videoTimeSec < item.start + item.duration + 0.00001
           );
-          const imageTime =
-            videoTimeSec - imageIndex * secondsPerImage;
-          const imageProgress = Math.max(
-            0,
-            Math.min(1, imageTime / secondsPerImage),
+          const imageIndex = scene ? scene.imageIndex : Math.min(
+            images.length - 1, Math.floor(videoTimeSec / secondsPerImage),
+          );
+          const imageTime = scene
+            ? videoTimeSec - scene.start
+            : videoTimeSec - imageIndex * secondsPerImage;
+          const imageProgress = Math.max(0,
+            Math.min(1, imageTime / (scene?.duration ?? secondsPerImage)),
           );
 
           drawNativeVideoFrame(
@@ -1870,6 +1872,10 @@ export default function BrowserImageToMp4() {
       setError("請先選擇至少 1 張圖片。");
       return;
     }
+    if (musicMode && !musicReady) {
+      setError("請先上傳 MP3，確認已讀取歌曲長度，再開始製作整首 MV。");
+      return;
+    }
     if (images.length > 12) {
       setError("一次最多 12 張圖片，避免手機或瀏覽器記憶體不足。");
       return;
@@ -1949,7 +1955,7 @@ export default function BrowserImageToMp4() {
 
       const includeFinalQrPage =
         qrEnabled && qrDisplayMode === "final";
-      let visualInputCount = images.length;
+      let visualInputCount = orderedScenes.length;
 
       if (includeFinalQrPage) {
         setStatus("建立 QR Code 最後一頁…");
@@ -1978,14 +1984,10 @@ export default function BrowserImageToMp4() {
       }
 
       const args: string[] = [];
-      images.forEach((_, i) => {
+      orderedScenes.forEach((scene) => {
         args.push(
-          "-loop",
-          "1",
-          "-t",
-          String(secondsPerImage),
-          "-i",
-          `rxv-img-${i}.jpg`,
+          "-loop", "1", "-t", String(scene.duration), "-i",
+          `rxv-img-${scene.imageIndex}.jpg`,
         );
       });
 
@@ -1994,32 +1996,30 @@ export default function BrowserImageToMp4() {
           "-loop",
           "1",
           "-t",
-          String(finalPageDuration),
+          String(musicTimeline ? musicTimeline.finalFrames / outputFps : finalPageDuration),
           "-i",
           "rxv-final-qr.jpg",
         );
       }
 
       if (audioName) {
-        args.push("-stream_loop", "-1", "-i", audioName);
+        if (musicMode) args.push("-i", audioName);
+        else args.push("-stream_loop", "-1", "-i", audioName);
       }
 
       const filters: string[] = [];
-      for (let i = 0; i < images.length; i += 1) {
+      for (let i = 0; i < orderedScenes.length; i += 1) {
+        const sceneSeconds = orderedScenes[i].duration;
         filters.push(
           `[${i}:v]setsar=1,${effectFilter(
-            effect,
-            width,
-            height,
-            secondsPerImage,
-            outputFps,
-          )},trim=duration=${secondsPerImage},setpts=PTS-STARTPTS[v${i}]`,
+            effect, width, height, sceneSeconds, outputFps,
+          )},trim=duration=${sceneSeconds},setpts=PTS-STARTPTS[v${i}]`,
         );
       }
 
       if (includeFinalQrPage) {
         filters.push(
-          `[${images.length}:v]fps=${outputFps},trim=duration=${finalPageDuration},setpts=PTS-STARTPTS[v${images.length}]`,
+          `[${orderedScenes.length}:v]fps=${outputFps},trim=duration=${musicTimeline ? musicTimeline.finalFrames / outputFps : finalPageDuration},setpts=PTS-STARTPTS[v${orderedScenes.length}]`,
         );
       }
 
@@ -2030,7 +2030,9 @@ export default function BrowserImageToMp4() {
 
       if (audioName) {
         filters.push(
-          `[${visualInputCount}:a]volume=${audioVolume.toFixed(2)}[aout]`,
+          musicMode
+            ? `[${visualInputCount}:a]volume=${audioVolume.toFixed(2)},apad,atrim=duration=${totalSeconds.toFixed(6)},asetpts=PTS-STARTPTS[aout]`
+            : `[${visualInputCount}:a]volume=${audioVolume.toFixed(2)}[aout]`,
         );
       }
 
@@ -2049,7 +2051,7 @@ export default function BrowserImageToMp4() {
           "aac",
           "-b:a",
           "128k",
-          "-shortest",
+          ...(musicMode ? ["-t", totalSeconds.toFixed(6)] : ["-shortest"]),
         );
       } else {
         args.push("-an");
@@ -2078,9 +2080,10 @@ export default function BrowserImageToMp4() {
       );
       setProgress(Math.max(30, progress));
 
-      const exitCode = await ffmpeg.exec(args, encodeTimeoutMs);
+      const durationAwareTimeoutMs = musicMode ? Math.max(encodeTimeoutMs, Math.min(1_800_000, Math.ceil(totalSeconds * 4000))) : encodeTimeoutMs;
+      const exitCode = await ffmpeg.exec(args, durationAwareTimeoutMs);
       if (exitCode !== 0) {
-        const minutes = Math.round(encodeTimeoutMs / 60_000);
+        const minutes = Math.round(durationAwareTimeoutMs / 60_000);
         throw new Error(
           `轉檔超過 ${minutes} 分鐘已自動停止。建議改用「540p 快速」或減少圖片張數後再試。`,
         );
