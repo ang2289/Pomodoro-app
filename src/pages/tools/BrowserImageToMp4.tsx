@@ -1072,6 +1072,9 @@ export default function BrowserImageToMp4() {
     [purpose, musicDuration, images.length, outputFps, qrEnabled, qrDisplayMode, finalPageDuration],
   );
   const musicMode = purpose === "music";
+  // Keep memory use predictable on phones, while desktop users can arrange a full-length MV.
+  const mobileDevice = typeof navigator !== "undefined" && (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || (typeof window !== "undefined" && window.innerWidth < 700));
+  const maxImages = musicMode ? (mobileDevice ? 24 : 48) : 12;
   const imageSequenceSeconds = musicTimeline ? musicTimeline.contentFrames / outputFps : images.length * secondsPerImage;
   const totalSeconds = musicTimeline
     ? musicTimeline.totalSeconds
@@ -1505,10 +1508,10 @@ export default function BrowserImageToMp4() {
 
   const handleImageSelection = (fileList: FileList | null) => {
     const picked = Array.from(fileList || []);
-    if (picked.length > 12) {
-      setAutomationMessage("一次最多載入 12 張圖片，已採用前 12 張；可用上下移動調整順序。");
+    if (picked.length > maxImages) {
+      setAutomationMessage(`目前模式最多載入 ${maxImages} 張，已選前 ${maxImages} 張；可用上下移動調整順序。`);
     }
-    applyImageSelection(picked.slice(0, 12));
+    applyImageSelection(picked.slice(0, maxImages));
   };
 
   const handleImageZip = async (file: File | null) => {
@@ -1526,15 +1529,20 @@ export default function BrowserImageToMp4() {
         .sort((a, b) => a.name.localeCompare(b.name, "zh-Hant", { numeric: true }));
       if (!files.length) throw new Error("ZIP 內找不到 PNG、JPG 或 WebP 圖片。");
       const picked: File[] = [];
-      for (const entry of files.slice(0, 12)) {
+      let totalExpandedBytes = 0;
+      for (const entry of files.slice(0, maxImages)) {
         const data = await entry.async("uint8array");
         if (data.byteLength > 12 * 1024 * 1024) throw new Error("ZIP 內有圖片超過 12MB，請先縮小該圖片。");
+        totalExpandedBytes += data.byteLength;
+        if (totalExpandedBytes > (mobileDevice ? 90 : 220) * 1024 * 1024) {
+          throw new Error("這批圖片解壓後占用空間太大，請分成較小的 ZIP，或改用較小尺寸的圖片。");
+        }
         const name = entry.name.split("/").pop() || "image.png";
         const type = /\.png$/i.test(name) ? "image/png" : /\.webp$/i.test(name) ? "image/webp" : "image/jpeg";
         picked.push(new File([new Uint8Array(data).buffer], name, { type }));
       }
       applyImageSelection(picked);
-      setAutomationMessage(`已從 ZIP 選取 ${picked.length} 張圖片${files.length > 12 ? `（共 ${files.length} 張，為了效能先取前 12 張）` : ""}；可直接編輯排序。`);
+      setAutomationMessage(`已從 ZIP 選取 ${picked.length} 張圖片${files.length > maxImages ? `（共 ${files.length} 張，為了效能先取前 ${maxImages} 張）` : ""}；可直接編輯排序。`);
     } catch (error) {
       setError(error instanceof Error ? error.message : "ZIP 讀取失敗，請確認檔案完整。");
     }
@@ -1902,8 +1910,13 @@ export default function BrowserImageToMp4() {
       setError("請先上傳 MP3，確認已讀取歌曲長度，再開始製作整首 MV。");
       return;
     }
-    if (images.length > 12) {
-      setError("一次最多 12 張圖片，避免手機或瀏覽器記憶體不足。");
+    if (images.length > maxImages) {
+      setError(`目前模式最多 ${maxImages} 張圖片，請先刪減圖片再產生影片。`);
+      return;
+    }
+    const bytes = images.reduce((sum, file) => sum + file.size, 0);
+    if (bytes > (mobileDevice ? 90 : 220) * 1024 * 1024) {
+      setError("圖片總大小過高，請先縮小圖片或分批製作，避免瀏覽器轉檔中斷。");
       return;
     }
     if (qrEnabled && !qrText.trim()) {
@@ -2305,7 +2318,7 @@ export default function BrowserImageToMp4() {
                   </span>
                   <div className="min-w-0 flex-1">
                     <h2 className="break-words text-base font-black text-slate-900">
-                      {musicMode ? "第 2 步｜選擇圖片（最多 12 張）" : "選擇圖片（最多 12 張）"}
+                      {musicMode ? `第 2 步｜選擇圖片（最多 ${maxImages} 張）` : "選擇圖片（最多 12 張）"}
                     </h2>
                     <p className="mt-1 break-words text-xs leading-5 text-slate-500">
                       縮圖僅供編排，原圖不會因此壓縮；圖片將依所選 MP4 解析度輸出。
@@ -2338,7 +2351,7 @@ export default function BrowserImageToMp4() {
                 />
 
                 <p className="mt-3 break-words text-sm font-bold text-slate-700">
-                  已選 {images.length} 張
+                  已選 {images.length} / {maxImages} 張
                   {images.length
                     ? `｜預估影片 ${totalSeconds.toFixed(1)} 秒｜${outputFps} fps`
                     : ""}
@@ -2357,6 +2370,8 @@ export default function BrowserImageToMp4() {
                               src={imagePreviewUrls[index]}
                               alt={`第 ${index + 1} 張預覽：${file.name}`}
                               className="h-full w-full object-contain"
+                              loading="lazy"
+                              decoding="async"
                             />
                           ) : (
                             <div className="flex h-full w-full items-center justify-center text-xs font-bold text-slate-400">
