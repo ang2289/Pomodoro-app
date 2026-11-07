@@ -7,6 +7,18 @@ export function imageSelectionLimit(purpose: "slideshow" | "music", mobile: bool
   return mobile || !nativeFast ? 24 : 48;
 }
 
+/** Keeps the existing order when the user imports a second batch of images. */
+export function combinePictureSelections<T>(
+  current: readonly T[],
+  incoming: readonly T[],
+  limit: number,
+  mode: "append" | "replace" = "append",
+): T[] {
+  const source = mode === "replace" ? incoming : [...current, ...incoming];
+  const capacity = Math.max(0, Math.floor(Number.isFinite(limit) ? limit : 0));
+  return source.slice(0, capacity);
+}
+
 /** The audio is the clock. Scene durations sum to the exact output frame count (no accumulated float drift). */
 export function buildMusicTimeline(audioSeconds: number, imageCount: number, fps: number, finalQrSeconds = 0): MusicTimeline {
   if (!Number.isFinite(audioSeconds) || audioSeconds <= 0 || imageCount <= 0 || fps <= 0) {
