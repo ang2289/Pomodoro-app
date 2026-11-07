@@ -1074,7 +1074,7 @@ export default function BrowserImageToMp4() {
   const musicMode = purpose === "music";
   // Keep memory use predictable on phones, while desktop users can arrange a full-length MV.
   const mobileDevice = typeof navigator !== "undefined" && (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || (typeof window !== "undefined" && window.innerWidth < 700));
-  const maxImages = musicMode ? (mobileDevice ? 24 : 48) : 12;
+  const maxImages = musicMode ? (mobileDevice || !nativeMp4Available ? 24 : 48) : 12;
   const imageSequenceSeconds = musicTimeline ? musicTimeline.contentFrames / outputFps : images.length * secondsPerImage;
   const totalSeconds = musicTimeline
     ? musicTimeline.totalSeconds
